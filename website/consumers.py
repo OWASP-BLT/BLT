@@ -3,6 +3,7 @@ import difflib
 import json
 import logging
 import os
+import secrets
 import tempfile
 import zipfile
 from pathlib import Path
@@ -361,6 +362,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except:
             return False
 
+    def get_or_create_session_key(self, data):
+        """Get existing session key from scope or data, or generate a new one."""
+        session_key = (
+            self.scope.get("session", {}).get("session_key") or data.get("session_key") or secrets.token_urlsafe(8)
+        )
+
+        # Store session key in scope for future use
+        if "session" not in self.scope:
+            self.scope["session"] = {}
+        self.scope["session"]["session_key"] = session_key
+
+        return session_key
+
     @database_sync_to_async
     def save_message(self, message, username):
         """Saves a message in the database."""
@@ -370,7 +384,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             session_key = None
 
             if username.startswith("anon_"):
-                session_key = username.split("_")[1]
+                # Safely extract session key from username
+                parts = username.split("_", 1)
+                if len(parts) > 1:
+                    session_key = parts[1]
             else:
                 user = User.objects.filter(username=username).first()
 
@@ -395,20 +412,58 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def add_reaction(self, message_id, emoji, username):
-        """Adds or toggles a reaction on a message."""
+        """
+        Adds or toggles a reaction (emoji) on a message.
+
+        If the user has not yet reacted to the message with the given emoji, their reaction is added.
+        If the user has already reacted with the same emoji, their reaction is removed (toggle behavior).
+        Multiple emoji reactions per user are supported. Users can only remove their own reactions.
+
+        Args:
+            message_id (int): The ID of the message to react to.
+            emoji (str): The emoji to add or remove (e.g., "👍", "❤️").
+            username (str): The username of the user adding/removing the reaction. For anonymous users,
+                this should be in the format "anon_{session_key}".
+
+        Returns:
+            dict: The updated reactions dictionary if successful, or None if the operation failed.
+
+        Note:
+            - Anonymous users are identified by usernames starting with "anon_" and are stored in reactions
+              as "session_{session_key}".
+            - The toggle behavior means that if a user has already reacted with the given emoji, their reaction
+              will be removed; otherwise, it will be added.
+        """
         try:
             message = Message.objects.get(id=message_id)
             reactions = message.reactions or {}
 
-            if emoji not in reactions:
-                reactions[emoji] = []
-
-            if username in reactions[emoji]:
-                reactions[emoji].remove(username)
-                if not reactions[emoji]:
-                    del reactions[emoji]
+            # Handle anonymous users - extract session key from anon_ prefix
+            is_anonymous = username.startswith("anon_")
+            if is_anonymous:
+                # Safely extract session key from username
+                parts = username.split("_", 1)
+                if len(parts) > 1:
+                    user_id = f"session_{parts[1]}"
+                else:
+                    # Fallback for malformed anonymous username
+                    user_id = username
             else:
-                reactions[emoji] = reactions.get(emoji, []) + [username]
+                user_id = username
+
+            # Check if user already has this emoji reaction
+            if emoji in reactions:
+                if user_id in reactions[emoji]:
+                    # User can only remove their own reaction
+                    reactions[emoji].remove(user_id)
+                    if not reactions[emoji]:
+                        del reactions[emoji]
+                else:
+                    # Add new reaction for this emoji
+                    reactions[emoji].append(user_id)
+            else:
+                # Create new emoji reaction list
+                reactions[emoji] = [user_id]
 
             message.reactions = reactions
             message.save()
@@ -437,15 +492,46 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if message_type == "add_reaction":
                 message_id = data.get("message_id")
                 emoji = data.get("emoji")
-                username = self.scope["user"].username if self.scope["user"].is_authenticated else "Anonymous"
 
-                if not message_id or not emoji:
+                # Validate emoji input
+                if not emoji or not isinstance(emoji, str):
+                    await self.send(
+                        text_data=json.dumps({"type": "error", "code": "invalid_emoji", "message": "Invalid emoji"})
+                    )
+                    return
+
+                # Limit emoji length to prevent abuse (emojis are typically 1-4 characters)
+                if len(emoji) > 10:
+                    await self.send(
+                        text_data=json.dumps({"type": "error", "code": "invalid_emoji", "message": "Emoji too long"})
+                    )
+                    return
+
+                if not message_id:
                     await self.send(
                         text_data=json.dumps(
-                            {"type": "error", "code": "invalid_reaction", "message": "Message ID and emoji required"}
+                            {"type": "error", "code": "invalid_reaction", "message": "Message ID required"}
                         )
                     )
                     return
+
+                # Get username or generate anonymous session-based username
+                if self.scope["user"].is_authenticated:
+                    username = self.scope["user"].username
+                else:
+                    session_key = self.get_or_create_session_key(data)
+                    username = f"anon_{session_key}"
+
+                    # Send the session key back to the client
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "session_key",
+                                "session_key": session_key,
+                                "message": "Store this session key for future reactions",
+                            }
+                        )
+                    )
 
                 reactions = await self.add_reaction(message_id, emoji, username)
                 if reactions is not None:
@@ -462,7 +548,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # Handle new messages
             elif message_type == "message" or message_type == "chat_message":
                 message = data.get("message", "").strip()
-                username = data.get("username", "Anonymous")
+
+                # Get proper username for authenticated or anonymous users
+                if self.scope["user"].is_authenticated:
+                    username = self.scope["user"].username
+                else:
+                    session_key = self.get_or_create_session_key(data)
+                    username = f"anon_{session_key}"
 
                 if not message:
                     await self.send(
