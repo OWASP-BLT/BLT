@@ -204,9 +204,7 @@
                                        class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50"
                                        required>
                             </div>
-                            {% if form.email.errors %}
-                                <div class="mt-2 text-sm text-red-600 hover:text-gray-900 dark:hover:text-white">{{ form.email.errors }}</div>
-                            {% endif %}
+                            {% if form.email.errors %}<div class="mt-2 text-sm text-red-600">{{ form.email.errors }}</div>{% endif %}
                         </div>
                         <!-- Crypto Addresses -->
                         <div class="space-y-4">
@@ -284,7 +282,7 @@
                                                    class="hidden"
                                                    {% if tag.id in form.tags.value %}checked{% endif %}>
                                             <label for="tag_{{ tag.id }}"
-                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors hover:text-gray-900 dark:hover:text-white {% if tag.id in form.tags.value %} bg-[#e74c3c] text-white hover:text-white{% else %} bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors hover:text-gray-900 dark:hover:text-white {% if tag.id in form.tags.value %} bg-[#e74c3c] text-white hover:text-white{% else %} bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %}">
                                                 {{ tag.name }}
                                             </label>
                                         </div>
@@ -365,7 +363,7 @@
                 </div>
             </form>
             <!-- Danger Zone -->
-            <div class="mt-12 p-6 bg-red-50 dark:bg-gray-900 rounded-lg border flex justify-between border-red-200 dark:border-gray-700">
+            <div class="mt-12 p-6 bg-red-50 dark:bg-gray-900 rounded-lg border flex justify-between border-red-200 dark:border-red-900">
                 <h3 class="text-lg font-semibold text-red-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                     Danger Zone
                 </h3>
@@ -409,7 +407,7 @@
                         label.classList.add('bg-[#e74c3c]', 'text-white');
                     } else {
                         label.classList.remove('bg-[#e74c3c]', 'text-white');
-                        label.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200');
+                       label.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-700');
                     }
                 });
             });
