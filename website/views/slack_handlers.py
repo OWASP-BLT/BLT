@@ -35,13 +35,27 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
 
 def get_slack_username(workspace_client, user_id):
-    """Helper function to fetch username from Slack user ID"""
+    """
+    Helper function to fetch username from Slack user ID.
+
+    Priority order for username selection:
+    1. real_name (full name like "John Doe")
+    2. display_name from profile (custom display name)
+    3. name (username like "john.doe")
+    4. user_id as fallback
+
+    Returns None if API call fails.
+    """
     try:
         user_info = workspace_client.users_info(user=user_id)
         if user_info.get("ok") and user_info.get("user"):
-            # Return the real_name if available, otherwise use name or display_name
             user = user_info["user"]
-            return user.get("real_name") or user.get("profile", {}).get("display_name") or user.get("name") or user_id
+            # Try to get the best available name
+            real_name = user.get("real_name")
+            display_name = user.get("profile", {}).get("display_name")
+            username = user.get("name")
+
+            return real_name or display_name or username or user_id
     except (SlackApiError, KeyError, AttributeError) as e:
         logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
     return None
@@ -283,9 +297,11 @@ def _handle_team_join(user_id, request):
             workspace_id=team_id, activity_type="team_join", user_id=user_id, details={"event_data": event_data}
         )
 
+        workspace_client = None
         try:
             slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
             activity.workspace_name = slack_integration.integration.organization.name
+            activity.save()
 
             # If integration exists and has welcome message
             if slack_integration.welcome_message:
@@ -313,11 +329,12 @@ def _handle_team_join(user_id, request):
             else:
                 return
 
-        # Fetch and save username
-        username = get_slack_username(workspace_client, user_id)
-        if username:
-            activity.username = username
-        activity.save()
+        # Fetch and save username if workspace_client was created
+        if workspace_client:
+            username = get_slack_username(workspace_client, user_id)
+            if username:
+                activity.username = username
+                activity.save()
 
         # Add delay to ensure user is fully joined
         time.sleep(2)  # Wait 2 seconds before sending message
