@@ -3732,12 +3732,18 @@ class Recommendation(models.Model):
             models.Index(fields=["to_user", "is_approved", "is_visible"], name="rec_to_user_app_vis_idx"),
             models.Index(fields=["from_user"], name="rec_from_user_idx"),
         )
+        constraints = (
+            models.CheckConstraint(
+                check=~models.Q(from_user=models.F("to_user")),
+                name="prevent_self_recommendation",
+            ),
+        )
 
     def __str__(self):
         return f"Recommendation from {self.from_user.username} to {self.to_user.username}"
 
     def clean(self):
-        """Validate recommendation text length"""
+        """Validate recommendation text length and skills_endorsed"""
         from django.core.exceptions import ValidationError
 
         # Validate text length only (from_user/to_user validation happens in view)
@@ -3746,6 +3752,29 @@ class Recommendation(models.Model):
                 raise ValidationError("Recommendation text must be at least 200 characters long.")
             if len(self.recommendation_text) > 1000:
                 raise ValidationError("Recommendation text must not exceed 1000 characters.")
+
+        # Validate skills_endorsed
+        if self.skills_endorsed is not None:
+            if not isinstance(self.skills_endorsed, list):
+                raise ValidationError({"skills_endorsed": "skills_endorsed must be a list."})
+            if len(self.skills_endorsed) > 5:
+                raise ValidationError({"skills_endorsed": "You can endorse a maximum of 5 skills."})
+            # Normalize and validate each skill
+            normalized_skills = []
+            for skill in self.skills_endorsed:
+                if not isinstance(skill, str):
+                    raise ValidationError({"skills_endorsed": "All endorsed skills must be strings."})
+                normalized_skill = skill.strip()
+                if normalized_skill:  # Only add non-empty strings
+                    normalized_skills.append(normalized_skill)
+            # Update with normalized skills (remove duplicates while preserving order)
+            seen = set()
+            unique_skills = []
+            for skill in normalized_skills:
+                if skill not in seen:
+                    seen.add(skill)
+                    unique_skills.append(skill)
+            self.skills_endorsed = unique_skills
 
     def save(self, *args, **kwargs):
         """Override save to run validation when both users are set"""
