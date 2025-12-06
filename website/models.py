@@ -964,11 +964,19 @@ class UserProfile(models.Model):
     contribution_rank = models.PositiveIntegerField(default=0)
 
     leaderboard_score = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0, help_text="Cached total leaderboard score (0-100)"
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Cached total leaderboard score (0-100)",
     )
 
     quality_score = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0, help_text="Cached quality component score (0-100)"
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Cached quality component score (0-100)",
     )
 
     check_in_count = models.IntegerField(default=0, help_text="Total check-ins recorded for leaderboard calculation")
@@ -976,6 +984,13 @@ class UserProfile(models.Model):
     last_score_update = models.DateTimeField(
         null=True, blank=True, help_text="When the leaderboard score was last recalculated"
     )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["-leaderboard_score", "-current_streak"]),
+            models.Index(fields=["team", "-leaderboard_score"]),
+            models.Index(fields=["-quality_score"]),
+        ]
 
     def calculate_leaderboard_score(self):
         # Lock the row to prevent concurrent updates
@@ -1274,24 +1289,6 @@ class Bid(models.Model):
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
-
-    # def save(self, *args, **kwargs):
-    #     if (
-    #         self.status == "Open"
-    #         and (timezone.now() - self.created).total_seconds() >= 24 * 60 * 60
-    #     ):
-    #         self.status = "Selected"
-    #         self.modified = timezone.now()
-    #         email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created}\nBid Amount: {self.amount}"
-    #         send_mail(
-    #             "Bid Closed",
-    #             email_body,
-    #             settings.EMAIL_HOST_USER,
-    #             [settings.EMAIL_HOST_USER],
-    #             fail_silently=False,
-    #         )
-
-    #     super().save(*args, **kwargs)
 
 
 class ChatBotLog(models.Model):
@@ -1618,6 +1615,12 @@ class DailyStatusReport(models.Model):
     goal_accomplished = models.BooleanField(default=False)
     current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "-created"]),
+            models.Index(fields=["goal_accomplished"]),
+        ]
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"

@@ -24,6 +24,7 @@ from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
@@ -1579,6 +1580,7 @@ class FindSimilarBugsApiView(APIView):
 class TeamMemberLeaderboardAPIView(APIView):
     authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
         try:

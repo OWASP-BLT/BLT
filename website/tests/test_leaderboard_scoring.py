@@ -1,14 +1,56 @@
 import datetime
 from datetime import timedelta
 from decimal import Decimal
+from io import StringIO
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
-from website.models import UserProfile
+from website.leaderboard import update_leaderboard_on_dsr_save
+from website.models import DailyStatusReport, UserProfile
+
+User = get_user_model()
+
+
+class LeaderboardSignalTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="password")
+        self.profile = self.user.userprofile
+        cache.clear()
+
+    def test_signal_updates_profile_on_dsr_save(self):
+        """Test that saving a DSR triggers leaderboard updates"""
+        with patch("website.leaderboard.transaction.atomic"):
+            with patch.object(UserProfile, "update_streak_and_award_points") as mock_update:
+                with patch.object(UserProfile, "calculate_leaderboard_score") as mock_calc:
+                    # Create DSR
+                    dsr = DailyStatusReport.objects.create(
+                        user=self.user, date=timezone.now().date(), goal_accomplished=True
+                    )
+
+                    # Trigger signal
+                    update_leaderboard_on_dsr_save(sender=DailyStatusReport, instance=dsr, created=True)
+
+                    mock_update.assert_called_once()
+                    mock_calc.assert_called_once()
+
+    def test_signal_respects_skip_flag(self):
+        """Test that signal skips when flag is set"""
+        dsr = DailyStatusReport.objects.create(user=self.user, goal_accomplished=True)
+        dsr._skip_leaderboard_update = True
+
+        with patch("website.leaderboard.transaction.atomic") as mock_atomic:
+            update_leaderboard_on_dsr_save(sender=DailyStatusReport, instance=dsr, created=True)
+            mock_atomic.assert_not_called()
+
+    def tearDown(self):
+        cache.clear()
 
 
 class UserProfileLeaderboardScoreTest(TestCase):
@@ -202,3 +244,32 @@ class UserProfileLeaderboardIntegrationTest(TestCase):
             self.assertEqual(updated_profile.leaderboard_score, Decimal("92.50"))
             self.assertEqual(updated_profile.quality_score, Decimal("95.00"))
             self.assertIsNotNone(updated_profile.last_score_update)
+
+
+class RecalcLeaderboardsCommandTest(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(username="user1", password="pass")
+        self.user2 = User.objects.create_user(username="user2", password="pass")
+
+    def test_command_runs_without_errors(self):
+        """Test that the command runs without raising exceptions"""
+        out = StringIO()
+        err = StringIO()
+        sys.stdout = out
+        sys.stderr = err
+
+        try:
+            call_command("recalc_all_leaderboards")
+            output = out.getvalue()
+            self.assertIn("Recalculating leaderboard scores", output)
+            self.assertIn("completed", output.lower())
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+
+    def test_command_handles_errors_gracefully(self):
+        """Test command continues when individual users fail"""
+        from unittest.mock import patch
+
+        with patch("website.services.leaderboard_scoring.LeaderboardScoringService.calculate_for_user") as mock_calc:
+            mock_calc.side_effect = Exception("Test error")
