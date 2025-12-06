@@ -1529,40 +1529,49 @@ class AddSlackIntegrationView(View):
         return redirect("organization_manage_integrations", id=id)
 
 
+def _get_slack_integration_or_error(organization_id):
+    """Helper method to get Slack integration or return error response."""
+    integration = Integration.objects.filter(
+        organization_id=organization_id,
+        service_name=IntegrationServices.SLACK.value,
+    ).first()
+
+    if not integration or not hasattr(integration, "slack_integration"):
+        return None, JsonResponse(
+            {
+                "success": False,
+                "message": "Slack integration not found",
+            },
+            status=404,
+        )
+
+    slack_integration = integration.slack_integration
+
+    if not slack_integration.bot_access_token:
+        return None, JsonResponse(
+            {
+                "success": False,
+                "message": "Bot access token is missing",
+            },
+            status=400,
+        )
+
+    return slack_integration, None
+
+
 class TestSlackIntegrationView(View):
     """Test the Slack integration by making an auth.test API call."""
 
     @validate_organization_user
     def post(self, request, id, *args, **kwargs):
         try:
-            integration = Integration.objects.filter(
-                organization_id=id,
-                service_name=IntegrationServices.SLACK.value,
-            ).first()
-
-            if not integration or not hasattr(integration, "slack_integration"):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "Slack integration not found",
-                    },
-                    status=404,
-                )
-
-            slack_integration = integration.slack_integration
-            
-            if not slack_integration.bot_access_token:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "Bot access token is missing",
-                    },
-                    status=400,
-                )
+            slack_integration, error_response = _get_slack_integration_or_error(id)
+            if error_response:
+                return error_response
 
             # Test the connection using auth.test
             app = App(token=slack_integration.bot_access_token)
-            
+
             try:
                 response = app.client.auth_test()
                 
@@ -1613,30 +1622,9 @@ class LookupSlackUserView(View):
     @validate_organization_user
     def post(self, request, id, *args, **kwargs):
         try:
-            integration = Integration.objects.filter(
-                organization_id=id,
-                service_name=IntegrationServices.SLACK.value,
-            ).first()
-
-            if not integration or not hasattr(integration, "slack_integration"):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "Slack integration not found",
-                    },
-                    status=404,
-                )
-
-            slack_integration = integration.slack_integration
-            
-            if not slack_integration.bot_access_token:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "Bot access token is missing",
-                    },
-                    status=400,
-                )
+            slack_integration, error_response = _get_slack_integration_or_error(id)
+            if error_response:
+                return error_response
 
             # Get user ID from request
             try:

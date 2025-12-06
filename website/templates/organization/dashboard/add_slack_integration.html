@@ -837,34 +837,56 @@
         
         function showUserResult(user) {
             userErrorContainer.classList.add('hidden');
-            
-            // Update avatar
+
+            // Update avatar - XSS safe using DOM APIs
             const avatar = document.getElementById('userAvatar');
+            avatar.innerHTML = ''; // Clear previous content
             if (user.avatar) {
-                avatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" class="w-12 h-12 rounded-lg">`;
+                const img = document.createElement('img');
+                img.src = user.avatar;
+                img.alt = user.name;
+                img.className = 'w-12 h-12 rounded-lg';
+                avatar.appendChild(img);
             } else {
-                avatar.innerHTML = `<div class="w-12 h-12 bg-[#e74c3c] rounded-lg flex items-center justify-center text-white font-bold">${user.name.charAt(0).toUpperCase()}</div>`;
+                const div = document.createElement('div');
+                div.className = 'w-12 h-12 bg-[#e74c3c] rounded-lg flex items-center justify-center text-white font-bold';
+                div.textContent = user.name.charAt(0).toUpperCase();
+                avatar.appendChild(div);
             }
-            
-            // Update user info
+
+            // Update user info - XSS safe using textContent
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userRealName').textContent = user.real_name || 'No real name set';
             document.getElementById('userIdDisplay').textContent = user.id;
-            
+
             if (user.email) {
-                document.getElementById('userEmail').innerHTML = `<span class="font-medium">Email:</span> ${user.email}`;
-                document.getElementById('userEmail').classList.remove('hidden');
+                const emailElement = document.getElementById('userEmail');
+                emailElement.innerHTML = ''; // Clear previous content
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'font-medium';
+                labelSpan.textContent = 'Email: ';
+                const emailText = document.createTextNode(user.email);
+                emailElement.appendChild(labelSpan);
+                emailElement.appendChild(emailText);
+                emailElement.classList.remove('hidden');
             } else {
                 document.getElementById('userEmail').classList.add('hidden');
             }
-            
+
             if (user.timezone) {
-                document.getElementById('userTimezone').innerHTML = `<span class="font-medium">Timezone:</span> ${user.timezone}`;
-                document.getElementById('userTimezone').classList.remove('hidden');
+                const tzElement = document.getElementById('userTimezone');
+                tzElement.innerHTML = ''; // Clear previous content
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'font-medium';
+                labelSpan.textContent = 'Timezone: ';
+                const tzText = document.createTextNode(user.timezone);
+                tzElement.appendChild(labelSpan);
+                tzElement.appendChild(tzText);
+                tzElement.classList.remove('hidden');
             } else {
                 document.getElementById('userTimezone').classList.add('hidden');
             }
-            
+
             userResultContainer.classList.remove('hidden');
         }
         
