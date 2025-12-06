@@ -75,6 +75,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.11.2+
 - PostgreSQL
 - Docker & Docker Compose (recommended)
@@ -82,6 +83,7 @@
 ### Installation
 
 #### Using Docker (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/OWASP-BLT/BLT.git
@@ -97,12 +99,13 @@ docker-compose up
 
 Access the application at **http://localhost:8000**
 
-#### Using Poetry
+#### Using UV
+
 ```bash
 # Install dependencies
-pip install poetry
-poetry shell
-poetry install
+[UV installation](https://docs.astral.sh/uv/getting-started/installation/)
+uv sync
+source .venv/bin/activate
 
 # Set up database
 python manage.py migrate

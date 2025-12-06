@@ -10,7 +10,7 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 - **Database**: PostgreSQL with Redis for caching
 - **Frontend**: Tailwind CSS, vanilla JavaScript (separate files)
 - **Real-time**: Django Channels with WebSocket support
-- **Package Management**: Poetry (NOT pip)
+- **Package Management**: UV (NOT pip)
 - **Code Quality**: pre-commit hooks, Black, isort, ruff, djLint
 
 ## Development Workflow
@@ -35,17 +35,17 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 
 ### Testing Requirements
 
-- Run Django tests with: `poetry run python manage.py test --failfast`
+- Run Django tests with: `uv run python manage.py test --failfast`
 - Add tests for new features or bug fixes when appropriate
 - Ensure existing tests pass before committing
 - Test files are located in `website/tests/`
 
 ### Dependency Management
 
-- **ALWAYS use Poetry**, never use pip directly
-- Add dependencies: `poetry add <package-name>`
-- Add dev dependencies: `poetry add --group dev <package-name>`
-- Update dependencies: `poetry update <package-name>`
+- **ALWAYS use uv**, never use pip directly
+- Add dependencies: `uv add <package-name>`
+- Add dev dependencies: `uv add --group dev <package-name>`
+- Update dependencies: `uv update <package-name>`
 - Avoid installing packages that are not necessary
 
 ## Coding Standards
@@ -55,7 +55,7 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 - **Formatting**: Use Black with default settings (enforced by pre-commit)
 - **Imports**: Use isort with Django profile (enforced by pre-commit)
 - **Linting**: Follow ruff rules (enforced by pre-commit)
-- **Error Handling**: 
+- **Error Handling**:
   - Don't expose exception details in user-facing messages
   - ❌ BAD: `messages.error(request, f"Error: {str(e)}")`
   - ✅ GOOD: `messages.error(request, "Unable to process request. Please check your input and try again.")`
@@ -226,6 +226,7 @@ python manage.py runserver
 ## Summary of Key Rules
 
 ✅ **DO**:
+
 - Use Poetry for dependency management
 - Use Tailwind CSS for styling
 - Keep JavaScript in separate files
@@ -236,6 +237,7 @@ python manage.py runserver
 - Test your changes thoroughly
 
 ❌ **DON'T**:
+
 - Use pip for package installation
 - Add `<style>` tags or inline styles
 - Embed JavaScript in HTML templates

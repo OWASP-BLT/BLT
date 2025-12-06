@@ -157,37 +157,37 @@ erDiagram
     User ||--o{ Issue : reports
     User ||--o{ Points : earns
     User ||--o{ Message : sends
-    
+
     Organization ||--o{ Domain : owns
     Organization ||--o{ Hunt : hosts
     Organization ||--o{ Project : manages
     Organization ||--o{ Hackathon : organizes
     Organization ||--o{ Job : posts
-    
+
     Domain ||--o{ Issue : contains
-    
+
     Hunt ||--o{ Issue : tracks
     Hunt ||--o{ HuntPrize : offers
-    
+
     Project ||--o{ Repo : includes
     Project ||--o{ Contribution : has
-    
+
     Repo ||--o{ GitHubIssue : tracks
     Repo ||--o{ Contributor : has
-    
+
     Hackathon ||--o{ HackathonPrize : offers
     Hackathon ||--o{ HackathonSponsor : has
     Hackathon ||--o{ Repo : includes
-    
+
     Challenge ||--o{ StakingPool : uses
     StakingPool ||--o{ StakingEntry : contains
-    
+
     Course ||--o{ Section : contains
     Section ||--o{ Lecture : includes
-    
+
     Room ||--o{ Message : contains
     Thread ||--o{ Message : contains
-    
+
     UserProfile }o--o{ Badge : earns
 ```
 
@@ -324,21 +324,21 @@ flowchart TB
 flowchart TB
     subgraph Production["Production Environment"]
         LB["Load Balancer"]
-        
+
         subgraph AppServers["Application Servers"]
             Django1["Django + Gunicorn"]
             Django2["Django + Gunicorn"]
         end
-        
+
         subgraph WSServers["WebSocket Servers"]
             Daphne1["Daphne/Channels"]
         end
-        
+
         subgraph DataStores["Data Stores"]
             PG["PostgreSQL"]
             RedisCache["Redis"]
         end
-        
+
         subgraph Storage["File Storage"]
             GCSBucket["Google Cloud Storage"]
             StaticFiles["Static Files CDN"]
@@ -363,35 +363,35 @@ flowchart TB
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Backend Framework** | Django 5.1+ |
-| **Frontend** | Django Templates, Tailwind CSS, JavaScript |
-| **Database** | PostgreSQL |
-| **Cache** | Redis |
-| **Real-time** | Django Channels (WebSocket) |
-| **API** | Django REST Framework |
-| **Authentication** | Django AllAuth, OAuth2 |
-| **Task Queue** | Celery (optional) |
-| **File Storage** | Google Cloud Storage |
-| **Email** | SendGrid |
-| **Version Control Integration** | GitHub API |
-| **Communication** | Slack API |
-| **Payments** | Bitcoin/BCH |
-| **Containerization** | Docker |
-| **Package Management** | Poetry |
+| Layer                           | Technology                                 |
+| ------------------------------- | ------------------------------------------ |
+| **Backend Framework**           | Django 5.1+                                |
+| **Frontend**                    | Django Templates, Tailwind CSS, JavaScript |
+| **Database**                    | PostgreSQL                                 |
+| **Cache**                       | Redis                                      |
+| **Real-time**                   | Django Channels (WebSocket)                |
+| **API**                         | Django REST Framework                      |
+| **Authentication**              | Django AllAuth, OAuth2                     |
+| **Task Queue**                  | Celery (optional)                          |
+| **File Storage**                | Google Cloud Storage                       |
+| **Email**                       | SendGrid                                   |
+| **Version Control Integration** | GitHub API                                 |
+| **Communication**               | Slack API                                  |
+| **Payments**                    | Bitcoin/BCH                                |
+| **Containerization**            | Docker                                     |
+| **Package Management**          | UV                                         |
 
 ## Feature Modules
 
-| Module | Description |
-|--------|-------------|
-| **Bug Reporting** | Core issue/bug submission and tracking |
-| **Bug Bounties** | Hunt creation, bounty management, rewards |
-| **Organizations** | Company/org management, domains, team members |
-| **Projects** | Open source project tracking, repos |
-| **Hackathons** | Hackathon events, prizes, leaderboards |
-| **Education** | Courses, lectures, learning paths |
-| **Gamification** | Points, badges, challenges, staking |
-| **Community** | Forum, chat rooms, direct messaging |
-| **OSSH** | Open Source Sorting Hat - project recommendations |
-| **Sizzle** | Time tracking and activity logging |
+| Module            | Description                                       |
+| ----------------- | ------------------------------------------------- |
+| **Bug Reporting** | Core issue/bug submission and tracking            |
+| **Bug Bounties**  | Hunt creation, bounty management, rewards         |
+| **Organizations** | Company/org management, domains, team members     |
+| **Projects**      | Open source project tracking, repos               |
+| **Hackathons**    | Hackathon events, prizes, leaderboards            |
+| **Education**     | Courses, lectures, learning paths                 |
+| **Gamification**  | Points, badges, challenges, staking               |
+| **Community**     | Forum, chat rooms, direct messaging               |
+| **OSSH**          | Open Source Sorting Hat - project recommendations |
+| **Sizzle**        | Time tracking and activity logging                |

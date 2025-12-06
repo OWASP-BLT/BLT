@@ -49,7 +49,7 @@ Throughout this guide, you'll see commands for different platforms. For Windows:
 
 ---
 
-## Step 1: Add environment variables
+## Step 1: Add Environment Variables
 
 Before proceeding with any setup, you need to configure environment variables.
 
@@ -71,13 +71,10 @@ cp .env.example .env
 ```powershell
 # --- Move to project directory ---
 cd BLT
-
 # Using PowerShell
 Copy-Item .env.example .env
-
 # Or using CMD
 copy .env.example .env
-
 # Or using Git Bash (if installed)
 cp .env.example .env
 ```
@@ -135,7 +132,7 @@ Before building the Docker images, ensure all files, especially scripts like `en
    - Click it and select "LF: Unix" from the dropdown to switch the line endings to LF.
    - Save the file.
 
-3. If the browser **automatically redirects to HTTPS** even in incognito mode, you can try the following:  
+3. If the browser **automatically redirects to HTTPS** even in incognito mode, you can try the following:
    For **local development**, make these adjustments in `/blt/settings.py` to enable access over **HTTP**:
 
    - Set:
@@ -145,7 +142,6 @@ Before building the Docker images, ensure all files, especially scripts like `en
      ```
 
 4. **Manual conversion to LF (only needed for existing clones or if `.gitattributes` didn't work):**
-
    **For Linux/macOS:**
 
    - Using `dos2unix`:
@@ -227,8 +223,8 @@ The default port is 5432. If you encounter port conflicts, change the port in yo
 
 ## Commands to Set Up the Project
 
-- **Copy and configure the `.env` file:**  
-   **Linux/macOS/Git Bash:**
+- **Copy and configure the `.env` file:**
+  **Linux/macOS/Git Bash:**
 
   ```bash
   cp .env.example .env
@@ -356,46 +352,42 @@ pyenv install 3.11.2
 
 Note: Project root folder already contains `.python-version`, so pyenv can recognize the local version to use for the current project.
 
-#### Setup virtual environment using poetry
+### Setup Virtual Environment Using uv
 
-Ensure that `python -V` returns the correct python version for the project
+Ensure that `python -V` returns the correct Python version for the project.
 
 ```sh
-# --- Install postgres ---
-
-# Install postgres on macOS
+# --- Install PostgreSQL ---
+# Install PostgreSQL on macOS
 brew install postgresql
-
-# Install postgres on Ubuntu/Debian
+# Install PostgreSQL on Ubuntu/Debian
 sudo apt-get install postgresql
-
-# Install postgres on Windows
+# Install PostgreSQL on Windows
 # Download from: https://www.postgresql.org/download/windows/
 # Or use Chocolatey: choco install postgresql
 
 # --- Setup Virtual Environment ---
-# Install Poetry
-pip install poetry
+# Install uv
+pip install uv
+# Create a virtual environment using uv
+uv venv
+# Activate the virtual environment
+source .venv/bin/activate  # Linux/macOS
+.\.venv\Scripts\activate   # Windows (PowerShell)
 
-# Activate virtual environment
-poetry shell
-
+# --- Install Dependencies ---
 # Install required dependencies
-poetry install
+uv pip install -r requirements.txt
 
-# --- Project setup ---
+# --- Project Setup ---
 # Create tables in the database
 python manage.py migrate
-
 # Load initial data
 python3 manage.py loaddata website/fixtures/initial_data.json
-
 # Create a super user
 python manage.py createsuperuser
-
 # Collect static files
 python manage.py collectstatic
-
 # Run the server
 python manage.py runserver
 ```
@@ -405,7 +397,7 @@ python manage.py runserver
 Then go to `http://127.0.0.1:8000/admin/socialaccount/socialapp/` and add filler information for social auth accounts.
 Add a Domain `http://127.0.0.1:8000/admin/website/domain/` with the name 'owasp.org'.
 
-#### Visit `http://localhost:8000`
+### Visit [http://localhost:8000](http://localhost:8000)
 
 **Note:** In case you encounter an error related to PostgreSQL development libraries:
 
@@ -417,20 +409,20 @@ Add a Domain `http://127.0.0.1:8000/admin/website/domain/` with the name 'owasp.
 
 If you run into issues during the setup, here are some common solutions:
 
-### 1.Cannot install nltk, distlib, certifi
+### 1. Cannot Install `nltk`, `distlib`, `certifi`
 
-The error message indicates that the package manager (Poetry) is unable to find installation candidates.
-Below are the temporary solutions.
+The error message indicates that the package manager (uv) is unable to find installation candidates.
+
+**Temporary solutions:**
 
 ```sh
-poetry cache clear --all pypi
-
-#For Docker method only
+uv pip cache clear --all
+# For Docker method only
 docker-compose build --no-cache
 ```
 
 Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT/issues/2659).
 
-## Need more help?
+## Need More Help?
 
 If you're still facing issues or need further assistance, feel free to reach out to the community on the [OWASP Slack channel](https://owasp.org/slack/invite).
