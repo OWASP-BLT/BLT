@@ -37,6 +37,7 @@ from website.api.views import (
     OrganizationViewSet,
     ProjectViewSet,
     PublicJobListViewSet,
+    SearchHistoryApiView,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -66,6 +67,7 @@ from website.views.company import (
     AddSlackIntegrationView,
     DomainView,
     EndBughuntView,
+    LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardIntegrations,
@@ -78,6 +80,7 @@ from website.views.company import (
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
+    TestSlackIntegrationView,
     accept_bug,
     check_domain_security_txt,
     create_job,
@@ -252,6 +255,7 @@ from website.views.organization import (
     hunt_results,
     join_room,
     like_activity,
+    link_slack_channel_to_project,
     load_more_issues,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -263,6 +267,7 @@ from website.views.organization import (
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
+    slack_channels_list,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
@@ -548,6 +553,16 @@ urlpatterns = [
         name="ongoing_hunts",
     ),
     re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
+    re_path(
+        r"^dashboard/organization/slack-channels$",
+        slack_channels_list,
+        name="slack_channels_list",
+    ),
+    path(
+        "dashboard/organization/slack-channels/link",
+        link_slack_channel_to_project,
+        name="link_slack_channel_to_project",
+    ),
     re_path(
         r"^dashboard/organization/settings$",
         OrganizationSettings.as_view(),
@@ -943,6 +958,16 @@ urlpatterns = [
         name="add_slack_integration",
     ),
     path(
+        "organization/<int:id>/dashboard/test_slack_integration/",
+        TestSlackIntegrationView.as_view(),
+        name="test_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/lookup_slack_user/",
+        LookupSlackUserView.as_view(),
+        name="lookup_slack_user",
+    ),
+    path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
         AddDomainView.as_view(),
         name="edit_domain",
@@ -1228,6 +1253,7 @@ urlpatterns = [
     ),
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
+    path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
 ]
 
 if settings.DEBUG:

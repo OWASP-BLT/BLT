@@ -1,0 +1,159 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Slack Channels</h1>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
+            View all OWASP Slack channels and their member counts.
+            {% if is_superuser %}As a superuser, you can link unconnected channels to projects.{% endif %}
+        </p>
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Channel
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Members
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Topic
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Linked Project
+                        </th>
+                        {% if is_superuser %}
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for channel in channels %}
+                        <tr id="channel-row-{{ channel.channel_id }}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="text-gray-500 dark:text-gray-400">#</span>
+                                    <a href="{{ channel.slack_url }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="ml-1 text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                                        {{ channel.name }}
+                                    </a>
+                                    {% if channel.is_archived %}
+                                        <span class="ml-2 px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
+                                            Archived
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-gray-900 dark:text-white font-medium">{{ channel.num_members }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-gray-600 dark:text-gray-300 text-sm truncate max-w-xs block">
+                                    {{ channel.topic|truncatechars:50|default:"—" }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap"
+                                id="project-cell-{{ channel.channel_id }}">
+                                {% if channel.project %}
+                                    <a href="{% url 'project_detail' channel.project.slug %}"
+                                       class="text-blue-600 dark:text-blue-400 hover:underline">
+                                        {{ channel.project.name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-400 dark:text-gray-500">Not linked</span>
+                                {% endif %}
+                            </td>
+                            {% if is_superuser %}
+                                <td class="px-6 py-4 whitespace-nowrap"
+                                    id="action-cell-{{ channel.channel_id }}">
+                                    {% if not channel.project %}
+                                        <div class="flex items-center space-x-2">
+                                            <select id="project-select-{{ channel.channel_id }}"
+                                                    class="block w-48 py-1 px-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 dark:text-white">
+                                                <option value="">Select a project...</option>
+                                                {% for project in unlinked_projects %}<option value="{{ project.id }}">{{ project.name }}</option>{% endfor %}
+                                            </select>
+                                            <button onclick="linkChannelToProject('{{ channel.channel_id }}')"
+                                                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                Link
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-green-600 dark:text-green-400 text-sm">✓ Linked</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{% if is_superuser %}5{% else %}4{% endif %}"
+                                class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                No Slack channels found. Run the <code class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">update_slack_user_count</code> management command to sync channels.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">Total: {{ channels|length }} channels</div>
+    </div>
+    {% if is_superuser %}
+        <script>
+            function linkChannelToProject(channelId) {
+                const select = document.getElementById('project-select-' + channelId);
+                const projectId = select.value;
+                
+                if (!projectId) {
+                    alert('Please select a project');
+                    return;
+                }
+                
+                const csrfToken = '{{ csrf_token }}';
+                
+                fetch('{% url "link_slack_channel_to_project" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: `channel_id=${channelId}&project_id=${projectId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the UI to show the linked project
+                        const projectCell = document.getElementById('project-cell-' + channelId);
+                        projectCell.innerHTML = `<span class="text-blue-600 dark:text-blue-400">${data.project_name}</span>`;
+                        
+                        const actionCell = document.getElementById('action-cell-' + channelId);
+                        actionCell.innerHTML = '<span class="text-green-600 dark:text-green-400 text-sm">✓ Linked</span>';
+                        
+                        // Remove the project from all other dropdowns
+                        document.querySelectorAll('select[id^="project-select-"]').forEach(sel => {
+                            const option = sel.querySelector(`option[value="${projectId}"]`);
+                            if (option) {
+                                option.remove();
+                            }
+                        });
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while linking the channel');
+                });
+            }
+        </script>
+    {% endif %}
+{% endblock content %}

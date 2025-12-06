@@ -1,6 +1,11 @@
+from datetime import timedelta
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 
 class UserProfileUpdateTest(TestCase):
@@ -204,3 +209,90 @@ class UserProfileVerifierTest(TestCase):
         self.user.userprofile.save()
         self.user.userprofile.refresh_from_db()
         self.assertFalse(self.user.userprofile.is_verifier)
+
+
+class UserProfileVisitCounterTest(TestCase):
+    def setUp(self):
+        """Create test user with profile"""
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        # UserProfile is created automatically by signal
+        self.profile = self.user.userprofile
+
+    def test_update_visit_counter_first_visit(self):
+        """Test that first visit increments both counters"""
+        initial_visit_count = self.profile.visit_count
+        initial_daily_count = self.profile.daily_visit_count
+
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        self.assertEqual(self.profile.visit_count, initial_visit_count + 1)
+        self.assertEqual(self.profile.daily_visit_count, initial_daily_count + 1)
+        self.assertIsNotNone(self.profile.last_visit_day)
+
+    def test_update_visit_counter_same_day(self):
+        """Test that multiple visits on same day only increment general counter"""
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_daily_count = self.profile.daily_visit_count
+        first_visit_count = self.profile.visit_count
+
+        # Second visit on same day
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Daily count should stay the same
+        self.assertEqual(self.profile.daily_visit_count, first_daily_count)
+        # General visit count should increment
+        self.assertEqual(self.profile.visit_count, first_visit_count + 1)
+
+    def test_update_visit_counter_different_days(self):
+        """Test that visits on different days increment both counters"""
+        from website.models import UserProfile
+
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_daily_count = self.profile.daily_visit_count
+        first_visit_count = self.profile.visit_count
+
+        # Set the last_visit_day to yesterday using atomic update
+        yesterday = timezone.now().date() - timedelta(days=1)
+        UserProfile.objects.filter(pk=self.profile.pk).update(last_visit_day=yesterday)
+        self.profile.refresh_from_db()
+
+        # Visit on current day (which is different from yesterday)
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Both counters should increment since it's a different day
+        self.assertEqual(self.profile.daily_visit_count, first_daily_count + 1)
+        self.assertEqual(self.profile.visit_count, first_visit_count + 1)
+        # Last visit day should be updated to today
+        self.assertEqual(self.profile.last_visit_day, timezone.now().date())
+
+    def test_update_visit_counter_atomic_operations(self):
+        """Test that update_visit_counter uses QuerySet.update() with F() expressions instead of save()"""
+        initial_visit_count = self.profile.visit_count
+
+        with transaction.atomic():
+            with patch.object(self.profile, "save") as mock_save:
+                self.profile.update_visit_counter()
+                mock_save.assert_not_called()
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.visit_count, initial_visit_count + 1)
+
+    def test_update_visit_counter_no_transaction_error(self):
+        """Test that update_visit_counter doesn't raise TransactionManagementError when called multiple times"""
+        try:
+            with transaction.atomic():
+                self.profile.update_visit_counter()
+                self.profile.update_visit_counter()
+            # If we get here, no TransactionManagementError was raised
+            success = True
+        except transaction.TransactionManagementError:
+            success = False
+
+        self.assertTrue(success, "update_visit_counter raised TransactionManagementError")

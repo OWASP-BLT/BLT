@@ -48,7 +48,7 @@ SERVER_EMAIL = os.environ.get("FROM_EMAIL", "blt-support@owasp.org")
 EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
 BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
-TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
+TWITTER_URL = os.environ.get("TWITTER_URL", "https://x.com/owasp_blt")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
