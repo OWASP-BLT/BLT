@@ -32,9 +32,6 @@ class Command(BaseCommand):
                     # Lock the row before updating
                     locked_profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
 
-                    # Update streak first
-                    locked_profile.update_streak_and_award_points()
-
                     # Calculate score
                     score, breakdown = LeaderboardScoringService.calculate_for_user(locked_profile.user)
 
