@@ -35,7 +35,7 @@ class LeaderboardSignalConfigTest(TestCase):
             update_leaderboard_on_dsr_save,
             receivers,
             "update_leaderboard_on_dsr_save is not registered as a post_save receiver for DailyStatusReport. "
-            "Ensure 'import website.leaderboard' is present in WebsiteConfig.ready()",
+            "Ensure 'import website.signals' is present in WebsiteConfig.ready()",
         )
 
     def test_signal_registration_count(self):
@@ -64,7 +64,7 @@ class LeaderboardSignalTest(TestCase):
 
     def test_signal_updates_profile_on_dsr_save(self):
         """Test that saving a DSR triggers leaderboard updates"""
-        with patch("website.leaderboard.transaction.atomic"):
+        with patch("website.signals.transaction.atomic"):
             with patch.object(UserProfile, "update_streak_and_award_points") as mock_update:
                 with patch.object(UserProfile, "calculate_leaderboard_score") as mock_calc:
                     # Reset mocks to ensure clean state
@@ -83,7 +83,7 @@ class LeaderboardSignalTest(TestCase):
         dsr = DailyStatusReport.objects.create(user=self.user, date=timezone.now().date(), goal_accomplished=True)
         dsr._skip_leaderboard_update = True
 
-        with patch("website.leaderboard.transaction.atomic") as mock_atomic:
+        with patch("website.signals.transaction.atomic") as mock_atomic:
             update_leaderboard_on_dsr_save(sender=DailyStatusReport, instance=dsr, created=True)
             mock_atomic.assert_not_called()
 
@@ -230,6 +230,9 @@ class UserProfileLeaderboardScoreTest(TestCase):
         self.user_profile.check_in_count = 5
         self.user_profile.last_score_update = timezone.now() - timedelta(days=1)
         self.user_profile.save()
+
+        # Capture original values for comparison
+        original_last_score_update = self.user_profile.last_score_update
 
         # Mock new calculation
         mock_calculate.return_value = (Decimal("75.00"), {"goals": Decimal("80.00")})
