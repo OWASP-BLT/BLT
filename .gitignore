@@ -4,6 +4,7 @@ staticfiles
 /env
 /pvenv
 db.sqlite3
+*.db
 .idea
 /media
 .vagrant
