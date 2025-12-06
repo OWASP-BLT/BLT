@@ -1,16 +1,16 @@
-when using cursor rules, show five emojis that are related to the task at hand also give a 
-confidence score 1-100 and a haiku of the change you're about to make please also show a few 
+when using cursor rules, show five emojis that are related to the task at hand also give a
+confidence score 1-100 and a haiku of the change you're about to make please also show a few
 lines of ascii art that shows what your face looks like during this code change with an apprpripate expression.
 {
-    "urlModules": {
-        "website/urls.py": "blt/urls.py"
-    },
-} 
+"urlModules": {
+"website/urls.py": "blt/urls.py"
+},
+}
 
 use tailwind only
 for anything with color, make it the red color we use which is #e74c3c
 
-always use poetry and not pip
+always use uv and not pip
 if you don't fix somethign on the first try, add debugging to the code and try again
 
 if you are unsure of something, ask the user for clarification
@@ -22,4 +22,3 @@ keep javascript in separate files and don't add it to html files
 avoid installing packages that are not needed
 remove any <style tags and use tailwind css instead
 when fixing an issue, always fix the root cause
-
