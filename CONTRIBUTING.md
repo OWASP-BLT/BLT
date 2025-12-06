@@ -35,15 +35,16 @@ Before you start contributing, you'll need to set up your development environmen
 - Python 3.11.2 (recommended)
 - PostgreSQL
 - Docker and Docker Compose (for Docker setup)
+- uv
 
 ### Docker Setup (Recommended)
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/OWASP-BLT/BLT.git
-   cd BLT
-   ```
+```bash
+$ git clone https://github.com/OWASP-BLT/BLT.git
+$ cd BLT
+```
 
 2. Configure environment variables:
 
@@ -72,18 +73,19 @@ Before you start contributing, you'll need to set up your development environmen
 
    If you're working on a Windows machine, we recommend configuring Git to work with `.gitattributes`:
 
-   ```bash
-   git config --global core.autocrlf input
-   ```
+If you're working on a Windows machine, ensure all files use LF line endings:
 
-   **Windows users:** For more detailed instructions on handling line endings, including when manual conversion is needed and PowerShell/VS Code methods, see the [Setup.md](docs/Setup.md#1-ensure-lf-line-endings) documentation.
+```bash
+$ git config --global core.autocrlf input
+```
+
+**Windows users:** For more detailed instructions on handling line endings, including when manual conversion is needed and PowerShell/VS Code methods, see the [Setup.md](docs/Setup.md#1-ensure-lf-line-endings) documentation.
 
 4. Build and start the Docker containers:
 
-   ```bash
-   docker-compose build
-   docker-compose up
-   ```
+```bash
+$ docker-compose up --build
+```
 
 5. Access the application at [http://localhost:8000](http://localhost:8000)
 
@@ -93,48 +95,47 @@ Before you start contributing, you'll need to set up your development environmen
 
 2. Start Vagrant:
 
-   ```bash
-   vagrant up
-   vagrant ssh
-   cd BLT
-   ```
+```bash
+$ vagrant up
+$ vagrant ssh
+$ cd BLT
+```
 
 3. Set up the application:
 
-   ```bash
-   python manage.py migrate
-   python manage.py createsuperuser
-   python manage.py collectstatic
-   python manage.py runserver
-   ```
+```bash
+$ python manage.py migrate
+$ python manage.py createsuperuser
+$ python manage.py collectstatic
+$ python manage.py runserver
+```
 
 4. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Python Virtual Environment Setup
 
-1. Install Python 3.11.2 (using pyenv or another tool):
+1. Install Python 3.11.2 (using uv):
 
-   ```bash
-   pyenv install 3.11.2
-   ```
+```bash
+$ pyenv install 3.11.2
+```
 
-2. Set up Poetry and virtual environment:
+2. Set up uv and virtual environment:
 
-   ```bash
-   pip install poetry
-   poetry shell
-   poetry install
-   ```
+```bash
+$ uv sync
+$ source .venv/bin/activate
+```
 
 3. Set up the application:
 
-   ```bash
-   python manage.py migrate
-   python3 manage.py loaddata website/fixtures/initial_data.json
-   python manage.py createsuperuser
-   python manage.py collectstatic
-   python manage.py runserver
-   ```
+```bash
+$ python manage.py migrate
+$ python manage.py loaddata website/fixtures/initial_data.json
+$ python manage.py createsuperuser
+$ python manage.py collectstatic
+$ python manage.py runserver
+```
 
 4. Access the application at [http://localhost:8000](http://localhost:8000)
 
@@ -185,18 +186,18 @@ We use several tools to maintain code quality:
 - isort for import sorting
 - ruff for linting
 
-You can run these tools using Poetry:
+You can run these tools using UV:
 
 ```bash
-poetry run black .
-poetry run isort .
-poetry run ruff .
+uv run black .
+uv run isort .
+uv run ruff .
 ```
 
 We also use pre-commit hooks to ensure code quality. Install them with:
 
 ```bash
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 ### JavaScript Code Standards
@@ -214,7 +215,7 @@ For temporary debugging during development, comment out console statements befor
 When adding new features or fixing bugs, please include appropriate tests. Run the tests with:
 
 ```bash
-python manage.py test
+uv python manage.py test
 ```
 
 ## Documentation
