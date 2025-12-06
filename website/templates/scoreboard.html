@@ -74,7 +74,7 @@
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {% for domain in scoreboard %}
-                            <tr class="hover:bg-gray-50">
+                            <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="{% url 'domain' slug=domain.name %}" class="block w-16 h-16">
                                         {% if domain.get_logo and domain.get_logo != "None" %}
