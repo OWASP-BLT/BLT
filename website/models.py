@@ -1125,12 +1125,18 @@ class UserProfile(models.Model):
         return True
 
     def compute_score_breakdown(self):
+        """
+        Return the current leaderboard breakdown for this user, staying in
+        sync with LeaderboardScoringService.
+        """
+        score, breakdown = LeaderboardScoringService.calculate_for_user(self.user)
+
         return {
-            "daily_reports": self.daily_reports_score,
-            "bugs_fixed": self.bug_fix_score,
-            "reviews_done": self.review_score,
-            "other": self.other_score,
-            "total": self.leaderboard_score,
+            "frequency": breakdown.get("frequency", 0),
+            "streak": breakdown.get("streak", 0),
+            "goals": breakdown.get("goals", 0),
+            "completeness": breakdown.get("completeness", 0),
+            "total": score,
         }
 
     def award_streak_badges(self):
