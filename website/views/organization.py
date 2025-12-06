@@ -1532,34 +1532,83 @@ def sizzle(request):
 
 
 def trademark_detailview(request, slug):
+    """
+    Search for trademarks in the local database first, then fallback to USPTO API if needed.
+    Supports searching by keyword, serial number, or registration number.
+    """
+    query = slug.strip()
+    page_number = request.GET.get("page", 1)
+
+    # Search in local database first
+    trademarks = Trademark.objects.filter(
+        Q(keyword__icontains=query)
+        | Q(serial_number__iexact=query)
+        | Q(registration_number__iexact=query)
+        | Q(description__icontains=query)
+    ).prefetch_related("owners")
+
+    # If we have results in local database, use them
+    if trademarks.exists():
+        # Paginate results
+        paginator = Paginator(trademarks, 50)  # 50 results per page
+        try:
+            page_obj = paginator.get_page(page_number)
+        except (PageNotAnInteger, EmptyPage):
+            page_obj = paginator.get_page(1)
+
+        context = {
+            "count": paginator.count,
+            "items": page_obj,
+            "query": query,
+            "page_obj": page_obj,
+            "from_local_db": True,
+        }
+        return render(request, "trademark_detailview.html", context)
+
+    # Fallback to USPTO API if local database has no results
     if settings.USPTO_API is None:
-        return HttpResponse("API KEY NOT SETUP")
+        context = {
+            "error_message": "No results found in local database and USPTO API is not configured.",
+            "query": query,
+        }
+        return render(request, "trademark_detailview.html", context)
 
-    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (slug)
-    headers = {
-        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
-        "x-rapidapi-key": settings.USPTO_API,
-    }
-    trademark_available_response = requests.get(trademark_available_url, headers=headers)
-    ta_data = trademark_available_response.json()
+    try:
+        trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (query)
+        headers = {
+            "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+            "x-rapidapi-key": settings.USPTO_API,
+        }
+        trademark_available_response = requests.get(trademark_available_url, headers=headers, timeout=10)
 
-    if trademark_available_response.status_code == 429:
-        error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
-        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+        if trademark_available_response.status_code == 429:
+            error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
+            return render(request, "trademark_detailview.html", {"error_message": error_message, "query": query})
 
-    if not isinstance(ta_data, list) or len(ta_data) == 0:
-        error_message = "Invalid response from USPTO API."
-        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+        ta_data = trademark_available_response.json()
 
-    if ta_data[0].get("available") == "no":
-        trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
-        trademark_search_response = requests.get(trademark_search_url, headers=headers)
-        ts_data = trademark_search_response.json()
-        context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
-    else:
-        context = {"available": ta_data[0].get("available"), "query": slug}
+        if not isinstance(ta_data, list) or len(ta_data) == 0:
+            error_message = "No results found."
+            return render(request, "trademark_detailview.html", {"error_message": error_message, "query": query})
 
-    return render(request, "trademark_detailview.html", context)
+        if ta_data[0].get("available") == "no":
+            trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (query)
+            trademark_search_response = requests.get(trademark_search_url, headers=headers, timeout=10)
+            ts_data = trademark_search_response.json()
+            context = {
+                "count": ts_data.get("count"),
+                "items": ts_data.get("items"),
+                "query": query,
+                "from_local_db": False,
+            }
+        else:
+            context = {"available": ta_data[0].get("available"), "query": query, "from_local_db": False}
+
+        return render(request, "trademark_detailview.html", context)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"USPTO API request failed: {str(e)}", exc_info=True)
+        error_message = "Unable to process request. Please try again later."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": query})
 
 
 def trademark_search(request, **kwargs):
@@ -2515,9 +2564,7 @@ class OrganizationListView(ListView):
                 path__startswith="/organization/",
                 path__regex=r"^/organization/[^/]+/$",  # Only match exact organization paths
             )
-            .exclude(
-                path="/organizations/"  # Exclude the main organizations list page
-            )
+            .exclude(path="/organizations/")  # Exclude the main organizations list page
             .order_by("-created")
             .values_list("path", flat=True)
             .distinct()[:5]
