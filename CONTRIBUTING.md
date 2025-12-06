@@ -85,7 +85,7 @@ Before you start contributing, you'll need to set up your development environmen
    docker-compose up
    ```
 
-5. Access the application at http://localhost:8000
+5. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Vagrant Setup
 
@@ -108,7 +108,7 @@ Before you start contributing, you'll need to set up your development environmen
    python manage.py runserver
    ```
 
-4. Access the application at http://localhost:8000
+4. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Python Virtual Environment Setup
 
@@ -136,7 +136,7 @@ Before you start contributing, you'll need to set up your development environmen
    python manage.py runserver
    ```
 
-4. Access the application at http://localhost:8000
+4. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ## Making Contributions
 
