@@ -18,7 +18,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.files.storage import default_storage
+from django.core.files.storage import storages
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
 from django.db.models import Count, F
@@ -537,6 +537,25 @@ def validate_image(fieldfile_obj):
         raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 
+def issue_screenshot_upload_path(instance, filename):
+    """
+    Route screenshots to `private-screenshots` when the related issue is hidden,
+    otherwise to `screenshots`.
+
+    Works for both:
+      - Issue.screenshot         (instance is Issue)
+      - IssueScreenshot.image    (instance is IssueScreenshot with .issue FK)
+    """
+    # If the instance has an `.issue` FK (IssueScreenshot), use that.
+    # Otherwise assume instance *is* the Issue object itself.
+    related_issue = getattr(instance, "issue", instance)
+
+    is_hidden = bool(getattr(related_issue, "is_hidden", False))
+
+    prefix = "private-screenshots" if is_hidden else "screenshots"
+    return f"{prefix}/{filename}"
+
+
 class Hunt(models.Model):
     class Meta:
         ordering = ["-id"]
@@ -614,7 +633,12 @@ class Issue(models.Model):
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
-    screenshot = models.ImageField(upload_to="screenshots", null=True, blank=True, validators=[validate_image])
+    screenshot = models.ImageField(
+        upload_to=issue_screenshot_upload_path,
+        null=True,
+        blank=True,
+        validators=[validate_image],
+    )
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
@@ -778,9 +802,19 @@ else:
 
 
 class IssueScreenshot(models.Model):
-    image = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
+    image = models.ImageField(
+        upload_to=issue_screenshot_upload_path,
+        validators=[validate_image],
+    )
+    issue = models.ForeignKey(
+        "Issue",
+        on_delete=models.CASCADE,
+        related_name="screenshots",
+    )
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"IssueScreenshot(id={self.pk}, issue={self.issue_id})"
 
 
 if is_using_gcs():
@@ -809,21 +843,90 @@ else:
             instance.image.delete(save=False)
 
 
+def _move_image(name, storage, is_hidden):
+    """
+    Move a file referenced by `name` in `storage` to the correct prefix.
+
+    Returns the new name, or None if nothing was done.
+    """
+    if not name:
+        return None
+
+    filename = os.path.basename(name)
+    if not filename:
+        return None
+
+    # Decide target prefix based on visibility
+    target_prefix = "private-screenshots" if is_hidden else "screenshots"
+
+    # Already under the right prefix -> nothing to do
+    if name.startswith(target_prefix + "/"):
+        return None
+
+    # By default, use the current field storage
+    target_storage = storage
+
+    # If hiding and a private backend is configured, use that
+    if is_hidden and hasattr(settings, "STORAGES") and "private" in settings.STORAGES:
+        target_storage = storages["private"]
+
+    # Copy file to new location
+    try:
+        with storage.open(name, "rb") as f:
+            new_name = target_storage.save(f"{target_prefix}/{filename}", f)
+    except Exception as e:
+        logger.error(
+            "Failed to move screenshot '%s' from storage '%s' to '%s': %s",
+            name,
+            getattr(storage, "bucket_name", repr(storage)),
+            getattr(target_storage, "bucket_name", repr(target_storage)),
+            e,
+        )
+        raise
+
+    # Delete old file (best effort)
+    if new_name != name:
+        try:
+            storage.delete(name)
+        except Exception as e:
+            logger.warning(
+                "Failed to delete old screenshot '%s' from storage '%s': %s",
+                name,
+                getattr(storage, "bucket_name", repr(storage)),
+                e,
+            )
+
+    return new_name
+
+
 @receiver(post_save, sender=Issue)
 def update_issue_image_access(sender, instance, **kwargs):
-    if instance.is_hidden:
-        issue_screenshot_list = IssueScreenshot.objects.filter(issue=instance.id)
-        for screenshot in issue_screenshot_list:
-            old_name = screenshot.image.name
-            if "hidden" not in old_name:
-                filename = screenshot.image.name
-                extension = filename.split(".")[-1]
-                name = filename[:20] + "hidden" + str(uuid.uuid4())[:40] + "." + extension
-                default_storage.save(f"screenshots/{name}", screenshot.image)
-                default_storage.delete(old_name)
-                screenshot.image = f"screenshots/{name}"
-                screenshot.image.name = f"screenshots/{name}"
-                screenshot.save()
+    """
+    Keep Issue.screenshot and related IssueScreenshot.image in the right place
+    when the Issue is saved (especially when is_hidden changes).
+
+    - Hidden issues  -> private-screenshots/
+    - Public issues  -> screenshots/
+    """
+
+    # 1) Move the single Issue.screenshot, if present
+    if instance.screenshot:
+        current_name = instance.screenshot.name or ""
+        new_name = _move_image(current_name, instance.screenshot.storage, instance.is_hidden)
+        if new_name and new_name != current_name:
+            # Update DB without re-triggering field saves
+            Issue.objects.filter(pk=instance.pk).update(screenshot=new_name)
+
+    # 2) Move all IssueScreenshot images for this issue
+    for screenshot in instance.screenshots.all():
+        if not screenshot.image:
+            continue
+
+        current_name = screenshot.image.name or ""
+        new_name = _move_image(current_name, screenshot.image.storage, instance.is_hidden)
+        if new_name and new_name != current_name:
+            # Update DB without calling screenshot.save() (avoids extra logic)
+            IssueScreenshot.objects.filter(pk=screenshot.pk).update(image=new_name)
 
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 280)

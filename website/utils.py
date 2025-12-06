@@ -21,10 +21,12 @@ from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from google.api_core.exceptions import GoogleAPIError, NotFound
+from google.cloud import storage
 from openai import OpenAI
 from PIL import Image
 
-from website.models import DailyStats
+from website.models import DailyStats, is_using_gcs
 
 from .models import PRAnalysisReport
 
@@ -814,7 +816,7 @@ class twitter:
                 status = api.update_status(status=message)
 
             # Get tweet URL
-            tweet_url = f"https://x.com/user/status/{status.id}"
+            tweet_url = f"https://twitter.com/user/status/{status.id}"
 
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
@@ -1129,3 +1131,47 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+class SignedUrlError(Exception):
+    """Base error for signed URL generation."""
+
+    def __init__(self, kind: str, message: str | None = None):
+        self.kind = kind
+        super().__init__(message or kind)
+
+
+def generate_signed_url(blob_name: str, expiration: int = 3600) -> str:
+    """
+    Generate a signed URL for a GCS object.
+
+    Assumes GCS is configured and is_using_gcs() was checked by the caller.
+    Raises SignedUrlError with kind:
+      - "not_found"   → blob does not exist
+      - "storage"     → generic storage/client error
+      - "config"      → configuration/credentials issue
+    """
+    if not is_using_gcs():
+        raise SignedUrlError("config", "GCS is not configured")
+
+    client = storage.Client()
+
+    bucket_name = getattr(settings, "GS_PRIVATE_BUCKET_NAME", None) or getattr(settings, "GS_BUCKET_NAME", None)
+    if not bucket_name:
+        raise SignedUrlError("config", "No GCS bucket configured")
+
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    try:
+        return blob.generate_signed_url(
+            version="v4",
+            expiration=expiration,
+            method="GET",
+        )
+    except NotFound as e:
+        # Blob is missing
+        raise SignedUrlError("not_found", f"Blob '{blob_name}' not found") from e
+    except GoogleAPIError as e:
+        # GCS client/storage error
+        raise SignedUrlError("storage", "Error generating signed URL") from e
