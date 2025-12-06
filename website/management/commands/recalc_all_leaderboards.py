@@ -18,8 +18,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.MIGRATE_HEADING("Recalculating leaderboard scores..."))
 
-        profiles = UserProfile.objects.select_related("user", "team").iterator(chunk_size=500)
-        total = profiles.count()
+        qs = UserProfile.objects.select_related("user", "team")
+        total = qs.count()
+        profiles = qs.iterator(chunk_size=500)
 
         team_ids_to_invalidate = set()
 
