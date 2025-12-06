@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Create Anonymous Bug Hunt
+{% endblock title %}
+{% block description %}
+    Create a bug hunt anonymously by paying upfront. Bugs will be verified before payouts occur.
+{% endblock description %}
+{% block body %}
+    <div class="w-full bg-[#fdfeff] min-h-screen">
+        <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-[#e74c3c] font-satoshi font-bold text-[35px]">Create Anonymous Bug Hunt</h1>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                    Create a bug hunt for any company without requiring authentication.
+                    Provide your BCH address and send tips directly to bug hunters when bugs are verified.
+                </p>
+            </div>
+            <!-- Info Box -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>How it works:</strong> Create a bug hunt with prize details and provide your BCH address as proof of payment availability.
+                            When bugs are verified, hunters provide their BCH addresses and you send tips directly from your wallet.
+                            Money never touches BLT systems - payments are direct peer-to-peer tips. The hunt will be reviewed and published by the organization.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Form Container -->
+            <form method="post"
+                  action="{% url 'anonymous_hunt' %}"
+                  id="anonymous_hunt_form">
+                {% csrf_token %}
+                <div class="bg-white dark:bg-gray-800 p-10 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md">
+                    <div class="pb-12">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Bug Hunt Information</h2>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Provide details about the bug hunt you want to create.</p>
+                        <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                <label for="bughunt_name"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Bug Hunt Name <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input type="text"
+                                           name="bughunt_name"
+                                           id="bughunt_name"
+                                           placeholder="e.g., Summer Security Challenge 2025"
+                                           required
+                                           maxlength="25"
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
+                                </div>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="email"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Your Email <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input type="email"
+                                           name="email"
+                                           id="email"
+                                           placeholder="your@email.com"
+                                           required
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">You'll receive hunt updates and verification notifications here</p>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="bch_address"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Your BCH Address (CashAddr Format) <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input type="text"
+                                           name="bch_address"
+                                           id="bch_address"
+                                           placeholder="bitcoincash:qp..."
+                                           required
+                                           pattern="bitcoincash:.*"
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    This address proves you have funds available. You'll send tips directly to bug hunters' BCH addresses when bugs are verified.
+                                    Must start with "bitcoincash:"
+                                </p>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="organization"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Target Organization <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2 w-full">
+                                    <select id="organization"
+                                            name="organization"
+                                            required
+                                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 bg-white dark:bg-gray-800 transition-colors duration-200 cursor-pointer sm:text-sm sm:leading-6">
+                                        <option value="" disabled selected>Select an organization</option>
+                                        {% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="domain_name"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Domain Name <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input type="text"
+                                           name="domain_name"
+                                           id="domain_name"
+                                           placeholder="example.com"
+                                           required
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
+                                </div>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="domain_url"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Domain URL <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input type="url"
+                                           name="domain_url"
+                                           id="domain_url"
+                                           placeholder="https://example.com"
+                                           required
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6" />
+                                </div>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="start_date"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Start Date <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input name="start_date"
+                                           id="start_date"
+                                           required
+                                           type="text"
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                           placeholder="MM/DD/YYYY">
+                                </div>
+                            </div>
+                            <div class="sm:col-span-3">
+                                <label for="end_date"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    End Date <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-2">
+                                    <input name="end_date"
+                                           id="end_date"
+                                           required
+                                           type="text"
+                                           class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                           placeholder="MM/DD/YYYY">
+                                </div>
+                            </div>
+                            <div class="sm:col-span-6">
+                                <label for="markdown-description"
+                                       class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+                                    Description
+                                </label>
+                                <div class="mt-2">
+                                    <textarea id="markdown-description"
+                                              name="markdown-description"
+                                              rows="4"
+                                              class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] sm:text-sm sm:leading-6"
+                                              placeholder="Describe the scope and rules of this bug hunt..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Prizes Section -->
+                    <div class="border-t border-gray-200 pt-12">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Prizes</h2>
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            Add prizes for this bug hunt. You'll send BCH tips directly to verified bug hunters.
+                        </p>
+                        <div id="prizes-container" class="mt-6 space-y-4">
+                            <!-- Prizes will be added here dynamically -->
+                        </div>
+                        <button type="button"
+                                id="add-prize-btn"
+                                class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            <svg class="-ml-1 mr-2 h-5 w-5"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add Prize
+                        </button>
+                        <input type="hidden" id="prizes" name="prizes" value="[]">
+                        <div class="mt-6 p-4 bg-gray-50 rounded-md">
+                            <p class="text-sm font-medium text-gray-900">
+                                Total Prize Value: <span id="total-payment" class="text-[#e74c3c] font-bold">$0</span>
+                            </p>
+                            <p class="text-xs text-gray-600 mt-1">This is for informational purposes. You'll pay hunters directly via BCH.</p>
+                        </div>
+                    </div>
+                    <!-- Submit Button -->
+                    <div class="mt-8 flex items-center justify-end gap-x-6">
+                        <button type="submit"
+                                class="rounded-md bg-[#e74c3c] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#c0392b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e74c3c]">
+                            Create Anonymous Bug Hunt
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="{% static 'js/anonymous_hunt.js' %}"></script>
+{% endblock body %}
