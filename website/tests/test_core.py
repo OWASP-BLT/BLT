@@ -480,7 +480,7 @@ class TopEarnersTests(TestCase):
 
         # Create test repository
         self.repo = Repo.objects.create(
-            name="TestRepo", url="https://github.com/test/repo", description="Test repository"
+            name="TestRepo", repo_url="https://github.com/test/repo", description="Test repository"
         )
 
         # Create test contributors
