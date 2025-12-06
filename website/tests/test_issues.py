@@ -95,3 +95,278 @@ class GitHubIssueImageURLTests(TestCase):
             formatted_url = http_url
 
         self.assertEqual(formatted_url, http_url)
+
+
+@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
+class GitHubIntegrationFieldsTests(TestCase):
+    """Test GitHub integration fields on the Issue model"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="12345")
+        self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
+
+    def test_issue_created_with_default_github_fields(self):
+        """Test that new issues have correct default values for GitHub fields"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+        )
+
+        # Check default values
+        self.assertEqual(issue.github_comment_count, 0)
+        self.assertEqual(issue.github_state, "")  # Default is empty string, not None
+        self.assertFalse(issue.github_fetch_status)
+        self.assertEqual(issue.github_url, "")
+
+    def test_issue_with_github_url_and_open_state(self):
+        """Test issue with GitHub URL and open state"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue with GitHub",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/1",
+            github_state="open",
+            github_comment_count=5,
+            github_fetch_status=True,
+        )
+
+        self.assertEqual(issue.github_url, "https://github.com/test/repo/issues/1")
+        self.assertEqual(issue.github_state, "open")
+        self.assertEqual(issue.github_comment_count, 5)
+        self.assertTrue(issue.github_fetch_status)
+
+    def test_issue_with_github_url_and_closed_state(self):
+        """Test issue with GitHub URL and closed state"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue Closed",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/2",
+            github_state="closed",
+            github_comment_count=10,
+            github_fetch_status=True,
+        )
+
+        self.assertEqual(issue.github_state, "closed")
+        self.assertEqual(issue.github_comment_count, 10)
+        self.assertTrue(issue.github_fetch_status)
+
+    def test_issue_github_state_choices(self):
+        """Test that github_state only accepts valid choices"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+            github_state="open",
+        )
+
+        # Test valid choices
+        issue.github_state = "closed"
+        issue.save()
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_state, "closed")
+
+        # Test that we can set it back to open
+        issue.github_state = "open"
+        issue.save()
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_state, "open")
+
+    def test_issue_github_fetch_failed(self):
+        """Test issue when GitHub data fetch fails"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue Fetch Failed",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/3",
+            github_fetch_status=False,  # Fetch failed or not attempted
+        )
+
+        self.assertFalse(issue.github_fetch_status)
+        self.assertEqual(issue.github_state, "")  # Default is empty string, not None
+        self.assertEqual(issue.github_comment_count, 0)
+
+    def test_issue_update_github_fields(self):
+        """Test updating GitHub fields on existing issue"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue Update",
+            user=self.user,
+        )
+
+        # Initially no GitHub data
+        self.assertEqual(issue.github_comment_count, 0)
+        self.assertEqual(issue.github_state, "")  # Default is empty string, not None
+        self.assertFalse(issue.github_fetch_status)
+
+        # Update with GitHub data
+        issue.github_url = "https://github.com/test/repo/issues/4"
+        issue.github_state = "open"
+        issue.github_comment_count = 3
+        issue.github_fetch_status = True
+        issue.save()
+
+        # Verify updates
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_url, "https://github.com/test/repo/issues/4")
+        self.assertEqual(issue.github_state, "open")
+        self.assertEqual(issue.github_comment_count, 3)
+        self.assertTrue(issue.github_fetch_status)
+
+    def test_issue_github_comment_count_zero(self):
+        """Test issue with zero comments"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue No Comments",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/5",
+            github_state="open",
+            github_comment_count=0,
+            github_fetch_status=True,
+        )
+
+        self.assertEqual(issue.github_comment_count, 0)
+        self.assertTrue(issue.github_fetch_status)
+
+    def test_issue_github_comment_count_rejects_negative(self):
+        """Test that negative comment counts are rejected"""
+        from django.core.exceptions import ValidationError
+
+        # Attempt to create an issue with negative comment count
+        issue = Issue(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+            github_comment_count=-1,
+        )
+
+        # Django's full_clean() should raise ValidationError for negative value
+        # PositiveIntegerField validates that value must be >= 0
+        with self.assertRaises(ValidationError) as context:
+            issue.full_clean()
+
+        # Verify that the error is specifically about the github_comment_count field
+        self.assertIn("github_comment_count", context.exception.error_dict)
+
+    def test_issue_without_github_url_but_with_state(self):
+        """Test that an issue can have GitHub state without URL (edge case)"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue Edge Case",
+            user=self.user,
+            github_state="open",
+            github_fetch_status=True,
+        )
+
+        # This is allowed but might indicate data inconsistency
+        self.assertEqual(issue.github_state, "open")
+        self.assertEqual(issue.github_url, "")
+
+    def test_multiple_issues_with_different_github_states(self):
+        """Test creating multiple issues with different GitHub states"""
+        issue1 = Issue.objects.create(
+            url="http://example1.com",
+            description="Open Issue",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/10",
+            github_state="open",
+            github_fetch_status=True,
+        )
+
+        issue2 = Issue.objects.create(
+            url="http://example2.com",
+            description="Closed Issue",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/11",
+            github_state="closed",
+            github_fetch_status=True,
+        )
+
+        issue3 = Issue.objects.create(
+            url="http://example3.com",
+            description="Issue Without GitHub",
+            user=self.user,
+        )
+
+        # Verify all issues maintain their states
+        self.assertEqual(Issue.objects.get(pk=issue1.pk).github_state, "open")
+        self.assertEqual(Issue.objects.get(pk=issue2.pk).github_state, "closed")
+        self.assertEqual(Issue.objects.get(pk=issue3.pk).github_state, "")  # Default is empty string
+
+    def test_issue_github_state_blank_string(self):
+        """Test that github_state defaults to blank string"""
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue Blank State",
+            user=self.user,
+            github_url="https://github.com/test/repo/issues/13",
+            github_state="",
+            github_fetch_status=False,
+        )
+
+        self.assertEqual(issue.github_state, "")
+        self.assertFalse(issue.github_fetch_status)
+
+    def test_issue_github_last_fetched_at(self):
+        """Test github_last_fetched_at timestamp field"""
+        from django.utils import timezone
+
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+        )
+
+        # Initially None
+        self.assertIsNone(issue.github_last_fetched_at)
+
+        # Set when data is fetched
+        fetch_time = timezone.now()
+        issue.github_url = "https://github.com/test/repo/issues/1"
+        issue.github_state = "open"
+        issue.github_fetch_status = True
+        issue.github_last_fetched_at = fetch_time
+        issue.save()
+
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_last_fetched_at, fetch_time)
+        self.assertEqual(issue.github_url, "https://github.com/test/repo/issues/1")
+        self.assertEqual(issue.github_state, "open")
+        self.assertTrue(issue.github_fetch_status)
+
+        # Update timestamp on subsequent fetch
+        import time
+
+        time.sleep(0.01)  # Ensure timestamp is different
+        later_fetch_time = timezone.now()
+        issue.github_state = "closed"
+        issue.github_comment_count = 5
+        issue.github_last_fetched_at = later_fetch_time
+        issue.save()
+
+        issue.refresh_from_db()
+        self.assertEqual(issue.github_last_fetched_at, later_fetch_time)
+        self.assertGreater(issue.github_last_fetched_at, fetch_time)
+        self.assertEqual(issue.github_state, "closed")
+        self.assertEqual(issue.github_comment_count, 5)
+
+    def test_issue_github_state_invalid_choice(self):
+        """Test that github_state rejects invalid choices"""
+        from django.core.exceptions import ValidationError
+
+        issue = Issue.objects.create(
+            url="http://example.com",
+            description="Test Issue",
+            user=self.user,
+        )
+
+        # Attempt to set an invalid state
+        issue.github_state = "invalid_state"
+
+        # Django's full_clean() should raise ValidationError for invalid choice
+        with self.assertRaises(ValidationError) as context:
+            issue.full_clean()
+
+        # Verify that the error is specifically about the github_state field
+        self.assertIn("github_state", context.exception.error_dict)
