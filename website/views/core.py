@@ -789,12 +789,13 @@ def search(request, template="search.html"):
                             )
 
                             # CLEANUP — keep last 50
-                            if len(user_history_ids) >= 50:
+                            excess_ids = []  # Initialize to empty list
+                            if len(user_history_ids) >= 49:
                                 excess_ids = user_history_ids[50:]
                                 SearchHistory.objects.filter(id__in=excess_ids).delete()
 
-                        if excess_ids:
-                            SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
+                            if excess_ids:
+                                SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
             except Exception:
                 # Log the error but don't re-raise - allow search to proceed normally
                 # Transaction will be rolled back automatically by Django
