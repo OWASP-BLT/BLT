@@ -1,21 +1,26 @@
+import hashlib
+import io
 import json
 import logging
 import smtplib
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
+from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
+from PIL import Image, ImageDraw, ImageFont
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
@@ -25,11 +30,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+logger = logging.getLogger(__name__)
+
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
+    IP,
     ActivityLog,
     Contributor,
     Domain,
+    GitHubIssue,
     Hunt,
     HuntPrize,
     InviteFriend,
@@ -64,7 +73,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.utils import get_client_ip, image_validator
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -1079,6 +1088,222 @@ class OwaspComplianceChecker(APIView):
         }
 
         return Response(report, status=status.HTTP_200_OK)
+
+
+def generate_issue_badge_image(view_count, bounty_amount):
+    """Generate PNG badge image with view count and bounty information."""
+    # Image dimensions
+    width, height = 300, 30
+
+    # Create image with gradient background (BLT brand colors)
+    img = Image.new("RGB", (width, height), color="#e74c3c")
+    draw = ImageDraw.Draw(img)
+
+    # Create gradient effect from #e74c3c to #c0392b
+    for x in range(width):
+        # Interpolate between #e74c3c (231,76,60) and #c0392b (192,57,43)
+        r = int(231 - (231 - 192) * x / width)
+        g = int(76 - (76 - 57) * x / width)
+        b = int(60 - (60 - 43) * x / width)
+        draw.line([(x, 0), (x, height)], fill=(r, g, b))
+
+    # Add text - use ASCII-friendly labels as fallback for emoji compatibility
+    text = f"👁 {view_count} views | 💰 {bounty_amount}"
+    text_fallback = f"Views: {view_count} | Bounty: {bounty_amount}"
+
+    # Try multiple font paths for better Unicode/emoji support
+    font = None
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",  # macOS
+    ]
+
+    for font_path in font_paths:
+        try:
+            font = ImageFont.truetype(font_path, 14)
+            break
+        except (IOError, OSError):
+            continue
+
+    # If no TrueType font available, use default and switch to ASCII text
+    if font is None:
+        font = ImageFont.load_default()
+        text = text_fallback  # Use ASCII-friendly text with default font
+
+    # Get text bounding box for centering
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+
+    # Center the text
+    x = (width - text_width) // 2
+    y = (height - text_height) // 2
+
+    # Draw text in white
+    draw.text((x, y), text, fill="white", font=font)
+
+    # Save to bytes
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+
+    return img_bytes.getvalue()
+
+
+@api_view(["GET"])
+def github_issue_badge(request, issue_number):
+    """
+    Generate dynamic PNG badge showing view count and bounty for a GitHub issue.
+    GET /api/v1/badge/issue/{issue_number}/
+
+    Returns a PNG badge with:
+    - View count for past 30 days (from IP logs)
+    - Current bounty amount (from GitHubIssue model)
+
+    Security & Privacy:
+    - X-Forwarded-For header is used but can be spoofed; ensure trusted proxy configuration
+    - Application must be behind a trusted reverse proxy (Nginx, AWS ALB, etc.)
+
+    Note: IP hashing with HMAC-SHA256 is available via hash_ip_address() function
+    but not currently applied. See future PR for IP privacy enhancements.
+    """
+    try:
+        # Track badge view FIRST (before caching/counting) for accurate metrics
+        # Note: get_client_ip extracts from X-Forwarded-For header (can be spoofed)
+        # Ensure app is behind a trusted proxy that sanitizes this header
+        client_ip = get_client_ip(request)
+        badge_path = f"/api/v1/badge/issue/{issue_number}/"
+
+        # Update or create IP log entry atomically
+        # NOTE: IP addresses are currently stored in plain text
+        # TODO: Future PR will implement IP hashing for privacy protection (GDPR/CCPA)
+        ip_log, created = IP.objects.get_or_create(
+            address=client_ip,
+            path=badge_path,
+            defaults={
+                "method": "GET",
+                "agent": request.META.get("HTTP_USER_AGENT", "")[:255],
+                "issuenumber": issue_number,
+                "count": 1,
+            },
+        )
+        if not created:
+            # Use atomic F() expression to prevent race conditions
+            # Also update updated_at to track last view timestamp for accurate 30-day counts
+            IP.objects.filter(pk=ip_log.pk).update(count=F("count") + 1, updated_at=timezone.now())
+
+        # Check cache AFTER logging to ensure all views are tracked
+        cache_key = f"badge_issue_{issue_number}"
+        cached_data = cache.get(cache_key)
+
+        # Check ETag for conditional request
+        request_etag = request.headers.get("If-None-Match")
+
+        if cached_data:
+            # Always include cache headers for consistency
+            headers = {
+                "ETag": cached_data["etag"],
+                "Cache-Control": "public, max-age=300",
+            }
+
+            if request_etag and request_etag == cached_data["etag"]:
+                # 304 Not Modified with proper headers
+                return HttpResponse(
+                    status=status.HTTP_304_NOT_MODIFIED,
+                    headers=headers,
+                )
+
+            # Return cached badge with headers
+            return HttpResponse(
+                cached_data["image"],
+                content_type="image/png",
+                headers=headers,
+            )
+
+        # Try to get existing GitHubIssue record (don't create to prevent abuse)
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_number)
+            bounty_amount = "$0"
+            if github_issue.p2p_amount_usd:
+                try:
+                    # Handle numeric strings and float values defensively
+                    bounty_amount = f"${int(float(github_issue.p2p_amount_usd))}"
+                except (ValueError, TypeError):
+                    # Invalid or non-numeric value, default to $0
+                    bounty_amount = "$0"
+        except GitHubIssue.DoesNotExist:
+            # Issue doesn't exist - return default badge without creating record
+            bounty_amount = "$0"
+
+        # Calculate view count from past 30 days (AFTER incrementing, so current view counts)
+        # Use updated_at (not created) to accurately track views from IPs active in last 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        view_count = (
+            IP.objects.filter(
+                path=badge_path,
+                updated_at__gte=thirty_days_ago,
+            ).aggregate(total=Sum("count"))["total"]
+            or 0
+        )
+
+        # Generate PNG badge image
+        image_content = generate_issue_badge_image(view_count, bounty_amount)
+
+        # Generate ETag with secure hash (SHA-256 instead of MD5)
+        etag = hashlib.sha256(image_content).hexdigest()[:32]  # Use first 32 chars
+
+        # Cache for 5 minutes (300 seconds)
+        cache.set(
+            cache_key,
+            {"image": image_content, "etag": etag},
+            timeout=300,
+        )
+
+        return HttpResponse(
+            image_content,
+            content_type="image/png",
+            headers={
+                "ETag": etag,
+                "Cache-Control": "public, max-age=300",
+            },
+        )
+
+    except Exception as e:
+        logger.error(
+            "Error generating badge for issue %s: %s",
+            issue_number,
+            str(e),
+            exc_info=True,
+        )
+        # Return a simple error badge image
+        error_img = Image.new("RGB", (300, 30), color="#555555")
+        error_draw = ImageDraw.Draw(error_img)
+        error_text = "Badge unavailable"
+
+        try:
+            error_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+        except IOError:
+            error_font = ImageFont.load_default()
+
+        # Center the error text
+        bbox = error_draw.textbbox((0, 0), error_text, font=error_font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = (300 - text_width) // 2
+        y = (30 - text_height) // 2
+        error_draw.text((x, y), error_text, fill="white", font=error_font)
+
+        # Convert to bytes
+        error_bytes = io.BytesIO()
+        error_img.save(error_bytes, format="PNG")
+        error_bytes.seek(0)
+
+        return HttpResponse(
+            error_bytes.getvalue(),
+            content_type="image/png",
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 class JobViewSet(viewsets.ModelViewSet):
