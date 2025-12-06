@@ -790,8 +790,8 @@ def search(request, template="search.html"):
 
                             # CLEANUP — keep last 50
                             excess_ids = []  # Initialize to empty list
-                            if len(user_history_ids) >= 49:
-                                excess_ids = user_history_ids[50:]
+                            if len(user_history_ids) >= 50:
+                                excess_ids = user_history_ids[49:]
                                 SearchHistory.objects.filter(id__in=excess_ids).delete()
 
                             if excess_ids:
