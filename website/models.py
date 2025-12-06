@@ -126,6 +126,52 @@ class SlackIntegration(models.Model):
         return f"Slack Integration for {self.integration.organization.name}"
 
 
+class SlackChannel(models.Model):
+    """
+    Stores Slack channel data fetched from the Slack API.
+    This table captures all channels from the OWASP Slack workspace.
+    """
+
+    channel_id = models.CharField(max_length=50, unique=True, primary_key=True)
+    name = models.CharField(max_length=255, db_index=True)
+    topic = models.TextField(blank=True, default="")
+    purpose = models.TextField(blank=True, default="")
+    num_members = models.IntegerField(default=0)
+    is_private = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+    is_general = models.BooleanField(default=False)
+    creator = models.CharField(max_length=50, blank=True, default="")
+    created_at = models.DateTimeField(null=True, blank=True)
+    slack_url = models.URLField(max_length=255, blank=True, default="")
+    last_synced = models.DateTimeField(auto_now=True)
+    organization = models.ForeignKey(
+        "Organization",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Organization this Slack channel belongs to",
+    )
+    project = models.ForeignKey(
+        "Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Project this Slack channel is linked to",
+    )
+
+    class Meta:
+        ordering = ["-num_members", "name"]
+        indexes = [
+            models.Index(fields=["name"], name="slackchannel_name_idx"),
+            models.Index(fields=["num_members"], name="slackchannel_members_idx"),
+        ]
+
+    def __str__(self):
+        return f"#{self.name} ({self.num_members} members)"
+
+
 class OrganisationType(Enum):
     ORGANIZATION = "organization"
     INDIVIDUAL = "individual"
@@ -429,7 +475,7 @@ class Domain(models.Model):
 
         validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
         try:
-            twitter_url = "https://twitter.com/%s" % (name)
+            twitter_url = "https://x.com/%s" % (name)
             validate(twitter_url)
             self.twitter = name
             self.save()
@@ -639,6 +685,52 @@ class Issue(models.Model):
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
             logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
+
+    def get_cve_severity(self):
+        """
+        Get the severity level based on CVE score.
+        CVSS v3.0 Ratings:
+        - None: 0.0
+        - Low: 0.1-3.9
+        - Medium: 4.0-6.9
+        - High: 7.0-8.9
+        - Critical: 9.0-10.0
+        """
+        if self.cve_score is None:
+            return None
+
+        score = float(self.cve_score)
+        if score == 0.0:
+            return "None"
+        elif 0.1 <= score <= 3.9:
+            return "Low"
+        elif 4.0 <= score <= 6.9:
+            return "Medium"
+        elif 7.0 <= score <= 8.9:
+            return "High"
+        elif 9.0 <= score <= 10.0:
+            return "Critical"
+        return None
+
+    def get_suggested_tip_amount(self):
+        """
+        Get suggested tip amount based on CVE severity.
+        Returns amount in USD.
+        """
+        severity = self.get_cve_severity()
+        if severity is None:
+            return None
+
+        # Suggested tip amounts based on severity
+        tip_amounts = {
+            "None": 0,
+            "Low": 5,
+            "Medium": 10,
+            "High": 20,
+            "Critical": 50,
+        }
+
+        return tip_amounts.get(severity, 0)
 
     class Meta:
         ordering = ["-created"]
@@ -892,21 +984,42 @@ class UserProfile(models.Model):
 
     def update_visit_counter(self):
         """
-        Update daily visit counter if last visit was on a different day
+        Update daily visit counter if last visit was on a different day.
+
+        Note: This method uses atomic database updates and does not refresh
+        the instance. Call refresh_from_db() after this method if you need
+        the updated values.
+
+        Returns:
+            None (previously returned daily_visit_count, but that value would
+            be stale after the atomic update)
         """
         today = timezone.now().date()
 
+        # Skip if transaction is marked for rollback to avoid TransactionManagementError
+        # This commonly occurs during Django test teardown when a transaction has
+        # encountered an error and is being rolled back
+        try:
+            if transaction.get_rollback():
+                return None
+        except transaction.TransactionManagementError:
+            # Called outside transaction context, proceed normally
+            pass
+
+        # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
         if not self.last_visit_day or today > self.last_visit_day:
-            self.daily_visit_count += 1
-            self.last_visit_day = today
-            self.save()
+            # Update both daily count, last visit day, and general visit count in one atomic operation
+            UserProfile.objects.filter(pk=self.pk).update(
+                daily_visit_count=F("daily_visit_count") + 1,
+                last_visit_day=today,
+                visit_count=F("visit_count") + 1,
+            )
+        else:
+            # Only increment the general visit_count
+            UserProfile.objects.filter(pk=self.pk).update(visit_count=F("visit_count") + 1)
 
-        # Always increment the general visit_count regardless of day
-        self.visit_count += 1
-        self.save(update_fields=["visit_count"])
-
-        return self.daily_visit_count
+        return None
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
@@ -1133,6 +1246,39 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
+class SearchHistory(models.Model):
+    """Track user search queries for displaying recent searches."""
+
+    SEARCH_TYPE_CHOICES = [
+        ("all", "All"),
+        ("issues", "Issues"),
+        ("domains", "Domains"),
+        ("users", "Users"),
+        ("labels", "Labels"),
+        ("organizations", "Organizations"),
+        ("projects", "Projects"),
+        ("repos", "Repositories"),
+        ("tags", "Tags"),
+        ("languages", "Languages"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="search_history")
+    query = models.CharField(max_length=255)
+    search_type = models.CharField(max_length=50, choices=SEARCH_TYPE_CHOICES, default="all")
+    result_count = models.PositiveIntegerField(null=True, blank=True, help_text="Number of results returned")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "-timestamp"], name="search_hist_user_time_idx"),
+        ]
+        verbose_name_plural = "Search Histories"
+
+    def __str__(self):
+        return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
+
+
 class ForumCategory(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -1245,6 +1391,7 @@ class Project(models.Model):
     slack = models.URLField(null=True, blank=True)
     slack_channel = models.CharField(max_length=255, blank=True, null=True)
     slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    slack_user_count = models.IntegerField(default=0)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
@@ -1877,6 +2024,7 @@ class SlackBotActivity(models.Model):
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
     user_id = models.CharField(max_length=20, null=True, blank=True)
+    username = models.CharField(max_length=255, null=True, blank=True)
     details = models.JSONField(default=dict)  # Stores flexible activity-specific data
     success = models.BooleanField(default=True)
     error_message = models.TextField(null=True, blank=True)
@@ -2035,19 +2183,26 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return []
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for comments (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
             response = requests.get(api_url, headers=headers)
             response.raise_for_status()
             comments = response.json()
@@ -2068,10 +2223,20 @@ class GitHubIssue(models.Model):
                 )
 
             return formatted_comments
-        except (requests.exceptions.RequestException, KeyError) as e:
-            # Log the error but don't raise it to avoid breaking the site
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+        except requests.exceptions.HTTPError as e:
+            # Handle HTTP errors with specific status codes
+            if e.response.status_code == 403:
+                logger.warning(
+                    f"GitHub API 403 Forbidden for issue ({self.url}). "
+                    f"This may indicate an invalid/expired GitHub token, rate limiting, or insufficient permissions. "
+                    f"Check GITHUB_TOKEN configuration."
+                )
+            else:
+                logger.error(f"GitHub API HTTP {e.response.status_code} error for issue ({self.url}): {str(e)}")
+            return []
+        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+            # Log other request errors or data parsing errors
+            logger.error(f"Error fetching comments for issue ({self.url}): {str(e)}")
             return []
 
     def add_comment(self, comment_text):
@@ -2084,27 +2249,33 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"body": comment_text}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding comments (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"body": comment_text}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
             return False
 
@@ -2120,26 +2291,33 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding labels
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"labels": labels}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding labels (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"labels": labels}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
             return False
 
