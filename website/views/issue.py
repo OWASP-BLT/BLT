@@ -27,7 +27,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count, Prefetch, Q, Sum
+from django.db.models import Count, Max, Prefetch, Q, Sum
 from django.db.transaction import atomic
 from django.dispatch import receiver
 from django.http import (
@@ -418,6 +418,84 @@ def remove_user_from_issue(request, id):
         return safe_redirect_request(request)
 
 
+def normalize_and_populate_cve_score(issue_obj):
+    """
+    Normalize CVE ID and populate score if available.
+
+    Args:
+        issue_obj: Issue instance to normalize and populate
+
+    Returns:
+        issue_obj: The same issue object (for chaining)
+    """
+    if issue_obj.cve_id:
+        from website.cache.cve_cache import normalize_cve_id
+
+        normalized = normalize_cve_id(issue_obj.cve_id)
+        # If normalization returns empty string (invalid/whitespace-only input),
+        # set cve_id to None to prevent storing invalid data
+        if not normalized:
+            issue_obj.cve_id = None
+            issue_obj.cve_score = None
+        else:
+            # Only update if normalized value differs from original
+            if normalized != issue_obj.cve_id:
+                issue_obj.cve_id = normalized
+
+            # Fetch CVE score from cache/API
+            # Note: get_cve_score() handles all network/API exceptions internally
+            # and returns None on any error, so no exception handling needed here
+            issue_obj.cve_score = issue_obj.get_cve_score()
+    return issue_obj
+
+
+def cve_autocomplete(request):
+    """
+    API endpoint for CVE ID autocomplete suggestions.
+    Returns existing CVE IDs from the database that match the query.
+    """
+    query = request.GET.get("q", "").strip().upper()
+
+    # Validate input: must be at least 3 characters and match CVE format start
+    # The endpoint allows queries of 3+ characters and permits partial CVE inputs
+    # like "CVE-" or "CVE-2024-" for incremental autocomplete
+    if not query or len(query) < 3:
+        return JsonResponse({"results": []})
+
+    # Validate CVE format: must start with "CVE-"
+    if not query.startswith("CVE-"):
+        return JsonResponse({"results": []})
+
+    # For autocomplete, just use the uppercase query directly
+    # Don't use normalize_cve_id() which validates against full CVE pattern
+    # Autocomplete needs to work with partial inputs like "CVE-2024-"
+    normalized_query = query
+
+    # Apply visibility filters: exclude hunt issues and respect is_hidden rules
+    queryset = Issue.objects.filter(cve_id__istartswith=normalized_query, hunt=None)
+    queryset = queryset.exclude(cve_id__isnull=True).exclude(cve_id="")
+
+    # Apply is_hidden visibility rules (same as search_issues)
+    if request.user.is_anonymous:
+        queryset = queryset.exclude(Q(is_hidden=True))
+    else:
+        # Authenticated users can see their own hidden issues
+        queryset = queryset.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+
+    # Get distinct CVE IDs that match the query, ordered by most recent usage
+    # Use subquery to get most recent issue for each CVE ID, then order by creation date
+    cve_ids = (
+        queryset.values("cve_id")
+        .annotate(latest_created=Max("created"))
+        .order_by("-latest_created", "cve_id")[:10]  # Most recent first, then alphabetical
+        .values_list("cve_id", flat=True)
+    )
+
+    results = [{"id": cve_id, "text": cve_id} for cve_id in cve_ids]
+
+    return JsonResponse({"results": results})
+
+
 def search_issues(request, template="search.html"):
     query = request.GET.get("query")
     stype = request.GET.get("type")
@@ -437,6 +515,9 @@ def search_issues(request, template="search.html"):
     elif query[:6] == "label:":
         stype = "label"
         query = query[6:]
+    elif query[:4] == "cve:":
+        stype = "cve"
+        query = query[4:]
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
@@ -474,6 +555,43 @@ def search_issues(request, template="search.html"):
             "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
+        }
+
+    if stype == "cve":
+        # Normalize CVE ID for matching (case-insensitive, whitespace-trimmed)
+        # Use case-insensitive matching to handle both normalized and unnormalized data
+        from website.cache.cve_cache import normalize_cve_id
+
+        normalized_cve = normalize_cve_id(query)
+
+        if normalized_cve:
+            if request.user.is_anonymous:
+                issues = (
+                    Issue.objects.filter(cve_id__iexact=normalized_cve, hunt=None)
+                    .exclude(Q(is_hidden=True))
+                    .order_by("-created")[0:20]
+                )
+            else:
+                issues = (
+                    Issue.objects.filter(cve_id__iexact=normalized_cve, hunt=None)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .order_by("-created")[0:20]
+                )
+        else:
+            issues = Issue.objects.none()
+
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": issues,
+        }
+
+    if context is None:
+        # Fallback: if no context was set, return empty search
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.none(),
         }
 
     if request.user.is_authenticated:
@@ -694,6 +812,8 @@ class IssueBaseCreate(object):
             )
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+        # Normalize CVE ID and populate score if available
+        normalize_and_populate_cve_score(obj)
         obj.save()
         Points.objects.create(user=self.request.user, issue=obj, score=score)
 
@@ -1188,7 +1308,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1214,7 +1334,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
@@ -1329,11 +1449,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
-            try:
-                obj.cve_score = obj.get_cve_score()
-            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
-                # If CVE score fetch fails, continue without it
-                obj.cve_score = None
+            # Normalize CVE ID and populate score if available
+            normalize_and_populate_cve_score(obj)
+            if obj.cve_id and obj.cve_score is None:
                 messages.warning(
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
                 )
@@ -1831,6 +1949,11 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 )
                 return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             issue.hunt = hunt
+            # Read CVE ID from POST data
+            cve_id = request.POST.get("cve_id", "").strip() or None
+            issue.cve_id = cve_id
+            # Normalize CVE ID and populate score if available
+            normalize_and_populate_cve_score(issue)
             issue.save()
             issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
