@@ -3,6 +3,7 @@ import math
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from website.models import DailyStatusReport, UserProfile
 from website.services.leaderboard_scoring import LeaderboardScoringService
