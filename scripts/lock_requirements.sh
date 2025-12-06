@@ -1,1 +1,1 @@
-poetry export -f requirements.txt --output requirements.txt --without-hashes
+uv export --format requirements.txt --without-hashes -o requirements.txt
