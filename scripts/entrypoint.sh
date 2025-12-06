@@ -12,7 +12,7 @@ done
 
 # Function to check if migrations are applied
 check_migrations() {
-    python manage.py showmigrations --plan | grep -q "\[ \]"
+    uv run python manage.py showmigrations --plan | grep -q "\[ \]"
     return $?
 }
 
@@ -22,22 +22,22 @@ if check_migrations; then
 
     # Run migrations
     echo "Migration script is running"
-    python manage.py migrate
+    uv run python manage.py migrate
 
     # Load initial data
-    python manage.py loaddata website/fixtures/initial_data.json
+    uv run python manage.py loaddata website/fixtures/initial_data.json
 
     # Create superuser
     echo "Creating the superuser, if it does not exist!"
-    python manage.py initsuperuser
+    uv run python manage.py initsuperuser
 
     # Collect static files
     echo "Collecting the static files!"
-    python manage.py collectstatic --noinput
+    uv run python manage.py collectstatic --noinput
 else
     echo "All migrations have already been applied. Skipping initialization."
 fi
 
 # Start the main application
 echo "Starting the main application http://localhost:8000/"
-exec python manage.py runserver 0.0.0.0:8000
+exec uv run python manage.py runserver 0.0.0.0:8000
