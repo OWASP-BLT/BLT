@@ -737,11 +737,12 @@ class SlackBotActivityAdmin(admin.ModelAdmin):
         "workspace_name",
         "activity_type",
         "user_id",
+        "username",
         "success",
         "created",
     )
     list_filter = ("activity_type", "success", "workspace_name")
-    search_fields = ("workspace_name", "user_id", "error_message")
+    search_fields = ("workspace_name", "user_id", "username", "error_message")
     readonly_fields = ("created",)
     ordering = ("-created",)
 
