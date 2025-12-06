@@ -1,5 +1,4 @@
 import datetime
-import sys
 from datetime import timedelta
 from decimal import Decimal
 from io import StringIO
@@ -8,14 +7,53 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management import call_command
+from django.db.models.signals import post_save
 from django.test import TestCase
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
-from website.leaderboard import update_leaderboard_on_dsr_save
 from website.models import DailyStatusReport, UserProfile
+from website.signals import update_leaderboard_on_dsr_save
 
 User = get_user_model()
+
+
+class LeaderboardSignalConfigTest(TestCase):
+    """Test that signal handlers are properly wired during app initialization"""
+
+    def test_dsr_signal_receiver_is_registered(self):
+        """Verify update_leaderboard_on_dsr_save is connected to post_save signal"""
+        # Get all receivers connected to DailyStatusReport's post_save signal
+        receivers = [
+            receiver[1]()  # receiver[1] is a weak reference, call it to get the function
+            for receiver in post_save.receivers
+            if receiver[0][1] == id(DailyStatusReport)  # Filter by sender model
+        ]
+
+        # Verify our handler is in the list
+        self.assertIn(
+            update_leaderboard_on_dsr_save,
+            receivers,
+            "update_leaderboard_on_dsr_save is not registered as a post_save receiver for DailyStatusReport. "
+            "Ensure 'import website.leaderboard' is present in WebsiteConfig.ready()",
+        )
+
+    def test_signal_registration_count(self):
+        """Verify signal is registered exactly once (not duplicated)"""
+
+        # Count how many times our handler is registered
+        registration_count = sum(
+            1
+            for receiver in post_save.receivers
+            if receiver[0][1] == id(DailyStatusReport) and receiver[1]() == update_leaderboard_on_dsr_save
+        )
+
+        self.assertEqual(
+            registration_count,
+            1,
+            f"Signal registered {registration_count} times (expected 1). "
+            "Check for duplicate imports in apps.py or multiple @receiver decorators.",
+        )
 
 
 class LeaderboardSignalTest(TestCase):
@@ -202,6 +240,9 @@ class UserProfileLeaderboardScoreTest(TestCase):
         self.user_profile.refresh_from_db()
         self.assertEqual(self.user_profile.leaderboard_score, Decimal("75.00"))
         self.assertEqual(self.user_profile.quality_score, Decimal("80.00"))
+        # ensure these fields were refreshed as well
+        self.assertNotEqual(self.user_profile.check_in_count, 5)
+        self.assertGreater(self.user_profile.last_score_update, original_last_score_update)
 
     def test_related_models_integration(self):
         """Test integration with related models"""
@@ -255,17 +296,11 @@ class RecalcLeaderboardsCommandTest(TestCase):
         """Test that the command runs without raising exceptions"""
         out = StringIO()
         err = StringIO()
-        sys.stdout = out
-        sys.stderr = err
 
-        try:
-            call_command("recalc_all_leaderboards")
-            output = out.getvalue()
-            self.assertIn("Recalculating leaderboard scores", output)
-            self.assertIn("completed", output.lower())
-        finally:
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
+        call_command("recalc_all_leaderboards", stdout=out, stderr=err)
+        output = out.getvalue()
+        self.assertIn("Recalculating leaderboard scores", output)
+        self.assertIn("completed", output.lower())
 
     def test_command_handles_errors_gracefully(self):
         """Test command continues when individual users fail"""
