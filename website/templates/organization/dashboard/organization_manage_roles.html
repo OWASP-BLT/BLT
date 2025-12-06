@@ -16,14 +16,14 @@
     Comprehensive role management system for your organization. Control who has access to what.
 {% endblock og_description %}
 {% block body %}
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Header Section -->
         <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Manage Roles</h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             Control user access and permissions within your organization
                         </p>
                     </div>
@@ -76,7 +76,7 @@
                                                 </span>
                                             {% endif %}
                                         </div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-500">{{ role.email }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ role.email }}</div>
                                     </td>
                                     <td class="px-6 py-4">
                                         {% if role.role == 0 %}
@@ -89,7 +89,7 @@
                                         {% if role.domain_name %}
                                             <div class="text-sm text-gray-900 dark:text-gray-100">{{ role.domain_name }}</div>
                                         {% else %}
-                                            <div class="text-sm text-gray-500 dark:text-gray-500 italic">All Domains</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400 italic">All Domains</div>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4">
@@ -135,7 +135,7 @@
                                                     {% if role.is_owner %}
                                                         <span class="text-gray-400 dark:text-gray-600 italic">Owner</span>
                                                     {% else %}
-                                                        <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 rounded-lg cursor-not-allowed font-medium text-sm"
+                                                        <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed font-medium text-sm"
                                                               title="You cannot edit or remove your own role">
                                                             <svg class="w-4 h-4 mr-1.5"
                                                                  fill="none"
@@ -160,14 +160,14 @@
                 <!-- Empty State -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8">
                     <div class="text-center">
-                        <svg class="mx-auto h-16 w-16 text-[#e74c3c]"
+                        <svg class="mx-auto h-16 w-16 text-gray-400"
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01m-6.938 4h13.856A2 2 0 0021 18.078V5.922A2 2 0 0018.928 4H5.072A2 2 0 003 5.922v12.156A2 2 0 005.062 20z" />
                         </svg>
                         <h3 class="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">No roles assigned yet</h3>
-                        <p class="mt-2 text-gray-500 dark:text-gray-500">Get started by adding user roles to your organization.</p>
+                        <p class="mt-2 text-gray-500 dark:text-gray-400">Get started by adding user roles to your organization.</p>
                         {% if is_org_admin or user_role_level == 0 %}
                             <div class="mt-6">
                                 <button onclick="openAddRoleModal()"
@@ -208,7 +208,7 @@
                                required
                                placeholder="user@example.com"
                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
-                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Enter the email address of the user you want to add</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter the email address of the user you want to add</p>
                     </div>
                     <!-- Role Selection -->
                     <div>
@@ -231,7 +231,7 @@
                             <option value="">All Domains</option>
                             {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                         </select>
-                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Leave empty for organization-wide access</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty for organization-wide access</p>
                     </div>
                 </div>
                 <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 rounded-b-lg">
@@ -258,7 +258,7 @@
                 <input type="hidden" id="edit_role_id" name="role_id">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Edit Role</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         User: <span id="edit_username" class="font-medium"></span>
                     </p>
                 </div>
