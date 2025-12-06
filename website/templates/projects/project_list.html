@@ -186,6 +186,34 @@
                                     <a href="{% if project.slug %}{% url 'project_detail' slug=project.slug %}{% else %}#{% endif %}"
                                        class="block group">
                                         <h2 class="text-3xl font-bold text-white mb-2 group-hover:underline">{{ project.name }}</h2>
+                                        {# Website and Slack badges - compact list view #}
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            {% if project.url %}
+                                                <a href="{{ project.url }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   aria-label="Join {{ project.name }} on Slack"
+                                                   class="inline-flex items-center bg-white/10 hover:bg-white/20 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-all duration-200 backdrop-blur-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                                        <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                                    </svg>
+                                                    Website
+                                                </a>
+                                            {% endif %}
+                                            {% if project.slack %}
+                                                <a href="{{ project.slack }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   aria-label="Join {{ project.name }} on Slack"
+                                                   class="inline-flex items-center bg-white/10 hover:bg-white/20 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-all duration-200 backdrop-blur-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+                                                    </svg>
+                                                    Slack
+                                                </a>
+                                            {% endif %}
+                                        </div>
                                         <p class="text-lg text-white/90 leading-relaxed group-hover:text-white">{{ project.description|truncatechars:200 }}</p>
                                     </a>
                                 </div>
