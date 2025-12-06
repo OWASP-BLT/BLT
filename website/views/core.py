@@ -704,6 +704,7 @@ def search(request, template="search.html"):
             # Note: When query is truthy, the page shows generic results (from if query block),
             # so we use generic counts to match what's displayed
             result_count = 0
+            # Calculate accurate result counts based on search type
             if search_type == "all":
                 result_count = (
                     organizations.count()
@@ -713,33 +714,45 @@ def search(request, template="search.html"):
                     + projects.count()
                     + repos.count()
                 )
+
             elif search_type == "issues":
                 result_count = issues.count()
+
             elif search_type == "domains":
                 result_count = domains.count()
+
             elif search_type == "users":
                 result_count = users.count()
+
             elif search_type == "labels":
-                result_count = issues.count()
+                # Count label-filtered issues
+                result_count = (
+                    Issue.objects.filter(label__icontains=query, hunt=None)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .count()
+                )
+
             elif search_type == "organizations":
                 result_count = organizations.count()
+
             elif search_type == "projects":
                 result_count = projects.count()
+
             elif search_type == "repos":
                 result_count = repos.count()
+
             elif search_type == "tags":
-                # When query is present, page shows generic results, so use generic count
+                matching_tags = Tag.objects.filter(name__icontains=query)
                 result_count = (
-                    organizations.count()
-                    + issues.count()
-                    + domains.count()
-                    + users.count()
-                    + projects.count()
-                    + repos.count()
+                    Organization.objects.filter(tags__in=matching_tags).distinct().count()
+                    + Domain.objects.filter(tags__in=matching_tags).distinct().count()
+                    + Issue.objects.filter(tags__in=matching_tags).distinct().count()
+                    + UserProfile.objects.filter(tags__in=matching_tags).distinct().count()
+                    + Repo.objects.filter(tags__in=matching_tags).distinct().count()
                 )
+
             elif search_type == "languages":
-                # When query is present, page shows generic results, so use generic repos count
-                result_count = repos.count()
+                result_count = Repo.objects.filter(primary_language__icontains=query).count()
 
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
             # Use select_for_update to prevent race conditions in concurrent requests
@@ -748,31 +761,38 @@ def search(request, template="search.html"):
                 with transaction.atomic():
                     # Check for duplicate consecutive searches within transaction
                     # Use select_for_update to lock the row and prevent concurrent modifications
-                    last_search = (
-                        SearchHistory.objects.filter(user=request.user)
-                        .select_for_update()
-                        .order_by("-timestamp")
-                        .first()
-                    )
-                    # Compare truncated query to stored query (which is also truncated)
-                    if (
-                        not last_search
-                        or last_search.query != truncated_query
-                        or last_search.search_type != search_type
-                    ):
-                        SearchHistory.objects.create(
-                            user=request.user,
-                            query=truncated_query,
-                            search_type=search_type,
-                            result_count=result_count,
+                    with transaction.atomic():
+                        # Lock entire user history, not just last row
+                        user_history_ids = list(
+                            SearchHistory.objects.filter(user=request.user)
+                            .select_for_update()
+                            .order_by("-timestamp")
+                            .values_list("id", flat=True)
                         )
 
-                        # Keep only last 50 searches per user (within same atomic block)
-                        excess_ids = list(
-                            SearchHistory.objects.filter(user=request.user)
-                            .order_by("-timestamp")
-                            .values_list("id", flat=True)[50:]
+                        last_search_id = user_history_ids[0] if user_history_ids else None
+                        last_search = (
+                            SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
                         )
+
+                        # Prevent consecutive duplicates
+                        if (
+                            not last_search
+                            or last_search.query != truncated_query
+                            or last_search.search_type != search_type
+                        ):
+                            SearchHistory.objects.create(
+                                user=request.user,
+                                query=truncated_query,
+                                search_type=search_type,
+                                result_count=result_count,
+                            )
+
+                            # CLEANUP — keep last 50
+                            if len(user_history_ids) >= 50:
+                                excess_ids = user_history_ids[50:]
+                                SearchHistory.objects.filter(id__in=excess_ids).delete()
+
                         if excess_ids:
                             SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
             except Exception:

@@ -929,7 +929,7 @@ class SearchHistoryApiView(APIView):
 
     def get(self, request, *args, **kwargs):
         """Retrieve user's search history, limited to last 50 searches."""
-        search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:50]
+        search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
         serializer = SearchHistorySerializer(search_history, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
