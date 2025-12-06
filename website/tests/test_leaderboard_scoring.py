@@ -269,7 +269,15 @@ class RecalcLeaderboardsCommandTest(TestCase):
 
     def test_command_handles_errors_gracefully(self):
         """Test command continues when individual users fail"""
-        from unittest.mock import patch
 
         with patch("website.services.leaderboard_scoring.LeaderboardScoringService.calculate_for_user") as mock_calc:
             mock_calc.side_effect = Exception("Test error")
+            out = StringIO()
+            # Command should complete without raising, despite per-user errors
+            call_command("recalc_all_leaderboards", stdout=out)
+
+            # Verify the command attempted to process users
+            self.assertGreaterEqual(mock_calc.call_count, 1)
+            # Optionally verify error was logged/handled
+            output = out.getvalue()
+            self.assertIn("completed", output.lower())
