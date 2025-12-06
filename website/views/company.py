@@ -454,6 +454,39 @@ class OrganizationDashboardAnalyticsView(View):
         """Convert label ID to human-readable name."""
         return self.labels.get(label_id, "Other")
 
+    def get_social_stats(self, organization_id):
+        """Get social media stats for the organization."""
+        try:
+            org = Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist:
+            return {
+                "has_twitter": False,
+                "has_facebook": False,
+                "has_github": False,
+                "has_linkedin": False,
+                "twitter_clicks": 0,
+                "facebook_clicks": 0,
+                "github_clicks": 0,
+                "linkedin_clicks": 0,
+                "total_clicks": 0,
+            }
+
+        social_clicks = org.social_clicks or {}
+
+        stats = {
+            "has_twitter": bool(org.twitter),
+            "has_facebook": bool(org.facebook),
+            "has_github": bool(org.github_org),
+            "has_linkedin": bool(org.linkedin),
+            "twitter_clicks": social_clicks.get("twitter", 0),
+            "facebook_clicks": social_clicks.get("facebook", 0),
+            "github_clicks": social_clicks.get("github", 0),
+            "linkedin_clicks": social_clicks.get("linkedin", 0),
+            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+        }
+
+        return stats
+
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
@@ -785,9 +818,160 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "security_incidents_summary": self.get_security_incidents_summary(id),
-            "threat_intelligence": self.get_threat_intelligence(id),
+            "social_stats": self.get_social_stats(id),
+            "network_traffic_data": self.get_network_traffic_data(id),
+            "compliance_monitoring": self.get_compliance_monitoring(id),
         }
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+
+class OrganizationSocialRedirectView(View):
+    """
+    Tracks social media clicks and redirects to the actual social media URL.
+    Usage: /organization/<org_id>/social/<platform>/
+    """
+
+    # Allowed domains for each platform to prevent open redirect attacks
+    ALLOWED_DOMAINS = {
+        "twitter": ["twitter.com", "x.com"],
+        "facebook": ["facebook.com", "fb.com"],
+        "linkedin": ["linkedin.com"],
+        "github": ["github.com"],
+    }
+
+    def get(self, request, org_id, platform):
+        # Validate platform - derive from ALLOWED_DOMAINS for single source of truth
+        valid_platforms = list(self.ALLOWED_DOMAINS.keys())
+        if platform not in valid_platforms:
+            return HttpResponseBadRequest("Invalid social platform")
+
+        # Get organization
+        try:
+            organization = Organization.objects.get(id=org_id)
+        except Organization.DoesNotExist as exc:
+            raise Http404("Organization not found") from exc
+
+        # Get the actual URL based on platform
+        url_mapping = {
+            "twitter": organization.twitter,
+            "facebook": organization.facebook,
+            "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
+            "linkedin": organization.linkedin,
+        }
+
+        target_url = url_mapping.get(platform)
+
+        if not target_url:
+            messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
+            return redirect("organization_analytics", id=org_id)
+
+        # Validate target URL domain to prevent open redirect attacks
+        parsed = urlparse(target_url)
+        hostname = (parsed.hostname or "").lower()
+        allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
+        # Validate hostname is either exact match or proper subdomain (not just string suffix)
+        if not any(
+            hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+            for domain in allowed_domains
+        ):
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
+            return redirect("organization_analytics", id=org_id)
+
+        # Increment the click counter
+        # Note: This accepts potential race conditions for performance. Click counts don't need strict accuracy.
+        # For critical counters requiring strict atomicity, use select_for_update() or database-level atomic operations.
+        with transaction.atomic():
+            # Get organization without locking
+            organization = Organization.objects.get(id=org_id)
+
+            # Get current clicks dict (handle None case)
+            clicks = organization.social_clicks or {}
+
+            # Increment the counter for this platform
+            clicks[platform] = clicks.get(platform, 0) + 1
+
+            # Update using update() which is faster than save() and locks for shorter time
+            Organization.objects.filter(id=org_id).update(social_clicks=clicks)
+
+        # Redirect to the actual social media URL
+        return redirect(target_url)
+
+
+class OrganizationProfileEditView(View):
+    """
+    View for editing organization profile information and social media links.
+    """
+
+    def _get_user_organizations(self, user):
+        """Helper method to get organizations accessible to the user."""
+        if user.is_authenticated:
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+        return []
+
+    def _get_social_stats(self, organization):
+        """Helper method to get social media click statistics for an organization."""
+        social_clicks = organization.social_clicks or {}
+        return {
+            "twitter_clicks": social_clicks.get("twitter", 0),
+            "facebook_clicks": social_clicks.get("facebook", 0),
+            "github_clicks": social_clicks.get("github", 0),
+            "linkedin_clicks": social_clicks.get("linkedin", 0),
+            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+        }
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        from website.forms import OrganizationProfileForm
+
+        organization = get_object_or_404(Organization, id=id)
+
+        # Get list of organizations for dropdown
+        organizations = self._get_user_organizations(request.user)
+
+        form = OrganizationProfileForm(instance=organization)
+
+        # Get social media click statistics
+        social_stats = self._get_social_stats(organization)
+
+        context = {
+            "organization": id,
+            "organization_obj": organization,
+            "organizations": organizations,
+            "form": form,
+            "social_stats": social_stats,
+        }
+
+        return render(request, "organization/dashboard/edit_organization_profile.html", context)
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        from website.forms import OrganizationProfileForm
+
+        organization = get_object_or_404(Organization, id=id)
+
+        form = OrganizationProfileForm(request.POST, request.FILES, instance=organization)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Organization profile updated successfully!")
+            return redirect("organization_analytics", id=id)
+        else:
+            # Get list of organizations for dropdown
+            organizations = self._get_user_organizations(request.user)
+
+            # Get social media click statistics for error case
+            social_stats = self._get_social_stats(organization)
+
+            context = {
+                "organization": id,
+                "organization_obj": organization,
+                "organizations": organizations,
+                "form": form,
+                "social_stats": social_stats,
+            }
+
+            messages.error(request, "Please correct the errors below.")
+            return render(request, "organization/dashboard/edit_organization_profile.html", context)
 
 
 class OrganizationDashboardIntegrations(View):
