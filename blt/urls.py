@@ -68,6 +68,7 @@ from website.views.company import (
     AddSlackIntegrationView,
     DomainView,
     EndBughuntView,
+    LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardIntegrations,
@@ -80,6 +81,7 @@ from website.views.company import (
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
+    TestSlackIntegrationView,
     accept_bug,
     check_domain_security_txt,
     create_job,
@@ -935,6 +937,16 @@ urlpatterns = [
         "organization/<int:id>/dashboard/add_slack_integration/",
         AddSlackIntegrationView.as_view(),
         name="add_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/test_slack_integration/",
+        TestSlackIntegrationView.as_view(),
+        name="test_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/lookup_slack_user/",
+        LookupSlackUserView.as_view(),
+        name="lookup_slack_user",
     ),
     path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
