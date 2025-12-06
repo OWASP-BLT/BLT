@@ -783,15 +783,14 @@ class HackathonLeaderboardTestCase(TestCase):
         # Check the leaderboard order and review counts
         self.assertEqual(len(reviewer_leaderboard), 2, "Reviewer leaderboard should have 2 reviewers")
 
-        # User2 should be first with 2 reviews
-        self.assertEqual(reviewer_leaderboard[0]["user"].id, self.user2.id)
-        self.assertEqual(reviewer_leaderboard[0]["count"], 2)
-        self.assertEqual(len(reviewer_leaderboard[0]["reviews"]), 2)
+        # Both users have 2 reviews - accept either order
+        user_ids = {entry["user"].id for entry in reviewer_leaderboard}
+        self.assertEqual(user_ids, {self.user2.id, self.user3.id})
 
-        # User3 should be second with 2 reviews
-        self.assertEqual(reviewer_leaderboard[1]["user"].id, self.user3.id)
-        self.assertEqual(reviewer_leaderboard[1]["count"], 2)
-        self.assertEqual(len(reviewer_leaderboard[1]["reviews"]), 2)
+        # Verify counts
+        for entry in reviewer_leaderboard:
+            self.assertEqual(entry["count"], 2)
+            self.assertEqual(len(entry["reviews"]), 2)
 
         # Test the hackathon detail view
         response = self.client.get(reverse("hackathon_detail", kwargs={"slug": review_hackathon.slug}))
