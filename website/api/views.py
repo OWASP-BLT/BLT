@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -61,6 +62,7 @@ from website.serializers import (
     RepoSerializer,
     SearchHistorySerializer,
     TagSerializer,
+    TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
@@ -69,6 +71,17 @@ from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
 # API's
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """
+    Session authentication without CSRF enforcement.
+    Used for API endpoints that need to support both browser sessions
+    and programmatic access without CSRF tokens.
+    """
+
+    def enforce_csrf(self, request):
+        return  # CSRF disabled to support API testing and non-browser clients
 
 
 class UserIssueViewSet(viewsets.ModelViewSet):
@@ -1561,3 +1574,70 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class TeamMemberLeaderboardAPIView(APIView):
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            userprofile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"detail": "User profile not found"}, status=404)
+
+        team = userprofile.team
+        if not team:
+            return Response({"detail": "User has no team"}, status=400)
+
+        # -------- Sorting --------
+        sort_param = request.GET.get("order_by", "score")
+        ordering_map = {
+            "score": "-leaderboard_score",
+            "streak": "-current_streak",
+            "quality": "-quality_score",
+        }
+        ordering = ordering_map.get(sort_param, "-leaderboard_score")
+
+        # -------- Pagination --------
+        try:
+            page = int(request.GET.get("page", 1))
+            page_size = int(request.GET.get("page_size", 20))
+        except (ValueError, TypeError):
+            return Response({"detail": "Invalid pagination parameters"}, status=400)
+
+        # Validate ranges
+        if page < 1 or page_size < 1 or page_size > 100:
+            return Response({"detail": "Invalid pagination parameters"}, status=400)
+
+        # -------- Cache Key --------
+        cache_key = f"team_lb:{team.id}:{sort_param}:{page}:{page_size}"
+        cached_value = cache.get(cache_key)
+
+        if cached_value:
+            return Response(cached_value)
+
+        # -------- Queryset --------
+        queryset = UserProfile.objects.filter(team=team).select_related("user").order_by(ordering)
+
+        total_count = queryset.count()
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        sliced_members = queryset[start:end]
+
+        serializer = TeamMemberLeaderboardSerializer(sliced_members, many=True)
+
+        response_data = {
+            "results": serializer.data,
+            "count": total_count,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total_count + page_size - 1) // page_size,
+            "ordering": sort_param,
+        }
+
+        # -------- Store in Cache for 5 minutes --------
+        cache.set(cache_key, response_data, timeout=300)
+
+        return Response(response_data)

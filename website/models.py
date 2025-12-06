@@ -32,6 +32,8 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
 
+from website.services.leaderboard_scoring import LeaderboardScoringService
+
 logger = logging.getLogger(__name__)
 
 
@@ -260,6 +262,9 @@ class Organization(models.Model):
     def is_manager(self, user):
         """Check if the user is a manager of the organization."""
         return self.managers.filter(id=user.id).exists()
+
+    def compute_team_score(self):
+        return self.managers.aggregate(total=models.Sum("userprofile__leaderboard_score"))["total"] or 0
 
     class Meta:
         ordering = ["-created"]
@@ -958,6 +963,43 @@ class UserProfile(models.Model):
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
 
+    leaderboard_score = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="Cached total leaderboard score (0-100)"
+    )
+
+    quality_score = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="Cached quality component score (0-100)"
+    )
+
+    check_in_count = models.IntegerField(default=0, help_text="Total check-ins recorded for leaderboard calculation")
+
+    last_score_update = models.DateTimeField(
+        null=True, blank=True, help_text="When the leaderboard score was last recalculated"
+    )
+
+    def calculate_leaderboard_score(self):
+        # Lock the row to prevent concurrent updates
+        with transaction.atomic():
+            locked_self = self.__class__.objects.select_for_update().get(pk=self.pk)
+
+            score, breakdown = LeaderboardScoringService.calculate_for_user(locked_self.user)
+
+            locked_self.leaderboard_score = score
+            locked_self.quality_score = breakdown["goals"]
+            locked_self.check_in_count = DailyStatusReport.objects.filter(user=locked_self.user).count()
+            locked_self.last_score_update = timezone.now()
+
+            locked_self.save(
+                update_fields=[
+                    "leaderboard_score",
+                    "quality_score",
+                    "check_in_count",
+                    "last_score_update",
+                ]
+            )
+
+        return score, breakdown
+
     def check_team_membership(self):
         return self.team is not None
 
@@ -1081,6 +1123,21 @@ class UserProfile(models.Model):
             return False
 
         return True
+
+    def compute_score_breakdown(self):
+        """
+        Return the current leaderboard breakdown for this user, staying in
+        sync with LeaderboardScoringService.
+        """
+        score, breakdown = LeaderboardScoringService.calculate_for_user(self.user)
+
+        return {
+            "frequency": breakdown.get("frequency", 0),
+            "streak": breakdown.get("streak", 0),
+            "goals": breakdown.get("goals", 0),
+            "completeness": breakdown.get("completeness", 0),
+            "total": score,
+        }
 
     def award_streak_badges(self):
         """
