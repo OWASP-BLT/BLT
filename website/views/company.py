@@ -1941,6 +1941,7 @@ class DomainView(View):
             "first_bug": first_bug,
             "last_bug": last_bug,
             "ongoing_bughunts": ongoing_bughunts,
+            "is_domain_manager": is_domain_manager,
         }
 
         return render(request, "organization/dashboard/view_domain.html", context)
@@ -2608,9 +2609,63 @@ def edit_prize(request, prize_id, organization_id):
     return JsonResponse({"success": True})
 
 
+def can_verify_issue(user, issue):
+    """
+    Helper function to check if a user can verify an issue.
+    Returns True if the user is a domain manager or organization admin.
+    """
+    if not issue.domain:
+        return False
+
+    is_domain_manager = issue.domain.managers.filter(id=user.id).exists()
+    is_org_admin = issue.domain.organization and issue.domain.organization.admin == user
+
+    return is_domain_manager or is_org_admin
+
+
+@login_required(login_url="/accounts/login")
+def verify_issue(request, issue_id):
+    """
+    Verify an issue (non-hunt issues).
+    Only domain managers and organization admins can verify issues.
+    """
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Only POST requests are allowed."}, status=405)
+
+    issue = get_object_or_404(Issue, id=issue_id)
+
+    # Check if user has permission to verify the issue
+    if not can_verify_issue(request.user, issue):
+        if not issue.domain:
+            return JsonResponse({"success": False, "error": "This issue is not associated with a domain."}, status=400)
+        return JsonResponse({"success": False, "error": "You do not have permission to verify this issue."}, status=403)
+
+    # Toggle verification status
+    issue.verified = not issue.verified
+    issue.save()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "verified": issue.verified,
+            "message": "Issue verified successfully." if issue.verified else "Issue verification removed.",
+        }
+    )
+
+
+@login_required(login_url="/accounts/login")
 def accept_bug(request, issue_id, reward_id=None):
     with transaction.atomic():
         issue = get_object_or_404(Issue, id=issue_id)
+
+        # Check if user has permission to verify the issue
+        if not issue.domain:
+            messages.error(request, "This issue is not associated with a domain.")
+            return redirect("show_bughunt", pk=issue.hunt.id)
+
+        if not can_verify_issue(request.user, issue):
+            messages.error(request, "You do not have permission to verify this issue.")
+            return redirect("show_bughunt", pk=issue.hunt.id)
 
         if reward_id == "no_reward":
             issue.verified = True
