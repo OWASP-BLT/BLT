@@ -34,6 +34,19 @@ client = WebClient(token=SLACK_TOKEN)
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
 
+def get_slack_username(workspace_client, user_id):
+    """Helper function to fetch username from Slack user ID"""
+    try:
+        user_info = workspace_client.users_info(user=user_id)
+        if user_info.get("ok") and user_info.get("user"):
+            # Return the real_name if available, otherwise use name or display_name
+            user = user_info["user"]
+            return user.get("real_name") or user.get("profile", {}).get("display_name") or user.get("name") or user_id
+    except (SlackApiError, KeyError, AttributeError) as e:
+        logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
+    return None
+
+
 def get_project_with_least_members():
     """Get the project channel name with the least members (excluding project-blt)."""
     try:
@@ -273,7 +286,6 @@ def _handle_team_join(user_id, request):
         try:
             slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
             activity.workspace_name = slack_integration.integration.organization.name
-            activity.save()
 
             # If integration exists and has welcome message
             if slack_integration.welcome_message:
@@ -300,6 +312,12 @@ def _handle_team_join(user_id, request):
                 welcome_message = _build_owasp_welcome_message(user_id)
             else:
                 return
+
+        # Fetch and save username
+        username = get_slack_username(workspace_client, user_id)
+        if username:
+            activity.username = username
+        activity.save()
 
         # Add delay to ensure user is fully joined
         time.sleep(2)  # Wait 2 seconds before sending message
@@ -374,6 +392,12 @@ def slack_commands(request):
                         "text": "This workspace is not properly configured. Please contact the workspace admin.",
                     }
                 )
+
+        # Fetch and save username
+        username = get_slack_username(workspace_client, user_id)
+        if username:
+            activity.username = username
+            activity.save()
 
         if command == "/discover":
             search_term = request.POST.get("text", "").strip()
