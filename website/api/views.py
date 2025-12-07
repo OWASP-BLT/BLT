@@ -4,6 +4,8 @@ import smtplib
 import sys
 import uuid
 from datetime import datetime
+from functools import wraps
+from typing import ClassVar
 from urllib.parse import urlparse
 
 import django
@@ -1571,6 +1573,7 @@ class FindSimilarBugsApiView(APIView):
 def debug_required(func):
     """Decorator to ensure endpoint only works in DEBUG mode"""
 
+    @wraps(func)
     def wrapper(request, *args, **kwargs):
         if not settings.DEBUG:
             return Response(
@@ -1585,7 +1588,7 @@ def debug_required(func):
 class DebugSystemStatsApiView(APIView):
     """Get current system statistics for debug panel"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [AllowAny]
 
     @debug_required
     def get(self, request, *args, **kwargs):
@@ -1633,7 +1636,7 @@ class DebugSystemStatsApiView(APIView):
 class DebugCacheInfoApiView(APIView):
     """Get cache backend information and statistics"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [AllowAny]
 
     @debug_required
     def get(self, request, *args, **kwargs):
@@ -1642,18 +1645,17 @@ class DebugCacheInfoApiView(APIView):
 
             cache_backend = settings.CACHES["default"]["BACKEND"].split(".")[-1]
 
-            # Try to get cache keys (Redis specific)
             cache_keys = []
             keys_count = 0
             try:
                 if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
                     all_keys = list(cache._cache.keys("*"))
                     keys_count = len(all_keys)
-                    cache_keys = all_keys[:10]  # First 10 keys as sample
+                    cache_keys = all_keys[:10]
             except Exception:
+                logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
                 cache_keys = []
 
-            # Calculate hit ratio if available
             hit_ratio = "N/A"
             try:
                 if hasattr(cache, "get_stats"):
@@ -1664,7 +1666,7 @@ class DebugCacheInfoApiView(APIView):
                     if total > 0:
                         hit_ratio = f"{(hits/total)*100:.2f}%"
             except Exception:
-                pass
+                logger.warning("Failed to retrieve cache hit ratio stats", exc_info=True)
 
             return Response(
                 {
@@ -1688,7 +1690,7 @@ class DebugCacheInfoApiView(APIView):
 class DebugPopulateDataApiView(APIView):
     """Populate database with test data"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
@@ -1708,7 +1710,7 @@ class DebugPopulateDataApiView(APIView):
 class DebugClearCacheApiView(APIView):
     """Clear all cache data"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
@@ -1728,7 +1730,7 @@ class DebugClearCacheApiView(APIView):
 class DebugRunMigrationsApiView(APIView):
     """Run pending database migrations"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
@@ -1747,7 +1749,7 @@ class DebugRunMigrationsApiView(APIView):
 class DebugCollectStaticApiView(APIView):
     """Collect static files"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
@@ -1766,7 +1768,7 @@ class DebugCollectStaticApiView(APIView):
 class DebugPanelStatusApiView(APIView):
     """Get overall debug panel status"""
 
-    permission_classes = [AllowAny]
+    permission_classes: ClassVar[list] = [AllowAny]
 
     @debug_required
     def get(self, request, *args, **kwargs):
