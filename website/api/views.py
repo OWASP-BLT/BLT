@@ -1593,13 +1593,40 @@ class DebugSystemStatsApiView(APIView):
     @debug_required
     def get(self, request, *args, **kwargs):
         try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT version();")
-                db_result = cursor.fetchone()
-                db_version = db_result[0] if db_result else "Unknown"
+            # Get database version with error handling
+            db_version = "Unknown"
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT version();")
+                    db_result = cursor.fetchone()
+                    if db_result and db_result[0]:
+                        db_version = db_result[0].split()[0]
+            except Exception as db_error:
+                logger.warning(f"Could not fetch database version: {db_error}")
 
-            memory = psutil.virtual_memory()
-            disk = psutil.disk_usage("/")
+            # Get system stats with error handling
+            memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            
+            try:
+                memory = psutil.virtual_memory()
+                memory_stats = {
+                    "total": f"{memory.total / (1024**3):.2f} GB",
+                    "used": f"{memory.used / (1024**3):.2f} GB",
+                    "percent": f"{memory.percent}%",
+                }
+            except Exception as mem_error:
+                logger.warning(f"Could not fetch memory stats: {mem_error}")
+
+            try:
+                disk = psutil.disk_usage("/")
+                disk_stats = {
+                    "total": f"{disk.total / (1024**3):.2f} GB",
+                    "used": f"{disk.used / (1024**3):.2f} GB",
+                    "percent": f"{disk.percent}%",
+                }
+            except Exception as disk_error:
+                logger.warning(f"Could not fetch disk stats: {disk_error}")
 
             return Response(
                 {
@@ -1610,18 +1637,10 @@ class DebugSystemStatsApiView(APIView):
                         "database": {
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
                             "name": settings.DATABASES["default"]["NAME"],
-                            "version": db_version.split()[0] if db_version else "Unknown",
+                            "version": db_version,
                         },
-                        "memory": {
-                            "total": f"{memory.total / (1024**3):.2f} GB",
-                            "used": f"{memory.used / (1024**3):.2f} GB",
-                            "percent": f"{memory.percent}%",
-                        },
-                        "disk": {
-                            "total": f"{disk.total / (1024**3):.2f} GB",
-                            "used": f"{disk.used / (1024**3):.2f} GB",
-                            "percent": f"{disk.percent}%",
-                        },
+                        "memory": memory_stats,
+                        "disk": disk_stats,
                     },
                 }
             )
