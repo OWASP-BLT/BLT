@@ -1,7 +1,9 @@
 import argparse
+import hashlib
 import json
 import logging
 import os
+import random
 import re
 import subprocess
 import tracemalloc
@@ -709,66 +711,22 @@ def search(request, template="search.html"):
         except Wallet.DoesNotExist:
             context["wallet"] = None
 
-        # Log search history for authenticated users
+        # Log search history for authenticated users - LAZY EVALUATION
+        # Only calculate result count when we're actually going to log the search
         if query:
             search_type = stype if stype else "all"
-            # Calculate total result count based on search type
-            result_count = 0
 
-            # Get result counts from context if available
-            try:
-                if search_type == "all" or not search_type:
-                    # Sum counts from all search results
-                    for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
-                        if key in context:
-                            items = context[key]
-                            if hasattr(items, "count"):
-                                result_count += items.count()
-                            elif isinstance(items, list):
-                                result_count += len(items)
-
-                elif search_type == "tags":
-                    # Sum counts for tag search
-                    for key in [
-                        "matching_organizations",
-                        "matching_domains",
-                        "matching_issues",
-                        "matching_user_profiles",
-                        "matching_repos",
-                    ]:
-                        if key in context:
-                            items = context[key]
-                            if hasattr(items, "count"):
-                                result_count += items.count()
-                            elif isinstance(items, list):
-                                result_count += len(items)
-
-                else:
-                    # Map search types to their context keys
-                    type_to_key = {
-                        "issues": "issues",
-                        "domains": "domains",
-                        "users": "users",
-                        "labels": "issues",  # labels search returns issues
-                        "organizations": "organizations",
-                        "projects": "projects",
-                        "repos": "repos",
-                        "languages": "repos",  # languages search returns repos
-                    }
-                    key = type_to_key.get(search_type, search_type)
-                    items = context.get(key)
-                    if items:
-                        if hasattr(items, "count"):
-                            result_count = items.count()
-                        elif isinstance(items, list):
-                            result_count = len(items)
-
-            except Exception as e:
-                logger.exception("Error calculating result count")
-                result_count = 0
+            # LAZY EVALUATION: Only calculate result count when we actually need it
+            # (after checking for duplicates and before creating the entry)
 
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
-            truncated_query = query[:255]  # Ensure query doesn't exceed max_length
+            if len(query) > 255:
+                # Store hash + preview for very long queries
+                query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
+                truncated_query = f"{query[:230]}... [hash:{query_hash}]"
+            else:
+                truncated_query = query
+
             try:
                 with transaction.atomic():
                     # Lock user's search history to prevent race conditions
@@ -788,6 +746,61 @@ def search(request, template="search.html"):
                         or last_search.query != truncated_query
                         or last_search.search_type != search_type
                     ):
+                        # LAZY EVALUATION: Calculate result count only now, when we need it
+                        result_count = 0
+
+                        # Get result counts from context if available
+                        try:
+                            if search_type == "all" or not search_type:
+                                # Sum counts from all search results
+                                for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
+                                    if key in context:
+                                        items = context[key]
+                                        if hasattr(items, "count"):
+                                            result_count += items.count()
+                                        elif isinstance(items, list):
+                                            result_count += len(items)
+
+                            elif search_type == "tags":
+                                # Sum counts for tag search
+                                for key in [
+                                    "matching_organizations",
+                                    "matching_domains",
+                                    "matching_issues",
+                                    "matching_user_profiles",
+                                    "matching_repos",
+                                ]:
+                                    if key in context:
+                                        items = context[key]
+                                        if hasattr(items, "count"):
+                                            result_count += items.count()
+                                        elif isinstance(items, list):
+                                            result_count += len(items)
+
+                            else:
+                                # Map search types to their context keys
+                                type_to_key = {
+                                    "issues": "issues",
+                                    "domains": "domains",
+                                    "users": "users",
+                                    "labels": "issues",  # labels search returns issues
+                                    "organizations": "organizations",
+                                    "projects": "projects",
+                                    "repos": "repos",
+                                    "languages": "repos",  # languages search returns repos
+                                }
+                                key = type_to_key.get(search_type, search_type)
+                                items = context.get(key)
+                                if items:
+                                    if hasattr(items, "count"):
+                                        result_count = items.count()
+                                    elif isinstance(items, list):
+                                        result_count = len(items)
+
+                        except Exception as e:
+                            logger.exception("Error calculating result count")
+                            result_count = 0
+
                         SearchHistory.objects.create(
                             user=request.user,
                             query=truncated_query,
@@ -796,7 +809,7 @@ def search(request, template="search.html"):
                         )
 
                         # CLEANUP — keep last 50 (exact count)
-                        if len(user_history_ids) >= 50:
+                        if len(user_history_ids) >= 50 and random.random() < 0.1:
                             # Keep first 50 (most recent) entries, delete the rest (older ones)
                             excess_ids = user_history_ids[49:]  # Actually this is CORRECT for this ordering
                             if excess_ids:
