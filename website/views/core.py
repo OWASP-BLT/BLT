@@ -574,8 +574,6 @@ def search(request, template="search.html"):
     context = {}
 
     if query:
-        # Nested conditionals to handle search types properly
-        stype = request.GET.get("type", "").strip()
         allowed_types = [
             "all",
             "issues",
