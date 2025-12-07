@@ -1602,7 +1602,7 @@ def debug_required(func):
 
         host = request.get_host()
         if not _is_local_host(host):
-            logger.warning(f"Debug endpoint accessed from non-local environment: {host}")
+            logger.warning("Debug endpoint accessed from non-local environment: %s", host)
             return Response(
                 {"success": False, "error": "This endpoint is only available in local development."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -1642,7 +1642,7 @@ class DebugSystemStatsApiView(APIView):
                         cursor.execute("SELECT VERSION();")
                         db_version = cursor.fetchone()[0]
             except Exception as e:
-                logger.error(f"Failed to get database version: {str(e)}", exc_info=True)
+                logger.error("Failed to get database version: %s", e, exc_info=True)
 
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
@@ -1656,7 +1656,7 @@ class DebugSystemStatsApiView(APIView):
                     "percent": f"{memory.percent}%",
                 }
             except Exception as mem_error:
-                logger.warning(f"Could not fetch memory stats: {mem_error}")
+                logger.warning("Could not fetch memory stats: %s", mem_error)
 
             try:
                 disk = psutil.disk_usage("/")
@@ -1666,7 +1666,7 @@ class DebugSystemStatsApiView(APIView):
                     "percent": f"{disk.percent}%",
                 }
             except Exception as disk_error:
-                logger.warning(f"Could not fetch disk stats: {disk_error}")
+                logger.warning("Could not fetch disk stats: %s", disk_error)
 
             return Response(
                 {
@@ -1685,7 +1685,7 @@ class DebugSystemStatsApiView(APIView):
                 }
             )
         except Exception as e:
-            logger.error(f"Error fetching system stats: {e}", exc_info=True)
+            logger.error("Error fetching system stats: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to fetch system statistics"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1741,7 +1741,7 @@ class DebugCacheInfoApiView(APIView):
                 }
             )
         except Exception as e:
-            logger.error(f"Error fetching cache info: {e}", exc_info=True)
+            logger.error("Error fetching cache info: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to fetch cache information"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1768,7 +1768,7 @@ class DebugPopulateDataApiView(APIView):
 
             return Response({"success": True, "message": "Test data populated successfully"})
         except Exception as e:
-            logger.error(f"Error populating test data: {e}", exc_info=True)
+            logger.error("Error populating test data: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to populate test data. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1789,7 +1789,7 @@ class DebugClearCacheApiView(APIView):
 
             return Response({"success": True, "message": "Cache cleared successfully"})
         except Exception as e:
-            logger.error(f"Error clearing cache: {e}", exc_info=True)
+            logger.error("Error clearing cache: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -1821,7 +1821,7 @@ class DebugRunMigrationsApiView(APIView):
 
             return Response({"success": True, "message": "Migrations completed successfully"})
         except Exception as e:
-            logger.error(f"Error running migrations: {e}", exc_info=True)
+            logger.error("Error running migrations: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to run migrations. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1847,7 +1847,7 @@ class DebugCollectStaticApiView(APIView):
 
             return Response({"success": True, "message": "Static files collected successfully"})
         except Exception as e:
-            logger.error(f"Error collecting static files: {e}", exc_info=True)
+            logger.error("Error collecting static files: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to collect static files. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
