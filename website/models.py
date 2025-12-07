@@ -1595,10 +1595,11 @@ class Activity(models.Model):
         ("update", "Updated"),
         ("delete", "Deleted"),
         ("signup", "Signed Up"),
+        ("connected", "Connected"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPES)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
