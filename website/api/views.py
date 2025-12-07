@@ -1626,7 +1626,7 @@ class TeamMemberLeaderboardAPIView(APIView):
         if page < 1 or page_size < 1 or page_size > 100:
             return Response({"detail": "Invalid pagination parameters"}, status=400)
 
-        #  Cache Key
+        # Cache Key
         cache_key = f"team_lb:{team.id}:{sort_param}:{page}:{page_size}"
         cached_value = cache.get(cache_key)
 
@@ -1657,6 +1657,8 @@ class TeamMemberLeaderboardAPIView(APIView):
         cache.set(cache_key, response_data, timeout=300)
 
         return Response(response_data)
+
+
 def _is_local_host(host: str, db_name: str | None = None) -> bool:
     """
     Determine if a request host represents a local environment.
