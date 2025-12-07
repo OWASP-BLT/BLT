@@ -576,9 +576,12 @@ def search(request, template="search.html"):
         if not stype or stype == "all":
             # Search ALL models
             organizations = Organization.objects.filter(name__icontains=query)
-            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )
+            if request.user.is_authenticated:
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )
+            else:
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
             domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
             users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
             projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
@@ -631,6 +634,7 @@ def search(request, template="search.html"):
 
         elif stype == "labels":
             context = {
+                "request": request,
                 "query": query,
                 "type": stype,
                 "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
@@ -718,24 +722,6 @@ def search(request, template="search.html"):
                             elif isinstance(items, list):
                                 result_count += len(items)
 
-                elif search_type in [
-                    "issues",
-                    "domains",
-                    "users",
-                    "labels",
-                    "organizations",
-                    "projects",
-                    "repos",
-                    "languages",
-                ]:
-                    # Get count for specific search type
-                    items = context.get(search_type)
-                    if items:
-                        if hasattr(items, "count"):
-                            result_count = items.count()
-                        elif isinstance(items, list):
-                            result_count = len(items)
-
                 elif search_type == "tags":
                     # Sum counts for tag search
                     for key in [
@@ -751,8 +737,29 @@ def search(request, template="search.html"):
                                 result_count += items.count()
                             elif isinstance(items, list):
                                 result_count += len(items)
+
+                else:
+                    # Map search types to their context keys
+                    type_to_key = {
+                        "issues": "issues",
+                        "domains": "domains",
+                        "users": "users",
+                        "labels": "issues",  # labels search returns issues
+                        "organizations": "organizations",
+                        "projects": "projects",
+                        "repos": "repos",
+                        "languages": "repos",  # languages search returns repos
+                    }
+                    key = type_to_key.get(search_type, search_type)
+                    items = context.get(key)
+                    if items:
+                        if hasattr(items, "count"):
+                            result_count = items.count()
+                        elif isinstance(items, list):
+                            result_count = len(items)
+
             except Exception as e:
-                logger.error(f"Error calculating result count: {e}")
+                logger.error("Error calculating result count")
                 result_count = 0
 
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
@@ -790,12 +797,12 @@ def search(request, template="search.html"):
                             if excess_ids:
                                 SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
 
-            except Exception as e:
+            except (DatabaseError, IntegrityError) as e:
                 # Log the error but don't break search
-                logger.error(
+                logger.exception(
                     f"Error saving search history - user_id: {request.user.id}, "
-                    f"truncated_query: {truncated_query[:50] if truncated_query else None}, "
-                    f"search_type: {search_type}, error: {str(e)}"
+                    f"truncated_query: {truncated_query[:50] if truncated_query else None!r}, "
+                    f"search_type: {search_type}"
                 )
 
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
