@@ -142,7 +142,7 @@ def add_github_comment_and_labels(
     Returns True if both comment and labels were added successfully, False otherwise.
     """
     # Create comment with payment details
-    comment_body = f"""**Bounty Paid**
+    comment_body = f"""🎉 **Bounty Paid!** 🎉
 
 💰 **Amount:** ${bounty_amount / 100:.2f}
 👤 **Recipient:** @{contributor_username}
