@@ -575,7 +575,21 @@ def search(request, template="search.html"):
 
     if query:
         # Nested conditionals to handle search types properly
-        if not stype or stype == "all":
+        stype = request.GET.get("type", "").strip()
+        allowed_types = [
+            "all",
+            "issues",
+            "domains",
+            "users",
+            "labels",
+            "organizations",
+            "projects",
+            "repos",
+            "tags",
+            "languages",
+        ]
+        if not stype or stype not in allowed_types:
+            stype = "all"
             # Search ALL models
             organizations = Organization.objects.filter(name__icontains=query)
             if request.user.is_authenticated:
@@ -839,7 +853,7 @@ def search(request, template="search.html"):
                 # Log the error but don't break search
                 logger.exception(
                     f"Error saving search history - user_id: {request.user.id}, "
-                    f"truncated_query: {truncated_query[:50] if truncated_query else None!r}, "
+                    f"truncated_query: {(truncated_query[:50] if truncated_query else None)!r}, "
                     f"search_type: {search_type}"
                 )
 
@@ -1621,11 +1635,10 @@ def home(request):
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
-    latest_bugs = (
-        Issue.objects.filter(hunt=None)
-        .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-        .order_by("-created")[:2]
-    )
+    if request.user.is_authenticated:
+        latest_bugs = Issue.objects.filter(hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    else:
+        latest_bugs = Issue.objects.filter(hunt=None).exclude(is_hidden=True)
 
     # Get 2 most recent active hackathons ordered by start time (descending)
     recent_hackathons_raw = (
