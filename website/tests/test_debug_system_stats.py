@@ -302,7 +302,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
+    @override_settings(DEBUG=True, ALLOWED_HOSTS=["*"])
     def test_debug_endpoint_allows_127_prefix(self):
         """Test that debug endpoints allow 127.x.x.x IPs"""
         self.reload_urls()
