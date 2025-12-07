@@ -1225,7 +1225,6 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
-    
     # Duplicate Bug Checking API
     path(
         "duplicate-check-example/",

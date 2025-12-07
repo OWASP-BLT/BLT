@@ -11,6 +11,7 @@ USE_OPENAI = bool(OPENAI_API_KEY)
 # Import OpenAI only when key exists
 if USE_OPENAI:
     from openai import OpenAI
+
     client = OpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -126,10 +127,7 @@ def fallback_blt_bot(message: str) -> str:
         )
 
     if "dashboard" in msg or "org" in msg:
-        return (
-            "BLT dashboards show organization metrics, contributor stats, issue activity, "
-            "and hunt performance."
-        )
+        return "BLT dashboards show organization metrics, contributor stats, issue activity, " "and hunt performance."
 
     if "repo" in msg or "github" in msg:
         return (
@@ -143,7 +141,4 @@ def fallback_blt_bot(message: str) -> str:
             "leaderboards, and contributions. Use /help for commands."
         )
 
-    return (
-        "Ask me something related to the OWASP BLT project. Use /help to see commands "
-        "and example questions."
-    )
+    return "Ask me something related to the OWASP BLT project. Use /help to see commands " "and example questions."
