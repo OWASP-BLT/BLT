@@ -138,10 +138,11 @@ Before you start contributing, you'll need to set up your development environmen
 
 4. Access the application at [http://localhost:8000](http://localhost:8000)
 
-#### Populating Test Data for Local Development
+### Populating Test Data for Local Development
 For faster local development and testing, the project provides a built-in Django management command to automatically populate the database with realistic sample data.
 
-Generate Sample Data
+#### Generate Sample Data
+
 Run the following command after migrations:
 
    ```bash
@@ -162,7 +163,7 @@ This command automatically creates:
 - Badges
 - Tags
 
-## Additional Seed Commands
+### Additional Seed Commands
 
 In addition to the main sample data generator, the project provides specialized seed commands for security labs and OWASP adventures.
 
@@ -174,7 +175,7 @@ This command populates the platform with predefined OWASP BLT adventure challeng
    python manage.py seed_adventures
    ```
 
-#### 2. Seed Security Lab Challenges
+### 2. Seed Security Lab Challenges
 This command seeds vulnerable security labs used for hands-on security practice, including:
 - IDOR
 - XSS
@@ -186,12 +187,12 @@ This command seeds vulnerable security labs used for hands-on security practice,
    python manage.py seed_all_security_lab
    ```
 
-##  Important Notes
+### Important Notes
 This command clears existing data before creating new records.
 It is intended strictly for local development and testing.
 Do not run this in production environments.
 
-Full Local Setup Example
+#### Full Local Setup Example
    ```bash
    python manage.py migrate
    python manage.py generate_sample_data
