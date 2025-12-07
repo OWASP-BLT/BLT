@@ -602,13 +602,20 @@ def search(request, template="search.html"):
             }
 
         elif stype == "issues":
+            if request.user.is_authenticated:
+                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )[0:20]
+            else:
+                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
+                    0:20
+                ]
+
             context = {
                 "request": request,
                 "query": query,
                 "type": stype,
-                "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[0:20],
+                "issues": issues_qs,
             }
 
         elif stype == "domains":
@@ -677,7 +684,14 @@ def search(request, template="search.html"):
             tags = Tag.objects.filter(name__icontains=query)
             matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
             matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-            matching_issues = Issue.objects.filter(tags__in=tags).distinct()
+            if request.user.is_authenticated:
+                matching_issues = (
+                    Issue.objects.filter(tags__in=tags)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .distinct()
+                )
+            else:
+                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()
             matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
             matching_repos = Repo.objects.filter(tags__in=tags).distinct()
             for org in matching_organizations:
@@ -811,7 +825,8 @@ def search(request, template="search.html"):
 
                         # CLEANUP — keep last 50 (exact count)
                         if len(user_history_ids) >= limit:
-                            excess_ids = user_history_ids[limit:]
+                            # Keep newest limit-1 old entries + new entry = limit total
+                            excess_ids = user_history_ids[limit - 1 :]
                             if excess_ids:
                                 SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
 
