@@ -366,9 +366,10 @@ class BaconSubmissionSlackNotificationTests(TestCase):
         # Create user with markdown characters in username
         user_with_markdown = User.objects.create_user(
             username="user_with_*bold*_underscore_`code`",
+            email="markdown@example.com",
             password="testpass123",
         )
-        self.client.login(email=user_with_markdown.email, password="testpass123")
+        self.client.force_login(user_with_markdown)
 
         mock_client = MagicMock()
         mock_webclient_class.return_value = mock_client
