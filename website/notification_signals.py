@@ -149,6 +149,8 @@ def verify_github_linkback_on_profile_update(sender, instance, **kwargs):
     Only runs when github_url field is actually updated to avoid unnecessary API calls.
     """
     # Skip if no github_url or reward already given
+    # NOTE: Only one reward is given per user, even if they change their GitHub profile.
+    # Users can update their GitHub URL, but they won't receive duplicate rewards.
     if not instance.github_url or instance.github_linking_reward_given:
         return
 

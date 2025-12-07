@@ -55,11 +55,28 @@ def check_blt_link_in_text(text):
     """
     Check if text contains a link to BLT website.
 
+    Accepts the following formats (case-insensitive):
+    - blt.owasp.org
+    - owaspblt.org
+    - github.com/OWASP-BLT/BLT
+
     Args:
         text: Text content to check
 
     Returns:
         True if BLT link found, False otherwise
+
+    Examples:
+        >>> check_blt_link_in_text("Check out blt.owasp.org!")
+        True
+        >>> check_blt_link_in_text("Visit https://blt.owasp.org")
+        True
+        >>> check_blt_link_in_text("See owaspblt.org for details")
+        True
+        >>> check_blt_link_in_text("Project: github.com/OWASP-BLT/BLT")
+        True
+        >>> check_blt_link_in_text("No BLT link here")
+        False
     """
     if not text:
         return False
@@ -113,7 +130,13 @@ def verify_github_linkback(github_username):
         response = requests.get(profile_url, headers=headers, timeout=10)
 
         if response.status_code != 200:
-            logger.error(f"Failed to fetch GitHub profile for {github_username}: {response.status_code}")
+            if response.status_code == 403 and "X-RateLimit-Remaining" in response.headers:
+                logger.warning(
+                    f"GitHub API rate limit exceeded for {github_username}. "
+                    f"Resets at: {response.headers.get('X-RateLimit-Reset')}"
+                )
+            else:
+                logger.error(f"Failed to fetch GitHub profile for {github_username}: {response.status_code}")
             return {"verified": False, "found_in": None}
 
         profile_data = response.json()
@@ -226,6 +249,13 @@ def award_github_linking_tokens(user, github_username=None):
             logger.info(f"Awarded {token_amount} BACON tokens to {user.username} for GitHub linking")
             return True
 
+    except UserProfile.DoesNotExist as e:
+        logger.error(f"User profile not found for {user.username}: {e}")
+        return False
     except Exception as e:
-        logger.exception(f"Error awarding GitHub linking tokens to {user.username}: {e}")
+        # Log with full traceback for unexpected errors
+        logger.exception(f"Unexpected error awarding GitHub linking tokens to {user.username}: {e}")
+        # Re-raise to alert about programming errors during development
+        if settings.DEBUG:
+            raise
         return False
