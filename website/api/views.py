@@ -1585,17 +1585,11 @@ def debug_required(func):
             )
 
         # Additional check: ensure we're in a local/development environment
-        is_local = any(
-            [
-                "localhost" in request.get_host().lower(),
-                "127.0.0.1" in request.get_host(),
-                request.get_host().startswith("127."),
-                request.get_host() == "testserver",  # Django test client
-            ]
-        )
+        host = request.get_host()
+        is_local = "localhost" in host.lower() or "127.0.0.1" in host or host.startswith("127.") or host == "testserver"
 
         if not is_local:
-            logger.warning(f"Debug endpoint accessed from non-local environment: {request.get_host()}")
+            logger.warning(f"Debug endpoint accessed from non-local environment: {host}")
             return Response(
                 {"success": False, "error": "This endpoint is only available in local development."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -1618,12 +1612,13 @@ class DebugSystemStatsApiView(APIView):
             db_name = settings.DATABASES["default"]["NAME"]
 
             # Redact database name in non-local environments
-            is_local = any(
-                [
-                    "localhost" in settings.ALLOWED_HOSTS,
-                    "127.0.0.1" in settings.ALLOWED_HOSTS,
-                    db_name == ":memory:",  # SQLite in-memory
-                ]
+            # Use same logic as debug_required decorator for consistency
+            is_local = (
+                "localhost" in request.get_host().lower()
+                or "127.0.0.1" in request.get_host()
+                or request.get_host().startswith("127.")
+                or request.get_host() == "testserver"
+                or db_name == ":memory:",  # SQLite in-memory
             )
 
             if not is_local:
