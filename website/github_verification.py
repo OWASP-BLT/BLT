@@ -155,7 +155,7 @@ def verify_github_linkback(github_username):
         return {"verified": False, "found_in": None}
 
 
-def award_github_linking_tokens(user):
+def award_github_linking_tokens(user, github_username=None):
     """
     Award bacon tokens to user for linking their GitHub profile.
 
@@ -164,6 +164,7 @@ def award_github_linking_tokens(user):
 
     Args:
         user: Django User object
+        github_username: GitHub username (optional, extracted from profile if not provided)
 
     Returns:
         bool: True if tokens were awarded, False otherwise
@@ -180,6 +181,10 @@ def award_github_linking_tokens(user):
                 logger.info(f"User {user.username} already received GitHub linking reward")
                 return False
 
+            # Extract GitHub username if not provided
+            if not github_username:
+                github_username = extract_github_username(user_profile.github_url)
+
             # Create a contribution record for this action
             contribution = Contribution.objects.create(
                 user=user,
@@ -187,7 +192,7 @@ def award_github_linking_tokens(user):
                 description=f"User {user.username} added a link to BLT on their GitHub profile, increasing platform visibility.",
                 contribution_type="github_link",
                 repository=None,
-                github_username=extract_github_username(user_profile.github_url),
+                github_username=github_username,
                 created=timezone.now(),
                 status="closed",
             )
@@ -221,6 +226,6 @@ def award_github_linking_tokens(user):
             logger.info(f"Awarded {token_amount} BACON tokens to {user.username} for GitHub linking")
             return True
 
-    except (ValueError, KeyError) as e:
-        logger.error(f"Error awarding GitHub linking tokens to {user.username}: {e}")
+    except Exception as e:
+        logger.exception(f"Error awarding GitHub linking tokens to {user.username}: {e}")
         return False

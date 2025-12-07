@@ -140,7 +140,7 @@ def notify_on_payment_processed(sender, instance, created, update_fields, **kwar
 
 
 @receiver(post_save, sender=UserProfile)
-def verify_github_linkback_on_profile_update(sender, instance, created, **kwargs):
+def verify_github_linkback_on_profile_update(sender, instance, **kwargs):
     """
     Signal to verify GitHub linkback and award tokens when user adds/updates GitHub URL.
 
@@ -182,8 +182,8 @@ def verify_github_linkback_on_profile_update(sender, instance, created, **kwargs
                 f"(found in: {verification_result['found_in']})"
             )
 
-            # Award tokens
-            success = award_github_linking_tokens(instance.user)
+            # Award tokens (pass github_username to avoid redundant extraction)
+            success = award_github_linking_tokens(instance.user, github_username)
 
             if success:
                 # Create notification for user
