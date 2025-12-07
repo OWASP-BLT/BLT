@@ -721,9 +721,10 @@ def search(request, template="search.html"):
 
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
             if len(query) > 255:
-                # Store hash + preview for very long queries
+                # Store hash + preview for very long queries, ensuring we stay within max_length (255)
                 query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
-                truncated_query = f"{query[:230]}... [hash:{query_hash}]"
+                # 228 + 27 ("... [hash:" + 16 hex chars + "]") = 255
+                truncated_query = f"{query[:228]}... [hash:{query_hash}]"
             else:
                 truncated_query = query
 
