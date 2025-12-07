@@ -2182,7 +2182,7 @@ def run_management_command(request):
         try:
             # Only allow running commands from the website app and exclude initsuperuser
             app_name = get_commands().get(command)
-            if app_name != "website" or command == "initsuperuser":
+            if app_name != "website" or command in ["initsuperuser", "generate_sample_data"]:
                 msg = f"Command {command} is not allowed to run from the web interface"
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": False, "error": msg})
