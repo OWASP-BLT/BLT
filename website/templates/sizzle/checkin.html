@@ -8,12 +8,14 @@
         {% include "includes/sidenav.html" %}
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
-                <h1 class="text-4xl font-semibold text-gray-800 dark:text-gray-200">Check-In Reports</h1>
+                <h1 class="text-4xl font-semibold text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">
+                    Check-In Reports
+                </h1>
                 <div class="flex space-x-2">
                     {% if user.is_authenticated %}
                         <!-- Daily Status Report button -->
                         <a href="{% url 'sizzle_daily_log' %}"
-                           class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                           class="bg-red-500 hover:bg-red-600 text-white py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300">
                             Daily Status Report
                         </a>
                     {% endif %}
@@ -47,22 +49,32 @@
                             </thead>
                             <tbody>
                                 {% for item in data %}
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.username }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.previous_work }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.next_plan }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.blockers }}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ item.username }}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ item.previous_work }}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ item.next_plan }}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ item.blockers }}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
                                             {% if item.goal_accomplished %}
                                                 ✅ Yes
                                             {% else %}
                                                 ❌ No
                                             {% endif %}
                                         </td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ item.current_mood }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ item.current_mood }}
+                                        </td>
                                         <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
                                             <a href="{% url 'checkIN_detail' item.id %}"
-                                               class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
+                                               class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded">View</a>
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -76,7 +88,9 @@
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden mb-8">
                         <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500"
                              id="report-title">Loading data...</div>
-                        <div class="p-4 text-gray-600 dark:text-gray-400">Please wait while data is loaded.</div>
+                        <div class="p-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                            Please wait while data is loaded.
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -121,7 +135,7 @@ function initializeDaterangepicker(retryCount = 0) {
                                     <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400 dark:border-gray-500">
                                         No Data
                                     </div>
-                                    <div class="p-4 text-gray-600 dark:text-gray-400">No check-in reports found for the selected range.</div>
+                                    <div class="p-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">No check-in reports found for the selected range.</div>
                                 </div>
                             `);
                             return;
@@ -144,13 +158,13 @@ function initializeDaterangepicker(retryCount = 0) {
                             dayReports.forEach(item => {
                                 const detailUrl = "/check-in/" + item.id + "/"; // Construct URL directly
                                 rows += `
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.username}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.previous_work}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.next_plan}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">${item.blockers}</td>
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">${item.username}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">${item.previous_work}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">${item.next_plan}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">${item.blockers}</td>
                                         <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
-                                            <a href="${detailUrl}" class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
+                                            <a href="${detailUrl}" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded">View</a>
                                         </td>
                                     </tr>
                                 `;
