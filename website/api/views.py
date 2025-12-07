@@ -1589,8 +1589,8 @@ def debug_required(func):
             [
                 "localhost" in request.get_host().lower(),
                 "127.0.0.1" in request.get_host(),
-                os.getenv("DYNO") is None,  # Not on Heroku
-                os.getenv("RENDER") is None,  # Not on Render
+                request.get_host().startswith("127."),
+                request.get_host() == "testserver",  # Django test client
             ]
         )
 
@@ -1615,7 +1615,6 @@ class DebugSystemStatsApiView(APIView):
     def get(self, request, *args, **kwargs):
         try:
             # Get database version with error handling
-            db_version = "Unknown"
             db_name = settings.DATABASES["default"]["NAME"]
 
             # Redact database name in non-local environments
@@ -1630,6 +1629,8 @@ class DebugSystemStatsApiView(APIView):
             if not is_local:
                 db_name = "[REDACTED]"
 
+            # Get database version with error handling
+            db_version = "Unknown"
             try:
                 with connection.cursor() as cursor:
                     if connection.vendor == "postgresql":
@@ -1641,11 +1642,8 @@ class DebugSystemStatsApiView(APIView):
                     elif connection.vendor == "mysql":
                         cursor.execute("SELECT VERSION();")
                         db_version = cursor.fetchone()[0]
-                    else:
-                        db_version = "Unknown"
             except Exception as e:
                 logger.error(f"Failed to get database version: {str(e)}", exc_info=True)
-                db_version = "Unknown"
 
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}

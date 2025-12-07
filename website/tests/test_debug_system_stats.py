@@ -1,5 +1,6 @@
 from importlib import reload
 from unittest.mock import patch
+import os
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -27,7 +28,7 @@ class DebugPanelAPITest(TestCase):
     def test_get_system_stats_success(self):
         """Test getting system stats in debug mode"""
         self.reload_urls()
-        self.client.force_authenticate(self.user)  # authenticate
+        self.client.force_authenticate(self.user)
         response = self.client.get(reverse("api_debug_system_stats"))
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -48,7 +49,7 @@ class DebugPanelAPITest(TestCase):
     def test_get_cache_info_success(self):
         """Test getting cache information"""
         self.reload_urls()
-        self.client.force_authenticate(self.user)  # authenticate
+        self.client.force_authenticate(self.user)
         response = self.client.get(reverse("api_debug_cache_info"))
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -211,7 +212,6 @@ class DebugPanelAPITest(TestCase):
     def test_collect_static_handles_errors(self, mock_views_call_command, mock_mgmt_call_command):
         """Test that collectstatic errors are handled gracefully"""
         self.reload_urls()
-        # Ensure that whichever call_command reference the view uses will raise
         mock_views_call_command.side_effect = Exception("Collectstatic failed")
         mock_mgmt_call_command.side_effect = Exception("Collectstatic failed")
 
@@ -229,7 +229,7 @@ class DebugPanelAPITest(TestCase):
     def test_get_debug_panel_status(self):
         """Test getting debug panel status"""
         self.reload_urls()
-        self.client.force_authenticate(self.user)  # authenticate
+        self.client.force_authenticate(self.user)
         response = self.client.get(reverse("api_debug_panel_status"))
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -256,8 +256,6 @@ class DebugPanelAPITest(TestCase):
     def test_all_endpoints_require_debug_mode(self):
         """Test that all debug endpoints are blocked in production"""
         self.reload_urls()
-        # In production (DEBUG=False), debug URLs are not registered at all
-        # So we expect NoReverseMatch exceptions when trying to reverse them
         endpoints = [
             "api_debug_system_stats",
             "api_debug_cache_info",
@@ -272,3 +270,114 @@ class DebugPanelAPITest(TestCase):
             with self.subTest(endpoint=endpoint):
                 with self.assertRaises(NoReverseMatch):
                     reverse(endpoint)
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_blocks_non_local_host(self):
+        """Test that debug endpoints block access from non-local hosts even when DEBUG=True"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='example.com'
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.assertIn("local development", data["error"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_allows_localhost(self):
+        """Test that debug endpoints allow localhost access"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='localhost:8000'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_allows_127_0_0_1(self):
+        """Test that debug endpoints allow 127.0.0.1 access"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='127.0.0.1:8000'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_allows_127_prefix(self):
+        """Test that debug endpoints allow 127.x.x.x IPs"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='127.0.1.1:8000'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_allows_testserver(self):
+        """Test that debug endpoints allow access from the Django test server"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='testserver'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_blocks_external_ip(self):
+        """Test that debug endpoints block access from external IPs"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='192.168.1.100:8000'
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        data = response.json()
+        self.assertFalse(data["success"])
+        self.assertIn("local development", data["error"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_blocks_remote_host(self):
+        """Test that debug endpoints block access from remote hosts"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='myapp.herokuapp.com'
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        data = response.json()
+        self.assertFalse(data["success"])
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_requires_authentication(self):
+        """Test that debug endpoints require authentication even locally"""
+        self.reload_urls()
+        # Don't authenticate
+        response = self.client.get(
+            reverse("api_debug_system_stats"),
+            HTTP_HOST='localhost:8000'
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
