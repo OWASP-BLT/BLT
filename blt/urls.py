@@ -37,6 +37,7 @@ from website.api.views import (
     OrganizationViewSet,
     ProjectViewSet,
     PublicJobListViewSet,
+    SearchHistoryApiView,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -66,6 +67,7 @@ from website.views.company import (
     AddSlackIntegrationView,
     DomainView,
     EndBughuntView,
+    LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardIntegrations,
@@ -78,6 +80,7 @@ from website.views.company import (
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
+    TestSlackIntegrationView,
     accept_bug,
     check_domain_security_txt,
     create_job,
@@ -935,6 +938,16 @@ urlpatterns = [
         name="add_slack_integration",
     ),
     path(
+        "organization/<int:id>/dashboard/test_slack_integration/",
+        TestSlackIntegrationView.as_view(),
+        name="test_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/lookup_slack_user/",
+        LookupSlackUserView.as_view(),
+        name="lookup_slack_user",
+    ),
+    path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
         AddDomainView.as_view(),
         name="edit_domain",
@@ -1221,6 +1234,7 @@ urlpatterns = [
     ),
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
+    path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
 ]
 
 if settings.DEBUG:

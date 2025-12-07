@@ -755,18 +755,92 @@ class ThreadAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+def backfill_slack_usernames(modeladmin, request, queryset):
+    """
+    Admin action to backfill username field for SlackBotActivity records.
+    Fetches usernames from Slack API for records that have user_id but no username.
+    """
+    import logging
+    import os
+
+    from slack_sdk.web import WebClient
+
+    logger = logging.getLogger(__name__)
+
+    # Import here to avoid circular imports
+    from website.views.slack_handlers import get_slack_username
+
+    # Filter to only records that have user_id but no username
+    records_to_update = queryset.filter(user_id__isnull=False).exclude(user_id="").filter(username__isnull=True)
+
+    if not records_to_update.exists():
+        modeladmin.message_user(request, "No records found with user_id but missing username.")
+        return
+
+    updated_count = 0
+    failed_count = 0
+    skipped_count = 0
+
+    # Get Slack tokens
+    SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+
+    for activity in records_to_update:
+        workspace_client = None
+
+        try:
+            # Try to get workspace-specific client
+            slack_integration = SlackIntegration.objects.get(workspace_name=activity.workspace_id)
+            workspace_client = WebClient(token=slack_integration.bot_access_token)
+        except SlackIntegration.DoesNotExist:
+            # Use default OWASP token for OWASP workspace
+            if activity.workspace_id == "T04T40NHX" and SLACK_TOKEN:
+                workspace_client = WebClient(token=SLACK_TOKEN)
+            else:
+                logger.warning(
+                    f"No Slack integration found for workspace {activity.workspace_id} "
+                    f"and not OWASP workspace. Skipping activity {activity.id}"
+                )
+                skipped_count += 1
+                continue
+
+        if workspace_client:
+            try:
+                username = get_slack_username(workspace_client, activity.user_id)
+                if username:
+                    activity.username = username
+                    activity.save(update_fields=["username"])
+                    updated_count += 1
+                else:
+                    logger.warning(f"Could not fetch username for user_id {activity.user_id} in activity {activity.id}")
+                    failed_count += 1
+            except Exception as e:
+                logger.error(
+                    f"Error fetching username for activity {activity.id}, user_id {activity.user_id}: {str(e)}",
+                    exc_info=True,
+                )
+                failed_count += 1
+
+    message = f"Backfill complete: {updated_count} updated, {failed_count} failed, {skipped_count} skipped."
+    modeladmin.message_user(request, message)
+
+
+backfill_slack_usernames.short_description = "Backfill username from Slack API"
+
+
 class SlackBotActivityAdmin(admin.ModelAdmin):
     list_display = (
         "workspace_name",
         "activity_type",
         "user_id",
+        "username",
         "success",
         "created",
     )
     list_filter = ("activity_type", "success", "workspace_name")
-    search_fields = ("workspace_name", "user_id", "error_message")
+    search_fields = ("workspace_name", "user_id", "username", "error_message")
     readonly_fields = ("created",)
     ordering = ("-created",)
+    actions = [backfill_slack_usernames]
 
 
 class RoomAdmin(admin.ModelAdmin):

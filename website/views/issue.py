@@ -1955,22 +1955,22 @@ def issue_count(request):
 def delete_content_comment(request):
     # Get content_type from POST for POST requests or GET for GET requests
     content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
-    
+
     # Validate that content_type is provided
     if not content_type:
         raise Http404("Content type is required")
-    
+
     try:
         content_pk = int(request.POST.get("content_pk"))
     except (ValueError, TypeError):
         raise Http404("Invalid content ID")
-    
+
     # Validate and get content_type_obj
     try:
         content_type_obj = ContentType.objects.get(model=content_type)
     except ContentType.DoesNotExist:
         raise Http404("Invalid content type")
-    
+
     # Get the actual content object
     try:
         content = content_type_obj.get_object_for_this_type(pk=content_pk)
@@ -1994,23 +1994,23 @@ def delete_content_comment(request):
 def update_content_comment(request, content_pk, comment_pk):
     # Get content_type from POST for POST requests or GET for GET requests
     content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
-    
+
     # Validate that content_type is provided
     if not content_type:
         raise Http404("Content type is required")
-    
+
     # Validate and get content_type_obj
     try:
         content_type_obj = ContentType.objects.get(model=content_type)
     except ContentType.DoesNotExist:
         raise Http404("Invalid content type")
-    
+
     # Get the actual content object
     try:
         content = content_type_obj.get_object_for_this_type(pk=content_pk)
     except Exception:
         raise Http404("Content does not exist")
-    
+
     comment = Comment.objects.filter(pk=comment_pk).first()
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -2030,17 +2030,17 @@ def update_content_comment(request, content_pk, comment_pk):
 def comment_on_content(request, content_pk):
     # Get content_type from POST for POST requests or GET for GET requests
     content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
-    
+
     # Validate that content_type is provided
     if not content_type:
         raise Http404("Content type is required")
-    
+
     # Validate and get content_type_obj
     try:
         content_type_obj = ContentType.objects.get(model=content_type)
     except ContentType.DoesNotExist:
         raise Http404("Invalid content type")
-    
+
     # Get the actual content object
     try:
         content = content_type_obj.get_object_for_this_type(pk=content_pk)
