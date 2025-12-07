@@ -276,7 +276,7 @@ def complete_staking_challenge(request, challenge_id):
                 if success and entry.status == "won":
                     messages.success(
                         request,
-                        f"🎉 Congratulations! You won {entry.pool.name} and earned {entry.actual_reward} BACON!",
+                        f"Congratulations! You won {entry.pool.name} and earned {entry.actual_reward} BACON!",
                     )
                 elif success:
                     messages.info(
