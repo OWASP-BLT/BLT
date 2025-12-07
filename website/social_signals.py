@@ -56,10 +56,6 @@ def reward_social_account_connection(request, sociallogin, **kwargs):
             f"provider={provider}, is_existing={sociallogin.is_existing}"
         )
 
-        # Set cache flag for middleware to show success message
-        message_cache_key = f"show_bacon_message_{user.id}"
-        cache.set(message_cache_key, {"provider": provider, "is_signup": not sociallogin.is_existing}, 60)
-
         # Security: Validate provider is in allowed list
         reward_amount = SOCIAL_CONNECTION_REWARDS.get(provider, 0)
         if reward_amount <= 0:
@@ -96,6 +92,10 @@ def reward_social_account_connection(request, sociallogin, **kwargs):
         except Exception as e:
             logger.error(f"Failed to award BACON tokens to user {user.username}: {str(e)}", exc_info=True)
             return
+
+        # Set cache flag for middleware to show success message (only after successful reward)
+        message_cache_key = f"show_bacon_message_{user.id}"
+        cache.set(message_cache_key, {"provider": provider, "is_signup": not sociallogin.is_existing}, 60)
 
         # Create activity for audit trail (non-critical)
         try:
