@@ -23,41 +23,50 @@
                     Discover our vision for the future of web security. Track our progress and upcoming features as we continue to evolve OWASP BLT.
                 </p>
             </div>
-            <!-- Milestone List Section -->
+            <!-- GitHub Projects Section -->
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 mb-10">
                 <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-8 flex items-center gap-3">
-                    <i class="fas fa-tasks text-[#e74c3c]"></i>
-                    Development Milestones {{ milestones|length }}
+                    <i class="fab fa-github text-[#e74c3c]"></i>
+                    Development Projects
                 </h2>
                 <div class="space-y-6">
-                    {% for milestone in milestones %}
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:-translate-y-1">
-                            <div class="flex flex-wrap items-center gap-4 mb-4">
-                                <div class="flex items-center gap-2">
-                                    <i class="{{ milestone.icon }} text-[#e74c3c]"></i>
-                                    <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ milestone.title }}</h3>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    {% for tag in milestone.tags %}
-                                        <span class="px-3 py-1 bg-{{ tag.color }} text-white rounded-full text-sm font-semibold">{{ tag.label }}</span>
-                                    {% endfor %}
-                                </div>
+                    <p class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                        We track all our development milestones, features, and progress on GitHub Projects. 
+                        This gives you real-time visibility into what we're working on and what's coming next.
+                    </p>
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-center py-8">
+                        <a href="{{ github_projects_url }}" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           class="group inline-flex items-center gap-3 px-8 py-4 bg-[#e74c3c] text-white text-lg font-semibold rounded-xl shadow-lg hover:bg-[#c0392b] transition-all transform hover:scale-105">
+                            <i class="fab fa-github text-2xl"></i>
+                            <span>View Our GitHub Projects</span>
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#e74c3c]/10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-project-diagram text-2xl text-[#e74c3c]"></i>
                             </div>
-                            {% if milestone.description %}
-                                <p class="text-gray-700 dark:text-gray-300 mb-4">{{ milestone.description }}</p>
-                            {% endif %}
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                    <i class="{{ milestone.progress_icon }} text-[#e74c3c]"></i>
-                                </div>
-                                <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                    <div class="h-full bg-[#e74c3c] rounded-full"
-                                         style="width: {{ milestone.progress }}"></div>
-                                </div>
-                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ milestone.progress }}</span>
-                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">Active Projects</h3>
+                            <p class="text-gray-700 dark:text-gray-300">View all ongoing development initiatives</p>
                         </div>
-                    {% endfor %}
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#e74c3c]/10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-chart-line text-2xl text-[#e74c3c]"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">Real-Time Progress</h3>
+                            <p class="text-gray-700 dark:text-gray-300">Track milestones and completion status</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-[#e74c3c]/10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-users text-2xl text-[#e74c3c]"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">Community Driven</h3>
+                            <p class="text-gray-700 dark:text-gray-300">See how you can contribute to projects</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- Community Input Section -->
