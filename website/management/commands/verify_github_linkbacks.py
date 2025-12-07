@@ -20,13 +20,14 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
 
         # Find users with GitHub URLs who haven't received the reward yet
-        profiles = (
+        # Evaluate queryset once to avoid two separate database queries
+        profiles = list(
             UserProfile.objects.filter(github_url__isnull=False, github_linking_reward_given=False)
             .exclude(github_url="")
             .select_related("user")
         )
 
-        self.stdout.write(f"Found {profiles.count()} profiles to check")
+        self.stdout.write(f"Found {len(profiles)} profiles to check")
 
         verified_count = 0
         awarded_count = 0
@@ -61,7 +62,7 @@ class Command(BaseCommand):
             time.sleep(1)
 
         self.stdout.write("\n" + "=" * 50)
-        self.stdout.write(f"Verified: {verified_count}/{profiles.count()}")
+        self.stdout.write(f"Verified: {verified_count}/{len(profiles)}")
         if not dry_run:
             self.stdout.write(self.style.SUCCESS(f"Awarded tokens to: {awarded_count} users"))
         else:

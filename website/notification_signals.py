@@ -147,6 +147,7 @@ def verify_github_linkback_on_profile_update(sender, instance, **kwargs):
     Uses transaction.on_commit() to defer verification until after the profile
     save transaction commits, avoiding nested transaction issues.
     Only runs when github_url field is actually updated to avoid unnecessary API calls.
+    Rate limited to prevent abuse and API exhaustion.
     """
     # Skip if no github_url or reward already given
     # NOTE: Only one reward is given per user, even if they change their GitHub profile.
@@ -157,6 +158,14 @@ def verify_github_linkback_on_profile_update(sender, instance, **kwargs):
     # Only verify if github_url was updated (not on every profile save)
     update_fields = kwargs.get("update_fields")
     if update_fields is not None and "github_url" not in update_fields:
+        return
+
+    # Rate limiting: prevent repeated GitHub API calls (5 minutes cooldown)
+    from django.core.cache import cache
+
+    rate_key = f"github_verify_rate_{instance.user.id}"
+    if not cache.add(rate_key, True, timeout=300):  # 5 minutes
+        logger.debug(f"Rate limit: Skipping GitHub verification for {instance.user.username}")
         return
 
     def perform_verification():
@@ -185,20 +194,11 @@ def verify_github_linkback_on_profile_update(sender, instance, **kwargs):
             )
 
             # Award tokens (pass github_username to avoid redundant extraction)
+            # Notification is created inside award_github_linking_tokens for atomicity
             success = award_github_linking_tokens(instance.user, github_username)
 
             if success:
-                # Create notification for user
-                message = (
-                    "Congratulations! You've earned 5 BACON tokens for adding a link to BLT "
-                    "on your GitHub profile. Thank you for supporting BLT!"
-                )
-                Notification.objects.create(
-                    user=instance.user,
-                    message=message,
-                    notification_type="reward",
-                    link=f"/profile/{instance.user.username}",
-                )
+                logger.info(f"Successfully awarded tokens and created notification for {instance.user.username}")
         else:
             logger.debug(
                 f"GitHub linkback not verified for {instance.user.username}. "

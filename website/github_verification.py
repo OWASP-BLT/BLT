@@ -246,6 +246,19 @@ def award_github_linking_tokens(user, github_username=None):
                 ]
             )
 
+            # Create notification inside transaction for atomicity
+            from website.models import Notification
+
+            Notification.objects.create(
+                user=user,
+                message=(
+                    "Congratulations! You've earned 5 BACON tokens for adding a link to BLT "
+                    "on your GitHub profile. Thank you for supporting BLT!"
+                ),
+                notification_type="reward",
+                link=f"/profile/{user.username}",
+            )
+
             logger.info(f"Awarded {token_amount} BACON tokens to {user.username} for GitHub linking")
             return True
 

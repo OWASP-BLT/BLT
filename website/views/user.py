@@ -62,38 +62,8 @@ from website.models import (
 logger = logging.getLogger(__name__)
 
 
-def extract_github_username(github_url):
-    """
-    Extract GitHub username from a GitHub URL for avatar display.
-
-    Args:
-        github_url (str): GitHub URL like 'https://github.com/username' or 'https://github.com/apps/dependabot'
-
-    Returns:
-        str or None: The username part of the URL, or None if invalid/empty
-    """
-    if not github_url or not isinstance(github_url, str):
-        return None
-
-    # Strip trailing slashes and whitespace
-    github_url = github_url.strip().rstrip("/")  # Clean URL format
-
-    # Remove query parameters and fragments if present
-    github_url = github_url.split("?")[0].split("#")[0]
-
-    # Ensure URL contains at least one slash
-    if "/" not in github_url:
-        return None
-
-    # Split on "/" and get the last segment
-    segments = github_url.split("/")
-    username = segments[-1] if segments else None
-
-    # Return username only if it's non-empty and not domain parts or protocol prefixes
-    if username and username not in ["github.com", "www.github.com", "www", "http:", "https:"]:
-        return username
-
-    return None
+# Import GitHub username extraction from centralized module
+from website.github_verification import extract_github_username
 
 
 @receiver(user_signed_up)
@@ -165,10 +135,8 @@ def profile_edit(request):
             existing_email = EmailAddress.objects.filter(user=request.user, email=new_email).first()
             if existing_email:
                 if existing_email.verified:
-                    # Save the profile anyway (for GitHub URL changes, etc.)
-                    form.save()
+                    # Don't save form, just show error to avoid confusing mixed state
                     form.add_error("email", "You already have this email verified. Please set it as primary instead.")
-                    messages.warning(request, "Profile updated, but email was not changed.")
                     return render(request, "profile_edit.html", {"form": form})
 
             if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
