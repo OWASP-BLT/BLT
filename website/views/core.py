@@ -32,7 +32,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
-from django.db import connection, models
+from django.db import connection, models, transaction
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -65,6 +65,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SearchHistory,
     SlackBotActivity,
     Tag,
     User,
@@ -353,7 +354,16 @@ def status_page(request):
             for proc in psutil.process_iter(["pid", "name", "memory_info"]):
                 try:
                     proc_info = proc.info
-                    proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                    mem = proc_info.get("memory_info")
+                    if mem is None:
+                        proc_info["memory_info"] = {"rss": 0, "vms": 0}
+                    elif hasattr(mem, "_asdict"):
+                        proc_info["memory_info"] = mem._asdict()
+                    else:
+                        proc_info["memory_info"] = {
+                            "rss": getattr(mem, "rss", 0),
+                            "vms": getattr(mem, "vms", 0),
+                        }
                     status_data["top_memory_consumers"].append(proc_info)
                 except (
                     psutil.NoSuchProcess,
@@ -687,6 +697,115 @@ def search(request, template="search.html"):
         }
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
+        # Log search history for authenticated users
+        if query:
+            search_type = stype if stype else "all"
+            # Calculate total result count based on search type
+            # Note: When query is truthy, the page shows generic results (from if query block),
+            # so we use generic counts to match what's displayed
+            result_count = 0
+            # Calculate accurate result counts based on search type
+            if search_type == "all":
+                result_count = (
+                    organizations.count()
+                    + issues.count()
+                    + domains.count()
+                    + users.count()
+                    + projects.count()
+                    + repos.count()
+                )
+
+            elif search_type == "issues":
+                result_count = issues.count()
+
+            elif search_type == "domains":
+                result_count = domains.count()
+
+            elif search_type == "users":
+                result_count = users.count()
+
+            elif search_type == "labels":
+                # Count label-filtered issues
+                result_count = (
+                    Issue.objects.filter(label__icontains=query, hunt=None)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .count()
+                )
+
+            elif search_type == "organizations":
+                result_count = organizations.count()
+
+            elif search_type == "projects":
+                result_count = projects.count()
+
+            elif search_type == "repos":
+                result_count = repos.count()
+
+            elif search_type == "tags":
+                matching_tags = Tag.objects.filter(name__icontains=query)
+                result_count = (
+                    Organization.objects.filter(tags__in=matching_tags).distinct().count()
+                    + Domain.objects.filter(tags__in=matching_tags).distinct().count()
+                    + Issue.objects.filter(tags__in=matching_tags).distinct().count()
+                    + UserProfile.objects.filter(tags__in=matching_tags).distinct().count()
+                    + Repo.objects.filter(tags__in=matching_tags).distinct().count()
+                )
+
+            elif search_type == "languages":
+                result_count = Repo.objects.filter(primary_language__icontains=query).count()
+
+            # Atomic operation: check for duplicates, create entry, and cleanup excess entries
+            # Use select_for_update to prevent race conditions in concurrent requests
+            truncated_query = query[:255]  # Ensure query doesn't exceed max_length
+            try:
+                with transaction.atomic():
+                    # Check for duplicate consecutive searches within transaction
+                    # Use select_for_update to lock the row and prevent concurrent modifications
+                    with transaction.atomic():
+                        # Lock entire user history, not just last row
+                        user_history_ids = list(
+                            SearchHistory.objects.filter(user=request.user)
+                            .select_for_update()
+                            .order_by("-timestamp")
+                            .values_list("id", flat=True)
+                        )
+
+                        last_search_id = user_history_ids[0] if user_history_ids else None
+                        last_search = (
+                            SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
+                        )
+
+                        # Prevent consecutive duplicates
+                        if (
+                            not last_search
+                            or last_search.query != truncated_query
+                            or last_search.search_type != search_type
+                        ):
+                            SearchHistory.objects.create(
+                                user=request.user,
+                                query=truncated_query,
+                                search_type=search_type,
+                                result_count=result_count,
+                            )
+
+                            # CLEANUP — keep last 50
+                            excess_ids = []  # Initialize to empty list
+                            if len(user_history_ids) >= 50:
+                                excess_ids = user_history_ids[49:]
+                                SearchHistory.objects.filter(id__in=excess_ids).delete()
+
+                            if excess_ids:
+                                SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
+            except Exception:
+                # Log the error but don't re-raise - allow search to proceed normally
+                # Transaction will be rolled back automatically by Django
+                logger.exception(
+                    f"Error saving search history - user_id: {request.user.id}, "
+                    f"truncated_query: {truncated_query[:50] if truncated_query else None}, "
+                    f"search_type: {search_type}"
+                )
+
+        context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
     return render(request, template, context)
 
 
