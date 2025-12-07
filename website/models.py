@@ -900,7 +900,7 @@ def _move_image(name, storage, is_hidden):
 
 
 @receiver(post_save, sender=Issue)
-def update_issue_image_access(_sender, instance, **_kwargs):
+def update_issue_image_access(sender, instance, **kwargs):
     """
     Keep Issue.screenshot and related IssueScreenshot.image in the right place
     when the Issue is saved (especially when is_hidden changes).
@@ -914,7 +914,6 @@ def update_issue_image_access(_sender, instance, **_kwargs):
         current_name = instance.screenshot.name or ""
         new_name = _move_image(current_name, instance.screenshot.storage, instance.is_hidden)
         if new_name and new_name != current_name:
-            # Update DB without re-triggering field saves
             Issue.objects.filter(pk=instance.pk).update(screenshot=new_name)
 
     # 2) Move all IssueScreenshot images for this issue
@@ -925,7 +924,6 @@ def update_issue_image_access(_sender, instance, **_kwargs):
         current_name = screenshot.image.name or ""
         new_name = _move_image(current_name, screenshot.image.storage, instance.is_hidden)
         if new_name and new_name != current_name:
-            # Update DB without calling screenshot.save() (avoids extra logic)
             IssueScreenshot.objects.filter(pk=screenshot.pk).update(image=new_name)
 
 
