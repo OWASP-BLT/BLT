@@ -144,10 +144,10 @@ def add_github_comment_and_labels(
     # Create comment with payment details
     comment_body = f"""**Bounty Paid**
 
-**Amount:** ${bounty_amount / 100:.2f}
-**Recipient:** @{contributor_username}
-**PR:** #{pr_number}
-**Transaction ID:** {transaction_id}
+💰 **Amount:** ${bounty_amount / 100:.2f}
+👤 **Recipient:** @{contributor_username}
+🔗 **PR:** #{pr_number}
+📋 **Transaction ID:** {transaction_id}
 
 Thank you for your contribution to this project!"""
 
