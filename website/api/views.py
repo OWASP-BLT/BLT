@@ -1867,9 +1867,7 @@ class DebugPanelStatusApiView(APIView):
                 "data": {
                     "debug_mode": settings.DEBUG,
                     "testing_mode": getattr(settings, "TESTING", False),
-                    "environment": "local"
-                    if ("localhost" in request.get_host().lower() or "127.0.0.1" in request.get_host())
-                    else "unknown",
+                    "environment": "local" if _is_local_host(request.get_host()) else "unknown",
                 },
             }
         )
