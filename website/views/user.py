@@ -63,7 +63,6 @@ logger = logging.getLogger(__name__)
 
 
 # Import GitHub username extraction from centralized module
-from website.github_verification import extract_github_username
 
 
 @receiver(user_signed_up)
