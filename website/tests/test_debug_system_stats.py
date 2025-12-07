@@ -1,6 +1,5 @@
 from importlib import reload
 from unittest.mock import patch
-import os
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -277,10 +276,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='example.com'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="example.com")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
@@ -292,10 +288,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='localhost:8000'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="localhost:8000")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
@@ -306,10 +299,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='127.0.0.1:8000'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="127.0.0.1:8000")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
@@ -320,10 +310,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='127.0.1.1:8000'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="127.0.1.1:8000")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
@@ -334,10 +321,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='testserver'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="testserver")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
@@ -348,10 +332,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='192.168.1.100:8000'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="192.168.1.100:8000")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
@@ -363,10 +344,7 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='myapp.herokuapp.com'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="myapp.herokuapp.com")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
@@ -376,8 +354,5 @@ class DebugPanelAPITest(TestCase):
         """Test that debug endpoints require authentication even locally"""
         self.reload_urls()
         # Don't authenticate
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST='localhost:8000'
-        )
+        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="localhost:8000")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
