@@ -1585,8 +1585,16 @@ def debug_required(func):
             )
 
         # Additional check: ensure we're in a local/development environment
-        host = request.get_host()
-        is_local = "localhost" in host.lower() or "127.0.0.1" in host or host.startswith("127.") or host == "testserver"
+        host = request.get_host().lower()
+        # Remove port if present (e.g., "localhost:8000" -> "localhost")
+        host_without_port = host.split(":")[0]
+
+        is_local = (
+            "localhost" in host
+            or host_without_port == "127.0.0.1"
+            or host_without_port.startswith("127.")
+            or host == "testserver"
+        )
 
         if not is_local:
             logger.warning(f"Debug endpoint accessed from non-local environment: {host}")
@@ -1613,12 +1621,15 @@ class DebugSystemStatsApiView(APIView):
 
             # Redact database name in non-local environments
             # Use same logic as debug_required decorator for consistency
+            host = request.get_host().lower()
+            host_without_port = host.split(":")[0]
+
             is_local = (
-                "localhost" in request.get_host().lower()
-                or "127.0.0.1" in request.get_host()
-                or request.get_host().startswith("127.")
-                or request.get_host() == "testserver"
-                or db_name == ":memory:",  # SQLite in-memory
+                "localhost" in host
+                or host_without_port == "127.0.0.1"
+                or host_without_port.startswith("127.")
+                or host == "testserver"
+                or db_name == ":memory:"  # SQLite in-memory
             )
 
             if not is_local:
