@@ -40,11 +40,10 @@ COPY pyproject.toml poetry.lock* ./
 # Clean any existing httpx installation and update pip
 RUN pip uninstall -y httpx || true
 RUN pip install --upgrade pip
-# Install dependencies with Poetry - with retry and fallback
-RUN poetry install --no-root --no-interaction --no-ansi || \
-    (echo "Poetry install failed, installing core dependencies only..." && \
-     pip install Django==5.2.9 psycopg2-binary==2.9.10 pillow==10.4.0 opencv-python-headless==4.10.0.84 && \
-      echo "Core dependencies installed, continuing...")
+# Install dependencies with Poetry - fail fast if dependencies can't be installed
+RUN set -e; \
+    poetry install --no-root --no-interaction --no-ansi || \
+    (echo "ERROR: Poetry install failed. Please fix dependency configuration." >&2 && exit 1)
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
