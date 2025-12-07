@@ -2765,11 +2765,161 @@ class MapView(ListView):
         return context
 
 
+def fetch_github_projects():
+    """
+    Fetch GitHub Projects data for OWASP-BLT organization using GraphQL API.
+    Returns a list of projects with their metadata and progress.
+    """
+    github_token = getattr(settings, "GITHUB_TOKEN", None)
+    if not github_token or github_token == "blank":
+        logging.warning("GitHub token not configured, cannot fetch projects")
+        return []
+
+    # GraphQL query to fetch organization projects
+    query = """
+    query($org: String!, $first: Int!) {
+      organization(login: $org) {
+        projectsV2(first: $first, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          nodes {
+            id
+            title
+            shortDescription
+            url
+            public
+            closed
+            updatedAt
+            items(first: 100) {
+              totalCount
+              nodes {
+                fieldValues(first: 10) {
+                  nodes {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                      field {
+                        ... on ProjectV2SingleSelectField {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={"query": query, "variables": {"org": "OWASP-BLT", "first": 50}},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logging.error(f"GraphQL error fetching projects: {data['errors']}")
+            return []
+
+        projects_data = data.get("data", {}).get("organization", {}).get("projectsV2", {}).get("nodes", [])
+
+        # Process projects to calculate progress and format data
+        projects = []
+        for project in projects_data:
+            # Only show public, non-closed projects
+            if not project.get("public", False) or project.get("closed", False):
+                continue
+
+            total_items = project.get("items", {}).get("totalCount", 0)
+            if total_items == 0:
+                continue
+
+            # Calculate done items by checking Status field
+            done_count = 0
+            items = project.get("items", {}).get("nodes", [])
+            for item in items:
+                field_values = item.get("fieldValues", {}).get("nodes", [])
+                for field_value in field_values:
+                    field_name = field_value.get("field", {}).get("name", "")
+                    status_name = field_value.get("name", "")
+                    if field_name == "Status" and status_name in ["Done", "Completed", "Closed"]:
+                        done_count += 1
+                        break
+
+            progress_percentage = int((done_count / total_items) * 100) if total_items > 0 else 0
+
+            # Format updated date
+            updated_at = project.get("updatedAt", "")
+            try:
+                updated_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(pytz.UTC)
+                delta = now - updated_date
+
+                if delta.days == 0:
+                    last_updated = "today"
+                elif delta.days == 1:
+                    last_updated = "yesterday"
+                elif delta.days < 7:
+                    last_updated = f"{delta.days} days ago"
+                elif delta.days < 30:
+                    weeks = delta.days // 7
+                    last_updated = f"{weeks} week{'s' if weeks > 1 else ''} ago"
+                else:
+                    months = delta.days // 30
+                    last_updated = f"{months} month{'s' if months > 1 else ''} ago"
+            except Exception:
+                last_updated = "recently"
+
+            projects.append(
+                {
+                    "title": project.get("title", "Untitled Project"),
+                    "description": project.get("shortDescription", ""),
+                    "url": project.get("url", ""),
+                    "progress": progress_percentage,
+                    "total_items": total_items,
+                    "done_items": done_count,
+                    "open_items": total_items - done_count,
+                    "last_updated": last_updated,
+                }
+            )
+
+        logging.info(f"Fetched {len(projects)} GitHub projects")
+        return projects
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch GitHub projects: {e}")
+        return []
+    except Exception as e:
+        logging.error(f"Unexpected error fetching GitHub projects: {e}")
+        return []
+
+
 class RoadmapView(TemplateView):
     template_name = "roadmap.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Try to get projects from cache first
+        cache_key = "github_projects_data"
+        projects = cache.get(cache_key)
+
+        if projects is None:
+            # Fetch from GitHub API
+            projects = fetch_github_projects()
+            # Cache for 30 minutes
+            cache.set(cache_key, projects, 1800)
+
+        context["projects"] = projects
         context["github_projects_url"] = "https://github.com/orgs/OWASP-BLT/projects?query=is%3Aopen"
         return context
 
