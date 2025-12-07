@@ -35,14 +35,14 @@ class IPRestrictMiddleware:
         """
         Retrieve blocked IP addresses from cache or database.
         """
-        blocked_addresses = Blocked.objects.values_list("address", flat=True)
+        blocked_addresses = Blocked.objects.filter(address__isnull=False).values_list("address", flat=True)
         return set(self.get_cached_data("blocked_ips", blocked_addresses))
 
     def blocked_ip_network(self):
         """
         Retrieve blocked IP networks from cache or database.
         """
-        blocked_network = Blocked.objects.values_list("ip_network", flat=True)
+        blocked_network = Blocked.objects.filter(ip_network__isnull=False).values_list("ip_network", flat=True)
         blocked_ip_network = []
 
         for range_str in self.get_cached_data("blocked_ip_network", blocked_network):
@@ -59,9 +59,9 @@ class IPRestrictMiddleware:
         """
         Retrieve blocked user agents from cache or database.
         """
-        blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
-        # Filter out None values
-        blocked_user_agents = [agent for agent in blocked_user_agents if agent is not None]
+        blocked_user_agents = Blocked.objects.filter(user_agent_string__isnull=False).values_list(
+            "user_agent_string", flat=True
+        )
         return set(self.get_cached_data("blocked_agents", blocked_user_agents))
 
     def ip_in_ips(self, ip, blocked_ips):
@@ -91,9 +91,7 @@ class IPRestrictMiddleware:
             return False
 
         user_agent_str = str(user_agent).strip().lower()
-        return any(
-            blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents if blocked_agent is not None
-        )
+        return any(blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents)
 
     async def increment_block_count_async(self, ip=None, network=None, user_agent=None):
         """
@@ -121,8 +119,10 @@ class IPRestrictMiddleware:
                     # Find matching user agents and update them
                     matching_agents = [
                         agent
-                        for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                        if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
+                        for agent in Blocked.objects.filter(user_agent_string__isnull=False).values_list(
+                            "user_agent_string", flat=True
+                        )
+                        if user_agent is not None and agent.lower() in user_agent.lower()
                     ]
                     if matching_agents:
                         Blocked.objects.filter(user_agent_string__in=matching_agents).update(
