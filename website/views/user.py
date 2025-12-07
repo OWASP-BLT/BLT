@@ -165,7 +165,10 @@ def profile_edit(request):
             existing_email = EmailAddress.objects.filter(user=request.user, email=new_email).first()
             if existing_email:
                 if existing_email.verified:
+                    # Save the profile anyway (for GitHub URL changes, etc.)
+                    form.save()
                     form.add_error("email", "You already have this email verified. Please set it as primary instead.")
+                    messages.warning(request, "Profile updated, but email was not changed.")
                     return render(request, "profile_edit.html", {"form": form})
 
             if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():

@@ -943,6 +943,19 @@ class UserProfile(models.Model):
     x_username = models.CharField(max_length=50, blank=True, null=True)
     linkedin_url = models.URLField(blank=True, null=True)
     github_url = models.URLField(blank=True, null=True)
+    github_linking_reward_given = models.BooleanField(
+        default=False,
+        help_text="Whether user has received bacon tokens for linking GitHub profile",
+    )
+    github_linkback_verified = models.BooleanField(
+        default=False,
+        help_text="Whether GitHub profile has been verified to link back to BLT",
+    )
+    github_linkback_verified_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="When the GitHub linkback was verified",
+    )
     website_url = models.URLField(blank=True, null=True)
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
@@ -1443,6 +1456,7 @@ class Contribution(models.Model):
         ("issue_assigned", "Issue Assigned"),
         ("pull_request", "Pull Request"),
         ("comment", "Comment"),
+        ("github_link", "GitHub Profile Link"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)

@@ -4,7 +4,17 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
-from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
+from website.models import (
+    GitHubIssue,
+    JoinRequest,
+    Kudos,
+    Notification,
+    Points,
+    Post,
+    User,
+    UserBadge,
+    UserProfile,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -136,3 +146,62 @@ def notify_on_payment_processed(sender, instance, created, update_fields, **kwar
 
                 Notification.objects.create(user=admin, message=message, notification_type="alert", link=link)
                 logger.info(f"Created payment notification for admin: {admin.username}")
+
+
+@receiver(post_save, sender=UserProfile)
+def verify_github_linkback_on_profile_update(sender, instance, created, **kwargs):
+    """
+    Signal to verify GitHub linkback and award tokens when user adds/updates GitHub URL.
+    """
+    logger.info(f"GitHub linkback signal fired for user {instance.user.username}")
+    logger.info(f"GitHub URL: {instance.github_url}, Reward given: {instance.github_linking_reward_given}")
+    
+    # Skip if no github_url or reward already given
+    if not instance.github_url or instance.github_linking_reward_given:
+        logger.info(f"Skipping GitHub verification - URL: {instance.github_url}, Already rewarded: {instance.github_linking_reward_given}")
+        return
+    
+    # Import here to avoid circular imports
+    from website.github_verification import (
+        award_github_linking_tokens,
+        extract_github_username,
+        verify_github_linkback,
+    )
+    
+    logger.info(f"Starting GitHub verification for {instance.user.username}")
+    
+    # Extract username from GitHub URL
+    github_username = extract_github_username(instance.github_url)
+    if not github_username:
+        logger.warning(f"Invalid GitHub URL for user {instance.user.username}: {instance.github_url}")
+        return
+    
+    # Verify linkback
+    verification_result = verify_github_linkback(github_username)
+    
+    if verification_result["verified"]:
+        logger.info(
+            f"GitHub linkback verified for {instance.user.username} "
+            f"(found in: {verification_result['found_in']})"
+        )
+        
+        # Award tokens
+        success = award_github_linking_tokens(instance.user)
+        
+        if success:
+            # Create notification for user
+            message = (
+                f"Congratulations! You've earned 5 BACON tokens for linking your BLT profile "
+                f"from your GitHub account. Thank you for supporting BLT!"
+            )
+            Notification.objects.create(
+                user=instance.user,
+                message=message,
+                notification_type="reward",
+                link=f"/profile/{instance.user.username}",
+            )
+    else:
+        logger.info(
+            f"GitHub linkback not verified for {instance.user.username}. "
+            f"User needs to add BLT link to their GitHub profile."
+        )
