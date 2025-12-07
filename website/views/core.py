@@ -3,7 +3,6 @@ import hashlib
 import json
 import logging
 import os
-import random
 import re
 import subprocess
 import tracemalloc
@@ -80,6 +79,7 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
+limit = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -810,9 +810,8 @@ def search(request, template="search.html"):
                         )
 
                         # CLEANUP — keep last 50 (exact count)
-                        if len(user_history_ids) >= 50 and random.random() < 0.1:
-                            # Keep first 50 (most recent) entries, delete the rest (older ones)
-                            excess_ids = user_history_ids[49:]  # Actually this is CORRECT for this ordering
+                        if len(user_history_ids) >= limit:
+                            excess_ids = user_history_ids[limit:]
                             if excess_ids:
                                 SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
 
