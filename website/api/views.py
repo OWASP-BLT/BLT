@@ -291,7 +291,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         # 2) Legacy single `Issue.screenshot`:
         #    only prepend it for *public* issues, never for hidden ones
         if issue.screenshot and not issue.is_hidden:
-            screenshot_urls = [request.build_absolute_uri(issue.screenshot.url)] + screenshot_urls
+            screenshot_urls = [request.build_absolute_uri(issue.screenshot.url), *screenshot_urls]
 
         # 3) Upvote / flag info
         is_upvoted = False
@@ -305,7 +305,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         tag_serializer = TagSerializer(issue.tags.all(), many=True)
         tags = tag_serializer.data
 
-        # 5) Issue data – pass request in context as well
+        # 5) Issue data - pass request in context as well
         issue_data = IssueSerializer(issue, context={"request": request}).data
 
         # 6) Final response structure
@@ -369,7 +369,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                 msg = result or "Invalid image"
                 return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ---- Now it’s safe to create the Issue ----
+        # ---- Now it's safe to create the Issue ----
         data = super().create(request, *args, **kwargs).data
         issue = Issue.objects.filter(id=data["id"]).first()
 

@@ -875,7 +875,7 @@ def _move_image(name, storage, is_hidden):
         with storage.open(name, "rb") as f:
             new_name = target_storage.save(f"{target_prefix}/{filename}", f)
     except Exception as e:
-        logger.error(
+        logger.exception(
             "Failed to move screenshot '%s' from storage '%s' to '%s': %s",
             name,
             getattr(storage, "bucket_name", repr(storage)),
@@ -900,7 +900,7 @@ def _move_image(name, storage, is_hidden):
 
 
 @receiver(post_save, sender=Issue)
-def update_issue_image_access(sender, instance, **kwargs):
+def update_issue_image_access(_sender, instance, **_kwargs):
     """
     Keep Issue.screenshot and related IssueScreenshot.image in the right place
     when the Issue is saved (especially when is_hidden changes).
