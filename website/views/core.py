@@ -2926,22 +2926,29 @@ def fetch_github_projects():
                         done_count += 1
                         break
 
-            # Calculate progress percentage
-            # If we have fewer items than total, we're sampling - extrapolate the percentage
+            # Calculate progress percentage and estimated item counts
+            # If we have fewer items than total, we're sampling - extrapolate the counts
             if items_checked > 0:
                 if items_checked < total_items:
-                    # Sampling - calculate percentage from sample
+                    # Sampling - calculate percentage from sample and extrapolate counts
                     sample_percentage = (done_count / items_checked) * 100
                     progress_percentage = int(sample_percentage)
+                    # Extrapolate done/open counts based on the sample ratio
+                    estimated_done = int((done_count / items_checked) * total_items)
+                    estimated_open = total_items - estimated_done
                     logging.debug(
                         f"Project '{project.get('title')}': Sampled {items_checked}/{total_items} items, "
-                        f"{done_count} done, estimated {progress_percentage}% complete"
+                        f"{done_count} done in sample, estimated {estimated_done} done total ({progress_percentage}%)"
                     )
                 else:
-                    # We have all items
+                    # We have all items - use actual counts
                     progress_percentage = int((done_count / total_items) * 100)
+                    estimated_done = done_count
+                    estimated_open = total_items - done_count
             else:
                 progress_percentage = 0
+                estimated_done = 0
+                estimated_open = total_items
 
             # Format updated date
             updated_at = project.get("updatedAt", "")
@@ -2972,8 +2979,8 @@ def fetch_github_projects():
                     "url": project.get("url", ""),
                     "progress": progress_percentage,
                     "total_items": total_items,
-                    "done_items": done_count,
-                    "open_items": total_items - done_count,
+                    "done_items": estimated_done,
+                    "open_items": estimated_open,
                     "last_updated": last_updated,
                 }
             )
