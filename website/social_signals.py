@@ -33,7 +33,7 @@ REWARD_COOLDOWN = 60  # 1 minute cooldown between rewards for same user/provider
 
 
 @receiver(social_account_added)
-def reward_social_account_connection(request, sociallogin, **kwargs):
+def reward_social_account_connection(_request, sociallogin, **_kwargs):
     """
     Award BACON tokens when an existing user connects a social account.
 
@@ -47,7 +47,7 @@ def reward_social_account_connection(request, sociallogin, **kwargs):
     - Logs all actions for audit trail
     - Handles errors gracefully without exposing internals
     """
-    try:
+    try:  # noqa: BLE001
         provider = sociallogin.account.provider
         user = sociallogin.user
 
@@ -72,25 +72,29 @@ def reward_social_account_connection(request, sociallogin, **kwargs):
             logger.warning(f"User {user.username} has no ID yet, skipping reward")
             return
 
-        # Security: Rate limiting - prevent duplicate rewards
+        # Security: Rate limiting - prevent duplicate rewards (atomic operation)
         cache_key = f"bacon_reward_{user.id}_{provider}"
-        if cache.get(cache_key):
+        if not cache.add(cache_key, True, REWARD_COOLDOWN):
             logger.warning(
-                f"Rate limit: User {user.username} already received reward for {provider} " f"within cooldown period"
+                "Rate limit: User %s already received reward for %s within cooldown period",
+                user.username,
+                provider,
             )
             return
 
-        # Set rate limit cache
-        cache.set(cache_key, True, REWARD_COOLDOWN)
-
-        logger.info(f"Attempting to award {reward_amount} BACON to user: {user.username}")
+        logger.info("Attempting to award %s BACON to user: %s", reward_amount, user.username)
 
         # Award BACON tokens
-        try:
+        try:  # noqa: BLE001
             awarded = giveBacon(user, amt=reward_amount)
-            logger.info(f"Successfully awarded {awarded} BACON tokens to user: {user.username}")
+            logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
         except Exception as e:
-            logger.error(f"Failed to award BACON tokens to user {user.username}: {str(e)}", exc_info=True)
+            logger.error(
+                "Failed to award BACON tokens to user %s: %s",
+                user.username,
+                e,
+                exc_info=True,
+            )
             return
 
         # Set cache flag for middleware to show success message (only after successful reward)
@@ -98,27 +102,27 @@ def reward_social_account_connection(request, sociallogin, **kwargs):
         cache.set(message_cache_key, {"provider": provider, "is_signup": not sociallogin.is_existing}, 60)
 
         # Create activity for audit trail (non-critical)
-        try:
+        try:  # noqa: BLE001
             from django.contrib.contenttypes.models import ContentType
 
             Activity.objects.create(
                 user=user,
                 action_type="connected",
                 title=f"Connected {provider.capitalize()} Account",
-                description=f"Earned {reward_amount} BACON tokens for connecting {provider.capitalize()} account",
+                description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
                 content_type=ContentType.objects.get_for_model(user),
                 object_id=user.id,
             )
-            logger.info(f"Created activity log for user {user.username} - {provider} connection")
+            logger.info("Created activity log for user %s - %s connection", user.username, provider)
         except Exception as e:
-            logger.warning(f"Failed to create activity log (non-critical): {str(e)}")
+            logger.warning("Failed to create activity log (non-critical): %s", e)
 
-    except Exception as e:
-        logger.error(f"Unexpected error in reward_social_account_connection: {str(e)}", exc_info=True)
+    except Exception as e:  # noqa: BLE001
+        logger.error("Unexpected error in reward_social_account_connection: %s", e, exc_info=True)
 
 
 @receiver(post_save, sender="socialaccount.SocialAccount")
-def social_account_post_save(sender, instance, created, **kwargs):
+def social_account_post_save(sender, instance, created, **_kwargs):  # noqa: ARG001
     """
     Award BACON tokens when a new social account is created (new user signup).
 
@@ -133,7 +137,7 @@ def social_account_post_save(sender, instance, created, **kwargs):
     if not created:
         return
 
-    try:
+    try:  # noqa: BLE001
         provider = instance.provider
         user = instance.user
 
@@ -149,19 +153,18 @@ def social_account_post_save(sender, instance, created, **kwargs):
         if reward_amount <= 0:
             return
 
-        # Rate limiting: prevent duplicate rewards
+        # Rate limiting: prevent duplicate rewards (atomic operation)
         cache_key = f"bacon_reward_{user.id}_{provider}"
-        if cache.get(cache_key):
-            logger.info(f"Rate limit: Skipping duplicate reward for {user.username}/{provider}")
+        if not cache.add(cache_key, True, REWARD_COOLDOWN):
+            logger.info("Rate limit: Skipping duplicate reward for %s/%s", user.username, provider)
             return
-        cache.set(cache_key, True, REWARD_COOLDOWN)
 
         # Award BACON tokens
-        try:
+        try:  # noqa: BLE001
             awarded = giveBacon(user, amt=reward_amount)
-            logger.info(f"Awarded {awarded} BACON to {user.username} for {provider} signup")
+            logger.info("Awarded %s BACON to %s for %s signup", awarded, user.username, provider)
         except Exception as e:
-            logger.error(f"Failed to award BACON to {user.username}: {e}", exc_info=True)
+            logger.error("Failed to award BACON to %s: %s", user.username, e, exc_info=True)
             return
 
         # Set cache flag for middleware to show success message
@@ -169,19 +172,19 @@ def social_account_post_save(sender, instance, created, **kwargs):
         cache.set(message_cache_key, {"provider": provider, "is_signup": True}, 60)
 
         # Create activity for audit trail
-        try:
+        try:  # noqa: BLE001
             from django.contrib.contenttypes.models import ContentType
 
             Activity.objects.create(
                 user=user,
                 action_type="connected",
                 title=f"Connected {provider.capitalize()} Account",
-                description=f"Earned {reward_amount} BACON tokens for connecting {provider.capitalize()} account",
+                description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
                 content_type=ContentType.objects.get_for_model(user),
                 object_id=user.id,
             )
         except Exception as e:
-            logger.warning(f"Failed to create activity for {user.username}: {e}")
+            logger.warning("Failed to create activity for %s: %s", user.username, e)
 
-    except Exception as e:
-        logger.error(f"Error in social_account_post_save: {e}", exc_info=True)
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error in social_account_post_save: %s", e, exc_info=True)
