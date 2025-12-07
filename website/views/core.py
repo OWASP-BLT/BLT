@@ -643,11 +643,11 @@ def search(request, template="search.html"):
 
         elif stype == "labels":
             if request.user.is_authenticated:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )[0:20]
             else:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
+                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(is_hidden=True)[
                     0:20
                 ]
 
