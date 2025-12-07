@@ -649,6 +649,7 @@ def search(request, template="search.html"):
                 if d:
                     org.absolute_url = d.get_absolute_url()
             context = {
+                "request": request,
                 "query": query,
                 "type": stype,
                 "organizations": organizations,
@@ -656,6 +657,7 @@ def search(request, template="search.html"):
 
         elif stype == "projects":
             context = {
+                "request": request,
                 "query": query,
                 "type": stype,
                 "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
@@ -663,6 +665,7 @@ def search(request, template="search.html"):
 
         elif stype == "repos":
             context = {
+                "request": request,
                 "query": query,
                 "type": stype,
                 "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
@@ -680,6 +683,7 @@ def search(request, template="search.html"):
                 if d:
                     org.absolute_url = d.get_absolute_url()
             context = {
+                "request": request,
                 "query": query,
                 "type": stype,
                 "tags": tags,
@@ -692,6 +696,7 @@ def search(request, template="search.html"):
 
         elif stype == "languages":
             context = {
+                "request": request,
                 "query": query,
                 "type": stype,
                 "repos": Repo.objects.filter(primary_language__icontains=query),
@@ -759,7 +764,7 @@ def search(request, template="search.html"):
                             result_count = len(items)
 
             except Exception as e:
-                logger.error("Error calculating result count")
+                logger.exception("Error calculating result count")
                 result_count = 0
 
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
