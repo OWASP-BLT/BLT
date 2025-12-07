@@ -61,6 +61,7 @@ from website.views.bitcoin import (
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
+from website.views.chatbot_api import chatbot_api
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -306,7 +307,6 @@ from website.views.Simulation import dashboard, lab_detail, submit_answer, task_
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
-from website.views.chatbot_api import chatbot_api
 from website.views.staking_competitive import (
     create_staking_pool,
     my_staking,

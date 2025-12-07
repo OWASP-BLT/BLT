@@ -123,7 +123,7 @@ async function sendMessage() {
     }
   } catch (error) {
     hideLoader();
-    console.error("Chatbot error:", error);
+
     addBotMessage("Error connecting to server. Please check your connection and try again.");
   }
 }
