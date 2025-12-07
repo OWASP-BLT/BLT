@@ -1062,7 +1062,7 @@ class OwaspComplianceChecker(APIView):
         if not url:
             return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Run all compliance checks
+        # Rerun all compliance checks
         github_check = self.check_github_compliance(url)
         website_check = self.check_website_compliance(url)
         vendor_check = self.check_vendor_neutrality(url)
@@ -1571,7 +1571,10 @@ class FindSimilarBugsApiView(APIView):
 
 
 def debug_required(func):
-    """Decorator to ensure endpoint only works in DEBUG mode"""
+    """
+    Decorator to ensure endpoint only works in DEBUG mode and local environment.
+    Adds additional protection beyond just DEBUG flag.
+    """
 
     @wraps(func)
     def wrapper(self, request, *args, **kwargs):
@@ -1580,6 +1583,24 @@ def debug_required(func):
                 {"success": False, "error": "This endpoint is only available in DEBUG mode."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        # Additional check: ensure we're in a local/development environment
+        is_local = any(
+            [
+                "localhost" in request.get_host().lower(),
+                "127.0.0.1" in request.get_host(),
+                os.getenv("DYNO") is None,  # Not on Heroku
+                os.getenv("RENDER") is None,  # Not on Render
+            ]
+        )
+
+        if not is_local:
+            logger.warning(f"Debug endpoint accessed from non-local environment: {request.get_host()}")
+            return Response(
+                {"success": False, "error": "This endpoint is only available in local development."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         return func(self, request, *args, **kwargs)
 
     return wrapper
@@ -1588,21 +1609,43 @@ def debug_required(func):
 class DebugSystemStatsApiView(APIView):
     """Get current system statistics for debug panel"""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def get(self, request, *args, **kwargs):
         try:
             # Get database version with error handling
             db_version = "Unknown"
+            db_name = settings.DATABASES["default"]["NAME"]
+
+            # Redact database name in non-local environments
+            is_local = any(
+                [
+                    "localhost" in settings.ALLOWED_HOSTS,
+                    "127.0.0.1" in settings.ALLOWED_HOSTS,
+                    db_name == ":memory:",  # SQLite in-memory
+                ]
+            )
+
+            if not is_local:
+                db_name = "[REDACTED]"
+
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT version();")
-                    db_result = cursor.fetchone()
-                    if db_result and db_result[0]:
-                        db_version = db_result[0].split()[0]
-            except Exception as db_error:
-                logger.warning(f"Could not fetch database version: {db_error}")
+                    if connection.vendor == "postgresql":
+                        cursor.execute("SELECT version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "sqlite":
+                        cursor.execute("SELECT sqlite_version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "mysql":
+                        cursor.execute("SELECT VERSION();")
+                        db_version = cursor.fetchone()[0]
+                    else:
+                        db_version = "Unknown"
+            except Exception as e:
+                logger.error(f"Failed to get database version: {str(e)}", exc_info=True)
+                db_version = "Unknown"
 
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
@@ -1636,7 +1679,7 @@ class DebugSystemStatsApiView(APIView):
                         "django_version": django.get_version(),
                         "database": {
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
-                            "name": settings.DATABASES["default"]["NAME"],
+                            "name": db_name,
                             "version": db_version,
                         },
                         "memory": memory_stats,
@@ -1655,7 +1698,7 @@ class DebugSystemStatsApiView(APIView):
 class DebugCacheInfoApiView(APIView):
     """Get cache backend information and statistics"""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def get(self, request, *args, **kwargs):
@@ -1664,7 +1707,7 @@ class DebugCacheInfoApiView(APIView):
 
             cache_backend = settings.CACHES["default"]["BACKEND"].split(".")[-1]
 
-            cache_keys = []
+            # Security: Don't expose actual cache keys as they may contain sensitive data
             keys_count = 0
 
             # Only attempt key listing for Redis backend; for other backends just log a note.
@@ -1673,10 +1716,8 @@ class DebugCacheInfoApiView(APIView):
                     if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
                         all_keys = list(cache._cache.keys("*"))
                         keys_count = len(all_keys)
-                        cache_keys = all_keys[:10]
                 except Exception:
                     logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
-                    cache_keys = []
             else:
                 logger.info("Cache key listing not supported for backend: %s", cache_backend)
 
@@ -1698,7 +1739,6 @@ class DebugCacheInfoApiView(APIView):
                     "data": {
                         "backend": cache_backend,
                         "keys_count": keys_count,
-                        "sample_keys": [str(k) for k in cache_keys],
                         "hit_ratio": hit_ratio,
                     },
                 }
@@ -1820,7 +1860,7 @@ class DebugCollectStaticApiView(APIView):
 class DebugPanelStatusApiView(APIView):
     """Get overall debug panel status"""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def get(self, request, *args, **kwargs):
@@ -1830,8 +1870,14 @@ class DebugPanelStatusApiView(APIView):
                 "data": {
                     "debug_mode": settings.DEBUG,
                     "testing_mode": getattr(settings, "TESTING", False),
-                    "allowed_hosts": settings.ALLOWED_HOSTS,
-                    "database_name": settings.DATABASES["default"]["NAME"],
+                    "environment": "local"
+                    if any(
+                        [
+                            "localhost" in request.get_host().lower(),
+                            "127.0.0.1" in request.get_host(),
+                        ]
+                    )
+                    else "unknown",
                 },
             }
         )
