@@ -647,9 +647,7 @@ def search(request, template="search.html"):
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )[0:20]
             else:
-                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(is_hidden=True)[
-                    0:20
-                ]
+                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(is_hidden=True)[0:20]
 
             context = {
                 "request": request,
@@ -819,7 +817,7 @@ def search(request, template="search.html"):
                                     elif isinstance(items, list):
                                         result_count = len(items)
 
-                        except Exception as e:
+                        except Exception:
                             logger.exception("Error calculating result count")
                             result_count = 0
 
