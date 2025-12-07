@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=DailyStatusReport)
-def update_leaderboard_on_dsr_save(_sender=None, instance=None, created=None, **_kwargs):
+def update_leaderboard_on_dsr_save(_sender=None, instance=None, created=None, **_kwargs):  # noqa: ARG001
     user = instance.user
 
     if getattr(instance, "_skip_leaderboard_update", False):
@@ -20,14 +20,17 @@ def update_leaderboard_on_dsr_save(_sender=None, instance=None, created=None, **
     try:
         with transaction.atomic():
             profile = UserProfile.objects.select_for_update().get(user=user)
-            profile.update_streak_and_award_points()
+            success = profile.update_streak_and_award_points()
+            if not success:
+                logger.warning(
+                    "update_streak_and_award_points failed for user_id=%s; " "skipping leaderboard recalculation",
+                    user.id,
+                )
+                return
             profile.calculate_leaderboard_score()
     except UserProfile.DoesNotExist:
         return
 
     team = profile.team
-    if team:
-        try:
-            cache.delete_pattern(f"team_lb:{team.id}:*")
-        except Exception as e:
-            logger.debug(f"Cache pattern deletion failed (expected for LocMemCache): {e}")
+    if team and hasattr(cache, "delete_pattern"):
+        cache.delete_pattern(f"team_lb:{team.id}:*")
