@@ -23,6 +23,25 @@ jobs:
           ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.ref_name }}
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
 
+      - name: Remove fix-pre-commit label
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'fix-pre-commit'
+              });
+              console.log('Successfully removed fix-pre-commit label');
+            } catch (error) {
+              // Label might not exist or already removed
+              console.log('Could not remove label:', error.message);
+            }
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -124,22 +143,3 @@ jobs:
               issue_number: context.issue.number,
               body: message
             });
-
-      - name: Remove fix-pre-commit label
-        if: github.event_name == 'pull_request_target'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            try {
-              await github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                name: 'fix-pre-commit'
-              });
-              console.log('Successfully removed fix-pre-commit label');
-            } catch (error) {
-              // Label might not exist or already removed
-              console.log('Could not remove label:', error.message);
-            }
