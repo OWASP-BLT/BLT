@@ -25,6 +25,13 @@ from website.api.views import (
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CheckDuplicateBugApiView,
+    DebugCacheInfoApiView,
+    DebugClearCacheApiView,
+    DebugCollectStaticApiView,
+    DebugPanelStatusApiView,
+    DebugPopulateDataApiView,
+    DebugRunMigrationsApiView,
+    DebugSystemStatsApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -1233,6 +1240,14 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    # Debug Panel APIs (only in debug mode)
+    path("api/debug/system-stats/", DebugSystemStatsApiView.as_view(), name="api_debug_system_stats"),
+    path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
+    path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
+    path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
+    path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
+    path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
+    path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
 ]
 
 if settings.DEBUG:

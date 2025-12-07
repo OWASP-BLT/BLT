@@ -1,10 +1,13 @@
 import json
 import logging
 import smtplib
+import sys
 import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
+import django
+import psutil
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
@@ -12,6 +15,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
+from django.core.management import call_command
+from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -1561,3 +1566,218 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+def debug_required(func):
+    """Decorator to ensure endpoint only works in DEBUG mode"""
+
+    def wrapper(request, *args, **kwargs):
+        if not settings.DEBUG:
+            return Response(
+                {"success": False, "error": "This endpoint is only available in DEBUG mode."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return func(request, *args, **kwargs)
+
+    return wrapper
+
+
+class DebugSystemStatsApiView(APIView):
+    """Get current system statistics for debug panel"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT version();")
+                db_result = cursor.fetchone()
+                db_version = db_result[0] if db_result else "Unknown"
+
+            memory = psutil.virtual_memory()
+            disk = psutil.disk_usage("/")
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+                        "django_version": ".".join(map(str, [django.VERSION[0], django.VERSION[1], django.VERSION[2]])),
+                        "database": {
+                            "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
+                            "name": settings.DATABASES["default"]["NAME"],
+                            "version": db_version.split()[0] if db_version else "Unknown",
+                        },
+                        "memory": {
+                            "total": f"{memory.total / (1024**3):.2f} GB",
+                            "used": f"{memory.used / (1024**3):.2f} GB",
+                            "percent": f"{memory.percent}%",
+                        },
+                        "disk": {
+                            "total": f"{disk.total / (1024**3):.2f} GB",
+                            "used": f"{disk.used / (1024**3):.2f} GB",
+                            "percent": f"{disk.percent}%",
+                        },
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error fetching system stats: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch system statistics"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCacheInfoApiView(APIView):
+    """Get cache backend information and statistics"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache_backend = settings.CACHES["default"]["BACKEND"].split(".")[-1]
+
+            # Try to get cache keys (Redis specific)
+            cache_keys = []
+            keys_count = 0
+            try:
+                if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
+                    all_keys = list(cache._cache.keys("*"))
+                    keys_count = len(all_keys)
+                    cache_keys = all_keys[:10]  # First 10 keys as sample
+            except Exception:
+                cache_keys = []
+
+            # Calculate hit ratio if available
+            hit_ratio = "N/A"
+            try:
+                if hasattr(cache, "get_stats"):
+                    stats = cache.get_stats()
+                    hits = stats.get("hits", 0)
+                    misses = stats.get("misses", 0)
+                    total = hits + misses
+                    if total > 0:
+                        hit_ratio = f"{(hits/total)*100:.2f}%"
+            except Exception:
+                pass
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "backend": cache_backend,
+                        "keys_count": keys_count,
+                        "sample_keys": [str(k) for k in cache_keys[:5]],
+                        "hit_ratio": hit_ratio,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error fetching cache info: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch cache information"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPopulateDataApiView(APIView):
+    """Populate database with test data"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            # Load initial data fixture
+            call_command("loaddata", "website/fixtures/initial_data.json", verbosity=0)
+
+            return Response({"success": True, "message": "Test data populated successfully"})
+        except Exception as e:
+            logger.error(f"Error populating test data: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugClearCacheApiView(APIView):
+    """Clear all cache data"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache.clear()
+
+            return Response({"success": True, "message": "Cache cleared successfully"})
+        except Exception as e:
+            logger.error(f"Error clearing cache: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DebugRunMigrationsApiView(APIView):
+    """Run pending database migrations"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            call_command("migrate", interactive=False, verbosity=0)
+
+            return Response({"success": True, "message": "Migrations completed successfully"})
+        except Exception as e:
+            logger.error(f"Error running migrations: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to run migrations. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCollectStaticApiView(APIView):
+    """Collect static files"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            call_command("collectstatic", interactive=False, verbosity=0)
+
+            return Response({"success": True, "message": "Static files collected successfully"})
+        except Exception as e:
+            logger.error(f"Error collecting static files: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to collect static files. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPanelStatusApiView(APIView):
+    """Get overall debug panel status"""
+
+    permission_classes = [AllowAny]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "debug_mode": settings.DEBUG,
+                    "testing_mode": getattr(settings, "TESTING", False),
+                    "allowed_hosts": settings.ALLOWED_HOSTS,
+                    "database_name": settings.DATABASES["default"]["NAME"],
+                },
+            }
+        )
