@@ -159,7 +159,7 @@ def screenshot_signed_url_view(request, pk: int):
     if issue.is_hidden:
         user = request.user
         is_owner = issue.user_id == user.id
-        is_staff = user.is_staff
+        is_staff = user.is_staff or user.is_superuser
         is_team_member = issue.team_members.filter(id=user.id).exists()
         if not (is_owner or is_staff or is_team_member):
             return Response(
@@ -206,10 +206,9 @@ def issue_screenshot_signed_url_view(request, pk: int):
     # same permission logic as above
     if issue.is_hidden:
         user = request.user
-        is_owner = user.is_authenticated and issue.user_id == user.id
-        is_staff = user.is_authenticated and user.is_staff
-        is_team_member = user.is_authenticated and issue.team_members.filter(id=user.id).exists()
-
+        is_owner = issue.user_id == user.id
+        is_staff = user.is_staff or user.is_superuser
+        is_team_member = issue.team_members.filter(id=user.id).exists()
         if not (is_owner or is_staff or is_team_member):
             return Response(
                 {"detail": "You do not have permission to view this screenshot."},
