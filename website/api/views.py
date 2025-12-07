@@ -1570,6 +1570,22 @@ class FindSimilarBugsApiView(APIView):
             )
 
 
+def _is_local_host(host: str, db_name: str | None = None) -> bool:
+    """
+    Determine if a request host represents a local environment.
+    Optionally treats SQLite in-memory DB as local for redaction logic.
+    """
+    host_lower = (host or "").lower()
+    host_without_port = host_lower.split(":")[0]
+    return (
+        "localhost" in host_lower
+        or host_without_port == "127.0.0.1"
+        or host_without_port.startswith("127.")
+        or host_lower == "testserver"
+        or (db_name == ":memory:" if db_name is not None else False)
+    )
+
+
 def debug_required(func):
     """
     Decorator to ensure endpoint only works in DEBUG mode and local environment.
@@ -1584,19 +1600,8 @@ def debug_required(func):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Additional check: ensure we're in a local/development environment
-        host = request.get_host().lower()
-        # Remove port if present (e.g., "localhost:8000" -> "localhost")
-        host_without_port = host.split(":")[0]
-
-        is_local = (
-            "localhost" in host
-            or host_without_port == "127.0.0.1"
-            or host_without_port.startswith("127.")
-            or host == "testserver"
-        )
-
-        if not is_local:
+        host = request.get_host()
+        if not _is_local_host(host):
             logger.warning(f"Debug endpoint accessed from non-local environment: {host}")
             return Response(
                 {"success": False, "error": "This endpoint is only available in local development."},
@@ -1616,23 +1621,11 @@ class DebugSystemStatsApiView(APIView):
     @debug_required
     def get(self, request, *args, **kwargs):
         try:
-            # Get database version with error handling
+            # Get database name
             db_name = settings.DATABASES["default"]["NAME"]
 
-            # Redact database name in non-local environments
-            # Use same logic as debug_required decorator for consistency
-            host = request.get_host().lower()
-            host_without_port = host.split(":")[0]
-
-            is_local = (
-                "localhost" in host
-                or host_without_port == "127.0.0.1"
-                or host_without_port.startswith("127.")
-                or host == "testserver"
-                or db_name == ":memory:"  # SQLite in-memory
-            )
-
-            if not is_local:
+            # Redact database name in non-local environments (defense-in-depth)
+            if not _is_local_host(request.get_host(), db_name=db_name):
                 db_name = "[REDACTED]"
 
             # Get database version with error handling
@@ -1817,7 +1810,7 @@ class DebugRunMigrationsApiView(APIView):
             )
 
         confirm = request.data.get("confirm")
-        if not (confirm is True or str(confirm).lower() == "true"):
+        if confirm is not True:
             return Response(
                 {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1875,12 +1868,7 @@ class DebugPanelStatusApiView(APIView):
                     "debug_mode": settings.DEBUG,
                     "testing_mode": getattr(settings, "TESTING", False),
                     "environment": "local"
-                    if any(
-                        [
-                            "localhost" in request.get_host().lower(),
-                            "127.0.0.1" in request.get_host(),
-                        ]
-                    )
+                    if ("localhost" in request.get_host().lower() or "127.0.0.1" in request.get_host())
                     else "unknown",
                 },
             }

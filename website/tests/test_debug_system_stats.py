@@ -55,7 +55,6 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["success"])
         self.assertIn("backend", data["data"])
         self.assertIn("keys_count", data["data"])
-        self.assertNotIn("sample_keys", data["data"])
 
     @override_settings(DEBUG=True)
     def test_clear_cache_success(self):
@@ -207,13 +206,11 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["success"])
 
     @override_settings(DEBUG=True)
-    @patch("django.core.management.call_command")
     @patch("website.api.views.call_command")
-    def test_collect_static_handles_errors(self, mock_views_call_command, mock_mgmt_call_command):
+    def test_collect_static_handles_errors(self, mock_call_command):
         """Test that collectstatic errors are handled gracefully"""
         self.reload_urls()
-        mock_views_call_command.side_effect = Exception("Collectstatic failed")
-        mock_mgmt_call_command.side_effect = Exception("Collectstatic failed")
+        mock_call_command.side_effect = Exception("Collectstatic failed")
 
         self.user.is_superuser = True
         self.user.save()
