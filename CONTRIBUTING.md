@@ -10,6 +10,7 @@ Thank you for your interest in contributing to OWASP BLT! We welcome contributio
   - [Docker Setup (Recommended)](#docker-setup-recommended)
   - [Vagrant Setup](#vagrant-setup)
   - [Python Virtual Environment Setup](#python-virtual-environment-setup)
+  - [Populating Test Data for Local Development](#populating-test-data-for-local-development)
 - [Making Contributions](#making-contributions)
   - [Finding Issues to Work On](#finding-issues-to-work-on)
   - [Creating a Pull Request](#creating-a-pull-request)
@@ -167,7 +168,7 @@ This command automatically creates:
 
 In addition to the main sample data generator, the project provides specialized seed commands for security labs and OWASP adventures.
 
-### 1. Seed OWASP BLT Adventures
+#### 1. Seed OWASP BLT Adventures
 
 This command populates the platform with predefined OWASP BLT adventure challenges.
 
@@ -175,7 +176,7 @@ This command populates the platform with predefined OWASP BLT adventure challeng
    python manage.py seed_adventures
    ```
 
-### 2. Seed Security Lab Challenges
+#### 2. Seed Security Lab Challenges
 This command seeds vulnerable security labs used for hands-on security practice, including:
 - IDOR
 - XSS
@@ -187,8 +188,8 @@ This command seeds vulnerable security labs used for hands-on security practice,
    python manage.py seed_all_security_lab
    ```
 
-### Important Notes
-This command clears existing data before creating new records.
+#### Important Notes
+This command clears existing data before creating sample data.
 It is intended strictly for local development and testing.
 Do not run this in production environments.
 
