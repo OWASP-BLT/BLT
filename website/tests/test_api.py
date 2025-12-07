@@ -239,3 +239,58 @@ class APITests(APITestCase):
             for n in range(0, count):
                 message = "Test is failed"
                 self.assertTrue(response.data["results"][n].is_hidden, message)
+
+
+class TestPasswordResetUnknownEmail(APITestCase):
+    """Test password reset behavior for unknown email addresses"""
+    password_reset_url = "/auth/password/reset/"
+    
+    def test_password_reset_unknown_email_no_email_sent(self):
+        """Test password reset with unknown email - should not send email"""
+        # Clear the mail outbox
+        mail.outbox = []
+        
+        # Try to reset password for non-existent email
+        response = self.client.post(self.password_reset_url, {'email': 'nonexistent@example.com'})
+        
+        print(f"\nTest: Password reset for unknown email")
+        print(f"Response status: {response.status_code}")
+        print(f"Response data: {response.json() if response.status_code == 200 else response.content}")
+        print(f"Emails sent: {len(mail.outbox)}")
+        
+        # The response should be 200 OK to not reveal account existence
+        self.assertEqual(response.status_code, 200)
+        
+        # But NO email should actually be sent for non-existent accounts
+        self.assertEqual(len(mail.outbox), 0, "No email should be sent for unknown accounts")
+        
+        print("✓ Correct: No email sent for unknown account")
+        print("✓ Response still returns 200 OK (doesn't leak account existence)")
+
+    def test_password_reset_known_email_sends_email(self):
+        """Test password reset with known email - should send email"""
+        # Create a user
+        user = get_user_model().objects.create_user(
+            username='testuser',
+            email='testuser@example.com',
+            password='testpass123'
+        )
+        
+        # Clear the mail outbox
+        mail.outbox = []
+        
+        # Try to reset password for existing email
+        response = self.client.post(self.password_reset_url, {'email': 'testuser@example.com'})
+        
+        print(f"\nTest: Password reset for known email")
+        print(f"Response status: {response.status_code}")
+        print(f"Response data: {response.json() if response.status_code == 200 else response.content}")
+        print(f"Emails sent: {len(mail.outbox)}")
+        
+        # The response should be 200 OK
+        self.assertEqual(response.status_code, 200)
+        
+        # Email SHOULD be sent for existing accounts
+        self.assertEqual(len(mail.outbox), 1, "Email should be sent for known accounts")
+        
+        print("✓ Correct: Email sent for known account")
