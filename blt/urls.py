@@ -306,6 +306,7 @@ from website.views.Simulation import dashboard, lab_detail, submit_answer, task_
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
+from website.views.chatbot_api import chatbot_api
 from website.views.staking_competitive import (
     create_staking_pool,
     my_staking,
@@ -1224,6 +1225,7 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
+    
     # Duplicate Bug Checking API
     path(
         "duplicate-check-example/",
@@ -1233,6 +1235,8 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    # Chatbot API endpoint
+    path("api/chatbot/", chatbot_api, name="chatbot_api"),
 ]
 
 if settings.DEBUG:
