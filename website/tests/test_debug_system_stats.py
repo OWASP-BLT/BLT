@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 User = get_user_model()
 
 
+@override_settings(ALLOWED_HOSTS=["*"])
 class DebugPanelAPITest(TestCase):
     """Test debug panel API endpoints"""
 
@@ -302,7 +303,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True, ALLOWED_HOSTS=["*"])
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_127_prefix(self):
         """Test that debug endpoints allow 127.x.x.x IPs"""
         self.reload_urls()
