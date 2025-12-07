@@ -16,7 +16,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         """
         Redirect to user's profile after signing up with a social account.
         Message is handled by middleware to ensure it shows after redirect.
-        
+
         Security:
             - Only redirects authenticated users
             - Uses resolve_url for safe URL generation
@@ -29,7 +29,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         """
         Redirect to user's profile after connecting a social account.
         Message is handled by middleware to ensure it shows after redirect.
-        
+
         Security:
             - Only redirects authenticated users
             - Uses resolve_url for safe URL generation
