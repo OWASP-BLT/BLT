@@ -1,11 +1,11 @@
 import json
 import logging
+import os
 import smtplib
 import sys
 import uuid
 from datetime import datetime
 from functools import wraps
-from typing import ClassVar
 from urllib.parse import urlparse
 
 import django
@@ -1574,13 +1574,13 @@ def debug_required(func):
     """Decorator to ensure endpoint only works in DEBUG mode"""
 
     @wraps(func)
-    def wrapper(request, *args, **kwargs):
+    def wrapper(self, request, *args, **kwargs):
         if not settings.DEBUG:
             return Response(
                 {"success": False, "error": "This endpoint is only available in DEBUG mode."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        return func(request, *args, **kwargs)
+        return func(self, request, *args, **kwargs)
 
     return wrapper
 
@@ -1588,7 +1588,7 @@ def debug_required(func):
 class DebugSystemStatsApiView(APIView):
     """Get current system statistics for debug panel"""
 
-    permission_classes: ClassVar[list] = [AllowAny]
+    permission_classes = [AllowAny]
 
     @debug_required
     def get(self, request, *args, **kwargs):
@@ -1607,7 +1607,7 @@ class DebugSystemStatsApiView(APIView):
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
             disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
-            
+
             try:
                 memory = psutil.virtual_memory()
                 memory_stats = {
@@ -1633,7 +1633,7 @@ class DebugSystemStatsApiView(APIView):
                     "success": True,
                     "data": {
                         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-                        "django_version": ".".join(map(str, [django.VERSION[0], django.VERSION[1], django.VERSION[2]])),
+                        "django_version": django.get_version(),
                         "database": {
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
                             "name": settings.DATABASES["default"]["NAME"],
@@ -1655,7 +1655,7 @@ class DebugSystemStatsApiView(APIView):
 class DebugCacheInfoApiView(APIView):
     """Get cache backend information and statistics"""
 
-    permission_classes: ClassVar[list] = [AllowAny]
+    permission_classes = [AllowAny]
 
     @debug_required
     def get(self, request, *args, **kwargs):
@@ -1666,14 +1666,19 @@ class DebugCacheInfoApiView(APIView):
 
             cache_keys = []
             keys_count = 0
-            try:
-                if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
-                    all_keys = list(cache._cache.keys("*"))
-                    keys_count = len(all_keys)
-                    cache_keys = all_keys[:10]
-            except Exception:
-                logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
-                cache_keys = []
+
+            # Only attempt key listing for Redis backend; for other backends just log a note.
+            if "redis" in cache_backend.lower():
+                try:
+                    if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
+                        all_keys = list(cache._cache.keys("*"))
+                        keys_count = len(all_keys)
+                        cache_keys = all_keys[:10]
+                except Exception:
+                    logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
+                    cache_keys = []
+            else:
+                logger.info("Cache key listing not supported for backend: %s", cache_backend)
 
             hit_ratio = "N/A"
             try:
@@ -1693,7 +1698,7 @@ class DebugCacheInfoApiView(APIView):
                     "data": {
                         "backend": cache_backend,
                         "keys_count": keys_count,
-                        "sample_keys": [str(k) for k in cache_keys[:5]],
+                        "sample_keys": [str(k) for k in cache_keys],
                         "hit_ratio": hit_ratio,
                     },
                 }
@@ -1709,13 +1714,20 @@ class DebugCacheInfoApiView(APIView):
 class DebugPopulateDataApiView(APIView):
     """Populate database with test data"""
 
-    permission_classes: ClassVar[list] = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            # Load initial data fixture
-            call_command("loaddata", "website/fixtures/initial_data.json", verbosity=0)
+            # Load initial data fixture from a resolved path and fail gracefully if missing
+            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
+            if not os.path.exists(fixture_path):
+                return Response(
+                    {"success": False, "error": "Fixture file not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            call_command("loaddata", fixture_path, verbosity=0)
 
             return Response({"success": True, "message": "Test data populated successfully"})
         except Exception as e:
@@ -1729,7 +1741,7 @@ class DebugPopulateDataApiView(APIView):
 class DebugClearCacheApiView(APIView):
     """Clear all cache data"""
 
-    permission_classes: ClassVar[list] = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
@@ -1749,10 +1761,24 @@ class DebugClearCacheApiView(APIView):
 class DebugRunMigrationsApiView(APIView):
     """Run pending database migrations"""
 
-    permission_classes: ClassVar[list] = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
+        # Extra safety: restrict to superusers and require an explicit confirmation flag
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only superusers can run migrations"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        confirm = request.data.get("confirm")
+        if not (confirm is True or str(confirm).lower() == "true"):
+            return Response(
+                {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             call_command("migrate", interactive=False, verbosity=0)
 
@@ -1768,10 +1794,17 @@ class DebugRunMigrationsApiView(APIView):
 class DebugCollectStaticApiView(APIView):
     """Collect static files"""
 
-    permission_classes: ClassVar[list] = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
+        # Restrict collectstatic to superusers to avoid accidental abuse
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only superusers can collect static files"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
             call_command("collectstatic", interactive=False, verbosity=0)
 
@@ -1787,7 +1820,7 @@ class DebugCollectStaticApiView(APIView):
 class DebugPanelStatusApiView(APIView):
     """Get overall debug panel status"""
 
-    permission_classes: ClassVar[list] = [AllowAny]
+    permission_classes = [AllowAny]
 
     @debug_required
     def get(self, request, *args, **kwargs):
