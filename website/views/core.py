@@ -2769,15 +2769,23 @@ def fetch_github_projects():
     """
     Fetch GitHub Projects data for OWASP-BLT organization using GraphQL API.
     Returns a list of projects with their metadata and progress.
+
+    Note: Progress calculation is based on a sample of items (up to 250).
+    For projects with more items, the percentage is an approximation.
     """
     github_token = getattr(settings, "GITHUB_TOKEN", None)
     if not github_token or github_token == "blank":
         logging.warning("GitHub token not configured, cannot fetch projects")
         return []
 
+    # Constants for GraphQL query limits
+    MAX_ITEMS_TO_FETCH = 250  # Increased from 100 to get better progress sampling
+    MAX_FIELD_VALUES = 20  # Increased from 10 to handle projects with many custom fields
+    COMPLETED_STATUS_VALUES = ["Done", "Completed", "Closed", "Complete", "✅ Done"]
+
     # GraphQL query to fetch organization projects
     query = """
-    query($org: String!, $first: Int!) {
+    query($org: String!, $first: Int!, $maxItems: Int!, $maxFields: Int!) {
       organization(login: $org) {
         projectsV2(first: $first, orderBy: {field: UPDATED_AT, direction: DESC}) {
           nodes {
@@ -2788,10 +2796,10 @@ def fetch_github_projects():
             public
             closed
             updatedAt
-            items(first: 100) {
+            items(first: $maxItems) {
               totalCount
               nodes {
-                fieldValues(first: 10) {
+                fieldValues(first: $maxFields) {
                   nodes {
                     ... on ProjectV2ItemFieldSingleSelectValue {
                       name
@@ -2820,7 +2828,15 @@ def fetch_github_projects():
         response = requests.post(
             "https://api.github.com/graphql",
             headers=headers,
-            json={"query": query, "variables": {"org": "OWASP-BLT", "first": 50}},
+            json={
+                "query": query,
+                "variables": {
+                    "org": "OWASP-BLT",
+                    "first": 50,
+                    "maxItems": MAX_ITEMS_TO_FETCH,
+                    "maxFields": MAX_FIELD_VALUES,
+                },
+            },
             timeout=10,
         )
         response.raise_for_status()
@@ -2846,16 +2862,34 @@ def fetch_github_projects():
             # Calculate done items by checking Status field
             done_count = 0
             items = project.get("items", {}).get("nodes", [])
+            items_checked = len(items)
+
             for item in items:
                 field_values = item.get("fieldValues", {}).get("nodes", [])
                 for field_value in field_values:
                     field_name = field_value.get("field", {}).get("name", "")
                     status_name = field_value.get("name", "")
-                    if field_name == "Status" and status_name in ["Done", "Completed", "Closed"]:
+                    # Check if this is a Status field with a completion value
+                    if field_name == "Status" and status_name in COMPLETED_STATUS_VALUES:
                         done_count += 1
                         break
 
-            progress_percentage = int((done_count / total_items) * 100) if total_items > 0 else 0
+            # Calculate progress percentage
+            # If we have fewer items than total, we're sampling - extrapolate the percentage
+            if items_checked > 0:
+                if items_checked < total_items:
+                    # Sampling - calculate percentage from sample
+                    sample_percentage = (done_count / items_checked) * 100
+                    progress_percentage = int(sample_percentage)
+                    logging.debug(
+                        f"Project '{project.get('title')}': Sampled {items_checked}/{total_items} items, "
+                        f"{done_count} done, estimated {progress_percentage}% complete"
+                    )
+                else:
+                    # We have all items
+                    progress_percentage = int((done_count / total_items) * 100)
+            else:
+                progress_percentage = 0
 
             # Format updated date
             updated_at = project.get("updatedAt", "")
