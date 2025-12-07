@@ -79,7 +79,7 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
-limit = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -588,7 +588,9 @@ def search(request, template="search.html"):
         ]
         if not stype or stype not in allowed_types:
             stype = "all"
-            # Search ALL models
+
+        # Handle type='all' - search ALL models
+        if stype == "all":
             organizations = Organization.objects.filter(name__icontains=query)
             if request.user.is_authenticated:
                 issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
@@ -841,9 +843,9 @@ def search(request, template="search.html"):
                         )
 
                         # CLEANUP — keep last 50 (exact count)
-                        if len(user_history_ids) >= limit:
+                        if len(user_history_ids) >= SEARCH_HISTORY_LIMIT:
                             # Keep newest limit-1 old entries + new entry = limit total
-                            excess_ids = user_history_ids[limit - 1 :]
+                            excess_ids = user_history_ids[SEARCH_HISTORY_LIMIT - 1 :]
                             if excess_ids:
                                 SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
 
