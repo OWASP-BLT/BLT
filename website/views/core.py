@@ -32,7 +32,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
-from django.db import connection, models, transaction
+from django.db import DatabaseError, IntegrityError, connection, models, transaction
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -797,7 +797,7 @@ def search(request, template="search.html"):
                             if excess_ids:
                                 SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
 
-            except (DatabaseError, IntegrityError) as e:
+            except (DatabaseError, IntegrityError):
                 # Log the error but don't break search
                 logger.exception(
                     f"Error saving search history - user_id: {request.user.id}, "
