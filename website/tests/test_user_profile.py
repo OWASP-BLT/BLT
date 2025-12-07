@@ -14,7 +14,7 @@ class UserProfileUpdateTest(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
         # UserProfile is created automatically by signal
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
 
     def test_update_profile_with_valid_bch_address(self):
         """Test updating user profile with a valid BCH address"""

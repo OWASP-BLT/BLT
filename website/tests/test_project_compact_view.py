@@ -12,7 +12,7 @@ class ProjectCompactViewTestCase(TestCase):
         self.client = Client()
 
         # Create test user
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
         # Create test organization
         self.org = Organization.objects.create(
@@ -159,7 +159,9 @@ class ProjectDeleteViewTestCase(TestCase):
         self.client = Client()
 
         # Create regular user
-        self.regular_user = User.objects.create_user(username="regular_user", password="testpass123")
+        self.regular_user = User.objects.create_user(
+            username="regular_user", email="regular_user@example.com", password="testpass123"
+        )
 
         # Create superuser
         self.superuser = User.objects.create_superuser(
@@ -198,7 +200,7 @@ class ProjectDeleteViewTestCase(TestCase):
 
     def test_delete_project_requires_superuser(self):
         """Test that deleting a project requires superuser permission"""
-        self.client.login(username="regular_user", password="testpass123")
+        self.client.login(email="regular_user@example.com", password="testpass123")
         url = reverse("delete_project", kwargs={"slug": self.project.slug})
         response = self.client.post(url)
         # Regular user should be forbidden
@@ -208,7 +210,7 @@ class ProjectDeleteViewTestCase(TestCase):
 
     def test_delete_project_superuser_can_delete(self):
         """Test that superuser can delete a project"""
-        self.client.login(username="superuser", password="superpass123")
+        self.client.login(email="superuser@example.com", password="superpass123")
         url = reverse("delete_project", kwargs={"slug": self.project.slug})
         response = self.client.post(url)
         # Should redirect to project list
@@ -219,7 +221,7 @@ class ProjectDeleteViewTestCase(TestCase):
 
     def test_delete_project_only_allows_post(self):
         """Test that delete project only allows POST requests"""
-        self.client.login(username="superuser", password="superpass123")
+        self.client.login(email="superuser@example.com", password="superpass123")
         url = reverse("delete_project", kwargs={"slug": self.project.slug})
         response = self.client.get(url)
         # GET should not be allowed
@@ -229,7 +231,7 @@ class ProjectDeleteViewTestCase(TestCase):
 
     def test_delete_nonexistent_project_returns_404(self):
         """Test that deleting a non-existent project returns 404"""
-        self.client.login(username="superuser", password="superpass123")
+        self.client.login(email="superuser@example.com", password="superpass123")
         url = reverse("delete_project", kwargs={"slug": "nonexistent-project"})
         response = self.client.post(url)
         self.assertEqual(response.status_code, 404)

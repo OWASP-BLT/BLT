@@ -59,7 +59,7 @@ class ActivityFeedTests(TestCase):
 
     def test_delete_button_not_visible_to_regular_user(self):
         """Test that delete button is not visible to regular users."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
         url = reverse("feed")
         response = self.client.get(url)
 
@@ -68,7 +68,7 @@ class ActivityFeedTests(TestCase):
 
     def test_delete_button_visible_to_superuser(self):
         """Test that delete button is visible to superusers."""
-        self.client.login(username="admin", password="adminpass123")
+        self.client.login(email="admin@example.com", password="adminpass123")
         url = reverse("feed")
         response = self.client.get(url)
 
@@ -77,7 +77,7 @@ class ActivityFeedTests(TestCase):
 
     def test_regular_user_cannot_delete_activity(self):
         """Test that regular users cannot delete activities."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
         url = reverse("delete_activity", kwargs={"id": self.activity.id})
         response = self.client.post(url)
 
@@ -87,7 +87,7 @@ class ActivityFeedTests(TestCase):
 
     def test_superuser_can_delete_activity(self):
         """Test that superusers can delete activities."""
-        self.client.login(username="admin", password="adminpass123")
+        self.client.login(email="admin@example.com", password="adminpass123")
         url = reverse("delete_activity", kwargs={"id": self.activity.id})
         response = self.client.post(url)
 

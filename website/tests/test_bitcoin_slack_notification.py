@@ -15,8 +15,8 @@ class BaconSubmissionSlackNotificationTests(TestCase):
     def setUp(self):
         """Set up test data"""
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
-        self.client.login(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
 
         # Create OWASP BLT organization
         self.organization = Organization.objects.create(
@@ -368,7 +368,7 @@ class BaconSubmissionSlackNotificationTests(TestCase):
             username="user_with_*bold*_underscore_`code`",
             password="testpass123",
         )
-        self.client.login(username=user_with_markdown.username, password="testpass123")
+        self.client.login(email=user_with_markdown.email, password="testpass123")
 
         mock_client = MagicMock()
         mock_webclient_class.return_value = mock_client

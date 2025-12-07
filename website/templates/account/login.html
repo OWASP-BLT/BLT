@@ -7,16 +7,16 @@
     Account Login | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
-    Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub.
+    Log in to your account to access the bug logging tool. Enter your email and password or log in with Google or GitHub.
 {% endblock description %}
 {% block keywords %}
-    Account Login, Bug Logging Tool, Username, Password, Google Login, GitHub Login
+    Account Login, Bug Logging Tool, Email, Password, Google Login, GitHub Login
 {% endblock keywords %}
 {% block og_title %}
     Account Login - Access Your Bug Logging Tool
 {% endblock og_title %}
 {% block og_description %}
-    Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub for a seamless experience.
+    Log in to your account to access the bug logging tool. Enter your email and password or log in with Google or GitHub for a seamless experience.
 {% endblock og_description %}
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
@@ -75,7 +75,7 @@
                         <input autofocus
                                id="id_login"
                                name="login"
-                               type="text"
+                               type="email"
                                value="{{ form.login.value|default:'' }}"
                                class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>

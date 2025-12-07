@@ -136,24 +136,11 @@ class MySeleniumTests(LiveServerTestCase):
         user_email = "bugbug@bugbug.com"
         user_name = "bugbug"
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys(user_email)
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+        self.selenium.find_element(By.NAME, "login").send_keys(user_email)
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
-        # Check for current header format: @username and separate Points display
-        self.assertIn(f"@{user_name}", body.text)
-        self.assertIn("0 Points", body.text)
-
-    @override_settings(DEBUG=True)
-    def test_login_username(self):
-        user_name = "bugbug"
-        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys(user_name)
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
+        body = self.selenium.find_element(By.TAG_NAME, "body")
         # Check for current header format: @username and separate Points display
         self.assertIn(f"@{user_name}", body.text)
         self.assertIn("0 Points", body.text)
@@ -164,7 +151,7 @@ class MySeleniumTests(LiveServerTestCase):
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug@bugbug.com")
         self.selenium.find_element(By.NAME, "password").send_keys("secret")
         self.selenium.find_element(By.NAME, "login_button").click()
 
@@ -204,7 +191,7 @@ class MySeleniumTests(LiveServerTestCase):
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug@bugbug.com")
         self.selenium.find_element(By.NAME, "password").send_keys("secret")
         self.selenium.find_element(By.NAME, "login_button").click()
 
@@ -351,7 +338,7 @@ class RemoveUserFromIssueTest(TestCase):
 
     def test_remove_user_from_issue(self):
         # Only the issue poster can delete own issue
-        self.client.login(username="testuser", password="password")
+        self.client.login(email="test@example.com", password="password")
 
         url = reverse("remove_user_from_issue", args=[self.issue.id])
         self.client.post(url, follow=True)  # Remove unused response variable
@@ -512,7 +499,7 @@ class ProjectPageTest(TestCase):
 class OrganizationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
 
     def test_create_and_list_organization(self):
         # Test organization creation
