@@ -1,14 +1,16 @@
 # Generated manually for GitHub OAuth BACON rewards feature
 
+from typing import ClassVar
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [
+    dependencies: ClassVar[list[tuple[str, str]]] = [
         ("website", "0260_add_username_to_slackbotactivity"),
     ]
 
-    operations = [
+    operations: ClassVar[list[migrations.operations.base.Operation]] = [
         migrations.AlterField(
             model_name="activity",
             name="action_type",
