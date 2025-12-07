@@ -1354,11 +1354,12 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
         new_filename = f"{name_without_ext}_processed.jpg"
 
         # Create new UploadedFile with processed content
-        processed_file = ContentFile(buffer.tobytes(), name=new_filename)
+        buffer_bytes = buffer.tobytes()
+        processed_file = ContentFile(buffer_bytes, name=new_filename)
 
         # Copy attributes from original file
         processed_file.content_type = "image/jpeg"
-        processed_file.size = len(buffer.tobytes())
+        processed_file.size = len(buffer_bytes)
 
         logging.info(f"Successfully processed screenshot: {original_name} -> {new_filename}")
         return processed_file
