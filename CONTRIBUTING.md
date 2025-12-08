@@ -118,19 +118,18 @@ Before you start contributing, you'll need to set up your development environmen
    pyenv install 3.11.2
    ```
 
-2. Set up Poetry and virtual environment:
+2. Set up Uv and virtual environment:
 
    ```bash
-   pip install poetry
-   poetry shell
-   poetry install
+   pip install uv
+   uv sync && source .venv/bin/activate
    ```
 
 3. Set up the application:
 
    ```bash
    python manage.py migrate
-   python3 manage.py loaddata website/fixtures/initial_data.json
+   python manage.py loaddata website/fixtures/initial_data.json
    python manage.py createsuperuser
    python manage.py collectstatic
    python manage.py runserver
@@ -185,18 +184,18 @@ We use several tools to maintain code quality:
 - isort for import sorting
 - ruff for linting
 
-You can run these tools using Poetry:
+You can run these tools using Uv:
 
 ```bash
-poetry run black .
-poetry run isort .
-poetry run ruff .
+uv run black .
+uv run isort .
+uv run ruff .
 ```
 
 We also use pre-commit hooks to ensure code quality. Install them with:
 
 ```bash
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 ### JavaScript Code Standards
