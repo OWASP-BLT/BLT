@@ -366,7 +366,7 @@ jobs:
 
             \`\`\`bash
             # Install dependencies
-            uv sync --all-extras
+            uv sync --all-groups
 
             # Run all tests
             uv run python manage.py test
@@ -528,7 +528,7 @@ jobs:
         run: docker exec my-container pip install uv
 
       - name: Sync dependencies with uv
-        run: docker exec my-container uv sync --no-group-dev
+        run: docker exec my-container uv sync --no-group dev
 
       - name: Clean up
         run: |
