@@ -13,6 +13,7 @@ Security Features:
 import logging
 
 from allauth.socialaccount.signals import social_account_added
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models.signals import post_save
@@ -34,13 +35,92 @@ SOCIAL_CONNECTION_REWARDS = {
 REWARD_COOLDOWN = 86400  # 24 hours cooldown to prevent disconnect/reconnect abuse
 
 
+def award_bacon_for_social(user, provider, is_signup):
+    """
+    Award BACON tokens for social account connection.
+
+    This helper function encapsulates the complete reward flow:
+    - Validates user and provider
+    - Enforces rate limiting
+    - Awards tokens and creates activity in atomic transaction
+    - Sets success message cache
+    - Handles errors with proper cleanup
+
+    Args:
+        user: The User instance
+        provider: Social provider name (e.g., 'github', 'google')
+        is_signup: Boolean indicating if this is a new signup (True) or existing user connection (False)
+
+    Returns:
+        bool: True if reward was successfully granted, False otherwise
+    """
+    # Security: Validate user exists and has ID
+    if not user or not user.id:
+        logger.warning("Invalid user for %s connection: user=%s", provider, user)
+        return False
+
+    # Security: Validate provider is in allowed list
+    reward_amount = SOCIAL_CONNECTION_REWARDS.get(provider, 0)
+    if reward_amount <= 0:
+        logger.info("No reward configured for provider: %s", provider)
+        return False
+
+    # Security: Rate limiting - prevent duplicate rewards (atomic operation)
+    cache_key = f"bacon_reward_{user.id}_{provider}"
+    if not cache.add(cache_key, True, REWARD_COOLDOWN):
+        logger.warning(
+            "Rate limit: User %s already received reward for %s within cooldown period",
+            user.username,
+            provider,
+        )
+        return False
+
+    logger.info("Attempting to award %s BACON to user: %s", reward_amount, user.username)
+
+    # Award BACON tokens and create activity in atomic transaction
+    try:  # noqa: BLE001
+        with transaction.atomic():
+            awarded = giveBacon(user, amt=reward_amount)
+            logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
+
+            # Create activity for audit trail within same transaction
+            Activity.objects.create(
+                user=user,
+                action_type="connected",
+                title=f"Connected {provider.capitalize()} Account",
+                description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
+                content_type=ContentType.objects.get_for_model(user),
+                object_id=user.id,
+            )
+            logger.info("Created activity log for user %s - %s connection", user.username, provider)
+
+        # Set cache flag for middleware to show success message (only after successful transaction)
+        message_cache_key = f"show_bacon_message_{user.id}"
+        cache.set(message_cache_key, {"provider": provider, "is_signup": is_signup}, 300)
+
+        return True
+
+    except Exception as e:
+        # Delete cache key on failure to allow retry
+        cache.delete(cache_key)
+        logger.error(
+            "Failed to award BACON tokens to user %s: %s",
+            user.username,
+            e,
+            exc_info=True,
+        )
+        return False
+
+
 @receiver(social_account_added)
 def reward_social_account_connection(_request, sociallogin, **_kwargs):
     """
-    Award BACON tokens when an existing user connects a social account.
+    Award BACON tokens when a social account is connected.
 
-    This signal only fires for existing users connecting accounts, not new signups.
-    New signups are handled by the post_save signal on SocialAccount.
+    This signal fires for both new user signups and existing users connecting accounts.
+    The sociallogin.is_existing attribute distinguishes between the two cases.
+    Note: The post_save handler on SocialAccount may also fire for the same event,
+    but rate limiting prevents duplicate rewards.
 
     Security measures:
     - Validates user exists and has ID
@@ -54,70 +134,14 @@ def reward_social_account_connection(_request, sociallogin, **_kwargs):
         user = sociallogin.user
 
         logger.info(
-            f"Social account connection: user={user.username if user else 'None'}, "
-            f"provider={provider}, is_existing={sociallogin.is_existing}"
+            "Social account connection: user=%s, provider=%s, is_existing=%s",
+            user.username if user else "None",
+            provider,
+            sociallogin.is_existing,
         )
 
-        # Security: Validate provider is in allowed list
-        reward_amount = SOCIAL_CONNECTION_REWARDS.get(provider, 0)
-        if reward_amount <= 0:
-            logger.info(f"No reward configured for provider: {provider}")
-            return
-
-        # Security: Validate user exists
-        if not user:
-            logger.warning(f"No user found in sociallogin for provider: {provider}")
-            return
-
-        # Security: Validate user has been saved to database
-        if not user.id:
-            logger.warning(f"User {user.username} has no ID yet, skipping reward")
-            return
-
-        # Security: Rate limiting - prevent duplicate rewards (atomic operation)
-        cache_key = f"bacon_reward_{user.id}_{provider}"
-        if not cache.add(cache_key, True, REWARD_COOLDOWN):
-            logger.warning(
-                "Rate limit: User %s already received reward for %s within cooldown period",
-                user.username,
-                provider,
-            )
-            return
-
-        logger.info("Attempting to award %s BACON to user: %s", reward_amount, user.username)
-
-        # Award BACON tokens and create activity in atomic transaction
-        try:  # noqa: BLE001
-            with transaction.atomic():
-                awarded = giveBacon(user, amt=reward_amount)
-                logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
-
-                # Create activity for audit trail within same transaction
-                from django.contrib.contenttypes.models import ContentType
-
-                Activity.objects.create(
-                    user=user,
-                    action_type="connected",
-                    title=f"Connected {provider.capitalize()} Account",
-                    description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
-                    content_type=ContentType.objects.get_for_model(user),
-                    object_id=user.id,
-                )
-                logger.info("Created activity log for user %s - %s connection", user.username, provider)
-
-            # Set cache flag for middleware to show success message (only after successful transaction)
-            message_cache_key = f"show_bacon_message_{user.id}"
-            cache.set(message_cache_key, {"provider": provider, "is_signup": not sociallogin.is_existing}, 300)
-
-        except Exception as e:
-            # Delete cache key on failure to allow retry
-            cache.delete(cache_key)
-            logger.error(
-                "Failed to award BACON tokens to user %s: %s",
-                user.username,
-                e,
-                exc_info=True,
-            )
+        # Delegate to shared reward logic
+        award_bacon_for_social(user, provider, is_signup=not sociallogin.is_existing)
 
     except Exception as e:  # noqa: BLE001
         logger.error("Unexpected error in reward_social_account_connection: %s", e, exc_info=True)
@@ -143,50 +167,10 @@ def social_account_post_save(sender, instance, created, **_kwargs):  # noqa: ARG
         provider = instance.provider
         user = instance.user
 
-        # Validate user
-        if not user or not user.id:
-            logger.warning(f"Social account created but user not ready: provider={provider}")
-            return
+        logger.info("New social account created: user=%s, provider=%s", user.username if user else "None", provider)
 
-        logger.info(f"New social account created: user={user.username}, provider={provider}")
-
-        # Check if reward is configured for this provider
-        reward_amount = SOCIAL_CONNECTION_REWARDS.get(provider, 0)
-        if reward_amount <= 0:
-            return
-
-        # Rate limiting: prevent duplicate rewards (atomic operation)
-        cache_key = f"bacon_reward_{user.id}_{provider}"
-        if not cache.add(cache_key, True, REWARD_COOLDOWN):
-            logger.info("Rate limit: Skipping duplicate reward for %s/%s", user.username, provider)
-            return
-
-        # Award BACON tokens and create activity in atomic transaction
-        try:  # noqa: BLE001
-            with transaction.atomic():
-                awarded = giveBacon(user, amt=reward_amount)
-                logger.info("Awarded %s BACON to %s for %s signup", awarded, user.username, provider)
-
-                # Create activity for audit trail within same transaction
-                from django.contrib.contenttypes.models import ContentType
-
-                Activity.objects.create(
-                    user=user,
-                    action_type="connected",
-                    title=f"Connected {provider.capitalize()} Account",
-                    description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
-                    content_type=ContentType.objects.get_for_model(user),
-                    object_id=user.id,
-                )
-
-            # Set cache flag for middleware to show success message (only after successful transaction)
-            message_cache_key = f"show_bacon_message_{user.id}"
-            cache.set(message_cache_key, {"provider": provider, "is_signup": True}, 300)
-
-        except Exception as e:
-            # Delete cache key on failure to allow retry
-            cache.delete(cache_key)
-            logger.error("Failed to award BACON to %s: %s", user.username, e, exc_info=True)
+        # Delegate to shared reward logic
+        award_bacon_for_social(user, provider, is_signup=True)
 
     except Exception as e:  # noqa: BLE001
         logger.error("Error in social_account_post_save: %s", e, exc_info=True)
