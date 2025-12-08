@@ -9,8 +9,7 @@
          data-summary="{{ summary_data|escapejs }}"
          data-yearly-chart="{{ yearly_chart_data_json|escapejs }}"
          data-top-repos="{{ top_repos_chart_data_json|escapejs }}"
-         data-yearly-trends="{{ yearly_contribution_data_json|escapejs }}"
-         data-gsoc-data="{{ gsoc_data_json|escapejs }}"></div>
+         data-report-data="{{ report_data_json|escapejs }}"></div>
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-2 text-center text-gray-900 dark:text-white">Google Summer of Code - PR Analysis</h1>
         <p class="text-lg text-center text-gray-600 dark:text-gray-400 mb-8">
@@ -107,20 +106,7 @@
                 </div>
             </div>
         </div>
-        <!-- Yearly Contribution Trends -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-10 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Repository Contribution Trends</h2>
-                <span class="text-sm text-red-600 font-medium">Top 5 repositories over time</span>
-            </div>
-            <div id="yearlyTrendsChart"></div>
-            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    Track how top repositories' contributions changed year over year
-                </div>
-            </div>
-        </div>
+        <!-- Yearly Contribution Trends - Removed since backend doesn't provide this data -->
         <!-- Quick Actions - Red theme -->
         <div class="flex flex-wrap gap-4 mb-8 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
             <!-- Refresh Button -->
@@ -164,25 +150,25 @@
                 GSOC Period: May - September
             </div>
         </div>
-        {% for year, data in gsoc_data.items %}
+        {% for year_block in report_data %}
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <div>
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            GSOC {{ year }}
+                            GSOC {{ year_block.year }}
                             <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(May - September)</span>
                         </h3>
                     </div>
                     <div class="flex items-center gap-4">
                         <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 dark:border-red-800">
-                            {{ data.total_prs }} Total PRs
+                            {{ year_block.total_prs }} Total PRs
                         </span>
                         <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-50 text-red-700 dark:bg-red-800 dark:text-red-300 border border-red-200 dark:border-red-800">
-                            {{ data.repos|length }} Repositories
+                            {{ year_block.repos|length }} Repositories
                         </span>
                     </div>
                 </div>
-                {% if data.repos %}
+                {% if year_block.repos %}
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                             <thead class="text-xs text-gray-700 uppercase bg-red-50 dark:bg-red-900/20 dark:text-gray-400">
@@ -194,7 +180,9 @@
                                         PR Count
                                     </th>
                                     <th scope="col"
-                                        class="px-6 py-3 font-semibold text-red-800 dark:text-red-300">Description</th>
+                                        class="px-6 py-3 font-semibold text-red-800 dark:text-red-300">
+                                        Contributors
+                                    </th>
                                     <th scope="col"
                                         class="px-6 py-3 text-right font-semibold text-red-800 dark:text-red-300">
                                         Actions
@@ -202,38 +190,36 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for repo_name, repo_data in data.repos.items %}
+                                {% for repo in year_block.repos %}
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/10">
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
                                             <div class="flex items-center gap-2">
                                                 <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                                                 </svg>
-                                                <span class="text-red-700 dark:text-red-300">{{ repo_name }}</span>
+                                                <span class="text-red-700 dark:text-red-300">{{ repo.repo__name }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 text-center">
-                                            <span class="px-3 py-1 rounded-full text-sm font-semibold {% if repo_data.count >= 15 %}bg-red-600 text-white {% elif repo_data.count >= 10 %}bg-red-500 text-white {% elif repo_data.count >= 5 %}bg-red-400 text-white {% elif repo_data.count >= 3 %}bg-red-300 text-red-800 {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
-                                                {{ repo_data.count }}
+                                            <span class="px-3 py-1 rounded-full text-sm font-semibold {% if repo.pr_count >= 15 %}bg-red-600 text-white {% elif repo.pr_count >= 10 %}bg-red-500 text-white {% elif repo.pr_count >= 5 %}bg-red-400 text-white {% elif repo.pr_count >= 3 %}bg-red-300 text-red-800 {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
+                                                {{ repo.pr_count }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <p class="text-gray-600 dark:text-gray-400 line-clamp-2">
-                                                {{ repo_data.description|default:"No description available" }}
-                                            </p>
+                                            <p class="text-gray-600 dark:text-gray-400">{{ repo.unique_contributors }} contributor(s)</p>
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <div class="flex justify-end gap-2">
-                                                <a href="{{ repo_data.url }}"
-                                                   target="_blank"
-                                                   class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-700 dark:text-red-300 transition duration-200 flex items-center gap-1">
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                    </svg>
-                                                    Repo
-                                                </a>
-                                                {% if repo_data.prs_url %}
-                                                    <a href="{{ repo_data.prs_url }}"
+                                                {% if repo.repo__repo_url %}
+                                                    <a href="{{ repo.repo__repo_url }}"
+                                                       target="_blank"
+                                                       class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-700 dark:text-red-300 transition duration-200 flex items-center gap-1">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                        Repo
+                                                    </a>
+                                                    <a href="{{ repo.repo__repo_url }}/pulls?q=is:pr+is:merged"
                                                        target="_blank"
                                                        class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition duration-200 flex items-center gap-1">
                                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +244,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p class="text-gray-500 dark:text-gray-400 text-lg">No pull requests found for this year</p>
-                        <p class="text-red-400 dark:text-red-500 text-sm mt-2">GSOC period: May - September {{ year }}</p>
+                        <p class="text-red-400 dark:text-red-500 text-sm mt-2">GSOC period: May - September {{ year_block.year }}</p>
                     </div>
                 {% endif %}
                 <!-- Year Summary -->
@@ -266,28 +252,26 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                             <p class="text-sm text-red-700 dark:text-red-300">Most Active Repo</p>
-                            {% with most_active=data.repos.items|dictsort:"1.count"|last %}
-                                <p class="font-semibold text-red-900 dark:text-red-200">{{ most_active.0|default:"-" }}</p>
+                            {% with most_active=year_block.repos|first %}
+                                <p class="font-semibold text-red-900 dark:text-red-200">{{ most_active.repo__name|default:"-" }}</p>
                             {% endwith %}
                         </div>
                         <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                             <p class="text-sm text-red-700 dark:text-red-300">Max PRs in Repo</p>
                             <p class="font-semibold text-red-900 dark:text-red-200">
-                                {% with sorted_repos=data.repos.items|dictsort:"1.count" %}
-                                    {% if sorted_repos %}
-                                        {% with last_repo=sorted_repos|last %}{{ last_repo.1.count }}{% endwith %}
-                                    {% else %}
-                                        0
-                                    {% endif %}
-                                {% endwith %}
+                                {% if year_block.repos %}
+                                    {{ year_block.repos.0.pr_count }}
+                                {% else %}
+                                    0
+                                {% endif %}
                             </p>
                         </div>
                         <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                             <p class="text-sm text-red-700 dark:text-red-300">Avg PRs/Repo</p>
                             <p class="font-semibold text-red-900 dark:text-red-200">
-                                {% with repo_count=data.repos|length %}
+                                {% with repo_count=year_block.repos|length %}
                                     {% if repo_count > 0 %}
-                                        {{ data.total_prs|floatformat:2 }}
+                                        {{ year_block.total_prs|floatformat:2 }}
                                     {% else %}
                                         0
                                     {% endif %}
@@ -297,11 +281,11 @@
                         <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                             <p class="text-sm text-red-700 dark:text-red-300">Year Rank</p>
                             <p class="font-semibold text-red-900 dark:text-red-200">
-                                {% if data.total_prs >= 100 %}
+                                {% if year_block.total_prs >= 100 %}
                                     ⭐ Excellent
-                                {% elif data.total_prs >= 50 %}
+                                {% elif year_block.total_prs >= 50 %}
                                     🔥 Good
-                                {% elif data.total_prs >= 20 %}
+                                {% elif year_block.total_prs >= 20 %}
                                     📈 Average
                                 {% else %}
                                     📊 Low
@@ -331,21 +315,18 @@
         summary: {},
         yearlyChart: {},
         topReposChart: {},
-        yearlyTrends: {},
-        gsocData: {}
+        reportData: []
     };
 
     // Parse data from hidden div
     function parseDataFromDOM() {
-        
         const dataDiv = document.getElementById('gsocData');
         if (dataDiv) {
             try {
                 window.gsocData.summary = JSON.parse(dataDiv.dataset.summary || '{}');
                 window.gsocData.yearlyChart = JSON.parse(dataDiv.dataset.yearlyChart || '{}');
                 window.gsocData.topReposChart = JSON.parse(dataDiv.dataset.topRepos || '{}');
-                window.gsocData.yearlyTrends = JSON.parse(dataDiv.dataset.yearlyTrends || '{}');
-                window.gsocData.gsocData = JSON.parse(dataDiv.dataset.gsocData || '{}');
+                window.gsocData.reportData = JSON.parse(dataDiv.dataset.reportData || '{}');
             } catch (e) {
                 console.error('Error parsing GSOC data:', e);
             }
@@ -356,7 +337,7 @@
         // ✅ Parse data once
         parseDataFromDOM();
 
-        //  NORMALIZE YEARLY DATA
+        // NORMALIZE YEARLY DATA
         const rawYearly = Array.isArray(window.gsocData.yearlyChart)
             ? window.gsocData.yearlyChart
             : [];
@@ -366,7 +347,7 @@
             pr_counts: rawYearly.map(d => d.prs),
         };
 
-        //  NORMALIZE TOP REPOS DATA
+        // NORMALIZE TOP REPOS DATA
         const rawTop = Array.isArray(window.gsocData.topReposChart)
             ? window.gsocData.topReposChart
             : [];
@@ -376,12 +357,7 @@
             counts: rawTop.map(d => d.prs),
         };
 
-        //  Disable trends safely for now
-        if (!window.gsocData.yearlyTrends || Array.isArray(window.gsocData.yearlyTrends)) {
-            window.gsocData.yearlyTrends = {};
-        }
-
-        //  Yearly PR Chart
+        // Yearly PR Chart
         if (window.gsocData.yearlyChart.years.length > 0) {
             const yearlyOptions = {
                 chart: { type: 'bar', height: '100%' },
@@ -401,7 +377,7 @@
             ).render();
         }
 
-        //  Top Repositories Chart
+        // Top Repositories Chart
         if (window.gsocData.topReposChart.repos.length > 0) {
             const topReposOptions = {
                 chart: { type: 'donut', height: '100%' },
@@ -415,15 +391,13 @@
                 topReposOptions
             ).render();
         }
-
-        // ✅ Trends will render only when backend sends correct shape
     })();
     
     function exportChartData() {
         const data = {
             yearlyData: window.gsocData.yearlyChart,
             topReposData: window.gsocData.topReposChart,
-            trendsData: window.gsocData.yearlyTrends,
+            reportData: window.gsocData.reportData,
             summary: window.gsocData.summary
         };
         
@@ -437,13 +411,13 @@
     }
     
     function downloadReport() {
-    alert("Download report is disabled until template refactor is complete.");
-}
-function viewRawData() {
-    const dataWindow = window.open('', '_blank');
-    dataWindow.document.write('<pre>' + JSON.stringify(window.gsocData, null, 2) + '</pre>');
-    dataWindow.document.close();
-}
+        alert("Download report is disabled until template refactor is complete.");
+    }
     
+    function viewRawData() {
+        const dataWindow = window.open('', '_blank');
+        dataWindow.document.write('<pre>' + JSON.stringify(window.gsocData, null, 2) + '</pre>');
+        dataWindow.document.close();
+    }
     </script>
 {% endblock %}

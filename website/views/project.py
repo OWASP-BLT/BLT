@@ -2262,23 +2262,20 @@ def gsoc_pr_report(request):
         avg_prs_per_year = round(total_prs / total_years, 2) if total_years else 0
 
         context = {
-            "gsoc_data": gsoc_data,
+            "report_data": report_data,
+            "report_data_json": json.dumps(report_data),
             "start_year": start_year,
             "end_year": current_year,
             "total_years": total_years,
             "total_repos": total_repos,
             "total_prs": total_prs,
+            "avg_prs_per_year": avg_prs_per_year,
             "summary_data": json.dumps(summary_data),
             "yearly_chart_data_json": json.dumps(yearly_chart_data),
-            "gsoc_data_json": json.dumps(list(gsoc_data.values())),
-            "avg_prs_per_year": avg_prs_per_year,
             "top_repos_chart_data_json": json.dumps(top_repos_chart_data),
         }
 
         return render(request, "projects/gsoc_pr_report.html", context)
-    except GitHubIssue.DoesNotExist:
-        messages.error(request, "No PR data available for GSOC analysis.")
-        return redirect("project_list")
     except Exception as e:
         logger.error(f"Error generating GSOC PR report: {e}")
         messages.error(request, "An error occurred while generating the report. Please try again later.")
