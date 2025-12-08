@@ -101,6 +101,9 @@ Access the application at **http://localhost:8000**
 
 #### Using uv
 
+> **Note:** The following uses `pip install uv` as a quick-start for users who already have Python and pip installed.
+> For the recommended and most reliable installation (which does not require Python or pip), use the standalone installer as described in our [Contributing Guide](https://github.com/OWASP-BLT/BLT/blob/main/CONTRIBUTING.md#uv-installation).
+
 ```bash
 # Install dependencies
 pip install uv

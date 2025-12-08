@@ -3,7 +3,7 @@ name = "blt"
 version = "0.1.0"
 description = ""
 authors = [{ name = "OWASP BLT", email = "you@example.com" }]
-requires-python = ">=3.11.2,<3.14"
+requires-python = ">=3.11.2,<3.12"
 license = "AGPL-3.0-or-later"
 dependencies = [
     "python-dotenv>=1.1.0,<2",
@@ -59,7 +59,7 @@ dependencies = [
     "drf-yasg>=1.21.10,<2",
     "slack-bolt>=1.23.0,<2",
     "slack-sdk>=3.35.0,<4",
-    "tld==0.13,<1",
+    "tld>=0.13,<0.14",
     "openai>=2.9.0,<3",
     "async-timeout>=4.0.3,<5",
     "python-dateutil>=2.9.0.post0,<3",
@@ -101,8 +101,8 @@ target-version = ['py311']
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-packages = ["blt"]
+# [tool.hatch.build.targets.wheel]
+# packages = ["blt"]
 
 [tool.ruff.lint]
 # This is a temporary ignore list to address on a PR per category basis after the initial run.

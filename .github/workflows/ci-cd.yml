@@ -96,7 +96,6 @@ jobs:
       - name: Run pre-commit
         id: pre-commit
         run: |
-          uv tool install pre-commit
           set +e
           uvx pre-commit run --all-files > pre-commit-output.txt 2>&1
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
@@ -429,6 +428,7 @@ jobs:
             const description = testExitCode === '0'
               ? 'Django tests passed'
               : 'Django tests failed';
+            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c'; // Green or Red
 
             // Get current labels on the PR
             const { data: current } = await github.rest.issues.listLabelsOnIssue({

@@ -35,7 +35,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies using uv
-RUN uv sync --frozen --no-group dev
+RUN uv sync --frozen --no-install-project --no-group dev
 
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
@@ -63,4 +63,4 @@ RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
 RUN chmod +x /blt/scripts/entrypoint.sh
 
 ENTRYPOINT ["/blt/scripts/entrypoint.sh"]
-CMD ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

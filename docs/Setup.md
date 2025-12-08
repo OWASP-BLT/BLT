@@ -386,7 +386,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # pip install uv
 
 # Activate virtual environment
-uv sync && source .venv/bin/activate
+uv sync
+
+# Activate the virtual environment (choose the command for your platform):
+# - Linux/macOS/Git Bash:
+source .venv/bin/activate
+# - Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# - Windows CMD:
+.venv\Scripts\activate.bat
 
 # --- Project setup ---
 # Create tables in the database
