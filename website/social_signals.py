@@ -3,16 +3,18 @@ Signal handlers for social account connections.
 Handles rewards and tracking when users connect their social accounts.
 
 Security Features:
-- Rate limiting: Prevents duplicate rewards for same provider
+- Rate limiting: Prevents duplicate rewards for same provider (24h cooldown)
 - Audit logging: All actions logged for security review
 - Input validation: Validates user and provider before processing
 - Error handling: Graceful failure without exposing internals
+- Transaction safety: Atomic operations for reward + audit trail
 """
 
 import logging
 
 from allauth.socialaccount.signals import social_account_added
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -29,7 +31,7 @@ SOCIAL_CONNECTION_REWARDS = {
 }
 
 # Rate limiting: Prevent duplicate rewards within this time window (seconds)
-REWARD_COOLDOWN = 60  # 1 minute cooldown between rewards for same user/provider
+REWARD_COOLDOWN = 86400  # 24 hours cooldown to prevent disconnect/reconnect abuse
 
 
 @receiver(social_account_added)
@@ -84,38 +86,38 @@ def reward_social_account_connection(_request, sociallogin, **_kwargs):
 
         logger.info("Attempting to award %s BACON to user: %s", reward_amount, user.username)
 
-        # Award BACON tokens
+        # Award BACON tokens and create activity in atomic transaction
         try:  # noqa: BLE001
-            awarded = giveBacon(user, amt=reward_amount)
-            logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
+            with transaction.atomic():
+                awarded = giveBacon(user, amt=reward_amount)
+                logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
+
+                # Create activity for audit trail within same transaction
+                from django.contrib.contenttypes.models import ContentType
+
+                Activity.objects.create(
+                    user=user,
+                    action_type="connected",
+                    title=f"Connected {provider.capitalize()} Account",
+                    description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
+                    content_type=ContentType.objects.get_for_model(user),
+                    object_id=user.id,
+                )
+                logger.info("Created activity log for user %s - %s connection", user.username, provider)
+
+            # Set cache flag for middleware to show success message (only after successful transaction)
+            message_cache_key = f"show_bacon_message_{user.id}"
+            cache.set(message_cache_key, {"provider": provider, "is_signup": not sociallogin.is_existing}, 300)
+
         except Exception as e:
+            # Delete cache key on failure to allow retry
+            cache.delete(cache_key)
             logger.error(
                 "Failed to award BACON tokens to user %s: %s",
                 user.username,
                 e,
                 exc_info=True,
             )
-            return
-
-        # Set cache flag for middleware to show success message (only after successful reward)
-        message_cache_key = f"show_bacon_message_{user.id}"
-        cache.set(message_cache_key, {"provider": provider, "is_signup": not sociallogin.is_existing}, 60)
-
-        # Create activity for audit trail (non-critical)
-        try:  # noqa: BLE001
-            from django.contrib.contenttypes.models import ContentType
-
-            Activity.objects.create(
-                user=user,
-                action_type="connected",
-                title=f"Connected {provider.capitalize()} Account",
-                description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
-                content_type=ContentType.objects.get_for_model(user),
-                object_id=user.id,
-            )
-            logger.info("Created activity log for user %s - %s connection", user.username, provider)
-        except Exception as e:
-            logger.warning("Failed to create activity log (non-critical): %s", e)
 
     except Exception as e:  # noqa: BLE001
         logger.error("Unexpected error in reward_social_account_connection: %s", e, exc_info=True)
@@ -159,32 +161,32 @@ def social_account_post_save(sender, instance, created, **_kwargs):  # noqa: ARG
             logger.info("Rate limit: Skipping duplicate reward for %s/%s", user.username, provider)
             return
 
-        # Award BACON tokens
+        # Award BACON tokens and create activity in atomic transaction
         try:  # noqa: BLE001
-            awarded = giveBacon(user, amt=reward_amount)
-            logger.info("Awarded %s BACON to %s for %s signup", awarded, user.username, provider)
+            with transaction.atomic():
+                awarded = giveBacon(user, amt=reward_amount)
+                logger.info("Awarded %s BACON to %s for %s signup", awarded, user.username, provider)
+
+                # Create activity for audit trail within same transaction
+                from django.contrib.contenttypes.models import ContentType
+
+                Activity.objects.create(
+                    user=user,
+                    action_type="connected",
+                    title=f"Connected {provider.capitalize()} Account",
+                    description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
+                    content_type=ContentType.objects.get_for_model(user),
+                    object_id=user.id,
+                )
+
+            # Set cache flag for middleware to show success message (only after successful transaction)
+            message_cache_key = f"show_bacon_message_{user.id}"
+            cache.set(message_cache_key, {"provider": provider, "is_signup": True}, 300)
+
         except Exception as e:
+            # Delete cache key on failure to allow retry
+            cache.delete(cache_key)
             logger.error("Failed to award BACON to %s: %s", user.username, e, exc_info=True)
-            return
-
-        # Set cache flag for middleware to show success message
-        message_cache_key = f"show_bacon_message_{user.id}"
-        cache.set(message_cache_key, {"provider": provider, "is_signup": True}, 60)
-
-        # Create activity for audit trail
-        try:  # noqa: BLE001
-            from django.contrib.contenttypes.models import ContentType
-
-            Activity.objects.create(
-                user=user,
-                action_type="connected",
-                title=f"Connected {provider.capitalize()} Account",
-                description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
-                content_type=ContentType.objects.get_for_model(user),
-                object_id=user.id,
-            )
-        except Exception as e:
-            logger.warning("Failed to create activity for %s: %s", user.username, e)
 
     except Exception as e:  # noqa: BLE001
         logger.error("Error in social_account_post_save: %s", e, exc_info=True)
