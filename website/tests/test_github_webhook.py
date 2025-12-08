@@ -47,8 +47,8 @@ class GitHubWebhookIssuesTestCase(TestCase):
             body="Test issue description",
             state="open",
             type="issue",
-            created_at=datetime(2024, 1, 1, 12, 0, 0),
-            updated_at=datetime(2024, 1, 1, 12, 0, 0),
+            created_at=timezone.make_aware(datetime(2024, 1, 1, 12, 0, 0)),
+            updated_at=timezone.make_aware(datetime(2024, 1, 1, 12, 0, 0)),
             url="https://github.com/testorg/test-repo/issues/123",
             repo=self.repo,
         )
