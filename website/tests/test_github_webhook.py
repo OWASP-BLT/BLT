@@ -12,6 +12,11 @@ from django.utils import timezone
 from website.models import GitHubIssue, Repo, UserProfile
 
 
+def compute_github_signature(secret: str, body: bytes) -> str:
+    """Generate X-Hub-Signature-256 header for a given body."""
+    return "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+
+
 @override_settings(GITHUB_WEBHOOK_SECRET="testsecret")
 class GitHubWebhookIssuesTestCase(TestCase):
     """Test GitHub webhook handling for ISSUE events"""
@@ -49,15 +54,7 @@ class GitHubWebhookIssuesTestCase(TestCase):
         )
 
     def _sign(self, body: bytes) -> str:
-        """Generate X-Hub-Signature-256 header for a given body."""
-        return (
-            "sha256="
-            + hmac.new(
-                self.secret.encode("utf-8"),
-                body,
-                hashlib.sha256,
-            ).hexdigest()
-        )
+        return compute_github_signature(self.secret, body)
 
     def _post(self, payload: dict, event: str = "issues", *, signature=None):
         """Helper to POST to /github-webhook/ with correct headers."""
@@ -298,15 +295,7 @@ class GitHubWebhookPullRequestTestCase(TestCase):
         self.pr_number = 42  # pull_request["number"]
 
     def _sign(self, body: bytes) -> str:
-        """Generate a valid X-Hub-Signature-256 header for the given request body."""
-        return (
-            "sha256="
-            + hmac.new(
-                self.secret.encode("utf-8"),
-                body,
-                hashlib.sha256,
-            ).hexdigest()
-        )
+        return compute_github_signature(self.secret, body)
 
     def _post(self, payload: dict, *, signature=None):
         """Helper to POST a signed pull_request webhook payload to /github-webhook/."""
@@ -464,3 +453,40 @@ class GitHubWebhookPullRequestTestCase(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(GitHubIssue.objects.count(), 0)
+
+        def test_missing_signature_returns_403(self):
+            """Missing signature header should return 403."""
+            payload = {
+                "action": "opened",
+                "pull_request": {
+                    "id": self.pr_global_id,
+                    "number": self.pr_number,
+                    "state": "open",
+                    "title": "No sig test",
+                    "body": "",
+                    "html_url": f"{self.repo_url}/pull/{self.pr_number}",
+                    "merged": False,
+                    "created_at": timezone.now().isoformat(),
+                    "updated_at": timezone.now().isoformat(),
+                    "user": {
+                        "login": "octocat",
+                        "html_url": "https://github.com/octocat",
+                        "avatar_url": "",
+                    },
+                },
+                "repository": {
+                    "full_name": "OWASP-BLT/demo-repo",
+                    "html_url": self.repo_url,
+                },
+            }
+            body = json.dumps(payload).encode("utf-8")
+
+            response = self.client.post(
+                self.webhook_url,
+                data=body,
+                content_type="application/json",
+                HTTP_X_GITHUB_EVENT="pull_request",
+                # Intentionally no HTTP_X_HUB_SIGNATURE_256 header
+            )
+
+            self.assertEqual(response.status_code, 403)
