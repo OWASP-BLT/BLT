@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0260_add_username_to_slackbotactivity"),
         ("website", "0260_merge_20251205_1407"),
