@@ -986,11 +986,7 @@ class UserProfile(models.Model):
     )
 
     class Meta:
-        indexes = [
-            models.Index(fields=["-leaderboard_score", "-current_streak"]),
-            models.Index(fields=["team", "-leaderboard_score"]),
-            models.Index(fields=["-quality_score"]),
-        ]
+        indexes = []
 
     def calculate_leaderboard_score(self):
         # Lock the row to prevent concurrent updates
@@ -1290,6 +1286,7 @@ class Bid(models.Model):
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
+
     # def save(self, *args, **kwargs):
     #     if (
     #         self.status == "Open"
@@ -1635,10 +1632,7 @@ class DailyStatusReport(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [
-            models.Index(fields=["user", "-created"]),
-            models.Index(fields=["goal_accomplished"]),
-        ]
+        indexes = []
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
