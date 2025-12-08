@@ -324,8 +324,10 @@ class HideImage(TestCase):
 class RemoveUserFromIssueTest(TestCase):
     def setUp(self):
         # Create a user, an anonymous user, and an issue
-        self.user = User.objects.create_user(username="testuser", password="password")
-        self.anonymous_user = User.objects.create_user(username="anonymous", password="password")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="password")
+        self.anonymous_user = User.objects.create_user(
+            username="anonymous", email="anonymous@example.com", password="password"
+        )
 
         self.issue = Issue.objects.create(user=self.user, description="Test Issue")
 
@@ -344,11 +346,15 @@ class RemoveUserFromIssueTest(TestCase):
         self.client.post(url, follow=True)  # Remove unused response variable
 
         self.issue.refresh_from_db()
-        self.activity.refresh_from_db()
 
-        # Activity user should be set to anonymous and issue user to None
-        self.assertEqual(self.activity.user.username, "anonymous")
+        # Issue user should be set to None
         self.assertIsNone(self.issue.user)
+
+        # Check that the first activity for this issue has been updated to anonymous user
+        issue_activity = Activity.objects.filter(
+            content_type=ContentType.objects.get_for_model(Issue), object_id=self.issue.id
+        ).first()
+        self.assertEqual(issue_activity.user.username, "anonymous")
 
 
 class LeaderboardTests(TestCase):
