@@ -1,7 +1,7 @@
 # Stage 1: Build stage
 FROM python:3.11.2 AS builder
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
 # Install system dependencies
@@ -28,28 +28,25 @@ RUN apt-get update \
     && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry and dependencies
-RUN pip install poetry
-RUN poetry config virtualenvs.create false
-COPY pyproject.toml poetry.lock* ./
-# Clean any existing httpx installation and update pip
-RUN pip uninstall -y httpx || true
-RUN pip install --upgrade pip
-# Install dependencies with Poetry
-RUN poetry install --no-root --no-interaction
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install additional Python packages
-RUN pip install opentelemetry-api opentelemetry-instrumentation
+# Copy project files
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies using uv
+RUN uv sync --frozen --no-install-project --no-group dev
 
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
+ENV PATH="/blt/.venv/bin:$PATH"
 
-# Copy only necessary files from builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy uv and installed packages from builder
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
+COPY --from=builder /blt/.venv /blt/.venv
 
 # Install runtime system dependencies
 RUN apt-get update && \
@@ -62,9 +59,8 @@ COPY . /blt
 
 # Convert line endings and set permissions
 RUN dos2unix Dockerfile docker-compose.yml scripts/entrypoint.sh ./blt/settings.py
-# Check if .env exists and run dos2unix on it, otherwise skip
 RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
 RUN chmod +x /blt/scripts/entrypoint.sh
 
 ENTRYPOINT ["/blt/scripts/entrypoint.sh"]
-CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

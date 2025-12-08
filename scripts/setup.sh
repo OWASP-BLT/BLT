@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Function to check if Poetry is installed
-check_poetry() {
-    if command -v poetry &> /dev/null
+# Function to check if Uv is installed
+check_uv() {
+    if command -v uv &> /dev/null
     then
-        echo "Poetry is installed."
+        echo "Uv is installed."
         return 0
     else
-        echo "Poetry is not installed. Please install it first: https://python-poetry.org/docs/#installation"
+        echo "Uv is not installed. Please install it first: https://docs.astral.sh/uv/getting-started/installation/"
         return 1
     fi
 }
@@ -24,30 +24,28 @@ check_docker() {
     fi
 }
 
-# Function to set up the project using Poetry
-setup_poetry() {
+# Function to set up the project using Uv
+setup_uv() {
 
-    check_poetry || exit 1
+    check_uv || exit 1
 
-    echo "Setting up the project using Poetry..."
+    echo "Setting up the project using Uv..."
 
-    echo "Updating Poetry to the latest version..."
-    poetry self update
-
+    echo "Updating Uv to the latest version..."
+    uv self update
 
     echo "Installing project dependencies..."
-    poetry install
+    uv sync
 
     echo "Running migrations..."
-    poetry run python manage.py migrate
-
+    uv run python manage.py migrate
 
     echo "Collecting static files..."
-    poetry run python manage.py collectstatic --noinput
+    uv run python manage.py collectstatic --noinput
 
-    echo "Poetry setup complete!"
+    echo "Uv setup complete!"
     echo "To start the Django server, use:"
-    echo "poetry run python manage.py runserver"
+    echo "uv run python manage.py runserver"
 }
 
 # Function to set up the project using Docker
@@ -59,7 +57,6 @@ setup_docker() {
         echo "Docker is not running. Please start Docker first."
         exit 1
     fi
-
 
     echo "Building Docker container..."
     sudo docker-compose up --build -d
@@ -96,28 +93,28 @@ main() {
     echo "Setting up the Django project..."
 
 
-    if check_poetry; then
-        read -p "Do you want to proceed with Poetry setup? (y/n): " choice
+    if check_uv; then
+        read -p "Do you want to proceed with Uv setup? (y/n): " choice
         if [[ "$choice" == "y" ]]; then
-            setup_poetry
+            setup_uv
         else
-            echo "Skipping Poetry setup."
+            echo "Skipping Uv setup."
         fi
     else
-        echo "Poetry is not installed, moving to Docker setup."
+        echo "Uv is not installed, moving to Docker setup."
     fi
 
-    if ! check_poetry || [[ "$choice" == "n" ]]; then
+    if ! check_uv || [[ "$choice" == "n" ]]; then
         if check_docker; then
             read -p "Do you want to proceed with Docker setup? (y/n): " choice
             if [[ "$choice" == "y" ]]; then
                 setup_docker
             else
-                echo "Setup aborted. Please install Poetry or Docker and rerun the script."
+                echo "Setup aborted. Please install Uv or Docker and rerun the script."
                 exit 1
             fi
         else
-            echo "Neither Poetry nor Docker is installed. Setup cannot continue."
+            echo "Neither Uv nor Docker is installed. Setup cannot continue."
             exit 1
         fi
     fi
