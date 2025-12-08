@@ -40,7 +40,7 @@ def create_indexes(apps, schema_editor):
         )
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_use_leaderb_aa31e8_idx" '
-            'ON "website_userprofile" ("leaderboard_score", "current_streak" DESC);'
+            'ON "website_userprofile" ("leaderboard_score" DESC, "current_streak" DESC);'
         )
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_use_team_id_8dcd03_idx" '

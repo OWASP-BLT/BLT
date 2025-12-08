@@ -1639,11 +1639,15 @@ class TeamMemberLeaderboardAPIView(APIView):
         lock_acquired = cache.add(lock_key, "1", timeout=10)  # 10-sec lock
 
         if not lock_acquired:
-            # Another request is rebuilding - wait briefly and retry
-            time.sleep(0.1)
-            cached_value = cache.get(cache_key)
-            if cached_value:
-                return Response(cached_value)
+            # Wait for the leader to populate cache (max 2 seconds)
+            waited = 0
+            while waited < 2:
+                time.sleep(0.1)
+                waited += 0.1
+                cached_value = cache.get(cache_key)
+                if cached_value:
+                    return Response(cached_value)
+            lock_acquired = cache.add(lock_key, "1", timeout=10)
 
         try:
             # Queryset
@@ -1670,7 +1674,8 @@ class TeamMemberLeaderboardAPIView(APIView):
             cache.set(cache_key, response_data, timeout=300)
             return Response(response_data)
         finally:
-            cache.delete(lock_key)
+            if lock_acquired:
+                cache.delete(lock_key)
 
 
 def _is_local_host(host: str, db_name: str | None = None) -> bool:
