@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
+from dateutil.parser import ParserError
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -1229,6 +1230,27 @@ def validate_github_signature(payload_body: bytes, signature_header: str | None)
     return hmac.compare_digest(expected, signature_header)
 
 
+def safe_parse_github_datetime(value, *, default=None, field_name=""):
+    """
+    Safely parse a GitHub timestamp string into a datetime.
+
+    Returns `default` if the value is empty or malformed, and logs a warning
+    instead of letting ParserError crash the webhook handler.
+    """
+    if not value:
+        return default
+    try:
+        return dateutil_parser.parse(value)
+    except (ParserError, ValueError, TypeError, OverflowError) as exc:
+        logger.warning(
+            "Failed to parse GitHub datetime for %s: %r (%s)",
+            field_name,
+            value,
+            exc,
+        )
+        return default
+
+
 @csrf_exempt
 def github_webhook(request):
     """
@@ -1322,9 +1344,21 @@ def handle_pull_request_event(payload):
     gh_login = pr_user.get("login")
     gh_avatar = pr_user.get("avatar_url")
     gh_github_url = pr_user_html_url
+    gh_id = pr_user.get("id")  # GitHub user ID (preferred unique key)
 
-    if gh_github_url:
-        try:
+    try:
+        if gh_id is not None:
+            # Primary: use github_id as the unique identifier
+            contributor, _ = Contributor.objects.get_or_create(
+                github_id=gh_id,
+                defaults={
+                    "github_url": gh_github_url or "",
+                    "name": gh_login or extract_github_username(gh_github_url) or "",
+                    "avatar_url": gh_avatar,
+                },
+            )
+        elif gh_github_url:
+            # Fallback for rare cases where id is missing (e.g. some bots)
             contributor, _ = Contributor.objects.get_or_create(
                 github_url=gh_github_url,
                 defaults={
@@ -1332,15 +1366,31 @@ def handle_pull_request_event(payload):
                     "avatar_url": gh_avatar,
                 },
             )
-        except Exception as e:
-            logger.error(f"Error getting/creating Contributor for PR: {e}")
-            contributor = None
+    except Exception as e:
+        logger.error(f"Error getting/creating Contributor for PR: {e}")
+        contributor = None
 
-    # --- Timestamps (using same style as handle_issue_event) ---
-    created_at = dateutil_parser.parse(pr_data["created_at"]) if pr_data.get("created_at") else timezone.now()
-    updated_at = dateutil_parser.parse(pr_data["updated_at"]) if pr_data.get("updated_at") else timezone.now()
-    closed_at = dateutil_parser.parse(pr_data["closed_at"]) if pr_data.get("closed_at") else None
-    merged_at = dateutil_parser.parse(pr_data["merged_at"]) if pr_data.get("merged_at") else None
+        # --- Timestamps (using same style as handle_issue_event) ---
+        created_at = safe_parse_github_datetime(
+            pr_data.get("created_at"),
+            default=timezone.now(),
+            field_name="pull_request.created_at",
+        )
+    updated_at = safe_parse_github_datetime(
+        pr_data.get("updated_at"),
+        default=timezone.now(),
+        field_name="pull_request.updated_at",
+    )
+    closed_at = safe_parse_github_datetime(
+        pr_data.get("closed_at"),
+        default=None,
+        field_name="pull_request.closed_at",
+    )
+    merged_at = safe_parse_github_datetime(
+        pr_data.get("merged_at"),
+        default=None,
+        field_name="pull_request.merged_at",
+    )
 
     # --- Repo mapping (same style as handle_issue_event) ---
     repo_html_url = repo_data.get("html_url")
