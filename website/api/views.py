@@ -89,7 +89,7 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
     and programmatic access without CSRF tokens.
     """
 
-    def enforce_csrf(self, request):
+    def enforce_csrf(self, request):  # noqa: ARG002
         return  # CSRF disabled to support API testing and non-browser clients
 
 

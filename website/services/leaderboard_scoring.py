@@ -1,7 +1,6 @@
 from datetime import timedelta
-from decimal import Decimal
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 
 
@@ -16,9 +15,11 @@ class LeaderboardScoringService:
             breakdown (dict)
         """
         try:
-            profile = user.userprofile
+            # Touch related profile to ensure it exists
+            user.userprofile
         except UserProfile.DoesNotExist:
-            return Decimal("0"), {"goals": 0, "frequency": 0}
+            # Consistent zero-case return
+            return 0.0, {"frequency": 0, "streak": 0, "goals": 0, "completeness": 0}
 
         from website.models import DailyStatusReport
 
