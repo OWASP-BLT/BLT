@@ -1,4 +1,5 @@
 import logging
+from math import ceil
 
 from django.core.cache import cache
 from django.db import transaction
@@ -39,10 +40,12 @@ def update_leaderboard_on_dsr_save(_sender=None, instance=None, created=None, **
     if hasattr(cache, "delete_pattern"):
         cache.delete_pattern(f"team_lb:{team.id}:*")
     else:
+        team_size = UserProfile.objects.filter(team=team).count()
         # Fallback: Delete known cache keys
         for page_size in [10, 20, 50, 100]:
+            total_pages = ceil(team_size / page_size)
             for order in ["score", "streak", "quality"]:
-                # Delete up to 50 pages (covers teams with 5000 members at size=100)
-                for page in range(1, 51):
+                # Delete all cached pages based on actual team size
+                for page in range(1, total_pages + 1):
                     cache_key = f"team_lb:{team.id}:{order}:{page}:{page_size}"
                     cache.delete(cache_key)

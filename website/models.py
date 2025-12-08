@@ -985,14 +985,11 @@ class UserProfile(models.Model):
         null=True, blank=True, help_text="When the leaderboard score was last recalculated"
     )
 
-    class Meta:
-        indexes = []
-
     def calculate_leaderboard_score(self):
         # Lock the row to prevent concurrent updates
         with transaction.atomic():
             locked_self = self.__class__.objects.select_for_update().get(pk=self.pk)
-            DailyStatusReport.objects.filter(user=locked_self.user).select_for_update()
+            DailyStatusReport.objects.select_for_update().filter(user=locked_self.user).exists()
 
             score, breakdown = LeaderboardScoringService.calculate_for_user(locked_self.user)
 
@@ -1630,9 +1627,6 @@ class DailyStatusReport(models.Model):
     goal_accomplished = models.BooleanField(default=False)
     current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        indexes = []
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
