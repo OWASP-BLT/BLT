@@ -118,14 +118,59 @@ Before you start contributing, you'll need to set up your development environmen
    pyenv install 3.11.2
    ```
 
-2. Set up Uv and virtual environment:
+2. Install Uv:
+
+   **Recommended (Standalone Installer):**
+
+   **macOS/Linux:**
 
    ```bash
-   pip install uv
-   uv sync && source .venv/bin/activate
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. Set up the application:
+   **Windows (PowerShell):**
+
+   ```powershell
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+   **Alternative (pipx):**
+
+   ```bash
+   pipx install uv
+   ```
+
+   For more installation options, see the [official uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
+
+3. Set up virtual environment and install dependencies:
+
+   ```bash
+   uv sync
+   ```
+
+4. Activate the virtual environment:
+
+   **Linux/macOS/Git Bash:**
+
+   ```bash
+   source .venv/bin/activate
+   ```
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+   **Windows (CMD):**
+
+   ```cmd
+   .venv\Scripts\activate.bat
+   ```
+
+   > **Note:** You can skip manual activation and use `uv run <command>` instead, which automatically runs commands in the project's virtual environment.
+
+5. Set up the application:
 
    ```bash
    python manage.py migrate
@@ -135,7 +180,7 @@ Before you start contributing, you'll need to set up your development environmen
    python manage.py runserver
    ```
 
-4. Access the application at [http://localhost:8000](http://localhost:8000)
+6. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ## Making Contributions
 

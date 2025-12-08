@@ -374,8 +374,16 @@ sudo apt-get install postgresql
 # --- Setup Virtual Environment ---
 
 # Official guide: https://docs.astral.sh/uv/getting-started/installation/
-# Install Uv
-pip install uv
+# Install Uv (Recommended: Use standalone installer)
+
+# For macOS/Linux (using curl):
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# For Windows (using PowerShell):
+# Run in PowerShell: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Alternative: Install via pip (if you prefer)
+# pip install uv
 
 # Activate virtual environment
 uv sync && source .venv/bin/activate
@@ -416,7 +424,7 @@ If you run into issues during the setup, here are some common solutions:
 
 ### 1.Cannot install nltk, distlib, certifi
 
-The error message indicates that the package manager (Uv) is unable to find installation candidates.
+The error message indicates that the package manager (uv) is unable to find installation candidates.
 Below are the temporary solutions.
 
 ```sh
