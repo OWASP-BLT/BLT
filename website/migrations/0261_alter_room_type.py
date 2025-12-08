@@ -10,23 +10,12 @@ def backwards(apps, schema_editor):
     Room = apps.get_model("website", "Room")
     Room.objects.filter(type="organization").update(type="org")
 
-def forwards(apps, schema_editor):
-    Room = apps.get_model("website", "Room")
-    Room.objects.filter(type="org").update(type="organization")
-
-
-def backwards(apps, schema_editor):
-    Room = apps.get_model("website", "Room")
-    Room.objects.filter(type="organization").update(type="org")
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0260_add_username_to_slackbotactivity"),
     ]
 
     operations = [
-        migrations.RunPython(forwards, backwards),
         migrations.RunPython(forwards, backwards),
         migrations.AlterField(
             model_name="room",
