@@ -48,10 +48,10 @@ class LeaderboardScoringService:
         stats = reports.aggregate(
             total=Count("id"),
             accomplished=Count("id", filter=Q(goal_accomplished=True)),
-            has_prev=Count("id", filter=Q(previous_work__isnull=False)),
-            has_next=Count("id", filter=Q(next_plan__isnull=False)),
-            has_blockers=Count("id", filter=Q(blockers__isnull=False)),
-            has_mood=Count("id", filter=Q(current_mood__isnull=False)),
+            has_prev=Count("id", filter=~Q(previous_work="")),
+            has_next=Count("id", filter=~Q(next_plan="")),
+            has_blockers=Count("id", filter=~Q(blockers="")),
+            has_mood=Count("id", filter=~Q(current_mood="")),
         )
 
         # Completeness score
@@ -64,8 +64,6 @@ class LeaderboardScoringService:
             if stats["total"] > 0
             else 0
         )
-
-        completeness_score = (sum(completeness_values) / len(completeness_values)) * 100
 
         # Weighted final
         final_score = frequency_score * 0.2 + streak_score * 0.2 + goal_score * 0.3 + completeness_score * 0.3
