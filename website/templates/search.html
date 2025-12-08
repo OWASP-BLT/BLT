@@ -20,7 +20,7 @@
 {% block content %}
     <!-- Include Sidenav -->
     {% include "includes/sidenav.html" %}
-    <div class="absolute bottom-[10px] right-[15px]">
+    <div class="absolute bottom-[130px] right-[100px] flex space-x-4" style="font-size: 40px;">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/search.html">
             <i class="fab fa-github"></i>
         </a>
@@ -29,80 +29,10 @@
         </a>
     </div>
     <div class="row mt-20">
-        <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center">
-                <span class="search-header text-black dark:text-white text-3xl">Search Results for&nbsp;</span><span class="search-header-query text-blue-400 font-bold text-3xl">{{ query }}</span>
-            </h1>
-            <hr>
-        </div>
     </div>
     {% if query %}
         <div class="container mt-4">
             <div class="flex">
-                <!-- Left sidebar with counts -->
-                {% if type == 'all' %}
-                    <div class="w-64 flex-shrink-0 pr-6 sticky top-4">
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Results Found</h2>
-                            <div class="space-y-2">
-                                {% if organizations %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('organizations-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Organizations</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ organizations|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if issues %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('issues-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Issues</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ issues|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if domains %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('domains-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Domains</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ domains|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if users %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('users-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Users</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ users|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if projects %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('projects-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Projects</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ projects|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if repos %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('repos-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Repos</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ repos|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
                 <!-- Main content area -->
                 <div class="flex-1">
                     {% if issues %}
@@ -767,10 +697,22 @@
                         </div>
                     {% endif %}
                     {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="alert alert-warning text-center" role="alert">Nothing Found!</div>
-                            </div>
+                        <div class="flex-1">
+                            {% if not issues %}
+                            <script>
+                                document.body.style.overflow = "hidden";
+                            </script>
+                                <div class="w-full flex justify-center items-center h-[500px]">
+                                    <div class="flex flex-col items-center justify-center text-center z-10 translate-x-20">
+                                        <h2 class="text-3xl font-bold text-gray-300 dark:text-gray-500 mb-4">
+                                            Nothing Found!
+                                        </h2>
+                                        <p class="text-gray-400 dark:text-gray-600 text-lg">
+                                            Try searching with different keywords.
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
