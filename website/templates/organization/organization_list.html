@@ -201,7 +201,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="mt-6 flex justify-between items-center">
-                                    <span class="text-sm text-gray-500 dark:text-gray-500">Joined {{ org.created|date:"M d, Y"}}</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">Joined {{ org.created|date:"M d, Y" }}</span>
                                     <a href="{% url 'organization_detail' org.slug %}"
                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-red-700">
                                         View Details
