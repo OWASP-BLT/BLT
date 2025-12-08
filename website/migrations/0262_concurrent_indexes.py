@@ -32,7 +32,7 @@ def create_indexes(apps, schema_editor):
     else:
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_dai_user_id_1d9003_idx" '
-            'ON "website_dailystatusreport" ("user_id", "created");'
+            'ON "website_dailystatusreport" ("user_id", "created" DESC);'
         )
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_dai_goal_ac_39f9cb_idx" '
@@ -40,14 +40,15 @@ def create_indexes(apps, schema_editor):
         )
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_use_leaderb_aa31e8_idx" '
-            'ON "website_userprofile" ("leaderboard_score", "current_streak");'
+            'ON "website_userprofile" ("leaderboard_score", "current_streak" DESC);'
         )
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_use_team_id_8dcd03_idx" '
-            'ON "website_userprofile" ("team_id", "leaderboard_score");'
+            'ON "website_userprofile" ("team_id", "leaderboard_score" DESC);'
         )
         schema_editor.execute(
-            'CREATE INDEX IF NOT EXISTS "website_use_quality_777c8d_idx" ' 'ON "website_userprofile" ("quality_score");'
+            'CREATE INDEX IF NOT EXISTS "website_use_quality_777c8d_idx" '
+            'ON "website_userprofile" ("quality_score" DESC);'
         )
 
 
