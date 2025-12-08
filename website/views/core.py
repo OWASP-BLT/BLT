@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -32,7 +33,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
-from django.db import connection, models, transaction
+from django.db import DatabaseError, IntegrityError, connection, models, transaction
 from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -78,6 +79,7 @@ from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_ur
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
+SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -572,240 +574,291 @@ def search(request, template="search.html"):
     context = {}
 
     if query:
-        # Search across multiple models
-        organizations = Organization.objects.filter(name__icontains=query)
-        issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
-        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-        users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        allowed_types = [
+            "all",
+            "issues",
+            "domains",
+            "users",
+            "labels",
+            "organizations",
+            "projects",
+            "repos",
+            "tags",
+            "languages",
+        ]
+        if not stype or stype not in allowed_types:
+            stype = "all"
 
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "organizations": organizations,
-            "domains": domains,
-            "users": users,
-            "issues": issues,
-            "projects": projects,
-            "repos": repos,
-        }
+        # Handle type='all' - search ALL models
+        if stype == "all":
+            organizations = Organization.objects.filter(name__icontains=query)
+            if request.user.is_authenticated:
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )
+            else:
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
 
-        # Get badges for each user
-        for user in users:
-            user.badges = UserBadge.objects.filter(user=user)
-            # Ensure user has a username for profile URL
-            user.username = user.username
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "organizations": organizations,
+                "domains": domains,
+                "users": users,
+                "issues": issues,
+                "projects": projects,
+                "repos": repos,
+            }
 
-        # Get domain URLs for organizations
-        for org in organizations:
-            d = Domain.objects.filter(organization=org).first()
-            if d:
-                org.absolute_url = d.get_absolute_url()
+        elif stype == "issues":
+            if request.user.is_authenticated:
+                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )[0:20]
+            else:
+                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
+                    0:20
+                ]
 
-    elif stype == "issues":
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
-        }
-    elif stype == "domains":
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
-        }
-    elif stype == "users":
-        users = (
-            UserProfile.objects.filter(Q(user__username__icontains=query))
-            .annotate(total_score=Sum("user__points__score"))
-            .order_by("-total_score")[0:20]
-        )
-        for userprofile in users:
-            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "users": users,
-        }
-    elif stype == "labels":
-        context = {
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
-        }
-    elif stype == "organizations":
-        organizations = Organization.objects.filter(name__icontains=query)
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "issues": issues_qs,
+            }
 
-        for org in organizations:
-            d = Domain.objects.filter(organization=org).first()
-            if d:
-                org.absolute_url = d.get_absolute_url()
-        context = {
-            "query": query,
-            "type": stype,
-            "organizations": Organization.objects.filter(name__icontains=query),
-        }
-    elif stype == "projects":
-        context = {
-            "query": query,
-            "type": stype,
-            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
-        }
-    elif stype == "repos":
-        context = {
-            "query": query,
-            "type": stype,
-            "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
-        }
-    elif stype == "tags":
-        tags = Tag.objects.filter(name__icontains=query)
-        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-        matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-        matching_issues = Issue.objects.filter(tags__in=tags).distinct()
-        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-        matching_repos = Repo.objects.filter(tags__in=tags).distinct()
-        for org in matching_organizations:
-            d = Domain.objects.filter(organization=org).first()
-            if d:
-                org.absolute_url = d.get_absolute_url()
-        context = {
-            "query": query,
-            "type": stype,
-            "tags": tags,
-            "matching_organizations": matching_organizations,
-            "matching_domains": matching_domains,
-            "matching_issues": matching_issues,
-            "matching_user_profiles": matching_user_profiles,
-            "matching_repos": matching_repos,
-        }
-    elif stype == "languages":
-        context = {
-            "query": query,
-            "type": stype,
-            "repos": Repo.objects.filter(primary_language__icontains=query),
-        }
+        elif stype == "domains":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
+            }
+
+        elif stype == "users":
+            users = (
+                UserProfile.objects.filter(Q(user__username__icontains=query))
+                .annotate(total_score=Sum("user__points__score"))
+                .order_by("-total_score")[0:20]
+            )
+            for userprofile in users:
+                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "users": users,
+            }
+
+        elif stype == "labels":
+            if request.user.is_authenticated:
+                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )[0:20]
+            else:
+                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(is_hidden=True)[0:20]
+
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "issues": issues_qs,
+            }
+
+        elif stype == "organizations":
+            organizations = Organization.objects.filter(name__icontains=query)
+            for org in organizations:
+                d = Domain.objects.filter(organization=org).first()
+                if d:
+                    org.absolute_url = d.get_absolute_url()
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "organizations": organizations,
+            }
+
+        elif stype == "projects":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+            }
+
+        elif stype == "repos":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+            }
+
+        elif stype == "tags":
+            tags = Tag.objects.filter(name__icontains=query)
+            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+            matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+            if request.user.is_authenticated:
+                matching_issues = (
+                    Issue.objects.filter(tags__in=tags)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .distinct()
+                )
+            else:
+                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()
+            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+            matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+            for org in matching_organizations:
+                d = Domain.objects.filter(organization=org).first()
+                if d:
+                    org.absolute_url = d.get_absolute_url()
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "tags": tags,
+                "matching_organizations": matching_organizations,
+                "matching_domains": matching_domains,
+                "matching_issues": matching_issues,
+                "matching_user_profiles": matching_user_profiles,
+                "matching_repos": matching_repos,
+            }
+
+        elif stype == "languages":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "repos": Repo.objects.filter(primary_language__icontains=query),
+            }
+
+    # Handle authenticated user features
     if request.user.is_authenticated:
-        context["wallet"] = Wallet.objects.get(user=request.user)
-        # Log search history for authenticated users
+        try:
+            context["wallet"] = Wallet.objects.get(user=request.user)
+        except Wallet.DoesNotExist:
+            context["wallet"] = None
+
+        # Log search history for authenticated users - LAZY EVALUATION
+        # Only calculate result count when we're actually going to log the search
         if query:
             search_type = stype if stype else "all"
-            # Calculate total result count based on search type
-            # Note: When query is truthy, the page shows generic results (from if query block),
-            # so we use generic counts to match what's displayed
-            result_count = 0
-            # Calculate accurate result counts based on search type
-            if search_type == "all":
-                result_count = (
-                    organizations.count()
-                    + issues.count()
-                    + domains.count()
-                    + users.count()
-                    + projects.count()
-                    + repos.count()
-                )
 
-            elif search_type == "issues":
-                result_count = issues.count()
-
-            elif search_type == "domains":
-                result_count = domains.count()
-
-            elif search_type == "users":
-                result_count = users.count()
-
-            elif search_type == "labels":
-                # Count label-filtered issues
-                result_count = (
-                    Issue.objects.filter(label__icontains=query, hunt=None)
-                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-                    .count()
-                )
-
-            elif search_type == "organizations":
-                result_count = organizations.count()
-
-            elif search_type == "projects":
-                result_count = projects.count()
-
-            elif search_type == "repos":
-                result_count = repos.count()
-
-            elif search_type == "tags":
-                matching_tags = Tag.objects.filter(name__icontains=query)
-                result_count = (
-                    Organization.objects.filter(tags__in=matching_tags).distinct().count()
-                    + Domain.objects.filter(tags__in=matching_tags).distinct().count()
-                    + Issue.objects.filter(tags__in=matching_tags).distinct().count()
-                    + UserProfile.objects.filter(tags__in=matching_tags).distinct().count()
-                    + Repo.objects.filter(tags__in=matching_tags).distinct().count()
-                )
-
-            elif search_type == "languages":
-                result_count = Repo.objects.filter(primary_language__icontains=query).count()
+            # LAZY EVALUATION: Only calculate result count when we actually need it
+            # (after checking for duplicates and before creating the entry)
 
             # Atomic operation: check for duplicates, create entry, and cleanup excess entries
-            # Use select_for_update to prevent race conditions in concurrent requests
-            truncated_query = query[:255]  # Ensure query doesn't exceed max_length
+            if len(query) > 255:
+                # Store hash + preview for very long queries, ensuring we stay within max_length (255)
+                query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
+                # 228 + 27 ("... [hash:" + 16 hex chars + "]") = 255
+                truncated_query = f"{query[:228]}... [hash:{query_hash}]"
+            else:
+                truncated_query = query
+
             try:
                 with transaction.atomic():
-                    # Check for duplicate consecutive searches within transaction
-                    # Use select_for_update to lock the row and prevent concurrent modifications
-                    with transaction.atomic():
-                        # Lock entire user history, not just last row
-                        user_history_ids = list(
-                            SearchHistory.objects.filter(user=request.user)
-                            .select_for_update()
-                            .order_by("-timestamp")
-                            .values_list("id", flat=True)
+                    # Lock user's search history to prevent race conditions
+                    user_history_ids = list(
+                        SearchHistory.objects.filter(user=request.user)
+                        .select_for_update()
+                        .order_by("-timestamp")
+                        .values_list("id", flat=True)
+                    )
+
+                    last_search_id = user_history_ids[0] if user_history_ids else None
+                    last_search = SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
+
+                    # Prevent consecutive duplicates
+                    if (
+                        not last_search
+                        or last_search.query != truncated_query
+                        or last_search.search_type != search_type
+                    ):
+                        # LAZY EVALUATION: Calculate result count only now, when we need it
+                        result_count = 0
+
+                        # Get result counts from context if available
+                        try:
+                            if search_type == "all" or not search_type:
+                                # Sum counts from all search results
+                                for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
+                                    if key in context:
+                                        items = context[key]
+                                        if hasattr(items, "count"):
+                                            result_count += items.count()
+                                        elif isinstance(items, list):
+                                            result_count += len(items)
+
+                            elif search_type == "tags":
+                                # Sum counts for tag search
+                                for key in [
+                                    "matching_organizations",
+                                    "matching_domains",
+                                    "matching_issues",
+                                    "matching_user_profiles",
+                                    "matching_repos",
+                                ]:
+                                    if key in context:
+                                        items = context[key]
+                                        if hasattr(items, "count"):
+                                            result_count += items.count()
+                                        elif isinstance(items, list):
+                                            result_count += len(items)
+
+                            else:
+                                # Map search types to their context keys
+                                type_to_key = {
+                                    "issues": "issues",
+                                    "domains": "domains",
+                                    "users": "users",
+                                    "labels": "issues",  # labels search returns issues
+                                    "organizations": "organizations",
+                                    "projects": "projects",
+                                    "repos": "repos",
+                                    "languages": "repos",  # languages search returns repos
+                                }
+                                key = type_to_key.get(search_type, search_type)
+                                items = context.get(key)
+                                if items:
+                                    if hasattr(items, "count"):
+                                        result_count = items.count()
+                                    elif isinstance(items, list):
+                                        result_count = len(items)
+
+                        except Exception:
+                            logger.exception("Error calculating result count")
+                            result_count = 0
+
+                        SearchHistory.objects.create(
+                            user=request.user,
+                            query=truncated_query,
+                            search_type=search_type,
+                            result_count=result_count,
                         )
 
-                        last_search_id = user_history_ids[0] if user_history_ids else None
-                        last_search = (
-                            SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
-                        )
-
-                        # Prevent consecutive duplicates
-                        if (
-                            not last_search
-                            or last_search.query != truncated_query
-                            or last_search.search_type != search_type
-                        ):
-                            SearchHistory.objects.create(
-                                user=request.user,
-                                query=truncated_query,
-                                search_type=search_type,
-                                result_count=result_count,
-                            )
-
-                            # CLEANUP — keep last 50
-                            excess_ids = []  # Initialize to empty list
-                            if len(user_history_ids) >= 50:
-                                excess_ids = user_history_ids[49:]
-                                SearchHistory.objects.filter(id__in=excess_ids).delete()
-
+                        # CLEANUP — keep last 50 (exact count)
+                        if len(user_history_ids) >= SEARCH_HISTORY_LIMIT:
+                            # Keep newest limit-1 old entries + new entry = limit total
+                            excess_ids = user_history_ids[SEARCH_HISTORY_LIMIT - 1 :]
                             if excess_ids:
                                 SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
-            except Exception:
-                # Log the error but don't re-raise - allow search to proceed normally
-                # Transaction will be rolled back automatically by Django
+
+            except (DatabaseError, IntegrityError):
+                # Log the error but don't break search
                 logger.exception(
                     f"Error saving search history - user_id: {request.user.id}, "
-                    f"truncated_query: {truncated_query[:50] if truncated_query else None}, "
+                    f"truncated_query: {(truncated_query[:50] if truncated_query else None)!r}, "
                     f"search_type: {search_type}"
                 )
 
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
+
     return render(request, template, context)
 
 
@@ -1582,11 +1635,10 @@ def home(request):
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
-    latest_bugs = (
-        Issue.objects.filter(hunt=None)
-        .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-        .order_by("-created")[:2]
-    )
+    if request.user.is_authenticated:
+        latest_bugs = Issue.objects.filter(hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    else:
+        latest_bugs = Issue.objects.filter(hunt=None).exclude(is_hidden=True)
 
     # Get 2 most recent active hackathons ordered by start time (descending)
     recent_hackathons_raw = (
@@ -2182,7 +2234,7 @@ def run_management_command(request):
         try:
             # Only allow running commands from the website app and exclude initsuperuser
             app_name = get_commands().get(command)
-            if app_name != "website" or command == "initsuperuser":
+            if app_name != "website" or command in ["initsuperuser", "generate_sample_data"]:
                 msg = f"Command {command} is not allowed to run from the web interface"
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": False, "error": msg})
@@ -2765,464 +2817,203 @@ class MapView(ListView):
         return context
 
 
+def fetch_github_projects():
+    """
+    Fetch GitHub Projects data for OWASP-BLT organization using GraphQL API.
+    Returns a list of projects with their metadata and progress.
+
+    Note: Progress calculation is based on a sample of items (up to 250).
+    For projects with more items, the percentage is an approximation.
+    """
+    github_token = getattr(settings, "GITHUB_TOKEN", None)
+    if not github_token or github_token == "blank":
+        logging.warning("GitHub token not configured, cannot fetch projects")
+        return []
+
+    # Constants for GraphQL query limits
+    MAX_ITEMS_TO_FETCH = 250  # Increased from 100 to get better progress sampling
+    MAX_FIELD_VALUES = 20  # Increased from 10 to handle projects with many custom fields
+    COMPLETED_STATUS_VALUES = ["Done", "Completed", "Closed", "Complete", "✅ Done"]
+
+    # GraphQL query to fetch organization projects
+    query = """
+    query($org: String!, $first: Int!, $maxItems: Int!, $maxFields: Int!) {
+      organization(login: $org) {
+        projectsV2(first: $first, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          nodes {
+            id
+            title
+            shortDescription
+            url
+            public
+            closed
+            updatedAt
+            items(first: $maxItems) {
+              totalCount
+              nodes {
+                fieldValues(first: $maxFields) {
+                  nodes {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                      field {
+                        ... on ProjectV2SingleSelectField {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={
+                "query": query,
+                "variables": {
+                    "org": "OWASP-BLT",
+                    "first": 50,
+                    "maxItems": MAX_ITEMS_TO_FETCH,
+                    "maxFields": MAX_FIELD_VALUES,
+                },
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logging.error(f"GraphQL error fetching projects: {data['errors']}")
+            return []
+
+        projects_data = data.get("data", {}).get("organization", {}).get("projectsV2", {}).get("nodes", [])
+
+        # Process projects to calculate progress and format data
+        projects = []
+        for project in projects_data:
+            # Only show public, non-closed projects
+            if not project.get("public", False) or project.get("closed", False):
+                continue
+
+            total_items = project.get("items", {}).get("totalCount", 0)
+            if total_items == 0:
+                continue
+
+            # Calculate done items by checking Status field
+            done_count = 0
+            items = project.get("items", {}).get("nodes", [])
+            items_checked = len(items)
+
+            for item in items:
+                field_values = item.get("fieldValues", {}).get("nodes", [])
+                for field_value in field_values:
+                    field_name = field_value.get("field", {}).get("name", "")
+                    status_name = field_value.get("name", "")
+                    # Check if this is a Status field with a completion value
+                    if field_name == "Status" and status_name in COMPLETED_STATUS_VALUES:
+                        done_count += 1
+                        break
+
+            # Calculate progress percentage and estimated item counts
+            # If we have fewer items than total, we're sampling - extrapolate the counts
+            if items_checked > 0:
+                if items_checked < total_items:
+                    # Sampling - calculate percentage from sample and extrapolate counts
+                    sample_percentage = (done_count / items_checked) * 100
+                    progress_percentage = int(sample_percentage)
+                    # Extrapolate done/open counts based on the sample ratio
+                    estimated_done = int((done_count / items_checked) * total_items)
+                    estimated_open = total_items - estimated_done
+                    logging.debug(
+                        f"Project '{project.get('title')}': Sampled {items_checked}/{total_items} items, "
+                        f"{done_count} done in sample, estimated {estimated_done} done total ({progress_percentage}%)"
+                    )
+                else:
+                    # We have all items - use actual counts
+                    progress_percentage = int((done_count / total_items) * 100)
+                    estimated_done = done_count
+                    estimated_open = total_items - done_count
+            else:
+                progress_percentage = 0
+                estimated_done = 0
+                estimated_open = total_items
+
+            # Format updated date
+            updated_at = project.get("updatedAt", "")
+            try:
+                updated_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(pytz.UTC)
+                delta = now - updated_date
+
+                if delta.days == 0:
+                    last_updated = "today"
+                elif delta.days == 1:
+                    last_updated = "yesterday"
+                elif delta.days < 7:
+                    last_updated = f"{delta.days} days ago"
+                elif delta.days < 30:
+                    weeks = delta.days // 7
+                    last_updated = f"{weeks} week{'s' if weeks > 1 else ''} ago"
+                else:
+                    months = delta.days // 30
+                    last_updated = f"{months} month{'s' if months > 1 else ''} ago"
+            except Exception:
+                last_updated = "recently"
+
+            projects.append(
+                {
+                    "title": project.get("title", "Untitled Project"),
+                    "description": project.get("shortDescription", ""),
+                    "url": project.get("url", ""),
+                    "progress": progress_percentage,
+                    "total_items": total_items,
+                    "done_items": estimated_done,
+                    "open_items": estimated_open,
+                    "last_updated": last_updated,
+                }
+            )
+
+        logging.info(f"Fetched {len(projects)} GitHub projects")
+        return projects
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch GitHub projects: {e}")
+        return []
+    except Exception as e:
+        logging.error(f"Unexpected error fetching GitHub projects: {e}")
+        return []
+
+
 class RoadmapView(TemplateView):
     template_name = "roadmap.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        milestones = [
-            {
-                "title": "📺 BLTV - BLT Eduction",
-                "due_date": "No due date",
-                "last_updated": "about 3 hours ago",
-                "description": "Add an educational component to BLT so that users can learn along w…",
-                "progress": "100%",
-                "open": 0,
-                "closed": 1,
-            },
-            {
-                "title": "🚀 Code Reviewer Leaderboard",
-                "due_date": "No due date",
-                "last_updated": "1 day ago",
-                "description": "Here's an Emoji Code Reviewer Leaderboard idea, ranking reviewers b…",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "Bid on Issues",
-                "due_date": "No due date",
-                "last_updated": "1 day ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🏠 Improvements",
-                "due_date": "No due date",
-                "last_updated": "5 days ago",
-                "description": "",
-                "progress": "46%",
-                "open": 7,
-                "closed": 6,
-            },
-            {
-                "title": "🔒 Protection Of Online Privacy",
-                "due_date": "No due date",
-                "last_updated": "8 days ago",
-                "description": "Web Monitoring System Implementation Plan Overview Enhances user tr…",
-                "progress": "88%",
-                "open": 1,
-                "closed": 8,
-            },
-            {
-                "title": "🧠 AI",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "🔧 App Improvements",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 16,
-                "closed": 0,
-            },
-            {
-                "title": "🛡️ OWASP tools",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 2,
-                "closed": 0,
-            },
-            {
-                "title": "🧰 Extension Improvements",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 4,
-                "closed": 0,
-            },
-            {
-                "title": "🏆 Sponsorship in app",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🎤 GitHub Sportscaster",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🥗 Daily Check-ins",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "New Project: Fresh - Daily Check-In Component for BLT Fresh is a pr…",
-                "progress": "18%",
-                "open": 9,
-                "closed": 2,
-            },
-            {
-                "title": "🔥 Time Tracking",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "Simplified Project: Sizzle - Multi-Platform Time Tracking for BLT P…",
-                "progress": "12%",
-                "open": 14,
-                "closed": 2,
-            },
-            {
-                "title": "🛡️ Trademark Defense",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "Protects brand integrity and legal standing, important for long-ter…",
-                "progress": "30%",
-                "open": 7,
-                "closed": 3,
-            },
-            {
-                "title": "🏢 Organization Portal in App",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "💌 Invites in app",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🌍 Banned Apps Simulation in app",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Simulate app behavior in countries with restrictions to ensure compliance "
-                "and accessibility.",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🤖 Slack Bot 2.0",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 12,
-                "closed": 0,
-            },
-            {
-                "title": "🚀 OWASP BLT Adventures",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🌐 Organizations",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Project: Refactor BLT Website to Combine Companies and Teams into O…",
-                "progress": "0%",
-                "open": 4,
-                "closed": 0,
-            },
-            {
-                "title": "🔧 Maintenance",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "General maintenance issues",
-                "progress": "50%",
-                "open": 16,
-                "closed": 16,
-            },
-            {
-                "title": "Bug / Issue / Project tools",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🏆 Gamification",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Project Summary: Gamification Integration for BLT Platform The gami…",
-                "progress": "15%",
-                "open": 17,
-                "closed": 3,
-            },
-            {
-                "title": "GSOC tools",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 3,
-                "closed": 0,
-            },
-            {
-                "title": "🚀🎨🔄 Tailwind Migration",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Migrate the remaining pages to tailwind "
-                "https://blt.owasp.org/template_list/?sort=has_style_tags",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🐞 New Issue Detail Page",
-                "due_date": "No due date",
-                "last_updated": "13 days ago",
-                "description": "Improves issue tracking efficiency and developer experience on the site.",
-                "progress": "66%",
-                "open": 3,
-                "closed": 6,
-            },
-            {
-                "title": "🥓 BACON",
-                "due_date": "No due date",
-                "last_updated": "21 days ago",
-                "description": "🥓 BACON: Blockchain Assisted Contribution Network BACON is a cuttin…",
-                "progress": "50%",
-                "open": 7,
-                "closed": 7,
-            },
-            {
-                "title": "💰 Multi-Crypto Donations",
-                "due_date": "No due date",
-                "last_updated": "about 1 month ago",
-                "description": "Overview: The Decentralized Multi-Crypto Payment Integration featur…",
-                "progress": "25%",
-                "open": 6,
-                "closed": 2,
-            },
-            {
-                "title": "💡 Suggestions",
-                "due_date": "No due date",
-                "last_updated": "about 1 month ago",
-                "description": "",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "💸 Pledge",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🌘Dark Mode",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "👷 Contributor Ranking",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "🌞💻🥉 Shows contributor github username, commits, issues opened, issu…",
-                "progress": "80%",
-                "open": 1,
-                "closed": 4,
-            },
-            {
-                "title": "✅ Bug Verifiers",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "Ensures bug fixes are valid and effective, maintaining site integrity.",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "🤖 Artificial Intelligence",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "",
-                "progress": "100%",
-                "open": 0,
-                "closed": 2,
-            },
-            {
-                "title": "🕹️ Penteston Integration",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "Enhances site security through integrated pentesting tools. We will…",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🔔 Follower notifications",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "The feature would allow users to follow a company's bug reports and…",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "📊 Review Queue",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "Streamlines content moderation, improving site quality.",
-                "progress": "0%",
-                "open": 3,
-                "closed": 0,
-            },
-            {
-                "title": "🕵️ Private Bug Bounties",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "Allows companies to conduct private, paid bug bounties in a non-com…",
-                "progress": "25%",
-                "open": 3,
-                "closed": 1,
-            },
-            {
-                "title": "📡 Cyber Dashboard",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "🌞💻🥉 a comprehensive dashboard of stats and information for organiza…",
-                "progress": "0%",
-                "open": 13,
-                "closed": 0,
-            },
-            {
-                "title": "🪝 Webhooks",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "automate the synchronization of issue statuses between GitHub and t…",
-                "progress": "0%",
-                "open": 2,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Modern Front-End Redesign with React & Tailwind CSS (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "A complete redesign of BLT's interface, improving accessibility, usability, "
-                "and aesthetics. The new front-end will be built with React and Tailwind CSS, "
-                "ensuring high performance while maintaining a lightweight architecture under "
-                "100MB. Dark mode will be the default, with full responsiveness and an enhanced "
-                "user experience.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Organization Dashboard – Enhanced Vulnerability & Bug Management (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Redesign and expand the organization dashboard to provide seamless management of bug "
-                "bounties, security reports, and contributor metrics. Features will include advanced "
-                "filtering, real-time analytics, and improved collaboration tools for security teams.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Secure API Development & Migration to Django Ninja (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Migrate our existing and develop a secure, well-documented API with automated "
-                "security tests to support the new front-end. This may involve migrating from Django "
-                "Rest Framework to Django Ninja for improved performance, maintainability, and API "
-                "efficiency.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Gamification & Blockchain Rewards System (Ordinals & Solana) (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Introduce GitHub-integrated contribution tracking that rewards security "
-                "researchers with Bitcoin Ordinals and Solana-based incentives. This will "
-                "integrate with other parts of the website as well such as daily check-ins "
-                "and code quality. Gamification elements such as badges, leaderboards, and "
-                "contribution tiers will encourage engagement and collaboration in "
-                "open-source security.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Decentralized Bidding System for Issues (Bitcoin Cash Integration) (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Create a decentralized system where developers can bid on GitHub issues "
-                "using Bitcoin Cash, ensuring direct transactions between contributors and "
-                "project owners without BLT handling funds.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 AI-Powered Code Review & Smart Prioritization System for Maintainers (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Develop an AI-driven GitHub assistant that analyzes pull requests, detects "
-                "security vulnerabilities, and provides real-time suggestions for improving "
-                "code quality. A smart prioritization system will help maintainers rank issues "
-                "based on urgency, community impact, and dependencies.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Enhanced Slack Bot & Automation System (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Expand the BLT Slack bot to automate vulnerability tracking, send real-time "
-                "alerts for new issues, and integrate GitHub notifications and contributor "
-                "activity updates for teams. prioritize them based on community engagement, "
-                "growth and securing worldwide applications",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-        ]
+        # Try to get projects from cache first
+        cache_key = "github_projects_data"
+        projects = cache.get(cache_key)
 
-        context["milestones"] = milestones
-        context["milestone_count"] = len(milestones)
+        if projects is None:
+            # Fetch from GitHub API
+            projects = fetch_github_projects()
+            # Cache for 30 minutes
+            cache.set(cache_key, projects, 1800)
+
+        context["projects"] = projects
+        context["github_projects_url"] = "https://github.com/orgs/OWASP-BLT/projects?query=is%3Aopen"
         return context
 
 
