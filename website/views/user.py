@@ -1261,6 +1261,17 @@ def github_webhook(request):
     and returns a JSON response indicating success or error.
     """
     if request.method == "POST":
+        # Fail closed if secret is not configured
+        if not getattr(settings, "GITHUB_WEBHOOK_SECRET", None):
+            logger.error("GITHUB_WEBHOOK_SECRET is not configured; refusing webhook request.")
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Webhook secret not configured",
+                },
+                status=503,
+            )
+
         signature = request.headers.get("X-Hub-Signature-256")
 
         if not validate_github_signature(request.body, signature):

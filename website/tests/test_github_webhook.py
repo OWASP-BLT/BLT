@@ -490,3 +490,83 @@ class GitHubWebhookPullRequestTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+
+@override_settings(GITHUB_WEBHOOK_SECRET="testsecret")
+class GitHubWebhookPullRequestIdempotentTestCase(TestCase):
+    """Verify that repeated PR events don't duplicate GitHubIssue rows."""
+
+    def setUp(self):
+        self.client = Client()
+        self.webhook_url = reverse("github-webhook")
+        self.secret = "testsecret"
+
+        # Same repo + IDs as the other PR test case
+        self.repo_url = "https://github.com/OWASP-BLT/demo-repo"
+        self.repo = Repo.objects.create(
+            name="demo-repo",
+            repo_url=self.repo_url,
+            slug="owasp-blt-demo-repo",
+        )
+
+        self.pr_global_id = 987654321  # pull_request["id"]
+        self.pr_number = 42  # pull_request["number"]
+
+    def _post(self, payload: dict, *, signature=None):
+        body = json.dumps(payload).encode("utf-8")
+        headers = {
+            "HTTP_X_GITHUB_EVENT": "pull_request",
+        }
+        if signature is None:
+            signature = compute_github_signature(self.secret, body)
+        headers["HTTP_X_HUB_SIGNATURE_256"] = signature
+
+        return self.client.post(
+            self.webhook_url,
+            data=body,
+            content_type="application/json",
+            **headers,
+        )
+
+    def test_repeated_events_do_not_duplicate_pr_issue(self):
+        """Sending the same 'opened' PR event twice still results in a single GitHubIssue."""
+        created_at = timezone.now()
+        updated_at = timezone.now()
+
+        payload = {
+            "action": "opened",
+            "pull_request": {
+                "id": self.pr_global_id,
+                "number": self.pr_number,
+                "state": "open",
+                "title": "Idempotency test",
+                "body": "",
+                "html_url": f"{self.repo_url}/pull/{self.pr_number}",
+                "merged": False,
+                "created_at": created_at.isoformat().replace("+00:00", "Z"),
+                "updated_at": updated_at.isoformat().replace("+00:00", "Z"),
+                "user": {
+                    "login": "octocat",
+                    "html_url": "https://github.com/octocat",
+                    "avatar_url": "",
+                },
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+
+        # First event
+        response1 = self._post(payload)
+        self.assertEqual(response1.status_code, 200)
+
+        # Second identical event
+        response2 = self._post(payload)
+        self.assertEqual(response2.status_code, 200)
+
+        # Still only one GitHubIssue row for this PR + repo
+        self.assertEqual(
+            GitHubIssue.objects.filter(issue_id=self.pr_global_id, repo=self.repo).count(),
+            1,
+        )
