@@ -135,6 +135,7 @@ class MySeleniumTests(LiveServerTestCase):
     def test_login(self):
         user_email = "bugbug@bugbug.com"
         user_name = "bugbug"
+        self._ensure_bugbug_user_verified()
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element(By.NAME, "login").send_keys(user_email)
         self.selenium.find_element(By.NAME, "password").send_keys("secret")
