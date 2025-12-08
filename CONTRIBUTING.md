@@ -173,11 +173,11 @@ Before you start contributing, you'll need to set up your development environmen
 5. Set up the application:
 
    ```bash
-   python manage.py migrate
-   python manage.py loaddata website/fixtures/initial_data.json
-   python manage.py createsuperuser
-   python manage.py collectstatic
-   python manage.py runserver
+   uv run python manage.py migrate
+   uv run python manage.py loaddata website/fixtures/initial_data.json
+   uv run python manage.py createsuperuser
+   uv run python manage.py collectstatic
+   uv run python manage.py runserver
    ```
 
 6. Access the application at [http://localhost:8000](http://localhost:8000)

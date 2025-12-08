@@ -122,7 +122,7 @@ jobs:
 
             \`\`\`bash
             # Install pre-commit if you haven't already
-            uv tool install pre-commit
+            uvx pre-commit install
 
             # Run pre-commit on all files
             uvx pre-commit run --all-files
@@ -523,9 +523,6 @@ jobs:
       - name: Run Docker container
         run: |
           docker run -d --name my-container my-app
-
-      - name: Install uv in container
-        run: docker exec my-container pip install uv
 
       - name: Sync dependencies with uv
         run: docker exec my-container uv sync --no-group dev
