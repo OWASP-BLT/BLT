@@ -52,7 +52,7 @@ Seeded Content & Educational Features
 
 Docs & Contribution
 
-- Contribution guide enforces Uv, pre-commit, Black/isort/ruff, djLint, and JS console rule. Follow CONTRIBUTING.md for development workflow and CI rules.
+- Contribution guide enforces uv, pre-commit, Black/isort/ruff, djLint, and JS console rule. Follow CONTRIBUTING.md for development workflow and CI rules.
 
 How to verify implementation
 

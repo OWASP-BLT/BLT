@@ -379,7 +379,7 @@ flowchart TB
 | **Communication**               | Slack API                                  |
 | **Payments**                    | Bitcoin/BCH                                |
 | **Containerization**            | Docker                                     |
-| **Package Management**          | Uv                                         |
+| **Package Management**          | uv                                         |
 
 ## Feature Modules
 

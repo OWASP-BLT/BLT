@@ -99,7 +99,7 @@ docker-compose up
 
 Access the application at **http://localhost:8000**
 
-#### Using Uv
+#### Using uv
 
 ```bash
 # Install dependencies

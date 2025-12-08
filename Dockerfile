@@ -42,6 +42,7 @@ FROM python:3.11.2-slim
 
 ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
+ENV PATH="/blt/.venv/bin:$PATH"
 
 # Copy uv and installed packages from builder
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv

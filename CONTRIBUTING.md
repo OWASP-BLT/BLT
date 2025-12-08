@@ -184,7 +184,7 @@ We use several tools to maintain code quality:
 - isort for import sorting
 - ruff for linting
 
-You can run these tools using Uv:
+You can run these tools using uv:
 
 ```bash
 uv run black .

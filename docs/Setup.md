@@ -354,8 +354,6 @@ pyenv install 3.11.2
 
 ```
 
-Note: Project root folder already contains `.python-version`, so pyenv can recognize the local version to use for the current project.
-
 #### Setup virtual environment using Uv
 
 Ensure that `python -V` returns the correct python version for the project

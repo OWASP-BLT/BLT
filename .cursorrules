@@ -11,7 +11,7 @@ use tailwind only
 for anything with color, make it the red color we use which is #e74c3c
 
 always use Uv package manager
-if you don't fix somethign on the first try, add debugging to the code and try again
+if you don't fix something on the first try, add debugging to the code and try again
 
 if you are unsure of something, ask the user for clarification
 
