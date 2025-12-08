@@ -53,6 +53,7 @@ from website.models import (
 )
 from website.utils import admin_required
 
+logger = logging.getLogger(__name__)
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
