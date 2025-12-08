@@ -2340,10 +2340,15 @@ class SocialAccountReward(models.Model):
     rewarded_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the reward was granted")
 
     class Meta:
-        unique_together = ("user", "provider")
         verbose_name = "Social Account Reward"
         verbose_name_plural = "Social Account Rewards"
         ordering = ["-rewarded_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "provider"],
+                name="unique_user_provider_reward",
+            ),
+        ]
         indexes = [
             models.Index(fields=["user", "provider"]),
         ]

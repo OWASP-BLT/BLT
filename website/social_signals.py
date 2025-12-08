@@ -15,7 +15,7 @@ import logging
 from allauth.socialaccount.signals import social_account_added
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -97,13 +97,24 @@ def award_bacon_for_social(user, provider, is_signup):
                 # Database guard: Create reward record (unique constraint prevents duplicates)
                 try:
                     SocialAccountReward.objects.create(user=user, provider=provider)
-                except Exception as e:  # IntegrityError if already exists
+                except IntegrityError:
                     logger.warning(
                         "User %s already rewarded for %s (database guard)",
                         user.username,
                         provider,
                     )
                     # Don't delete cache key - this is a permanent block
+                    return False
+                except Exception as e:  # noqa: BLE001
+                    # Catch any other database errors to prevent breaking outer transactions
+                    logger.error(
+                        "Database error creating reward record for %s/%s: %s",
+                        user.username,
+                        provider,
+                        e,
+                        exc_info=True,
+                    )
+                    cache.delete(cache_key)
                     return False
 
                 awarded = giveBacon(user, amt=reward_amount)
@@ -188,13 +199,16 @@ def reward_social_account_connection(_request, sociallogin, **_kwargs):
 @receiver(post_save, sender="socialaccount.SocialAccount")
 def social_account_post_save(sender, instance, created, **_kwargs):  # noqa: ARG001
     """
-    Award BACON tokens when a new social account is created (new user signup).
+    Award BACON tokens when a new social account record is created.
 
-    This signal fires for new user signups via OAuth. The social_account_added
-    signal handles existing users connecting accounts.
+    This signal fires whenever a SocialAccount is created, which includes both
+    new user signups and existing users connecting accounts. The rate limiting
+    and database guard prevent duplicate rewards if both this signal and
+    social_account_added fire for the same connection.
 
     Security measures:
-    - Rate limiting prevents duplicate rewards
+    - Database guard prevents duplicate rewards permanently
+    - Cache-based rate limiting for fast duplicate detection
     - Input validation ensures user and provider are valid
     - Audit trail via Activity model
     """
