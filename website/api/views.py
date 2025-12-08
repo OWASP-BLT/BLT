@@ -3,6 +3,7 @@ import logging
 import os
 import smtplib
 import sys
+import time
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -1633,30 +1634,43 @@ class TeamMemberLeaderboardAPIView(APIView):
         if cached_value:
             return Response(cached_value)
 
-        # Queryset
-        queryset = UserProfile.objects.filter(team=team).select_related("user").order_by(ordering)
+        # Mutex to prevent stampede
+        lock_key = f"{cache_key}:lock"
+        lock_acquired = cache.add(lock_key, "1", timeout=10)  # 10-sec lock
 
-        total_count = queryset.count()
-        start = (page - 1) * page_size
-        end = start + page_size
+        if not lock_acquired:
+            # Another request is rebuilding - wait briefly and retry
+            time.sleep(0.1)
+            cached_value = cache.get(cache_key)
+            if cached_value:
+                return Response(cached_value)
 
-        sliced_members = queryset[start:end]
+        try:
+            # Queryset
+            queryset = UserProfile.objects.filter(team=team).select_related("user").order_by(ordering)
 
-        serializer = TeamMemberLeaderboardSerializer(sliced_members, many=True)
+            total_count = queryset.count()
+            start = (page - 1) * page_size
+            end = start + page_size
 
-        response_data = {
-            "results": serializer.data,
-            "count": total_count,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": (total_count + page_size - 1) // page_size,
-            "ordering": sort_param,
-        }
+            sliced_members = queryset[start:end]
 
-        # Store in Cache for 5 minutes
-        cache.set(cache_key, response_data, timeout=300)
+            serializer = TeamMemberLeaderboardSerializer(sliced_members, many=True)
 
-        return Response(response_data)
+            response_data = {
+                "results": serializer.data,
+                "count": total_count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (total_count + page_size - 1) // page_size,
+                "ordering": sort_param,
+            }
+
+            # Store in Cache for 5 minutes
+            cache.set(cache_key, response_data, timeout=300)
+            return Response(response_data)
+        finally:
+            cache.delete(lock_key)
 
 
 def _is_local_host(host: str, db_name: str | None = None) -> bool:

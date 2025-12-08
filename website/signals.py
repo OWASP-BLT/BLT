@@ -20,6 +20,7 @@ def update_leaderboard_on_dsr_save(_sender=None, instance=None, created=None, **
     try:
         with transaction.atomic():
             profile = UserProfile.objects.select_for_update().get(user=user)
+            instance._skip_leaderboard_update = True
             success = profile.update_streak_and_award_points()
             if not success:
                 logger.warning(
@@ -32,5 +33,16 @@ def update_leaderboard_on_dsr_save(_sender=None, instance=None, created=None, **
         return
 
     team = profile.team
-    if team and hasattr(cache, "delete_pattern"):
+    if not team:
+        return
+
+    if hasattr(cache, "delete_pattern"):
         cache.delete_pattern(f"team_lb:{team.id}:*")
+    else:
+        # Fallback: Delete known cache keys
+        for page_size in [10, 20, 50, 100]:
+            for order in ["score", "streak", "quality"]:
+                # Delete up to 50 pages (covers teams with 5000 members at size=100)
+                for page in range(1, 51):
+                    cache_key = f"team_lb:{team.id}:{order}:{page}:{page_size}"
+                    cache.delete(cache_key)

@@ -996,6 +996,7 @@ class UserProfile(models.Model):
         # Lock the row to prevent concurrent updates
         with transaction.atomic():
             locked_self = self.__class__.objects.select_for_update().get(pk=self.pk)
+            DailyStatusReport.objects.filter(user=locked_self.user).select_for_update()
 
             score, breakdown = LeaderboardScoringService.calculate_for_user(locked_self.user)
 
@@ -1289,6 +1290,23 @@ class Bid(models.Model):
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
+    # def save(self, *args, **kwargs):
+    #     if (
+    #         self.status == "Open"
+    #         and (timezone.now() - self.created).total_seconds() >= 24 * 60 * 60
+    #     ):
+    #         self.status = "Selected"
+    #         self.modified = timezone.now()
+    #         email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created}\nBid Amount: {self.amount}"
+    #         send_mail(
+    #             "Bid Closed",
+    #             email_body,
+    #             settings.EMAIL_HOST_USER,
+    #             [settings.EMAIL_HOST_USER],
+    #             fail_silently=False,
+    #         )
+
+    #     super().save(*args, **kwargs)
 
 
 class ChatBotLog(models.Model):

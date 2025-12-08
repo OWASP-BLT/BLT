@@ -21,9 +21,7 @@ class LeaderboardScoringService:
 
         from website.models import DailyStatusReport
 
-        reports = DailyStatusReport.objects.filter(
-            user=user, created__gte=timezone.now() - timedelta(days=30)
-        ).order_by("created")
+        reports = DailyStatusReport.objects.filter(user=user, created__gte=timezone.now() - timedelta(days=30))
 
         if not reports.exists():
             return 0, {"frequency": 0, "streak": 0, "goals": 0, "completeness": 0}
@@ -44,16 +42,26 @@ class LeaderboardScoringService:
         else:
             goal_score = 0
 
+        # Use aggregation instead of iteration
+        stats = reports.aggregate(
+            total=Count("id"),
+            accomplished=Count("id", filter=Q(goal_accomplished=True)),
+            has_prev=Count("id", filter=Q(previous_work__isnull=False)),
+            has_next=Count("id", filter=Q(next_plan__isnull=False)),
+            has_blockers=Count("id", filter=Q(blockers__isnull=False)),
+            has_mood=Count("id", filter=Q(current_mood__isnull=False)),
+        )
+
         # Completeness score
-        completeness_values = []
-        for r in reports:
-            c = (
-                (1 if r.previous_work else 0)
-                + (1 if r.next_plan else 0)
-                + (0.5 if r.blockers else 0)
-                + (0.5 if r.current_mood and r.current_mood.strip() else 0)
-            ) / 3
-            completeness_values.append(c)
+        completeness_score = (
+            (
+                (stats["has_prev"] + stats["has_next"] + stats["has_blockers"] * 0.5 + stats["has_mood"] * 0.5)
+                / (stats["total"] * 3)
+            )
+            * 100
+            if stats["total"] > 0
+            else 0
+        )
 
         completeness_score = (sum(completeness_values) / len(completeness_values)) * 100
 
