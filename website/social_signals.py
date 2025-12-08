@@ -31,6 +31,13 @@ SOCIAL_CONNECTION_REWARDS = {
     "facebook": 0,  # Not rewarding Facebook connections yet
 }
 
+# Brand-accurate display names for providers
+SOCIAL_PROVIDER_DISPLAY_NAMES = {
+    "github": "GitHub",
+    "google": "Google",
+    "facebook": "Facebook",
+}
+
 # Rate limiting: Prevent duplicate rewards within this time window (seconds)
 REWARD_COOLDOWN = 86400  # 24 hours cooldown to prevent disconnect/reconnect abuse
 
@@ -77,22 +84,38 @@ def award_bacon_for_social(user, provider, is_signup):
 
     logger.info("Attempting to award %s BACON to user: %s", reward_amount, user.username)
 
-    # Award BACON tokens and create activity in atomic transaction
-    try:  # noqa: BLE001
-        with transaction.atomic():
-            awarded = giveBacon(user, amt=reward_amount)
-            logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
+    # Get brand-accurate display name
+    display_name = SOCIAL_PROVIDER_DISPLAY_NAMES.get(provider, provider.capitalize())
 
-            # Create activity for audit trail within same transaction
-            Activity.objects.create(
-                user=user,
-                action_type="connected",
-                title=f"Connected {provider.capitalize()} Account",
-                description=f"Earned {awarded} BACON tokens for connecting {provider.capitalize()} account",
-                content_type=ContentType.objects.get_for_model(user),
-                object_id=user.id,
-            )
-            logger.info("Created activity log for user %s - %s connection", user.username, provider)
+    # Award BACON tokens and create activity in atomic transaction
+    try:
+        with transaction.atomic():
+            try:
+                awarded = giveBacon(user, amt=reward_amount)
+                logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
+
+                # Create activity for audit trail within same transaction
+                Activity.objects.create(
+                    user=user,
+                    action_type="connected",
+                    title=f"Connected {display_name} Account",
+                    description=f"Earned {awarded} BACON tokens for connecting {display_name} account",
+                    content_type=ContentType.objects.get_for_model(user),
+                    object_id=user.id,
+                )
+                logger.info("Created activity log for user %s - %s connection", user.username, provider)
+
+            except Exception as e:  # noqa: BLE001
+                # Catch exceptions inside atomic block to prevent breaking outer transactions
+                logger.error(
+                    "Failed to award BACON tokens to user %s: %s",
+                    user.username,
+                    e,
+                    exc_info=True,
+                )
+                # Delete cache key on failure to allow retry
+                cache.delete(cache_key)
+                return False
 
         # Set cache flag for middleware to show success message (only after successful transaction)
         message_cache_key = f"show_bacon_message_{user.id}"
@@ -100,11 +123,11 @@ def award_bacon_for_social(user, provider, is_signup):
 
         return True
 
-    except Exception as e:
-        # Delete cache key on failure to allow retry
+    except Exception as e:  # noqa: BLE001
+        # Outer catch for transaction.atomic() failures
         cache.delete(cache_key)
         logger.error(
-            "Failed to award BACON tokens to user %s: %s",
+            "Transaction error awarding BACON to user %s: %s",
             user.username,
             e,
             exc_info=True,

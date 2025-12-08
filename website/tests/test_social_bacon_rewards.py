@@ -62,7 +62,7 @@ class SocialBaconRewardTestCase(TestCase):
         # Check activity was created
         activity = Activity.objects.filter(user=user, action_type="connected").first()
         self.assertIsNotNone(activity)
-        self.assertIn("Github", activity.title)  # Note: capitalize() makes it "Github" not "GitHub"
+        self.assertIn("GitHub", activity.title)  # Brand-accurate display name
 
     def test_existing_user_connect_awards_bacon(self):
         """Test that existing user connecting GitHub awards 10 BACON tokens."""
@@ -263,5 +263,5 @@ class SocialBaconRewardTestCase(TestCase):
         self.assertEqual(activities.count(), 1)
 
         activity = activities.first()
-        self.assertIn("Github", activity.title)  # Note: capitalize() makes it "Github" not "GitHub"
+        self.assertIn("GitHub", activity.title)  # Brand-accurate display name
         self.assertIn("10 BACON", activity.description)
