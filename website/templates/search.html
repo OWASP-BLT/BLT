@@ -20,7 +20,7 @@
 {% block content %}
     <!-- Include Sidenav -->
     {% include "includes/sidenav.html" %}
-    <div class="absolute bottom-[130px] right-[100px] flex space-x-4 social-links">
+    <div class="absolute social-links-position flex space-x-4 social-links">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/search.html">
             <i class="fab fa-github"></i>
         </a>
@@ -697,17 +697,11 @@
                     {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
                         <div class="flex-1">
                             {% if not issues %}
-                            <script>
-                                document.body.style.overflow = "hidden";
-                            </script>
+                                <script>document.body.style.overflow = "hidden";</script>
                                 <div class="w-full flex justify-center items-center h-[500px]">
                                     <div class="flex flex-col items-center justify-center text-center z-10 translate-x-20">
-                                        <h2 class="text-3xl font-bold text-gray-300 dark:text-gray-500 mb-4">
-                                            Nothing Found!
-                                        </h2>
-                                        <p class="text-gray-400 dark:text-gray-600 text-lg">
-                                            Try searching with different keywords.
-                                        </p>
+                                        <h2 class="text-3xl font-bold text-gray-300 dark:text-gray-500 mb-4">Nothing Found!</h2>
+                                        <p class="text-gray-400 dark:text-gray-600 text-lg">Try searching with different keywords.</p>
                                     </div>
                                 </div>
                             {% endif %}
