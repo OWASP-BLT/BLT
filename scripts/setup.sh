@@ -35,7 +35,8 @@ setup_uv() {
     uv self update
 
     echo "Installing project dependencies..."
-    uv sync && source .venv/bin/activate
+    uv sync
+    source .venv/bin/activate
 
     echo "Running migrations..."
     uv run python manage.py migrate
