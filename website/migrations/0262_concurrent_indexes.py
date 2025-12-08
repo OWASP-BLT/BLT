@@ -1,45 +1,39 @@
-import django.core.validators
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
+    atomic = False
+
     dependencies = [
-        ("website", "0260_add_username_to_slackbotactivity"),
+        ("website", "0261_userprofile_check_in_count_and_more"),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="userprofile",
-            name="check_in_count",
-            field=models.IntegerField(default=0, help_text="Total check-ins recorded for leaderboard calculation"),
+        # DailyStatusReport indexes
+        migrations.RunSQL(
+            sql='CREATE INDEX CONCURRENTLY IF NOT EXISTS "website_dai_user_id_1d9003_idx" '
+            'ON "website_dailystatusreport" ("user_id", "created" DESC);',
+            reverse_sql='DROP INDEX CONCURRENTLY IF EXISTS "website_dai_user_id_1d9003_idx";',
         ),
-        migrations.AddField(
-            model_name="userprofile",
-            name="last_score_update",
-            field=models.DateTimeField(
-                blank=True, help_text="When the leaderboard score was last recalculated", null=True
-            ),
+        migrations.RunSQL(
+            sql='CREATE INDEX CONCURRENTLY IF NOT EXISTS "website_dai_goal_ac_39f9cb_idx" '
+            'ON "website_dailystatusreport" ("goal_accomplished");',
+            reverse_sql='DROP INDEX CONCURRENTLY IF EXISTS "website_dai_goal_ac_39f9cb_idx";',
         ),
-        migrations.AddField(
-            model_name="userprofile",
-            name="leaderboard_score",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=0,
-                max_digits=5,
-                help_text="Cached total leaderboard score (0-100)",
-                validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)],
-            ),
+        # UserProfile indexes
+        migrations.RunSQL(
+            sql='CREATE INDEX CONCURRENTLY IF NOT EXISTS "website_use_leaderb_aa31e8_idx" '
+            'ON "website_userprofile" ("leaderboard_score" DESC, "current_streak" DESC);',
+            reverse_sql='DROP INDEX CONCURRENTLY IF EXISTS "website_use_leaderb_aa31e8_idx";',
         ),
-        migrations.AddField(
-            model_name="userprofile",
-            name="quality_score",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=0,
-                max_digits=5,
-                help_text="Cached quality component score (0-100)",
-                validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)],
-            ),
+        migrations.RunSQL(
+            sql='CREATE INDEX CONCURRENTLY IF NOT EXISTS "website_use_team_id_8dcd03_idx" '
+            'ON "website_userprofile" ("team_id", "leaderboard_score" DESC);',
+            reverse_sql='DROP INDEX CONCURRENTLY IF EXISTS "website_use_team_id_8dcd03_idx";',
+        ),
+        migrations.RunSQL(
+            sql='CREATE INDEX CONCURRENTLY IF NOT EXISTS "website_use_quality_777c8d_idx" '
+            'ON "website_userprofile" ("quality_score" DESC);',
+            reverse_sql='DROP INDEX CONCURRENTLY IF EXISTS "website_use_quality_777c8d_idx";',
         ),
     ]
