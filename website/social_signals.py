@@ -20,7 +20,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from website.feed_signals import giveBacon
-from website.models import Activity
+from website.models import Activity, SocialAccountReward
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +72,11 @@ def award_bacon_for_social(user, provider, is_signup):
         logger.info("No reward configured for provider: %s", provider)
         return False
 
-    # Security: Rate limiting - prevent duplicate rewards (atomic operation)
+    # Security: Database-backed one-time reward check (permanent, survives cache clears)
+    # This is checked inside the transaction to ensure atomicity
     cache_key = f"bacon_reward_{user.id}_{provider}"
+
+    # Fast path: Check cache first to avoid database hit for recent attempts
     if not cache.add(cache_key, True, REWARD_COOLDOWN):
         logger.warning(
             "Rate limit: User %s already received reward for %s within cooldown period",
@@ -91,6 +94,18 @@ def award_bacon_for_social(user, provider, is_signup):
     try:
         with transaction.atomic():
             try:
+                # Database guard: Create reward record (unique constraint prevents duplicates)
+                try:
+                    SocialAccountReward.objects.create(user=user, provider=provider)
+                except Exception as e:  # IntegrityError if already exists
+                    logger.warning(
+                        "User %s already rewarded for %s (database guard)",
+                        user.username,
+                        provider,
+                    )
+                    # Don't delete cache key - this is a permanent block
+                    return False
+
                 awarded = giveBacon(user, amt=reward_amount)
                 logger.info("Successfully awarded %s BACON tokens to user: %s", awarded, user.username)
 

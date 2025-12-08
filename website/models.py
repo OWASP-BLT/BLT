@@ -2325,6 +2325,33 @@ class BaconEarning(models.Model):
         return f"{self.user.username} - {self.tokens_earned} Tokens"
 
 
+class SocialAccountReward(models.Model):
+    """
+    Permanent record of social account connection rewards.
+    Ensures each user can only be rewarded once per provider, ever.
+    Uses database unique constraint to prevent duplicate rewards even if cache is cleared.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, help_text="User who received the reward")
+    provider = models.CharField(
+        max_length=30,
+        help_text="Social provider name (e.g., github, google, facebook)",
+    )
+    rewarded_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the reward was granted")
+
+    class Meta:
+        unique_together = ("user", "provider")
+        verbose_name = "Social Account Reward"
+        verbose_name_plural = "Social Account Rewards"
+        ordering = ["-rewarded_at"]
+        indexes = [
+            models.Index(fields=["user", "provider"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.provider} reward at {self.rewarded_at}"
+
+
 class GitHubReview(models.Model):
     """
     Model to store reviews made by users on pull requests.
