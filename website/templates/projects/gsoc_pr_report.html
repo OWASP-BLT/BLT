@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}GSOC PR Report{% endblock %}
+{% block content %}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    {% include "includes/sidenav.html" %}
+    <!-- Hidden data storage for JavaScript -->
+    <div id="gsocData"
+         style="display:none"
+         data-summary="{{ summary_data|escapejs }}"
+         data-yearly-chart="{{ yearly_chart_data_json|escapejs }}"
+         data-top-repos="{{ top_repos_chart_data_json|escapejs }}"
+         data-yearly-trends="{{ yearly_contribution_data_json|escapejs }}"
+         data-gsoc-data="{{ gsoc_data_json|escapejs }}"></div>
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-2 text-center text-gray-900 dark:text-white">Google Summer of Code - PR Analysis</h1>
+        <p class="text-lg text-center text-gray-600 dark:text-gray-400 mb-8">
+            Pull requests merged during GSOC periods ({{ start_year }} - {{ end_year }})
+        </p>
+        <!-- Summary Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <!-- Total Years -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Years</h2>
+                    <svg class="w-6 h-6 text-red-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-2">{{ total_years }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ start_year }} - {{ end_year }}</p>
+            </div>
+            <!-- Total Repositories -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Active Repos</h2>
+                    <svg class="w-6 h-6 text-red-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                </div>
+                <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-2">{{ total_repos }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Active repositories</p>
+            </div>
+            <!-- Total PRs -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total PRs</h2>
+                    <svg class="w-6 h-6 text-red-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-2">{{ total_prs }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Merged during GSOC</p>
+            </div>
+            <!-- Average PRs/Year -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Avg PRs/Year</h2>
+                    <svg class="w-6 h-6 text-red-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                </div>
+                <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-2">{{ avg_prs_per_year }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Across all years</p>
+            </div>
+        </div>
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+            <!-- Yearly PR Contributions Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Yearly PR Contributions</h2>
+                    <span class="text-sm text-red-600 font-medium">Total: {{ total_prs }} PRs</span>
+                </div>
+                <div id="yearlyPrChart"></div>
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        Each bar represents PRs merged during GSOC period (May-Sept)
+                    </div>
+                </div>
+            </div>
+            <!-- Top Repositories Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Top Repositories</h2>
+                    <span class="text-sm text-red-600 font-medium">All GSOC Periods</span>
+                </div>
+                <div id="topReposChart"></div>
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                        Shows repositories with highest total PRs across all years
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Yearly Contribution Trends -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-10 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Repository Contribution Trends</h2>
+                <span class="text-sm text-red-600 font-medium">Top 5 repositories over time</span>
+            </div>
+            <div id="yearlyTrendsChart"></div>
+            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                    Track how top repositories' contributions changed year over year
+                </div>
+            </div>
+        </div>
+        <!-- Quick Actions - Red theme -->
+        <div class="flex flex-wrap gap-4 mb-8 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
+            <!-- Refresh Button -->
+            <a href="{{ request.get_full_path }}"
+               class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-lg shadow text-sm font-medium transition duration-200 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+            </a>
+            <!-- Export Data -->
+            <button onclick="exportChartData()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium transition duration-200 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                Export Charts
+            </button>
+            <!-- Download Report -->
+            <button onclick="downloadReport()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium transition duration-200 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download Report
+            </button>
+            <!-- View Raw Data -->
+            <button onclick="viewRawData()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium transition duration-200 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                View Data
+            </button>
+        </div>
+        <!-- Detailed Year-by-Year Data -->
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Year-by-Year Analysis</h2>
+            <div class="flex items-center gap-2 text-sm text-red-600">
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                GSOC Period: May - September
+            </div>
+        </div>
+        {% for year, data in gsoc_data.items %}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            GSOC {{ year }}
+                            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">(May - September)</span>
+                        </h3>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 dark:border-red-800">
+                            {{ data.total_prs }} Total PRs
+                        </span>
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-50 text-red-700 dark:bg-red-800 dark:text-red-300 border border-red-200 dark:border-red-800">
+                            {{ data.repos|length }} Repositories
+                        </span>
+                    </div>
+                </div>
+                {% if data.repos %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                            <thead class="text-xs text-gray-700 uppercase bg-red-50 dark:bg-red-900/20 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-3 font-semibold text-red-800 dark:text-red-300">Repository</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-center font-semibold text-red-800 dark:text-red-300">
+                                        PR Count
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 font-semibold text-red-800 dark:text-red-300">Description</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-right font-semibold text-red-800 dark:text-red-300">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repo_name, repo_data in data.repos.items %}
+                                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/10">
+                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                                </svg>
+                                                <span class="text-red-700 dark:text-red-300">{{ repo_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="px-3 py-1 rounded-full text-sm font-semibold {% if repo_data.count >= 15 %}bg-red-600 text-white {% elif repo_data.count >= 10 %}bg-red-500 text-white {% elif repo_data.count >= 5 %}bg-red-400 text-white {% elif repo_data.count >= 3 %}bg-red-300 text-red-800 {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
+                                                {{ repo_data.count }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <p class="text-gray-600 dark:text-gray-400 line-clamp-2">
+                                                {{ repo_data.description|default:"No description available" }}
+                                            </p>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex justify-end gap-2">
+                                                <a href="{{ repo_data.url }}"
+                                                   target="_blank"
+                                                   class="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-700 dark:text-red-300 transition duration-200 flex items-center gap-1">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                    </svg>
+                                                    Repo
+                                                </a>
+                                                {% if repo_data.prs_url %}
+                                                    <a href="{{ repo_data.prs_url }}"
+                                                       target="_blank"
+                                                       class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition duration-200 flex items-center gap-1">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                        </svg>
+                                                        PRs
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <svg class="w-16 h-16 text-red-300 mx-auto mb-4"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-gray-500 dark:text-gray-400 text-lg">No pull requests found for this year</p>
+                        <p class="text-red-400 dark:text-red-500 text-sm mt-2">GSOC period: May - September {{ year }}</p>
+                    </div>
+                {% endif %}
+                <!-- Year Summary -->
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <p class="text-sm text-red-700 dark:text-red-300">Most Active Repo</p>
+                            {% with most_active=data.repos.items|dictsort:"1.count"|last %}
+                                <p class="font-semibold text-red-900 dark:text-red-200">{{ most_active.0|default:"-" }}</p>
+                            {% endwith %}
+                        </div>
+                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <p class="text-sm text-red-700 dark:text-red-300">Max PRs in Repo</p>
+                            <p class="font-semibold text-red-900 dark:text-red-200">
+                                {% with sorted_repos=data.repos.items|dictsort:"1.count" %}
+                                    {% if sorted_repos %}
+                                        {% with last_repo=sorted_repos|last %}{{ last_repo.1.count }}{% endwith %}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                {% endwith %}
+                            </p>
+                        </div>
+                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <p class="text-sm text-red-700 dark:text-red-300">Avg PRs/Repo</p>
+                            <p class="font-semibold text-red-900 dark:text-red-200">
+                                {% with repo_count=data.repos|length %}
+                                    {% if repo_count > 0 %}
+                                        {{ data.total_prs|floatformat:2 }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                {% endwith %}
+                            </p>
+                        </div>
+                        <div class="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <p class="text-sm text-red-700 dark:text-red-300">Year Rank</p>
+                            <p class="font-semibold text-red-900 dark:text-red-200">
+                                {% if data.total_prs >= 100 %}
+                                    ⭐ Excellent
+                                {% elif data.total_prs >= 50 %}
+                                    🔥 Good
+                                {% elif data.total_prs >= 20 %}
+                                    📈 Average
+                                {% else %}
+                                    📊 Low
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center border border-red-200 dark:border-red-800">
+                <svg class="w-16 h-16 text-red-300 mx-auto mb-4"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h3 class="text-xl font-bold text-red-700 dark:text-red-300 mb-2">No GSOC Data Available</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-lg">No pull requests found for GSOC periods</p>
+                <p class="text-red-400 dark:text-red-500 text-sm mt-2">{{ start_year }} - {{ end_year }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    <script>
+    // Initialize global data object
+    window.gsocData = {
+        summary: {},
+        yearlyChart: {},
+        topReposChart: {},
+        yearlyTrends: {},
+        gsocData: {}
+    };
+
+    // Parse data from hidden div
+    function parseDataFromDOM() {
+        
+        const dataDiv = document.getElementById('gsocData');
+        if (dataDiv) {
+            try {
+                window.gsocData.summary = JSON.parse(dataDiv.dataset.summary || '{}');
+                window.gsocData.yearlyChart = JSON.parse(dataDiv.dataset.yearlyChart || '{}');
+                window.gsocData.topReposChart = JSON.parse(dataDiv.dataset.topRepos || '{}');
+                window.gsocData.yearlyTrends = JSON.parse(dataDiv.dataset.yearlyTrends || '{}');
+                window.gsocData.gsocData = JSON.parse(dataDiv.dataset.gsocData || '{}');
+            } catch (e) {
+                console.error('Error parsing GSOC data:', e);
+            }
+        }
+    }
+
+    (function () {
+        // ✅ Parse data once
+        parseDataFromDOM();
+
+        // 🔹 NORMALIZE YEARLY DATA
+        const rawYearly = Array.isArray(window.gsocData.yearlyChart)
+            ? window.gsocData.yearlyChart
+            : [];
+
+        window.gsocData.yearlyChart = {
+            years: rawYearly.map(d => d.year),
+            pr_counts: rawYearly.map(d => d.prs),
+        };
+
+        // 🔹 NORMALIZE TOP REPOS DATA
+        const rawTop = Array.isArray(window.gsocData.topReposChart)
+            ? window.gsocData.topReposChart
+            : [];
+
+        window.gsocData.topReposChart = {
+            repos: rawTop.map(d => d.repo),
+            counts: rawTop.map(d => d.prs),
+        };
+
+        // 🔹 Disable trends safely for now
+        if (!window.gsocData.yearlyTrends || Array.isArray(window.gsocData.yearlyTrends)) {
+            window.gsocData.yearlyTrends = {};
+        }
+
+        // ✅ Yearly PR Chart
+        if (window.gsocData.yearlyChart.years.length > 0) {
+            const yearlyOptions = {
+                chart: { type: 'bar', height: '100%' },
+                series: [{
+                    name: 'PR Count',
+                    data: window.gsocData.yearlyChart.pr_counts
+                }],
+                xaxis: {
+                    categories: window.gsocData.yearlyChart.years
+                },
+                colors: ['#DC2626']
+            };
+
+            new ApexCharts(
+                document.querySelector("#yearlyPrChart"),
+                yearlyOptions
+            ).render();
+        }
+
+        // ✅ Top Repositories Chart
+        if (window.gsocData.topReposChart.repos.length > 0) {
+            const topReposOptions = {
+                chart: { type: 'donut', height: '100%' },
+                series: window.gsocData.topReposChart.counts,
+                labels: window.gsocData.topReposChart.repos,
+                colors: ['#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FECACA']
+            };
+
+            new ApexCharts(
+                document.querySelector("#topReposChart"),
+                topReposOptions
+            ).render();
+        }
+
+        // ✅ Trends will render only when backend sends correct shape
+    })();
+    
+    function exportChartData() {
+        const data = {
+            yearlyData: window.gsocData.yearlyChart,
+            topReposData: window.gsocData.topReposChart,
+            trendsData: window.gsocData.yearlyTrends,
+            summary: window.gsocData.summary
+        };
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `gsoc_pr_report_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+    }
+    
+    function downloadReport() {
+    alert("Download report is disabled until template refactor is complete.");
+}
+
+    
+    </script>
+{% endblock %}

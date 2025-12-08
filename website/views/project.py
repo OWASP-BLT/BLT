@@ -44,6 +44,7 @@ from website.models import (
     Contribution,
     Contributor,
     ContributorStats,
+    GitHubIssue,
     Organization,
     Project,
     Repo,
@@ -2191,3 +2192,80 @@ class RepoBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
+
+
+def gsoc_pr_report(request):
+    current_year = datetime.now().year
+    start_year = current_year - 10
+
+    report_data = []
+
+    for year in range(start_year, current_year + 1):
+        start_date = datetime(year, 5, 1)
+        end_date = datetime(year, 9, 30)
+
+        repos_with_prs = (
+            GitHubIssue.objects.filter(
+                type="pull_request", is_merged=True, merged_at__gte=start_date, merged_at__lte=end_date
+            )
+            .values("repo__name", "repo__repo_url")
+            .annotate(pr_count=Count("id"), unique_contributors=Count("contributor", distinct=True))
+            .order_by("-pr_count")
+        )
+
+        if repos_with_prs:
+            report_data.append(
+                {"year": year, "repos": list(repos_with_prs), "total_prs": sum(r["pr_count"] for r in repos_with_prs)}
+            )
+
+    # ✅ SUMMARY + CHART CALCULATIONS
+    total_years = len(report_data)
+
+    all_repos = set()
+    total_prs = 0
+    yearly_chart_data = []
+
+    for year_block in report_data:
+        total_prs += year_block["total_prs"]
+        yearly_chart_data.append({"year": year_block["year"], "prs": year_block["total_prs"]})
+
+        for repo in year_block["repos"]:
+            all_repos.add(repo["repo__name"])
+    from collections import defaultdict
+
+    repo_totals = defaultdict(int)
+
+    for year_block in report_data:
+        for repo in year_block["repos"]:
+            repo_totals[repo["repo__name"]] += repo["pr_count"]
+
+    top_repos_chart_data = [
+        {"repo": repo, "prs": count}
+        for repo, count in sorted(repo_totals.items(), key=lambda x: x[1], reverse=True)[:5]
+    ]
+
+    total_repos = len(all_repos)
+
+    summary_data = {
+        "total_years": total_years,
+        "total_repos": total_repos,
+        "total_prs": total_prs,
+    }
+    avg_prs_per_year = round(total_prs / total_years, 2) if total_years else 0
+
+    context = {
+        "report_data": report_data,
+        "start_year": start_year,
+        "end_year": current_year,
+        "total_years": total_years,
+        "total_repos": total_repos,
+        "total_prs": total_prs,
+        "summary_data": summary_data,
+        "yearly_chart_data_json": json.dumps(yearly_chart_data),
+        "yearly_contribution_data_json": json.dumps(yearly_chart_data),
+        "gsoc_data_json": json.dumps(report_data),
+        "avg_prs_per_year": avg_prs_per_year,
+        "top_repos_chart_data_json": json.dumps(top_repos_chart_data),
+    }
+
+    return render(request, "projects/gsoc_pr_report.html", context)
