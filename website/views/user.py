@@ -1354,7 +1354,9 @@ def handle_pull_request_event(payload):
                 defaults={
                     "github_url": gh_github_url or "",
                     "name": gh_login or extract_github_username(gh_github_url) or "",
-                    "avatar_url": gh_avatar,
+                    "avatar_url": gh_avatar or "",
+                    "contributor_type": "User",
+                    "contributions": 0,
                 },
             )
         elif gh_github_url:
