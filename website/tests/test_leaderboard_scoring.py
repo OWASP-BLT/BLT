@@ -247,7 +247,11 @@ class UserProfileLeaderboardScoreTest(TestCase):
 
         # Verify service calls
         mock_calc.assert_called_once_with(self.user)
-        mock_objects.filter.assert_called_once_with(user=self.user)
+        cutoff = timezone.now().date() - timedelta(days=30)
+        mock_objects.filter.assert_called_once_with(
+            user=self.user,
+            date__gte=cutoff,
+        )
         mock_objects.filter.return_value.count.assert_called_once()
 
     @patch("website.models.LeaderboardScoringService.calculate_for_user")
