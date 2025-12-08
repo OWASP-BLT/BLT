@@ -2,13 +2,6 @@
 
 from django.db import migrations, models
 
-def forwards(apps, schema_editor):
-    Room = apps.get_model("website", "Room")
-    Room.objects.filter(type="org").update(type="organization")
-
-def backwards(apps, schema_editor):
-    Room = apps.get_model("website", "Room")
-    Room.objects.filter(type="organization").update(type="org")
 
 class Migration(migrations.Migration):
     dependencies = [
