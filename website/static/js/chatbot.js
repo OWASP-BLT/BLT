@@ -9,16 +9,8 @@ const chatLog = document.getElementById("chat-log");
 const loader = document.getElementById("loading");
 const quickCommands = document.querySelectorAll(".quick-command");
 
-if (
-  !chatWidget ||
-  !chatToggle ||
-  !chatClose ||
-  !chatInput ||
-  !chatSend ||
-  !chatLog
-) {
-  // Chatbot not present on this page → exit safely
-  return;
+if (!chatBox || !chatIcon || !closeBtn || !input || !sendBtn || !chatLog) {
+  throw new Error("Required chatbot elements missing");
 }
 
 // Welcome message flag
