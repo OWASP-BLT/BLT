@@ -71,8 +71,11 @@ class Migration(migrations.Migration):
             model_name="socialaccountreward",
             index=models.Index(fields=["user", "provider"], name="website_soc_user_id_provid_idx"),
         ),
-        migrations.AlterUniqueTogether(
-            name="socialaccountreward",
-            unique_together={("user", "provider")},
+        migrations.AddConstraint(
+            model_name="socialaccountreward",
+            constraint=models.UniqueConstraint(
+                fields=["user", "provider"],
+                name="unique_user_provider_reward",
+            ),
         ),
     ]
