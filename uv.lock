@@ -343,7 +343,7 @@ requires-dist = [
     { name = "tweepy", specifier = ">=4.15.0,<5" },
     { name = "ua-parser", specifier = ">=1.0.1,<2" },
     { name = "user-agents", specifier = ">=2.2.0,<3" },
-    { name = "uvicorn", specifier = ">=0.34.0,<0.35" },
+    { name = "uvicorn", specifier = ">=0.34.0,<0.40" },
     { name = "whitenoise", specifier = ">=6.9.0,<7" },
 ]
 
