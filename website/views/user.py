@@ -3,7 +3,7 @@ import hmac
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
@@ -1358,14 +1358,10 @@ def handle_pull_request_event(payload):
                 },
             )
         elif gh_github_url:
-            # Fallback for rare cases where id is missing (e.g. some bots)
-            contributor, _ = Contributor.objects.get_or_create(
-                github_url=gh_github_url,
-                defaults={
-                    "name": gh_login or extract_github_username(gh_github_url) or "",
-                    "avatar_url": gh_avatar,
-                },
-            )
+            # Fallback: try to find existing contributor by URL, but don't create
+            # without github_id, since it's a required unique field
+            contributor = Contributor.objects.filter(github_url=gh_github_url).first()
+
     except Exception as e:
         logger.error(f"Error getting/creating Contributor for PR: {e}")
         contributor = None
