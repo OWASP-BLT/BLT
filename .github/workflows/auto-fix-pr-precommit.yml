@@ -1,0 +1,467 @@
+name: Auto-Fix Pre-Commit Issues on PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-fix-${{ github.event.pull_request.head.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-fix-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !endsWith(github.actor, '[bot]')
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check recent auto-fix PRs (rate limit)
+        id: throttle_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RECENT_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json createdAt \
+            --jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 3600))] | length')
+
+          RECENT_PRS=${RECENT_PRS:-0}
+
+          if [ "$RECENT_PRS" -ge 3 ]; then
+            echo "throttled=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Rate limit hit: $RECENT_PRS auto-fix PRs in the last hour."
+          else
+            echo "throttled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if throttled
+        if: steps.throttle_check.outputs.throttled == 'true'
+        run: |
+          echo "⚠️ Rate limit reached. Skipping auto-fix to prevent spam."
+          exit 0
+
+      - name: Check for existing auto-fix PR
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_FIX_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --head "${{ github.event.pull_request.head.ref }}" \
+            --json number \
+            --jq 'length')
+
+          if [ "$OPEN_FIX_PRS" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Open auto-fix PR already exists."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if auto-fix PR already exists
+        if: steps.existing_pr.outputs.exists == 'true'
+        run: |
+          echo "⚠️ Auto-fix PR already open; skipping to avoid duplicates."
+          exit 0
+
+      - name: Check if triggered by bot commit
+        id: bot_check
+        run: |
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_COMMIT_MSG" == *"🤖 Auto-fix:"* ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "🔁 Detected auto-fix commit; skipping to avoid loop."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache pre-commit hooks
+        if: steps.bot_check.outputs.skip == 'false'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Cache Poetry dependencies
+        if: steps.bot_check.outputs.skip == 'false'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Set up Python
+        if: steps.bot_check.outputs.skip == 'false'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.2'
+
+      - name: Install Poetry
+        if: steps.bot_check.outputs.skip == 'false'
+        run: pip install poetry
+
+      - name: Install dependencies (with retry)
+        if: steps.bot_check.outputs.skip == 'false'
+        run: |
+          max_retries=3
+          delay=10
+          attempt=1
+
+          until poetry install --with dev --no-interaction; do
+            if [ "$attempt" -ge "$max_retries" ]; then
+              echo "❌ poetry install failed after $max_retries attempts"
+              exit 1
+            fi
+            echo "⚠️ poetry install failed (attempt $attempt). Retrying in $delay seconds..."
+            attempt=$((attempt+1))
+            sleep "$delay"
+          done
+
+      - name: Run pre-commit checks
+        if: steps.bot_check.outputs.skip == 'false'
+        id: precommit
+        continue-on-error: true
+        run: |
+          poetry run pre-commit run --all-files
+
+      - name: Check if fixes are needed
+        if: steps.bot_check.outputs.skip == 'false' && steps.precommit.outcome == 'failure'
+        id: check_fixes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "fixes_needed=true" >> $GITHUB_OUTPUT
+            echo "✅ Pre-commit made auto-fixes"
+          else
+            echo "fixes_needed=false" >> $GITHUB_OUTPUT
+            echo "❌ Pre-commit failed but no auto-fixes available"
+          fi
+
+      - name: Check diff size
+        id: check_diff_size
+        if: steps.check_fixes.outputs.fixes_needed == 'true'
+        run: |
+          FILE_COUNT=$(git diff --name-only | wc -l)
+          INSERTIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= insertions?)' || echo "0")
+          DELETIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= deletions?)' || echo "0")
+          TOTAL_CHANGES=$((INSERTIONS + DELETIONS))
+
+          echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
+          echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
+
+          if [ "${FILE_COUNT:-0}" -gt 100 ] || [ "${TOTAL_CHANGES:-0}" -gt 1000 ]; then
+            echo "too_large=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Diff too large: $FILE_COUNT files / $TOTAL_CHANGES line changes" 
+          else
+            echo "too_large=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if diff too large
+        if: steps.check_diff_size.outputs.too_large == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## ⚠️ Auto-fix Skipped: Diff Too Large" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Changed files: ${{ steps.check_diff_size.outputs.files_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "Total changes: ${{ steps.check_diff_size.outputs.total_changes }}" >> $GITHUB_STEP_SUMMARY
+          echo "Auto-fix would modify too many files. Manual review recommended." >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+      - name: Detect conflicting commits with retry
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
+        id: detect_conflict
+        env:
+          BRANCH_REF: ${{ github.event.pull_request.head.ref }}
+          MAX_RETRIES: 3
+          RETRY_DELAY: 5
+        run: |
+          set +e
+          
+          for attempt in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $attempt/$MAX_RETRIES: Checking for conflicting commits..."
+            
+            # Fetch the latest remote state
+            git fetch origin "$BRANCH_REF" 2>/dev/null
+            FETCH_EXIT=$?
+            
+            if [ $FETCH_EXIT -ne 0 ]; then
+              echo "⚠️ Fetch attempt $attempt failed. Retrying in ${RETRY_DELAY}s..."
+              sleep $RETRY_DELAY
+              continue
+            fi
+            
+            # Get current HEAD and remote HEAD
+            LOCAL_HEAD=$(git rev-parse HEAD)
+            REMOTE_HEAD=$(git rev-parse origin/"$BRANCH_REF")
+            
+            if [ "$LOCAL_HEAD" = "$REMOTE_HEAD" ]; then
+              echo "✅ No conflicting commits detected on attempt $attempt"
+              echo "conflict_detected=false" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️ Conflicting commits detected on attempt $attempt"
+              echo "conflict_detected=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+          
+          echo "❌ Failed to fetch after $MAX_RETRIES attempts"
+          echo "conflict_detected=unknown" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Handle conflicting commits
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "❌ New commits detected on remote branch since checkout."
+          echo "Auto-fix aborted to prevent commit conflicts."
+          
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "⚠️ **Auto-fix Skipped Due to Concurrent Changes**
+
+          New commits were pushed to this branch while the auto-fix was running.
+          To prevent conflicts, the auto-fix was not applied.
+
+          **Next Steps:**
+          1. Pull the latest changes: \`git pull origin ${{ github.event.pull_request.head.ref }}\`
+          2. Run pre-commit locally: \`poetry run pre-commit run --all-files\`
+          3. Commit and push any fixes
+
+          Or wait for the workflow to re-run on the next commit."
+          
+          exit 0
+
+      - name: Commit and push fixes with retry
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'false'
+        id: push_fixes
+        env:
+          BRANCH_REF: ${{ github.event.pull_request.head.ref }}
+          MAX_RETRIES: 3
+          RETRY_DELAY: 5
+        run: |
+          set +e
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          for attempt in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $attempt/$MAX_RETRIES: Attempting to push fixes..."
+            
+            git add -u
+            git commit -m "🤖 Auto-fix: Apply pre-commit fixes
+
+          This commit automatically applies formatting and linting fixes:
+          - Black code formatting
+          - isort import sorting
+          - ruff linting fixes
+          - djLint template formatting
+
+          Generated by auto-fix-pr-precommit workflow"
+            
+            COMMIT_EXIT=$?
+            
+            if [ $COMMIT_EXIT -ne 0 ]; then
+              echo "⚠️ Commit attempt $attempt failed. Retrying in ${RETRY_DELAY}s..."
+              sleep $RETRY_DELAY
+              continue
+            fi
+            
+            git push origin "$BRANCH_REF" 2>/dev/null
+            PUSH_EXIT=$?
+            
+            if [ $PUSH_EXIT -eq 0 ]; then
+              echo "✅ Fixes pushed successfully on attempt $attempt"
+              echo "push_successful=true" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "⚠️ Push attempt $attempt failed. Checking if due to concurrent commits..."
+              
+              # Check if remote branch moved ahead (concurrent commits)
+              git fetch origin "$BRANCH_REF" 2>/dev/null
+              FETCH_EXIT=$?
+              
+              if [ $FETCH_EXIT -eq 0 ]; then
+                LOCAL_COMMIT=$(git rev-parse HEAD~1)
+                REMOTE_COMMIT=$(git rev-parse origin/"$BRANCH_REF")
+                
+                if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
+                  echo "🔄 Concurrent commits detected on remote branch (attempt $attempt)"
+                  echo "Remote branch has advanced. Backing off to avoid conflicts..."
+                  # Just back off - don't rebase
+                  git reset --soft HEAD~1
+                  sleep $RETRY_DELAY
+                  continue
+                fi
+              fi
+              
+              echo "⚠️ Push attempt $attempt failed. Retrying in ${RETRY_DELAY}s..."
+              git reset --soft HEAD~1
+              sleep $RETRY_DELAY
+            fi
+          done
+          
+          echo "❌ Failed to push after $MAX_RETRIES attempts"
+          echo "push_successful=false" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Verify pre-commit passes after fixes
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'true'
+        id: verify_precommit
+        run: |
+          set +e
+          echo "🔍 Verifying pre-commit passes after fixes..."
+          poetry run pre-commit run --all-files
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ Pre-commit verification passed!"
+            echo "precommit_verified=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Pre-commit still failing after auto-fixes"
+            echo "precommit_verified=false" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+
+      - name: Fail if pre-commit still failing
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'false'
+        run: |
+          echo "## ❌ Auto-fix Applied But Pre-commit Still Failing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pre-commit fixes were applied and pushed, but pre-commit checks still fail." >> $GITHUB_STEP_SUMMARY
+          echo "This indicates a non-auto-fixable issue that requires manual intervention." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Pre-commit still failing after auto-fixes. Manual intervention required."
+          exit 1
+
+      - name: Ensure labels exist
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create or update labels; --force makes this idempotent
+          gh label create "automated-fix" \
+            --color "0e8a16" \
+            --description "Automated fixes applied" \
+            --force || true
+
+          gh label create "pre-commit" \
+            --color "1d76db" \
+            --description "Pre-commit related" \
+            --force || true
+
+      - name: Add labels to PR
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --add-label "automated-fix" \
+            --add-label "pre-commit"
+
+      - name: Comment on PR with fixes
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.push_fixes.outputs.push_successful == 'true' &&
+            steps.verify_precommit.outputs.precommit_verified == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "🤖 **Auto-fix Applied Successfully**
+
+          Pre-commit checks detected formatting issues and automatically applied fixes.
+
+          ✅ **Changes Applied:**
+          - Black code formatting
+          - isort import sorting
+          - ruff linting fixes
+          - djLint template formatting
+
+          ✅ **Verification:** Pre-commit checks pass after fixes.
+
+          The fixes have been committed directly to this PR branch and verified."
+
+      - name: Success summary (fixes applied)
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'true' && steps.verify_precommit.outputs.precommit_verified == 'true'
+        run: |
+          echo "## ✅ Auto-fix Applied and Verified Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pre-commit fixes have been automatically applied and verified." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Changes committed:**" >> $GITHUB_STEP_SUMMARY
+          git log -1 --pretty=format:"- %s (%h)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ All pre-commit checks passing" >> $GITHUB_STEP_SUMMARY
+
+      - name: Success summary (no fixes needed)
+        if: steps.precommit.outcome == 'success'
+        run: |
+          echo "## ✅ Pre-commit Checks Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All pre-commit checks passed successfully. No fixes needed!" >> $GITHUB_STEP_SUMMARY
+
+      - name: Failure summary (push failed)
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'false'
+        run: |
+          echo "## ⚠️ Auto-fix Failed to Push" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pre-commit fixes were created but failed to push after multiple retries." >> $GITHUB_STEP_SUMMARY
+          echo "This typically indicates concurrent branch activity (other commits being pushed simultaneously)." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**What this means:**" >> $GITHUB_STEP_SUMMARY
+          echo "- The auto-fix workflow attempted to push fixes 3 times" >> $GITHUB_STEP_SUMMARY
+          echo "- Each attempt failed because the remote branch was updated by concurrent commits" >> $GITHUB_STEP_SUMMARY
+          echo "- The workflow will re-run automatically on the next commit to the branch" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Recommended Action:**" >> $GITHUB_STEP_SUMMARY
+          echo "Wait for the next commit or push to re-trigger the workflow, or manually apply: \`poetry run pre-commit run --all-files\`" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Failed to push auto-fixes after retries due to concurrent branch activity"
+          exit 1
+
+      - name: Notify on precommit failure
+        if: steps.precommit.outcome == 'failure' &&
+            steps.check_fixes.outputs.fixes_needed == 'false'
+        run: |
+          echo "## ❌ Pre-commit Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pre-commit checks failed but no auto-fixes could be applied." >> $GITHUB_STEP_SUMMARY
+          echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Syntax errors in Python code" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid Django template syntax" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing required imports" >> $GITHUB_STEP_SUMMARY
+          echo "- Test failures" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
+          exit 1
