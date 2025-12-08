@@ -46,4 +46,24 @@ class Migration(migrations.Migration):
                 validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)],
             ),
         ),
+        migrations.AddIndex(
+            model_name="dailystatusreport",
+            index=models.Index(fields=["user", "-created"], name="website_dai_user_id_1d9003_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="dailystatusreport",
+            index=models.Index(fields=["goal_accomplished"], name="website_dai_goal_ac_39f9cb_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="userprofile",
+            index=models.Index(fields=["-leaderboard_score", "-current_streak"], name="website_use_leaderb_aa31e8_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="userprofile",
+            index=models.Index(fields=["team", "-leaderboard_score"], name="website_use_team_id_8dcd03_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="userprofile",
+            index=models.Index(fields=["-quality_score"], name="website_use_quality_777c8d_idx"),
+        ),
     ]
