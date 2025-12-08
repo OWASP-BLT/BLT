@@ -27,7 +27,7 @@ class LeaderboardSignalConfigTest(TestCase):
         receivers = [
             receiver[1]()  # receiver[1] is a weak reference, call it to get the function
             for receiver in post_save.receivers
-            if receiver[0][1] == id(DailyStatusReport)  # Filter by sender model
+            if receiver[0][0] == id(DailyStatusReport)  # Filter by sender model
         ]
 
         # Verify our handler is in the list
@@ -45,7 +45,7 @@ class LeaderboardSignalConfigTest(TestCase):
         registration_count = sum(
             1
             for receiver in post_save.receivers
-            if receiver[0][1] == id(DailyStatusReport) and receiver[1]() == update_leaderboard_on_dsr_save
+            if receiver[0][0] == id(DailyStatusReport) and receiver[1]() == update_leaderboard_on_dsr_save
         )
 
         self.assertEqual(
