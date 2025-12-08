@@ -332,7 +332,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.12.9,<4" },
     { name = "async-timeout", specifier = ">=4.0.3,<5" },
-    { name = "atproto", specifier = ">=0.0.64,<0.0.65" },
+    { name = "atproto", specifier = ">=0.0.64,<0.1" },
     { name = "beautifulsoup4", specifier = ">=4.14.3,<5" },
     { name = "better-profanity", specifier = ">=0.7.0,<0.8" },
     { name = "bitcash", specifier = ">=1.0.2,<2" },
@@ -386,7 +386,7 @@ requires-dist = [
     { name = "slack-bolt", specifier = ">=1.23.0,<2" },
     { name = "slack-sdk", specifier = ">=3.35.0,<4" },
     { name = "tablib", specifier = ">=3.8.0,<4" },
-    { name = "tld", specifier = "==0.13" },
+    { name = "tld", specifier = "==0.13,<1" },
     { name = "tweepy", specifier = ">=4.15.0,<5" },
     { name = "ua-parser", specifier = ">=1.0.1,<2" },
     { name = "user-agents", specifier = ">=2.2.0,<3" },
