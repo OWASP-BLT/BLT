@@ -995,7 +995,11 @@ class UserProfile(models.Model):
 
             locked_self.leaderboard_score = score
             locked_self.quality_score = breakdown["goals"]
-            locked_self.check_in_count = DailyStatusReport.objects.filter(user=locked_self.user).count()
+            cutoff = timezone.now().date() - timedelta(days=30)
+            locked_self.check_in_count = DailyStatusReport.objects.filter(
+                user=locked_self.user,
+                date__gte=cutoff,
+            ).count()
             locked_self.last_score_update = timezone.now()
 
             locked_self.save(
