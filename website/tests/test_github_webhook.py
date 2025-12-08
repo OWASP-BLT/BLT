@@ -454,39 +454,39 @@ class GitHubWebhookPullRequestTestCase(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(GitHubIssue.objects.count(), 0)
 
-        def test_missing_signature_returns_403(self):
-            """Missing signature header should return 403."""
-            payload = {
-                "action": "opened",
-                "pull_request": {
-                    "id": self.pr_global_id,
-                    "number": self.pr_number,
-                    "state": "open",
-                    "title": "No sig test",
-                    "body": "",
-                    "html_url": f"{self.repo_url}/pull/{self.pr_number}",
-                    "merged": False,
-                    "created_at": timezone.now().isoformat(),
-                    "updated_at": timezone.now().isoformat(),
-                    "user": {
-                        "login": "octocat",
-                        "html_url": "https://github.com/octocat",
-                        "avatar_url": "",
-                    },
+    def test_missing_signature_returns_403(self):
+        """Missing signature header should return 403."""
+        payload = {
+            "action": "opened",
+            "pull_request": {
+                "id": self.pr_global_id,
+                "number": self.pr_number,
+                "state": "open",
+                "title": "No sig test",
+                "body": "",
+                "html_url": f"{self.repo_url}/pull/{self.pr_number}",
+                "merged": False,
+                "created_at": timezone.now().isoformat(),
+                "updated_at": timezone.now().isoformat(),
+                "user": {
+                    "login": "octocat",
+                    "html_url": "https://github.com/octocat",
+                    "avatar_url": "",
                 },
-                "repository": {
-                    "full_name": "OWASP-BLT/demo-repo",
-                    "html_url": self.repo_url,
-                },
-            }
-            body = json.dumps(payload).encode("utf-8")
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+        body = json.dumps(payload).encode("utf-8")
 
-            response = self.client.post(
-                self.webhook_url,
-                data=body,
-                content_type="application/json",
-                HTTP_X_GITHUB_EVENT="pull_request",
-                # Intentionally no HTTP_X_HUB_SIGNATURE_256 header
-            )
+        response = self.client.post(
+            self.webhook_url,
+            data=body,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="pull_request",
+            # Intentionally no HTTP_X_HUB_SIGNATURE_256 header
+        )
 
-            self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)

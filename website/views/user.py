@@ -1370,12 +1370,12 @@ def handle_pull_request_event(payload):
         logger.error(f"Error getting/creating Contributor for PR: {e}")
         contributor = None
 
-        # --- Timestamps (using same style as handle_issue_event) ---
-        created_at = safe_parse_github_datetime(
-            pr_data.get("created_at"),
-            default=timezone.now(),
-            field_name="pull_request.created_at",
-        )
+    # --- Timestamps (using same style as handle_issue_event) ---
+    created_at = safe_parse_github_datetime(
+        pr_data.get("created_at"),
+        default=timezone.now(),
+        field_name="pull_request.created_at",
+    )
     updated_at = safe_parse_github_datetime(
         pr_data.get("updated_at"),
         default=timezone.now(),
