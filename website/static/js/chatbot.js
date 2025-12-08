@@ -9,6 +9,18 @@ const chatLog = document.getElementById("chat-log");
 const loader = document.getElementById("loading");
 const quickCommands = document.querySelectorAll(".quick-command");
 
+if (
+  !chatWidget ||
+  !chatToggle ||
+  !chatClose ||
+  !chatInput ||
+  !chatSend ||
+  !chatLog
+) {
+  // Chatbot not present on this page → exit safely
+  return;
+}
+
 // Welcome message flag
 let hasWelcomed = false;
 
@@ -17,7 +29,9 @@ chatIcon.addEventListener("click", () => {
   chatBox.classList.remove("hidden");
   // Show welcome message on first open
   if (!hasWelcomed) {
-    addBotMessage("Hello! I'm BLT Bot. How can I help you today? Try using the quick commands below or type your question!");
+    addBotMessage(
+      "Hello! I'm BLT Bot. How can I help you today? Try using the quick commands below or type your question!"
+    );
     hasWelcomed = true;
   }
 });
@@ -115,16 +129,20 @@ async function sendMessage() {
 
     let data = await response.json();
     hideLoader();
-    
+
     if (data.reply) {
       addBotMessage(data.reply);
     } else {
-      addBotMessage("I received your message, but couldn't generate a response. Please try again.");
+      addBotMessage(
+        "I received your message, but couldn't generate a response. Please try again."
+      );
     }
   } catch (error) {
     hideLoader();
 
-    addBotMessage("Error connecting to server. Please check your connection and try again.");
+    addBotMessage(
+      "Error connecting to server. Please check your connection and try again."
+    );
   }
 }
 

@@ -1,8 +1,11 @@
 import json
+import logging
 import os
 
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+
+logger = logging.getLogger(__name__)
+
 
 # Load OpenAI key (optional)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -15,7 +18,6 @@ if USE_OPENAI:
     client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-@csrf_exempt
 def chatbot_api(request):
     if request.method != "POST":
         return JsonResponse({"reply": "Only POST requests allowed."}, status=405)
@@ -48,7 +50,8 @@ def chatbot_api(request):
     except json.JSONDecodeError:
         return JsonResponse({"reply": "Invalid JSON format."}, status=400)
     except Exception as e:
-        return JsonResponse({"reply": f"Server error: {str(e)}"}, status=500)
+        logger.error(f"Chatbot error: {e}", exc_info=True)
+        return JsonResponse({"reply": "Something went wrong. Please try again later."}, status=500)
 
 
 # -------------------------
@@ -110,7 +113,7 @@ def fallback_blt_bot(message: str) -> str:
 
     if msg.startswith("/bacon") or "bacon" in msg:
         return (
-            "Bacon Tokens are BLT’s internal reward currency for contributing to issues, "
+            "Bacon Tokens are BLT's internal reward currency for contributing to issues, "
             "hunts, and community events."
         )
 
