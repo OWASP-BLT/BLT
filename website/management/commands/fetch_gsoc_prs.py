@@ -236,7 +236,8 @@ class Command(BaseCommand):
                 self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
-                self.check_and_wait_for_rate_limit(headers, verbose)
+                if page % 10 == 0:
+                    self.check_and_wait_for_rate_limit(headers, verbose)
 
                 response = requests.get(url, headers=headers, timeout=30)
 
@@ -287,7 +288,12 @@ class Command(BaseCommand):
 
     def check_and_wait_for_rate_limit(self, headers, verbose=False):
         try:
-            response = requests.get("https://api.github.com/rate_limit", headers=headers, timeout=10)
+            response = requests.get(
+                "https://api.github.com/rate_limit",
+                headers=headers,
+                timeout=10,
+            )
+
             if response.status_code == 200:
                 data = response.json()
                 core = data.get("resources", {}).get("core", {})
@@ -297,11 +303,16 @@ class Command(BaseCommand):
                 if verbose:
                     self.stdout.write(f"Rate limit remaining: {remaining}")
 
+                # Only pause if we're actually close to exhaustion
                 if remaining < 100:
                     wait_seconds = max(reset_time - int(time.time()), 0) + 10
+                    if verbose:
+                        self.stdout.write(f"Low rate limit detected. Sleeping for {wait_seconds}s...")
                     time.sleep(wait_seconds)
+
         except Exception:
-            pass
+            if verbose:
+                logger.debug("Could not check rate limit, continuing anyway")
 
     def save_prs_to_db_rest_api(self, repo, prs, since_date, verbose=False):
         """
@@ -575,6 +586,11 @@ class Command(BaseCommand):
                 if reviewer_github_url:
                     reviewer_profile = UserProfile.objects.filter(github_url=reviewer_github_url).first()
 
+                # Skip reviews without submitted_at (e.g., PENDING reviews)
+                submitted_at_str = review.get("submitted_at")
+                if not submitted_at_str:
+                    continue
+
                 # Create or update the review
                 GitHubReview.objects.update_or_create(
                     review_id=review["id"],
@@ -584,7 +600,7 @@ class Command(BaseCommand):
                         "reviewer_contributor": reviewer_contributor,
                         "body": review.get("body", ""),
                         "state": review["state"],
-                        "submitted_at": datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                        "submitted_at": datetime.strptime(submitted_at_str, "%Y-%m-%dT%H:%M:%SZ").replace(
                             tzinfo=pytz.UTC
                         ),
                         "url": review["html_url"],
