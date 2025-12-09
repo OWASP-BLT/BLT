@@ -16,15 +16,15 @@
     Configure and manage your Slack integration settings for seamless team communication and notifications.
 {% endblock og_description %}
 {% block body %}
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Header Section -->
-        <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div class="flex flex-col gap-6">
                     <!-- Top Row: Back button and Actions -->
                     <div class="flex items-center justify-between">
                         <a href="{% url 'organization_manage_integrations' organization %}"
-                           class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group">
+                           class="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors group">
                             <svg class="w-5 h-5 transition-transform group-hover:-translate-x-1"
                                  fill="none"
                                  stroke="currentColor"
@@ -37,7 +37,7 @@
                     <!-- Main Header -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div class="flex items-start gap-4">
-                            <div class="w-16 h-16 bg-gradient-to-br from-[#e74c3c]/10 to-[#e74c3c]/5 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#e74c3c]/20">
+                            <div class="w-16 h-16 bg-gradient-to-br from-[#e74c3c]/10 to-[#e74c3c]/5 dark:from-[#e74c3c]/20 dark:to-[#e74c3c]/10 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#e74c3c]/20 dark:border-[#e74c3c]/30">
                                 <img src="{% static 'images/slack_icon.png' %}"
                                      alt="Slack"
                                      width="40"
@@ -45,14 +45,14 @@
                                      class="w-10 h-10">
                             </div>
                             <div>
-                                <h1 class="text-3xl font-bold text-gray-900 mb-2">Slack Integration Settings</h1>
+                                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Slack Integration Settings</h1>
                                 <div class="flex items-center gap-3">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700">
                                         <span class="w-2 h-2 mr-2 bg-green-500 rounded-full animate-pulse"></span>
                                         Connected
                                     </span>
-                                    <span class="text-sm text-gray-500">•</span>
-                                    <span class="text-sm text-gray-600">Configure notifications and preferences</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">•</span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Configure notifications and preferences</span>
                                 </div>
                             </div>
                         </div>
@@ -77,13 +77,13 @@
             <form method="post" action="#" class="space-y-4">
                 {% csrf_token %}
                 <!-- Connection Info Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">Connection Information</h2>
-                        <p class="text-sm text-gray-500 mt-1">Your Slack workspace connection details</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Connection Information</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your Slack workspace connection details</p>
                     </div>
                     <div class="p-6">
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                             <div class="flex items-start gap-3">
                                 <div class="w-10 h-10 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <svg class="w-5 h-5 text-[#e74c3c]"
@@ -95,17 +95,20 @@
                                     </svg>
                                 </div>
                                 <div class="flex-1">
-                                    <label for="bot_token" class="block text-sm font-medium text-gray-900 mb-2">Bot Access Token</label>
+                                    <label for="bot_token"
+                                           class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                        Bot Access Token
+                                    </label>
                                     <div class="flex items-center gap-2">
                                         <input type="password"
                                                name="bot_token"
                                                id="bot_token"
                                                value="{{ slack_integration.bot_access_token }}"
                                                disabled
-                                               class="flex-1 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 sm:text-sm px-4 py-3 cursor-not-allowed font-mono" />
+                                               class="flex-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 sm:text-sm px-4 py-3 cursor-not-allowed font-mono" />
                                         <button type="button"
                                                 id="toggleToken"
-                                                class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                                 title="Show/Hide Token">
                                             <svg id="eyeIcon"
                                                  class="w-5 h-5"
@@ -118,7 +121,7 @@
                                             </svg>
                                         </button>
                                     </div>
-                                    <p class="mt-2 text-xs text-gray-500">
+                                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                                         <svg class="w-3 h-3 inline mr-1"
                                              fill="none"
                                              stroke="currentColor"
@@ -206,18 +209,20 @@
                     </div>
                 </div>
                 <!-- Channel Settings Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">Channel Settings</h2>
-                        <p class="text-sm text-gray-500 mt-1">Choose the default channel for notifications</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Channel Settings</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Choose the default channel for notifications</p>
                     </div>
                     <div class="p-6">
                         <div class="max-w-xl">
                             <label for="target_channel"
-                                   class="block text-sm font-medium text-gray-900 mb-2">Default Channel</label>
+                                   class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                Default Channel
+                            </label>
                             <select id="target_channel"
                                     name="target_channel"
-                                    class="block w-full rounded-lg border border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white">
+                                    class="block w-full rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                                 {% for channel_name in channels %}
                                     <option value="{{ channel_name }}"
                                             {% if slack_integration.default_channel_name == channel_name %}selected{% endif %}>
@@ -225,15 +230,17 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                            <p class="mt-2 text-sm text-gray-500">This channel will receive automated notifications and updates</p>
+                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                This channel will receive automated notifications and updates
+                            </p>
                         </div>
                     </div>
                 </div>
                 <!-- Automated Updates Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">Automated Updates</h2>
-                        <p class="text-sm text-gray-500 mt-1">Configure scheduled notifications</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Automated Updates</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure scheduled notifications</p>
                     </div>
                     <div class="p-6 space-y-6">
                         <div class="flex items-start gap-4">
@@ -241,21 +248,25 @@
                                 <input type="checkbox"
                                        id="daily_sizzle_timelogs_status"
                                        name="daily_sizzle_timelogs_status"
-                                       class="h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"
+                                       class="h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 dark:border-gray-600 rounded"
                                        {% if slack_integration.daily_updates %}checked{% endif %}>
                             </div>
                             <div class="flex-1">
                                 <label for="daily_sizzle_timelogs_status"
-                                       class="text-sm font-medium text-gray-900">Daily Sizzle Timelogs Status</label>
-                                <p class="text-sm text-gray-500 mt-1">Send daily timelog summaries to your team</p>
+                                       class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    Daily Sizzle Timelogs Status
+                                </label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Send daily timelog summaries to your team</p>
                             </div>
                         </div>
                         <div class="max-w-xl pl-8">
                             <label for="daily_sizzle_timelogs_hour"
-                                   class="block text-sm font-medium text-gray-900 mb-2">Update Time (UTC)</label>
+                                   class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                Update Time (UTC)
+                            </label>
                             <select id="daily_sizzle_timelogs_hour"
                                     name="daily_sizzle_timelogs_hour"
-                                    class="block w-full rounded-lg border border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white"
+                                    class="block w-full rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm px-4 py-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                     {% if not slack_integration.daily_updates %}disabled{% endif %}>
                                 <option value=""
                                         disabled
@@ -269,21 +280,21 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                            <p class="mt-2 text-sm text-gray-500">Choose when you want to receive daily updates</p>
+                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Choose when you want to receive daily updates</p>
                         </div>
                     </div>
                 </div>
                 <!-- Welcome Message Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <div class="flex items-start justify-between">
                             <div>
-                                <h2 class="text-lg font-semibold text-gray-900">Welcome Message</h2>
-                                <p class="text-sm text-gray-500 mt-1">Customize the message sent to new team members</p>
+                                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Welcome Message</h2>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Customize the message sent to new team members</p>
                             </div>
                             <button type="button"
                                     id="previewToggle"
-                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-[#e74c3c] hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+                                    class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-[#e74c3c] hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
                                 <svg class="w-4 h-4 mr-1.5"
                                      fill="none"
                                      stroke="currentColor"
@@ -300,21 +311,24 @@
                         <!-- Editor View -->
                         <div id="editorView">
                             <div class="flex items-center justify-between mb-2">
-                                <label for="welcome_message" class="block text-sm font-medium text-gray-900">Message Content</label>
-                                <span id="charCount" class="text-xs text-gray-500">0 characters</span>
+                                <label for="welcome_message"
+                                       class="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    Message Content
+                                </label>
+                                <span id="charCount" class="text-xs text-gray-500 dark:text-gray-400">0 characters</span>
                             </div>
                             <div class="relative">
                                 <textarea id="welcome_message"
                                           name="welcome_message"
                                           rows="10"
-                                          class="block w-full rounded-lg border border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm resize-none px-4 py-3"
+                                          class="block w-full rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm resize-none px-4 py-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                           placeholder="Welcome to our workspace! 👋&#10;&#10;Here's some helpful information:&#10;• Channel #general for discussions&#10;• Channel #help for assistance&#10;• Channel #announcements for updates&#10;&#10;Feel free to introduce yourself!"
                                           maxlength="3000">{{ welcome_message }}</textarea>
                                 <div class="absolute bottom-3 right-3">
                                     <div class="relative">
                                         <button type="button"
                                                 id="insertEmoji"
-                                                class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                                class="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                                                 title="Insert emoji">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
@@ -323,17 +337,17 @@
                                         </button>
                                         <!-- Emoji Picker Dropdown -->
                                         <div id="emojiPicker"
-                                             class="hidden absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-72 max-h-64 overflow-y-auto z-10">
+                                             class="hidden absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3 w-72 max-h-64 overflow-y-auto z-10">
                                             <div class="mb-2">
-                                                <h4 class="text-xs font-semibold text-gray-700 mb-2">Frequently Used</h4>
+                                                <h4 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Frequently Used</h4>
                                                 <div class="grid grid-cols-8 gap-1" id="emojiFrequent"></div>
                                             </div>
                                             <div class="mb-2">
-                                                <h4 class="text-xs font-semibold text-gray-700 mb-2">Smileys & People</h4>
+                                                <h4 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Smileys & People</h4>
                                                 <div class="grid grid-cols-8 gap-1" id="emojiSmileys"></div>
                                             </div>
                                             <div class="mb-2">
-                                                <h4 class="text-xs font-semibold text-gray-700 mb-2">Objects & Symbols</h4>
+                                                <h4 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Objects & Symbols</h4>
                                                 <div class="grid grid-cols-8 gap-1" id="emojiObjects"></div>
                                             </div>
                                         </div>
@@ -341,10 +355,10 @@
                                 </div>
                             </div>
                             <!-- Formatting Toolbar -->
-                            <div class="mt-3 flex flex-wrap items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                <span class="text-xs font-medium text-gray-700">Markdown Formatting:</span>
+                            <div class="mt-3 flex flex-wrap items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Markdown Formatting:</span>
                                 <button type="button"
-                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                                         data-format="*"
                                         title="Bold">
                                     <svg class="w-3 h-3 mr-1"
@@ -356,21 +370,21 @@
                                     *Bold*
                                 </button>
                                 <button type="button"
-                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                                         data-format="_"
                                         title="Italic">
                                     <span class="italic mr-1">I</span>
                                     _Italic_
                                 </button>
                                 <button type="button"
-                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                                         data-format="~"
                                         title="Strikethrough">
                                     <span class="line-through mr-1">S</span>
                                     ~Strike~
                                 </button>
                                 <button type="button"
-                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                                         data-format="`"
                                         title="Code">
                                     <svg class="w-3 h-3 mr-1"
@@ -382,7 +396,7 @@
                                     `Code`
                                 </button>
                                 <button type="button"
-                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                                        class="format-btn inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                                         data-format=">"
                                         title="Quote">
                                     <svg class="w-3 h-3 mr-1"
@@ -399,33 +413,34 @@
                         <!-- Preview View -->
                         <div id="previewView" class="hidden">
                             <div class="mb-2">
-                                <span class="text-sm font-medium text-gray-900">Preview</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Preview</span>
                             </div>
-                            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200 min-h-[280px]">
-                                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                            <div class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-gray-200 dark:border-gray-600 min-h-[280px]">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                                     <div class="flex items-start gap-3 mb-4">
                                         <div class="w-10 h-10 bg-[#e74c3c] rounded flex items-center justify-center text-white font-bold flex-shrink-0">
                                             BL
                                         </div>
                                         <div class="flex-1">
                                             <div class="flex items-center gap-2 mb-1">
-                                                <span class="font-semibold text-gray-900">BLT Bot</span>
-                                                <span class="inline-flex items-center px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">APP</span>
-                                                <span class="text-xs text-gray-500">Just now</span>
+                                                <span class="font-semibold text-gray-900 dark:text-gray-100">BLT Bot</span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">APP</span>
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">Just now</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div id="previewContent" class="text-sm text-gray-700 leading-relaxed"></div>
+                                    <div id="previewContent"
+                                         class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Actions -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6 flex items-center justify-between">
                         <a href="{% url 'organization_manage_integrations' organization %}"
-                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                             Cancel
                         </a>
                         <button type="submit"
@@ -648,7 +663,7 @@
         function createEmojiButton(emoji) {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'text-2xl hover:bg-gray-100 rounded p-1 transition-colors cursor-pointer';
+            btn.className = 'text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1 transition-colors cursor-pointer';
             btn.textContent = emoji;
             btn.title = emoji;
             btn.addEventListener('click', function(e) {

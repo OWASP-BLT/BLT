@@ -16,14 +16,14 @@
     Access and manage all your bug bounties effortlessly. Filter by status, view details, and edit or delete hunts with ease.
 {% endblock og_description %}
 {% block body %}
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Header Section -->
         <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Manage Bug Bounties</h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">Organize and control your bug bounty programs</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Organize and control your bug bounty programs</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <!-- Filter Dropdown -->
@@ -82,11 +82,11 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             {% for hunt in bughunts %}
-                                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ hunt.name|truncatechars:40 }}</div>
                                         {% if hunt.url %}
-                                            <div class="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                                 <a href="{% if hunt.url|slice:':4' == 'http' %}{{ hunt.url }}{% else %}https://{{ hunt.url }}{% endif %}"
                                                    target="_blank"
                                                    rel="noopener noreferrer"
@@ -104,9 +104,9 @@
                                         {% if not hunt.is_published %}
                                             <span class="inline-flex px-3 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">Draft</span>
                                         {% elif not hunt.result_published %}
-                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Ongoing</span>
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">Ongoing</span>
                                         {% else %}
-                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-red-100 text-red-600 rounded-full">Ended</span>
+                                            <span class="inline-flex px-3 py-1 text-xs font-medium bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-200 rounded-full">Ended</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4">
@@ -127,7 +127,7 @@
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-end space-x-2">
                                             <a href="{% url 'show_bughunt' hunt.id %}"
-                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-700 dark:border dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-medium text-sm"
                                                title="View Bug Bounty">
                                                 <svg class="w-4 h-4 mr-1.5"
                                                      fill="none"
@@ -140,7 +140,7 @@
                                                 View
                                             </a>
                                             {% if hunt.result_published %}
-                                                <span class="inline-flex items-center px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500 rounded-lg cursor-not-allowed font-medium text-sm"
+                                                <span class="inline-flex items-center px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed font-medium text-sm"
                                                       title="Hunt Ended - Cannot Edit">
                                                     <svg class="w-4 h-4 mr-1.5"
                                                          fill="none"
@@ -184,7 +184,7 @@
                             </path>
                         </svg>
                         <h3 class="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">No bug bounties yet</h3>
-                        <p class="mt-2 text-gray-500 dark:text-gray-500">
+                        <p class="mt-2 text-gray-500 dark:text-gray-400">
                             Start securing your applications by creating your first bug bounty program.
                         </p>
                         <div class="mt-6">
