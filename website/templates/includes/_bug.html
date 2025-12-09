@@ -196,9 +196,10 @@
                 <!-- Like -->
                 <button onclick="like_unlike_handler(event, {{ bug.id }})"
                         aria-label="Like this bug report"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded flex items-center justify-center">
                     <svg id="likeSvg{{ bug.id }}"
                          class="w-5 h-5"
+                         viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
                          stroke-width="2">
@@ -209,9 +210,10 @@
                 <!-- Dislike -->
                 <button onclick="dislike_handler(event, {{ bug.id }})"
                         aria-label="Dislike this bug report"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded flex items-center justify-center">
                     <svg id="dislikeSvg{{ bug.id }}"
                          class="w-5 h-5"
+                         viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
                          stroke-width="2">
@@ -222,9 +224,10 @@
                 <!-- Flag -->
                 <button onclick="flag_unflag_handler(event, {{ bug.id }})"
                         aria-label="Flag this bug report"
-                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors">
+                        class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c] transition-colors focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 rounded flex items-center justify-center">
                     <svg id="flagSvg{{ bug.id }}"
                          class="w-5 h-5"
+                         viewBox="0 0 24 24"
                          fill="none"
                          stroke="currentColor"
                          stroke-width="2">
