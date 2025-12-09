@@ -20,6 +20,7 @@ from django.core.mail import send_mail
 from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q, Sum
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -773,8 +774,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # Annotate Project with aggregated stars and forks from related Repos
         projects_qs = Project.objects.annotate(
-            total_stars=Sum("repos__stars"),
-            total_forks=Sum("repos__forks"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
         )
 
         try:
@@ -821,8 +822,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # Annotate Project with aggregated stars and forks from related Repos
         projects = Project.objects.annotate(
-            total_stars=Sum("repos__stars"),
-            total_forks=Sum("repos__forks"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
         )
 
         # Freshness is NOT a DB field (SerializerMethodField)
@@ -833,16 +834,32 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if stars:
             try:
                 stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 projects = projects.filter(total_stars__gte=stars_int)
             except (ValueError, TypeError):
-                pass  # Invalid stars value, skip filter
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if forks:
             try:
                 forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 projects = projects.filter(total_forks__gte=forks_int)
             except (ValueError, TypeError):
-                pass  # Invalid forks value, skip filter
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
