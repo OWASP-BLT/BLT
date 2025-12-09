@@ -37,9 +37,20 @@ This approach:
 
 - **Implementation**: `dj-rest-auth` library with `allauth` backend
 - **URL**: `/auth/password/reset/` (POST)
-- **Settings**: `blt/settings.py` - `REST_AUTH` configuration
+- **Settings**: `blt/settings.py` - `REST_AUTH` configuration and `ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False`
 - **Form**: Uses `AllAuthPasswordResetForm` from `dj-rest-auth.forms`
 - **Tests**: `website/tests/test_api.py` - `TestPasswordResetUnknownEmail`
+
+## Critical Configuration
+
+**Important**: django-allauth 65.x introduced the `ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS` setting which defaults to `True`. This means that by default, allauth will send an email to unknown email addresses during password reset, revealing that the account doesn't exist.
+
+**Required Setting** (already configured in `blt/settings.py`):
+```python
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
+```
+
+This setting ensures that NO emails are sent to unknown accounts, preventing account enumeration attacks.
 
 ## Testing
 

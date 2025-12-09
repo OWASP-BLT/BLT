@@ -345,6 +345,9 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
+# Security: Do not send emails to unknown accounts during password reset
+# This prevents account enumeration attacks
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
