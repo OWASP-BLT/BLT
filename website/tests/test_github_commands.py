@@ -2,7 +2,7 @@
 Tests for GitHub data fetching management commands.
 Tests focus on key functionality: timeouts, bulk operations, and data integrity.
 """
-from datetime import datetime, timedelta
+from datetime import timedelta
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -32,7 +32,7 @@ class GitHubCommandsIntegrationTests(TestCase):
             "resources": {
                 "core": {
                     "remaining": remaining,
-                    "reset": int((datetime.now() + timedelta(hours=1)).timestamp()),
+                    "reset": int((timezone.now() + timedelta(hours=1)).timestamp()),
                     "limit": 5000,
                 }
             }
@@ -58,6 +58,7 @@ class GitHubCommandsIntegrationTests(TestCase):
             "updated_at": "2024-06-02T00:00:00Z",
             "closed_at": "2024-06-02T00:00:00Z",
             "merged_at": merged_at,
+            "url": f"https://api.github.com/repos/OWASP-BLT/BLT/pulls/{number}",
             "html_url": f"https://github.com/OWASP-BLT/BLT/pull/{number}",
             "user": {
                 "id": user_id,
@@ -575,7 +576,7 @@ class GitHubCommandsIntegrationTests(TestCase):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "resources": {"core": {"remaining": 5000, "reset": int((datetime.now() + timedelta(hours=1)).timestamp())}}
+            "resources": {"core": {"remaining": 5000, "reset": int((timezone.now() + timedelta(hours=1)).timestamp())}}
         }
 
         empty_response = self.make_empty_response()
