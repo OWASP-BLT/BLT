@@ -104,7 +104,7 @@ class Command(BaseCommand):
             date_obj = parse_date(since_date_arg)
             if not date_obj:
                 raise ValueError(f"Invalid --since-date value: {since_date_arg}. Use YYYY-MM-DD.")
-            since_date = timezone.make_aware(datetime.combine(date_obj, datetime.min.time()))
+            since_date = datetime.combine(date_obj, datetime.min.time()).replace(tzinfo=pytz.UTC)
             self.stdout.write(f"Fetching closed PRs merged since {since_date_arg}")
         else:
             since_date = timezone.now() - relativedelta(months=6)
@@ -338,13 +338,9 @@ class Command(BaseCommand):
 
                 merged_prs = []
                 for pr in data:
-                    merged_at = self.parse_github_datetime(pr.get("merged_at"))  # 🔹 uses helper
+                    merged_at = self.parse_github_datetime(pr.get("merged_at"))  # uses helper
                     if merged_at and merged_at >= since_date:
                         merged_prs.append(pr)
-                    else:
-                        # As soon as we hit a too-old PR (sorted by updated), we can stop
-                        reached_end = True
-                        break
 
                 if merged_prs:
                     prs_added, prs_updated = self.save_prs_to_db(repo, merged_prs, since_date, verbose)
@@ -357,7 +353,7 @@ class Command(BaseCommand):
                     reached_end = True
                     break
 
-                # 🔹 Optional progress log every 10 pages
+                # progress log every 10 pages
                 if page % 10 == 0:
                     elapsed = time.time() - start_time
                     if elapsed > 0:
