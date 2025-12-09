@@ -772,28 +772,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
 
-        # Annotate Project with aggregated stars and forks from related Repos
         projects_qs = Project.objects.annotate(
             total_stars=Coalesce(Sum("repos__stars"), 0),
             total_forks=Coalesce(Sum("repos__forks"), 0),
         )
 
-        try:
-            query_int = int(query)
-
-            projects = projects_qs.filter(
-                Q(name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(tags__name__icontains=query)
-                | Q(total_stars__gte=query_int)
-                | Q(total_forks__gte=query_int)
-            ).distinct()
-
-        except ValueError:
-            # If query is not a number, exclude stars/forks from search
-            projects = projects_qs.filter(
-                Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
-            ).distinct()
+        projects = projects_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
+        ).distinct()
 
         project_data = []
         for project in projects:
