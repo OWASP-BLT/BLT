@@ -827,10 +827,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         )
 
         # Freshness is NOT a DB field (SerializerMethodField)
-        # Skipping for now to avoid FieldError
         if freshness:
-            pass  # Safe no-op until model-level freshness is implemented
+            pass  # Safe no-op
 
+        # SAFE stars validation
         if stars:
             try:
                 stars_int = int(stars)
@@ -846,6 +846,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # SAFE forks validation
         if forks:
             try:
                 forks_int = int(forks)
