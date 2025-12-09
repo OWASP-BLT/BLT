@@ -770,18 +770,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
+
+        # Annotate Project with aggregated stars and forks from related Repos
+        projects_qs = Project.objects.annotate(
+            total_stars=Sum("repos__stars"),
+            total_forks=Sum("repos__forks"),
+        )
+
         try:
             query_int = int(query)
-            projects = Project.objects.filter(
+
+            projects = projects_qs.filter(
                 Q(name__icontains=query)
                 | Q(description__icontains=query)
                 | Q(tags__name__icontains=query)
-                | Q(stars=query_int)
-                | Q(forks=query_int)
+                | Q(total_stars=query_int)
+                | Q(total_forks=query_int)
             ).distinct()
+
         except ValueError:
             # If query is not a number, exclude stars/forks from search
-            projects = Project.objects.filter(
+            projects = projects_qs.filter(
                 Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
             ).distinct()
 
@@ -791,7 +800,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -808,14 +819,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
-        projects = Project.objects.all()
+        # Annotate Project with aggregated stars and forks from related Repos
+        projects = Project.objects.annotate(
+            total_stars=Sum("repos__stars"),
+            total_forks=Sum("repos__forks"),
+        )
 
+        # Freshness is NOT a DB field (SerializerMethodField)
+        # Skipping for now to avoid FieldError
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            pass  # Safe no-op until model-level freshness is implemented
+
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            projects = projects.filter(total_stars__gte=stars)
+
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            projects = projects.filter(total_forks__gte=forks)
+
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -825,7 +845,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
