@@ -65,7 +65,7 @@ class Command(BaseCommand):
             since_date = datetime.strptime(since_date_arg, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
             self.stdout.write(f"Fetching closed PRs merged since {since_date_arg}")
         else:
-            since_date = timezone.now() - relativedelta(months=6)
+            since_date = timezone.now().astimezone(pytz.UTC) - relativedelta(months=6)
             self.stdout.write(
                 f"Fetching closed PRs merged in the last 6 months (since {since_date.strftime('%Y-%m-%d')})"
             )
@@ -252,6 +252,7 @@ class Command(BaseCommand):
                     continue
 
                 response.raise_for_status()
+                retry_count = 0
                 data = response.json()
 
                 if not data:
@@ -272,6 +273,17 @@ class Command(BaseCommand):
                     total_prs_fetched += len(merged_prs)
                     total_prs_added += prs_added
                     total_prs_updated += prs_updated
+
+                # Optional optimization: stop once the page's oldest updated_at is before since_date
+                last_updated_str = data[-1].get("updated_at")
+                if last_updated_str:
+                    last_updated = datetime.strptime(
+                        last_updated_str,
+                        "%Y-%m-%dT%H:%M:%SZ",
+                    ).replace(tzinfo=pytz.UTC)
+                    if last_updated < since_date:
+                        reached_end = True
+                        break
 
                 if len(data) < per_page:
                     reached_end = True
