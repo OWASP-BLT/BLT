@@ -62,7 +62,7 @@ class Command(BaseCommand):
         since_date_arg = options.get("since_date")
 
         if since_date_arg:
-            since_date = timezone.make_aware(datetime.strptime(since_date_arg, "%Y-%m-%d"))
+            since_date = datetime.strptime(since_date_arg, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
             self.stdout.write(f"Fetching closed PRs merged since {since_date_arg}")
         else:
             since_date = timezone.now() - relativedelta(months=6)
@@ -223,8 +223,8 @@ class Command(BaseCommand):
         page = 1
         per_page = 100
         reached_end = False
-        consecutive_errors = 0
-        max_consecutive_errors = 3
+        retry_count = 0
+        max_retries = 5
 
         while not reached_end:
             url = (
@@ -241,6 +241,10 @@ class Command(BaseCommand):
                 response = requests.get(url, headers=headers, timeout=30)
 
                 if response.status_code == 403:
+                    retry_count += 1
+                    if retry_count > max_retries:
+                        logger.error(f"Max retries exceeded for {owner}/{repo_name}")
+                        break
                     retry_after = response.headers.get("Retry-After")
                     wait_time = int(retry_after) if retry_after else 60
                     time.sleep(wait_time)
@@ -260,9 +264,6 @@ class Command(BaseCommand):
 
                         if merged_at >= since_date:
                             merged_prs.append(pr)
-                        else:
-                            reached_end = True
-                            break
 
                 if merged_prs:
                     prs_added, prs_updated = self.save_prs_to_db_rest_api(repo, merged_prs, since_date, verbose)
