@@ -784,8 +784,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 Q(name__icontains=query)
                 | Q(description__icontains=query)
                 | Q(tags__name__icontains=query)
-                | Q(total_stars=query_int)
-                | Q(total_forks=query_int)
+                | Q(total_stars__gte=query_int)
+                | Q(total_forks__gte=query_int)
             ).distinct()
 
         except ValueError:
@@ -831,10 +831,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
             pass  # Safe no-op until model-level freshness is implemented
 
         if stars:
-            projects = projects.filter(total_stars__gte=stars)
+            try:
+                stars_int = int(stars)
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                pass  # Invalid stars value, skip filter
 
         if forks:
-            projects = projects.filter(total_forks__gte=forks)
+            try:
+                forks_int = int(forks)
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                pass  # Invalid forks value, skip filter
 
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
