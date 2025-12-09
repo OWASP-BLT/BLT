@@ -144,6 +144,10 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {"id": "U123", "name": "testuser", "real_name": "Test User"},
+        }
 
         # Create test event data
         event_data = {
@@ -184,6 +188,10 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {"id": "U123", "name": "testuser", "real_name": "Test User"},
+        }
 
         # Create test event data for OWASP workspace
         event_data = {
@@ -223,6 +231,10 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {"id": "U123", "name": "testuser", "real_name": "Test User"},
+        }
 
         # Create test request
         request = MagicMock()
@@ -256,6 +268,10 @@ class SlackHandlerTests(TestCase):
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
         mock_client.team_info.return_value = {"ok": True, "team": {"name": "Test Workspace"}}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {"id": "U123", "name": "testuser", "real_name": "Test User"},
+        }
 
         # Mock admin API response - simulating permission error
         from slack_sdk.errors import SlackApiError
