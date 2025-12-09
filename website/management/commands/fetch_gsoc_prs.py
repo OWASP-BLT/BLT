@@ -175,6 +175,7 @@ class Command(BaseCommand):
 
                 # Reset the last_pr_page_processed if requested
                 if reset:
+                    repo.last_pr_page_processed = 0
                     repo.save()
                     self.stdout.write(f"Reset last_pr_page_processed for {repo_full_name}")
 
