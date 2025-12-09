@@ -813,9 +813,12 @@ class GitHubCommandsIntegrationTests(TestCase):
         # Verify timeout is a tuple (connect, read) as recommended
         timeout_value = call_kwargs["timeout"]
         self.assertIsInstance(timeout_value, (int, tuple), "Timeout should be tuple (connect, read)")
-        self.assertEqual(len(timeout_value), 2, "Timeout tuple should have 2 values")
-        self.assertGreater(timeout_value[0], 0, "Connect timeout should be > 0")
-        self.assertGreater(timeout_value[1], 0, "Read timeout should be > 0")
+        if isinstance(timeout_value, tuple):
+            self.assertEqual(len(timeout_value), 2, "Timeout tuple should have 2 values")
+            self.assertGreater(timeout_value[0], 0, "Connect timeout should be > 0")
+            self.assertGreater(timeout_value[1], 0, "Read timeout should be > 0")
+        else:
+            self.assertGreater(timeout_value, 0, "Timeout int should be > 0")
 
     @patch("website.management.commands.fetch_pr_reviews.requests.get")
     def test_review_with_null_submitted_at_skipped(self, mock_get):

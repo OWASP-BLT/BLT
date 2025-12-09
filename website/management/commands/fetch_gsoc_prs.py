@@ -274,17 +274,6 @@ class Command(BaseCommand):
                     total_prs_added += prs_added
                     total_prs_updated += prs_updated
 
-                # Optional optimization: stop once the page's oldest updated_at is before since_date
-                last_updated_str = data[-1].get("updated_at")
-                if last_updated_str:
-                    last_updated = datetime.strptime(
-                        last_updated_str,
-                        "%Y-%m-%dT%H:%M:%SZ",
-                    ).replace(tzinfo=pytz.UTC)
-                    if last_updated < since_date:
-                        reached_end = True
-                        break
-
                 if len(data) < per_page:
                     reached_end = True
                     break
