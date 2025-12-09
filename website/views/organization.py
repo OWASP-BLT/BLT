@@ -2412,8 +2412,10 @@ class RoomCreateView(CreateView):
 
 
 def join_room(request, room_id):
-    room = Room.objects.prefetch_related("screenshots", "tags").select_related("admin").get(id=room_id)
-
+    room = get_object_or_404(
+        Room.objects.prefetch_related("screenshots", "tags").select_related("admin"),
+        id=room_id,
+    )
     # Ensure session key exists for anonymous users
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
