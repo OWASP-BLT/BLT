@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.dateparse import parse_date, parse_datetime
 
 from website.models import Contributor, GitHubIssue, Repo, UserProfile
 from website.views.constants import GSOC25_PROJECTS
@@ -19,6 +20,18 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = "Fetch closed pull requests from GitHub repositories merged in the last 6 months"
+
+    def parse_github_datetime(self, value):
+        """
+        Parse GitHub API ISO 8601 datetime string to timezone-aware UTC datetime.
+        Returns None if value is falsy.
+        """
+        if not value:
+            return None
+        dt = parse_datetime(value)
+        if dt and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.UTC)
+        return dt
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -52,20 +65,49 @@ class Command(BaseCommand):
             help="Fetch PRs merged after this date (YYYY-MM-DD). Default: 6 months ago.",
         )
 
+        parser.add_argument(
+            "--rate-check-interval",
+            type=int,
+            default=10,
+            help="Check rate limit every N pages (default: 10; use smaller for long backfills).",
+        )
+        parser.add_argument(
+            "--rate-limit-threshold",
+            type=int,
+            default=500,
+            help="Pause when remaining requests drop below this threshold (default: 500).",
+        )
+
+        # configurable 403 retry behavior
+        parser.add_argument(
+            "--max-retries",
+            type=int,
+            default=5,
+            help="Maximum consecutive retries for 403 responses (default: 5).",
+        )
+
     def handle(self, *args, **options):
         limit = options["limit"]
         verbose = options.get("verbose", False)  # Use verbose flag from options
         repos_arg = options["repos"]
         reset = options["reset"]
 
-        # Backward-compatible since-date handling
+        # configurable rate & retry options
+        rate_check_interval = options.get("rate_check_interval", 10)
+        rate_limit_threshold = options.get("rate_limit_threshold", 500)
+        max_retries = options.get("max_retries", 5)
+
+        # safer since-date handling
         since_date_arg = options.get("since_date")
 
         if since_date_arg:
-            since_date = datetime.strptime(since_date_arg, "%Y-%m-%d").replace(tzinfo=pytz.UTC)
+            date_obj = parse_date(since_date_arg)
+            if not date_obj:
+                raise ValueError(f"Invalid --since-date value: {since_date_arg}. Use YYYY-MM-DD.")
+            since_date = timezone.make_aware(datetime.combine(date_obj, datetime.min.time()))
             self.stdout.write(f"Fetching closed PRs merged since {since_date_arg}")
         else:
-            since_date = timezone.now().astimezone(pytz.UTC) - relativedelta(months=6)
+            since_date = timezone.now() - relativedelta(months=6)
             self.stdout.write(
                 f"Fetching closed PRs merged in the last 6 months (since {since_date.strftime('%Y-%m-%d')})"
             )
@@ -133,13 +175,19 @@ class Command(BaseCommand):
 
                 # Reset the last_pr_page_processed if requested
                 if reset:
-                    repo.last_pr_page_processed = 0
                     repo.save()
                     self.stdout.write(f"Reset last_pr_page_processed for {repo_full_name}")
 
                 # Fetch closed PRs since the specified date
                 prs_fetched, prs_added, prs_updated = self.fetch_and_save_prs(
-                    repo, owner, repo_name, since_date, verbose
+                    repo,
+                    owner,
+                    repo_name,
+                    since_date,
+                    verbose,
+                    rate_check_interval=rate_check_interval,
+                    rate_limit_threshold=rate_limit_threshold,
+                    max_retries=max_retries,
                 )
 
                 total_prs_fetched += prs_fetched
@@ -208,7 +256,17 @@ class Command(BaseCommand):
 
         return repo
 
-    def fetch_and_save_prs(self, repo, owner, repo_name, since_date, verbose=False):
+    def fetch_and_save_prs(
+        self,
+        repo,
+        owner,
+        repo_name,
+        since_date,
+        verbose=False,
+        rate_check_interval=10,
+        rate_limit_threshold=500,
+        max_retries=5,
+    ):
         total_prs_fetched = 0
         total_prs_added = 0
         total_prs_updated = 0
@@ -224,7 +282,8 @@ class Command(BaseCommand):
         per_page = 100
         reached_end = False
         retry_count = 0
-        max_retries = 5
+        backoff_base = 60
+        start_time = time.time()
 
         while not reached_end:
             url = (
@@ -236,39 +295,59 @@ class Command(BaseCommand):
                 self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
-                if page % 10 == 0:
-                    self.check_and_wait_for_rate_limit(headers, verbose)
+                if page == 1 or page % rate_check_interval == 0:
+                    self.check_and_wait_for_rate_limit(headers, verbose=verbose, threshold=rate_limit_threshold)
 
                 response = requests.get(url, headers=headers, timeout=30)
 
                 if response.status_code == 403:
                     retry_count += 1
                     if retry_count > max_retries:
-                        logger.error(f"Max retries exceeded for {owner}/{repo_name}")
+                        msg = f"Max retries ({max_retries}) exceeded for {owner}/{repo_name} on page {page}"
+                        self.stdout.write(self.style.ERROR(msg))
+                        logger.error(msg)
                         break
+
                     retry_after = response.headers.get("Retry-After")
-                    wait_time = int(retry_after) if retry_after else 60
+                    if retry_after:
+                        wait_time = int(retry_after)
+                    else:
+                        # Exponential backoff: 60, 120, 240, ...
+                        wait_time = min(backoff_base * (2 ** (retry_count - 1)), 3600)
+
+                    logger.warning(
+                        f"403 rate limit for {owner}/{repo_name}, "
+                        f"retry {retry_count}/{max_retries}, waiting {wait_time}s"
+                    )
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"403 rate limit (attempt {retry_count}/{max_retries}). " f"Waiting {wait_time}s..."
+                        )
+                    )
                     time.sleep(wait_time)
                     continue
-
-                response.raise_for_status()
                 retry_count = 0
+                response.raise_for_status()
                 data = response.json()
 
                 if not data:
+                    if verbose:
+                        self.stdout.write(f"No more PRs found for {owner}/{repo_name} on page {page}")
                     reached_end = True
                     break
 
                 merged_prs = []
                 for pr in data:
-                    if pr.get("merged_at"):
-                        merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
-
-                        if merged_at >= since_date:
-                            merged_prs.append(pr)
+                    merged_at = self.parse_github_datetime(pr.get("merged_at"))  # 🔹 uses helper
+                    if merged_at and merged_at >= since_date:
+                        merged_prs.append(pr)
+                    else:
+                        # As soon as we hit a too-old PR (sorted by updated), we can stop
+                        reached_end = True
+                        break
 
                 if merged_prs:
-                    prs_added, prs_updated = self.save_prs_to_db_rest_api(repo, merged_prs, since_date, verbose)
+                    prs_added, prs_updated = self.save_prs_to_db(repo, merged_prs, since_date, verbose)
 
                     total_prs_fetched += len(merged_prs)
                     total_prs_added += prs_added
@@ -278,44 +357,87 @@ class Command(BaseCommand):
                     reached_end = True
                     break
 
+                # 🔹 Optional progress log every 10 pages
+                if page % 10 == 0:
+                    elapsed = time.time() - start_time
+                    if elapsed > 0:
+                        self.stdout.write(
+                            f"Progress: Page {page}, fetched {total_prs_fetched} PRs " f"(elapsed: {int(elapsed)}s)"
+                        )
+
                 page += 1
                 time.sleep(2)
 
             except Exception as e:
                 logger.error(f"Error fetching PRs for {owner}/{repo_name}: {str(e)}", exc_info=True)
+                self.stdout.write(self.style.ERROR(f"Error fetching PRs for {owner}/{repo_name}: {str(e)}"))
                 break
+
+        self.stdout.write(f"Fetched {total_prs_fetched} PRs, Added {total_prs_added}, Updated {total_prs_updated}")
 
         return total_prs_fetched, total_prs_added, total_prs_updated
 
-    def check_and_wait_for_rate_limit(self, headers, verbose=False):
+    def check_and_wait_for_rate_limit(self, headers, verbose=False, threshold=500):
+        """
+        Check GitHub API rate limit and wait if necessary.
+        Always logs a warning when we have to sleep.
+        """
         try:
             response = requests.get(
                 "https://api.github.com/rate_limit",
                 headers=headers,
                 timeout=10,
             )
-
             if response.status_code == 200:
                 data = response.json()
                 core = data.get("resources", {}).get("core", {})
                 remaining = core.get("remaining", 0)
+                limit = core.get("limit", 5000)
                 reset_time = core.get("reset", 0)
 
                 if verbose:
-                    self.stdout.write(f"Rate limit remaining: {remaining}")
+                    reset_dt = datetime.fromtimestamp(reset_time, tz=pytz.UTC)
+                    self.stdout.write(
+                        f"Rate limit status: {remaining}/{limit} requests remaining "
+                        f"(resets at {reset_dt.strftime('%H:%M:%S UTC')})"
+                    )
 
-                # Only pause if we're actually close to exhaustion
-                if remaining < 100:
+                if remaining < threshold:
                     wait_seconds = max(reset_time - int(time.time()), 0) + 10
-                    if verbose:
-                        self.stdout.write(f"Low rate limit detected. Sleeping for {wait_seconds}s...")
+                    reset_dt = datetime.fromtimestamp(reset_time, tz=pytz.UTC)
+                    logger.warning(
+                        f"GitHub API rate limit low: {remaining}/{limit} remaining. "
+                        f"Sleeping {wait_seconds}s until reset at {reset_dt}"
+                    )
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Rate limit low: {remaining}/{limit} remaining. " f"Pausing for {wait_seconds}s..."
+                        )
+                    )
                     time.sleep(wait_seconds)
+                    self.stdout.write(self.style.SUCCESS("Rate limit wait complete, resuming..."))
 
-        except Exception:
+            else:
+                logger.warning(
+                    f"Rate limit check returned status {response.status_code}. " f"Response: {response.text[:200]}"
+                )
+                if verbose:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Rate limit check failed with status {response.status_code}, continuing anyway"
+                        )
+                    )
+
+        except requests.RequestException as e:
+            logger.warning(f"Failed to check rate limit: {str(e)}", exc_info=verbose)
             if verbose:
-                logger.debug("Could not check rate limit, continuing anyway")
+                self.stdout.write(self.style.WARNING(f"Could not check rate limit ({str(e)}), continuing anyway"))
+        except Exception as e:
+            logger.error(f"Unexpected error checking rate limit: {str(e)}", exc_info=True)
+            if verbose:
+                self.stdout.write(self.style.ERROR(f"Unexpected rate limit check error: {str(e)}"))
 
-    def save_prs_to_db_rest_api(self, repo, prs, since_date, verbose=False):
+    def save_prs_to_db(self, repo, prs, since_date, verbose=False):
         """
         Save pull requests to the database using bulk operations.
         Returns the number of new PRs added and updated.
@@ -404,16 +526,16 @@ class Command(BaseCommand):
                 continue
 
             # Parse dates
-            created_at = datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
-            updated_at = datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
-            closed_at = (
-                datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
-                if pr.get("closed_at")
-                else None
-            )
-            merged_at = datetime.strptime(merged_at_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
+            created_at = self.parse_github_datetime(pr.get("created_at"))
+            updated_at = self.parse_github_datetime(pr.get("updated_at"))
+            closed_at = self.parse_github_datetime(pr.get("closed_at"))
+            merged_at = self.parse_github_datetime(merged_at_str)
 
             # Skip PRs that were merged before the since_date
+            if not merged_at:
+                skipped_not_merged += 1
+                continue
+
             if merged_at < since_date:
                 skipped_old_prs += 1
                 continue
@@ -506,7 +628,11 @@ class Command(BaseCommand):
 
         # Bulk add contributors to repo (M2M relationship)
         if existing_contributors:
-            repo.contributor.add(*existing_contributors.values())
+            existing_links = set(repo.contributor.values_list("github_id", flat=True))
+            new_contributors_to_add = [c for c in existing_contributors.values() if c.github_id not in existing_links]
+
+            if new_contributors_to_add:
+                repo.contributor.add(*new_contributors_to_add)
 
         if verbose:
             if skipped_not_merged > 0:
@@ -601,9 +727,7 @@ class Command(BaseCommand):
                         "reviewer_contributor": reviewer_contributor,
                         "body": review.get("body", ""),
                         "state": review["state"],
-                        "submitted_at": datetime.strptime(submitted_at_str, "%Y-%m-%dT%H:%M:%SZ").replace(
-                            tzinfo=pytz.UTC
-                        ),
+                        "submitted_at": self.parse_github_datetime(review.get("submitted_at")),
                         "url": review["html_url"],
                     },
                 )
