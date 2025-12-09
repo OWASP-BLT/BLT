@@ -656,12 +656,27 @@ def search(request, template="search.html"):
             }
 
         elif stype == "labels":
+            # Map query to numeric label values (by id or display name)
+            label_values = []
+            q_lower = query.lower()
+
+            # Allow direct numeric id search, e.g. "3"
+            if query.isdigit():
+                label_values.append(int(query))
+
+            # Also match by human-readable label names (e.g. "Performance")
+            for value, name in Issue._meta.get_field("label").choices:
+                if q_lower in str(name).lower():
+                    label_values.append(value)
+
+            issues_base_qs = (
+                Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+            )
+
             if request.user.is_authenticated:
-                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[0:20]
+                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
             else:
-                issues_qs = Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(is_hidden=True)[0:20]
+                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
 
             context = {
                 "request": request,
