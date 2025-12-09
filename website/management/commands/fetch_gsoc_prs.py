@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -43,17 +44,31 @@ class Command(BaseCommand):
             help="Reset the last_pr_page_processed counter and start from the beginning",
         )
 
+        # (Backward compatible)
+        parser.add_argument(
+            "--since-date",
+            type=str,
+            default=None,
+            help="Fetch PRs merged after this date (YYYY-MM-DD). Default: 6 months ago.",
+        )
+
     def handle(self, *args, **options):
         limit = options["limit"]
         verbose = options.get("verbose", False)  # Use verbose flag from options
         repos_arg = options["repos"]
         reset = options["reset"]
 
-        # Fetch PRs from the last 6 months
-        since_date = timezone.now() - relativedelta(months=6)
-        since_date_str = since_date.strftime("%Y-%m-%d")
+        # Backward-compatible since-date handling
+        since_date_arg = options.get("since_date")
 
-        self.stdout.write(f"Fetching closed PRs merged in the last 6 months (since {since_date_str})")
+        if since_date_arg:
+            since_date = timezone.make_aware(datetime.strptime(since_date_arg, "%Y-%m-%d"))
+            self.stdout.write(f"Fetching closed PRs merged since {since_date_arg}")
+        else:
+            since_date = timezone.now() - relativedelta(months=6)
+            self.stdout.write(
+                f"Fetching closed PRs merged in the last 6 months (since {since_date.strftime('%Y-%m-%d')})"
+            )
 
         # Determine which repositories to process
         if repos_arg:
@@ -194,80 +209,100 @@ class Command(BaseCommand):
         return repo
 
     def fetch_and_save_prs(self, repo, owner, repo_name, since_date, verbose=False):
-        """
-        Fetch closed pull requests from GitHub API using Search API for server-side filtering.
-        Returns a tuple of (total_prs_fetched, total_prs_added, total_prs_updated).
-        """
         total_prs_fetched = 0
         total_prs_added = 0
         total_prs_updated = 0
 
         since_date_str = since_date.strftime("%Y-%m-%d")
-
         self.stdout.write(f"Fetching merged PRs for {owner}/{repo_name} since {since_date_str}")
 
-        # Set up headers for GitHub API
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
-        # Use GitHub Search API for server-side filtering by merge date
         page = 1
         per_page = 100
         reached_end = False
+        consecutive_errors = 0
+        max_consecutive_errors = 3
 
         while not reached_end:
-            # Search API allows filtering by merged date
             url = (
-                f"https://api.github.com/search/issues"
-                f"?q=repo:{owner}/{repo_name}+type:pr+is:merged+merged:>={since_date_str}"
-                f"&per_page={per_page}&page={page}&sort=updated&order=desc"
+                f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
+                f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
             )
 
             if verbose:
                 self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
-                response = requests.get(url, headers=headers, timeout=10)
-                response.raise_for_status()
+                self.check_and_wait_for_rate_limit(headers, verbose)
 
-                result = response.json()
-                data = result.get("items", [])
+                response = requests.get(url, headers=headers, timeout=30)
+
+                if response.status_code == 403:
+                    retry_after = response.headers.get("Retry-After")
+                    wait_time = int(retry_after) if retry_after else 60
+                    time.sleep(wait_time)
+                    continue
+
+                response.raise_for_status()
+                data = response.json()
 
                 if not data:
-                    if verbose:
-                        self.stdout.write(f"No more PRs found for {owner}/{repo_name} on page {page}")
                     reached_end = True
                     break
 
-                if verbose:
-                    self.stdout.write(f"Fetched {len(data)} merged PRs from page {page}")
+                merged_prs = []
+                for pr in data:
+                    if pr.get("merged_at"):
+                        merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
 
-                # Process this page of PRs
-                prs_added, prs_updated = self.save_prs_to_db(repo, data, since_date, verbose)
-                total_prs_fetched += len(data)
-                total_prs_added += prs_added
-                total_prs_updated += prs_updated
+                        if merged_at >= since_date:
+                            merged_prs.append(pr)
+                        else:
+                            reached_end = True
+                            break
 
-                # Check if we've reached the last page
+                if merged_prs:
+                    prs_added, prs_updated = self.save_prs_to_db_rest_api(repo, merged_prs, since_date, verbose)
+
+                    total_prs_fetched += len(merged_prs)
+                    total_prs_added += prs_added
+                    total_prs_updated += prs_updated
+
                 if len(data) < per_page:
-                    if verbose:
-                        self.stdout.write(f"Reached last page ({page}) for {owner}/{repo_name}")
                     reached_end = True
                     break
 
                 page += 1
+                time.sleep(2)
 
             except Exception as e:
                 logger.error(f"Error fetching PRs for {owner}/{repo_name}: {str(e)}", exc_info=True)
-                self.stdout.write(self.style.ERROR(f"Error fetching PRs for {owner}/{repo_name}: {str(e)}"))
                 break
-
-        self.stdout.write(f"Fetched {total_prs_fetched} PRs, Added {total_prs_added}, Updated {total_prs_updated}")
 
         return total_prs_fetched, total_prs_added, total_prs_updated
 
-    def save_prs_to_db(self, repo, prs, since_date, verbose=False):
+    def check_and_wait_for_rate_limit(self, headers, verbose=False):
+        try:
+            response = requests.get("https://api.github.com/rate_limit", headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                core = data.get("resources", {}).get("core", {})
+                remaining = core.get("remaining", 0)
+                reset_time = core.get("reset", 0)
+
+                if verbose:
+                    self.stdout.write(f"Rate limit remaining: {remaining}")
+
+                if remaining < 100:
+                    wait_seconds = max(reset_time - int(time.time()), 0) + 10
+                    time.sleep(wait_seconds)
+        except Exception:
+            pass
+
+    def save_prs_to_db_rest_api(self, repo, prs, since_date, verbose=False):
         """
         Save pull requests to the database using bulk operations.
         Returns the number of new PRs added and updated.
@@ -282,9 +317,9 @@ class Command(BaseCommand):
 
         # Pre-fetch existing PRs for this repo
         existing_pr_ids = set(
-            GitHubIssue.objects.filter(
-                repo=repo, issue_id__in=[pr["number"] for pr in prs if "pull_request" in pr]
-            ).values_list("issue_id", flat=True)
+            GitHubIssue.objects.filter(repo=repo, issue_id__in=[pr["number"] for pr in prs]).values_list(
+                "issue_id", flat=True
+            )
         )
 
         # Collect all contributor data first
@@ -292,7 +327,7 @@ class Command(BaseCommand):
         contributor_data_map = {}
 
         for pr in prs:
-            if not pr.get("pull_request", {}).get("merged_at"):
+            if not pr.get("merged_at"):
                 continue
             if pr.get("user") and pr["user"].get("id"):
                 github_id = pr["user"]["id"]
@@ -347,13 +382,8 @@ class Command(BaseCommand):
         prs_to_update = []
 
         for pr in prs:
-            # Search API returns issues, check if it has pull_request key
-            if "pull_request" not in pr:
-                continue
-
             # Get merged_at from pull_request object
-            pr_data = pr.get("pull_request", {})
-            merged_at_str = pr_data.get("merged_at")
+            merged_at_str = pr.get("merged_at")
 
             # Skip PRs that aren't merged
             if not merged_at_str:
@@ -482,8 +512,7 @@ class Command(BaseCommand):
         from website.models import GitHubReview
 
         # Get the reviews URL from the PR data (Search API returns pull_request.url)
-        pr_obj = pr_data.get("pull_request", {})
-        reviews_url = pr_obj.get("url")
+        reviews_url = pr_data.get("url")
 
         if not reviews_url:
             return
