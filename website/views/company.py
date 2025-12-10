@@ -821,6 +821,7 @@ class OrganizationDashboardAnalyticsView(View):
             "social_stats": self.get_social_stats(id),
             "network_traffic_data": self.get_network_traffic_data(id),
             "compliance_monitoring": self.get_compliance_monitoring(id),
+            "threat_intelligence": self.get_threat_intelligence(id),
         }
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
