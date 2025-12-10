@@ -20,7 +20,7 @@
 {% block content %}
     <!-- Include Sidenav -->
     {% include "includes/sidenav.html" %}
-    <div class="absolute bottom-[10px] right-[15px]">
+    <div class="fixed bottom-4 right-20 z-50 flex gap-3 text-2xl">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/search.html">
             <i class="fab fa-github"></i>
         </a>
@@ -28,25 +28,35 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="row mt-20">
-        <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center">
-                <span class="search-header text-black dark:text-white text-3xl">Search Results for&nbsp;</span><span class="search-header-query text-blue-400 font-bold text-3xl">{{ query }}</span>
-            </h1>
-            <hr>
-        </div>
+    <div class="flex flex-col items-center">
+        <h1 class="text-center mb-4 mt-20">
+            <span class="text-black dark:text-gray-300 text-3xl">Search Results for&nbsp;</span>
+            <span class="text-blue-400 font-bold text-3xl">{{ query }}</span>
+        </h1>
     </div>
     {% if query %}
+    {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
+    <div class="flex w-full h-[500px] justify-center items-center">
+        <script>
+            document.body.style.overflow = "hidden";
+        </script>
+        <div class="flex flex-col items-center text-center mb-20">
+            <h2 class="text-3xl font-bold text-gray-300 dark:text-gray-500 mb-4">Nothing Found!</h2>
+            <p class="text-gray-400 dark:text-gray-600 text-lg">Try searching with different keywords.</p>
+        </div>
+    </div>
+    {% else %}
         <div class="container mt-4">
             <div class="flex">
                 <!-- Left sidebar with counts -->
                 {% if type == 'all' %}
                     <div class="w-64 flex-shrink-0 pr-6 sticky top-4">
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                        <div class="bg-gray-3 dark:bg-gray-800 rounded-lg shadow-lg p-4 relative -top-10">
                             <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Results Found</h2>
+                            <hr class="mt-2 mb-3 border-gray-300 dark:border-gray-600 w-[220px] ml-[-10px]">
                             <div class="space-y-2">
-                                {% if organizations %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                {% if organizations or issues or domains or users or projects or repos %}
+                                    <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                          onclick="scrollToSection('organizations-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Organizations</span>
@@ -55,7 +65,7 @@
                                     </div>
                                 {% endif %}
                                 {% if issues %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                          onclick="scrollToSection('issues-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Issues</span>
@@ -64,7 +74,7 @@
                                     </div>
                                 {% endif %}
                                 {% if domains %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                          onclick="scrollToSection('domains-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Domains</span>
@@ -73,7 +83,7 @@
                                     </div>
                                 {% endif %}
                                 {% if users %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                          onclick="scrollToSection('users-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Users</span>
@@ -82,7 +92,7 @@
                                     </div>
                                 {% endif %}
                                 {% if projects %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                          onclick="scrollToSection('projects-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Projects</span>
@@ -91,7 +101,7 @@
                                     </div>
                                 {% endif %}
                                 {% if repos %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                    <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                          onclick="scrollToSection('repos-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Repos</span>
@@ -239,6 +249,7 @@
                             </div>
                         </div>
                     {% endif %}
+                    {% endif %} 
                     {% if users %}
                         <div id="users-section" class="bg-gray-50 dark:bg-gray-900 py-12">
                             <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
@@ -763,13 +774,6 @@
                                         </div>
                                     {% endfor %}
                                 </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="alert alert-warning text-center" role="alert">Nothing Found!</div>
                             </div>
                         </div>
                     {% endif %}
