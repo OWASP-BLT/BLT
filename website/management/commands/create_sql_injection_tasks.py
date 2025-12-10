@@ -10,7 +10,7 @@ class Command(BaseCommand):
         try:
             sql_lab = Labs.objects.get(name="SQL Injection")
         except Labs.DoesNotExist:
-            self.stdout.write(self.style.ERROR("SQL Injection lab not found. Please run create_initial_labs first."))
+            self.stdout.write(self.style.ERROR("SQL Injection lab not found. Please run seed_all_security_lab first."))
             return
 
         tasks_data = [

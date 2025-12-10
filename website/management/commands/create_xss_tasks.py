@@ -11,7 +11,7 @@ class Command(BaseCommand):
             xss_lab = Labs.objects.get(name="Cross-Site Scripting (XSS)")
         except Labs.DoesNotExist:
             self.stdout.write(
-                self.style.ERROR("Cross-Site Scripting (XSS) lab not found. Please run create_initial_labs first.")
+                self.style.ERROR("Cross-Site Scripting (XSS) lab not found. Please run seed_all_security_lab first.")
             )
             return
 
