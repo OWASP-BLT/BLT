@@ -2552,7 +2552,33 @@ def refresh_gsoc_project(request):
     View to handle refreshing PRs for a specific GSoC project.
     Only staff users can access this view.
     """
-    # Custom rate limiting check
+    # Validate input first
+    project_name = request.POST.get("project_name")
+    reset_counter = request.POST.get("reset_counter") == "true"
+
+    # Check if project_name is provided and valid
+    if not project_name:
+        messages.error(request, "Project name is required.")
+        return redirect("gsoc")
+
+    if project_name not in GSOC25_PROJECTS:
+        messages.error(request, "Invalid project name")
+        return redirect("gsoc")
+
+    # Get the repositories for this project
+    repos = GSOC25_PROJECTS.get(project_name, [])
+
+    if not repos:
+        messages.error(request, f"No repositories found for project {project_name}")
+        return redirect("gsoc")
+
+    # Validate repository format
+    for repo in repos:
+        if not isinstance(repo, str) or repo.count("/") != 1:
+            messages.error(request, f"Invalid repository format: {repo}")
+            return redirect("gsoc")
+
+    # Rate limiting check - only after validation passes
     today = timezone.now().date()
     refresh_count = DailyStats.objects.filter(name=f"refresh_gsoc_{request.user.id}", created__date=today).count()
 
@@ -2560,75 +2586,60 @@ def refresh_gsoc_project(request):
         messages.error(request, "You have reached your daily limit of 5 refreshes.")
         return redirect("gsoc")
 
-    # Create or update the counter
-    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
+    # Fixed start date: 2024-11-11
+    since_date = timezone.make_aware(datetime(2024, 11, 11))
 
-    if request.method == "POST":
-        project_name = request.POST.get("project_name")
-        reset_counter = request.POST.get("reset_counter") == "true"
+    try:
+        # Call the fetch_gsoc_prs command with the specific repositories
+        repo_list = ",".join(repos)
+        command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
 
-        if not project_name or project_name not in GSOC25_PROJECTS:
-            messages.error(request, "Invalid project name")
-            return redirect("gsoc")
+        # Add reset flag if requested
+        if reset_counter:
+            command_args.append("--reset")
+            messages.info(request, f"Resetting page counter for {project_name} repositories")
 
-        # Get the repositories for this project
-        repos = GSOC25_PROJECTS.get(project_name, [])
+        # Run the command
+        call_command(*command_args)
 
-        if not repos:
-            messages.error(request, f"No repositories found for project {project_name}")
-            return redirect("gsoc")
+        # Debug: Count how many GitHubIssues were created with contributors
+        repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
+        issue_count = GitHubIssue.objects.filter(
+            repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
+        ).count()
 
-        # Fixed start date: 2024-11-11
-        since_date = timezone.make_aware(datetime(2024, 11, 11))
+        contributor_count = GitHubIssue.objects.filter(
+            repo__in=repo_objs,
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=since_date,
+            contributor__isnull=False,
+        ).count()
 
-        try:
-            # Call the fetch_gsoc_prs command with the specific repositories
-            # We pass the repositories as a comma-separated string
-            repo_list = ",".join(repos)
-            command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
+        messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
 
-            # Add reset flag if requested
-            if reset_counter:
-                command_args.append("--reset")
-                messages.info(request, f"Resetting page counter for {project_name} repositories")
+        # Update user profiles for PRs that don't have them
+        for repo_full_name in repos:
+            try:
+                owner, repo_name = repo_full_name.split("/")
+                repo = Repo.objects.filter(name=repo_name).first()
 
-            # Run the command
-            call_command(*command_args)
+                if repo:
+                    # Get PRs without user profiles
+                    prs_without_profiles = GitHubIssue.objects.filter(
+                        repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date, user_profile=None
+                    )
 
-            # Debug: Count how many GitHubIssues were created with contributors
-            repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
-            issue_count = GitHubIssue.objects.filter(
-                repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
-            ).count()
+                    # Process in batches for efficiency
+                    batch_size = 50
+                    for i in range(0, prs_without_profiles.count(), batch_size):
+                        batch = prs_without_profiles[i : i + batch_size]
 
-            contributor_count = GitHubIssue.objects.filter(
-                repo__in=repo_objs,
-                type="pull_request",
-                is_merged=True,
-                merged_at__gte=since_date,
-                contributor__isnull=False,
-            ).count()
-
-            messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
-
-            # Update user profiles for PRs that don't have them
-            for repo_full_name in repos:
-                try:
-                    owner, repo_name = repo_full_name.split("/")
-                    repo = Repo.objects.filter(name=repo_name).first()
-
-                    if repo:
-                        # Get PRs without user profiles
-                        prs_without_profiles = GitHubIssue.objects.filter(
-                            repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date, user_profile=None
-                        )
-
-                        for pr in prs_without_profiles:
+                        for pr in batch:
                             try:
                                 # Extract username from PR URL
                                 pr_url_parts = pr.url.split("/")
                                 if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                                    # Get or create a user profile
                                     github_url = f"https://github.com/{pr_url_parts[3]}"
 
                                     # Skip bot accounts
@@ -2639,20 +2650,21 @@ def refresh_gsoc_project(request):
                                     user_profile = UserProfile.objects.filter(github_url=github_url).first()
 
                                     if user_profile:
-                                        # Link the PR to the user profile
                                         pr.user_profile = user_profile
                                         pr.save()
                             except (IndexError, AttributeError):
                                 continue
-                except Exception as e:
-                    messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
+            except Exception as e:
+                messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
-            messages.success(
-                request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
-            )
-        except Exception as e:
-            messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
+        # Only increment counter AFTER successful completion
+        DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
 
-        return redirect("gsoc")
+        messages.success(
+            request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
+        )
+
+    except Exception as e:
+        messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
 
     return redirect("gsoc")
