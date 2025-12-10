@@ -49,7 +49,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
-from django_ratelimit.decorators import ratelimit
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
@@ -2548,12 +2547,22 @@ class GsocView(View):
 @login_required
 @user_passes_test(admin_required)
 @require_http_methods(["POST"])
-@ratelimit(key="user", rate="5/h", method="POST")
 def refresh_gsoc_project(request):
     """
     View to handle refreshing PRs for a specific GSoC project.
     Only staff users can access this view.
     """
+    # Custom rate limiting check
+    today = timezone.now().date()
+    refresh_count = DailyStats.objects.filter(name=f"refresh_gsoc_{request.user.id}", created__date=today).count()
+
+    if refresh_count >= 5:
+        messages.error(request, "You have reached your daily limit of 5 refreshes.")
+        return redirect("gsoc")
+
+    # Create or update the counter
+    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
+
     if request.method == "POST":
         project_name = request.POST.get("project_name")
         reset_counter = request.POST.get("reset_counter") == "true"
