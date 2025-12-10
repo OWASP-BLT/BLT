@@ -1679,9 +1679,7 @@ class DebugSystemStatsApiView(APIView):
 
             try:
                 cpu = psutil.cpu_percent(interval=1)
-                cpu_stats = {
-                    "percent": f"{cpu}%"
-                }
+                cpu_stats = {"percent": f"{cpu}%"}
             except Exception as cpu_error:
                 logger.warning("Could not fetch CPU stats: %s", cpu_error)
 
@@ -1822,64 +1820,41 @@ class DebugClearCacheApiView(APIView):
             )
 
 
-class DebugRunMigrationsApiView(APIView):
-    """Run pending database migrations"""
+class DebugSyncGithubDataApiView(APIView):
+    """Sync GitHub data for tracked repositories"""
 
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
     def post(self, request, *args, **kwargs):
-        # Extra safety: restrict to superusers and require an explicit confirmation flag
-        if not request.user.is_superuser:
-            return Response(
-                {"success": False, "error": "Only superusers can run migrations"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        confirm = request.data.get("confirm")
-        if confirm is not True:
-            return Response(
-                {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
-            call_command("migrate", interactive=False, verbosity=0)
+            from io import StringIO
 
-            return Response({"success": True, "message": "Migrations completed successfully"})
+            status_messages = []
+
+            # Sync OWASP projects
+            call_command("check_owasp_projects", stdout=StringIO())
+            status_messages.append("✓ Synced OWASP projects")
+
+            # Update GitHub issues
+            call_command("update_github_issues", stdout=StringIO())
+            status_messages.append("✓ Updated GitHub issues")
+
+            # Fetch PR reviews
+            call_command("fetch_pr_reviews", stdout=StringIO())
+            status_messages.append("✓ Fetched PR reviews")
+
+            # Update contributor stats
+            call_command("update_contributor_stats", stdout=StringIO())
+            status_messages.append("✓ Updated contributor stats")
+
+            return Response({"success": True, "message": "GitHub data synced successfully", "details": status_messages})
+
         except Exception as e:
-            logger.error("Error running migrations: %s", e, exc_info=True)
+            logger.error("Error syncing GitHub data: %s", e, exc_info=True)
             return Response(
-                {"success": False, "error": "Failed to run migrations. Please check server logs."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class DebugCollectStaticApiView(APIView):
-    """Collect static files"""
-
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def post(self, request, *args, **kwargs):
-        # Restrict collectstatic to superusers to avoid accidental abuse
-        if not request.user.is_superuser:
-            return Response(
-                {"success": False, "error": "Only superusers can collect static files"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            call_command("collectstatic", interactive=False, verbosity=0)
-
-            return Response({"success": True, "message": "Static files collected successfully"})
-        except Exception as e:
-            logger.error("Error collecting static files: %s", e, exc_info=True)
-            return Response(
-                {"success": False, "error": "Failed to collect static files. Please check server logs."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"success": False, "error": "Failed to sync GitHub data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 

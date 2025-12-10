@@ -292,9 +292,10 @@ DB Connections: ${stats.database?.connections || "N/A"}
     this.showStatus("Syncing GitHub data...", "info");
     this.makeRequest(
       "POST",
-      `${this.apiBaseUrl}/run-migrations/`,
+      `${this.apiBaseUrl}/sync-github/`,
       { confirm: true },
       (data) => {
+        console.log(data);
         if (data.success) {
           this.showStatus("GitHub data synced successfully!", "success");
         } else {

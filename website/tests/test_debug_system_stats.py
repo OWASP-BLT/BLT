@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 User = get_user_model()
 
 
-@override_settings(ALLOWED_HOSTS=["*"], DEBUG=True)
+@override_settings(ALLOWED_HOSTS=["*"])
 class DebugPanelAPITest(TestCase):
     """Tests for debug panel API endpoints"""
 
@@ -131,103 +131,6 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    def test_run_migrations_requires_superuser(self):
-        """Test that running migrations requires superuser privileges"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_run_migrations_requires_confirm_flag(self):
-        """Test that migrations require an explicit confirm flag"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_run_migrations_success_for_superuser(self):
-        """Test that a superuser can run migrations with confirmation"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_run_migrations_handles_errors(self, mock_call_command):
-        """Test that migration errors are handled gracefully"""
-        self.reload_urls()
-        mock_call_command.side_effect = Exception("Migration failed")
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_collect_static_requires_superuser(self):
-        """Test that collectstatic endpoint requires superuser privileges"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_collect_static_success_for_superuser(self):
-        """Test that a superuser can call collectstatic successfully"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_collect_static_handles_errors(self, mock_call_command):
-        """Test that collectstatic errors are handled gracefully"""
-        self.reload_urls()
-        mock_call_command.side_effect = Exception("Collectstatic failed")
-
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
     def test_get_debug_panel_status(self):
         """Test getting debug panel status"""
         self.reload_urls()
@@ -264,8 +167,7 @@ class DebugPanelAPITest(TestCase):
         endpoints = [
             "api_debug_clear_cache",
             "api_debug_populate_data",
-            "api_debug_run_migrations",
-            "api_debug_collect_static",
+            "api_debug_sync_github",
         ]
 
         for endpoint in endpoints:
@@ -415,3 +317,42 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
+
+    @override_settings(DEBUG=True)
+    @patch("website.api.views.call_command")
+    def test_sync_github_data_success(self, mock_call_command):
+        """Test that GitHub sync endpoint works"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("details", data)
+
+        # Verify management commands were called
+        calls = [call[0][0] for call in mock_call_command.call_args_list]
+        self.assertIn("check_owasp_projects", calls)
+
+    @override_settings(DEBUG=True)
+    def test_sync_github_data_requires_authentication(self):
+        """Test that GitHub sync requires authentication"""
+        self.reload_urls()
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @override_settings(DEBUG=True)
+    @patch("website.api.views.call_command")
+    def test_sync_github_data_handles_errors(self, mock_call_command):
+        """Test GitHub sync error handling"""
+        self.reload_urls()
+        mock_call_command.side_effect = Exception("Sync failed")
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
