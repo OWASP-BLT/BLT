@@ -614,6 +614,11 @@ class OrganizationProfileForm(forms.ModelForm):
             from urllib.parse import urlparse
 
             parsed = urlparse(url)
+
+            # Validate scheme
+            if parsed.scheme not in ["http", "https"]:
+                raise forms.ValidationError(f"{platform_name} URL must use http or https")
+
             hostname = (parsed.hostname or "").lower()
             # Only allow specified domains and their subdomains (prevent suffix attacks)
             if not any(
@@ -653,6 +658,20 @@ class OrganizationProfileForm(forms.ModelForm):
         """Validate Matrix URL to prevent open redirect vulnerabilities"""
         matrix_url = self.cleaned_data.get("matrix_url")
         return self._validate_social_url(matrix_url, ["matrix.to", "matrix.org"], "Matrix")
+
+    def clean_github_org(self):
+        """Validate GitHub organization handle"""
+        github_org = self.cleaned_data.get("github_org")
+        if github_org:
+            import re
+
+            # GitHub usernames can only contain alphanumeric characters and hyphens
+            # Cannot start or end with hyphen, no consecutive hyphens
+            if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$", github_org):
+                raise forms.ValidationError(
+                    "Invalid GitHub organization handle. Use only letters, numbers, and hyphens."
+                )
+        return github_org
 
     class Meta:
         model = Organization

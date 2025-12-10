@@ -31,7 +31,8 @@ else:
         app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
         handler = SlackRequestHandler(app)
     except Exception as e:
-        logger.warning(f"Failed to initialize Slack app: {e}. Slack integration disabled.")
+        logger.warning("Failed to initialize Slack app. Slack integration disabled.")
+        logger.debug(f"Slack initialization error details: {e}", exc_info=True)
         app = None
         handler = None
 

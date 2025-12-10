@@ -263,11 +263,13 @@ class RegisterOrganizationView(View):
                         request.session.pop("org_ref", None)
 
                     if not referral_succeeded:
-                        error_detail = referral_error_type if referral_error_type else "Unknown error"
                         messages.warning(
                             request,
-                            f"Referral code could not be applied ({error_detail}), but your organization was created successfully.",
+                            "Referral code could not be applied, but your organization was created successfully.",
                         )
+                        # Log error type for debugging without exposing to user
+                        if referral_error_type:
+                            logger.debug(f"Referral application failed with error type: {referral_error_type}")
                 else:
                     request.session.pop("org_ref", None)
 
@@ -305,13 +307,14 @@ class RegisterOrganizationView(View):
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
         except Exception as e:
+            logger.exception("Error creating organization")
             if "value too long" in str(e):
                 messages.error(
                     request,
                     "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.",
                 )
             else:
-                messages.error(request, f"Error creating organization: {e}")
+                messages.error(request, "Unable to create organization. Please check your input and try again.")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
@@ -815,6 +818,7 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "security_incidents_summary": self.get_security_incidents_summary(id),
+            "threat_intelligence": self.get_threat_intelligence(id),
             "social_stats": self.get_social_stats(id),
             "network_traffic_data": self.get_network_traffic_data(id),
             "compliance_monitoring": self.get_compliance_monitoring(id),
@@ -864,6 +868,12 @@ class OrganizationSocialRedirectView(View):
 
         # Validate target URL domain to prevent open redirect attacks
         parsed = urlparse(target_url)
+
+        # Validate scheme
+        if parsed.scheme not in ["http", "https"]:
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
+            return redirect("organization_analytics", id=org_id)
+
         hostname = (parsed.hostname or "").lower()
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
         # Validate hostname is either exact match or proper subdomain (not just string suffix)
@@ -2187,16 +2197,16 @@ class OrganizationDashboardManageRolesView(View):
                 messages.error(request, "Role not found")
             except ValueError as e:
                 logger.error(f"Invalid value provided when updating role: {str(e)}")
-                messages.error(request, str(e))
+                messages.error(request, "Invalid role value provided. Please check your input.")
             except ValidationError as e:
                 logger.error(f"Validation error when updating role: {str(e)}")
-                messages.error(request, str(e))
+                messages.error(request, "Unable to update role. Please check your input and try again.")
             except IntegrityError as e:
                 logger.error(f"Database integrity error when updating role: {str(e)}")
-                messages.error(request, "Database integrity error: Unable to update role due to conflicting data")
+                messages.error(request, "Unable to update role due to conflicting data.")
             except Exception as e:
                 logger.exception("Error updating role")
-                messages.error(request, "An error occurred while updating the role. " + str(e))
+                messages.error(request, "An error occurred while updating the role. Please try again.")
 
         elif action == "remove_role":
             role_id = request.POST.get("role_id")
@@ -2704,7 +2714,8 @@ def check_domain_security_txt(request):
             messages.info(request, f"No security.txt found for {domain.name}")
 
     except Exception as e:
-        messages.error(request, f"Error checking security.txt: {str(e)}")
+        logger.exception(f"Error checking security.txt for domain {domain.name}")
+        messages.error(request, "Unable to check security.txt. Please try again later.")
 
     # Redirect back to the manage domains page
     if domain.organization:
