@@ -1,0 +1,147 @@
+name: Add Last Active Label
+
+# Runs daily to add labels based on days since last activity
+# Also allows manual triggering for testing
+on:
+  schedule:
+    # Run daily at midnight UTC (00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual triggering for testing
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  add_last_active_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add Last Active Label to Issues and PRs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Get all open issues (includes PRs)
+            core.info('Fetching all open issues and pull requests...');
+            const allItems = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            
+            core.info(`Found ${allItems.length} open items (issues and PRs)`);
+            
+            // Calculate days since last activity and add labels
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            
+            // Color scheme constants for different age ranges
+            const COLOR_FRESH = '0e8a16';      // Green (0-2 days)
+            const COLOR_GETTING_OLD = 'fbca04'; // Yellow (3-7 days)
+            const COLOR_NEEDS_ATTENTION = 'ff9800'; // Orange (8-14 days)
+            const COLOR_STALE = 'e74c3c';      // Red (15+ days) - project's brand color
+            
+            // Regex pattern to match existing last-active labels (compile once)
+            const lastActiveRegex = /^last-active:/i;
+            
+            // Function to ensure label exists (define once, outside loop)
+            async function ensureLabelExists(labelName, labelColor, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`  Created label: ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            // Process each item
+            for (const item of allItems) {
+              const itemNumber = item.number;
+              const itemType = item.pull_request ? 'PR' : 'Issue';
+              const lastActivity = new Date(item.updated_at);
+              const daysSinceActivity = Math.floor((now - lastActivity.getTime()) / oneDayMs);
+              
+              core.info(`\nProcessing ${itemType} #${itemNumber}: ${item.title}`);
+              core.info(`  Last activity: ${item.updated_at}`);
+              core.info(`  Days since activity: ${daysSinceActivity}`);
+              
+              // Determine the label based on days since last activity
+              const newLabel = `last-active: ${daysSinceActivity}d`;
+              
+              // Set color based on the number of days
+              let labelColor;
+              let description;
+              if (daysSinceActivity <= 2) {
+                labelColor = COLOR_FRESH;
+                description = `${itemType} last updated ${daysSinceActivity} day${daysSinceActivity === 1 ? '' : 's'} ago`;
+              } else if (daysSinceActivity <= 7) {
+                labelColor = COLOR_GETTING_OLD;
+                description = `${itemType} last updated ${daysSinceActivity} days ago`;
+              } else if (daysSinceActivity <= 14) {
+                labelColor = COLOR_NEEDS_ATTENTION;
+                description = `${itemType} last updated ${daysSinceActivity} days ago`;
+              } else {
+                labelColor = COLOR_STALE;
+                description = `${itemType} last updated ${daysSinceActivity} days ago`;
+              }
+              
+              // Get current labels on the item
+              const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+                owner, 
+                repo, 
+                issue_number: itemNumber, 
+                per_page: 100 
+              });
+              const currentNames = new Set(current.map(l => l.name));
+              
+              // Check if the correct label is already present
+              if (currentNames.has(newLabel)) {
+                core.info(`  Label ${newLabel} already present - no action needed`);
+                continue;
+              }
+              
+              // Remove any existing last-active labels (since we need to update)
+              for (const name of currentNames) {
+                if (lastActiveRegex.test(name)) {
+                  try {
+                    await github.rest.issues.removeLabel({ 
+                      owner, 
+                      repo, 
+                      issue_number: itemNumber, 
+                      name 
+                    });
+                    core.info(`  Removed old label: ${name}`);
+                  } catch (err) {
+                    core.warning(`  Failed to remove label ${name}: ${err.message}`);
+                  }
+                }
+              }
+              
+              // Ensure the new label exists (create if missing)
+              await ensureLabelExists(newLabel, labelColor, description);
+              
+              // Add the new label
+              await github.rest.issues.addLabels({ 
+                owner, 
+                repo, 
+                issue_number: itemNumber, 
+                labels: [newLabel] 
+              });
+              core.info(`  Applied label: ${newLabel}`);
+            }
+            
+            core.info(`\n✅ Finished processing ${allItems.length} items`);

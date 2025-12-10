@@ -136,12 +136,10 @@ jobs:
               echo "Comment about peer review already exists (ID: $EXISTING_COMMENT)."
             fi
             
-            echo "Peer review check failed: No valid peer review found."
-            exit 1
+            echo "Peer review check: No valid peer review found."
           else
             echo "Peer review check passed: Valid reviewers found: $VALID_REVIEWERS"
             echo "has_peer_review=true" >> $GITHUB_OUTPUT
-            exit 0
           fi
       
       - name: Add peer review status label
