@@ -379,7 +379,7 @@ Workflows that handle issue lifecycle and assignment.
 
 **AI Relevance**: Manages contribution flow—important when AI tools make it easy to create many issues quickly.
 
-#### 5.3 Add Days Old Label (`add-days-old-label.yml`)
+#### 5.3 Add Last Active Label (`add-last-active-label.yml`)
 **Purpose**: Automatically label issues and PRs based on days since last activity
 
 **Triggers**:
@@ -387,9 +387,9 @@ Workflows that handle issue lifecycle and assignment.
 - Manual dispatch for testing
 
 **Key Features**:
-- Adds `days-old: X` labels to all open issues and PRs
+- Adds `last-active: Xd` labels to all open issues and PRs
 - Based on `updated_at` timestamp (last activity), not when created
-- Automatically removes outdated days-old labels before adding new ones
+- Automatically removes outdated last-active labels before adding new ones
 - Creates labels with color-coded severity:
   - 0-2 days: Green (fresh)
   - 3-7 days: Yellow (getting old)
