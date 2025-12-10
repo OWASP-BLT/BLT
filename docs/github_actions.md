@@ -17,9 +17,9 @@ This document provides a comprehensive overview of all GitHub Actions workflows 
 
 ## Overview
 
-The OWASP BLT repository uses **27 GitHub Actions workflows** to automate nearly every aspect of the development lifecycle. These workflows help maintain high code quality, manage contributions from a global community, and ensure security best practices are followed.
+The OWASP BLT repository uses **28 GitHub Actions workflows** to automate nearly every aspect of the development lifecycle. These workflows help maintain high code quality, manage contributions from a global community, and ensure security best practices are followed.
 
-**Total Workflows**: 27
+**Total Workflows**: 28
 
 ## Why GitHub Actions Matter in the Age of AI
 
@@ -378,6 +378,27 @@ Workflows that handle issue lifecycle and assignment.
 **Note**: This is temporary during high-backlog periods. It prevents issue overload while the team focuses on existing work.
 
 **AI Relevance**: Manages contribution flow—important when AI tools make it easy to create many issues quickly.
+
+#### 5.3 Add Days Old Label (`add-days-old-label.yml`)
+**Purpose**: Automatically label issues and PRs based on days since last activity
+
+**Triggers**:
+- Daily schedule (midnight UTC)
+- Manual dispatch for testing
+
+**Key Features**:
+- Adds `days-old: X` labels to all open issues and PRs
+- Based on `updated_at` timestamp (last activity), not when created
+- Automatically removes outdated days-old labels before adding new ones
+- Creates labels with color-coded severity:
+  - 0-2 days: Green (fresh)
+  - 3-7 days: Yellow (getting old)
+  - 8-14 days: Orange (needs attention)
+  - 15+ days: Red (stale)
+- Processes both issues and pull requests
+- Runs daily to keep labels current
+
+**AI Relevance**: Helps prioritize review and maintenance efforts by surfacing items that need attention, critical for managing high-volume AI-assisted contributions.
 
 ---
 

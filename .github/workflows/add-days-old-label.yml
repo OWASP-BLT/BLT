@@ -1,0 +1,137 @@
+name: Add Days Old Label
+
+# Runs daily to add labels based on days since last activity
+# Also allows manual triggering for testing
+on:
+  schedule:
+    # Run daily at midnight UTC (00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allow manual triggering for testing
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  add_days_old_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add Days Old Label to Issues and PRs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Get all open issues (includes PRs)
+            core.info('Fetching all open issues and pull requests...');
+            const allItems = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            
+            core.info(`Found ${allItems.length} open items (issues and PRs)`);
+            
+            // Calculate days since last activity and add labels
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            
+            // Process each item
+            for (const item of allItems) {
+              const itemNumber = item.number;
+              const itemType = item.pull_request ? 'PR' : 'Issue';
+              const lastActivity = new Date(item.updated_at);
+              const daysSinceActivity = Math.floor((now - lastActivity.getTime()) / oneDayMs);
+              
+              core.info(`\nProcessing ${itemType} #${itemNumber}: ${item.title}`);
+              core.info(`  Last activity: ${item.updated_at}`);
+              core.info(`  Days since activity: ${daysSinceActivity}`);
+              
+              // Determine the label based on days since last activity
+              const newLabel = `days-old: ${daysSinceActivity}`;
+              
+              // Set color based on the number of days
+              let labelColor;
+              let description;
+              if (daysSinceActivity <= 2) {
+                labelColor = '0e8a16'; // Green - fresh
+                description = `${itemType} last updated ${daysSinceActivity} day${daysSinceActivity === 1 ? '' : 's'} ago`;
+              } else if (daysSinceActivity <= 7) {
+                labelColor = 'fbca04'; // Yellow - getting old
+                description = `${itemType} last updated ${daysSinceActivity} days ago`;
+              } else if (daysSinceActivity <= 14) {
+                labelColor = 'ff9800'; // Orange - needs attention
+                description = `${itemType} last updated ${daysSinceActivity} days ago`;
+              } else {
+                labelColor = 'e74c3c'; // Red (project's preferred red color) - stale
+                description = `${itemType} last updated ${daysSinceActivity} days ago`;
+              }
+              
+              // Get current labels on the item
+              const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+                owner, 
+                repo, 
+                issue_number: itemNumber, 
+                per_page: 100 
+              });
+              const currentNames = new Set(current.map(l => l.name));
+              
+              // Remove any existing days-old labels
+              const daysOldRegex = /^days-old:/i;
+              for (const name of currentNames) {
+                if (daysOldRegex.test(name) && name !== newLabel) {
+                  try {
+                    await github.rest.issues.removeLabel({ 
+                      owner, 
+                      repo, 
+                      issue_number: itemNumber, 
+                      name 
+                    });
+                    core.info(`  Removed old label: ${name}`);
+                  } catch (err) {
+                    core.warning(`  Failed to remove label ${name}: ${err.message}`);
+                  }
+                }
+              }
+              
+              // Ensure the new label exists (create if missing)
+              async function ensureLabelExists(labelName) {
+                try {
+                  await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                } catch (e) {
+                  if (e.status === 404) {
+                    await github.rest.issues.createLabel({
+                      owner,
+                      repo,
+                      name: labelName,
+                      color: labelColor,
+                      description: description,
+                    });
+                    core.info(`  Created label: ${labelName}`);
+                  } else {
+                    throw e;
+                  }
+                }
+              }
+              
+              await ensureLabelExists(newLabel);
+              
+              // Add the label if it isn't already present
+              if (!currentNames.has(newLabel)) {
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: itemNumber, 
+                  labels: [newLabel] 
+                });
+                core.info(`  Applied label: ${newLabel}`);
+              } else {
+                core.info(`  Label ${newLabel} already present`);
+              }
+            }
+            
+            core.info(`\n✅ Finished processing ${allItems.length} items`);
