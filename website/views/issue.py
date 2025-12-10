@@ -47,6 +47,7 @@ from django.utils.html import escape
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.views.decorators.throttle import throttle
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -2543,6 +2544,8 @@ class GsocView(View):
         return render(request, "gsoc.html", {"projects": sorted_project_data})
 
 
+@staff_member_required
+@throttle(rate="5/hour")
 def refresh_gsoc_project(request):
     """
     View to handle refreshing PRs for a specific GSoC project.
