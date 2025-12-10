@@ -103,13 +103,17 @@ class DailyChallengeService:
 
         from website.models import DailyChallenge, UserDailyChallenge
 
-        # Get all active challenge types
-        active_challenges = DailyChallenge.objects.filter(is_active=True)
+        # Get all active challenge types, excluding streak_milestone (not a true daily challenge)
+        # Streak milestones should be handled separately as they only complete on specific days
+        active_challenges = DailyChallenge.objects.filter(
+            is_active=True
+        ).exclude(challenge_type="streak_milestone")
+        
         if not active_challenges.exists():
-            logger.warning(f"No active challenges available for user {user.username}")
+            logger.warning(f"No active daily challenges available for user {user.username}")
             return None
 
-        # Randomly select a challenge type
+        # Randomly select a challenge type from daily-completable challenges
         challenge_list = list(active_challenges)
         if not challenge_list:
             logger.warning(f"Empty challenge list for user {user.username}")
