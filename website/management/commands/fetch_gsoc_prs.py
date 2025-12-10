@@ -97,6 +97,16 @@ class Command(BaseCommand):
         rate_limit_threshold = options.get("rate_limit_threshold", 500)
         max_retries = options.get("max_retries", 5)
 
+        # EARLY VALIDATION (prevents runtime crashes)
+        if rate_check_interval <= 0:
+            raise ValueError("--rate-check-interval must be a positive integer")
+
+        if rate_limit_threshold < 0:
+            raise ValueError("--rate-limit-threshold must be a non-negative integer")
+
+        if max_retries < 0:
+            raise ValueError("--max-retries must be greater than or equal to 0")
+
         # safer since-date handling
         since_date_arg = options.get("since_date")
 
@@ -647,8 +657,8 @@ class Command(BaseCommand):
         """
         from website.models import GitHubReview
 
-        # Get the reviews URL from the PR data (Search API returns pull_request.url)
-        reviews_url = pr_data.get("url") or pr_data.get("pull_request", {}).get("url")
+        # Prefer pull_request.url (Search API shape), fall back to root url (REST /pulls)
+        reviews_url = pr_data.get("pull_request", {}).get("url") or pr_data.get("url")
 
         if not reviews_url:
             return
