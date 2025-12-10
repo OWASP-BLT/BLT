@@ -1623,6 +1623,7 @@ def debug_required(func):
 class DebugSystemStatsApiView(APIView):
     """Get current system statistics for debug panel"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1654,6 +1655,7 @@ class DebugSystemStatsApiView(APIView):
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
             disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            cpu_stats = {"percent": "N/A"}
 
             try:
                 memory = psutil.virtual_memory()
@@ -1675,6 +1677,14 @@ class DebugSystemStatsApiView(APIView):
             except Exception as disk_error:
                 logger.warning("Could not fetch disk stats: %s", disk_error)
 
+            try:
+                cpu = psutil.cpu_percent(interval=1)
+                cpu_stats = {
+                    "percent": f"{cpu}%"
+                }
+            except Exception as cpu_error:
+                logger.warning("Could not fetch CPU stats: %s", cpu_error)
+
             return Response(
                 {
                     "success": True,
@@ -1685,9 +1695,16 @@ class DebugSystemStatsApiView(APIView):
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
                             "name": db_name,
                             "version": db_version,
+                            "user_count": User.objects.count(),
+                            "issue_count": Issue.objects.count(),
+                            "org_count": Organization.objects.count(),
+                            "domain_count": Domain.objects.count(),
+                            "repo_count": Repo.objects.count(),
+                            "connections": connection.queries.__len__(),
                         },
                         "memory": memory_stats,
                         "disk": disk_stats,
+                        "cpu": cpu_stats,
                     },
                 }
             )
@@ -1702,6 +1719,7 @@ class DebugSystemStatsApiView(APIView):
 class DebugCacheInfoApiView(APIView):
     """Get cache backend information and statistics"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1758,6 +1776,7 @@ class DebugCacheInfoApiView(APIView):
 class DebugPopulateDataApiView(APIView):
     """Populate database with test data"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1785,6 +1804,7 @@ class DebugPopulateDataApiView(APIView):
 class DebugClearCacheApiView(APIView):
     """Clear all cache data"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1805,6 +1825,7 @@ class DebugClearCacheApiView(APIView):
 class DebugRunMigrationsApiView(APIView):
     """Run pending database migrations"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1838,6 +1859,7 @@ class DebugRunMigrationsApiView(APIView):
 class DebugCollectStaticApiView(APIView):
     """Collect static files"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1864,6 +1886,7 @@ class DebugCollectStaticApiView(APIView):
 class DebugPanelStatusApiView(APIView):
     """Get overall debug panel status"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required

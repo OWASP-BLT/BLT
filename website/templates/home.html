@@ -19,6 +19,9 @@
     {% if debug_mode %}
         <!-- Local Mode Panel -->
         <div id="dev-panel"
+            {% if user.is_authenticated and user.auth_token %}
+                data-api-token="{{ user.auth_token.key }}"
+            {% endif %}
              class="bg-gray-900 dark:bg-gray-50 text-white p-4 mb-4 rounded-lg shadow-lg max-w-7xl mx-auto mt-4">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center">
@@ -39,23 +42,23 @@
                         <ul class="text-sm">
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Memory Usage:</span>
-                                <span class="font-mono">{{ system_stats.memory_usage }}</span>
+                                <span class="font-mono" data-stat="memory">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>CPU Usage:</span>
-                                <span class="font-mono">{{ system_stats.cpu_percent }}</span>
+                                <span class="font-mono" data-stat="cpu">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Python Version:</span>
-                                <span class="font-mono text-xs">{{ system_stats.python_version|truncatechars:20 }}</span>
+                                <span class="font-mono text-xs" data-stat="python_version">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Django Version:</span>
-                                <span class="font-mono">{{ system_stats.django_version }}</span>
+                                <span class="font-mono" data-stat="django_version">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 dark:text-gray-400">
                                 <span>DB Connections:</span>
-                                <span class="font-mono">{{ system_stats.db_connections }}</span>
+                                <span class="font-mono" data-stat="db_connections">Loading...</span>
                             </li>
                         </ul>
                     </div>
@@ -1257,6 +1260,11 @@
             </div>
         </footer>
     </div>
+    {% block extra_js %}
+        {% if debug_mode %}
+            <script src="{% static 'js/debug-panel.js' %}" defer></script>
+        {% endif %}
+    {% endblock extra_js %}
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
     <script>
