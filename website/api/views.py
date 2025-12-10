@@ -1823,7 +1823,7 @@ class DebugClearCacheApiView(APIView):
 class DebugSyncGithubDataApiView(APIView):
     """Sync GitHub data for tracked repositories"""
 
-    authentication_classes = [SessionAuthentication]
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
