@@ -3,6 +3,7 @@
 import logging
 from datetime import time
 
+import pytz
 from django.utils import timezone
 
 from website.models import UserDailyChallenge, UserProfile
@@ -210,6 +211,7 @@ class DailyChallengeService:
                 try:
                     if challenge_type == "early_checkin":
                         is_completed = DailyChallengeService._check_early_checkin(
+                            user,
                             daily_status_report,
                         )
                     elif challenge_type == "positive_mood":
@@ -266,17 +268,52 @@ class DailyChallengeService:
             return []
 
     @staticmethod
-    def _check_early_checkin(daily_status_report):
+    def _check_early_checkin(user, daily_status_report):
         """
-        Check if check-in was submitted before 10 AM.
-        Uses the created timestamp which represents when check-in was submitted.
+        Check if check-in was submitted before 10 AM in the user's timezone.
+        Uses the created timestamp and converts it to the user's timezone.
         """
         if not daily_status_report or not daily_status_report.created:
             return False
 
-        checkin_time = daily_status_report.created.time()
-        early_threshold = time(10, 0)  # 10:00 AM
-        return checkin_time < early_threshold
+        try:
+            # Get user's timezone from profile, default to UTC
+            try:
+                profile = UserProfile.objects.get(user=user)
+                user_tz_str = profile.timezone or "UTC"
+            except UserProfile.DoesNotExist:
+                user_tz_str = "UTC"
+
+            # Get timezone object
+            try:
+                user_tz = pytz.timezone(user_tz_str)
+            except pytz.exceptions.UnknownTimeZoneError:
+                logger.warning(
+                    f"Unknown timezone '{user_tz_str}' for user {user.username}, using UTC"
+                )
+                user_tz = pytz.UTC
+
+            # Convert check-in time to user's timezone
+            checkin_utc = daily_status_report.created
+            if timezone.is_naive(checkin_utc):
+                checkin_utc = timezone.make_aware(checkin_utc)
+
+            checkin_user_tz = checkin_utc.astimezone(user_tz)
+            checkin_time = checkin_user_tz.time()
+
+            # Check if before 10 AM in user's timezone
+            early_threshold = time(10, 0)  # 10:00 AM
+            return checkin_time < early_threshold
+
+        except Exception as e:
+            logger.error(
+                f"Error checking early check-in for user {user.username}: {e}",
+                exc_info=True,
+            )
+            # Fallback to UTC if timezone conversion fails
+            checkin_time = daily_status_report.created.time()
+            early_threshold = time(10, 0)
+            return checkin_time < early_threshold
 
     @staticmethod
     def _check_positive_mood(daily_status_report):
