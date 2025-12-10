@@ -859,6 +859,149 @@ class Points(models.Model):
         return f"{self.user.username} - {self.score} points"
 
 
+class DailyChallenge(models.Model):
+    """
+    Represents a daily challenge type that can be assigned to users.
+    Each challenge type has specific criteria for completion.
+    """
+
+    CHALLENGE_TYPE_CHOICES = [
+        ("early_checkin", "Early Check-in"),
+        ("positive_mood", "Positive Mood"),
+        ("complete_all_fields", "Complete All Fields"),
+        ("streak_milestone", "Streak Milestone"),
+        ("no_blockers", "No Blockers"),
+    ]
+
+    challenge_type = models.CharField(
+        max_length=50,
+        choices=CHALLENGE_TYPE_CHOICES,
+        unique=True,
+        help_text="Type of daily challenge",
+    )
+    title = models.CharField(
+        max_length=255,
+        help_text="Display title for the challenge",
+    )
+    description = models.TextField(
+        help_text="Description of what the challenge requires",
+    )
+    points_reward = models.IntegerField(
+        default=10,
+        help_text="Points awarded for completing this challenge",
+        validators=[MinValueValidator(0)],
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this challenge type is currently active",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Daily Challenge"
+        verbose_name_plural = "Daily Challenges"
+
+    def __str__(self):
+        return self.title
+
+
+class UserDailyChallenge(models.Model):
+    """
+    Tracks a user's assigned daily challenge and its completion status.
+    """
+
+    STATUS_CHOICES = [
+        ("assigned", "Assigned"),
+        ("completed", "Completed"),
+        ("expired", "Expired"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="daily_challenges",
+    )
+    challenge = models.ForeignKey(
+        DailyChallenge,
+        on_delete=models.CASCADE,
+        related_name="user_assignments",
+    )
+    challenge_date = models.DateField(
+        help_text="Date for which this challenge is assigned",
+        db_index=True,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="assigned",
+    )
+    points_awarded = models.IntegerField(
+        default=0,
+        help_text="Points actually awarded (may differ from challenge.points_reward)",
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the challenge was completed",
+    )
+    next_challenge_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the next challenge will be available (24 hours from last check-in submission)",
+        db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["user", "challenge_date"]]
+        ordering = ["-challenge_date", "status"]
+        indexes = [
+            models.Index(fields=["user", "challenge_date"]),
+            models.Index(fields=["status", "challenge_date"]),
+        ]
+
+    def mark_completed(self):
+        """
+        Mark challenge as completed and award points.
+        Uses transaction to ensure atomicity.
+        """
+        if self.status == "completed":
+            return False
+
+        try:
+            with transaction.atomic():
+                self.refresh_from_db()
+                if self.status == "completed":
+                    return False
+
+                self.status = "completed"
+                self.completed_at = timezone.now()
+                self.points_awarded = self.challenge.points_reward
+                self.save()
+
+                Points.objects.create(
+                    user=self.user,
+                    score=self.challenge.points_reward,
+                    reason=f"Completed daily challenge: {self.challenge.title}",
+                )
+
+                return True
+        except Exception as e:
+            logger.error(
+                "Error completing challenge %s for user %s: %s",
+                self.id,
+                self.user.username,
+                e,
+            )
+            return False
+
+    def __str__(self):
+        return f"{self.user.username} - {self.challenge.title} ({self.challenge_date})"
+
+
 class InviteFriend(models.Model):
     sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
     recipients = models.ManyToManyField(User, related_name="received_invites", blank=True)
@@ -968,6 +1111,11 @@ class UserProfile(models.Model):
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
+    timezone = models.CharField(
+        max_length=50,
+        default="UTC",
+        help_text="User's timezone (e.g., 'Asia/Kolkata', 'America/New_York'). Defaults to UTC.",
+    )
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -1561,6 +1709,9 @@ class DailyStatusReport(models.Model):
     goal_accomplished = models.BooleanField(default=False)
     current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [["user", "date"]]  # One check-in per user per day
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"

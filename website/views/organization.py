@@ -1363,14 +1363,26 @@ def sizzle_daily_log(request):
         if request.method == "POST":
             previous_work = request.POST.get("previous_work")
             next_plan = request.POST.get("next_plan")
-            blockers = request.POST.get("blockers")
-            goal_accomplished = request.POST.get("goal_accomplished") == "on"
+            blockers_type = request.POST.get("blockers")
+            blockers_other = request.POST.get("blockers_other", "")
+            # Combine blockers: if "other" selected, use blockers_other, otherwise use the type
+            if blockers_type == "other" and blockers_other:
+                blockers = blockers_other
+            elif blockers_type == "no_blockers":
+                blockers = "no blockers"
+            elif blockers_type:
+                blockers = blockers_type
+            else:
+                blockers = ""
+            # Handle goal_accomplished as radio button (yes/no instead of checkbox)
+            goal_accomplished_value = request.POST.get("goal_accomplished")
+            goal_accomplished = goal_accomplished_value == "yes"
             current_mood = request.POST.get("feeling")
             logger.debug(
                 f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
             )
 
-            DailyStatusReport.objects.create(
+            daily_status = DailyStatusReport.objects.create(
                 user=request.user,
                 date=now().date(),
                 previous_work=previous_work,
@@ -1380,11 +1392,64 @@ def sizzle_daily_log(request):
                 current_mood=current_mood,
             )
 
-            messages.success(request, "Daily status report submitted successfully.")
+            # Set next_challenge_at to 24 hours from now for all user's challenges
+            from datetime import timedelta
+
+            from website.models import UserDailyChallenge
+
+            next_challenge_time = now() + timedelta(hours=24)
+            UserDailyChallenge.objects.filter(
+                user=request.user,
+                status="assigned",
+            ).update(next_challenge_at=next_challenge_time)
+
+            # Check and complete daily challenges
+            completed_challenges_data = []
+            total_points_awarded = 0
+            try:
+                from website.services.daily_challenge_service import DailyChallengeService
+
+                completed_challenges = DailyChallengeService.check_and_complete_challenges(
+                    request.user,
+                    daily_status,
+                )
+
+                if completed_challenges:
+                    # Get details of completed challenges
+                    from datetime import date
+
+                    from website.models import UserDailyChallenge
+
+                    user_challenges = (
+                        UserDailyChallenge.objects.filter(
+                            user=request.user,
+                            challenge_date=date.today(),
+                            status="completed",
+                        )
+                        .select_related("challenge")
+                        .order_by("-completed_at")
+                    )
+
+                    for uc in user_challenges:
+                        if uc.challenge.title in completed_challenges:
+                            completed_challenges_data.append(
+                                {
+                                    "title": uc.challenge.title,
+                                    "points": uc.points_awarded,
+                                    "description": uc.challenge.description,
+                                }
+                            )
+                            total_points_awarded += uc.points_awarded
+
+            except Exception as e:
+                logger.error(f"Error checking challenges: {e}")
+
             return JsonResponse(
                 {
                     "success": "true",
                     "message": "Daily status report submitted successfully.",
+                    "completed_challenges": completed_challenges_data,
+                    "total_points": total_points_awarded,
                 }
             )
 
@@ -2163,23 +2228,84 @@ def truncate_text(text, length=15):
 
 @login_required
 def add_sizzle_checkIN(request):
-    # Fetch yesterday's report
-    yesterday = now().date() - timedelta(days=1)
-    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
+    try:
+        from datetime import timedelta
 
-    # Fetch the last check-in (most recent) for the user only if no yesterday report
-    last_checkin = None
-    if not yesterday_report:
-        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+        from website.models import DailyStatusReport, UserDailyChallenge
+        from website.services.daily_challenge_service import DailyChallengeService
 
-    # Fetch all check-ins for the user, ordered by date
-    all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+        # Fetch yesterday's report
+        yesterday = now().date() - timedelta(days=1)
+        yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
-    return render(
-        request,
-        "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
-    )
+        # Fetch the last check-in (most recent) for the user only if no yesterday report
+        last_checkin = None
+        if not yesterday_report:
+            last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
+        # Fetch all check-ins for the user, ordered by date
+        all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+
+        # Get active challenges for display
+        active_challenges = []
+        completed_challenges_today = []
+        next_challenge_at = None
+        if request.user.is_authenticated:
+            try:
+                today = now().date()
+                active_challenges = DailyChallengeService.get_active_challenges_for_user(
+                    request.user,
+                    today,
+                )
+
+                # Get completed challenges for today
+                completed_challenges_today = (
+                    UserDailyChallenge.objects.filter(
+                        user=request.user,
+                        challenge_date=today,
+                        status="completed",
+                    )
+                    .select_related("challenge")
+                    .order_by("-completed_at")
+                )
+
+                # Get next challenge time (24 hours from last check-in)
+                # Always calculate next challenge time if there's a last check-in
+                last_checkin_for_timer = (
+                    DailyStatusReport.objects.filter(user=request.user).order_by("-created").first()
+                )
+                if last_checkin_for_timer:
+                    next_challenge_at = last_checkin_for_timer.created + timedelta(hours=24)
+                else:
+                    # If no check-in, check if there's a next_challenge_at set
+                    current_challenge = UserDailyChallenge.objects.filter(
+                        user=request.user,
+                        status="assigned",
+                    ).first()
+                    if current_challenge and current_challenge.next_challenge_at:
+                        next_challenge_at = current_challenge.next_challenge_at
+                    else:
+                        # No check-in yet, set next_challenge_at to None (timer won't show)
+                        next_challenge_at = None
+            except Exception as e:
+                logger.error(f"Error loading challenges in add_sizzle_checkIN: {e}", exc_info=True)
+                # Continue with empty challenges if there's an error
+
+        return render(
+            request,
+            "sizzle/add_sizzle_checkin.html",
+            {
+                "yesterday_report": yesterday_report,
+                "last_checkin": last_checkin,
+                "all_checkins": all_checkins,
+                "active_challenges": active_challenges,
+                "completed_challenges_today": completed_challenges_today,
+                "next_challenge_at": next_challenge_at,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error in add_sizzle_checkIN view: {e}", exc_info=True)
+        raise
 
 
 def checkIN(request):
