@@ -1373,7 +1373,11 @@ def sizzle_daily_log(request):
             elif blockers_type:
                 blockers = blockers_type
             else:
-                blockers = ""
+                # Server-side validation: blockers is required
+                return JsonResponse(
+                    {"success": "false", "message": "Blockers field is required."},
+                    status=400,
+                )
             # Handle goal_accomplished as radio button (yes/no instead of checkbox)
             goal_accomplished_value = request.POST.get("goal_accomplished")
             goal_accomplished = goal_accomplished_value == "yes"

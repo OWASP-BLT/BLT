@@ -13,111 +13,117 @@
                 </h1>
             </div>
             <!-- Success Message Area (hidden by default) -->
-            <div id="success-message" class="mb-6 hidden transition-all duration-300 ease-in-out">
+            <div id="success-message"
+                 class="mb-6 hidden transition-all duration-300 ease-in-out">
                 <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg shadow-sm">
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            <svg class="h-5 w-5 text-green-400"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                         </div>
                         <div class="ml-3 flex-1">
-                            <h3 class="text-sm font-medium text-green-800 dark:text-green-200" id="success-title">
-                                Check-in submitted successfully!
-                            </h3>
-                            <div id="challenges-completed" class="mt-2 text-sm text-green-700 dark:text-green-300"></div>
+                            <h3 class="text-sm font-medium text-green-800 dark:text-green-200"
+                                id="success-title">Check-in submitted successfully!</h3>
+                            <div id="challenges-completed"
+                                 class="mt-2 text-sm text-green-700 dark:text-green-300"></div>
                         </div>
                     </div>
                 </div>
             </div>
-
             <!-- Timer Section - Always visible if there's a last check-in -->
             {% if next_challenge_at %}
-            <div class="mb-4 p-4 bg-gradient-to-r from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl shadow-md">
-                <div class="flex items-center justify-center space-x-2 px-3 py-2 bg-red-100 dark:bg-red-900/40 rounded-lg border border-red-300 dark:border-red-700">
-                    <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span class="text-sm font-medium text-red-700 dark:text-red-300">Next challenge in:</span>
-                    <span id="countdown-timer" class="text-lg font-bold text-red-800 dark:text-red-200" data-next-challenge="{{ next_challenge_at|date:'c' }}">--:--:--</span>
+                <div class="mb-4 p-4 bg-gradient-to-r from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl shadow-md">
+                    <div class="flex items-center justify-center space-x-2 px-3 py-2 bg-red-100 dark:bg-red-900/40 rounded-lg border border-red-300 dark:border-red-700">
+                        <svg class="w-5 h-5 text-red-600 dark:text-red-400"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        <span class="text-sm font-medium text-red-700 dark:text-red-300">Next challenge in:</span>
+                        <span id="countdown-timer"
+                              class="text-lg font-bold text-red-800 dark:text-red-200"
+                              data-next-challenge="{{ next_challenge_at|date:'c' }}">--:--:--</span>
+                    </div>
                 </div>
-            </div>
             {% endif %}
-
             {% if active_challenges %}
-            <div class="mb-6 p-5 bg-gradient-to-r from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center">
-                        <h3 class="text-xl font-bold text-red-900 dark:text-red-200">Today's Challenges</h3>
-                        <span class="ml-2 px-2 py-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 text-xs font-semibold rounded-full">
-                            {{ active_challenges|length }} Active
-                        </span>
+                <div class="mb-6 p-5 bg-gradient-to-r from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <h3 class="text-xl font-bold text-red-900 dark:text-red-200">Today's Challenges</h3>
+                            <span class="ml-2 px-2 py-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 text-xs font-semibold rounded-full">
+                                {{ active_challenges|length }} Active
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div class="space-y-3">
-                    {% for user_challenge in active_challenges %}
-                    <div class="flex items-start p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-red-200 dark:border-red-700 shadow-sm hover:shadow-md hover:border-red-300 dark:hover:border-red-600 transition-all duration-200">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-200 text-lg">{{ user_challenge.challenge.title }}</h4>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 animate-pulse">
-                                    {{ user_challenge.get_status_display }}
-                                </span>
-                            </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">{{ user_challenge.challenge.description }}</p>
-                            <div class="mt-3 flex items-center space-x-4">
-                                <div class="flex items-center space-x-1">
-                                    <span class="text-yellow-500">⭐</span>
-                                    <span class="text-sm font-semibold text-red-600 dark:text-red-400">
-                                        +{{ user_challenge.challenge.points_reward }} points
-                                    </span>
+                    <div class="space-y-3">
+                        {% for user_challenge in active_challenges %}
+                            <div class="flex items-start p-4 bg-white dark:bg-gray-800 rounded-lg border-2 border-red-200 dark:border-red-700 shadow-sm hover:shadow-md hover:border-red-300 dark:hover:border-red-600 transition-all duration-200">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <h4 class="font-semibold text-gray-900 dark:text-gray-200 text-lg">{{ user_challenge.challenge.title }}</h4>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 animate-pulse">
+                                            {{ user_challenge.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">{{ user_challenge.challenge.description }}</p>
+                                    <div class="mt-3 flex items-center space-x-4">
+                                        <div class="flex items-center space-x-1">
+                                            <span class="text-yellow-500">⭐</span>
+                                            <span class="text-sm font-semibold text-red-600 dark:text-red-400">
+                                                +{{ user_challenge.challenge.points_reward }} points
+                                            </span>
+                                        </div>
+                                        {% if user_challenge.challenge.challenge_type == "no_blockers" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Select "No blockers" from dropdown</span>
+                                        {% elif user_challenge.challenge.challenge_type == "positive_mood" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Select Happy or Smile</span>
+                                        {% elif user_challenge.challenge.challenge_type == "early_checkin" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Submit before 10 AM</span>
+                                        {% elif user_challenge.challenge.challenge_type == "complete_all_fields" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Fill all fields completely</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                {% if user_challenge.challenge.challenge_type == "no_blockers" %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400 italic">Select "No blockers" from dropdown</span>
-                                {% elif user_challenge.challenge.challenge_type == "positive_mood" %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400 italic">Select Happy or Smile</span>
-                                {% elif user_challenge.challenge.challenge_type == "early_checkin" %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400 italic">Submit before 10 AM</span>
-                                {% elif user_challenge.challenge.challenge_type == "complete_all_fields" %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400 italic">Fill all fields completely</span>
-                                {% endif %}
                             </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Completed Challenges Today (if any) -->
-            {% if completed_challenges_today %}
-            <div id="completed-challenges-section" class="mb-6">
-                <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <h3 class="text-lg font-semibold text-green-900 dark:text-green-200 mb-3">✅ Completed Challenges Today</h3>
-                    <div id="completed-challenges-list" class="space-y-2">
-                        {% for user_challenge in completed_challenges_today %}
-                        <div class="flex items-start p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-800">
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 dark:text-gray-200">✅ {{ user_challenge.challenge.title }}</h4>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ user_challenge.challenge.description }}</p>
-                            </div>
-                            <div class="ml-4">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                                    +{{ user_challenge.points_awarded }} points
-                                </span>
-                            </div>
-                        </div>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
-            {% else %}
-            <div id="completed-challenges-section" class="mb-6 hidden">
-                <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <h3 class="text-lg font-semibold text-green-900 dark:text-green-200 mb-3">✅ Completed Challenges Today</h3>
-                    <div id="completed-challenges-list" class="space-y-2"></div>
+            {% endif %}
+            <!-- Completed Challenges Today (if any) -->
+            {% if completed_challenges_today %}
+                <div id="completed-challenges-section" class="mb-6">
+                    <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-900 dark:text-green-200 mb-3">✅ Completed Challenges Today</h3>
+                        <div id="completed-challenges-list" class="space-y-2">
+                            {% for user_challenge in completed_challenges_today %}
+                                <div class="flex items-start p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-800">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-gray-900 dark:text-gray-200">✅ {{ user_challenge.challenge.title }}</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ user_challenge.challenge.description }}</p>
+                                    </div>
+                                    <div class="ml-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                            +{{ user_challenge.points_awarded }} points
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
-            </div>
+            {% else %}
+                <div id="completed-challenges-section" class="mb-6 hidden">
+                    <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-900 dark:text-green-200 mb-3">✅ Completed Challenges Today</h3>
+                        <div id="completed-challenges-list" class="space-y-2"></div>
+                    </div>
+                </div>
             {% endif %}
             <div class="flex justify-center">
                 <form id="checkInForm"
@@ -126,7 +132,6 @@
                       class="w-full max-w-5xl bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 space-y-8"
                       {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
                     {% csrf_token %}
-                    
                     <!-- Section 1: Previous Work -->
                     <div class="form-group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div class="flex items-center mb-4">
@@ -135,10 +140,10 @@
                             </div>
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
-                        <label for="previous_work_card"
+                                    <label for="previous_work_card"
                                            class="block text-lg font-semibold text-gray-800 dark:text-gray-100">
-                            What did you work on previously?
-                        </label>
+                                        What did you work on previously?
+                                    </label>
                                     <span class="text-red-500 dark:text-red-400 font-semibold text-sm">*</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">Required</span>
                                 </div>
@@ -148,15 +153,16 @@
                             </div>
                         </div>
                         <div class="relative">
-                        <textarea id="previous_work_card"
-                                  name="previous_work"
-                                  rows="5"
+                            <textarea id="previous_work_card"
+                                      name="previous_work"
+                                      rows="5"
                                       placeholder="Describe what you worked on..."
                                       class="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:focus:border-red-500 transition-all duration-200 shadow-inner"
                                       required
                                       oninput="updateWordCount('previous_work_card', 'previous_work_count')"></textarea>
                             <div class="absolute bottom-3 right-3">
-                                <span id="previous_work_count" class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600">0 words</span>
+                                <span id="previous_work_count"
+                                      class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600">0 words</span>
                             </div>
                         </div>
                         {% if yesterday_report %}
@@ -167,7 +173,6 @@
                             </button>
                         {% endif %}
                     </div>
-
                     <!-- Section 2: Next Plan -->
                     <div class="form-group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div class="flex items-center mb-4">
@@ -176,10 +181,10 @@
                             </div>
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
-                        <label for="next_plan_card"
+                                    <label for="next_plan_card"
                                            class="block text-lg font-semibold text-gray-800 dark:text-gray-100">
-                            What do you plan to do next?
-                        </label>
+                                        What do you plan to do next?
+                                    </label>
                                     <span class="text-red-500 dark:text-red-400 font-semibold text-sm">*</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">Required</span>
                                 </div>
@@ -189,19 +194,19 @@
                             </div>
                         </div>
                         <div class="relative">
-                        <textarea id="next_plan_card"
-                                  name="next_plan"
-                                  rows="5"
+                            <textarea id="next_plan_card"
+                                      name="next_plan"
+                                      rows="5"
                                       placeholder="Describe your upcoming plans..."
                                       class="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:focus:border-purple-500 transition-all duration-200 shadow-inner"
                                       required
                                       oninput="updateWordCount('next_plan_card', 'next_plan_count')"></textarea>
                             <div class="absolute bottom-3 right-3">
-                                <span id="next_plan_count" class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600">0 words</span>
+                                <span id="next_plan_count"
+                                      class="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full shadow-sm border border-gray-200 dark:border-gray-600">0 words</span>
                             </div>
                         </div>
                     </div>
-
                     <!-- Section 3: Blockers -->
                     <div class="form-group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div class="flex items-center mb-4">
@@ -210,10 +215,10 @@
                             </div>
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
-                        <label for="blockers_card"
+                                    <label for="blockers_card"
                                            class="block text-lg font-semibold text-gray-800 dark:text-gray-100">
-                            Do you have any blockers?
-                        </label>
+                                        Do you have any blockers?
+                                    </label>
                                     <span class="text-red-500 dark:text-red-400 font-semibold text-sm">*</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">Required</span>
                                 </div>
@@ -223,7 +228,8 @@
                             </div>
                         </div>
                         <select id="blockers_card"
-                                  name="blockers"
+                                name="blockers"
+                                required
                                 class="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:focus:border-orange-500 transition-all duration-200 shadow-inner text-base">
                             <option value="">Select an option...</option>
                             <option value="no_blockers">✅ No blockers - All good!</option>
@@ -239,7 +245,6 @@
                                   placeholder="If you selected 'Other', please describe your blockers here..."
                                   class="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:focus:border-orange-500 transition-all duration-200 mt-3 hidden shadow-inner"></textarea>
                     </div>
-
                     <!-- Yesterday's Context -->
                     {% if yesterday_report %}
                         <div class="bg-gradient-to-r from-red-50 to-red-50 dark:from-red-900/30 dark:to-red-900/30 border-2 border-red-200 dark:border-red-800 rounded-xl p-5 shadow-sm">
@@ -249,11 +254,11 @@
                             </h3>
                             <div class="space-y-2 text-sm">
                                 <p class="text-gray-700 dark:text-gray-300">
-                                    <strong class="text-red-800 dark:text-red-300">Yesterday's plan:</strong> 
+                                    <strong class="text-red-800 dark:text-red-300">Yesterday's plan:</strong>
                                     <span class="text-gray-600 dark:text-gray-400">{{ yesterday_report.next_plan|truncatewords:30 }}</span>
                                 </p>
                                 <p class="text-gray-700 dark:text-gray-300">
-                                    <strong class="text-red-800 dark:text-red-300">Yesterday's blockers:</strong> 
+                                    <strong class="text-red-800 dark:text-red-300">Yesterday's blockers:</strong>
                                     <span class="text-gray-600 dark:text-gray-400">{{ yesterday_report.blockers|truncatewords:20 }}</span>
                                 </p>
                             </div>
@@ -274,7 +279,6 @@
                             {% endif %}
                         </div>
                     {% endif %}
-
                     <!-- Section 4: Goal Accomplished -->
                     <div class="form-group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div class="flex items-center mb-4">
@@ -284,8 +288,8 @@
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
                                     <label class="block text-lg font-semibold text-gray-800 dark:text-gray-100">
-                            Did you accomplish your goals for yesterday?
-                        </label>
+                                        Did you accomplish your goals for yesterday?
+                                    </label>
                                     <span class="text-red-500 dark:text-red-400 font-semibold text-sm">*</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">Required</span>
                                 </div>
@@ -304,7 +308,7 @@
                             <label class="flex items-center cursor-pointer group">
                                 <input type="radio"
                                        id="goal_no"
-                               name="goal_accomplished"
+                                       name="goal_accomplished"
                                        value="no"
                                        class="w-5 h-5 text-red-500 border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:bg-gray-800 dark:border-gray-600 cursor-pointer transition-all duration-200"
                                        required>
@@ -312,7 +316,6 @@
                             </label>
                         </div>
                     </div>
-
                     <!-- Section 5: Mood Selection -->
                     <div class="form-group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div class="flex items-center mb-4">
@@ -321,10 +324,10 @@
                             </div>
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 mb-1">
-                        <label for="feeling_card"
+                                    <label for="feeling_card"
                                            class="block text-lg font-semibold text-gray-800 dark:text-gray-100">
-                            How are you feeling today?
-                        </label>
+                                        How are you feeling today?
+                                    </label>
                                     <span class="text-red-500 dark:text-red-400 font-semibold text-sm">*</span>
                                     <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">Required</span>
                                 </div>
@@ -334,32 +337,58 @@
                             </div>
                         </div>
                         <div class="flex items-center justify-center space-x-3 p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-inner">
-                            <input type="radio" id="mood_1" name="feeling" value="😊" class="hidden peer/mood_1" required>
-                            <label for="mood_1" class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-red-400 dark:hover:border-red-500 peer-checked/mood_1:border-red-500 dark:peer-checked/mood_1:border-red-400 peer-checked/mood_1:bg-gradient-to-br peer-checked/mood_1:from-red-50 peer-checked/mood_1:to-red-100 dark:peer-checked/mood_1:from-red-900/40 dark:peer-checked/mood_1:to-red-800/40 peer-checked/mood_1:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
+                            <input type="radio"
+                                   id="mood_1"
+                                   name="feeling"
+                                   value="😊"
+                                   class="hidden peer/mood_1"
+                                   required>
+                            <label for="mood_1"
+                                   class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-red-400 dark:hover:border-red-500 peer-checked/mood_1:border-red-500 dark:peer-checked/mood_1:border-red-400 peer-checked/mood_1:bg-gradient-to-br peer-checked/mood_1:from-red-50 peer-checked/mood_1:to-red-100 dark:peer-checked/mood_1:from-red-900/40 dark:peer-checked/mood_1:to-red-800/40 peer-checked/mood_1:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
                                 <span class="text-5xl mb-3 filter drop-shadow-lg block">😊</span>
                                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 block text-center">Happy</span>
                             </label>
-                            
-                            <input type="radio" id="mood_2" name="feeling" value="😄" class="hidden peer/mood_2" required>
-                            <label for="mood_2" class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-red-400 dark:hover:border-red-500 peer-checked/mood_2:border-red-500 dark:peer-checked/mood_2:border-red-400 peer-checked/mood_2:bg-gradient-to-br peer-checked/mood_2:from-red-50 peer-checked/mood_2:to-red-100 dark:peer-checked/mood_2:from-red-900/40 dark:peer-checked/mood_2:to-red-800/40 peer-checked/mood_2:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
+                            <input type="radio"
+                                   id="mood_2"
+                                   name="feeling"
+                                   value="😄"
+                                   class="hidden peer/mood_2"
+                                   required>
+                            <label for="mood_2"
+                                   class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-red-400 dark:hover:border-red-500 peer-checked/mood_2:border-red-500 dark:peer-checked/mood_2:border-red-400 peer-checked/mood_2:bg-gradient-to-br peer-checked/mood_2:from-red-50 peer-checked/mood_2:to-red-100 dark:peer-checked/mood_2:from-red-900/40 dark:peer-checked/mood_2:to-red-800/40 peer-checked/mood_2:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
                                 <span class="text-5xl mb-3 filter drop-shadow-lg block">😄</span>
                                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 block text-center">Smile</span>
                             </label>
-                            
-                            <input type="radio" id="mood_3" name="feeling" value="😐" class="hidden peer/mood_3" required>
-                            <label for="mood_3" class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-gray-400 dark:hover:border-gray-500 peer-checked/mood_3:border-gray-500 dark:peer-checked/mood_3:border-gray-400 peer-checked/mood_3:bg-gradient-to-br peer-checked/mood_3:from-gray-100 peer-checked/mood_3:to-gray-200 dark:peer-checked/mood_3:from-gray-700 dark:peer-checked/mood_3:to-gray-800 peer-checked/mood_3:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
+                            <input type="radio"
+                                   id="mood_3"
+                                   name="feeling"
+                                   value="😐"
+                                   class="hidden peer/mood_3"
+                                   required>
+                            <label for="mood_3"
+                                   class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-gray-400 dark:hover:border-gray-500 peer-checked/mood_3:border-gray-500 dark:peer-checked/mood_3:border-gray-400 peer-checked/mood_3:bg-gradient-to-br peer-checked/mood_3:from-gray-100 peer-checked/mood_3:to-gray-200 dark:peer-checked/mood_3:from-gray-700 dark:peer-checked/mood_3:to-gray-800 peer-checked/mood_3:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
                                 <span class="text-5xl mb-3 filter drop-shadow-lg block">😐</span>
                                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 block text-center">Okay</span>
                             </label>
-                            
-                            <input type="radio" id="mood_4" name="feeling" value="😔" class="hidden peer/mood_4" required>
-                            <label for="mood_4" class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-yellow-400 dark:hover:border-yellow-500 peer-checked/mood_4:border-yellow-500 dark:peer-checked/mood_4:border-yellow-400 peer-checked/mood_4:bg-gradient-to-br peer-checked/mood_4:from-yellow-50 peer-checked/mood_4:to-yellow-100 dark:peer-checked/mood_4:from-yellow-900/40 dark:peer-checked/mood_4:to-yellow-800/40 peer-checked/mood_4:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
+                            <input type="radio"
+                                   id="mood_4"
+                                   name="feeling"
+                                   value="😔"
+                                   class="hidden peer/mood_4"
+                                   required>
+                            <label for="mood_4"
+                                   class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-yellow-400 dark:hover:border-yellow-500 peer-checked/mood_4:border-yellow-500 dark:peer-checked/mood_4:border-yellow-400 peer-checked/mood_4:bg-gradient-to-br peer-checked/mood_4:from-yellow-50 peer-checked/mood_4:to-yellow-100 dark:peer-checked/mood_4:from-yellow-900/40 dark:peer-checked/mood_4:to-yellow-800/40 peer-checked/mood_4:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
                                 <span class="text-5xl mb-3 filter drop-shadow-lg block">😔</span>
                                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 block text-center">Sad</span>
                             </label>
-                            
-                            <input type="radio" id="mood_5" name="feeling" value="😠" class="hidden peer/mood_5" required>
-                            <label for="mood_5" class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-red-400 dark:hover:border-red-500 peer-checked/mood_5:border-red-500 dark:peer-checked/mood_5:border-red-400 peer-checked/mood_5:bg-gradient-to-br peer-checked/mood_5:from-red-50 peer-checked/mood_5:to-red-100 dark:peer-checked/mood_5:from-red-900/40 dark:peer-checked/mood_5:to-red-800/40 peer-checked/mood_5:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
+                            <input type="radio"
+                                   id="mood_5"
+                                   name="feeling"
+                                   value="😠"
+                                   class="hidden peer/mood_5"
+                                   required>
+                            <label for="mood_5"
+                                   class="flex flex-col items-center justify-center cursor-pointer p-5 rounded-xl border-2 border-transparent hover:border-red-400 dark:hover:border-red-500 peer-checked/mood_5:border-red-500 dark:peer-checked/mood_5:border-red-400 peer-checked/mood_5:bg-gradient-to-br peer-checked/mood_5:from-red-50 peer-checked/mood_5:to-red-100 dark:peer-checked/mood_5:from-red-900/40 dark:peer-checked/mood_5:to-red-800/40 peer-checked/mood_5:shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-md min-w-[90px]">
                                 <span class="text-5xl mb-3 filter drop-shadow-lg block">😠</span>
                                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 block text-center">Angry</span>
                             </label>
@@ -376,84 +405,74 @@
             <!-- Check-ins Summary Table -->
             <div class="mt-12">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                        Your Check-in History
-                    </h2>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Your Check-in History</h2>
                     <span class="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-sm font-semibold rounded-full">
                         {{ all_checkins|length }} Total
                     </span>
                 </div>
-                
                 {% if all_checkins %}
-                <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gradient-to-r from-red-600 to-red-500">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Date & Time</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Goals</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Mood</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Blockers</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Previous Work</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Next Plan</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {% for checkin in all_checkins %}
-                                <tr class="hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-150">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {{ checkin.date|date:"M d, Y" }}
-                                        </div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                            {{ checkin.created|date:"g:i A" }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if checkin.goal_accomplished %}
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                                                Yes
-                                            </span>
-                                        {% else %}
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
-                                                No
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-2xl">{{ checkin.current_mood }}</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title="{{ checkin.blockers }}">
-                                            {{ checkin.blockers|truncatewords:8|default:"None" }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs">
-                                            <p class="truncate" title="{{ checkin.previous_work }}">
-                                                {{ checkin.previous_work|truncatewords:12|default:"—" }}
-                                            </p>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs">
-                                            <p class="truncate" title="{{ checkin.next_plan }}">
-                                                {{ checkin.next_plan|truncatewords:12|default:"—" }}
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gradient-to-r from-red-600 to-red-500">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Date & Time</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Goals</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Mood</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Blockers</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Previous Work</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Next Plan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    {% for checkin in all_checkins %}
+                                        <tr class="hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ checkin.date|date:"M d, Y" }}</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ checkin.created|date:"g:i A" }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                {% if checkin.goal_accomplished %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                                                        Yes
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                                                        No
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="text-2xl">{{ checkin.current_mood }}</span>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate"
+                                                     title="{{ checkin.blockers }}">
+                                                    {{ checkin.blockers|truncatewords:8|default:"None" }}
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs">
+                                                    <p class="truncate" title="{{ checkin.previous_work }}">{{ checkin.previous_work|truncatewords:12|default:"—" }}</p>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="text-sm text-gray-900 dark:text-gray-100 max-w-xs">
+                                                    <p class="truncate" title="{{ checkin.next_plan }}">{{ checkin.next_plan|truncatewords:12|default:"—" }}</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
                 {% else %}
-                <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-12 border border-gray-200 dark:border-gray-700 text-center">
-                    <div class="text-6xl mb-4">📝</div>
-                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Check-ins Yet</h3>
-                    <p class="text-gray-600 dark:text-gray-400">Start your journey by submitting your first check-in above!</p>
-                </div>
+                    <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-12 border border-gray-200 dark:border-gray-700 text-center">
+                        <div class="text-6xl mb-4">📝</div>
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Check-ins Yet</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Start your journey by submitting your first check-in above!</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
