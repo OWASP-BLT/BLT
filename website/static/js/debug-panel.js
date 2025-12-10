@@ -295,7 +295,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
       `${this.apiBaseUrl}/sync-github/`,
       { confirm: true },
       (data) => {
-        console.log(data);
         if (data.success) {
           this.showStatus("GitHub data synced successfully!", "success");
         } else {
