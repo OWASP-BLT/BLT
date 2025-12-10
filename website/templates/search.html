@@ -20,7 +20,7 @@
 {% block content %}
     <!-- Include Sidenav -->
     {% include "includes/sidenav.html" %}
-    <div class="fixed bottom-4 right-20 z-50 flex gap-3 text-2xl">
+    <div class="absolute bottom-[10px] right-[15px]">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/search.html">
             <i class="fab fa-github"></i>
         </a>
@@ -28,12 +28,12 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="flex flex-col items-center mt-20">
-        <h1 class="text-center mb-4 mt-20">
-            <span class="text-black dark:text-gray-300 text-3xl">Search Results for&nbsp;</span>
-            <span class="text-blue-400 font-bold text-3xl">{{ query }}</span>
-        </h1>
-    </div>
+        <div class="flex flex-col items-center mt-20">
+            <h1 class="text-center mb-4 mt-20">
+                <span class="text-black dark:text-gray-300 text-3xl">Search Results for&nbsp;</span>
+                <span class="text-blue-400 font-bold text-3xl">{{ query }}</span>
+            </h1>
+        </div>
     {% if query %}
     {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
     <div class="flex w-full h-[400px] justify-center items-center">
@@ -51,7 +51,7 @@
                 <!-- Left sidebar with counts -->
                 {% if type == 'all' %}
                     <div class="w-64 flex-shrink-0 pr-6 sticky top-4">
-                        <div class="bg-gray-3 dark:bg-gray-800 rounded-lg shadow-lg p-4 relative -top-10">
+                        <div class="bg-gray-3 dark:bg-gray-800 rounded-lg shadow-lg p-4 relative -top-20">
                             <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Results Found</h2>
                             <hr class="mt-2 mb-3 border-gray-300 dark:border-gray-600 w-[220px] ml-[-10px]">
                             <div class="space-y-2">
