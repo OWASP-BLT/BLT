@@ -19,99 +19,191 @@
     <section>
         {% include "includes/admin_sidenav.html" %}
     </section>
-    <div>
-        <div class="col_3">
+    <div class="ml-16 p-6 bg-white dark:bg-gray-800 min-h-screen">
+        <!-- Organization Switcher (shown when user manages multiple organizations) -->
+        {% if user_can_manage_multiple %}
+            <div class="mb-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        <div>
+                            <label for="organization-switcher" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Switch Organization
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Currently viewing: <strong>{{ selected_organization.name }}</strong></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <select id="organization-switcher" 
+                                class="px-4 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
+                                onchange="window.location.href='{% url 'admin_organization_dashboard' %}?switch_to=' + this.value">
+                            {% for org in organizations %}
+                                <option value="{{ org.pk }}" {% if org.pk == selected_organization.pk %}selected{% endif %}>
+                                    {{ org.name }}{% if not org.is_active %} (Inactive){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Organizations List -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
+                    {% if user_can_manage_multiple %}
+                        Your Organizations
+                    {% else %}
+                        Organization Dashboard
+                    {% endif %}
+                </h2>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    {% if user_can_manage_multiple %}
+                        You manage {{ organizations.count }} organization{{ organizations.count|pluralize }}. Select one to view details.
+                    {% else %}
+                        Manage your organization settings and view details.
+                    {% endif %}
+                </p>
+            </div>
+            
             {% if organizations %}
-                <div class="list-group">
-                    <a href="#" class="list-group-item active">Organization</a>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
                     {% for organization in organizations %}
-                        {% if organization.is_active %}
-                            <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
-                               class="list-group-item">{{ organization.name }}</a>
-                        {% else %}
-                            <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
-                               class="list-group-item list-group-item-danger">{{ organization.name }}</a>
-                        {% endif %}
+                        <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
+                           class="block px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {% if organization.pk == selected_organization.pk %}bg-red-50 dark:bg-red-900/20 border-l-4 border-red-600{% endif %}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    {% if organization.logo %}
+                                        <img src="{{ organization.logo.url }}" 
+                                             alt="{{ organization.name }}" 
+                                             class="w-12 h-12 rounded-lg object-cover">
+                                    {% else %}
+                                        <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                                            <span class="text-gray-500 dark:text-gray-300 text-xl font-bold">
+                                                {{ organization.name|slice:":1"|upper }}
+                                            </span>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {{ organization.name }}
+                                            {% if organization.pk == selected_organization.pk %}
+                                                <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                                                    Selected
+                                                </span>
+                                            {% endif %}
+                                        </h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            {{ organization.url }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    {% if organization.is_active %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                            Active
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                                            Inactive
+                                        </span>
+                                    {% endif %}
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </a>
                     {% endfor %}
                 </div>
             {% else %}
-            </br>
-            no Organization found !
-        {% endif %}
-        <div class="clearfix"></div>
+                <div class="px-6 py-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No organizations found</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">You don't have access to any organizations.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-<div id="addDomainModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-        <!-- Modal content-->
-        <form id="add-or-update-organization">
-            {% csrf_token %}
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">Create Organization</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="name">Name:</label>
-                        <input type="text"
-                               name="name"
-                               required
-                               class="form-control"
-                               id="name"
-                               value="">
+    <!-- Create Organization Button and Modal (only for superusers) -->
+    {% if user.is_superuser %}
+        <div id="addDomainModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <form id="add-or-update-organization">
+                    {% csrf_token %}
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">×</button>
+                            <h4 class="modal-title">Create Organization</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="name">Name:</label>
+                                <input type="text"
+                                       name="name"
+                                       required
+                                       class="form-control"
+                                       id="name"
+                                       value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="url">Website:</label>
+                                <input type="url" name="url" class="form-control" id="url" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="admin">Admin:</label>
+                                <input type="email" name="admin" class="form-control" id="admin" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="logo">Logo:</label>
+                                <input type="file" name="logo" class="form-control" id="logo" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email address:</label>
+                                <input type="email"
+                                       name="email"
+                                       required
+                                       class="form-control"
+                                       id="email"
+                                       value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="github">Github:</label>
+                                <input type="url" name="github" class="form-control" id="github" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="subscription">Subscription:</label>
+                                <input type="text"
+                                       name="subscription"
+                                       class="form-control"
+                                       id="subscription"
+                                       value="">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <input type="submit"
+                                   class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                                   value="Create" />
+                            <input type="reset"
+                                   data-dismiss="modal"
+                                   class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                                   value="Reset" />
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="url">Website:</label>
-                        <input type="url" name="url" class="form-control" id="url" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="admin">Admin:</label>
-                        <input type="email" name="admin" class="form-control" id="admin" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="logo">Logo:</label>
-                        <input type="file" name="logo" class="form-control" id="logo" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email address:</label>
-                        <input type="email"
-                               name="email"
-                               required
-                               class="form-control"
-                               id="email"
-                               value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="github">Github:</label>
-                        <input type="url" name="github" class="form-control" id="github" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="subscription">Subscription:</label>
-                        <input type="text"
-                               name="subscription"
-                               class="form-control"
-                               id="subscription"
-                               value="">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <input type="submit"
-                           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                           value="Create" />
-                    <input type="reset"
-                           data-dismiss="modal"
-                           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                           value="Reset" />
-                </div>
+                </form>
             </div>
-        </form>
-    </div>
-</div>
-<button type="button"
-        class="btn btn_5 btn-lg btn-success add-admin-button"
-        data-toggle="modal"
-        data-target="#addDomainModal">
-    <i class="lnr lnr-plus-circle"> </i>
-</button>
+        </div>
+        <button type="button"
+                class="btn btn_5 btn-lg btn-success add-admin-button"
+                data-toggle="modal"
+                data-target="#addDomainModal">
+            <i class="lnr lnr-plus-circle"> </i>
+        </button>
+    {% endif %}
 {% endblock content %}
