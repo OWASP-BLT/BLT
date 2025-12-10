@@ -1,4 +1,4 @@
-name: Add Days Old Label
+name: Add Last Active Label
 
 # Runs daily to add labels based on days since last activity
 # Also allows manual triggering for testing
@@ -13,10 +13,10 @@ permissions:
   issues: write
 
 jobs:
-  add_days_old_label:
+  add_last_active_label:
     runs-on: ubuntu-latest
     steps:
-      - name: Add Days Old Label to Issues and PRs
+      - name: Add Last Active Label to Issues and PRs
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,8 +45,8 @@ jobs:
             const COLOR_NEEDS_ATTENTION = 'ff9800'; // Orange (8-14 days)
             const COLOR_STALE = 'e74c3c';      // Red (15+ days) - project's brand color
             
-            // Regex pattern to match existing days-old labels (compile once)
-            const daysOldRegex = /^days-old:/i;
+            // Regex pattern to match existing last-active labels (compile once)
+            const lastActiveRegex = /^last-active:/i;
             
             // Function to ensure label exists (define once, outside loop)
             async function ensureLabelExists(labelName, labelColor, description) {
@@ -80,7 +80,7 @@ jobs:
               core.info(`  Days since activity: ${daysSinceActivity}`);
               
               // Determine the label based on days since last activity
-              const newLabel = `days-old: ${daysSinceActivity}`;
+              const newLabel = `last-active: ${daysSinceActivity}d`;
               
               // Set color based on the number of days
               let labelColor;
@@ -114,9 +114,9 @@ jobs:
                 continue;
               }
               
-              // Remove any existing days-old labels (since we need to update)
+              // Remove any existing last-active labels (since we need to update)
               for (const name of currentNames) {
-                if (daysOldRegex.test(name)) {
+                if (lastActiveRegex.test(name)) {
                   try {
                     await github.rest.issues.removeLabel({ 
                       owner, 
