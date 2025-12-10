@@ -105,9 +105,19 @@ class DailyChallengeService:
 
         # Get all active challenge types, excluding streak_milestone (not a true daily challenge)
         # Streak milestones should be handled separately as they only complete on specific days
+        # Only include challenges that can be completed on any day
+        daily_completable_types = [
+            "early_checkin",
+            "positive_mood",
+            "complete_all_fields",
+            "no_blockers",
+            "detailed_reporter",
+            "goal_achiever",
+            "detailed_planner",
+        ]
         active_challenges = DailyChallenge.objects.filter(
-            is_active=True
-        ).exclude(challenge_type="streak_milestone")
+            is_active=True, challenge_type__in=daily_completable_types
+        )
         
         if not active_challenges.exists():
             logger.warning(f"No active daily challenges available for user {user.username}")
@@ -219,6 +229,18 @@ class DailyChallengeService:
                         is_completed = DailyChallengeService._check_no_blockers(
                             daily_status_report,
                         )
+                    elif challenge_type == "detailed_reporter":
+                        is_completed = DailyChallengeService._check_detailed_reporter(
+                            daily_status_report,
+                        )
+                    elif challenge_type == "goal_achiever":
+                        is_completed = DailyChallengeService._check_goal_achiever(
+                            daily_status_report,
+                        )
+                    elif challenge_type == "detailed_planner":
+                        is_completed = DailyChallengeService._check_detailed_planner(
+                            daily_status_report,
+                        )
                     else:
                         logger.warning(
                             f"Unknown challenge type {challenge_type} for user {user.username}",
@@ -313,3 +335,40 @@ class DailyChallengeService:
 
         # Check for exact match with "no blockers" or "no_blockers"
         return blockers in ["no blockers", "no_blockers"]
+
+    @staticmethod
+    def _check_detailed_reporter(daily_status_report):
+        """
+        Check if user wrote at least 200 words in previous_work field.
+        This encourages detailed reporting of work done.
+        """
+        if not daily_status_report or not daily_status_report.previous_work:
+            return False
+
+        previous_work = daily_status_report.previous_work.strip()
+        word_count = len(previous_work.split())
+        return word_count >= 200
+
+    @staticmethod
+    def _check_goal_achiever(daily_status_report):
+        """
+        Check if user accomplished their goals from yesterday.
+        This encourages goal completion and accountability.
+        """
+        if not daily_status_report:
+            return False
+
+        return daily_status_report.goal_accomplished is True
+
+    @staticmethod
+    def _check_detailed_planner(daily_status_report):
+        """
+        Check if user wrote at least 200 words in next_plan field.
+        This encourages detailed planning for upcoming work.
+        """
+        if not daily_status_report or not daily_status_report.next_plan:
+            return False
+
+        next_plan = daily_status_report.next_plan.strip()
+        word_count = len(next_plan.split())
+        return word_count >= 200

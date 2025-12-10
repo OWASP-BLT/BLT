@@ -87,6 +87,12 @@
                                             <span class="text-xs text-gray-500 dark:text-gray-400 italic">Submit before 10 AM</span>
                                         {% elif user_challenge.challenge.challenge_type == "complete_all_fields" %}
                                             <span class="text-xs text-gray-500 dark:text-gray-400 italic">Fill all fields completely</span>
+                                        {% elif user_challenge.challenge.challenge_type == "detailed_reporter" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Write at least 200 words in "Previous Work"</span>
+                                        {% elif user_challenge.challenge.challenge_type == "goal_achiever" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Select "Yes" for goal accomplished</span>
+                                        {% elif user_challenge.challenge.challenge_type == "detailed_planner" %}
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">Write at least 200 words in "Next Plan"</span>
                                         {% endif %}
                                     </div>
                                 </div>

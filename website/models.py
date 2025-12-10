@@ -871,6 +871,9 @@ class DailyChallenge(models.Model):
         ("complete_all_fields", "Complete All Fields"),
         ("streak_milestone", "Streak Milestone"),
         ("no_blockers", "No Blockers"),
+        ("detailed_reporter", "Detailed Reporter"),
+        ("goal_achiever", "Goal Achiever"),
+        ("detailed_planner", "Detailed Planner"),
     ]
 
     challenge_type = models.CharField(
