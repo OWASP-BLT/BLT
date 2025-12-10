@@ -1293,37 +1293,27 @@ validation = ["swagger-spec-validator (>=2.1.0)"]
 
 [[package]]
 name = "faiss-cpu"
-version = "1.11.0"
+version = "1.13.1"
 description = "A library for efficient similarity search and clustering of dense vectors."
 optional = false
-python-versions = ">=3.9"
+python-versions = "<3.15,>=3.10"
 groups = ["main"]
 files = [
-    {file = "faiss_cpu-1.11.0-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:1995119152928c68096b0c1e5816e3ee5b1eebcf615b80370874523be009d0f6"},
-    {file = "faiss_cpu-1.11.0-cp310-cp310-macosx_14_0_x86_64.whl", hash = "sha256:788d7bf24293fdecc1b93f1414ca5cc62ebd5f2fecfcbb1d77f0e0530621c95d"},
-    {file = "faiss_cpu-1.11.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:73408d52429558f67889581c0c6d206eedcf6fabe308908f2bdcd28fd5e8be4a"},
-    {file = "faiss_cpu-1.11.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:1f53513682ca94c76472544fa5f071553e428a1453e0b9755c9673f68de45f12"},
-    {file = "faiss_cpu-1.11.0-cp310-cp310-win_amd64.whl", hash = "sha256:30489de0356d3afa0b492ca55da164d02453db2f7323c682b69334fde9e8d48e"},
-    {file = "faiss_cpu-1.11.0-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:a90d1c81d0ecf2157e1d2576c482d734d10760652a5b2fcfa269916611e41f1c"},
-    {file = "faiss_cpu-1.11.0-cp311-cp311-macosx_14_0_x86_64.whl", hash = "sha256:2c39a388b059fb82cd97fbaa7310c3580ced63bf285be531453bfffbe89ea3dd"},
-    {file = "faiss_cpu-1.11.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:a4e3433ffc7f9b8707a7963db04f8676a5756868d325644db2db9d67a618b7a0"},
-    {file = "faiss_cpu-1.11.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:926645f1b6829623bc88e93bc8ca872504d604718ada3262e505177939aaee0a"},
-    {file = "faiss_cpu-1.11.0-cp311-cp311-win_amd64.whl", hash = "sha256:931db6ed2197c03a7fdf833b057c13529afa2cec8a827aa081b7f0543e4e671b"},
-    {file = "faiss_cpu-1.11.0-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:356437b9a46f98c25831cdae70ca484bd6c05065af6256d87f6505005e9135b9"},
-    {file = "faiss_cpu-1.11.0-cp312-cp312-macosx_14_0_x86_64.whl", hash = "sha256:c4a3d35993e614847f3221c6931529c0bac637a00eff0d55293e1db5cb98c85f"},
-    {file = "faiss_cpu-1.11.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:8f9af33e0b8324e8199b93eb70ac4a951df02802a9dcff88e9afc183b11666f0"},
-    {file = "faiss_cpu-1.11.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:48b7e7876829e6bdf7333041800fa3c1753bb0c47e07662e3ef55aca86981430"},
-    {file = "faiss_cpu-1.11.0-cp312-cp312-win_amd64.whl", hash = "sha256:bdc199311266d2be9d299da52361cad981393327b2b8aa55af31a1b75eaaf522"},
-    {file = "faiss_cpu-1.11.0-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:0c98e5feff83b87348e44eac4d578d6f201780dae6f27f08a11d55536a20b3a8"},
-    {file = "faiss_cpu-1.11.0-cp313-cp313-macosx_14_0_x86_64.whl", hash = "sha256:796e90389427b1c1fb06abdb0427bb343b6350f80112a2e6090ac8f176ff7416"},
-    {file = "faiss_cpu-1.11.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:2b6e355dda72b3050991bc32031b558b8f83a2b3537a2b9e905a84f28585b47e"},
-    {file = "faiss_cpu-1.11.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:6c482d07194638c169b4422774366e7472877d09181ea86835e782e6304d4185"},
-    {file = "faiss_cpu-1.11.0-cp313-cp313-win_amd64.whl", hash = "sha256:13eac45299532b10e911bff1abbb19d1bf5211aa9e72afeade653c3f1e50e042"},
-    {file = "faiss_cpu-1.11.0-cp39-cp39-macosx_14_0_arm64.whl", hash = "sha256:4c029f2d21d50c1118e35457532e8a0a39f1a9fc1d864dd003e27576778bf2b5"},
-    {file = "faiss_cpu-1.11.0-cp39-cp39-macosx_14_0_x86_64.whl", hash = "sha256:d09d6b474c22caa0657f627be1b83d14d75ed0a29b6c06facfe9b7c9efa4ed38"},
-    {file = "faiss_cpu-1.11.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:72165263bbc3bf4026276b9df4227bb2871823b23af6546cd41a90bcd08d5f25"},
-    {file = "faiss_cpu-1.11.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:760a4f0ce612c5ddaf4862d32ec13d5b8e609c983d391d419ea5ea50d5557dd9"},
-    {file = "faiss_cpu-1.11.0-cp39-cp39-win_amd64.whl", hash = "sha256:a2ad3b2aadd490d15d2d19586679ad2f4e821c1a9597af8086ba543bef4d6e1f"},
+    {file = "faiss_cpu-1.13.1-cp310-abi3-macosx_14_0_arm64.whl", hash = "sha256:2967def7aa2da8efbf6a5da81138780aa17a9970ca666417cb632a00a593423d"},
+    {file = "faiss_cpu-1.13.1-cp310-abi3-macosx_14_0_x86_64.whl", hash = "sha256:30c179891656a988f5223e586c696432aacc5f4e763d85e165be30ef57ac2bbf"},
+    {file = "faiss_cpu-1.13.1-cp310-abi3-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ff5bdbf392081659e6b0f98f03b602bf08d1b5a790e28aa1185ae925decff6b2"},
+    {file = "faiss_cpu-1.13.1-cp310-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3de25edb0e69c1b95eeda923b2e23da01f472b2cc3f4817e63b25a56847d6ea7"},
+    {file = "faiss_cpu-1.13.1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:0b2f0e6cd30511b9fe320a2309389269269d3e363cc88c3a0380095a8c08ae27"},
+    {file = "faiss_cpu-1.13.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8ad542573ad05af6c508f4cf5268ba2aad06f0c8d4e780a0eeba7fe6fd274922"},
+    {file = "faiss_cpu-1.13.1-cp310-cp310-win_amd64.whl", hash = "sha256:30e9c129e0beb9da699982d9068322e3808e0d0faab4652cabf2c08900ab7892"},
+    {file = "faiss_cpu-1.13.1-cp311-cp311-win_amd64.whl", hash = "sha256:dbcf54daf14068b23c3d4116aa087eff6cf7cb43457c572318dfc2cbd944607a"},
+    {file = "faiss_cpu-1.13.1-cp311-cp311-win_arm64.whl", hash = "sha256:9860949a70d1b25ff11ac9600aeda796db6710bf667b1f5508b44a63e6170b30"},
+    {file = "faiss_cpu-1.13.1-cp312-cp312-win_amd64.whl", hash = "sha256:0fece5b63e8d014f8db4abfe0b4c9a82e6508e64f450fce700e5cb4b47041f1a"},
+    {file = "faiss_cpu-1.13.1-cp312-cp312-win_arm64.whl", hash = "sha256:168986e3f152a7568257c5ac50f3cf1a1aaa34fb41e1ba7259799bcb8ffe687f"},
+    {file = "faiss_cpu-1.13.1-cp313-cp313-win_amd64.whl", hash = "sha256:5f71c8840794c39c1e1cdd92c2ef4d3f77b3e650f614f296e31c2545ad2bab51"},
+    {file = "faiss_cpu-1.13.1-cp313-cp313-win_arm64.whl", hash = "sha256:24cb2d6ce2459c94e15a6cecfed15ff8d9f997aed7bae4037c0f045022030cb3"},
+    {file = "faiss_cpu-1.13.1-cp314-cp314-win_amd64.whl", hash = "sha256:5195ab9149c563cafe4da8ab4cc0b84b177cbb1f8aa897a8c199e11ef4f37e16"},
+    {file = "faiss_cpu-1.13.1-cp314-cp314-win_arm64.whl", hash = "sha256:ffc58173e24026ee4dc08c50dd3506ad553d4b2103892500b0d4ae9344027d57"},
 ]
 
 [package.dependencies]
@@ -4120,4 +4110,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "62d9654f892105026cba5d899decc58e5dc8d0e378e95dddee762d6738658451"
+content-hash = "b1b02660d78dfeed2d70f9592da45ca43f45844e545743ebc68be1a1b4b54c01"
