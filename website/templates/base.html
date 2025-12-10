@@ -409,6 +409,14 @@
                         .catch(error => {
                             // Show error inline instead of alert
                             console.error('Error submitting check-in:', error);
+                            // Display user-facing error notification
+                            if (typeof window.createMessage === 'function') {
+                                window.createMessage(
+                                    'Failed to submit check-in: ' + (error.message || 'Unknown error'),
+                                    'error',
+                                    8000
+                                );
+                            }
                         })
                         .finally(() => {
                             // Re-enable the submit button and reset its text

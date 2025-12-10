@@ -599,6 +599,66 @@
                     submitButton.disabled = true;
                     submitButton.textContent = 'Submitting...';
                     
+                    // Helper function to escape HTML to prevent XSS
+                    function escapeHtml(text) {
+                        const div = document.createElement('div');
+                        div.textContent = text;
+                        return div.innerHTML;
+                    }
+                    
+                    // Helper function to create a challenge item element
+                    function createChallengeItem(challenge) {
+                        const item = document.createElement('div');
+                        item.className = 'flex items-center justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded';
+                        
+                        const titleSpan = document.createElement('span');
+                        titleSpan.className = 'text-sm font-medium text-green-800 dark:text-green-200';
+                        titleSpan.textContent = challenge.title;
+                        
+                        const pointsSpan = document.createElement('span');
+                        pointsSpan.className = 'text-sm font-bold text-green-600 dark:text-green-400';
+                        pointsSpan.textContent = '+' + challenge.points + ' points';
+                        
+                        item.appendChild(titleSpan);
+                        item.appendChild(pointsSpan);
+                        
+                        return item;
+                    }
+                    
+                    // Helper function to create a completed challenge item element
+                    function createCompletedChallengeItem(challenge) {
+                        const item = document.createElement('div');
+                        item.className = 'flex items-start p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-800';
+                        
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'flex-1';
+                        
+                        const titleH4 = document.createElement('h4');
+                        titleH4.className = 'font-medium text-gray-900 dark:text-gray-200';
+                        titleH4.textContent = '✅ ' + challenge.title;
+                        
+                        const descP = document.createElement('p');
+                        descP.className = 'text-sm text-gray-600 dark:text-gray-400 mt-1';
+                        descP.textContent = challenge.description;
+                        
+                        contentDiv.appendChild(titleH4);
+                        contentDiv.appendChild(descP);
+                        
+                        const pointsDiv = document.createElement('div');
+                        pointsDiv.className = 'ml-4';
+                        
+                        const pointsSpan = document.createElement('span');
+                        pointsSpan.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+                        pointsSpan.textContent = '+' + challenge.points + ' points';
+                        
+                        pointsDiv.appendChild(pointsSpan);
+                        
+                        item.appendChild(contentDiv);
+                        item.appendChild(pointsDiv);
+                        
+                        return item;
+                    }
+                    
                     try {
                         const response = await fetch(checkInForm.action, {
                             method: 'POST',
@@ -619,30 +679,41 @@
                             if (data.completed_challenges && data.completed_challenges.length > 0) {
                                 successTitle.textContent = `🎉 Great job! You completed ${data.completed_challenges.length} challenge(s)!`;
                                 
-                                let challengesHtml = '<div class="mt-2 space-y-1">';
+                                // Clear existing content
+                                challengesCompleted.textContent = '';
+                                
+                                const containerDiv = document.createElement('div');
+                                containerDiv.className = 'mt-2 space-y-1';
+                                
                                 data.completed_challenges.forEach(challenge => {
-                                    challengesHtml += `
-                                        <div class="flex items-center justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
-                                            <span class="text-sm font-medium text-green-800 dark:text-green-200">${challenge.title}</span>
-                                            <span class="text-sm font-bold text-green-600 dark:text-green-400">+${challenge.points} points</span>
-                                        </div>
-                                    `;
+                                    containerDiv.appendChild(createChallengeItem(challenge));
                                 });
+                                
                                 if (data.total_points > 0) {
-                                    challengesHtml += `
-                                        <div class="mt-2 pt-2 border-t border-green-200 dark:border-green-700">
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-sm font-semibold text-green-800 dark:text-green-200">Total Points Awarded:</span>
-                                                <span class="text-lg font-bold text-green-600 dark:text-green-400">+${data.total_points} points</span>
-                                            </div>
-                                        </div>
-                                    `;
+                                    const totalDiv = document.createElement('div');
+                                    totalDiv.className = 'mt-2 pt-2 border-t border-green-200 dark:border-green-700';
+                                    
+                                    const totalInnerDiv = document.createElement('div');
+                                    totalInnerDiv.className = 'flex items-center justify-between';
+                                    
+                                    const totalLabel = document.createElement('span');
+                                    totalLabel.className = 'text-sm font-semibold text-green-800 dark:text-green-200';
+                                    totalLabel.textContent = 'Total Points Awarded:';
+                                    
+                                    const totalPoints = document.createElement('span');
+                                    totalPoints.className = 'text-lg font-bold text-green-600 dark:text-green-400';
+                                    totalPoints.textContent = '+' + data.total_points + ' points';
+                                    
+                                    totalInnerDiv.appendChild(totalLabel);
+                                    totalInnerDiv.appendChild(totalPoints);
+                                    totalDiv.appendChild(totalInnerDiv);
+                                    containerDiv.appendChild(totalDiv);
                                 }
-                                challengesHtml += '</div>';
-                                challengesCompleted.innerHTML = challengesHtml;
+                                
+                                challengesCompleted.appendChild(containerDiv);
                             } else {
                                 successTitle.textContent = '✅ Check-in submitted successfully!';
-                                challengesCompleted.innerHTML = '';
+                                challengesCompleted.textContent = '';
                             }
                             
                             // Show success message with smooth animation
@@ -654,23 +725,13 @@
                                 const completedSection = document.getElementById('completed-challenges-section');
                                 const completedList = document.getElementById('completed-challenges-list');
                                 
-                                let completedHtml = '';
+                                // Clear existing content
+                                completedList.textContent = '';
+                                
                                 data.completed_challenges.forEach(challenge => {
-                                    completedHtml += `
-                                        <div class="flex items-start p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-800">
-                                            <div class="flex-1">
-                                                <h4 class="font-medium text-gray-900 dark:text-gray-200">✅ ${challenge.title}</h4>
-                                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${challenge.description}</p>
-                                            </div>
-                                            <div class="ml-4">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                                                    +${challenge.points} points
-                                                </span>
-                                            </div>
-                                        </div>
-                                    `;
+                                    completedList.appendChild(createCompletedChallengeItem(challenge));
                                 });
-                                completedList.innerHTML = completedHtml;
+                                
                                 completedSection.classList.remove('hidden');
                             }
                             
@@ -695,11 +756,12 @@
                             successTitle.classList.remove('text-green-800', 'dark:text-green-200');
                             successTitle.classList.add('text-red-800', 'dark:text-red-200');
                             
-                            challengesCompleted.innerHTML = `
-                                <p class="text-sm text-red-700 dark:text-red-300">
-                                    ${data.message || 'An error occurred. Please try again.'}
-                                </p>
-                            `;
+                            // Clear existing content and create error message using DOM methods
+                            challengesCompleted.textContent = '';
+                            const errorP = document.createElement('p');
+                            errorP.className = 'text-sm text-red-700 dark:text-red-300';
+                            errorP.textContent = data.message || 'An error occurred. Please try again.';
+                            challengesCompleted.appendChild(errorP);
                             
                             successMessage.classList.remove('hidden');
                             successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -718,11 +780,25 @@
                         successTitle.classList.remove('text-green-800', 'dark:text-green-200');
                         successTitle.classList.add('text-red-800', 'dark:text-red-200');
                         
-                        challengesCompleted.innerHTML = `
-                            <p class="text-sm text-red-700 dark:text-red-300">
-                                An error occurred. Please try again.
-                            </p>
-                        `;
+                        // Clear existing content and create error message using DOM methods
+                        challengesCompleted.textContent = '';
+                        const errorP = document.createElement('p');
+                        errorP.className = 'text-sm text-red-700 dark:text-red-300';
+                        errorP.textContent = 'An error occurred. Please try again.';
+                        challengesCompleted.appendChild(errorP);
+                        
+                        // Also show error via createMessage if available
+                        if (typeof window.createMessage === 'function') {
+                            window.createMessage(
+                                'Failed to submit check-in: ' + (error.message || 'Unknown error'),
+                                'error',
+                                8000
+                            );
+                        }
+                        
+                        // Re-enable submit button for retry
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText;
                         
                         successMessage.classList.remove('hidden');
                         successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
