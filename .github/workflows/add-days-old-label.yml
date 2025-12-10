@@ -9,7 +9,6 @@ on:
   workflow_dispatch: # Allow manual triggering for testing
 
 permissions:
-  contents: read
   pull-requests: write
   issues: write
 
@@ -39,6 +38,29 @@ jobs:
             // Calculate days since last activity and add labels
             const now = Date.now();
             const oneDayMs = 24 * 60 * 60 * 1000;
+            
+            // Regex pattern to match existing days-old labels (compile once)
+            const daysOldRegex = /^days-old:/i;
+            
+            // Function to ensure label exists (define once, outside loop)
+            async function ensureLabelExists(labelName, labelColor, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`  Created label: ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
             
             // Process each item
             for (const item of allItems) {
@@ -81,7 +103,6 @@ jobs:
               const currentNames = new Set(current.map(l => l.name));
               
               // Remove any existing days-old labels
-              const daysOldRegex = /^days-old:/i;
               for (const name of currentNames) {
                 if (daysOldRegex.test(name) && name !== newLabel) {
                   try {
@@ -99,26 +120,7 @@ jobs:
               }
               
               // Ensure the new label exists (create if missing)
-              async function ensureLabelExists(labelName) {
-                try {
-                  await github.rest.issues.getLabel({ owner, repo, name: labelName });
-                } catch (e) {
-                  if (e.status === 404) {
-                    await github.rest.issues.createLabel({
-                      owner,
-                      repo,
-                      name: labelName,
-                      color: labelColor,
-                      description: description,
-                    });
-                    core.info(`  Created label: ${labelName}`);
-                  } else {
-                    throw e;
-                  }
-                }
-              }
-              
-              await ensureLabelExists(newLabel);
+              await ensureLabelExists(newLabel, labelColor, description);
               
               // Add the label if it isn't already present
               if (!currentNames.has(newLabel)) {
