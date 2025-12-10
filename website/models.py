@@ -2019,6 +2019,7 @@ class SlackBotActivity(models.Model):
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
     user_id = models.CharField(max_length=20, null=True, blank=True)
+    username = models.CharField(max_length=255, null=True, blank=True)
     details = models.JSONField(default=dict)  # Stores flexible activity-specific data
     success = models.BooleanField(default=True)
     error_message = models.TextField(null=True, blank=True)
