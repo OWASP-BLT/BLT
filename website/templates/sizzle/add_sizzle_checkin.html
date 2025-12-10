@@ -131,13 +131,43 @@
                     </div>
                 </div>
             {% endif %}
-            <div class="flex justify-center">
-                <form id="checkInForm"
-                      method="post"
-                      action="{% url 'sizzle_daily_log' %}"
-                      class="w-full max-w-5xl bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 space-y-8"
-                      {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
-                    {% csrf_token %}
+            {% if today_checkin %}
+                <!-- Already submitted message -->
+                <div class="flex justify-center">
+                    <div class="w-full max-w-5xl bg-gradient-to-r from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-xl p-8 shadow-lg">
+                        <div class="flex items-center justify-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <svg class="w-12 h-12 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-2xl font-bold text-green-900 dark:text-green-200 mb-2">Check-in Already Submitted!</h3>
+                                <p class="text-lg text-green-800 dark:text-green-300 mb-4">
+                                    You've already submitted your check-in for today.
+                                </p>
+                                {% if next_challenge_at %}
+                                    <p class="text-sm text-green-700 dark:text-green-400">
+                                        Your next challenge will be available in: <span id="countdown-timer-inline" class="font-bold" data-next-challenge="{{ next_challenge_at|date:'c' }}">--:--:--</span>
+                                    </p>
+                                {% else %}
+                                    <p class="text-sm text-green-700 dark:text-green-400">
+                                        Your next challenge will be available 24 hours after your last submission.
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Check-in form (only shown if not submitted today) -->
+                <div class="flex justify-center">
+                    <form id="checkInForm"
+                          method="post"
+                          action="{% url 'sizzle_daily_log' %}"
+                          class="w-full max-w-5xl bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8 space-y-8"
+                          {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
+                        {% csrf_token %}
                     <!-- Section 1: Previous Work -->
                     <div class="form-group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                         <div class="flex items-center mb-4">
@@ -408,6 +438,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
             <!-- Check-ins Summary Table -->
             <div class="mt-12">
                 <div class="flex items-center justify-between mb-6">
@@ -486,15 +517,23 @@
     <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script>
-        // Countdown timer for next challenge
+        // Countdown timer for next challenge (handles both timer locations)
         function updateCountdown() {
-            const timerElement = document.getElementById('countdown-timer');
-            if (!timerElement) return;
+            // Get both timer elements (main timer and inline timer in "already submitted" message)
+            const mainTimer = document.getElementById('countdown-timer');
+            const inlineTimer = document.getElementById('countdown-timer-inline');
+            const timerElements = [mainTimer, inlineTimer].filter(el => el !== null);
             
-            const nextChallengeStr = timerElement.getAttribute('data-next-challenge');
+            if (timerElements.length === 0) return;
+            
+            // Use the first timer element to get the data attribute
+            const firstTimer = timerElements[0];
+            const nextChallengeStr = firstTimer.getAttribute('data-next-challenge');
             if (!nextChallengeStr || nextChallengeStr.trim() === '') {
-                timerElement.textContent = 'Available now!';
-                timerElement.classList.add('text-green-600', 'dark:text-green-400');
+                timerElements.forEach(el => {
+                    el.textContent = 'Available now!';
+                    el.classList.add('text-green-600', 'dark:text-green-400');
+                });
                 return;
             }
             
@@ -503,9 +542,11 @@
             const diff = nextChallengeTime - now;
             
             if (diff <= 0) {
-                timerElement.textContent = 'Available now!';
-                timerElement.classList.add('text-green-600', 'dark:text-green-400');
-                timerElement.classList.remove('text-red-800', 'dark:text-red-200');
+                timerElements.forEach(el => {
+                    el.textContent = 'Available now!';
+                    el.classList.add('text-green-600', 'dark:text-green-400');
+                    el.classList.remove('text-red-800', 'dark:text-red-200');
+                });
                 return;
             }
             
@@ -513,13 +554,16 @@
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             
-            timerElement.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            timerElement.classList.remove('text-green-600', 'dark:text-green-400');
-            timerElement.classList.add('text-red-800', 'dark:text-red-200');
+            const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            timerElements.forEach(el => {
+                el.textContent = timeString;
+                el.classList.remove('text-green-600', 'dark:text-green-400');
+                el.classList.add('text-red-800', 'dark:text-red-200');
+            });
         }
         
-        // Update countdown every second
-        if (document.getElementById('countdown-timer')) {
+        // Update countdown every second (for both timer locations)
+        if (document.getElementById('countdown-timer') || document.getElementById('countdown-timer-inline')) {
             updateCountdown();
             setInterval(updateCountdown, 1000);
         }

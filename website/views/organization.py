@@ -2269,6 +2269,10 @@ def add_sizzle_checkIN(request):
         yesterday = now().date() - timedelta(days=1)
         yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+        # Check if user already submitted check-in today
+        today = now().date()
+        today_checkin = DailyStatusReport.objects.filter(user=request.user, date=today).first()
+
         # Fetch the last check-in (most recent) for the user only if no yesterday report
         last_checkin = None
         if not yesterday_report:
@@ -2332,6 +2336,7 @@ def add_sizzle_checkIN(request):
                 "active_challenges": active_challenges,
                 "completed_challenges_today": completed_challenges_today,
                 "next_challenge_at": next_challenge_at,
+                "today_checkin": today_checkin,
             },
         )
     except Exception as e:
