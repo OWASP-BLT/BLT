@@ -269,6 +269,121 @@ def resolve(request, id):
         return HttpResponseForbidden("not logged in or superuser or issue user")
 
 
+@login_required(login_url="/accounts/login")
+@csrf_exempt
+def report_issue(request, id):
+    """Allow users to report suspicious issues"""
+    issue = get_object_or_404(Issue, id=id)
+
+    # Prevent users from reporting their own issues
+    if request.user == issue.user:
+        return JsonResponse({"status": "error", "message": "You cannot report your own issue"}, status=400)
+
+    if request.method == "POST":
+        from website.models import IssueReport
+
+        # Check if user already reported this issue
+        existing_report = IssueReport.objects.filter(reporter=request.user, reported_issue=issue).first()
+        if existing_report:
+            return JsonResponse({"status": "error", "message": "You have already reported this issue"}, status=400)
+
+        reason = request.POST.get("reason", "other")
+        description = request.POST.get("description", "")
+
+        if not description.strip():
+            return JsonResponse({"status": "error", "message": "Please provide a description"}, status=400)
+
+        # Create the report
+        report = IssueReport.objects.create(
+            reporter=request.user, reported_issue=issue, reason=reason, description=description
+        )
+
+        return JsonResponse({"status": "success", "message": "Issue reported successfully. Admins will review it."})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@login_required(login_url="/accounts/login")
+def view_issue_reports(request):
+    """Admin view to see all issue reports"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Permission denied")
+
+    from website.models import IssueReport
+
+    reports = IssueReport.objects.select_related("reporter", "reported_issue", "reviewed_by").all()
+
+    context = {
+        "reports": reports,
+        "pending_count": reports.filter(status="pending").count(),
+    }
+
+    return render(request, "admin/issue_reports.html", context)
+
+
+@login_required(login_url="/accounts/login")
+@csrf_exempt
+def update_report_status(request, report_id):
+    """Admin endpoint to update report status"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Permission denied")
+
+    from website.models import IssueReport
+
+    report = get_object_or_404(IssueReport, id=report_id)
+
+    if request.method == "POST":
+        status = request.POST.get("status")
+        admin_notes = request.POST.get("admin_notes", "")
+
+        if status in dict(IssueReport.STATUS_CHOICES):
+            report.status = status
+            report.admin_notes = admin_notes
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.save()
+
+            return JsonResponse({"status": "success", "message": "Report updated successfully"})
+
+        return JsonResponse({"status": "error", "message": "Invalid status"}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+def get_issue_reports_count(issue):
+    """Helper function to get report count for an issue"""
+    from website.models import IssueReport
+
+    return IssueReport.objects.filter(reported_issue=issue).count()
+
+
+def get_issue_pending_reports_count(issue):
+    """Helper function to get pending report count for an issue"""
+    from website.models import IssueReport
+
+    return IssueReport.objects.filter(reported_issue=issue, status="pending").count()
+
+
+@login_required(login_url="/accounts/login")
+def view_issue_specific_reports(request, issue_id):
+    """View reports for a specific issue"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Permission denied")
+
+    from website.models import IssueReport
+
+    issue = get_object_or_404(Issue, id=issue_id)
+    reports = IssueReport.objects.filter(reported_issue=issue).select_related("reporter", "reviewed_by")
+
+    context = {
+        "issue": issue,
+        "reports": reports,
+        "pending_count": reports.filter(status="pending").count(),
+    }
+
+    return render(request, "admin/issue_specific_reports.html", context)
+
+
 def UpdateIssue(request):
     if not request.POST.get("issue_pk"):
         return HttpResponse("Missing issue ID")
@@ -1768,6 +1883,11 @@ class IssueView(DetailView):
             context["users_score"] = (
                 list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
             )
+
+        # Add report counts for admins
+        if self.request.user.is_authenticated and (self.request.user.is_superuser or self.request.user.is_staff):
+            context["reports_count"] = get_issue_reports_count(self.object)
+            context["pending_reports_count"] = get_issue_pending_reports_count(self.object)
 
         return context
 
