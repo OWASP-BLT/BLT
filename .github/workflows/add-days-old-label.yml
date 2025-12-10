@@ -39,6 +39,12 @@ jobs:
             const now = Date.now();
             const oneDayMs = 24 * 60 * 60 * 1000;
             
+            // Color scheme constants for different age ranges
+            const COLOR_FRESH = '0e8a16';      // Green (0-2 days)
+            const COLOR_GETTING_OLD = 'fbca04'; // Yellow (3-7 days)
+            const COLOR_NEEDS_ATTENTION = 'ff9800'; // Orange (8-14 days)
+            const COLOR_STALE = 'e74c3c';      // Red (15+ days) - project's brand color
+            
             // Regex pattern to match existing days-old labels (compile once)
             const daysOldRegex = /^days-old:/i;
             
@@ -80,16 +86,16 @@ jobs:
               let labelColor;
               let description;
               if (daysSinceActivity <= 2) {
-                labelColor = '0e8a16'; // Green - fresh
+                labelColor = COLOR_FRESH;
                 description = `${itemType} last updated ${daysSinceActivity} day${daysSinceActivity === 1 ? '' : 's'} ago`;
               } else if (daysSinceActivity <= 7) {
-                labelColor = 'fbca04'; // Yellow - getting old
+                labelColor = COLOR_GETTING_OLD;
                 description = `${itemType} last updated ${daysSinceActivity} days ago`;
               } else if (daysSinceActivity <= 14) {
-                labelColor = 'ff9800'; // Orange - needs attention
+                labelColor = COLOR_NEEDS_ATTENTION;
                 description = `${itemType} last updated ${daysSinceActivity} days ago`;
               } else {
-                labelColor = 'e74c3c'; // Red (project's preferred red color) - stale
+                labelColor = COLOR_STALE;
                 description = `${itemType} last updated ${daysSinceActivity} days ago`;
               }
               
@@ -102,9 +108,15 @@ jobs:
               });
               const currentNames = new Set(current.map(l => l.name));
               
-              // Remove any existing days-old labels
+              // Check if the correct label is already present
+              if (currentNames.has(newLabel)) {
+                core.info(`  Label ${newLabel} already present - no action needed`);
+                continue;
+              }
+              
+              // Remove any existing days-old labels (since we need to update)
               for (const name of currentNames) {
-                if (daysOldRegex.test(name) && name !== newLabel) {
+                if (daysOldRegex.test(name)) {
                   try {
                     await github.rest.issues.removeLabel({ 
                       owner, 
@@ -122,18 +134,14 @@ jobs:
               // Ensure the new label exists (create if missing)
               await ensureLabelExists(newLabel, labelColor, description);
               
-              // Add the label if it isn't already present
-              if (!currentNames.has(newLabel)) {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: itemNumber, 
-                  labels: [newLabel] 
-                });
-                core.info(`  Applied label: ${newLabel}`);
-              } else {
-                core.info(`  Label ${newLabel} already present`);
-              }
+              // Add the new label
+              await github.rest.issues.addLabels({ 
+                owner, 
+                repo, 
+                issue_number: itemNumber, 
+                labels: [newLabel] 
+              });
+              core.info(`  Applied label: ${newLabel}`);
             }
             
             core.info(`\n✅ Finished processing ${allItems.length} items`);
