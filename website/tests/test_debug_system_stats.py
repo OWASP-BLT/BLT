@@ -335,6 +335,9 @@ class DebugPanelAPITest(TestCase):
         # Verify management commands were called
         calls = [call[0][0] for call in mock_call_command.call_args_list]
         self.assertIn("check_owasp_projects", calls)
+        self.assertIn("update_github_issues", calls)
+        self.assertIn("fetch_pr_reviews", calls)
+        self.assertIn("update_contributor_stats", calls)
 
     @override_settings(DEBUG=True)
     def test_sync_github_data_requires_authentication(self):

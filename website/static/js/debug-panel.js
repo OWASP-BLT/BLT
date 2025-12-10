@@ -35,7 +35,7 @@ const DebugPanel = {
       },
       (error) => {
         this.showStatus(
-          `✗ Authentication failed: ${error}. Please ensure you're logged in as a superuser.`,
+          `✗ Authentication failed: ${error}. Please ensure you're logged in.`,
           "error"
         );
       }
@@ -89,7 +89,7 @@ const DebugPanel = {
       (data) => {
         if (data.success && data.data) {
           const stats = data.data;
-        
+
           const memoryEl = document.querySelector('[data-stat="memory"]');
           if (memoryEl && stats.memory) {
             const memValue =
@@ -100,8 +100,8 @@ const DebugPanel = {
           }
 
           const cpuEl = document.querySelector('[data-stat="cpu"]');
-          if (cpuEl && stats.cpu.percent !== undefined) {
-            cpuEl.textContent = `${stats.cpu.percent}%`;
+          if (cpuEl && stats.cpu && stats.cpu.percent !== undefined) {
+            cpuEl.textContent = stats.cpu.percent;
           }
 
           const pythonEl = document.querySelector(
@@ -263,7 +263,7 @@ Memory: ${
               : stats.memory || "N/A"
           }
 Disk: ${stats.disk?.used || "N/A"} / ${stats.disk?.total || "N/A"}
-CPU: ${stats.cpu?.percent || "N/A"}%
+CPU: ${stats.cpu?.percent || "N/A"}
 DB Connections: ${stats.database?.connections || "N/A"}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
@@ -341,7 +341,10 @@ DB Connections: ${stats.database?.connections || "N/A"}
     statusContainer.classList.remove("hidden");
     const timestamp = new Date().toLocaleTimeString();
     const colorClass = this.getStatusColor(type);
-    statusContent.innerHTML += `<div class="text-${colorClass} mb-2">[${timestamp}] ${message}</div>`;
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `text-${colorClass} mb-2`;
+    messageDiv.textContent = `[${timestamp}] ${message}`;
+    statusContent.appendChild(messageDiv);
     statusContent.scrollTop = statusContent.scrollHeight;
   },
 
@@ -403,10 +406,10 @@ DB Connections: ${stats.database?.connections || "N/A"}
 
           if (response.status === 401) {
             errorMessage =
-              "401 Unauthorized. Please ensure you're logged in as a superuser.";
+              "401 Unauthorized. Please ensure you're logged in.";
           } else if (response.status === 403) {
             errorMessage =
-              "403 Forbidden. You need superuser permissions or debug endpoints are restricted.";
+              "403 Forbidden. Debug endpoints may be restricted to local development.";
           } else if (response.status === 404) {
             errorMessage = "404 Not Found. Debug API endpoint not found.";
           }

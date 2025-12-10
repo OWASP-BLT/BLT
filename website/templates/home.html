@@ -19,7 +19,6 @@
     {% if debug_mode %}
         <!-- Local Mode Panel -->
         <div id="dev-panel"
-             {% if user.is_authenticated and user.auth_token %}data-api-token="{{ user.auth_token.key }}"{% endif %}
              class="bg-gray-900 dark:bg-gray-50 text-white p-4 mb-4 rounded-lg shadow-lg max-w-7xl mx-auto mt-4">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center">

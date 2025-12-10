@@ -3,6 +3,7 @@ import logging
 import os
 import smtplib
 import sys
+import threading
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -1593,6 +1594,46 @@ def _is_local_host(host: str, db_name: str | None = None) -> bool:
     )
 
 
+# Helper function to run GitHub sync commands in a background thread (for debug endpoint)
+def _run_github_sync_commands_in_background():
+    """
+    Run GitHub sync management commands in a background thread.
+
+    This is used by the debug-only sync endpoint to avoid blocking the request thread
+    with potentially long-running operations. It is intentionally best-effort and does
+    not expose task tracking to the client.
+    """
+    from io import StringIO
+
+    status_messages = []
+
+    try:
+        call_command("check_owasp_projects", stdout=StringIO())
+        status_messages.append("✓ Synced OWASP projects")
+    except Exception as e:
+        logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
+
+    try:
+        call_command("update_github_issues", stdout=StringIO())
+        status_messages.append("✓ Updated GitHub issues")
+    except Exception as e:
+        logger.error("Error running update_github_issues: %s", e, exc_info=True)
+
+    try:
+        call_command("fetch_pr_reviews", stdout=StringIO())
+        status_messages.append("✓ Fetched PR reviews")
+    except Exception as e:
+        logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
+
+    try:
+        call_command("update_contributor_stats", stdout=StringIO())
+        status_messages.append("✓ Updated contributor stats")
+    except Exception as e:
+        logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
+
+    logger.info("Background GitHub sync completed with messages: %s", status_messages)
+
+
 def debug_required(func):
     """
     Decorator to ensure endpoint only works in DEBUG mode and local environment.
@@ -1678,10 +1719,21 @@ class DebugSystemStatsApiView(APIView):
                 logger.warning("Could not fetch disk stats: %s", disk_error)
 
             try:
-                cpu = psutil.cpu_percent(interval=1)
+                cpu = psutil.cpu_percent(interval=0)
                 cpu_stats = {"percent": f"{cpu}%"}
             except Exception as cpu_error:
                 logger.warning("Could not fetch CPU stats: %s", cpu_error)
+
+            # Get active DB connections (PostgreSQL only)
+            active_connections = "N/A"
+            try:
+                if connection.vendor == "postgresql":
+                    with connection.cursor() as cursor:
+                        # Count active connections for the current database
+                        cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database();")
+                        active_connections = cursor.fetchone()[0]
+            except Exception as conn_error:
+                logger.warning("Could not fetch active DB connections: %s", conn_error)
 
             return Response(
                 {
@@ -1693,12 +1745,14 @@ class DebugSystemStatsApiView(APIView):
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
                             "name": db_name,
                             "version": db_version,
+                            # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
                             "user_count": User.objects.count(),
                             "issue_count": Issue.objects.count(),
                             "org_count": Organization.objects.count(),
                             "domain_count": Domain.objects.count(),
                             "repo_count": Repo.objects.count(),
-                            "connections": connection.queries.__len__(),
+                            # Active DB connections for this PostgreSQL database (not per-request queries)
+                            "connections": active_connections,
                         },
                         "memory": memory_stats,
                         "disk": disk_stats,
@@ -1829,28 +1883,21 @@ class DebugSyncGithubDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            from io import StringIO
+            # Run long-running sync commands in a background thread to avoid blocking the request.
+            # This endpoint is debug-only (guarded by @debug_required) and is intended for local use.
+            thread = threading.Thread(
+                target=_run_github_sync_commands_in_background,
+                name="debug-github-sync",
+                daemon=True,
+            )
+            thread.start()
 
-            status_messages = []
-
-            # Sync OWASP projects
-            call_command("check_owasp_projects", stdout=StringIO())
-            status_messages.append("✓ Synced OWASP projects")
-
-            # Update GitHub issues
-            call_command("update_github_issues", stdout=StringIO())
-            status_messages.append("✓ Updated GitHub issues")
-
-            # Fetch PR reviews
-            call_command("fetch_pr_reviews", stdout=StringIO())
-            status_messages.append("✓ Fetched PR reviews")
-
-            # Update contributor stats
-            call_command("update_contributor_stats", stdout=StringIO())
-            status_messages.append("✓ Updated contributor stats")
-
-            return Response({"success": True, "message": "GitHub data synced successfully", "details": status_messages})
-
+            return Response(
+                {
+                    "success": True,
+                    "message": "GitHub data sync started in background",
+                }
+            )
         except Exception as e:
             logger.error("Error syncing GitHub data: %s", e, exc_info=True)
             return Response(
