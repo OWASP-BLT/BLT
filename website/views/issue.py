@@ -468,12 +468,30 @@ def search_issues(request, template="search.html"):
         }
 
     if stype == "label" or stype is None:
+        label_values = []
+        q_lower = query.lower()
+
+        # Allow numeric label ID
+        if query.isdigit():
+            label_values.append(int(query))
+
+        # Match against label display names
+        for value, name in Issue._meta.get_field("label").choices:
+            if q_lower in str(name).lower():
+                label_values.append(value)
+
+        issues_base_qs = (
+            Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+        )
+        if request.user.is_anonymous:
+            issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+        else:
+            issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues_qs,
         }
 
     if request.user.is_authenticated:
