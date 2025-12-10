@@ -966,28 +966,31 @@ class UserDailyChallenge(models.Model):
     def mark_completed(self):
         """
         Mark challenge as completed and award points.
-        Uses transaction to ensure atomicity.
+        Uses transaction with row-level lock to prevent duplicate point awards.
         """
         if self.status == "completed":
             return False
 
         try:
             with transaction.atomic():
-                self.refresh_from_db()
-                if self.status == "completed":
+                # Acquire row-level lock to prevent concurrent updates
+                locked_instance = UserDailyChallenge.objects.select_for_update().get(pk=self.pk)
+                if locked_instance.status == "completed":
                     return False
 
-                self.status = "completed"
-                self.completed_at = timezone.now()
-                self.points_awarded = self.challenge.points_reward
-                self.save()
+                locked_instance.status = "completed"
+                locked_instance.completed_at = timezone.now()
+                locked_instance.points_awarded = locked_instance.challenge.points_reward
+                locked_instance.save()
 
                 Points.objects.create(
-                    user=self.user,
-                    score=self.challenge.points_reward,
-                    reason=f"Completed daily challenge: {self.challenge.title}",
+                    user=locked_instance.user,
+                    score=locked_instance.challenge.points_reward,
+                    reason=f"Completed daily challenge: {locked_instance.challenge.title}",
                 )
 
+                # Update self to reflect the changes
+                self.refresh_from_db()
                 return True
         except Exception as e:
             logger.error(
