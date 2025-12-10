@@ -17,7 +17,7 @@ from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
@@ -46,10 +46,10 @@ from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.views.decorators.throttle import throttle
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
+from django_ratelimit.decorators import ratelimit
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
@@ -77,6 +77,7 @@ from website.models import (
     Wallet,
 )
 from website.utils import (
+    admin_required,
     get_client_ip,
     get_email_from_domain,
     get_page_votes,
@@ -2544,8 +2545,10 @@ class GsocView(View):
         return render(request, "gsoc.html", {"projects": sorted_project_data})
 
 
-@staff_member_required
-@throttle(rate="5/hour")
+@login_required
+@user_passes_test(admin_required)
+@require_http_methods(["POST"])
+@ratelimit(key="user", rate="5/h", method="POST")
 def refresh_gsoc_project(request):
     """
     View to handle refreshing PRs for a specific GSoC project.
