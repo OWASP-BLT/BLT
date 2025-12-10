@@ -196,7 +196,7 @@
             .then(data => {
                 captchaContainer.innerHTML = `
                     <input type="hidden" name="captcha_0" value="${data.key}">
-                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 dark:border-gray-600 rounded">
+                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 dark:border-gray-600 rounded" loading="lazy">
                 `;
             })
             .catch(error => console.error('Error:', error));

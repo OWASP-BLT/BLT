@@ -568,9 +568,9 @@
         <div class="w-[20vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
         <div class="inline-block relative h-[200px] w-[200px]">
             {% if user.userprofile.avatar %}
-                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover" alt="avatar" width="200" height="200">
+                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover" alt="avatar" width="200" height="200" loading="lazy">
             {% else %}
-                <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover" alt="avatar" width="200" height="200">
+                <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover" alt="avatar" width="200" height="200" loading="lazy">
             {% endif %}
             {% if request.user == user %}
                 <button class="upload-btn right-[5px] bg-gray absolute bottom-[20px]">Edit Profile Pic</button>
@@ -738,7 +738,7 @@
                                 <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
                                     <div class="flex items-center">
                                         <a href="{% url 'domain' slug=activity.domain_name %}">
-                                            <img src="https://www.{{ activity.domain_name }}/favicon.ico" height="30" width="30" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            <img src="https://www.{{ activity.domain_name }}/favicon.ico" height="30" width="30" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';" loading="lazy">
                                         </a>
                                         <div class="w-[80%]">
                                             <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
@@ -771,13 +771,13 @@
                                     {% for screenshot_activity,screenshot in activity_screenshots.items %}
                                         {% if activity == screenshot_activity and screenshot.image.url %}
                                             <a href="{{ activity.get_absolute_url }}">
-                                                <img src="{{ screenshot.image.url }}" loading="lazy" class="ml-3" alt="Bug report screenshot" width="50%" height="50%">
+                                                <img src="{{ screenshot.image.url }}" loading="lazy" class="ml-3" alt="Bug report screenshot" width="50%" height="50%" loading="lazy">
                                             </a>
                                         {% endif %}
                                     {% endfor %}
                                     {% if activity.screenshot %}
                                         <a href="{{ activity.get_absolute_url }}">
-                                            <img src="{{ activity.screenshot.url }}" loading="lazy" class="ml-3" alt="Bug report screenshot" width="50%" height="50%">
+                                            <img src="{{ activity.screenshot.url }}" loading="lazy" class="ml-3" alt="Bug report screenshot" width="50%" height="50%" loading="lazy">
                                         </a>
                                     {% endif %}
                                 </div>
@@ -888,7 +888,7 @@
                                 <li class="flex justify-between mb-3 items-center">
                                     <div class="flex w-full">
                                         <a href="{% url 'domain' slug=website.name %}">
-                                            <img src="https://www.{{ website.name }}/favicon.ico" height="20" width="20" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            <img src="https://www.{{ website.name }}/favicon.ico" height="20" width="20" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';" loading="lazy">
                                         </a>
                                         <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
                                     </div>
@@ -917,7 +917,7 @@
                 {% for user_badge in user_badges %}
                     <div class="badge-item relative text-center bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md">
                         {% if user_badge.badge.icon %}
-                            <img src="{{ user_badge.badge.icon.url }}" alt="{{ user_badge.badge.title }}" class="w-16 h-16 mx-auto object-contain" width="64" height="64">
+                            <img src="{{ user_badge.badge.icon.url }}" alt="{{ user_badge.badge.title }}" class="w-16 h-16 mx-auto object-contain" width="64" height="64" loading="lazy">
                         {% endif %}
                         <h4 class="font-bold text-sm mt-2">{{ user_badge.badge.title }}</h4>
                         <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>

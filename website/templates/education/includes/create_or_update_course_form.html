@@ -109,7 +109,7 @@ new TomSelect("#tags", {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const preview = document.getElementById('thumbnail-preview');
-                preview.innerHTML = `<img src="${e.target.result}" alt="Course Thumbnail" class="w-24 h-24 rounded-lg shadow-md">`;
+                preview.innerHTML = `<img src="${e.target.result}" alt="Course Thumbnail" class="w-24 h-24 rounded-lg shadow-md" loading="lazy">`;
             };
             reader.readAsDataURL(file);
         }

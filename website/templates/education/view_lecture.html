@@ -8,7 +8,7 @@
                 <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-600 text-6xl"></i>
                 </div>
-                <!-- <img src="{{ lecture.thumbnail.url }}" alt="Lecture Thumbnail" class="w-44 h-44 rounded-sm shadow-md" width="176" height="176">
+                <!-- <img src="{{ lecture.thumbnail.url }}" alt="Lecture Thumbnail" class="w-44 h-44 rounded-sm shadow-md" width="176" height="176" loading="lazy">
                         In case lectures have the feature to add thumbnails later
 -->
                 <div class="flex flex-col space-y-4 w-full">
