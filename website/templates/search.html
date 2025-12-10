@@ -28,7 +28,7 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="flex flex-col items-center">
+    <div class="flex flex-col items-center mt-20">
         <h1 class="text-center mb-4 mt-20">
             <span class="text-black dark:text-gray-300 text-3xl">Search Results for&nbsp;</span>
             <span class="text-blue-400 font-bold text-3xl">{{ query }}</span>
@@ -36,7 +36,7 @@
     </div>
     {% if query %}
     {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
-    <div class="flex w-full h-[500px] justify-center items-center">
+    <div class="flex w-full h-[400px] justify-center items-center">
         <script>
             document.body.style.overflow = "hidden";
         </script>
