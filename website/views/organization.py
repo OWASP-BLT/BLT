@@ -1386,15 +1386,42 @@ def sizzle_daily_log(request):
                 f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
             )
 
-            daily_status = DailyStatusReport.objects.create(
+            # Check if user already submitted a check-in today
+            today = now().date()
+            existing_checkin = DailyStatusReport.objects.filter(
                 user=request.user,
-                date=now().date(),
-                previous_work=previous_work,
-                next_plan=next_plan,
-                blockers=blockers,
-                goal_accomplished=goal_accomplished,
-                current_mood=current_mood,
-            )
+                date=today,
+            ).first()
+
+            if existing_checkin:
+                return JsonResponse(
+                    {
+                        "success": "false",
+                        "message": "You have already submitted a check-in for today. Please wait 24 hours from your last submission to submit again.",
+                    },
+                    status=400,
+                )
+
+            # Create new check-in
+            try:
+                daily_status = DailyStatusReport.objects.create(
+                    user=request.user,
+                    date=today,
+                    previous_work=previous_work,
+                    next_plan=next_plan,
+                    blockers=blockers,
+                    goal_accomplished=goal_accomplished,
+                    current_mood=current_mood,
+                )
+            except Exception as e:
+                logger.error(f"Error creating daily status report: {e}", exc_info=True)
+                return JsonResponse(
+                    {
+                        "success": "false",
+                        "message": "An error occurred while submitting your check-in. Please try again.",
+                    },
+                    status=500,
+                )
 
             # Set next_challenge_at to 24 hours from now for all user's challenges
             from datetime import timedelta
