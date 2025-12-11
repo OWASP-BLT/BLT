@@ -2096,12 +2096,19 @@ class DebugSyncGithubDataApiView(APIView):
 
         except Exception as e:
             logger.error("Error syncing GitHub data: %s", e, exc_info=True)
-            # Ensure running flag cleared on unexpected exceptions
-            _github_sync_running = False
-            _github_sync_thread = None
-            _github_sync_started_at = None
-            # Do not expose exception details to clients
-            _github_sync_last_error = "sync_failed"
+            # Ensure running flag is cleared on unexpected exceptions under lock to avoid races
+            try:
+                _github_sync_lock.acquire()
+                _github_sync_running = False
+                _github_sync_thread = None
+                _github_sync_started_at = None
+                # Do not expose exception details to clients
+                _github_sync_last_error = "sync_failed"
+            finally:
+                try:
+                    _github_sync_lock.release()
+                except Exception:
+                    pass
             return Response(
                 {"success": False, "error": "Failed to sync GitHub data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
