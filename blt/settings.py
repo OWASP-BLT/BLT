@@ -130,7 +130,7 @@ MIDDLEWARE = [
 ]
 
 
-if DEBUG:
+if DEBUG and not TESTING:
     MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
     MIDDLEWARE += ["livereload.middleware.LiveReloadScript", "debug_toolbar.middleware.DebugToolbarMiddleware"]
     INTERNAL_IPS = ["127.0.0.1"]
