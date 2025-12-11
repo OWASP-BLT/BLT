@@ -770,13 +770,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
-        projects = Project.objects.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
-        ).distinct()
+        try:
+            query_int = int(query)
+            projects = Project.objects.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(tags__name__icontains=query)
+                | Q(stars=query_int)
+                | Q(forks=query_int)
+            ).distinct()
+        except ValueError:
+            # If query is not a number, exclude stars/forks from search
+            projects = Project.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
+            ).distinct()
 
         project_data = []
         for project in projects:
