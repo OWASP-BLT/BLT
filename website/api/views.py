@@ -18,7 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection
+from django.db import IntegrityError, connection
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -47,7 +47,6 @@ from website.models import (
     Organization,
     Points,
     Project,
-    Repo,
     SearchHistory,
     Tag,
     TimeLog,
@@ -57,6 +56,7 @@ from website.models import (
 )
 from website.serializers import (
     ActivityLogSerializer,
+    BountySerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
     ContributorSerializer,
@@ -66,13 +66,13 @@ from website.serializers import (
     JobSerializer,
     OrganizationSerializer,
     ProjectSerializer,
-    RepoSerializer,
     SearchHistorySerializer,
     TagSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
 from website.utils import image_validator
+from website.views.models_bounty import Bounty
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -699,18 +699,40 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
 
-    @action(detail=True, methods=["get"])
-    def repositories(self, request, pk=None):
-        """
-        Get all repositories for an organization.
-        """
-        try:
-            organization = self.get_object()
-            repos = Repo.objects.filter(organization=organization)
-            serializer = RepoSerializer(repos, many=True, context={"request": request})
-            return Response(serializer.data)
-        except Organization.DoesNotExist:
-            return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+
+@action(detail=False, methods=["get"], url_path="issue-total")
+def issue_total(self, request):
+    repo = request.query_params.get("repo")
+    issue_number = request.query_params.get("issue_number")
+
+    if not repo or not issue_number:
+        return Response(
+            {"detail": "Parameters 'repo' and 'issue_number' are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        issue_number = int(issue_number)
+    except (ValueError, TypeError):
+        return Response(
+            {"detail": "Parameter 'issue_number' must be a valid integer"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    total = (
+        Bounty.objects.filter(repo_full_name=repo, issue_number=issue_number)
+        .aggregate(total=Sum("amount"))
+        .get("total")
+        or 0
+    )
+
+    return Response(
+        {
+            "repo": repo,
+            "issue_number": issue_number,
+            "total": float(total),
+        }
+    )
 
 
 class ContributorViewSet(viewsets.ModelViewSet):
@@ -1950,3 +1972,33 @@ class DebugPanelStatusApiView(APIView):
                 },
             }
         )
+
+
+class BountyViewSet(viewsets.ModelViewSet):
+    queryset = Bounty.objects.all()
+    serializer_class = BountySerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        origin_comment_id = serializer.validated_data.get("origin_comment_id")
+
+        # Early duplicate check
+        if origin_comment_id and Bounty.objects.filter(origin_comment_id=origin_comment_id).exists():
+            return Response(
+                {"detail": "Bounty for this GitHub comment already exists."},
+                status=status.HTTP_200_OK,
+            )
+
+        try:
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except IntegrityError:
+            # If two requests arrive at the same time
+            return Response(
+                {"detail": "Bounty for this GitHub comment already exists."},
+                status=status.HTTP_200_OK,
+            )

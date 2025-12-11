@@ -22,6 +22,7 @@ from website.models import (
     User,
     UserProfile,
 )
+from website.views.models_bounty import Bounty
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -305,3 +306,23 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+
+
+class BountySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bounty
+        fields = [
+            "id",
+            "repo_full_name",
+            "issue_number",
+            "issue_url",
+            "sponsor_github",
+            "sponsor_user",
+            "amount",
+            "currency",
+            "created_at",
+            "paid",
+            "paid_at",
+            "origin_comment_id",
+        ]
+        read_only_fields = ["id", "created_at", "paid", "paid_at"]
