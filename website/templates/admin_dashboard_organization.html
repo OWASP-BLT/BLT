@@ -216,20 +216,22 @@
                 switcher.addEventListener('change', function() {
                     const baseUrl = this.getAttribute('data-base-url');
                     const selectedOrg = this.value;
-                    // Only allow relative paths or same-origin absolute URLs
                     if (baseUrl && selectedOrg) {
                         try {
-                            // The base argument ensures relative URLs are interpreted correctly
+                            // Parse and validate URL to prevent XSS
                             const url = new URL(baseUrl, window.location.origin);
-                            if (url.origin === window.location.origin) {
-                                // Construct the final URL safely
-                                url.searchParams.set('switch_to', selectedOrg);
-                                window.location.href = url.toString();
+                            // Only allow http/https protocols and same-origin URLs
+                            if ((url.protocol === 'http:' || url.protocol === 'https:') && 
+                                url.origin === window.location.origin) {
+                                // Safely encode the organization ID in the query parameter
+                                url.searchParams.set('switch_to', encodeURIComponent(selectedOrg));
+                                // Use location.assign for safer navigation
+                                window.location.assign(url.toString());
                             } else {
-                                console.error("Invalid baseUrl: not same-origin");
+                                console.error("Invalid URL: must be same-origin http/https");
                             }
                         } catch (e) {
-                            console.error("Invalid baseUrl format");
+                            console.error("Invalid URL format:", e);
                         }
                     }
                 });
