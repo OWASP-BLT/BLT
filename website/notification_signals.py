@@ -1,10 +1,11 @@
 import logging
 
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
-from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
+from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -136,3 +137,80 @@ def notify_on_payment_processed(sender, instance, created, update_fields, **kwar
 
                 Notification.objects.create(user=admin, message=message, notification_type="alert", link=link)
                 logger.info(f"Created payment notification for admin: {admin.username}")
+
+
+@receiver(post_save, sender=UserProfile)
+def verify_github_linkback_on_profile_update(sender, instance, **kwargs):
+    """
+    Signal to verify GitHub linkback and award tokens when user adds/updates GitHub URL.
+
+    Uses transaction.on_commit() to defer verification until after the profile
+    save transaction commits, avoiding nested transaction issues.
+    Only runs when github_url field is actually updated to avoid unnecessary API calls.
+    Rate limited to prevent abuse and API exhaustion.
+    """
+    # Skip if no github_url or reward already given
+    # NOTE: Only one reward is given per user, even if they change their GitHub profile.
+    # Users can update their GitHub URL, but they won't receive duplicate rewards.
+    if not instance.github_url or instance.github_linking_reward_given:
+        return
+
+    # Only verify if github_url was updated (not on every profile save)
+    update_fields = kwargs.get("update_fields")
+    if update_fields is not None and "github_url" not in update_fields:
+        return
+
+    # Rate limiting: prevent repeated GitHub API calls (5 minutes cooldown)
+    from django.core.cache import cache
+
+    rate_key = f"github_verify_rate_{instance.user.id}"
+    if not cache.add(rate_key, True, timeout=300):  # 5 minutes
+        logger.debug(f"Rate limit: Skipping GitHub verification for {instance.user.username}")
+        return
+
+    def perform_verification():
+        # Import here to avoid circular imports
+        from django.conf import settings
+
+        from website.github_verification import (
+            award_github_linking_tokens,
+            extract_github_username,
+            verify_github_linkback,
+        )
+
+        # Skip verification in test mode to avoid transaction conflicts
+        if getattr(settings, "TESTING", False):
+            logger.debug("Skipping GitHub verification in test mode")
+            return
+
+        logger.info(f"Starting GitHub linkback verification for {instance.user.username}")
+
+        # Extract username from GitHub URL
+        github_username = extract_github_username(instance.github_url)
+        if not github_username:
+            logger.warning(f"Invalid GitHub URL for user {instance.user.username}")
+            return
+
+        # Verify linkback
+        verification_result = verify_github_linkback(github_username)
+
+        if verification_result["verified"]:
+            logger.info(
+                f"GitHub linkback verified for {instance.user.username} "
+                f"(found in: {verification_result['found_in']})"
+            )
+
+            # Award tokens (pass github_username to avoid redundant extraction)
+            # Notification is created inside award_github_linking_tokens for atomicity
+            success = award_github_linking_tokens(instance.user, github_username)
+
+            if success:
+                logger.info(f"Successfully awarded tokens and created notification for {instance.user.username}")
+        else:
+            logger.debug(
+                f"GitHub linkback not verified for {instance.user.username}. "
+                "User needs to add BLT link to their GitHub profile."
+            )
+
+    # Defer verification until after the current transaction commits
+    transaction.on_commit(perform_verification)
