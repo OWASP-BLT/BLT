@@ -231,7 +231,7 @@ jobs:
                   'For more information, see the [Django documentation on migration conflicts](https://docs.djangoproject.com/en/stable/topics/migrations/#migration-files).';
 
                 // Check if we already posted a similar comment
-                const { data: comments } = await github.rest.issues.listComments({
+                const comments = await github.paginate(github.rest.issues.listComments, {
                   owner,
                   repo,
                   issue_number: pull_number,
