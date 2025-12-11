@@ -799,7 +799,9 @@ def search(request, template="search.html"):
                         result_count = 0
 
                         # Get result counts from context if available
-                        # Use len() instead of .count() to avoid additional DB queries on sliced querysets
+                        # Use len() instead of .count() on sliced querysets:
+                        # .count() on a sliced queryset first evaluates the slice and then counts,
+                        # making it redundant and potentially slower than just using len().
                         try:
                             if search_type == "all" or not search_type:
                                 # Sum counts from all search results
