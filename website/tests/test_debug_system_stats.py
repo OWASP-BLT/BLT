@@ -319,8 +319,8 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_sync_github_data_success(self, mock_call_command):
+    @patch("website.api.views._run_github_sync_commands_in_background")
+    def test_sync_github_data_success(self, mock_sync):
         """Test that GitHub sync endpoint works"""
         self.reload_urls()
         self.client.force_authenticate(self.user)
@@ -330,14 +330,10 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
-        self.assertIn("details", data)
+        self.assertIn("message", data)
 
-        # Verify management commands were called
-        calls = [call[0][0] for call in mock_call_command.call_args_list]
-        self.assertIn("check_owasp_projects", calls)
-        self.assertIn("update_github_issues", calls)
-        self.assertIn("fetch_pr_reviews", calls)
-        self.assertIn("update_contributor_stats", calls)
+        # Background function was triggered (actual execution is async)
+        mock_sync.assert_called_once()
 
     @override_settings(DEBUG=True)
     def test_sync_github_data_requires_authentication(self):
@@ -349,11 +345,11 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_sync_github_data_handles_errors(self, mock_call_command):
+    @patch("website.api.views.threading.Thread")
+    def test_sync_github_data_handles_errors(self, mock_thread):
         """Test GitHub sync error handling"""
         self.reload_urls()
-        mock_call_command.side_effect = Exception("Sync failed")
+        mock_thread.return_value.start.side_effect = Exception("Thread start failed")
         self.client.force_authenticate(self.user)
 
         response = self.client.post(reverse("api_debug_sync_github"))

@@ -1605,33 +1605,37 @@ def _run_github_sync_commands_in_background():
     """
     from io import StringIO
 
+    # Try to acquire the lock non-blocking; if already locked, skip this run
+    _github_sync_lock = threading.Lock()
+    acquired = _github_sync_lock.acquire(blocking=False)
+    if not acquired:
+        logger.warning("Background GitHub sync already in progress; skipping new sync request.")
+        return
     status_messages = []
-
     try:
-        call_command("check_owasp_projects", stdout=StringIO())
-        status_messages.append("✓ Synced OWASP projects")
-    except Exception as e:
-        logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
-
-    try:
-        call_command("update_github_issues", stdout=StringIO())
-        status_messages.append("✓ Updated GitHub issues")
-    except Exception as e:
-        logger.error("Error running update_github_issues: %s", e, exc_info=True)
-
-    try:
-        call_command("fetch_pr_reviews", stdout=StringIO())
-        status_messages.append("✓ Fetched PR reviews")
-    except Exception as e:
-        logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
-
-    try:
-        call_command("update_contributor_stats", stdout=StringIO())
-        status_messages.append("✓ Updated contributor stats")
-    except Exception as e:
-        logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
-
-    logger.info("Background GitHub sync completed with messages: %s", status_messages)
+        try:
+            call_command("check_owasp_projects", stdout=StringIO())
+            status_messages.append("✓ Synced OWASP projects")
+        except Exception as e:
+            logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
+        try:
+            call_command("update_github_issues", stdout=StringIO())
+            status_messages.append("✓ Updated GitHub issues")
+        except Exception as e:
+            logger.error("Error running update_github_issues: %s", e, exc_info=True)
+        try:
+            call_command("fetch_pr_reviews", stdout=StringIO())
+            status_messages.append("✓ Fetched PR reviews")
+        except Exception as e:
+            logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
+        try:
+            call_command("update_contributor_stats", stdout=StringIO())
+            status_messages.append("✓ Updated contributor stats")
+        except Exception as e:
+            logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
+        logger.info("Background GitHub sync completed with messages: %s", status_messages)
+    finally:
+        _github_sync_lock.release()
 
 
 def debug_required(func):
@@ -1734,6 +1738,9 @@ class DebugSystemStatsApiView(APIView):
                         active_connections = cursor.fetchone()[0]
             except Exception as conn_error:
                 logger.warning("Could not fetch active DB connections: %s", conn_error)
+                active_connections = "Unavailable (error)"
+            else:
+                active_connections = "Not Available (non-PostgreSQL DB)"
 
             return Response(
                 {
@@ -1888,7 +1895,6 @@ class DebugSyncGithubDataApiView(APIView):
             thread = threading.Thread(
                 target=_run_github_sync_commands_in_background,
                 name="debug-github-sync",
-                daemon=True,
             )
             thread.start()
 

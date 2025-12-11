@@ -173,8 +173,8 @@ const DebugPanel = {
             cacheKeysEl.textContent = cacheInfo.keys_count || "0";
           }
           if (cacheHitRatioEl) {
-            const hitRatio = parseFloat(cacheInfo.hit_ratio) || 0;
-            cacheHitRatioEl.textContent = `${hitRatio.toFixed(2)}%`;
+            const hitRatio = parseFloat(cacheInfo.hit_ratio);
+            cacheHitRatioEl.textContent = isNaN(hitRatio) ? "N/A" : `${hitRatio.toFixed(2)}%`;
           }
         }
       }
@@ -296,7 +296,10 @@ DB Connections: ${stats.database?.connections || "N/A"}
       { confirm: true },
       (data) => {
         if (data.success) {
-          this.showStatus("GitHub data synced successfully!", "success");
+          this.showStatus(
+            data.message ? data.message : "GitHub data synced successfully!",
+            "success"
+          );
         } else {
           this.showStatus(
             `Error: ${data.error || "Failed to sync GitHub data"}`,
@@ -414,7 +417,9 @@ DB Connections: ${stats.database?.connections || "N/A"}
             errorMessage = "404 Not Found. Debug API endpoint not found.";
           }
 
-          throw { status: response.status, message: errorMessage };
+          const error = new Error(errorMessage);
+          error.status = response.status;
+          throw error;
         }
 
         if (!contentType || !contentType.includes("application/json")) {
