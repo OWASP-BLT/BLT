@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client, TestCase
 from django.urls import reverse
+from rest_framework import serializers
+from .models import Bounty
 
 from website.models import Activity, Issue
 
@@ -120,3 +122,24 @@ class ActivityFeedTests(TestCase):
         rss_url = reverse("activity_feed_rss")
         self.assertContains(response, rss_url)
         self.assertContains(response, "Subscribe to RSS Feed")
+    
+
+
+    class BountySerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Bounty
+            fields = [
+                "id",
+            "repo_full_name",
+            "issue_number",
+            "issue_url",
+            "sponsor_github",
+            "sponsor_user",
+            "amount",
+            "currency",
+            "created_at",
+            "paid",
+            "paid_at",
+            "origin_comment_id",
+            ]
+            read_only_fields = ["id", "created_at", "paid", "paid_at"]

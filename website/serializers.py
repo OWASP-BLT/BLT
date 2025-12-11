@@ -22,6 +22,8 @@ from website.models import (
     User,
     UserProfile,
 )
+from rest_framework import serializers
+from website.views.models_bounty import Bounty
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -305,3 +307,9 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+
+
+class BountySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bounty
+        fields = "__all__"

@@ -32,7 +32,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework import viewsets, status
+from django.db.models import Sum
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
@@ -74,7 +75,8 @@ from website.serializers import (
 )
 from website.utils import image_validator
 from website.views.user import LeaderboardBase
-
+from website.views.models_bounty import Bounty
+from website.serializers import BountySerializer
 logger = logging.getLogger(__name__)
 # API's
 
@@ -1948,5 +1950,72 @@ class DebugPanelStatusApiView(APIView):
                     "testing_mode": getattr(settings, "TESTING", False),
                     "environment": "local" if _is_local_host(request.get_host()) else "unknown",
                 },
+            }
+        )
+
+
+
+
+
+class BountyViewSet(viewsets.ModelViewSet):
+    """
+    API to create and list bounties.
+    Used by GitHub Action & Slack integration.
+    """
+    queryset = Bounty.objects.all()
+    serializer_class = BountySerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        POST /api/bounties/
+
+        Stores a bounty contribution.
+        Prevents duplicate creation using origin_comment_id
+        (GitHub often sends duplicate events).
+        """
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        origin_comment_id = serializer.validated_data.get("origin_comment_id")
+
+        # Prevent duplicate entries
+        if origin_comment_id and Bounty.objects.filter(origin_comment_id=origin_comment_id).exists():
+            return Response(
+                {"detail": "Bounty for this GitHub comment already exists."},
+                status=status.HTTP_200_OK,
+            )
+
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="issue-total")
+    def issue_total(self, request):
+        """
+        GET /api/bounties/issue-total/?repo=org/repo&issue_number=123
+
+        Returns total bounty amount for a specific issue.
+        """
+        repo = request.query_params.get("repo")
+        issue_number = request.query_params.get("issue_number")
+
+        if not repo or not issue_number:
+            return Response(
+                {"detail": "Parameters 'repo' and 'issue_number' are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total = (
+            Bounty.objects
+            .filter(repo_full_name=repo, issue_number=issue_number)
+            .aggregate(total=Sum("amount"))
+            .get("total") or 0
+        )
+
+        return Response(
+            {
+                "repo": repo,
+                "issue_number": int(issue_number),
+                "total": float(total)
             }
         )

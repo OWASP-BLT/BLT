@@ -370,7 +370,8 @@ from website.views.user import (
     view_thread,
 )
 from website.views.video_call import video_call
-
+from rest_framework import routers
+from website.api.views import BountyViewSet
 admin.autodiscover()
 
 # Use the drf_yasg schema view
@@ -398,7 +399,8 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
-
+router = routers.DefaultRouter()
+router.register(r"bounties", BountyViewSet, basename="bounty")
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
