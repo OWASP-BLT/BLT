@@ -72,6 +72,8 @@ jobs:
             ${{ github.event_name == 'pull_request_target' &&
             'label' || 'manual dispatch' }}
           PR_NUMBER: ${{ github.event.pull_request.number || 'N/A' }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -86,13 +88,18 @@ jobs:
           conflicts in the poetry.lock file without updating
           dependencies to newer versions."
 
-          BRANCH_NAME="${{ github.event.pull_request.head.ref || github.ref_name }}"
+          # Push to the PR's head branch
+          if [ -n "$PR_HEAD_REF" ]; then
+            BRANCH_NAME="$PR_HEAD_REF"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
           
           # For forked PRs, we need to push with authentication
-          if [ -n "${{ github.event.pull_request.head.repo.full_name }}" ]; then
+          if [ -n "$PR_HEAD_REPO" ]; then
             TOKEN="${{ secrets.GITHUB_TOKEN }}"
-            PUSH_URL="https://x-access-token:$TOKEN@github.com/${{ github.event.pull_request.head.repo.full_name }}.git"
-            git push "$PUSH_URL" HEAD:"$BRANCH_NAME"
+            PUSH_URL="https://x-access-token:$TOKEN@github.com"
+            git push "$PUSH_URL/$PR_HEAD_REPO.git" HEAD:"$BRANCH_NAME"
           else
             git push origin HEAD:"$BRANCH_NAME"
           fi
