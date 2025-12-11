@@ -127,10 +127,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     freshness = serializers.SerializerMethodField()
-    stars = serializers.IntegerField()
-    forks = serializers.IntegerField()
-    external_links = serializers.JSONField()
-    project_visit_count = serializers.IntegerField()
+
+    total_stars = serializers.IntegerField(read_only=True)
+    total_forks = serializers.IntegerField(read_only=True)
+
+    external_links = serializers.JSONField(required=False)
+    project_visit_count = serializers.IntegerField(required=False)
 
     class Meta:
         model = Project
