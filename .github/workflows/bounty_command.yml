@@ -28,7 +28,7 @@ jobs:
             const issue_url = context.payload.issue.html_url;
 
             // match "/bounty $50" or "/bounty 50" or "/bounty $12.50"
-            core.info(`Raw comment body is: >>>${body}<<<`);
+            core.info(`Raw comment body is: >>>${comment}<<<`);
             const m = comment.match(/\/bounty\s*\$?([0-9]+(?:\.[0-9]{1,2})?)/i);
             if (!m) {
               core.info("No /bounty command found.");
