@@ -216,8 +216,21 @@
                 switcher.addEventListener('change', function() {
                     const baseUrl = this.getAttribute('data-base-url');
                     const selectedOrg = this.value;
+                    // Only allow relative paths or same-origin absolute URLs
                     if (baseUrl && selectedOrg) {
-                        window.location.href = baseUrl + '?switch_to=' + encodeURIComponent(selectedOrg);
+                        try {
+                            // The base argument ensures relative URLs are interpreted correctly
+                            const url = new URL(baseUrl, window.location.origin);
+                            if (url.origin === window.location.origin) {
+                                // Construct the final URL safely
+                                url.searchParams.set('switch_to', selectedOrg);
+                                window.location.href = url.toString();
+                            } else {
+                                console.error("Invalid baseUrl: not same-origin");
+                            }
+                        } catch (e) {
+                            console.error("Invalid baseUrl format");
+                        }
                     }
                 });
             }
