@@ -162,10 +162,10 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
     # Get organizations the user can manage
     if user.is_superuser:
         # Superusers can see all organizations
-        organizations = Organization.objects.all()
+        organizations = Organization.objects.all().select_related('admin', 'subscription')
     else:
         # Regular users can only see organizations they admin or manage
-        organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user)).distinct()
+        organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user)).distinct().select_related('admin', 'subscription')
     
     # If user has no organizations, redirect to home
     if not organizations.exists():
@@ -178,7 +178,8 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
         try:
             selected_org = organizations.get(pk=selected_org_id)
             request.session['selected_organization_id'] = selected_org.pk
-            messages.success(request, f"Switched to {selected_org.name}")
+            # Escape organization name to prevent injection
+            messages.success(request, "Switched to " + str(selected_org.name))
             return redirect('admin_organization_dashboard')
         except Organization.DoesNotExist:
             messages.error(request, "Invalid organization selected.")
