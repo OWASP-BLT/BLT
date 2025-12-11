@@ -52,8 +52,7 @@
                                          onclick="scrollToSection('organizations-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Organizations</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{
-                                            organizations|length }}</span>
+                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ organizations|length }}</span>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -148,14 +147,10 @@
                                                         {% endif %}
                                                         <div>
                                                             <h2 class="text-4xl font-bold text-gray-800 dark:text-gray-200">
-                                                                <a href="{{ domain.get_absolute_url }}" class="hover:text-blue-600">{{
-                                                                domain.name }}</a>
+                                                                <a href="{{ domain.get_absolute_url }}" class="hover:text-blue-600">{{ domain.name }}</a>
                                                             </h2>
                                                             {% if domain.hostname_domain %}
-                                                                <p class="text-md text-gray-500 dark:text-gray-500">
-                                                                    {{
-                                                                    domain.hostname_domain }}
-                                                                </p>
+                                                                <p class="text-md text-gray-500 dark:text-gray-500">{{ domain.hostname_domain }}</p>
                                                             {% endif %}
                                                         </div>
                                                     </div>
@@ -191,8 +186,8 @@
                                                             <div class="flex flex-wrap mt-2">
                                                                 {% for manager in domain.managers.all %}
                                                                     <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full mr-2 mb-2">
-                                                                        <i class="fas fa-user-circle mr-1"></i> {{
-                                                                        manager.get_full_name|default:manager.username }}
+                                                                        <i class="fas fa-user-circle mr-1"></i>
+                                                                        {{ manager.get_full_name|default:manager.username }}
                                                                     </span>
                                                                 {% endfor %}
                                                             </div>
@@ -236,8 +231,13 @@
                                                     {% if domain.top_tester %}
                                                         <div class="mt-4 text-xl ml-4">
                                                             <i class="fas fa-user-check text-blue-600 mr-1"></i>
-                                                            <strong>Top Tester:</strong> <span class="text-blue-600">{{
-                                                            domain.top_tester.get_full_name|default:domain.top_tester.username }}</span>
+                                                            <strong>Top Tester:</strong> <span class="text-blue-600">
+                                                                {% if domain.top_tester.get_full_name %}
+                                                                    {{ domain.top_tester.get_full_name }}
+                                                                {% else %}
+                                                                    {{ domain.top_tester.username }}
+                                                                {% endif %}
+                                                            </span>
                                                         </div>
                                                     {% endif %}
                                                     <div class="mt-4 ml-4">
@@ -283,11 +283,9 @@
                                             <div class="flex-1">
                                                 <h3 class="text-3xl font-bold text-indigo-800 flex items-center space-x-2">
                                                     <a href="{% url 'profile' slug=user.username %}"
-                                                       class="hover:text-blue-600">{{
-                                                    user.username }}</a>
+                                                       class="hover:text-blue-600">{{ user.username }}</a>
                                                     {% if user.userprofile %}
-                                                        <span class="{{ user.userprofile.get_title_display|lower }} text-base p-2">{{
-                                                        user.userprofile.get_title_display }}</span>
+                                                        <span class="{{ user.userprofile.get_title_display|lower }} text-base p-2">{{ user.userprofile.get_title_display }}</span>
                                                     {% endif %}
                                                 </h3>
                                                 <div class="mt-3 flex flex-wrap gap-4 text-md text-gray-700 dark:text-gray-300">
@@ -403,14 +401,10 @@
                                                 <div class="flex-1">
                                                     <h3 class="text-3xl font-bold text-indigo-800">
                                                         <a href="/organization/{{ organization.slug }}"
-                                                           class="hover:text-blue-600">{{
-                                                        organization.name }}</a>
+                                                           class="hover:text-blue-600">{{ organization.name }}</a>
                                                     </h3>
                                                     {% if organization.description %}
-                                                        <p class="text-gray-700 dark:text-gray-300 mt-2 text-md">
-                                                            {{
-                                                            organization.description|truncatechars:150 }}
-                                                        </p>
+                                                        <p class="text-gray-700 dark:text-gray-300 mt-2 text-md">{{ organization.description|truncatechars:150 }}</p>
                                                     {% endif %}
                                                     <div class="mt-3 flex items-center space-x-4 text-md">
                                                         {% if organization.email %}
@@ -451,8 +445,7 @@
                                                     }}</span>
                                                 </div>
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
-                                                    <strong>Team Points:</strong> <span class="text-green-600">{{
-                                                    organization.team_points }}</span>
+                                                    <strong>Team Points:</strong> <span class="text-green-600">{{ organization.team_points }}</span>
                                                 </div>
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
                                                     <p class="mt-2 mb-0">
@@ -500,14 +493,10 @@
                                                 {% endif %}
                                                 <div class="flex-1">
                                                     <h3 class="text-3xl font-bold text-gray-800 dark:text-gray-200">
-                                                        <a href="{{ project.get_absolute_url }}" class="hover:text-blue-600">{{
-                                                        project.name }}</a>
+                                                        <a href="{{ project.get_absolute_url }}" class="hover:text-blue-600">{{ project.name }}</a>
                                                     </h3>
                                                     {% if project.description %}
-                                                        <p class="text-gray-700 dark:text-gray-300 mt-2 text-md">
-                                                            {{
-                                                            project.description|truncatechars:150 }}
-                                                        </p>
+                                                        <p class="text-gray-700 dark:text-gray-300 mt-2 text-md">{{ project.description|truncatechars:150 }}</p>
                                                     {% endif %}
                                                     <div class="mt-3 flex items-center space-x-4 text-md">
                                                         {% if project.url %}
@@ -637,8 +626,7 @@
                                                              width="32">
                                                     {% endif %}
                                                     <a href="{{ domain.get_absolute_url }}"
-                                                       class="font-medium hover:underline">{{
-                                                    domain.name }}</a>
+                                                       class="font-medium hover:underline">{{ domain.name }}</a>
                                                 </div>
                                             {% endfor %}
                                         </div>
@@ -660,8 +648,7 @@
                                                              width="32">
                                                     {% endif %}
                                                     <a href="{{ issue.get_absolute_url }}"
-                                                       class="font-medium hover:underline">{{
-                                                    issue.description }}</a>
+                                                       class="font-medium hover:underline">{{ issue.description }}</a>
                                                 </div>
                                             {% endfor %}
                                         </div>
@@ -733,8 +720,7 @@
                                                 {% endif %}
                                                 <div class="flex-1">
                                                     <h3 class="text-3xl font-bold text-indigo-800 flex items-center gap-3">
-                                                        <a href="{% url 'repo_detail' repo.slug %}" class="hover:text-[#e74c3c]">{{
-                                                        repo.name }}</a>
+                                                        <a href="{% url 'repo_detail' repo.slug %}" class="hover:text-[#e74c3c]">{{ repo.name }}</a>
                                                         <a href="{{ repo.repo_url }}"
                                                            target="_blank"
                                                            class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] text-2xl">
@@ -742,15 +728,11 @@
                                                         </a>
                                                     </h3>
                                                     {% if repo.description %}
-                                                        <p class="text-gray-700 dark:text-gray-300 mt-2 text-md">
-                                                            {{
-                                                            repo.description|truncatechars:150 }}
-                                                        </p>
+                                                        <p class="text-gray-700 dark:text-gray-300 mt-2 text-md">{{ repo.description|truncatechars:150 }}</p>
                                                     {% endif %}
                                                     <div class="mt-3 flex items-center space-x-4 text-md">
                                                         {% if repo.primary_language %}
-                                                            <span class="text-gray-800 dark:text-gray-200 bg-purple-200 px-3 py-1 rounded-full">{{
-                                                            repo.primary_language }}</span>
+                                                            <span class="text-gray-800 dark:text-gray-200 bg-purple-200 px-3 py-1 rounded-full">{{ repo.primary_language }}</span>
                                                         {% endif %}
                                                         {% if repo.stars %}
                                                             <span class="text-yellow-500 flex items-center space-x-2">

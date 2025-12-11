@@ -599,10 +599,7 @@
     class="hover:text-red-600">{{ activity.domain_title }}</a>
                                 </div>
                             </div>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm text-start w-full">
-                                {{
-                                activity.created|timesince }} ago.
-                            </p>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm text-start w-full">{{ activity.created|timesince }} ago.</p>
                             <div class="flex flex-row gap-2 items-center">
                                 URL:
                                 <a class="hover:text-red-600"
@@ -746,8 +743,7 @@
                                          onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                 </a>
                                 <a class="hover:text-red-600"
-                                   href="{% url 'domain' slug=website.name %}">{{
-                                website.name|truncatechars:20 }}</a>
+                                   href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:20 }}</a>
                             </div>
                             <div class="px-3 py-2 bg-blue-400 text-white rounded-lg flex items-center gap-2"
                                  name="{{ user }}">
@@ -837,8 +833,7 @@
                                     <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                                         <i class="fas fa-book text-gray-600 dark:text-gray-400"></i>
                                         <a href="{{ repo_data.repo_url }}"
-                                           class="hover:text-red-600 text-black/80 dark:text-white/80 font-bold hover:underline transition-all duration-200">{{
-                                        repo_name }}</a>
+                                           class="hover:text-red-600 text-black/80 dark:text-white/80 font-bold hover:underline transition-all duration-200">{{ repo_name }}</a>
                                     </h3>
                                     <div class="flex gap-3 text-md">
                                         <span class="flex items-center gap-1 text-purple-700 font-bold">
@@ -857,8 +852,7 @@
                                 {% for pr in repo_data.pull_requests %}
                                     <div class="flex justify-between items-center p-4 hover:bg-gray-50 transition-all duration-200">
                                         <a href="{{ pr.url }}"
-                                           class="text-blue-600 hover:text-red-600 font-medium hover:underline transition-all duration-200">{{
-                                        pr.title }}</a>
+                                           class="text-blue-600 hover:text-red-600 font-medium hover:underline transition-all duration-200">{{ pr.title }}</a>
                                         <span class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} = text-purple-700 {% elif pr.state == 'open' %} text-yellow-700 {% else %} text-red-700 {% endif %} text-lg">
                                             {% if pr.is_merged %}
                                                 <i class="fas fa-check-circle rounded-full text-lg"></i>
@@ -1062,8 +1056,8 @@
                                     </a>
                                     <div class="mb-2 text-xl">
                                         {{ activity.user|default:"Anonymous" }}
-                                        found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{
-                                            activity.domain_title }}</a> - {{ activity.created|timesince }}
+                                        found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">
+                                            {{ activity.domain_title }}</a> - {{ activity.created|timesince }}
                                         ago
                                     </div>
                                     <a class="text-lg" href="{{ activity.url }}" target="_blank" rel="noopener noreferrer">
@@ -1184,8 +1178,8 @@
                     <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🌟 Kudos {{ user.kudos_received.count }}</div>
                 </button>
                 <button class="mr-3">
-                    <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👁️ {% trans "Profile Views" %} {{
-                        user.userprofile.visit_count }}</div>
+                    <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👁️ {% trans "Profile Views" %}
+                         {{ user.userprofile.visit_count }}</div>
                 </button>
             </div>
             <div class="text-2xl font-bold my-4">
@@ -1502,8 +1496,7 @@
                                                             <p class="text-sm text-gray-600 dark:text-gray-400">{{ i.user }}</p>
                                                         </div>
                                                         <div class="flex items-center gap-2">
-                                                            <span class="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{{
-                                                            i.status }}</span>
+                                                            <span class="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{{ i.status }}</span>
                                                             <button type="button"
                                                                     class="text-gray-400 dark:text-gray-600 hover:text-red-500"
                                                                     name="{{ i.pk }}"
@@ -1589,10 +1582,7 @@
                                                                     onclick="this.nextElementSibling.classList.toggle('hidden')">
                                                                 <i class="fas fa-comment-dots"></i> View Comment
                                                             </button>
-                                                            <div class="hidden mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                                                {{
-                                                                k.comment }}
-                                                            </div>
+                                                            <div class="hidden mt-2 text-sm text-gray-600 dark:text-gray-400">{{ k.comment }}</div>
                                                         </td>
                                                     {% endif %}
                                                 </tr>

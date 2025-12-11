@@ -40,8 +40,7 @@
                         <span class="text-[#e74c3c]">{{ cve_severity }}</span> Severity CVE
                     </h5>
                     <p class="text-sm text-gray-700 dark:text-gray-300">
-                        This CVE is rated <strong>{{ cve_severity }}</strong> severity. We suggest tipping <strong>${{
-                        suggested_tip_amount }}</strong> to <a href="{% url 'profile' slug=object.user.username %}"
+                        This CVE is rated <strong>{{ cve_severity }}</strong> severity. We suggest tipping <strong>${{ suggested_tip_amount }}</strong> to <a href="{% url 'profile' slug=object.user.username %}"
     class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-semibold">@{{ object.user.username }}</a>
                     </p>
                 </div>
@@ -107,16 +106,14 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
             <div class="flex gap-3 items-center">
                 <span class="text-gray-700 dark:text-gray-300 font-medium">Added On</span>
-                <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                object.created }}</span>
+                <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ object.created }}</span>
             </div>
         </div>
         <!-- Bug Type -->
         <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
             <div class="flex gap-3 items-center">
                 <span class="text-gray-700 dark:text-gray-300 font-medium">Bug Type</span>
-                <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                object.get_label_display }}</span>
+                <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ object.get_label_display }}</span>
             </div>
         </div>
         <!-- CVE Score -->
@@ -124,8 +121,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex gap-3 items-center">
                     <span class="text-gray-700 dark:text-gray-300 font-medium">CVE Score</span>
-                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                    object.cve_score }}</span>
+                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ object.cve_score }}</span>
                 </div>
             </div>
         {% endif %}
@@ -134,8 +130,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex gap-3 items-center">
                     <span class="text-gray-700 dark:text-gray-300 font-medium">CVE ID</span>
-                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                    object.cve_id }}</span>
+                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ object.cve_id }}</span>
                 </div>
             </div>
         {% endif %}
@@ -146,8 +141,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700 hover:border-[#e74c3c] transition-colors duration-200">
                     <div class="flex gap-3 items-center">
                         <span class="text-gray-700 dark:text-gray-300 font-medium">Submitted</span>
-                        <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                        object.hunt.name }}</span>
+                        <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ object.hunt.name }}</span>
                     </div>
                 </div>
             </a>
@@ -178,8 +172,7 @@
                 <div class="flex gap-2 items-center">
                     <span class="text-gray-700 dark:text-gray-300 font-medium">Github URL</span>
                     <div class="flex items-center">
-                        <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all mr-2">{{
-                        object.domain.github }}</span>
+                        <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all mr-2">{{ object.domain.github }}</span>
                         <a href="{{ object.domain.github }}"
                            target="_blank"
                            class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">
@@ -193,8 +186,7 @@
                 <div class="flex gap-2 items-center">
                     <span class="text-gray-700 dark:text-gray-300 font-medium">Github Issues URL</span>
                     <div class="flex items-center">
-                        <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all mr-2">{{
-                        github_issues_url }}</span>
+                        <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all mr-2">{{ github_issues_url }}</span>
                         <a href="{{ github_issues_url }}"
                            target="_blank"
                            class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c]">
@@ -209,8 +201,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex gap-3 items-center">
                     <span class="text-gray-700 dark:text-gray-300 font-medium">Email Clicks</span>
-                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                    email_clicks }}</span>
+                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ email_clicks }}</span>
                 </div>
             </div>
         {% endif %}
@@ -219,8 +210,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex gap-3 items-center">
                     <span class="text-gray-700 dark:text-gray-300 font-medium">Email Events</span>
-                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{
-                    email_events }}</span>
+                    <span class="text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-md select-all break-all">{{ email_events }}</span>
                 </div>
             </div>
         {% endif %}
