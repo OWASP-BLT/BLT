@@ -1,0 +1,109 @@
+name: Remove Last Active Label on Update
+
+# When a PR or issue is updated, remove the last-active label
+# The scheduled workflow will re-add it with the correct value on its next run
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+  issues:
+    types:
+      - opened
+      - reopened
+      - edited
+  issue_comment:
+    types:
+      - created
+      - edited
+      - deleted
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+      - dismissed
+  pull_request_review_comment:
+    types:
+      - created
+      - edited
+      - deleted
+  pull_request_review_thread:
+    types:
+      - resolved
+      - unresolved
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  remove_last_active_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Last Active Label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let itemNumber;
+            let itemType;
+            
+            // Determine the item number based on the event type
+            if (context.payload.pull_request) {
+              itemNumber = context.payload.pull_request.number;
+              itemType = 'PR';
+            } else if (context.payload.issue) {
+              itemNumber = context.payload.issue.number;
+              itemType = context.payload.issue.pull_request ? 'PR' : 'Issue';
+            } else {
+              core.info('No pull_request or issue in context. Skipping.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            core.info(`Processing ${itemType} #${itemNumber} - Activity detected, removing last-active label`);
+
+            // Get current labels on the item
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: itemNumber, 
+              per_page: 100 
+            });
+            
+            // Regex pattern to match existing last-active labels
+            const lastActiveRegex = /^last-active:/i;
+            
+            let removedCount = 0;
+            
+            // Remove any existing last-active labels
+            for (const label of current) {
+              if (lastActiveRegex.test(label.name)) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: itemNumber, 
+                    name: label.name
+                  });
+                  core.info(`  Removed label: ${label.name}`);
+                  removedCount++;
+                } catch (err) {
+                  core.warning(`  Failed to remove label ${label.name}: ${err.message}`);
+                }
+              }
+            }
+            
+            if (removedCount === 0) {
+              core.info('  No last-active labels found to remove');
+            } else {
+              core.info(`✅ Successfully removed ${removedCount} last-active label(s) from ${itemType} #${itemNumber}`);
+            }
