@@ -2171,7 +2171,16 @@ def get_github_issue(request):
         issue_details = generate_github_issue(description)
 
         if "error" in issue_details:
-            return JsonResponse({"error": "There's a problem with AI"}, status=500)
+            return render(
+                request,
+                "github_issue_prompt.html",
+                {
+                    "error": issue_details.get("error"),
+                    "description": description,
+                    "repository_url": repository_url,
+                },
+                status=500,
+            )
 
         # Render the github_issue.html page with the generated issue details
         return render(
@@ -2190,7 +2199,12 @@ def get_github_issue(request):
 
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key or api_key.startswith("sk-proj-"):
+            return {"error": "OpenAI API key is not configured"}
+
+        # Use a short timeout so the request does not hang the view
+        client = OpenAI(api_key=api_key).with_options(timeout=10)
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
@@ -2214,8 +2228,16 @@ def generate_github_issue(description):
 
         # Extract and parse the response
         if response.choices and response.choices[0].message:
-            issue_details_str = response.choices[0].message.content
-            issue_details = json.loads(issue_details_str)  # Parse the JSON response
+            issue_details_str = response.choices[0].message.content or ""
+            cleaned_response = issue_details_str.strip()
+
+            # Handle models that wrap JSON in ```json ``` blocks
+            if cleaned_response.startswith("```"):
+                cleaned_response = cleaned_response.strip("`").strip()
+                if cleaned_response.lower().startswith("json"):
+                    cleaned_response = cleaned_response[4:].strip()
+
+            issue_details = json.loads(cleaned_response)  # Parse the JSON response
 
             # Validate the response has all required fields
             if not all(k in issue_details for k in ["title", "description", "labels"]):
