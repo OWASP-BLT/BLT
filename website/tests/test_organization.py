@@ -333,7 +333,8 @@ class OrganizationSwitchingTests(TestCase):
         )
         self.org1.managers.add(inactive_user)
 
-        self.client.login(username="inactive", password="inactivepass123")
+        # Use force_login to bypass authentication check, then test is_active check in view
+        self.client.force_login(inactive_user)
         response = self.client.get(reverse("admin_organization_dashboard"))
 
         # Should be redirected to home
