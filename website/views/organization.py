@@ -1365,9 +1365,17 @@ def sizzle_daily_log(request):
             next_plan = request.POST.get("next_plan")
             blockers_type = request.POST.get("blockers")
             blockers_other = request.POST.get("blockers_other", "")
-            # Combine blockers: if "other" selected, use blockers_other, otherwise use the type
-            if blockers_type == "other" and blockers_other:
-                blockers = blockers_other
+            # Combine blockers: if "other" selected, require blockers_other to be non-empty
+            if blockers_type == "other":
+                if not blockers_other or not blockers_other.strip():
+                    return JsonResponse(
+                        {
+                            "success": "false",
+                            "message": "Please provide a description when selecting 'Other' for blockers.",
+                        },
+                        status=400,
+                    )
+                blockers = blockers_other.strip()
             elif blockers_type == "no_blockers":
                 blockers = "no blockers"
             elif blockers_type:
@@ -1378,43 +1386,57 @@ def sizzle_daily_log(request):
                     {"success": "false", "message": "Blockers field is required."},
                     status=400,
                 )
-            # Handle goal_accomplished as radio button (yes/no instead of checkbox)
+            # Handle goal_accomplished as radio button (yes/no) - require explicit selection
             goal_accomplished_value = request.POST.get("goal_accomplished")
+            if goal_accomplished_value not in ["yes", "no"]:
+                return JsonResponse(
+                    {
+                        "success": "false",
+                        "message": "Goal accomplished field is required. Please select 'Yes' or 'No'.",
+                    },
+                    status=400,
+                )
             goal_accomplished = goal_accomplished_value == "yes"
             current_mood = request.POST.get("feeling")
             logger.debug(
                 f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
             )
 
-            # Check if user already submitted a check-in today
+            # Use get_or_create to handle concurrent submissions gracefully
             today = now().date()
-            existing_checkin = DailyStatusReport.objects.filter(
-                user=request.user,
-                date=today,
-            ).first()
-
-            if existing_checkin:
-                return JsonResponse(
-                    {
-                        "success": "false",
-                        "message": "You have already submitted a check-in for today. Please wait 24 hours from your last submission to submit again.",
-                    },
-                    status=400,
-                )
-
-            # Create new check-in
             try:
-                daily_status = DailyStatusReport.objects.create(
+                daily_status, created = DailyStatusReport.objects.get_or_create(
                     user=request.user,
                     date=today,
-                    previous_work=previous_work,
-                    next_plan=next_plan,
-                    blockers=blockers,
-                    goal_accomplished=goal_accomplished,
-                    current_mood=current_mood,
+                    defaults={
+                        "previous_work": previous_work,
+                        "next_plan": next_plan,
+                        "blockers": blockers,
+                        "goal_accomplished": goal_accomplished,
+                        "current_mood": current_mood,
+                    },
                 )
+
+                if not created:
+                    # Record already exists (concurrent submission or duplicate)
+                    logger.info(
+                        f"Check-in already exists for user {request.user.username} on {today}. Returning 400 to client."
+                    )
+                    return JsonResponse(
+                        {
+                            "success": "false",
+                            "message": "You have already submitted a check-in for today. Please wait 24 hours from your last submission to submit again.",
+                        },
+                        status=400,
+                    )
+
+                logger.info(f"Created new check-in for user {request.user.username} on {today}")
             except Exception as e:
-                logger.error(f"Error creating daily status report: {e}", exc_info=True)
+                # Unexpected database error (not a duplicate)
+                logger.error(
+                    f"Unexpected error creating daily status report for user {request.user.username}: {e}",
+                    exc_info=True,
+                )
                 return JsonResponse(
                     {
                         "success": "false",
@@ -1423,14 +1445,13 @@ def sizzle_daily_log(request):
                     status=500,
                 )
 
-            # Set next_challenge_at to 24 hours from now for all user's challenges
-            from datetime import timedelta
-
+            # Set next_challenge_at to 24 hours from now for today's challenges only
             from website.models import UserDailyChallenge
 
             next_challenge_time = now() + timedelta(hours=24)
             UserDailyChallenge.objects.filter(
                 user=request.user,
+                challenge_date=today,
                 status="assigned",
             ).update(next_challenge_at=next_challenge_time)
 
@@ -1446,31 +1467,32 @@ def sizzle_daily_log(request):
                 )
 
                 if completed_challenges:
-                    # Get details of completed challenges
-                    from datetime import date
-
+                    # Get details of completed challenges using timezone-aware today
                     from website.models import UserDailyChallenge
+
+                    # Get challenge titles to filter at DB level
+                    challenge_titles = list(completed_challenges)
 
                     user_challenges = (
                         UserDailyChallenge.objects.filter(
                             user=request.user,
-                            challenge_date=date.today(),
+                            challenge_date=today,
                             status="completed",
+                            challenge__title__in=challenge_titles,
                         )
                         .select_related("challenge")
                         .order_by("-completed_at")
                     )
 
                     for uc in user_challenges:
-                        if uc.challenge.title in completed_challenges:
-                            completed_challenges_data.append(
-                                {
-                                    "title": uc.challenge.title,
-                                    "points": uc.points_awarded,
-                                    "description": uc.challenge.description,
-                                }
-                            )
-                            total_points_awarded += uc.points_awarded
+                        completed_challenges_data.append(
+                            {
+                                "title": uc.challenge.title,
+                                "points": uc.points_awarded,
+                                "description": uc.challenge.description,
+                            }
+                        )
+                        total_points_awarded += uc.points_awarded
 
             except Exception as e:
                 logger.error(f"Error checking challenges: {e}")

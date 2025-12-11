@@ -7,6 +7,44 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def remove_duplicate_daily_status_reports(apps, schema_editor):
+    """
+    Remove duplicate DailyStatusReport entries before applying unique_together constraint.
+    For each (user, date) group, keep the record with the earliest created_at timestamp
+    and delete the rest.
+    """
+    DailyStatusReport = apps.get_model("website", "DailyStatusReport")
+
+    # Find all duplicate groups (user, date) with count > 1
+    from django.db.models import Count
+
+    duplicates = DailyStatusReport.objects.values("user", "date").annotate(count=Count("id")).filter(count__gt=1)
+
+    deleted_count = 0
+    for group in duplicates:
+        user_id = group["user"]
+        date = group["date"]
+
+        # Get all records for this (user, date) group, ordered by created_at
+        records = DailyStatusReport.objects.filter(user_id=user_id, date=date).order_by("created_at")
+
+        # Keep the first one (earliest created_at), delete the rest
+        keep_record = records.first()
+        if keep_record:
+            records_to_delete = records.exclude(id=keep_record.id)
+            count = records_to_delete.count()
+            records_to_delete.delete()
+            deleted_count += count
+
+    if deleted_count > 0:
+        print(f"Removed {deleted_count} duplicate DailyStatusReport entries")
+
+
+def reverse_remove_duplicates(apps, schema_editor):
+    """Reverse migration - nothing to do as we can't restore deleted duplicates"""
+    pass
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0260_add_username_to_slackbotactivity"),
@@ -128,6 +166,7 @@ class Migration(migrations.Migration):
                 max_length=50,
             ),
         ),
+        migrations.RunPython(remove_duplicate_daily_status_reports, reverse_remove_duplicates),
         migrations.AlterUniqueTogether(
             name="dailystatusreport",
             unique_together={("user", "date")},
