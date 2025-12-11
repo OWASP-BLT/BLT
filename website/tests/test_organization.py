@@ -174,3 +174,154 @@ class SizzleCheckInViewTests(TestCase):
         self.assertContains(response, "Last check-in was on")
         self.assertContains(response, "Fill from Last Check-in")
         self.assertContains(response, "fillFromLastCheckinBtn")
+
+
+class OrganizationSwitchingTests(TestCase):
+    """Test organization switching functionality for administrators"""
+
+    def setUp(self):
+        self.client = Client()
+
+        # Create users
+        self.admin_user = User.objects.create_user(
+            username="admin", password="adminpass123", email="admin@example.com", is_active=True
+        )
+        self.manager_user = User.objects.create_user(
+            username="manager", password="managerpass123", email="manager@example.com", is_active=True
+        )
+        self.regular_user = User.objects.create_user(
+            username="regular", password="regularpass123", email="regular@example.com", is_active=True
+        )
+        self.superuser = User.objects.create_user(
+            username="superuser", password="superpass123", email="super@example.com", is_active=True, is_superuser=True
+        )
+
+        # Create organizations
+        self.org1 = Organization.objects.create(
+            name="Organization 1", description="First org", slug="org-1", url="https://org1.com", admin=self.admin_user
+        )
+        self.org2 = Organization.objects.create(
+            name="Organization 2", description="Second org", slug="org-2", url="https://org2.com", admin=self.admin_user
+        )
+        self.org3 = Organization.objects.create(
+            name="Organization 3", description="Third org", slug="org-3", url="https://org3.com"
+        )
+
+        # Add manager relationship
+        self.org3.managers.add(self.manager_user)
+
+    def test_admin_can_access_their_organizations(self):
+        """Test that admin can access organizations they administer"""
+        self.client.login(username="admin", password="adminpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Organization 1")
+        self.assertContains(response, "Organization 2")
+        self.assertNotContains(response, "Organization 3")
+
+    def test_manager_can_access_managed_organizations(self):
+        """Test that manager can access organizations they manage"""
+        self.client.login(username="manager", password="managerpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Organization 3")
+        self.assertNotContains(response, "Organization 1")
+        self.assertNotContains(response, "Organization 2")
+
+    def test_superuser_can_access_all_organizations(self):
+        """Test that superuser can access all organizations"""
+        self.client.login(username="superuser", password="superpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Organization 1")
+        self.assertContains(response, "Organization 2")
+        self.assertContains(response, "Organization 3")
+
+    def test_regular_user_cannot_access_dashboard(self):
+        """Test that regular user without organizations is redirected"""
+        self.client.login(username="regular", password="regularpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertEqual(response.url, "/")
+
+    def test_organization_switching_updates_session(self):
+        """Test that switching organizations updates the session"""
+        self.client.login(username="admin", password="adminpass123")
+
+        # Switch to org2
+        response = self.client.get(reverse("admin_organization_dashboard"), {"switch_to": self.org2.pk})
+
+        self.assertEqual(response.status_code, 302)  # Redirect after switching
+        self.assertEqual(self.client.session.get("selected_organization_id"), self.org2.pk)
+
+    def test_organization_switcher_shown_for_multiple_orgs(self):
+        """Test that organization switcher is shown when user manages multiple organizations"""
+        self.client.login(username="admin", password="adminpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Switch Organization")
+        self.assertTrue(response.context["user_can_manage_multiple"])
+
+    def test_organization_switcher_not_shown_for_single_org(self):
+        """Test that organization switcher is not shown when user manages only one organization"""
+        self.client.login(username="manager", password="managerpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Switch Organization")
+        self.assertFalse(response.context["user_can_manage_multiple"])
+
+    def test_selected_organization_persists_in_session(self):
+        """Test that selected organization persists across requests"""
+        self.client.login(username="admin", password="adminpass123")
+
+        # First request - should select org1 (first org)
+        response = self.client.get(reverse("admin_organization_dashboard"))
+        first_selected = response.context["selected_organization"]
+
+        # Switch to org2
+        self.client.get(reverse("admin_organization_dashboard"), {"switch_to": self.org2.pk})
+
+        # Next request should maintain org2 selection
+        response = self.client.get(reverse("admin_organization_dashboard"))
+        self.assertEqual(response.context["selected_organization"].pk, self.org2.pk)
+
+    def test_admin_can_view_organization_detail(self):
+        """Test that admin can view details of their organization"""
+        self.client.login(username="admin", password="adminpass123")
+        response = self.client.get(reverse("admin_organization_dashboard_detail", kwargs={"pk": self.org1.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Organization 1")
+
+    def test_admin_cannot_view_other_organization_detail(self):
+        """Test that admin cannot view details of organization they don't manage"""
+        self.client.login(username="admin", password="adminpass123")
+        response = self.client.get(reverse("admin_organization_dashboard_detail", kwargs={"pk": self.org3.pk}))
+
+        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertEqual(response.url, "/")
+
+    def test_manager_can_view_managed_organization_detail(self):
+        """Test that manager can view details of organization they manage"""
+        self.client.login(username="manager", password="managerpass123")
+        response = self.client.get(reverse("admin_organization_dashboard_detail", kwargs={"pk": self.org3.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Organization 3")
+
+    def test_invalid_organization_switch_shows_error(self):
+        """Test that switching to invalid organization shows error"""
+        self.client.login(username="admin", password="adminpass123")
+
+        # Try to switch to org3 which admin doesn't manage
+        response = self.client.get(reverse("admin_organization_dashboard"), {"switch_to": self.org3.pk}, follow=True)
+
+        # Should get error message
+        messages = list(response.context["messages"])
+        self.assertTrue(any("Invalid organization" in str(m) for m in messages))
