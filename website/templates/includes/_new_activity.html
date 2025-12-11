@@ -54,7 +54,7 @@
                          loading="lazy"
                          alt="user avatar">
                 {% else %}
-                    <img src="{% static 'images/dummy-user.png' %}"
+                    <img src="{% static 'images/dummy-user.webp' %}"
                          height="30"
                          width="30"
                          class="mr-3 h-[40px] w-[40px] rounded-full"
@@ -65,30 +65,32 @@
             <div class="w-full flex flex-col gap-2">
                 <div class="mb-2 text-lg">
                     <a href="{{ activity.user.get_absolute_url }}"
-                       class="hover:text-red-500">@{{ activity.user|default:"Anonymous" }}</a>
+                       class="hover:text-red-500">@{{
+                    activity.user|default:"Anonymous" }}</a>
                     found a bug on <a href="{% url 'domain' slug=activity.domain_name %}"
-    class="hover:text-red-500">{{ activity.domain_title }}</a>
-                </div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ activity.created|timesince }} ago.</p>
-                <a class="font-medium hover:text-red-500"
-                   href="{{ activity.url }}"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <div>URL: {{ activity.url|truncatechars:30 }}</div>
-                </a>
-                <a class="whitespace-nowrap mb-1 text-xl"
-                   href="{{ activity.get_absolute_url }}#comments">
-                    {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
-                </a>
+    class="hover:text-red-500">{{
+                activity.domain_title }}</a>
             </div>
-        </div>
-        <div class="flex flex-row gap-2 items-center justify-between w-full my-2">
-            <button class="bg-red-500 w-full hover:bg-red-600 text-white font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl transition duration-200 label label-default pull-right">
-                {{ activity.status }}
-            </button>
-            <button class="bg-red-500 w-full hover:bg-red-600 text-white font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl transition duration-200 label label-default pull-right">
-                {{ activity.get_label_display }}
-            </button>
+            <p class="text-sm text-gray-600 dark:text-gray-400">{{ activity.created|timesince }} ago.</p>
+            <a class="font-medium hover:text-red-500"
+               href="{{ activity.url }}"
+               target="_blank"
+               rel="noopener noreferrer">
+                <div>URL: {{ activity.url|truncatechars:30 }}</div>
+            </a>
+            <a class="whitespace-nowrap mb-1 text-xl"
+               href="{{ activity.get_absolute_url }}#comments">
+                {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
+            </a>
         </div>
     </div>
+    <div class="flex flex-row gap-2 items-center justify-between w-full my-2">
+        <button class="bg-red-500 w-full hover:bg-red-600 text-white font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl transition duration-200 label label-default pull-right">
+            {{ activity.status }}
+        </button>
+        <button class="bg-red-500 w-full hover:bg-red-600 text-white font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl transition duration-200 label label-default pull-right">
+            {{ activity.get_label_display }}
+        </button>
+    </div>
+</div>
 </div>

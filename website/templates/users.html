@@ -5,7 +5,8 @@
     Explore Our Community Members
 {% endblock title %}
 {% block description %}
-    Discover and connect with our diverse community members. View profiles, roles, and contact information to engage with like-minded individuals.
+    Discover and connect with our diverse community members. View profiles, roles, and contact information to engage with
+    like-minded individuals.
 {% endblock description %}
 {% block keywords %}
     Community Members, Explore Members, View Profiles, Connect with Community, User Roles, Contact Information
@@ -14,7 +15,8 @@
     Explore Our Community Members - Connect and Discover
 {% endblock og_title %}
 {% block og_description %}
-    Dive into our community and meet our members. View profiles, learn about their roles, and get in touch to build meaningful connections.
+    Dive into our community and meet our members. View profiles, learn about their roles, and get in touch to build
+    meaningful connections.
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -68,7 +70,7 @@
                              width="100px"
                              height="100px"
                              alt="{{ contributor.name }}'s avatar"
-                             onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                             onerror="this.src='{% static 'images/dummy-user.webp' %}'">
                         <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ contributor.name }}</div>
                         <div class="text-purple-600 text-lg">{{ contributor.contributor_type }}</div>
                         <p class="text-gray-600 dark:text-gray-400 text-center px-4">Contributions: {{ contributor.contributions }}</p>
@@ -97,7 +99,7 @@
                                  width="100px"
                                  height="100px"
                                  alt="{{ user.user.username }}'s avatar"
-                                 onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                 onerror="this.src='{% static 'images/dummy-user.webp' %}'">
                         {% elif user.github_url %}
                             {% with github_username=user.github_url|cut:"https://github.com/"|cut:"/" %}
                                 <img src="https://github.com/{{ github_username }}.png"
@@ -105,10 +107,10 @@
                                      width="100px"
                                      height="100px"
                                      alt="{{ user.user.username }}'s avatar"
-                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                     onerror="this.src='{% static 'images/dummy-user.webp' %}'">
                             {% endwith %}
                         {% else %}
-                            <img src="{% static 'images/dummy-user.png' %}"
+                            <img src="{% static 'images/dummy-user.webp' %}"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                  width="100px"
                                  height="100px"
