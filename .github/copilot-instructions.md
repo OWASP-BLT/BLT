@@ -218,8 +218,9 @@ python manage.py runserver
 
 ## Additional Resources
 
-- [Contributing Guide](../CONTRIBUTING.md) - Detailed contribution guidelines
+- [Contributing Guide](../docs/community/CONTRIBUTING.md) - Detailed contribution guidelines
 - [README](../README.md) - Project overview and setup instructions
+- [Full Documentation](../docs/index.md) - Complete documentation index
 - [Django Documentation](https://docs.djangoproject.com/) - Official Django docs
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs) - Tailwind CSS reference
 
