@@ -3512,3 +3512,101 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+class Bounty(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_PAID = "paid"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_PAID, "Paid"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name="bounties",
+        db_index=True,
+    )
+    sponsor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="bounties",
+        db_index=True,
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    github_issue_url = models.URLField()
+    github_sponsor_username = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["issue"]),
+            models.Index(fields=["sponsor"]),
+            models.Index(fields=["github_issue_url"]),
+        ]
+
+    def __str__(self):
+        return f"{self.github_sponsor_username} → {self.issue} (${self.amount})"
+
+    @classmethod
+    def total_for_issue(cls, issue):
+        """
+        Sum of all *non-cancelled* bounties for this issue.
+        """
+        return (
+            cls.objects.filter(issue=issue)
+            .exclude(status=cls.STATUS_CANCELLED)
+            .aggregate(total=models.Sum("amount"))["total"]
+            or 0
+        )
+
+    @classmethod
+    def total_for_issue_url(cls, github_issue_url: str):
+        return (
+            cls.objects.filter(github_issue_url=github_issue_url)
+            .exclude(status=cls.STATUS_CANCELLED)
+            .aggregate(total=models.Sum("amount"))["total"]
+            or 0
+        )
+
+    @classmethod
+    def unique_developers_sponsored_by_user(cls, sponsor):
+        """
+        Count distinct contributors who received payouts from this sponsor's bounties.
+
+        NOTE: This assumes you have some model linking issues/PRs/payouts to developers.
+        For now we stub assuming Issue has an `assignee` FK to User.
+        Adjust this to match BLT's actual payout/assignee model.
+        """
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+
+        # Example: distinct assignees on issues sponsored by this user, where bounty is paid.
+        return (
+            User.objects.filter(
+                issue__bounties__sponsor=sponsor,
+                issue__bounties__status=cls.STATUS_PAID,
+            )
+            .distinct()
+            .count()
+        )
+
+class SlackGithubLink(models.Model):
+    slack_user_id = models.CharField(max_length=64, unique=True)
+    slack_username = models.CharField(max_length=255, blank=True)
+    github_username = models.CharField(max_length=255)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.slack_user_id} -> {self.github_username}"

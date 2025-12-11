@@ -18,12 +18,12 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection,models
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets ,permissions, authentication
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
@@ -35,6 +35,7 @@ from rest_framework.views import APIView
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
+    Bounty,
     Contributor,
     Domain,
     Hunt,
@@ -56,6 +57,7 @@ from website.models import (
 )
 from website.serializers import (
     ActivityLogSerializer,
+    BountySerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
     ContributorSerializer,
@@ -1876,5 +1878,73 @@ class DebugPanelStatusApiView(APIView):
                     "testing_mode": getattr(settings, "TESTING", False),
                     "environment": "local" if _is_local_host(request.get_host()) else "unknown",
                 },
+            }
+        )
+
+class BountyViewSet(viewsets.ModelViewSet):
+    """
+    create: Create a new bounty.
+    list: List bounties (optionally filtered).
+    """
+
+    queryset = Bounty.objects.all().select_related("issue", "sponsor")
+    serializer_class = BountySerializer
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        issue_url = self.request.query_params.get("github_issue_url")
+        sponsor_username = self.request.query_params.get("sponsor")
+        if issue_url:
+            qs = qs.filter(github_issue_url=issue_url)
+        if sponsor_username:
+            qs = qs.filter(github_sponsor_username=sponsor_username)
+        return qs
+
+    @action(detail=False, methods=["get"], url_path="issue-total")
+    def issue_total(self, request):
+        github_issue_url = request.query_params.get("github_issue_url")
+        if not github_issue_url:
+            return Response(
+                {"detail": "github_issue_url is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        total = Bounty.total_for_issue_url(github_issue_url)
+        return Response({"github_issue_url": github_issue_url, "total_amount": total})
+
+    @action(detail=False, methods=["get"], url_path="sponsor-stats")
+    def sponsor_stats(self, request):
+        sponsor_username = request.query_params.get("github_username")
+        if not sponsor_username:
+            return Response(
+                {"detail": "github_username is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        qs = Bounty.objects.filter(github_sponsor_username=sponsor_username)
+        total_placed = qs.aggregate(total=models.Sum("amount"))["total"] or 0
+
+        # unique developers sponsored (using the helper)
+        # NOTE: this uses Django auth User; adjust to your domain model if needed.
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        # Distinct issue assignees with paid bounties from this sponsor:
+        unique_devs = (
+            User.objects.filter(
+                issue__bounties__github_sponsor_username=sponsor_username,
+                issue__bounties__status=Bounty.STATUS_PAID,
+            )
+            .distinct()
+            .count()
+        )
+
+        return Response(
+            {
+                "github_username": sponsor_username,
+                "total_bounty_placed": total_placed,
+                "developers_sponsored_count": unique_devs,
             }
         )

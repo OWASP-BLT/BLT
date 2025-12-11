@@ -26,7 +26,7 @@ from PIL import Image
 
 from website.models import DailyStats
 
-from .models import PRAnalysisReport
+from .models import PRAnalysisReport,SlackGithubLink
 
 # Only initialize OpenAI client if API key is available and valid
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -1129,3 +1129,14 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+def get_github_username_for_slack_user(slack_user_id: str) -> str | None:
+    """
+    Look up the GitHub username linked to this Slack user ID.
+    Returns None if no mapping exists.
+    """
+    try:
+        link = SlackGithubLink.objects.get(slack_user_id=slack_user_id)
+        return link.github_username
+    except SlackGithubLink.DoesNotExist:
+        return None

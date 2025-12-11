@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from website.models import (
     ActivityLog,
+    Bounty,
     Contributor,
     Domain,
     Hunt,
@@ -303,3 +304,60 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+
+class BountySerializer(serializers.ModelSerializer):
+    issue_id = serializers.PrimaryKeyRelatedField(
+        source="issue",
+        queryset=Issue.objects.all(),
+        write_only=True,
+    )
+    issue = serializers.StringRelatedField(read_only=True)
+    sponsor_username = serializers.CharField(
+        source="github_sponsor_username",
+        read_only=True,
+    )
+    sponsor_id = serializers.IntegerField(source="sponsor.id", read_only=True)
+
+    class Meta:
+        model = Bounty
+        fields = [
+            "id",
+            "issue",
+            "issue_id",
+            "sponsor_id",
+            "sponsor_username",
+            "amount",
+            "github_issue_url",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "status",
+            "created_at",
+            "updated_at",
+            "sponsor_id",
+            "sponsor_username",
+        ]
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Bounty amount must be positive.")
+        if value > 100000:  # arbitrary reasonable max, tweak as needed
+            raise serializers.ValidationError("Bounty amount is unreasonably large.")
+        return value
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        sponsor = request.user
+        validated_data["sponsor"] = sponsor
+
+        if "github_sponsor_username" not in validated_data:
+            # Fallback: use a profile field or username; tweak as needed
+            validated_data["github_sponsor_username"] = getattr(
+                sponsor, "github_username", sponsor.username
+            )
+
+        bounty = super().create(validated_data)
+        return bounty

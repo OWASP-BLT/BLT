@@ -22,6 +22,7 @@ import comments.views
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
+    BountyViewSet,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CheckDuplicateBugApiView,
@@ -398,6 +399,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
+router.register(r"bounties", BountyViewSet, basename="bounty")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -692,7 +694,7 @@ urlpatterns = [
     path("adventures/<slug:slug>/task/<int:task_id>/submit/", submit_task, name="submit_task"),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
-    re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
+    re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),    
     path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
     re_path(r"^invite/$", invite_organization, name="invite"),

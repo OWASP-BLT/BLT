@@ -1,0 +1,62 @@
+name: Bounty Command Trigger (calls composite action in BLT-Action)
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  detect-and-process:
+    runs-on: ubuntu-latest
+
+    # Only run on "real" issues, not PRs
+    if: github.event.issue.pull_request == null
+
+    steps:
+      - name: Parse comment for /bounty command
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = context.payload.comment.body || "";
+            const commenter = context.payload.comment.user?.login || context.actor || "";
+            const issue_number = context.payload.issue.number;
+            const issue_url = context.payload.issue.html_url;
+
+            // match "/bounty $50" or "/bounty 50" or "/bounty $12.50"
+            const m = comment.match(/\b\/bounty\s*\$?(\d+(?:\.\d{1,2})?)\b/i);
+            if (!m) {
+              core.info("No /bounty command found.");
+              return {
+                found: "false",
+              };
+            }
+
+            const amount = m[1];
+            core.info(`Bounty detected: $${amount} by ${commenter} on issue #${issue_number}`);
+
+            return {
+              found: "true",
+              amount,
+              commenter,
+              issue_number: String(issue_number),
+              issue_url,
+            };
+
+      - name: Call BLT-Action composite bounty processor
+        if: steps.parse.outputs.found == 'true'
+        uses: Jayant2908/BLT-ACTION/Bounty_Processor@Bounty_Command
+        with:
+          api_base_url: ${{ secrets.API_BASE_URL }}      # e.g. https://<ngrok>.ngrok.io/api/v1
+          blt_api_token: ${{ secrets.BLT_API_TOKEN }}    # Django Token
+          issue_number: ${{ steps.parse.outputs.issue_number }}
+          issue_url: ${{ steps.parse.outputs.issue_url }}
+          amount: ${{ steps.parse.outputs.amount }}
+          commenter: ${{ steps.parse.outputs.commenter }}
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

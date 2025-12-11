@@ -354,6 +354,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
+    "removable-unbreaking-jonathon.ngrok-free.dev",
     "localhost",
     "0.0.0.0",
 ]
