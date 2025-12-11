@@ -1,0 +1,84 @@
+# GitHub Pages Configuration for OWASP BLT Documentation
+
+# Site Settings
+title: OWASP BLT Documentation
+description: Comprehensive documentation for the OWASP Bug Logging Tool (BLT)
+baseurl: "/BLT"
+url: "https://owasp-blt.github.io"
+
+# Theme
+theme: jekyll-theme-cayman
+# Alternative themes you can use:
+# theme: jekyll-theme-minimal
+# theme: jekyll-theme-slate
+# theme: jekyll-theme-architect
+
+# Markdown
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+  - jekyll-github-metadata
+
+# Plugin Configuration
+relative_links:
+  enabled: true
+  collections: true
+
+optional_front_matter:
+  remove_originals: true
+
+readme_index:
+  enabled: true
+  remove_originals: false
+
+titles_from_headings:
+  enabled: true
+  strip_title: true
+  collections: true
+
+# File Exclusions
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+
+# Include files
+include:
+  - _config.yml
+  - .htaccess
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:collection/:name
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Community
+    url: /community/
+  - title: Setup
+    url: /setup/
+  - title: Architecture
+    url: /architecture/
+  - title: Features
+    url: /features/
+  - title: Pages
+    url: /pages/
+  - title: Troubleshooting
+    url: /troubleshooting/
