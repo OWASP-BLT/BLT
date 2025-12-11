@@ -536,8 +536,7 @@ DB Connections: ${stats.database?.connections || "N/A"}
         this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
       }
     } catch (e) {
-      // non-fatal: if adaptive polling fails, continue with existing timer
-      console.warn("Adaptive polling failed:", e);
+      // ignore timer adjustment errors
     }
 
     if (isRunning) {
