@@ -32,6 +32,7 @@ jobs:
             const m = comment.match(/\/bounty\s*\$?([0-9]+(?:\.[0-9]{1,2})?)/i);
             if (!m) {
               core.info("No /bounty command found.");
+              core.setOutput('found', 'false');
               return {
                 found: "false",
               };
@@ -39,6 +40,13 @@ jobs:
 
             const amount = m[1];
             core.info(`Bounty detected: $${amount} by ${commenter} on issue #${issue_number}`);
+
+            // 🔥 expose outputs for later steps
+            core.setOutput('found', 'true');
+            core.setOutput('amount', amount);
+            core.setOutput('commenter', commenter);
+            core.setOutput('issue_number', String(issue_number));
+            core.setOutput('issue_url', issue_url);
 
             return {
               found: "true",
