@@ -122,13 +122,11 @@
                             <div class="text-gray-700 dark:text-gray-300">
                                 {% if object.user.username %}
                                     <a href="{% url 'profile' slug=object.user.username %}"
-                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username
-                                    }}</a>
+                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
                                 {% else %}
                                     Anonymous
                                 {% endif %}
-                                <span class="text-gray-900 dark:text-gray-100">found this issue on {{ object.created
-                                }}</span>
+                                <span class="text-gray-900 dark:text-gray-100">found this issue on {{ object.created }}</span>
                             </div>
                         </div>
                     </div>
@@ -196,19 +194,19 @@
     </div>
     <!-- Scripts -->
     <script>
-    function deleteIssue(issueId) {
-        if (!confirm('Are you sure you want to delete this issue?')) {
-            return;
-        }
-
-        fetch(`/delete_issue/${issueId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        })
+        function deleteIssue(issueId) {
+            if (!confirm('Are you sure you want to delete this issue?')) {
+                return;
+            }
+            
+            fetch(`/delete_issue/${issueId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
             .then(response => {
                 if (response.ok) {
                     window.location.href = '/';
@@ -223,7 +221,7 @@
                     className: "danger"
                 });
             });
-    }
+        }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script>
@@ -252,46 +250,46 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-
-        const bugReportElement = document.getElementById('bug_report');
-
-        if (bugReportElement && window.markdownit) {
-            const md = new window.markdownit();
-            const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
-
-            // First render the markdown
-            let renderedHtml = md.render(markdownContent);
-
-            // Then transform issue references to clickable links
-            renderedHtml = renderedHtml.replace(
-                /#(\d+)/g,
-                '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-            );
-
-            // Update the content
-            bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
-                ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
-                ALLOWED_ATTR: ['href', 'class']
-            });
-        }
-
-        // Also process the issue title/description for issue references
-        const issueDescriptionElement = document.querySelector('.issue-description');
-        if (issueDescriptionElement) {
-            const originalText = issueDescriptionElement.textContent;
-
-            // Transform issue references to clickable links
-            const transformedText = originalText.replace(
-                /#(\d+)/g,
-                '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-            );
-
-            issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
-                ALLOWED_TAGS: ['a'],
-                ALLOWED_ATTR: ['href', 'class']
-            });
-        }
-    });
+        
+    const bugReportElement = document.getElementById('bug_report');
+    
+    if (bugReportElement && window.markdownit) {
+        const md = new window.markdownit();
+        const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+        
+        // First render the markdown
+        let renderedHtml = md.render(markdownContent);
+        
+        // Then transform issue references to clickable links
+        renderedHtml = renderedHtml.replace(
+            /#(\d+)/g, 
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        // Update the content
+        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
+        ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
+        ALLOWED_ATTR: ['href', 'class']
+});
+    }
+    
+    // Also process the issue title/description for issue references
+    const issueDescriptionElement = document.querySelector('.issue-description');
+    if (issueDescriptionElement) {
+        const originalText = issueDescriptionElement.textContent;
+        
+        // Transform issue references to clickable links
+        const transformedText = originalText.replace(
+            /#(\d+)/g, 
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
+        ALLOWED_TAGS: ['a'],
+        ALLOWED_ATTR: ['href', 'class']
+});
+    }
+});
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
             integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="

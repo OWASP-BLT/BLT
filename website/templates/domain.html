@@ -11,8 +11,7 @@
 {% endblock head %}
 {% block title %}{{ domain.name }} - Domain Dashboard{% endblock %}
 {% block description %}
-    View detailed stats, activities, and the latest information about {{ domain.name }}. Track issues, reports, and see top
-    hunters for this domain.
+    View detailed stats, activities, and the latest information about {{ domain.name }}. Track issues, reports, and see top hunters for this domain.
 {% endblock %}
 {% block keywords %}domain, dashboard, stats, activities, issues, bugs, top hunters{% endblock %}
 {% block og_title %}{{ domain.name }} - Domain Dashboard{% endblock %}
@@ -73,8 +72,7 @@
                                 <a href="?open={{ opened.previous_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Previous</a>
                             {% endif %}
-                            <span class="text-gray-700 dark:text-gray-300 font-medium">
-                            Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                            <span class="text-gray-700 dark:text-gray-300 font-medium">Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                             {% if opened.has_next %}
                                 <a href="?open={{ opened.next_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Next</a>
@@ -96,8 +94,7 @@
                                 <a href="?close={{ closed.previous_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Previous</a>
                             {% endif %}
-                            <span class="text-gray-700 dark:text-gray-300 font-medium">
-                            Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
+                            <span class="text-gray-700 dark:text-gray-300 font-medium">Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
                             {% if closed.has_next %}
                                 <a href="?close={{ closed.next_page_number }}"
                                    class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">Next</a>
@@ -203,8 +200,7 @@
                                 Security.txt Found
                             </h3>
                             <p class="text-gray-600 dark:text-gray-400 mb-4">
-                                This domain implements the security.txt standard (RFC 9116), making it easier for security
-                                researchers to report security vulnerabilities.
+                                This domain implements the security.txt standard (RFC 9116), making it easier for security researchers to report security vulnerabilities.
                             </p>
                             {% if domain.security_txt_checked_at %}
                                 <div class="text-sm text-gray-500 dark:text-gray-500 mb-4">
@@ -219,8 +215,7 @@
                                 No Security.txt Found
                             </h3>
                             <p class="text-gray-600 dark:text-gray-400 mb-4">
-                                This domain does not implement the security.txt standard (RFC 9116), which makes it harder for
-                                security researchers to report security vulnerabilities.
+                                This domain does not implement the security.txt standard (RFC 9116), which makes it harder for security researchers to report security vulnerabilities.
                             </p>
                             {% if domain.security_txt_checked_at %}
                                 <div class="text-sm text-gray-500 dark:text-gray-500">
@@ -252,8 +247,7 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-id-card text-[#e74c3c]"></i>
-                                            <span class="font-medium">Reg No:</span> {{ trademark.registration_number |
-                                            default:"N/A" }}
+                                            <span class="font-medium">Reg No:</span> {{ trademark.registration_number | default:"N/A" }}
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-hashtag text-[#e74c3c]"></i>
@@ -261,18 +255,15 @@
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-calendar-alt text-[#e74c3c]"></i>
-                                            <span class="font-medium">Filing Date:</span> {{ trademark.filing_date | default:"N/A"
-                                            }}
+                                            <span class="font-medium">Filing Date:</span> {{ trademark.filing_date | default:"N/A" }}
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-calendar-check text-[#e74c3c]"></i>
-                                            <span class="font-medium">Reg Date:</span> {{ trademark.registration_date |
-                                            default:"N/A" }}
+                                            <span class="font-medium">Reg Date:</span> {{ trademark.registration_date | default:"N/A" }}
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-history text-[#e74c3c]"></i>
-                                            <span class="font-medium">Status Date:</span> {{ trademark.status_date | default:"N/A"
-                                            }}
+                                            <span class="font-medium">Status Date:</span> {{ trademark.status_date | default:"N/A" }}
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-tag text-[#e74c3c]"></i>
@@ -362,8 +353,7 @@
                                                 {% endif %}
                                             </a>
                                             <a class="hover:text-red-600"
-                                               href="{% url 'profile' slug=leader.username %}">
-                                            {{ leader.username }}</a>
+                                               href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
                                         </div>
                                         <div class="px-3 py-2 bg-blue-400 text-white rounded-lg flex items-center gap-2"
                                              name="{{ user }}">
@@ -385,45 +375,45 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
-    var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    var months = [],
+        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+        var months = [],
         data = [];
-    var all_data = new Array(12).fill(0);
-    var current_month = {{ current_month }};
-    {% for i in domain_graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
+        var all_data = new Array(12).fill(0);
+        var current_month = {{ current_month }};
+        {% for i in domain_graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
 
-    if (current_month - 6 < 0) {
-        months = all_months.slice(current_month - 6);
-        months = months.concat(all_months.slice(0, current_month));
-        data = all_data.slice(current_month - 6);
-        data = data.concat(all_data.slice(0, current_month));
-    } else {
-        months = all_months.slice(current_month - 6, current_month);
-        data = all_data.slice(current_month - 6, current_month);
-    }
-    var options = {
-        series: [{
+        if (current_month - 6 < 0) {
+            months = all_months.slice(current_month - 6);
+            months = months.concat(all_months.slice(0, current_month));
+            data = all_data.slice(current_month - 6);
+            data = data.concat(all_data.slice(0, current_month));
+        } else {
+            months = all_months.slice(current_month - 6, current_month);
+            data = all_data.slice(current_month - 6, current_month);
+        }
+        var options = {
+            series: [{
             name: 'Monthly Activity',
             data: data
-        }],
-        chart: {
+          }],
+            chart: {
             height: 350,
             type: 'area'
-        },
-        dataLabels: {
+          },
+          dataLabels: {
             enabled: false
-        },
-        stroke: {
+          },
+          stroke: {
             curve: 'smooth'
-        },
-        xaxis: {
+          },
+          xaxis: {
             type: 'String',
             categories: months
-        },
-    };
-
-    var chart = new ApexCharts(document.querySelector("#chart"), options);
-    chart.render();
+          },
+          };
+  
+          var chart = new ApexCharts(document.querySelector("#chart"), options);
+          chart.render();
     </script>
     <script src="https://unpkg.com/@material-tailwind/html@latest/scripts/tabs.js"></script>
 {% endblock content %}

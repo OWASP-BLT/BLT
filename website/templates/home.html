@@ -4,16 +4,14 @@
 {% load custom_tags %}
 {% block title %}Home - Bug Logging Tool{% endblock %}
 {% block description %}
-    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through
-    community-driven collaboration.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
 {% endblock %}
 {% block keywords %}
     Bug Logging Tool, OWASP, security, bug reporting, rewards, open source, community, web security, contributions
 {% endblock %}
 {% block og_title %}Home - Bug Logging Tool{% endblock %}
 {% block og_description %}
-    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through
-    community-driven collaboration.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
 {% endblock %}
 {% block content %}
     <!-- Include Sidebar -->
@@ -144,10 +142,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <h1 class="text-4xl font-bold mb-5 text-black/90 dark:text-white/90">OWASP BLT: Secure the Web, Get Rewarded</h1>
             <p class="text-lg mb-4 text-black/80 dark:text-white/80">
-                Strengthen <span class="font-bold">worldwide applications</span> by <span class="font-bold">finding and
-                fixing security & coding issues</span> through <span class="font-bold">bug bounties and issue
-                rewards.</span> Earn <span class="font-bold">money via GitHub Sponsors & BCH</span> and get recognized
-                with <span class="font-bold">BACON</span>, the first open-source security token on Bitcoin Runes.
+                Strengthen <span class="font-bold">worldwide applications</span> by <span class="font-bold">finding and fixing security & coding issues</span> through <span class="font-bold">bug bounties and issue rewards.</span> Earn <span class="font-bold">money via GitHub Sponsors & BCH</span> and get recognized with <span class="font-bold">BACON</span>, the first open-source security token on Bitcoin Runes.
             </p>
         </div>
         <!-- Features Section -->
@@ -160,10 +155,7 @@
                             <i class="fas fa-shield-virus fa-2xl text-[#e74c3c]"></i>
                         </div>
                         <h3 class="text-lg font-semibold mb-1 dark:text-gray-100">Protect Applications</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                            Safeguard your applications from security
-                            vulnerabilities.
-                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Safeguard your applications from security vulnerabilities.</p>
                     </div>
                     <!-- Feature 2 -->
                     <div class="text-center">
@@ -286,8 +278,7 @@
                                     </div>
                                     <div class="flex items-center text-xs text-gray-500 mb-3">
                                         <i class="far fa-calendar mr-1.5"></i>
-                                        <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y"
-                                        }}</span>
+                                        <span>{{ hackathon.start_time|date:"M d, Y" }} - {{ hackathon.end_time|date:"M d, Y" }}</span>
                                     </div>
                                     <a href="{% url 'hackathon_detail' slug=hackathon.slug %}"
                                        class="inline-flex items-center justify-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors w-full">
@@ -362,8 +353,7 @@
                                             <a href="{% url 'profile' profile.user.username %}"
                                                class="font-medium hover:text-[#e74c3c]">{{ profile.user.username }}</a>
                                         </div>
-                                        <span class="text-green-600 font-medium">${{ profile.total_earnings|floatformat:2
-                                        }}</span>
+                                        <span class="text-green-600 font-medium">${{ profile.total_earnings|floatformat:2 }}</span>
                                     </div>
                                 {% empty %}
                                     <div class="text-center text-gray-500 dark:text-gray-500">
@@ -552,8 +542,7 @@
                         <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
                     </div>
                     <p class="text-gray-600 dark:text-gray-400 text-base max-w-9xl mx-auto mt-3">
-                        Four key components power OWASP BLT. The core, mobile access, browser integration, and
-                        automation—working together to secure applications worldwide.
+                        Four key components power OWASP BLT. The core, mobile access, browser integration, and automation—working together to secure applications worldwide.
                     </p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -727,10 +716,7 @@
                         </div>
                         <div>
                             <h3 class="text-xl font-bold">Join Our Referral Program</h3>
-                            <p class="text-gray-600 dark:text-gray-400">
-                                Sign in to get your referral link and start earning
-                                points!
-                            </p>
+                            <p class="text-gray-600 dark:text-gray-400">Sign in to get your referral link and start earning points!</p>
                         </div>
                     </div>
                     <div class="flex justify-center">
@@ -794,8 +780,7 @@
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
                                 <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Recent Discussions</h3>
-                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_posts.count }}
-                                recent)</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_posts.count }} recent)</span>
                             </div>
                             <div class="space-y-4">
                                 {% for post in recent_posts %}
@@ -833,8 +818,7 @@
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
                                 <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Activity Feed</h3>
-                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_activities|length }}
-                                recent)</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_activities|length }} recent)</span>
                             </div>
                             <div class="space-y-4">
                                 {% for activity in recent_activities %}
@@ -943,8 +927,7 @@
                         <div class="col-span-2 text-center p-8">
                             <p class="text-gray-500 dark:text-gray-500 mb-4">No bug reports available yet.</p>
                             <a href="{% url 'report' %}"
-                               class="inline-block px-6 py-3 bg-[#e74c3c] text-white rounded-md hover:bg-[#c0392b]">Report a
-                            Bug</a>
+                               class="inline-block px-6 py-3 bg-[#e74c3c] text-white rounded-md hover:bg-[#c0392b]">Report a Bug</a>
                         </div>
                     {% endfor %}
                 </div>
@@ -1015,30 +998,21 @@
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-plus text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Register Organization</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Add your company to our
-                            platform
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Add your company to our platform</p>
                     </a>
                     <!-- Domains -->
                     <a href="{% url 'domains' %}"
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Domains</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Manage website domains and
-                            assets
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage website domains and assets</p>
                     </a>
                     <!-- Bugs -->
                     <a href="{% url 'issues' %}"
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Bugs</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            View and track reported
-                            vulnerabilities
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">View and track reported vulnerabilities</p>
                     </a>
                     <!-- Issues -->
                     <a href="{% url 'github_issues' %}"
@@ -1055,40 +1029,28 @@
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Bounties</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Set up and manage bug bounty
-                            programs
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Set up and manage bug bounty programs</p>
                     </a>
                     <!-- Check-ins -->
                     <a href="{% url 'checkIN' %}"
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Check-ins</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Schedule and track security
-                            reviews
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Schedule and track security reviews</p>
                     </a>
                     <!-- Time Logs -->
                     <a href="{% url 'sizzle' %}"
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-clock text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Time Logs</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Track time spent on security
-                            tasks
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Track time spent on security tasks</p>
                     </a>
                     <!-- Trademarks -->
                     <a href="{% url 'trademark_search' %}"
                        class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-trademark text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Trademarks</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Search and monitor trademark
-                            usage
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Search and monitor trademark usage</p>
                     </a>
                     <!-- Map -->
                     <a href="{% url 'map' %}"
@@ -1117,10 +1079,7 @@
                        class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-code-branch text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Repositories</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Connect and monitor GitHub
-                            repos
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Connect and monitor GitHub repos</p>
                     </a>
                     <!-- Bid on Issues -->
                     <a href="{% url 'BiddingData' %}"
@@ -1134,10 +1093,7 @@
                        class="bg-gray-50 dark:bg-gray-900 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
                         <i class="fas fa-hand-holding-usd text-2xl text-[#e74c3c] mb-2"></i>
                         <span class="text-base font-medium text-center">Funding</span>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">
-                            Manage project funding &
-                            rewards
-                        </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1">Manage project funding & rewards</p>
                     </a>
                     <!-- Bacon -->
                     <a href="{% url 'bacon' %}"
@@ -1246,8 +1202,7 @@
                                  class="max-w-full max-h-full">
                         </a>
                         <p class="text-gray-700 dark:text-gray-300">
-                            Google supports BLT through <a href="{% url 'gsoc' %}" class="text-[#e74c3c] hover:text-[#c0392b]">Google Summer of Code</a>, fostering student
-                            contributions.
+                            Google supports BLT through <a href="{% url 'gsoc' %}" class="text-[#e74c3c] hover:text-[#c0392b]">Google Summer of Code</a>, fostering student contributions.
                         </p>
                     </div>
                     <!-- Your Logo Here -->
@@ -1310,12 +1265,12 @@
         copyText.select();
         copyText.setSelectionRange(0, 99999);
         document.execCommand("copy");
-
+        
         // Show feedback
         var button = event.target.closest('button');
         var originalText = button.innerHTML;
         button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
-        setTimeout(function () {
+        setTimeout(function() {
             button.innerHTML = originalText;
         }, 2000);
     }

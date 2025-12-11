@@ -3,7 +3,7 @@
 {% load static %}
 <div class="flex flex-col items-start gap-6">
     <h4 class="text-xl font-semibold">
-        Event ID <span class="text-gray-500 dark:text-gray-500">#{{ object.id }}</span>
+        Event ID  <span class="text-gray-500 dark:text-gray-500">#{{ object.id }}</span>
     </h4>
     <div class="flex justify-start items-center px-3 py-2 rounded-full border border-gray-300 dark:border-gray-600 w-full shadow-sm">
         <img class="w-[50px] rounded-full h-[50px] object-cover"
@@ -68,8 +68,7 @@
                              viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="ml-1.5 text-sm text-gray-600 dark:text-gray-400">{{ issue_count }} Issues
-                        Reported</span>
+                        <span class="ml-1.5 text-sm text-gray-600 dark:text-gray-400">{{ issue_count }} Issues Reported</span>
                     </div>
                 </div>
             </div>
@@ -77,10 +76,9 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 dark:border-gray-700 w-full">
             <div class="flex items-center space-x-4">
                 {% if browser_family %}
-                    {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as
-                        image_static %}
+                    {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                         <img class="w-12 h-12 rounded-lg object-cover shadow-sm"
-                             src="{% static_safe image_static 'img/browser-logos/default/browser_64x64.png' %}"
+                             src="{% static_safe image_static 'img/browser-logos/default/browser_64x64.webp' %}"
                              alt="Browser Logo"
                              width="48"
                              height="48">
