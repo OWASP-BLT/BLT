@@ -1257,11 +1257,6 @@
             </div>
         </footer>
     </div>
-    {% block extra_js %}
-        {% if debug_mode %}
-            <script src="{% static 'js/debug-panel.js' %}" defer></script>
-        {% endif %}
-    {% endblock extra_js %}
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
     <script>
@@ -1281,3 +1276,8 @@
     }
     </script>
 {% endblock content %}
+{% block extra_js %}
+    {% if debug_mode %}
+        <script src="{% static 'js/debug-panel.js' %}" defer></script>
+    {% endif %}
+{% endblock extra_js %}

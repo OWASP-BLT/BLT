@@ -7,6 +7,8 @@ from django.urls import NoReverseMatch, clear_url_caches, reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
+import website.api.views as views
+
 User = get_user_model()
 
 
@@ -48,6 +50,24 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         with self.assertRaises(NoReverseMatch):
             reverse("api_debug_system_stats")
+
+    @override_settings(DEBUG=False)
+    def test_all_debug_endpoints_blocked_in_production(self):
+        """Ensure all debug endpoints are not registered when DEBUG=False"""
+        self.reload_urls()
+        endpoints = [
+            "api_debug_system_stats",
+            "api_debug_cache_info",
+            "api_debug_clear_cache",
+            "api_debug_populate_data",
+            "api_debug_panel_status",
+            "api_debug_sync_github",
+        ]
+
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(NoReverseMatch):
+                    reverse(endpoint)
 
     @override_settings(DEBUG=True)
     def test_get_cache_info_success(self):
@@ -369,6 +389,19 @@ class DebugPanelAPITest(TestCase):
             isinstance(error_text, str) and len(error_text) > 0,
             "Expected non-empty error text in response",
         )
+
         # Ensure the Thread class was instantiated and its start method attempted to be called
         mock_thread.assert_called_once()
         mock_thread.return_value.start.assert_called_once()
+
+        # Verify cleanup of module-level sync state after a start failure
+        # (these globals are defined in website.api.views)
+        self.assertFalse(getattr(views, "_github_sync_running", True))
+        self.assertIsNone(getattr(views, "_github_sync_thread", None))
+        self.assertIsNone(getattr(views, "_github_sync_started_at", None))
+        last_error = getattr(views, "_github_sync_last_error", None)
+        # Accept list-based representation or legacy string, but prefer list and check for token
+        if isinstance(last_error, list):
+            self.assertIn("thread_start_failed", last_error)
+        else:
+            self.assertTrue(isinstance(last_error, str) and "thread_start_failed" in last_error)

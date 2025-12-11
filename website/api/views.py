@@ -15,6 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -1672,7 +1673,9 @@ _github_sync_running = False
 _github_sync_thread = None
 _github_sync_started_at = None
 _github_sync_last_finished_at = None
-_github_sync_last_error = None
+# Use a list to accumulate discrete error codes/messages instead of concatenating strings.
+# This makes it easier to inspect, extend, and join for display.
+_github_sync_last_error = []
 
 
 # Helper function to run GitHub sync commands in a background thread (for debug endpoint)
@@ -1688,82 +1691,93 @@ def _run_github_sync():
     global _github_sync_last_finished_at, _github_sync_last_error
     from io import StringIO
 
-    # Worker acquires the lock in blocking mode and holds it for the entire run
-    # so that only one sync can execute at a time and state is consistent.
-    _github_sync_lock.acquire()
-
-    try:
-        # Record actual start time (ISO format) when the background worker begins work
+    # Briefly acquire the lock to update start state, with a timeout to avoid deadlocks
+    if not _github_sync_lock.acquire(timeout=2):
+        logger.warning("Could not acquire _github_sync_lock to initialize GitHub sync state.")
+    else:
         try:
-            _github_sync_started_at = timezone.now().isoformat()
-        except Exception:
-            _github_sync_started_at = datetime.utcnow().isoformat()
-
-        # Reset last error at the beginning of the run (we hold the lock)
-        _github_sync_last_error = None
-
-        status_messages = []
-        try:
+            # Record actual start time (ISO format) when the background worker begins work
             try:
-                call_command("check_owasp_projects", stdout=StringIO())
-                status_messages.append("✓ Synced OWASP projects")
-            except Exception as e:
-                logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
-                _github_sync_last_error = (
-                    (_github_sync_last_error + "; check_owasp_projects_failed")
-                    if _github_sync_last_error
-                    else "check_owasp_projects_failed"
-                )
+                _github_sync_started_at = timezone.now().isoformat()
+            except Exception:
+                _github_sync_started_at = datetime.utcnow().isoformat()
 
-            try:
-                call_command("update_github_issues", stdout=StringIO())
-                status_messages.append("✓ Updated GitHub issues")
-            except Exception as e:
-                logger.error("Error running update_github_issues: %s", e, exc_info=True)
-                _github_sync_last_error = (
-                    (_github_sync_last_error + "; update_github_issues_failed")
-                    if _github_sync_last_error
-                    else "update_github_issues_failed"
-                )
-
-            try:
-                call_command("fetch_pr_reviews", stdout=StringIO())
-                status_messages.append("✓ Fetched PR reviews")
-            except Exception as e:
-                logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
-                _github_sync_last_error = (
-                    (_github_sync_last_error + "; fetch_pr_reviews_failed")
-                    if _github_sync_last_error
-                    else "fetch_pr_reviews_failed"
-                )
-
-            try:
-                call_command("update_contributor_stats", stdout=StringIO())
-                status_messages.append("✓ Updated contributor stats")
-            except Exception as e:
-                logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
-                _github_sync_last_error = (
-                    (_github_sync_last_error + "; update_contributor_stats_failed")
-                    if _github_sync_last_error
-                    else "update_contributor_stats_failed"
-                )
-
-            logger.info("Background GitHub sync completed with messages: %s", status_messages)
+            # Reset last error at the beginning of the run
+            _github_sync_last_error = []
         finally:
-            # Record finish time and clear running/thread while still holding the lock
+            try:
+                _github_sync_lock.release()
+            except Exception as e:
+                logger.error("Failed to release _github_sync_lock after initializing sync state: %s", e, exc_info=True)
+
+    status_messages = []
+    try:
+        try:
+            call_command("check_owasp_projects", stdout=StringIO())
+            status_messages.append("✓ Synced OWASP projects")
+        except Exception as e:
+            logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
+            _github_sync_last_error.append("check_owasp_projects_failed")
+
+        try:
+            call_command("update_github_issues", stdout=StringIO())
+            status_messages.append("✓ Updated GitHub issues")
+        except Exception as e:
+            logger.error("Error running update_github_issues: %s", e, exc_info=True)
+            _github_sync_last_error.append("update_github_issues_failed")
+
+        try:
+            call_command("fetch_pr_reviews", stdout=StringIO())
+            status_messages.append("✓ Fetched PR reviews")
+        except Exception as e:
+            logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
+            _github_sync_last_error.append("fetch_pr_reviews_failed")
+
+        try:
+            call_command("update_contributor_stats", stdout=StringIO())
+            status_messages.append("✓ Updated contributor stats")
+        except Exception as e:
+            logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
+            _github_sync_last_error.append("update_contributor_stats_failed")
+
+        logger.info("Background GitHub sync completed with messages: %s", status_messages)
+    finally:
+        # Acquire the lock with small retries to finalize finish state
+        finalized = False
+        for _ in range(3):
+            if _github_sync_lock.acquire(timeout=0.5):
+                try:
+                    try:
+                        _github_sync_last_finished_at = timezone.now().isoformat()
+                    except Exception:
+                        _github_sync_last_finished_at = datetime.utcnow().isoformat()
+
+                    _github_sync_running = False
+                    _github_sync_thread = None
+                    # Freeze errors to an immutable tuple to avoid accidental mutation post-finish
+                    try:
+                        _github_sync_last_error = tuple(_github_sync_last_error)
+                    except Exception:
+                        pass
+                    finalized = True
+                    break
+                finally:
+                    try:
+                        _github_sync_lock.release()
+                    except Exception as e:
+                        logger.error(
+                            "Failed to release _github_sync_lock after finalizing sync state: %s",
+                            e,
+                            exc_info=True,
+                        )
+        if not finalized:
+            # As a last resort, clear running state without the lock to avoid stale status
+            logger.warning("Finalization lock acquisition failed; clearing running state without lock.")
+            _github_sync_running = False
             try:
                 _github_sync_last_finished_at = timezone.now().isoformat()
             except Exception:
                 _github_sync_last_finished_at = datetime.utcnow().isoformat()
-
-            _github_sync_running = False
-            _github_sync_thread = None
-    finally:
-        # Release the lock so POST endpoint can start another sync later
-        try:
-            _github_sync_lock.release()
-        except Exception:
-            pass
 
 
 def debug_required(func):
@@ -1868,6 +1882,45 @@ class DebugSystemStatsApiView(APIView):
                     logger.warning("Could not fetch active DB connections: %s", conn_error)
                     active_connections = "Unavailable (error)"
 
+            # Attempt to use a short-lived cache to avoid repeated COUNT() queries during active development
+            try:
+                cached_counts = cache.get("debug_system_counts")
+            except Exception:
+                cached_counts = None
+
+            if cached_counts:
+                db_counts = cached_counts
+            else:
+                db_counts = {
+                    "user_count": User.objects.count(),
+                    "issue_count": Issue.objects.count(),
+                    "org_count": Organization.objects.count(),
+                    "domain_count": Domain.objects.count(),
+                    "repo_count": Repo.objects.count(),
+                }
+                # Cache for a short time (30 seconds) to reduce noise during rapid page reloads
+                try:
+                    cache.set("debug_system_counts", db_counts, timeout=30)
+                except Exception:
+                    # If cache not available, just continue with live counts
+                    pass
+
+            # Acquire lock briefly to read consistent GitHub sync state
+            try:
+                _github_sync_lock.acquire()
+                github_sync_status = {
+                    "running": bool(_github_sync_running),
+                    "started_at": _github_sync_started_at,
+                    "last_finished_at": _github_sync_last_finished_at,
+                    # Expose joined string for backward compatibility but keep internal list for structure
+                    "last_error": "; ".join(_github_sync_last_error) if _github_sync_last_error else None,
+                }
+            finally:
+                try:
+                    _github_sync_lock.release()
+                except Exception:
+                    logger.exception("Failed to release _github_sync_lock after reading status")
+
             return Response(
                 {
                     "success": True,
@@ -1880,17 +1933,18 @@ class DebugSystemStatsApiView(APIView):
                             "version": db_version,
                             # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
                             # This could be slow for large datasets as 5 separate COUNT queries are executed.
-                            "user_count": User.objects.count(),
-                            "issue_count": Issue.objects.count(),
-                            "org_count": Organization.objects.count(),
-                            "domain_count": Domain.objects.count(),
-                            "repo_count": Repo.objects.count(),
+                            "user_count": db_counts["user_count"],
+                            "issue_count": db_counts["issue_count"],
+                            "org_count": db_counts["org_count"],
+                            "domain_count": db_counts["domain_count"],
+                            "repo_count": db_counts["repo_count"],
                             # Active DB connections for this PostgreSQL database (not per-request queries)
                             "connections": active_connections,
                         },
                         "memory": memory_stats,
                         "disk": disk_stats,
                         "cpu": cpu_stats,
+                        "github_sync": github_sync_status,
                     },
                 }
             )
@@ -2008,6 +2062,38 @@ class DebugClearCacheApiView(APIView):
             )
 
 
+class DebugPanelStatusApiView(APIView):
+    """Return debug panel status and GitHub sync snapshot"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        # Snapshot sync status atomically
+        try:
+            _github_sync_lock.acquire()
+            status_snapshot = {
+                "running": _github_sync_running,
+                "started_at": _github_sync_started_at,
+                "last_finished_at": _github_sync_last_finished_at,
+                "last_error": list(_github_sync_last_error)
+                if isinstance(_github_sync_last_error, list)
+                else _github_sync_last_error,
+            }
+        finally:
+            try:
+                _github_sync_lock.release()
+            except Exception:
+                logger.exception("Failed releasing _github_sync_lock in panel status")
+
+        data = {
+            "debug_mode": True,
+            "github_sync": status_snapshot,
+        }
+        return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
+
+
 class DebugSyncGithubDataApiView(APIView):
     """Sync GitHub data for tracked repositories"""
 
@@ -2016,52 +2102,39 @@ class DebugSyncGithubDataApiView(APIView):
 
     @debug_required
     def post(self, request, *args, **kwargs):
+        global _github_sync_running, _github_sync_thread, _github_sync_started_at, _github_sync_last_error
         try:
-            global _github_sync_running, _github_sync_thread, _github_sync_started_at, _github_sync_last_error
-
-            # Acquire the module-level lock to avoid a race where two requests
-            # concurrently check/set _github_sync_running. Hold the lock until
-            # after the background thread has been created and started so the
-            # operation is atomic.
-            acquired = _github_sync_lock.acquire(blocking=False)
-            if not acquired:
-                # Another request is in the process of starting a sync
+            # Acquire the lock briefly to set start state atomically
+            if not _github_sync_lock.acquire(timeout=2):
+                logger.warning("Could not acquire _github_sync_lock in POST handler")
                 return Response(
-                    {"success": False, "error": "A GitHub sync is already being started."},
-                    status=status.HTTP_409_CONFLICT,
+                    {"success": False, "error": "Sync is busy. Please try again shortly."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
             try:
-                # Double-check running flag under the lock
+                # If a sync is already running, return a friendly status
                 if _github_sync_running:
                     return Response(
-                        {"success": False, "error": "A GitHub sync is already running."},
-                        status=status.HTTP_409_CONFLICT,
+                        {"success": False, "message": "GitHub sync is already running"},
+                        status=status.HTTP_200_OK,
                     )
 
-                # Mark as running and record tentative start time immediately.
+                # Initialize sync state
                 _github_sync_running = True
+                _github_sync_last_error = []
+                _github_sync_thread = threading.Thread(target=_run_github_sync, daemon=True)
+                thread = _github_sync_thread
                 try:
+                    # Record a provisional start timestamp; worker will overwrite with actual
                     _github_sync_started_at = timezone.now().isoformat()
                 except Exception:
                     _github_sync_started_at = datetime.utcnow().isoformat()
-
-                # Clear previous error state when a new sync starts.
-                _github_sync_last_error = None
-
-                # Create the thread (non-daemon so DB work can finish safely).
-                thread = threading.Thread(
-                    target=_run_github_sync,
-                    name="debug-github-sync",
-                    daemon=False,
-                )
-                _github_sync_thread = thread
             finally:
-                # Release the lock BEFORE starting the thread so the worker can acquire it
                 try:
                     _github_sync_lock.release()
                 except Exception:
-                    pass
+                    logger.exception("Failed releasing _github_sync_lock after initializing sync state")
 
             # Start the thread after releasing the lock
             try:
@@ -2073,68 +2146,47 @@ class DebugSyncGithubDataApiView(APIView):
                     _github_sync_running = False
                     _github_sync_thread = None
                     _github_sync_started_at = None
-                    # Store a generic code, not exception details
-                    _github_sync_last_error = "thread_start_failed"
+                    # Record a discrete failure token
+                    _github_sync_last_error = ["thread_start_failed"]
                 finally:
                     try:
                         _github_sync_lock.release()
                     except Exception:
-                        pass
-                logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
-                return Response(
-                    {"success": False, "error": "Failed to start background sync thread"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
+                        logger.exception("Failed releasing _github_sync_lock during thread start cleanup")
 
-            # Success: return response while background thread continues.
+                # Provide a slightly more detailed error payload in DEBUG so developers can triage; keep it generic in production.
+                error_response = {"success": False, "error": "Failed to start background sync thread"}
+                try:
+                    if settings.DEBUG:
+                        error_response["details"] = f"{type(start_err).__name__}: {start_err}"
+                except Exception as release_err:
+                    logger.error(
+                        "Error adding debug details to GitHub sync start failure response: %s",
+                        release_err,
+                        exc_info=True,
+                    )
+
+                return Response(error_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Success response
             return Response(
-                {
-                    "success": True,
-                    "message": "GitHub data sync started in background",
-                }
+                {"success": True, "message": "GitHub sync started"},
+                status=status.HTTP_200_OK,
             )
-
         except Exception as e:
-            logger.error("Error syncing GitHub data: %s", e, exc_info=True)
-            # Ensure running flag is cleared on unexpected exceptions under lock to avoid races
+            logger.error("Unexpected error starting GitHub sync: %s", e, exc_info=True)
+            # Attempt cleanup
             try:
                 _github_sync_lock.acquire()
                 _github_sync_running = False
                 _github_sync_thread = None
-                _github_sync_started_at = None
-                # Do not expose exception details to clients
-                _github_sync_last_error = "sync_failed"
             finally:
                 try:
                     _github_sync_lock.release()
                 except Exception:
-                    pass
+                    logger.exception("Failed releasing _github_sync_lock after unexpected error")
+
             return Response(
-                {"success": False, "error": "Failed to sync GitHub data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"success": False, "error": "Unexpected error starting sync"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-
-class DebugPanelStatusApiView(APIView):
-    """Get overall debug panel status"""
-
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def get(self, request, *args, **kwargs):
-        return Response(
-            {
-                "success": True,
-                "data": {
-                    "debug_mode": settings.DEBUG,
-                    "testing_mode": getattr(settings, "TESTING", False),
-                    "environment": "local" if _is_local_host(request.get_host()) else "unknown",
-                    "github_sync": {
-                        "running": bool(_github_sync_running),
-                        "started_at": _github_sync_started_at,
-                        "last_finished_at": _github_sync_last_finished_at,
-                        "last_error": _github_sync_last_error,
-                    },
-                },
-            }
-        )

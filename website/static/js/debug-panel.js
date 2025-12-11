@@ -417,11 +417,20 @@ DB Connections: ${stats.database?.connections || "N/A"}
    * Start polling the debug status endpoint for GitHub sync state
    */
   startGithubStatusPolling(intervalMs = 5000) {
+    // allow optional override from DOM (data attribute on #dev-panel)
+    const panel = document.getElementById("dev-panel");
+    const configured = panel?.dataset?.pollIntervalMs;
+    this._defaultPollInterval = typeof configured !== "undefined" ? parseInt(configured, 10) || intervalMs : intervalMs;
+
     // avoid starting multiple timers
     if (this.githubStatusTimer) return;
+
+    // track the currently used interval so we can adapt when state changes
+    this._currentPollInterval = this._defaultPollInterval;
+
     // schedule first poll asynchronously to avoid blocking initialization
     setTimeout(() => this.pollGithubSyncStatus(), 0);
-    this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), intervalMs);
+    this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
   },
 
   /**
@@ -431,6 +440,7 @@ DB Connections: ${stats.database?.connections || "N/A"}
     if (this.githubStatusTimer) {
       clearInterval(this.githubStatusTimer);
       this.githubStatusTimer = null;
+      this._currentPollInterval = null;
     }
   },
 
@@ -492,8 +502,12 @@ DB Connections: ${stats.database?.connections || "N/A"}
       // Use Tailwind utility classes instead of long inline styles
       // these classes assume Tailwind is available in the project
       badge.className = "inline-block ml-3 px-2 py-1 rounded text-xs font-mono";
-      // insert into the panel header (right after the title area if present)
-      const header = panel.querySelector(".flex.items-center") || panel.firstElementChild;
+      // Prefer a dedicated header container with a stable ID to avoid brittle DOM queries
+      let header = document.getElementById("dev-panel-header");
+      if (!header) {
+        // Fallback to legacy selector used previously
+        header = panel.querySelector(".flex.items-center") || panel.firstElementChild;
+      }
       if (header && header.parentNode) {
         header.parentNode.insertBefore(badge, header.nextSibling);
       } else {
@@ -510,15 +524,37 @@ DB Connections: ${stats.database?.connections || "N/A"}
       "text-white"
     );
 
+    // Adaptive polling: speed up when running, slow down when idle
+    try {
+      const desiredInterval = isRunning ? 1000 : (this._defaultPollInterval || 5000);
+      if (this._currentPollInterval !== desiredInterval) {
+        // Restart poll timer with new interval
+        if (this.githubStatusTimer) {
+          clearInterval(this.githubStatusTimer);
+        }
+        this._currentPollInterval = desiredInterval;
+        this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
+      }
+    } catch (e) {
+      // non-fatal: if adaptive polling fails, continue with existing timer
+      console.warn("Adaptive polling failed:", e);
+    }
+
     if (isRunning) {
       badge.textContent = `Sync: RUNNING (started: ${this.formatTimestamp(sync.started_at)})`;
       badge.classList.add("bg-amber-400", "text-black");
       badge.title = "";
     } else if (sync.last_error) {
-      badge.textContent = `Sync: ERROR (last: ${this.formatTimestamp(sync.last_finished_at)})`;
+      // Show a shortened error in the badge text while keeping full details in the tooltip
+      const errorMsg = String(sync.last_error);
+      // Shorten to first sentence or first 50 characters
+      let shortError = errorMsg.split(/[.!?]\s/)[0] || errorMsg;
+      if (shortError.length > 50) {
+        shortError = shortError.slice(0, 47) + "...";
+      }
+      badge.textContent = `Sync: ERROR (${shortError})`;
       badge.classList.add("bg-red-500", "text-white");
-      // include a tooltip with error details
-      badge.title = String(sync.last_error);
+      badge.title = errorMsg;
     } else {
       badge.textContent = `Sync: idle (last: ${this.formatTimestamp(sync.last_finished_at)})`;
       badge.classList.add("bg-emerald-500", "text-white");
