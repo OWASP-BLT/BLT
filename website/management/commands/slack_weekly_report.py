@@ -28,7 +28,7 @@ class Command(BaseCommand):
         summary = (
             "* Weekly OWASP BLT Report*\n\n"
             f"*New Issues:* {new_issues}\n"
-            f"*✔️ Closed Issues:* {closed_issues}\n"
+            f"*Closed Issues:* {closed_issues}\n"
             f"*New Users:* {new_users}\n"
             f"*Total Projects:* {total_projects}\n\n"
             "_Report generated automatically._"
