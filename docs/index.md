@@ -6,15 +6,15 @@ Welcome to the OWASP Bug Logging Tool (BLT) documentation! This is a comprehensi
 
 - [README](../README.md) - Project overview and quick start guide
 - [Setup Guide](setup/Setup.md) - Detailed installation and configuration
-- [Contributing Guide](community/CONTRIBUTING.md) - How to contribute to the project
+- [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
 
 ## 📚 Documentation Sections
 
 ### Community & Contributing
-- [Contributing Guide](community/CONTRIBUTING.md) - Development workflow and guidelines
-- [Code of Conduct](community/CODE_OF_CONDUCT.md) - Community standards and expectations
-- [Security Policy](community/SECURITY.md) - Reporting security vulnerabilities
-- [License](community/LICENSE.md) - Project license information
+- [Contributing Guide](../CONTRIBUTING.md) - Development workflow and guidelines
+- [Code of Conduct](../CODE_OF_CONDUCT.md) - Community standards and expectations
+- [Security Policy](../SECURITY.md) - Reporting security vulnerabilities
+- [License](../LICENSE.md) - Project license information
 
 ### Setup & Installation
 - [Setup Guide](setup/Setup.md) - Complete setup instructions for Docker, Vagrant, and local development
@@ -63,6 +63,10 @@ Detailed documentation for each page in the BLT application:
 
 ### Troubleshooting
 - [Staking Pool ValueError](troubleshooting/ValueError_staking_pool.md) - Common issues and solutions
+
+### Legal
+- [Terms of Service](legal/terms-of-service.md) - Terms and conditions for using BLT
+- [Privacy Policy](legal/privacy-policy.md) - How we collect, use, and protect your information
 
 ## 🔗 External Resources
 

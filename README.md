@@ -18,7 +18,7 @@
 ## 📊 Project Stats
 
 <p align="center">
-  <a href="docs/community/LICENSE.md">
+  <a href="LICENSE.md">
     <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
   </a>
   <a href="https://github.com/OWASP-BLT/BLT">
@@ -114,7 +114,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-For detailed setup instructions, see our [Setup Guide](docs/setup/Setup.md) and [Contributing Guide](docs/community/CONTRIBUTING.md).
+For detailed setup instructions, see our [Setup Guide](docs/setup/Setup.md) and [Contributing Guide](CONTRIBUTING.md).
 
 ---
 
@@ -122,7 +122,7 @@ For detailed setup instructions, see our [Setup Guide](docs/setup/Setup.md) and 
 
 We welcome contributions from everyone! Whether you're fixing bugs, adding features, improving documentation, or spreading the word, your help is appreciated.
 
-- 📚 Read our [Contributing Guide](docs/community/CONTRIBUTING.md)
+- 📚 Read our [Contributing Guide](CONTRIBUTING.md)
 - 📖 Browse the [Full Documentation](https://owasp-blt.github.io/BLT/)
 - 🐛 Check out [open issues](https://github.com/OWASP-BLT/BLT/issues)
 - 💡 Look for issues tagged with `good first issue` if you're new
@@ -155,7 +155,7 @@ We welcome contributions from everyone! Whether you're fixing bugs, adding featu
 
 ## 📄 License
 
-This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](docs/community/LICENSE.md) file for details.
+This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](LICENSE.md) file for details.
 
 ---
 
@@ -164,11 +164,11 @@ This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](d
 Comprehensive documentation is available at [https://owasp-blt.github.io/BLT/](https://owasp-blt.github.io/BLT/) or in the [docs/](docs/) directory:
 
 - [Setup & Installation](docs/setup/Setup.md)
-- [Contributing Guide](docs/community/CONTRIBUTING.md)
+- [Contributing Guide](CONTRIBUTING.md)
 - [Architecture Overview](docs/architecture/architecture.md)
 - [Features Documentation](docs/features/features.md)
 - [Page-by-Page Documentation](docs/pages/)
-- [Security Policy](docs/community/SECURITY.md)
+- [Security Policy](SECURITY.md)
 
 ---
 
