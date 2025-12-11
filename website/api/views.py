@@ -2001,47 +2001,71 @@ class DebugSyncGithubDataApiView(APIView):
         try:
             global _github_sync_running, _github_sync_thread, _github_sync_started_at
 
-            # Prevent concurrent syncs at the API boundary to avoid spawning multiple threads.
-            if _github_sync_running:
+            # Acquire the module-level lock to avoid a race where two requests
+            # concurrently check/set _github_sync_running. Hold the lock until
+            # after the background thread has been created and started so the
+            # operation is atomic.
+            acquired = _github_sync_lock.acquire(blocking=False)
+            if not acquired:
+                # Another request is in the process of starting a sync
                 return Response(
-                    {"success": False, "error": "A GitHub sync is already running."},
+                    {"success": False, "error": "A GitHub sync is already being started."},
                     status=status.HTTP_409_CONFLICT,
                 )
 
-            # Mark as running and create a non-daemon thread so the sync is allowed to finish.
-            # Record a tentative started_at timestamp now so the status endpoint can report it immediately.
-            _github_sync_running = True
             try:
-                _github_sync_started_at = timezone.now().isoformat()
-            except Exception:
-                _github_sync_started_at = datetime.utcnow().isoformat()
+                # Double-check running flag under the lock
+                if _github_sync_running:
+                    return Response(
+                        {"success": False, "error": "A GitHub sync is already running."},
+                        status=status.HTTP_409_CONFLICT,
+                    )
 
-            thread = threading.Thread(
-                target=_run_github_sync_commands_in_background,
-                name="debug-github-sync",
-                daemon=False,
-            )
-            _github_sync_thread = thread
+                # Mark as running and record tentative start time immediately.
+                _github_sync_running = True
+                try:
+                    _github_sync_started_at = timezone.now().isoformat()
+                except Exception:
+                    _github_sync_started_at = datetime.utcnow().isoformat()
 
-            try:
-                thread.start()
-            except Exception as start_err:
-                # If starting the thread fails, clear running flag and return server error.
-                _github_sync_running = False
-                _github_sync_thread = None
-                _github_sync_started_at = None
-                logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
-                return Response(
-                    {"success": False, "error": "Failed to start background sync thread"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                # Create the thread (non-daemon so DB work can finish safely).
+                thread = threading.Thread(
+                    target=_run_github_sync_commands_in_background,
+                    name="debug-github-sync",
+                    daemon=False,
                 )
+                _github_sync_thread = thread
 
-            return Response(
-                {
-                    "success": True,
-                    "message": "GitHub data sync started in background",
-                }
-            )
+                try:
+                    # Start the thread while still holding the lock so no other
+                    # request can start another thread between the check and start.
+                    thread.start()
+                except Exception as start_err:
+                    # If starting the thread fails, clear running flag and return server error.
+                    _github_sync_running = False
+                    _github_sync_thread = None
+                    _github_sync_started_at = None
+                    logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
+                    return Response(
+                        {"success": False, "error": "Failed to start background sync thread"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+                # Success: return response while background thread continues.
+                return Response(
+                    {
+                        "success": True,
+                        "message": "GitHub data sync started in background",
+                    }
+                )
+            finally:
+                # Always release lock so other requests can proceed. The background
+                # thread will set _github_sync_running=False when it finishes.
+                try:
+                    _github_sync_lock.release()
+                except Exception:
+                    pass
+
         except Exception as e:
             logger.error("Error syncing GitHub data: %s", e, exc_info=True)
             # Ensure running flag cleared on unexpected exceptions
