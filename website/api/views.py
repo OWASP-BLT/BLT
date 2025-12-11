@@ -1676,20 +1676,16 @@ _github_sync_last_error = None
 
 
 # Helper function to run GitHub sync commands in a background thread (for debug endpoint)
-def _run_github_sync_commands_in_background():
+def _run_github_sync():
     """
     Run GitHub sync management commands in a background thread.
 
-    This is used by the debug-only sync endpoint to avoid blocking the request thread
-    with potentially long-running operations. It is intentionally best-effort and does
-    not expose task tracking to the client.
+    This function records start/finish times and accumulates any errors that
+    happened during the run. All writes to the module-level sync state are
+    protected by _github_sync_lock to avoid races with the POST endpoint.
     """
-    global \
-        _github_sync_running, \
-        _github_sync_thread, \
-        _github_sync_started_at, \
-        _github_sync_last_finished_at, \
-        _github_sync_last_error
+    global _github_sync_running, _github_sync_thread, _github_sync_started_at
+    global _github_sync_last_finished_at, _github_sync_last_error
     from io import StringIO
 
     # Try to acquire the lock non-blocking; if already locked, skip this run
@@ -1698,54 +1694,70 @@ def _run_github_sync_commands_in_background():
         logger.warning("Background GitHub sync already in progress; skipping new sync request.")
         return
 
-    # Record actual start time (ISO format) when the background worker begins work
     try:
-        _github_sync_started_at = timezone.now().isoformat()
-    except Exception:
-        _github_sync_started_at = datetime.utcnow().isoformat()
-
-    status_messages = []
-    try:
+        # Record actual start time (ISO format) when the background worker begins work
         try:
-            call_command("check_owasp_projects", stdout=StringIO())
-            status_messages.append("✓ Synced OWASP projects")
-        except Exception as e:
-            logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
-            _github_sync_last_error = str(e)
+            _github_sync_started_at = timezone.now().isoformat()
+        except Exception:
+            _github_sync_started_at = datetime.utcnow().isoformat()
 
+        # Reset last error at the beginning of the run (we hold the lock)
+        _github_sync_last_error = None
+
+        status_messages = []
         try:
-            call_command("update_github_issues", stdout=StringIO())
-            status_messages.append("✓ Updated GitHub issues")
-        except Exception as e:
-            logger.error("Error running update_github_issues: %s", e, exc_info=True)
-            _github_sync_last_error = str(e)
+            try:
+                call_command("check_owasp_projects", stdout=StringIO())
+                status_messages.append("✓ Synced OWASP projects")
+            except Exception as e:
+                logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
+                _github_sync_last_error = (
+                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                )
 
-        try:
-            call_command("fetch_pr_reviews", stdout=StringIO())
-            status_messages.append("✓ Fetched PR reviews")
-        except Exception as e:
-            logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
-            _github_sync_last_error = str(e)
+            try:
+                call_command("update_github_issues", stdout=StringIO())
+                status_messages.append("✓ Updated GitHub issues")
+            except Exception as e:
+                logger.error("Error running update_github_issues: %s", e, exc_info=True)
+                _github_sync_last_error = (
+                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                )
 
-        try:
-            call_command("update_contributor_stats", stdout=StringIO())
-            status_messages.append("✓ Updated contributor stats")
-        except Exception as e:
-            logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
-            _github_sync_last_error = str(e)
+            try:
+                call_command("fetch_pr_reviews", stdout=StringIO())
+                status_messages.append("✓ Fetched PR reviews")
+            except Exception as e:
+                logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
+                _github_sync_last_error = (
+                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                )
 
-        logger.info("Background GitHub sync completed with messages: %s", status_messages)
+            try:
+                call_command("update_contributor_stats", stdout=StringIO())
+                status_messages.append("✓ Updated contributor stats")
+            except Exception as e:
+                logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
+                _github_sync_last_error = (
+                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                )
+
+            logger.info("Background GitHub sync completed with messages: %s", status_messages)
+        finally:
+            # Record finish time and clear running/thread while still holding the lock
+            try:
+                _github_sync_last_finished_at = timezone.now().isoformat()
+            except Exception:
+                _github_sync_last_finished_at = datetime.utcnow().isoformat()
+
+            _github_sync_running = False
+            _github_sync_thread = None
     finally:
+        # Release the lock so POST endpoint can start another sync later
         try:
             _github_sync_lock.release()
         except Exception:
             pass
-        try:
-            _github_sync_last_finished_at = timezone.now().isoformat()
-        except Exception:
-            _github_sync_last_finished_at = datetime.utcnow().isoformat()
-        _github_sync_running = False
-        _github_sync_thread = None
 
 
 def debug_required(func):
@@ -1999,7 +2011,7 @@ class DebugSyncGithubDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            global _github_sync_running, _github_sync_thread, _github_sync_started_at
+            global _github_sync_running, _github_sync_thread, _github_sync_started_at, _github_sync_last_error
 
             # Acquire the module-level lock to avoid a race where two requests
             # concurrently check/set _github_sync_running. Hold the lock until
@@ -2028,9 +2040,12 @@ class DebugSyncGithubDataApiView(APIView):
                 except Exception:
                     _github_sync_started_at = datetime.utcnow().isoformat()
 
+                # Clear previous error state when a new sync starts.
+                _github_sync_last_error = None
+
                 # Create the thread (non-daemon so DB work can finish safely).
                 thread = threading.Thread(
-                    target=_run_github_sync_commands_in_background,
+                    target=_run_github_sync,
                     name="debug-github-sync",
                     daemon=False,
                 )
@@ -2045,6 +2060,7 @@ class DebugSyncGithubDataApiView(APIView):
                     _github_sync_running = False
                     _github_sync_thread = None
                     _github_sync_started_at = None
+                    _github_sync_last_error = str(start_err)
                     logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
                     return Response(
                         {"success": False, "error": "Failed to start background sync thread"},
@@ -2072,6 +2088,7 @@ class DebugSyncGithubDataApiView(APIView):
             _github_sync_running = False
             _github_sync_thread = None
             _github_sync_started_at = None
+            _github_sync_last_error = str(e)
             return Response(
                 {"success": False, "error": "Failed to sync GitHub data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

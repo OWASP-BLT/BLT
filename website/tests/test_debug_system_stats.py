@@ -319,20 +319,25 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    @patch("website.api.views._run_github_sync_commands_in_background")
+    @patch("website.api.views._run_github_sync")
     def test_sync_github_data_success(self, mock_sync):
         """Test that GitHub sync endpoint works"""
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        response = self.client.post(reverse("api_debug_sync_github"))
+        # Make the background thread execute the sync target synchronously
+        # by patching threading.Thread.start to call our mock_sync directly.
+        with patch("website.api.views.threading.Thread") as mock_thread:
+            mock_thread.return_value.start.side_effect = lambda: mock_sync()
+
+            response = self.client.post(reverse("api_debug_sync_github"))
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data["success"])
         self.assertIn("message", data)
 
-        # Background function was triggered (actual execution is async)
+        # Background function should have been invoked (synchronously via the start patch)
         mock_sync.assert_called_once()
 
     @override_settings(DEBUG=True)

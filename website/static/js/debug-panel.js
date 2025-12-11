@@ -18,29 +18,63 @@ const DebugPanel = {
     }
 
     this.setupEventListeners();
-    this.verifyAuth();
-    this.loadInitialStats();
-    this.startGithubStatusPolling();
+
+    // Verify auth first; only load stats and start polling if auth succeeds
+    this.verifyAuth().then((ok) => {
+      if (ok) {
+        this.loadInitialStats();
+        this.startGithubStatusPolling();
+      } else {
+        // Disable interactive controls when not authenticated
+        this.disablePanel();
+      }
+    });
   },
 
   /**
    * Verify authentication status
    */
   verifyAuth() {
-    this.makeRequest(
-      "GET",
-      `${this.apiBaseUrl}/system-stats/`,
-      null,
-      () => {
-        this.showStatus("✓ Authentication verified", "success");
-      },
-      (error) => {
-        this.showStatus(
-          `✗ Authentication failed: ${error}. Please ensure you're logged in.`,
-          "error"
-        );
+    return new Promise((resolve) => {
+      this.makeRequest(
+        "GET",
+        `${this.apiBaseUrl}/system-stats/`,
+        null,
+        () => {
+          this.showStatus("✓ Authentication verified", "success");
+          this.authVerified = true;
+          resolve(true);
+        },
+        (error) => {
+          this.showStatus(
+            `✗ Authentication failed: ${error}. Debug panel disabled.`,
+            "error"
+          );
+          this.authVerified = false;
+          resolve(false);
+        }
+      );
+    });
+  },
+
+  disablePanel() {
+    // Disable buttons and stop any polling; keep a visible status message
+    const ids = [
+      "populate-data-btn",
+      "clear-cache-btn",
+      "check-performance-btn",
+      "sync-github-btn",
+    ];
+    ids.forEach((id) => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-50");
+        btn.classList.add("pointer-events-none");
       }
-    );
+    });
+    // Ensure polling is stopped
+    this.stopGithubStatusPolling();
   },
 
   /**
@@ -385,8 +419,8 @@ DB Connections: ${stats.database?.connections || "N/A"}
   startGithubStatusPolling(intervalMs = 5000) {
     // avoid starting multiple timers
     if (this.githubStatusTimer) return;
-    // poll immediately, then on an interval
-    this.pollGithubSyncStatus();
+    // schedule first poll asynchronously to avoid blocking initialization
+    setTimeout(() => this.pollGithubSyncStatus(), 0);
     this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), intervalMs);
   },
 
@@ -455,8 +489,9 @@ DB Connections: ${stats.database?.connections || "N/A"}
     if (!badge) {
       badge = document.createElement("div");
       badge.id = "github-sync-badge";
-      // minimal inlined styling so it appears nicely without editing templates
-      badge.style.cssText = "display:inline-block;margin-left:12px;padding:4px 8px;border-radius:6px;font-size:12px;font-family:monospace;";
+      // Use Tailwind utility classes instead of long inline styles
+      // these classes assume Tailwind is available in the project
+      badge.className = "inline-block ml-3 px-2 py-1 rounded text-xs font-mono";
       // insert into the panel header (right after the title area if present)
       const header = panel.querySelector(".flex.items-center") || panel.firstElementChild;
       if (header && header.parentNode) {
@@ -466,21 +501,27 @@ DB Connections: ${stats.database?.connections || "N/A"}
       }
     }
 
-    // Update badge content and color
+    // Reset color classes
+    badge.classList.remove(
+      "bg-amber-400",
+      "bg-red-500",
+      "bg-emerald-500",
+      "text-black",
+      "text-white"
+    );
+
     if (isRunning) {
       badge.textContent = `Sync: RUNNING (started: ${this.formatTimestamp(sync.started_at)})`;
-      badge.style.background = "#f59e0b"; // amber
-      badge.style.color = "#000";
+      badge.classList.add("bg-amber-400", "text-black");
+      badge.title = "";
     } else if (sync.last_error) {
       badge.textContent = `Sync: ERROR (last: ${this.formatTimestamp(sync.last_finished_at)})`;
-      badge.style.background = "#ef4444"; // red
-      badge.style.color = "#fff";
+      badge.classList.add("bg-red-500", "text-white");
       // include a tooltip with error details
       badge.title = String(sync.last_error);
     } else {
       badge.textContent = `Sync: idle (last: ${this.formatTimestamp(sync.last_finished_at)})`;
-      badge.style.background = "#10b981"; // green
-      badge.style.color = "#fff";
+      badge.classList.add("bg-emerald-500", "text-white");
       badge.title = "";
     }
   },
@@ -522,15 +563,15 @@ DB Connections: ${stats.database?.connections || "N/A"}
           if (response.status === 401) {
             errorMessage =
               "401 Unauthorized. Please ensure you're logged in.";
-              const error = new Error(errorMessage);
-              error.status = response.status;
-              throw error;
+            const error = new Error(errorMessage);
+            error.status = response.status;
+            throw error;
           } else if (response.status === 403) {
             errorMessage =
               "403 Forbidden. Debug endpoints may be restricted to local development.";
-              const error = new Error(errorMessage);
-              error.status = response.status;
-              throw error;
+            const error = new Error(errorMessage);
+            error.status = response.status;
+            throw error;
           } else if (response.status === 404) {
             errorMessage = "404 Not Found. Debug API endpoint not found.";
             const error = new Error(errorMessage);
@@ -563,8 +604,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
         if (error instanceof TypeError) {
           errorMsg = `Network error: ${error.message}`;
         } else if (error.message) {
-          errorMsg = error.message;
-        } else if (error.status) {
           errorMsg = error.message;
         }
 
