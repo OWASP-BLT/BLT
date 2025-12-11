@@ -1666,6 +1666,15 @@ def _is_local_host(host: str, db_name: str | None = None) -> bool:
     )
 
 
+# GitHub sync background thread management (debug endpoint only)
+_github_sync_lock = threading.Lock()
+_github_sync_running = False
+_github_sync_thread = None
+_github_sync_started_at = None
+_github_sync_last_finished_at = None
+_github_sync_last_error = None
+
+
 # Helper function to run GitHub sync commands in a background thread (for debug endpoint)
 def _run_github_sync_commands_in_background():
     """
@@ -1675,14 +1684,26 @@ def _run_github_sync_commands_in_background():
     with potentially long-running operations. It is intentionally best-effort and does
     not expose task tracking to the client.
     """
+    global \
+        _github_sync_running, \
+        _github_sync_thread, \
+        _github_sync_started_at, \
+        _github_sync_last_finished_at, \
+        _github_sync_last_error
     from io import StringIO
 
     # Try to acquire the lock non-blocking; if already locked, skip this run
-    _github_sync_lock = threading.Lock()
     acquired = _github_sync_lock.acquire(blocking=False)
     if not acquired:
         logger.warning("Background GitHub sync already in progress; skipping new sync request.")
         return
+
+    # Record actual start time (ISO format) when the background worker begins work
+    try:
+        _github_sync_started_at = timezone.now().isoformat()
+    except Exception:
+        _github_sync_started_at = datetime.utcnow().isoformat()
+
     status_messages = []
     try:
         try:
@@ -1690,24 +1711,41 @@ def _run_github_sync_commands_in_background():
             status_messages.append("✓ Synced OWASP projects")
         except Exception as e:
             logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
+            _github_sync_last_error = str(e)
+
         try:
             call_command("update_github_issues", stdout=StringIO())
             status_messages.append("✓ Updated GitHub issues")
         except Exception as e:
             logger.error("Error running update_github_issues: %s", e, exc_info=True)
+            _github_sync_last_error = str(e)
+
         try:
             call_command("fetch_pr_reviews", stdout=StringIO())
             status_messages.append("✓ Fetched PR reviews")
         except Exception as e:
             logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
+            _github_sync_last_error = str(e)
+
         try:
             call_command("update_contributor_stats", stdout=StringIO())
             status_messages.append("✓ Updated contributor stats")
         except Exception as e:
             logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
+            _github_sync_last_error = str(e)
+
         logger.info("Background GitHub sync completed with messages: %s", status_messages)
     finally:
-        _github_sync_lock.release()
+        try:
+            _github_sync_lock.release()
+        except Exception:
+            pass
+        try:
+            _github_sync_last_finished_at = timezone.now().isoformat()
+        except Exception:
+            _github_sync_last_finished_at = datetime.utcnow().isoformat()
+        _github_sync_running = False
+        _github_sync_thread = None
 
 
 def debug_required(func):
@@ -1802,17 +1840,15 @@ class DebugSystemStatsApiView(APIView):
 
             # Get active DB connections (PostgreSQL only)
             active_connections = "N/A"
-            try:
-                if connection.vendor == "postgresql":
+            if connection.vendor == "postgresql":
+                try:
                     with connection.cursor() as cursor:
                         # Count active connections for the current database
                         cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database();")
                         active_connections = cursor.fetchone()[0]
-            except Exception as conn_error:
-                logger.warning("Could not fetch active DB connections: %s", conn_error)
-                active_connections = "Unavailable (error)"
-            else:
-                active_connections = "Not Available (non-PostgreSQL DB)"
+                except Exception as conn_error:
+                    logger.warning("Could not fetch active DB connections: %s", conn_error)
+                    active_connections = "Unavailable (error)"
 
             return Response(
                 {
@@ -1825,6 +1861,7 @@ class DebugSystemStatsApiView(APIView):
                             "name": db_name,
                             "version": db_version,
                             # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
+                            # This could be slow for large datasets as 5 separate COUNT queries are executed.
                             "user_count": User.objects.count(),
                             "issue_count": Issue.objects.count(),
                             "org_count": Organization.objects.count(),
@@ -1962,13 +1999,42 @@ class DebugSyncGithubDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            # Run long-running sync commands in a background thread to avoid blocking the request.
-            # This endpoint is debug-only (guarded by @debug_required) and is intended for local use.
+            global _github_sync_running, _github_sync_thread, _github_sync_started_at
+
+            # Prevent concurrent syncs at the API boundary to avoid spawning multiple threads.
+            if _github_sync_running:
+                return Response(
+                    {"success": False, "error": "A GitHub sync is already running."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            # Mark as running and create a non-daemon thread so the sync is allowed to finish.
+            # Record a tentative started_at timestamp now so the status endpoint can report it immediately.
+            _github_sync_running = True
+            try:
+                _github_sync_started_at = timezone.now().isoformat()
+            except Exception:
+                _github_sync_started_at = datetime.utcnow().isoformat()
+
             thread = threading.Thread(
                 target=_run_github_sync_commands_in_background,
                 name="debug-github-sync",
+                daemon=False,
             )
-            thread.start()
+            _github_sync_thread = thread
+
+            try:
+                thread.start()
+            except Exception as start_err:
+                # If starting the thread fails, clear running flag and return server error.
+                _github_sync_running = False
+                _github_sync_thread = None
+                _github_sync_started_at = None
+                logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
+                return Response(
+                    {"success": False, "error": "Failed to start background sync thread"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
             return Response(
                 {
@@ -1978,6 +2044,10 @@ class DebugSyncGithubDataApiView(APIView):
             )
         except Exception as e:
             logger.error("Error syncing GitHub data: %s", e, exc_info=True)
+            # Ensure running flag cleared on unexpected exceptions
+            _github_sync_running = False
+            _github_sync_thread = None
+            _github_sync_started_at = None
             return Response(
                 {"success": False, "error": "Failed to sync GitHub data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -1998,6 +2068,12 @@ class DebugPanelStatusApiView(APIView):
                     "debug_mode": settings.DEBUG,
                     "testing_mode": getattr(settings, "TESTING", False),
                     "environment": "local" if _is_local_host(request.get_host()) else "unknown",
+                    "github_sync": {
+                        "running": bool(_github_sync_running),
+                        "started_at": _github_sync_started_at,
+                        "last_finished_at": _github_sync_last_finished_at,
+                        "last_error": _github_sync_last_error,
+                    },
                 },
             }
         )

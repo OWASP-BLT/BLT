@@ -355,3 +355,15 @@ class DebugPanelAPITest(TestCase):
         response = self.client.post(reverse("api_debug_sync_github"))
 
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Verify the response payload indicates failure and contains an error message
+        data = response.json()
+        self.assertFalse(data.get("success", True))
+        # Accept either a generic failure message or the specific implementation text
+        error_text = data.get("error", "") or data.get("message", "")
+        self.assertTrue(
+            isinstance(error_text, str) and len(error_text) > 0,
+            "Expected non-empty error text in response",
+        )
+        # Ensure the Thread class was instantiated and its start method attempted to be called
+        mock_thread.assert_called_once()
+        mock_thread.return_value.start.assert_called_once()

@@ -20,6 +20,7 @@ const DebugPanel = {
     this.setupEventListeners();
     this.verifyAuth();
     this.loadInitialStats();
+    this.startGithubStatusPolling();
   },
 
   /**
@@ -322,6 +323,11 @@ DB Connections: ${stats.database?.connections || "N/A"}
 
     if (content) {
       content.classList.toggle("hidden");
+      if (content.classList.contains("hidden")) {
+        this.stopGithubStatusPolling();
+      } else {
+        this.startGithubStatusPolling();
+      }
       const icon = button?.querySelector("i");
       if (icon) {
         icon.classList.toggle("fa-chevron-up");
@@ -374,6 +380,112 @@ DB Connections: ${stats.database?.connections || "N/A"}
   },
 
   /**
+   * Start polling the debug status endpoint for GitHub sync state
+   */
+  startGithubStatusPolling(intervalMs = 5000) {
+    // avoid starting multiple timers
+    if (this.githubStatusTimer) return;
+    // poll immediately, then on an interval
+    this.pollGithubSyncStatus();
+    this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), intervalMs);
+  },
+
+  /**
+   * Stop polling the debug status endpoint
+   */
+  stopGithubStatusPolling() {
+    if (this.githubStatusTimer) {
+      clearInterval(this.githubStatusTimer);
+      this.githubStatusTimer = null;
+    }
+  },
+
+  /**
+   * Poll the /api/debug/status/ endpoint and update a persistent badge in the dev panel
+   */
+  pollGithubSyncStatus() {
+    this.makeRequest(
+      "GET",
+      `${this.apiBaseUrl}/status/`,
+      null,
+      (data) => {
+        try {
+          if (!data || !data.data) {
+            this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: null });
+            return;
+          }
+          const sync = data.data.github_sync || {};
+          this.updateGithubStatusBadge(sync);
+        } catch (e) {
+          // if any parsing error occurs, show unavailable
+          this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: "parse error" });
+        }
+      },
+      (error) => {
+        // network or auth error: show unavailable status
+        this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: error });
+      }
+    );
+  },
+
+  /**
+   * Format ISO timestamp (or null) to a compact human-readable string
+   */
+  formatTimestamp(iso) {
+    if (!iso) return "N/A";
+    try {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleString();
+    } catch (e) {
+      return iso;
+    }
+  },
+
+  /**
+   * Create or update a persistent GitHub sync status badge inside the dev panel
+   */
+  updateGithubStatusBadge(sync) {
+    const panel = document.getElementById("dev-panel");
+    if (!panel) return;
+
+    let badge = document.getElementById("github-sync-badge");
+    const isRunning = Boolean(sync.running);
+
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "github-sync-badge";
+      // minimal inlined styling so it appears nicely without editing templates
+      badge.style.cssText = "display:inline-block;margin-left:12px;padding:4px 8px;border-radius:6px;font-size:12px;font-family:monospace;";
+      // insert into the panel header (right after the title area if present)
+      const header = panel.querySelector(".flex.items-center") || panel.firstElementChild;
+      if (header && header.parentNode) {
+        header.parentNode.insertBefore(badge, header.nextSibling);
+      } else {
+        panel.insertBefore(badge, panel.firstChild);
+      }
+    }
+
+    // Update badge content and color
+    if (isRunning) {
+      badge.textContent = `Sync: RUNNING (started: ${this.formatTimestamp(sync.started_at)})`;
+      badge.style.background = "#f59e0b"; // amber
+      badge.style.color = "#000";
+    } else if (sync.last_error) {
+      badge.textContent = `Sync: ERROR (last: ${this.formatTimestamp(sync.last_finished_at)})`;
+      badge.style.background = "#ef4444"; // red
+      badge.style.color = "#fff";
+      // include a tooltip with error details
+      badge.title = String(sync.last_error);
+    } else {
+      badge.textContent = `Sync: idle (last: ${this.formatTimestamp(sync.last_finished_at)})`;
+      badge.style.background = "#10b981"; // green
+      badge.style.color = "#fff";
+      badge.title = "";
+    }
+  },
+
+  /**
    * Make API request with proper session authentication
    */
   makeRequest(method, url, data, onSuccess, onError) {
@@ -410,11 +522,20 @@ DB Connections: ${stats.database?.connections || "N/A"}
           if (response.status === 401) {
             errorMessage =
               "401 Unauthorized. Please ensure you're logged in.";
+              const error = new Error(errorMessage);
+              error.status = response.status;
+              throw error;
           } else if (response.status === 403) {
             errorMessage =
               "403 Forbidden. Debug endpoints may be restricted to local development.";
+              const error = new Error(errorMessage);
+              error.status = response.status;
+              throw error;
           } else if (response.status === 404) {
             errorMessage = "404 Not Found. Debug API endpoint not found.";
+            const error = new Error(errorMessage);
+            error.status = response.status;
+            throw error;
           }
 
           const error = new Error(errorMessage);
