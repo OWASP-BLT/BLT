@@ -133,7 +133,7 @@
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex items-center space-x-3">
                                     <img class="w-8 h-8 rounded-full object-cover"
-                                         {% if user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}" {% else %} src="{% static 'images/dummy-user.webp' %}" {% endif %}
+                                         {% if child_comment.author_fk.user_avatar %} src="{{ MEDIA_URL }}{{ child_comment.author_fk.user_avatar }}" {% else %} src="{% static 'images/dummy-user.webp' %}" {% endif %}
                                          alt="{{ child_comment.author }} profile"
                                          width="32"
                                          height="32">

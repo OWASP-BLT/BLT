@@ -62,7 +62,7 @@
                 <div class="flex flex-row gap-4">
                     <button onclick="openFollowingModal();"
                             class="font-medium font-lg text-black dark:text-white hover:text-red-600 group/f transition-all duration-200">
-                        {{ following|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800 dark:text-gray-200"> {% trans "Follwings" %} </span>
+                        {{ following|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800 dark:text-gray-200"> {% trans "Following" %} </span>
                     </button>
                     <button onclick="openFollowers();"
                             class="font-medium font-lg text-black dark:text-white hover:text-red-600 group/f transition-all duration-200">
@@ -921,7 +921,7 @@
                                         <div class="flex justify-between items-center p-4 hover:bg-gray-50 transition-all duration-200">
                                             <a href="{{ pr.url }}"
                                                class="text-blue-600 hover:text-red-600 font-medium hover:underline transition-all duration-200">{{ pr.title }}</a>
-                                            <span class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} = text-purple-700 {% elif pr.state == 'open' %} text-yellow-700 {% else %} text-red-700 {% endif %} text-lg">
+                                            <span class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} text-purple-700 {% elif pr.state == 'open' %} text-yellow-700 {% else %} text-red-700 {% endif %} text-lg">
                                                 {% if pr.is_merged %}
                                                     <i class="fas fa-check-circle rounded-full text-lg"></i>
                                                 {% elif pr.state == 'open' %}
