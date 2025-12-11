@@ -325,7 +325,7 @@ jobs:
           
           echo "❌ Failed to push after $MAX_RETRIES attempts"
           echo "push_successful=false" >> $GITHUB_OUTPUT
-          exit 1
+          exit 0
 
       - name: Verify pre-commit passes after fixes
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.push_fixes.outputs.push_successful == 'true'
@@ -446,8 +446,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Recommended Action:**" >> $GITHUB_STEP_SUMMARY
           echo "Wait for the next commit or push to re-trigger the workflow, or manually apply: \`poetry run pre-commit run --all-files\`" >> $GITHUB_STEP_SUMMARY
-          echo "::error::Failed to push auto-fixes after retries due to concurrent branch activity"
-          exit 1
+          echo "::warning::Failed to push auto-fixes after retries due to concurrent branch activity. This is expected during high activity and will resolve automatically."
+          exit 0
 
       - name: Notify on precommit failure
         if: steps.precommit.outcome == 'failure' &&
