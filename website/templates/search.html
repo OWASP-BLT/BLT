@@ -5,8 +5,7 @@
     Search Results
 {% endblock title %}
 {% block description %}
-    View the results of your search, including activities, domains, and users. Find the information you are looking for
-    quickly and efficiently.
+    View the results of your search, including activities, domains, and users. Find the information you are looking for quickly and efficiently.
 {% endblock description %}
 {% block keywords %}
     Search Results, Search Activities, Search Domains, Search Users, Find Information, Efficient Search
@@ -15,8 +14,7 @@
     Search Results - Find What You Need
 {% endblock og_title %}
 {% block og_description %}
-    Access detailed search results, including activities, domains, and users. Quickly find the information and resources
-    you're looking for.
+    Access detailed search results, including activities, domains, and users. Quickly find the information and resources you're looking for.
 {% endblock og_description %}
 {% load humanize %}
 {% block content %}
@@ -61,8 +59,7 @@
                                          onclick="scrollToSection('issues-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Issues</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ issues|length
-                                            }}</span>
+                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ issues|length }}</span>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -71,8 +68,7 @@
                                          onclick="scrollToSection('domains-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Domains</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ domains|length
-                                            }}</span>
+                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ domains|length }}</span>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -81,8 +77,7 @@
                                          onclick="scrollToSection('users-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Users</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ users|length
-                                            }}</span>
+                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ users|length }}</span>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -91,8 +86,7 @@
                                          onclick="scrollToSection('projects-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Projects</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ projects|length
-                                            }}</span>
+                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ projects|length }}</span>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -101,8 +95,7 @@
                                          onclick="scrollToSection('repos-section')">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-700 dark:text-gray-300">Repos</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ repos|length
-                                            }}</span>
+                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ repos|length }}</span>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -176,8 +169,7 @@
                                                         </div>
                                                         <div class="flex items-center space-x-2">
                                                             <i class="fas fa-check-circle text-emerald-600"></i>
-                                                            <span><strong>Closed Issues:</strong> {{ domain.closed_issues.count
-                                                            }}</span>
+                                                            <span><strong>Closed Issues:</strong> {{ domain.closed_issues.count }}</span>
                                                         </div>
                                                     </div>
                                                     {% if domain.managers.exists %}
@@ -186,8 +178,7 @@
                                                             <div class="flex flex-wrap mt-2">
                                                                 {% for manager in domain.managers.all %}
                                                                     <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full mr-2 mb-2">
-                                                                        <i class="fas fa-user-circle mr-1"></i>
-                                                                        {{ manager.get_full_name|default:manager.username }}
+                                                                        <i class="fas fa-user-circle mr-1"></i> {{ manager.get_full_name|default:manager.username }}
                                                                     </span>
                                                                 {% endfor %}
                                                             </div>
@@ -231,13 +222,7 @@
                                                     {% if domain.top_tester %}
                                                         <div class="mt-4 text-xl ml-4">
                                                             <i class="fas fa-user-check text-blue-600 mr-1"></i>
-                                                            <strong>Top Tester:</strong> <span class="text-blue-600">
-                                                                {% if domain.top_tester.get_full_name %}
-                                                                    {{ domain.top_tester.get_full_name }}
-                                                                {% else %}
-                                                                    {{ domain.top_tester.username }}
-                                                                {% endif %}
-                                                            </span>
+                                                            <strong>Top Tester:</strong> <span class="text-blue-600">{{ domain.top_tester.get_full_name|default:domain.top_tester.username }}</span>
                                                         </div>
                                                     {% endif %}
                                                     <div class="mt-4 ml-4">
@@ -293,8 +278,7 @@
                                                         <p class="flex items-center px-3 py-2 shadow-sm">
                                                             <i class="fas fa-briefcase text-indigo-600 mr-2"></i>
                                                             <strong class="text-indigo-800">Role:</strong>
-                                                            <span class="ml-1 text-indigo-700">{{ user.userprofile.role|default:"Not
-                                                            specified" }}</span>
+                                                            <span class="ml-1 text-indigo-700">{{ user.userprofile.role|default:"Not specified" }}</span>
                                                         </p>
                                                         <p class="flex items-center px-3 py-2 shadow-sm">
                                                             <i class="fas fa-trophy text-yellow-600 mr-2"></i>
@@ -360,8 +344,7 @@
                                                                  title="{{ badge.badge.title }}"
                                                                  height="48"
                                                                  width="48">
-                                                            <span class="text-gray-700 dark:text-gray-300 font-medium">{{ badge.badge.title
-                                                            }}</span>
+                                                            <span class="text-gray-700 dark:text-gray-300 font-medium">{{ badge.badge.title }}</span>
                                                         </div>
                                                     {% endfor %}
                                                 </div>
@@ -441,8 +424,7 @@
                                             </div>
                                             <div class="mt-6 flex justify-between items-center">
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
-                                                    <strong>Type:</strong> <span class="text-blue-600">{{ organization.get_type_display
-                                                    }}</span>
+                                                    <strong>Type:</strong> <span class="text-blue-600">{{ organization.get_type_display }}</span>
                                                 </div>
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
                                                     <strong>Team Points:</strong> <span class="text-green-600">{{ organization.team_points }}</span>
@@ -545,16 +527,13 @@
                                             </div>
                                             <div class="mt-6 flex justify-between items-center">
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
-                                                    <strong>Visits:</strong> <span class="text-blue-600">{{ project.project_visit_count
-                                                    }}</span>
+                                                    <strong>Visits:</strong> <span class="text-blue-600">{{ project.project_visit_count }}</span>
                                                 </div>
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
-                                                    <strong>Created:</strong> <span class="text-green-600">{{ project.created|date:"F j,
-                                                    Y" }}</span>
+                                                    <strong>Created:</strong> <span class="text-green-600">{{ project.created|date:"F j, Y" }}</span>
                                                 </div>
                                                 <div class="text-md text-gray-600 dark:text-gray-400">
-                                                    <strong>Modified:</strong> <span class="text-orange-600">{{ project.modified|date:"F
-                                                    j, Y" }}</span>
+                                                    <strong>Modified:</strong> <span class="text-orange-600">{{ project.modified|date:"F j, Y" }}</span>
                                                 </div>
                                             </div>
                                             {% if project.tags.all %}
@@ -802,53 +781,53 @@
     function scrollToSection(sectionId) {
         const section = document.getElementById(sectionId);
         if (section) {
-            section.scrollIntoView({
+            section.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'start'
             });
         }
     }
-    document.addEventListener("DOMContentLoaded", function () {
-        const messageButtons = document.querySelectorAll(".start-chat");
-        messageButtons.forEach(button => {
-            button.addEventListener("click", function () {
-                const userId = this.getAttribute("data-user-id");
+document.addEventListener("DOMContentLoaded", function () {
+    const messageButtons = document.querySelectorAll(".start-chat");
+    messageButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            const userId = this.getAttribute("data-user-id");
 
-                fetch(`/messaging/start-thread/${userId}/`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken")
-                    },
-                    body: JSON.stringify({})
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            window.location.href = `/messaging/?thread=${data.thread_id}`;
-                        } else {
-                            alert("Error starting chat.");
-                        }
-                    })
-                    .catch(error => console.error("Error:", error));
-            });
+            fetch(`/messaging/start-thread/${userId}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = `/messaging/?thread=${data.thread_id}`;
+                } else {
+                    alert("Error starting chat.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
         });
+    });
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
+        return cookieValue;
+    }
 
-    });
+});
     </script>
 {% endblock content %}
