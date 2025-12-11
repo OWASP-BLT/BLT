@@ -22,7 +22,6 @@ import comments.views
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
-    BountyViewSet,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CheckDuplicateBugApiView,
@@ -390,7 +389,7 @@ schema_view = get_schema_view(
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
 
-router.register(r"bounties", BountyViewSet, basename="bounty")
+router = routers.DefaultRouter()
 router.register(r"issues", IssueViewSet, basename="issues")
 router.register(r"userissues", UserIssueViewSet, basename="userissues")
 router.register(r"profile", UserProfileViewSet, basename="profile")
@@ -399,9 +398,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
-router = routers.DefaultRouter()
-router.register(r"issues", IssueViewSet, basename="issues")
-router.register(r"userissues", UserIssueViewSet, basename="userissues")
+router.register(r"bounties", BountyViewSet, basename="bounties")
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
