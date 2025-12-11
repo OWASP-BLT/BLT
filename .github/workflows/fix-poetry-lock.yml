@@ -8,6 +8,15 @@ name: Fix Poetry Lock
 #
 # IMPORTANT: This workflow checks out the PR branch and runs poetry lock
 # to resolve conflicts in poetry.lock file.
+#
+# SECURITY CONSIDERATION (CodeQL Alert):
+# This workflow runs 'poetry lock --no-update' on code from the PR.
+# While this does read pyproject.toml from the PR branch, it is considered
+# safe because:
+# 1. Poetry lock only generates a lock file and doesn't execute code
+# 2. It doesn't install dependencies (unlike 'poetry install')
+# 3. The workflow is protected by the label approval gate
+# 4. This is necessary to fix poetry.lock conflicts in forked PRs
 
 on:
   workflow_dispatch:
