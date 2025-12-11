@@ -70,7 +70,6 @@ tweepy = "^4.15.0"
 better-profanity = "^0.7.0"
 django-bleach = "^3.1.0"
 pyjwt = {extras = ["crypto"], version = "^2.0.0"}
-django-silk = "^5.4.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.12.0"
@@ -83,6 +82,7 @@ chromedriver-autoinstaller = "^0.6.4"
 django-debug-toolbar = "^4.4.6"
 django-livereload-server = "^0.5.1"
 watchfiles = "^1.0.4"
+django-silk = "^5.4.0"
 
 [tool.isort]
 known_first_party = ["blt"]

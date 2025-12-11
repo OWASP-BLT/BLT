@@ -101,10 +101,9 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
-    "silk",
 )
 if DEBUG:
-    INSTALLED_APPS += ("silk", "debug_toolbar", "livereload")
+    INSTALLED_APPS += ("debug_toolbar", "livereload", "silk")
 
 
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
@@ -112,7 +111,6 @@ SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 
 MIDDLEWARE = [
-    "silk.middleware.SilkyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "blt.middleware.domain.DomainMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -134,7 +132,8 @@ MIDDLEWARE = [
 
 
 if DEBUG:
-    MIDDLEWARE += ("livereload.middleware.LiveReloadScript", "debug_toolbar.middleware.DebugToolbarMiddleware")
+    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript", "debug_toolbar.middleware.DebugToolbarMiddleware"]
     INTERNAL_IPS = ["127.0.0.1"]
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
