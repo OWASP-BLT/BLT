@@ -49,14 +49,19 @@ jobs:
             // Check if any migration files are present
             // Migration files are in website/migrations/ or comments/migrations/
             const migrationPattern = /^(website|comments)\/migrations\/.*\.py$/;
-            const hasMigrations = files.some(file => 
+            const migrationNumberPattern = /^(website|comments)\/migrations\/(\d{4})_.*\.py$/;
+            
+            const migrationFiles = files.filter(file => 
               migrationPattern.test(file.filename) && 
               !file.filename.endsWith('__init__.py')
             );
+            const hasMigrations = migrationFiles.length > 0;
 
-            const migrationsLabel = 'migrations';
-            const labelColor = 'fbca04'; // Yellow color for visibility
-            const description = 'PR contains database migration files';
+            // Define possible labels
+            const sequenceOkLabel = 'migration: sequence-ok';
+            const clashLabel = 'migration: clash';
+            const oldLabel = 'migrations';
+            const allMigrationLabels = [sequenceOkLabel, clashLabel, oldLabel];
 
             // Get current labels on the PR
             const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
@@ -67,7 +72,7 @@ jobs:
             });
             const currentNames = new Set(current.map(l => l.name));
 
-            // Ensure the label exists (create if missing)
+            // Ensure labels exist (create if missing)
             async function ensureLabelExists(labelName, color, desc) {
               try {
                 await github.rest.issues.getLabel({ owner, repo, name: labelName });
@@ -87,45 +92,191 @@ jobs:
               }
             }
 
-            await ensureLabelExists(migrationsLabel, labelColor, description);
+            // Remove old/incorrect labels
+            async function removeOldLabels(exceptLabel) {
+              for (const label of allMigrationLabels) {
+                if (label !== exceptLabel && currentNames.has(label)) {
+                  try {
+                    await github.rest.issues.removeLabel({ 
+                      owner, 
+                      repo, 
+                      issue_number: pull_number, 
+                      name: label 
+                    });
+                    core.info(`Removed label ${label} from PR #${pull_number}`);
+                  } catch (err) {
+                    if (err.status !== 404) {
+                      core.warning(`Failed to remove label ${label}: ${err.message}`);
+                    }
+                  }
+                }
+              }
+            }
 
             if (hasMigrations) {
-              // Log which migration files were found
-              const migrationFiles = files
-                .filter(file => migrationPattern.test(file.filename) && !file.filename.endsWith('__init__.py'))
-                .map(file => file.filename);
-              core.info(`Found migration files: ${migrationFiles.join(', ')}`);
+              core.info(`Found migration files: ${migrationFiles.map(f => f.filename).join(', ')}`);
 
-              // Add the label if it isn't already present
-              if (!currentNames.has(migrationsLabel)) {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: pull_number, 
-                  labels: [migrationsLabel] 
-                });
-                core.info(`Applied label ${migrationsLabel} to PR #${pull_number}`);
-              } else {
-                core.info(`Label ${migrationsLabel} already present on PR #${pull_number}`);
+              // Extract migration numbers from PR files
+              const prMigrationsByApp = {};
+              for (const file of migrationFiles) {
+                const match = file.filename.match(migrationNumberPattern);
+                if (match) {
+                  const app = match[1]; // 'website' or 'comments'
+                  const migrationNum = match[2];
+                  if (!prMigrationsByApp[app]) {
+                    prMigrationsByApp[app] = [];
+                  }
+                  prMigrationsByApp[app].push({
+                    number: migrationNum,
+                    filename: file.filename
+                  });
+                }
               }
-            } else {
-              // Remove the label if no migrations are present
-              if (currentNames.has(migrationsLabel)) {
+
+              // Get existing migration files from base branch
+              const baseBranch = pr.base.ref;
+              const baseMigrationsByApp = {};
+              
+              for (const app of ['website', 'comments']) {
                 try {
-                  await github.rest.issues.removeLabel({ 
+                  const { data: contents } = await github.rest.repos.getContent({
+                    owner,
+                    repo,
+                    path: `${app}/migrations`,
+                    ref: baseBranch
+                  });
+                  
+                  baseMigrationsByApp[app] = contents
+                    .filter(file => file.type === 'file' && file.name.endsWith('.py') && file.name !== '__init__.py')
+                    .map(file => {
+                      const match = file.name.match(/^(\d{4})_.*\.py$/);
+                      return match ? { number: match[1], filename: file.name } : null;
+                    })
+                    .filter(Boolean);
+                  
+                  core.info(`Base ${app}/migrations has ${baseMigrationsByApp[app].length} migrations`);
+                } catch (err) {
+                  if (err.status === 404) {
+                    core.info(`No migrations directory found for ${app} in base branch`);
+                    baseMigrationsByApp[app] = [];
+                  } else {
+                    throw err;
+                  }
+                }
+              }
+
+              // Check for conflicts
+              let hasConflicts = false;
+              const conflicts = [];
+              
+              for (const [app, prMigrations] of Object.entries(prMigrationsByApp)) {
+                const baseMigrations = baseMigrationsByApp[app] || [];
+                const baseMigrationNumbers = new Set(baseMigrations.map(m => m.number));
+                
+                for (const prMigration of prMigrations) {
+                  if (baseMigrationNumbers.has(prMigration.number)) {
+                    hasConflicts = true;
+                    const baseFile = baseMigrations.find(m => m.number === prMigration.number);
+                    conflicts.push({
+                      app,
+                      number: prMigration.number,
+                      prFile: prMigration.filename,
+                      baseFile: `${app}/migrations/${baseFile.filename}`
+                    });
+                    core.warning(
+                      `Migration conflict detected: ${prMigration.filename} conflicts with ${baseFile.filename}`
+                    );
+                  }
+                }
+              }
+
+              // Apply appropriate label
+              if (hasConflicts) {
+                // Create and apply clash label
+                await ensureLabelExists(
+                  clashLabel, 
+                  'd73a4a', // Red color
+                  'Migration number conflicts with base branch'
+                );
+                
+                if (!currentNames.has(clashLabel)) {
+                  await github.rest.issues.addLabels({ 
                     owner, 
                     repo, 
                     issue_number: pull_number, 
-                    name: migrationsLabel 
+                    labels: [clashLabel] 
                   });
-                  core.info(`Removed label ${migrationsLabel} from PR #${pull_number}`);
-                } catch (err) {
-                  // Ignore error if label doesn't exist
-                  if (err.status !== 404) {
-                    core.warning(`Failed to remove label ${migrationsLabel}: ${err.message}`);
-                  }
+                  core.info(`Applied label ${clashLabel} to PR #${pull_number}`);
+                }
+                
+                // Remove other migration labels
+                await removeOldLabels(clashLabel);
+                
+                // Add comment explaining the conflict
+                const conflictDetails = conflicts.map(c => 
+                  '- `' + c.prFile + '` conflicts with `' + c.baseFile + '`'
+                ).join('\n');
+                
+                const commentBody = '## ⚠️ Migration Conflict Detected\n\n' +
+                  'This PR has migration files that conflict with existing migrations in the base branch:\n\n' +
+                  conflictDetails + '\n\n' +
+                  '### How to resolve:\n\n' +
+                  '1. Delete the conflicting migration file(s) from your branch\n' +
+                  '2. Pull the latest changes from the base branch\n' +
+                  '3. Run `python manage.py makemigrations --merge` to create a merge migration\n' +
+                  '4. Commit and push the merge migration\n\n' +
+                  'Alternatively, you can:\n' +
+                  '- Delete your migration file(s) and regenerate them with the next available migration number\n' +
+                  '- Use the `regenerate-migrations` label to have migrations automatically regenerated\n\n' +
+                  'For more information, see the [Django documentation on migration conflicts](https://docs.djangoproject.com/en/stable/topics/migrations/#migration-files).';
+
+                // Check if we already posted a similar comment
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100
+                });
+                
+                const botComments = comments.filter(c => 
+                  c.user.type === 'Bot' && 
+                  c.body.includes('Migration Conflict Detected')
+                );
+                
+                if (botComments.length === 0) {
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    body: commentBody
+                  });
+                  core.info('Posted comment about migration conflicts');
+                } else {
+                  core.info('Comment about migration conflicts already exists');
                 }
               } else {
-                core.info(`No migrations found - label ${migrationsLabel} not present on PR #${pull_number}`);
+                // No conflicts - apply sequence-ok label
+                await ensureLabelExists(
+                  sequenceOkLabel, 
+                  '0e8a16', // Green color
+                  'Migrations are correctly sequenced'
+                );
+                
+                if (!currentNames.has(sequenceOkLabel)) {
+                  await github.rest.issues.addLabels({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    labels: [sequenceOkLabel] 
+                  });
+                  core.info(`Applied label ${sequenceOkLabel} to PR #${pull_number}`);
+                }
+                
+                // Remove other migration labels
+                await removeOldLabels(sequenceOkLabel);
               }
+            } else {
+              // No migrations found - remove all migration labels
+              core.info(`No migrations found in PR #${pull_number}`);
+              await removeOldLabels(null);
             }
