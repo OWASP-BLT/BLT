@@ -105,7 +105,6 @@ INSTALLED_APPS = (
 if DEBUG and not TESTING:
     INSTALLED_APPS += ("debug_toolbar", "livereload", "silk")
 
-
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
