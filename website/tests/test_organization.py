@@ -281,8 +281,7 @@ class OrganizationSwitchingTests(TestCase):
         self.client.login(username="admin", password="adminpass123")
 
         # First request - should select org1 (first org)
-        response = self.client.get(reverse("admin_organization_dashboard"))
-        first_selected = response.context["selected_organization"]
+        self.client.get(reverse("admin_organization_dashboard"))
 
         # Switch to org2
         self.client.get(reverse("admin_organization_dashboard"), {"switch_to": self.org2.pk})
@@ -325,3 +324,61 @@ class OrganizationSwitchingTests(TestCase):
         # Should get error message
         messages = list(response.context["messages"])
         self.assertTrue(any("Invalid organization" in str(m) for m in messages))
+
+    def test_inactive_user_cannot_access_dashboard(self):
+        """Test that inactive user is redirected from dashboard"""
+        # Create inactive user
+        inactive_user = User.objects.create_user(
+            username="inactive", password="inactivepass123", email="inactive@example.com", is_active=False
+        )
+        self.org1.managers.add(inactive_user)
+
+        self.client.login(username="inactive", password="inactivepass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        # Should be redirected to home
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+
+    def test_non_integer_organization_id_shows_error(self):
+        """Test that non-integer organization ID shows error"""
+        self.client.login(username="admin", password="adminpass123")
+
+        # Try to switch with invalid (non-integer) org ID
+        response = self.client.get(reverse("admin_organization_dashboard"), {"switch_to": "invalid"}, follow=True)
+
+        # Should get error message
+        messages = list(response.context["messages"])
+        self.assertTrue(any("Invalid organization" in str(m) for m in messages))
+
+    def test_user_both_admin_and_manager_of_same_org(self):
+        """Test that user who is both admin and manager sees organization only once"""
+        # Make admin_user also a manager of org1
+        self.org1.managers.add(self.admin_user)
+
+        self.client.login(username="admin", password="adminpass123")
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        # Should still see org1 only once (distinct query)
+        organizations_list = list(response.context["organizations"])
+        org1_count = sum(1 for org in organizations_list if org.pk == self.org1.pk)
+        self.assertEqual(org1_count, 1)
+
+    def test_deleted_organization_in_session_handled_gracefully(self):
+        """Test that deleted organization in session is handled gracefully"""
+        self.client.login(username="admin", password="adminpass123")
+
+        # Select org2
+        self.client.get(reverse("admin_organization_dashboard"), {"switch_to": self.org2.pk})
+
+        # Delete org2
+        org2_pk = self.org2.pk
+        self.org2.delete()
+
+        # Next request should handle deleted org gracefully
+        response = self.client.get(reverse("admin_organization_dashboard"))
+
+        # Should default to first available organization (org1)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_organization"].pk, self.org1.pk)

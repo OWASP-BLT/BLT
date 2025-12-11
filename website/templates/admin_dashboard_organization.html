@@ -25,7 +25,7 @@
             <div class="mb-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow p-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                         </svg>
                         <div>
@@ -62,7 +62,7 @@
                 </h2>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     {% if user_can_manage_multiple %}
-                        You manage {{ organizations.count }} organization{{ organizations.count|pluralize }}. Select one to view details.
+                        You manage {{ organizations_count }} organization{{ organizations_count|pluralize }}. Select one to view details.
                     {% else %}
                         Manage your organization settings and view details.
                     {% endif %}
@@ -111,7 +111,7 @@
                                             Inactive
                                         </span>
                                     {% endif %}
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                     </svg>
                                 </div>
@@ -121,7 +121,7 @@
                 </div>
             {% else %}
                 <div class="px-6 py-8 text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                     <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No organizations found</h3>
@@ -174,7 +174,7 @@
                                        value="">
                             </div>
                             <div class="form-group">
-                                <label for="github">Github:</label>
+                                <label for="github">GitHub:</label>
                                 <input type="url" name="github" class="form-control" id="github" value="">
                             </div>
                             <div class="form-group">

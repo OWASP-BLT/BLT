@@ -175,14 +175,20 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
     # Handle organization switching via query parameter
     selected_org_id = request.GET.get('switch_to')
     if selected_org_id:
+        # Validate that the org ID is a valid integer
         try:
-            selected_org = organizations.get(pk=selected_org_id)
-            request.session['selected_organization_id'] = selected_org.pk
-            # Django messages framework auto-escapes HTML in templates
-            messages.success(request, "Switched to " + str(selected_org.name))
-            return redirect('admin_organization_dashboard')
-        except Organization.DoesNotExist:
+            selected_org_pk = int(selected_org_id)
+        except (ValueError, TypeError):
             messages.error(request, "Invalid organization selected.")
+        else:
+            try:
+                selected_org = organizations.get(pk=selected_org_pk)
+                request.session['selected_organization_id'] = selected_org.pk
+                # Django messages framework auto-escapes HTML in templates
+                messages.success(request, "Switched to " + str(selected_org.name))
+                return redirect('admin_organization_dashboard')
+            except Organization.DoesNotExist:
+                messages.error(request, "Invalid organization selected.")
     
     # Get current selected organization from session or use first one
     selected_organization_id = request.session.get('selected_organization_id')
@@ -198,10 +204,14 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
         selected_organization = organizations.first()
         request.session['selected_organization_id'] = selected_organization.pk
     
+    # Calculate count once to avoid multiple DB queries
+    organizations_count = organizations.count()
+    
     context = {
         "organizations": organizations,
         "selected_organization": selected_organization,
-        "user_can_manage_multiple": organizations.count() > 1,
+        "user_can_manage_multiple": organizations_count > 1,
+        "organizations_count": organizations_count,
     }
     return render(request, template, context)
 
