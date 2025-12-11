@@ -333,13 +333,13 @@ class OrganizationSwitchingTests(TestCase):
         )
         self.org1.managers.add(inactive_user)
 
-        # Use force_login to bypass authentication check, then test is_active check in view
-        self.client.force_login(inactive_user)
+        # Inactive users cannot authenticate, so login will fail and redirect to login page
+        self.client.login(username="inactive", password="inactivepass123")
         response = self.client.get(reverse("admin_organization_dashboard"))
 
-        # Should be redirected to home
+        # Should be redirected to login page (by @login_required decorator)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/")
+        self.assertIn("/accounts/login", response.url)
 
     def test_non_integer_organization_id_shows_error(self):
         """Test that non-integer organization ID shows error"""
