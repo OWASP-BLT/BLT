@@ -31,7 +31,13 @@
                     <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-200">{% trans "About" %} {% env 'PROJECT_NAME' %}</h1>
                 </div>
                 <div class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed border-l-4 border-[#e74c3c]/20 pl-6 py-2">
-                    {% env 'PROJECT_NAME' %} {% trans "is a 100% free to use, open-source, non-commercial and non-profit gamified crowd-sourced QA testing and vulnerability disclosure platform. We support testing across websites, apps, git repositories, projects, and more. Our team has created dozens of open-source tools and embraces AI-powered processes for efficient testing and development. Every reward goes directly to the testers and security researchers who find and report issues." %}
+                    <p>
+                        {% env 'PROJECT_NAME' %} {% trans "is a 100% free to use, open-source, non-commercial and non-profit gamified crowd-sourced QA testing and vulnerability disclosure platform." %}
+                    </p>
+                    <p>
+                        {% trans "We support testing across websites, apps, git repositories, and other projects. Our team has created dozens of open-source tools and embraces AI-powered processes for efficient testing and development." %}
+                    </p>
+                    <p>{% trans "Every reward goes directly to the testers and security researchers who find and report issues." %}</p>
                 </div>
             </div>
             <!-- Mission & Vision -->

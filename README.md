@@ -57,7 +57,11 @@
 
 ## 🎯 What is OWASP BLT?
 
-**OWASP BLT (Bug Logging Tool)** is a gamified crowd-sourced QA testing and vulnerability disclosure platform that encompasses websites, apps, git repositories, and more. Our team has created dozens of open-source tools to assist in our main vision, including tools specific to the OWASP foundation. We embrace the AI revolution and have developed AI-powered tools and processes for efficient coding in harmony between humans and AI. Built by the community for the community, BLT makes it easy for security researchers, developers, and organizations to collaborate on finding and fixing vulnerabilities.
+**OWASP BLT (Bug Logging Tool)** is a gamified crowd-sourced QA testing and vulnerability disclosure platform that encompasses websites, apps, git repositories, and more. 
+
+Our team has created dozens of open-source tools to assist in our main vision, including tools specific to the OWASP foundation. We embrace the AI revolution and have developed AI-powered tools and processes for efficient coding in harmony between humans and AI. 
+
+Built by the community for the community, BLT makes it easy for security researchers, developers, and organizations to collaborate on finding and fixing vulnerabilities.
 
 ### ✨ Key Features
 
