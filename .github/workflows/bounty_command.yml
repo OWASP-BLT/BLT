@@ -29,7 +29,7 @@ jobs:
 
             // match "/bounty $50" or "/bounty 50" or "/bounty $12.50"
             core.info(`Raw comment body is: >>>${body}<<<`);
-            const m = body.match(/\/bounty\s*\$?([0-9]+(?:\.[0-9]{1,2})?)/i);
+            const m = comment.match(/\/bounty\s*\$?([0-9]+(?:\.[0-9]{1,2})?)/i);
             if (!m) {
               core.info("No /bounty command found.");
               return {
