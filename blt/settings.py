@@ -127,7 +127,6 @@ MIDDLEWARE = [
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
-    "silk.middleware.SilkyMiddleware",
 ]
 
 
