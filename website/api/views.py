@@ -1688,11 +1688,9 @@ def _run_github_sync():
     global _github_sync_last_finished_at, _github_sync_last_error
     from io import StringIO
 
-    # Try to acquire the lock non-blocking; if already locked, skip this run
-    acquired = _github_sync_lock.acquire(blocking=False)
-    if not acquired:
-        logger.warning("Background GitHub sync already in progress; skipping new sync request.")
-        return
+    # Worker acquires the lock in blocking mode and holds it for the entire run
+    # so that only one sync can execute at a time and state is consistent.
+    _github_sync_lock.acquire()
 
     try:
         # Record actual start time (ISO format) when the background worker begins work
@@ -2058,38 +2056,43 @@ class DebugSyncGithubDataApiView(APIView):
                     daemon=False,
                 )
                 _github_sync_thread = thread
-
+            finally:
+                # Release the lock BEFORE starting the thread so the worker can acquire it
                 try:
-                    # Start the thread while still holding the lock so no other
-                    # request can start another thread between the check and start.
-                    thread.start()
-                except Exception as start_err:
-                    # If starting the thread fails, clear running flag and return server error.
+                    _github_sync_lock.release()
+                except Exception:
+                    pass
+
+            # Start the thread after releasing the lock
+            try:
+                thread.start()
+            except Exception as start_err:
+                # If starting the thread fails, reacquire the lock and clean up state
+                try:
+                    _github_sync_lock.acquire()
                     _github_sync_running = False
                     _github_sync_thread = None
                     _github_sync_started_at = None
                     # Store a generic code, not exception details
                     _github_sync_last_error = "thread_start_failed"
-                    logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
-                    return Response(
-                        {"success": False, "error": "Failed to start background sync thread"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-
-                # Success: return response while background thread continues.
+                finally:
+                    try:
+                        _github_sync_lock.release()
+                    except Exception:
+                        pass
+                logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
                 return Response(
-                    {
-                        "success": True,
-                        "message": "GitHub data sync started in background",
-                    }
+                    {"success": False, "error": "Failed to start background sync thread"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-            finally:
-                # Always release lock so other requests can proceed. The background
-                # thread will set _github_sync_running=False when it finishes.
-                try:
-                    _github_sync_lock.release()
-                except Exception:
-                    pass
+
+            # Success: return response while background thread continues.
+            return Response(
+                {
+                    "success": True,
+                    "message": "GitHub data sync started in background",
+                }
+            )
 
         except Exception as e:
             logger.error("Error syncing GitHub data: %s", e, exc_info=True)
