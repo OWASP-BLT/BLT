@@ -204,10 +204,10 @@ class OrganizationSwitchingTests(TestCase):
             name="Organization 2", description="Second org", slug="org-2", url="https://org2.com", admin=self.admin_user
         )
         self.org3 = Organization.objects.create(
-            name="Organization 3", description="Third org", slug="org-3", url="https://org3.com"
+            name="Organization 3", description="Third org", slug="org-3", url="https://org3.com", admin=self.regular_user
         )
 
-        # Add manager relationship
+        # Add manager relationship (manager_user manages org3)
         self.org3.managers.add(self.manager_user)
 
     def test_admin_can_access_their_organizations(self):

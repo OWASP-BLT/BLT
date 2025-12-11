@@ -178,7 +178,7 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
         try:
             selected_org = organizations.get(pk=selected_org_id)
             request.session['selected_organization_id'] = selected_org.pk
-            # Escape organization name to prevent injection
+            # Django messages framework auto-escapes HTML in templates
             messages.success(request, "Switched to " + str(selected_org.name))
             return redirect('admin_organization_dashboard')
         except Organization.DoesNotExist:
