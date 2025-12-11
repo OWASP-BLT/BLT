@@ -1595,10 +1595,11 @@ class Activity(models.Model):
         ("update", "Updated"),
         ("delete", "Deleted"),
         ("signup", "Signed Up"),
+        ("connected", "Connected"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPES)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
@@ -2322,6 +2323,38 @@ class BaconEarning(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.tokens_earned} Tokens"
+
+
+class SocialAccountReward(models.Model):
+    """
+    Permanent record of social account connection rewards.
+    Ensures each user can only be rewarded once per provider, ever.
+    Uses database unique constraint to prevent duplicate rewards even if cache is cleared.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, help_text="User who received the reward")
+    provider = models.CharField(
+        max_length=30,
+        help_text="Social provider name (e.g., github, google, facebook)",
+    )
+    rewarded_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the reward was granted")
+
+    class Meta:
+        verbose_name = "Social Account Reward"
+        verbose_name_plural = "Social Account Rewards"
+        ordering = ["-rewarded_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "provider"],
+                name="unique_user_provider_reward",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "provider"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.provider} reward at {self.rewarded_at}"
 
 
 class GitHubReview(models.Model):

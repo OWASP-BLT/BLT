@@ -84,7 +84,9 @@ class DuplicateCheckerIntegrationTests(TestCase):
 
     def setUp(self):
         """Set up test data"""
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        import secrets
+
+        self.user = User.objects.create_user(username="testuser", password=secrets.token_urlsafe(32))
         self.domain = Domain.objects.create(name="example.com", url="https://example.com")
         self.issue1 = Issue.objects.create(
             user=self.user,
@@ -126,8 +128,10 @@ class DuplicateCheckerAPITests(TestCase):
 
     def setUp(self):
         """Set up test client and data"""
+        import secrets
+
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user = User.objects.create_user(username="testuser", password=secrets.token_urlsafe(32))
         self.domain = Domain.objects.create(name="example.com", url="https://example.com")
         self.issue = Issue.objects.create(
             user=self.user,
