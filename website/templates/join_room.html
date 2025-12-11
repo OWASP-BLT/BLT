@@ -21,7 +21,7 @@
             </div>
         </div>
         <div id="log-history"
-             class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg h-96 overflow-y-auto scroll-smooth">
+             class="mt-4 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg h-96 overflow-y-auto scroll-smooth border border-gray-200 dark:border-gray-700">
             <div id="messages-container" class="space-y-1.5">
                 {% for message in room_messages reversed %}
                     <div class="py-1 px-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm relative group message-item"
@@ -30,7 +30,9 @@
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <p class="text-sm font-medium">{{ message.username }}</p>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">{{ message.content }}</p>
+                                <p class="text-sm text-gray-800 dark:text-gray-200 break-words whitespace-pre-wrap [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline [&_a]:break-all hover:[&_a]:text-blue-700">
+                                    {{ message.content|urlize }}
+                                </p>
                                 <div class="flex items-center gap-2 mt-1">
                                     <span class="text-xs text-gray-500 dark:text-gray-500">{{ message.timestamp|naturaltime }}</span>
                                     <div class="reactions-container flex items-center gap-1 min-h-[28px]">
@@ -104,7 +106,7 @@
         <form id="chat-form" class="mt-4 flex gap-2" onsubmit="return false;">
             <input type="text"
                    id="message-input"
-                   class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-red-500 focus:ring-red-500"
+                   class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                    placeholder="Type your message..."
                    required>
             <button type="submit"
@@ -434,7 +436,7 @@ function updateReactions(messageId, reactions) {
                 if (users.length === 0) return; // Don't show reactions with 0 users
 
                 const reactionButton = document.createElement('button');
-                reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
+                reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200';
                 reactionButton.innerHTML = `
                     <span class="mr-1">${emoji}</span>
                     <span class="text-xs text-gray-600 dark:text-gray-400">${users.length}</span>
@@ -444,12 +446,11 @@ function updateReactions(messageId, reactions) {
                 displayedEmojis.add(emoji); // Mark as displayed
             });
         }
-
-        // 2. Display common quick reaction buttons (if not already displayed)
+        
         commonEmojis.forEach(emoji => {
             if (!displayedEmojis.has(emoji)) {
                 const quickReactionBtn = document.createElement('button');
-                quickReactionBtn.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200';
+                quickReactionBtn.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 border border-gray-200 dark:border-gray-700';
                 quickReactionBtn.innerHTML = `<span>${emoji}</span>`;
                  quickReactionBtn.title = `React with ${emoji}`; // Add title for accessibility
                 quickReactionBtn.onclick = () => addReaction(messageId, emoji);
@@ -464,16 +465,28 @@ function updateReactions(messageId, reactions) {
     }
 }
 
+function formatMessageWithLinks(content) {
+    let safeContent = escapeHtml(content);
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return safeContent.replace(urlRegex, function(url) {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 underline break-all hover:text-blue-700">${url}</a>`;
+    });
+}
+
 function appendMessage(data) {
     if (!messagesContainer) return;
 
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
-    messageDiv.dataset.messageId = data.message_id;
-    // Embed reactions data directly for new messages too
-    messageDiv.dataset.reactions = JSON.stringify(data.reactions || {});
-    
     const isCurrentUser = data.username === '{{ request.user.username }}';
+    const baseClasses = 'py-1 px-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm relative group message-item';
+    
+    const userClasses = isCurrentUser 
+        ? 'bg-red-50 dark:bg-red-900/30 ml-auto border border-red-100 dark:border-red-900/50' 
+        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+
+    messageDiv.className = `${baseClasses} ${userClasses}`;
+    messageDiv.dataset.messageId = data.message_id;
+    messageDiv.dataset.reactions = JSON.stringify(data.reactions || {});
     
     messageDiv.innerHTML = ` 
         <div class="flex items-start justify-between">
