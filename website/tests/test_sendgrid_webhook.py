@@ -17,9 +17,7 @@ class SendGridWebhookTestCase(TestCase):
         self.webhook_url = reverse("inbound_event_webhook_callback")
 
         # Create test user with email
-        self.user = User.objects.create_user(
-            username="testuser", email="test@example.com", password="testpass"
-        )
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass")
         self.user_profile = UserProfile.objects.get(user=self.user)
 
         # Create test domain
@@ -59,12 +57,12 @@ class SendGridWebhookTestCase(TestCase):
         self.assertTrue(mock_post.called)
         call_args = mock_post.call_args
         self.assertEqual(call_args[0][0], "https://hooks.slack.com/test")
-        
+
         # Verify the payload sent to Slack
         slack_payload = call_args[1]["json"]
         self.assertIn("blocks", slack_payload)
         self.assertEqual(len(slack_payload["blocks"]), 1)
-        
+
         # Verify the message contains event details
         text = slack_payload["blocks"][0]["text"]["text"]
         self.assertIn("BOUNCE", text)
@@ -121,11 +119,9 @@ class SendGridWebhookTestCase(TestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        
+
         # Verify debug log was called
-        mock_logger.debug.assert_called_with(
-            "SLACK_WEBHOOK_URL not configured, skipping Slack notification"
-        )
+        mock_logger.debug.assert_called_with("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
 
     @patch("website.views.organization.requests.post")
     @patch("website.views.organization.logger")
@@ -152,7 +148,7 @@ class SendGridWebhookTestCase(TestCase):
         # Webhook should still succeed even if Slack fails
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["detail"], "Inbound Sendgrid Webhook received")
-        
+
         # Verify error was logged
         mock_logger.error.assert_called()
 
