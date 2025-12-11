@@ -162,18 +162,23 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
     # Get organizations the user can manage
     if user.is_superuser:
         # Superusers can see all organizations
-        organizations = Organization.objects.all().select_related('admin', 'subscription')
+        organizations_qs = Organization.objects.all().select_related('admin', 'subscription')
     else:
         # Regular users can only see organizations they admin or manage
-        organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user)).distinct().select_related('admin', 'subscription')
+        organizations_qs = Organization.objects.filter(Q(admin=user) | Q(managers=user)).distinct().select_related('admin', 'subscription')
+    
+    # Evaluate queryset once to avoid N+1 queries
+    organizations_list = list(organizations_qs)
     
     # If user has no organizations, redirect to home
-    if not organizations.exists():
+    if not organizations_list:
         messages.info(request, "You don't have access to any organizations.")
         return redirect("/")
     
     # Handle organization switching via query parameter
     selected_org_id = request.GET.get('switch_to')
+    selected_organization = None
+    
     if selected_org_id:
         # Validate that the org ID is a valid integer
         try:
@@ -181,34 +186,36 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
         except (ValueError, TypeError):
             messages.error(request, "Invalid organization selected.")
         else:
-            try:
-                selected_org = organizations.get(pk=selected_org_pk)
-                request.session['selected_organization_id'] = selected_org.pk
+            # Find organization in the already-fetched list
+            selected_organization = next((org for org in organizations_list if org.pk == selected_org_pk), None)
+            if selected_organization:
+                request.session['selected_organization_id'] = selected_organization.pk
                 # Django messages framework auto-escapes HTML in templates
-                messages.success(request, "Switched to " + str(selected_org.name))
+                messages.success(request, "Switched to " + str(selected_organization.name))
                 return redirect('admin_organization_dashboard')
-            except Organization.DoesNotExist:
+            else:
                 messages.error(request, "Invalid organization selected.")
     
     # Get current selected organization from session or use first one
-    selected_organization_id = request.session.get('selected_organization_id')
-    if selected_organization_id:
-        try:
-            selected_organization = organizations.get(pk=selected_organization_id)
-        except Organization.DoesNotExist:
-            # If the stored org is no longer accessible, use the first one
-            selected_organization = organizations.first()
+    if not selected_organization:
+        selected_organization_id = request.session.get('selected_organization_id')
+        if selected_organization_id:
+            # Find organization in the already-fetched list
+            selected_organization = next((org for org in organizations_list if org.pk == selected_organization_id), None)
+            if not selected_organization:
+                # If the stored org is no longer accessible, use the first one
+                selected_organization = organizations_list[0]
+                request.session['selected_organization_id'] = selected_organization.pk
+        else:
+            # No selection in session, use the first organization
+            selected_organization = organizations_list[0]
             request.session['selected_organization_id'] = selected_organization.pk
-    else:
-        # No selection in session, use the first organization
-        selected_organization = organizations.first()
-        request.session['selected_organization_id'] = selected_organization.pk
     
-    # Calculate count once to avoid multiple DB queries
-    organizations_count = organizations.count()
+    # Calculate count from the already-fetched list
+    organizations_count = len(organizations_list)
     
     context = {
-        "organizations": organizations,
+        "organizations": organizations_list,
         "selected_organization": selected_organization,
         "user_can_manage_multiple": organizations_count > 1,
         "organizations_count": organizations_count,
