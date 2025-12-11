@@ -359,6 +359,13 @@ from website.views.user import (
     invite_friend,
     mark_as_read,
     messaging_home,
+    newsletter_confirm,
+    newsletter_detail,
+    newsletter_home,
+    newsletter_preferences,
+    newsletter_resend_confirmation,
+    newsletter_subscribe,
+    newsletter_unsubscribe,
     profile,
     profile_edit,
     referral_signup,
@@ -1229,6 +1236,14 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
+    # Newsletter URLs
+    path("newsletter/", newsletter_home, name="newsletter_home"),
+    path("newsletter/subscribe/", newsletter_subscribe, name="newsletter_subscribe"),
+    path("newsletter/confirm/<uuid:token>/", newsletter_confirm, name="newsletter_confirm"),
+    path("newsletter/unsubscribe/<uuid:token>/", newsletter_unsubscribe, name="newsletter_unsubscribe"),
+    path("newsletter/preferences/", newsletter_preferences, name="newsletter_preferences"),
+    path("newsletter/resend-confirmation/", newsletter_resend_confirmation, name="newsletter_resend_confirmation"),
+    path("newsletter/<slug:slug>/", newsletter_detail, name="newsletter_detail"),  # This pattern must come last
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
     # Duplicate Bug Checking API
