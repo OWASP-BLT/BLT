@@ -1256,7 +1256,7 @@ urlpatterns = [
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG and not settings.TESTING:
     import debug_toolbar
 
     urlpatterns = [
