@@ -316,7 +316,10 @@ class DailyChallengeService:
                 exc_info=True,
             )
             # Fallback to UTC if timezone conversion fails
-            checkin_time = daily_status_report.created.time()
+            checkin_utc = daily_status_report.created
+            if timezone.is_naive(checkin_utc):
+                checkin_utc = timezone.make_aware(checkin_utc)
+            checkin_time = checkin_utc.astimezone(pytz.UTC).time()
             early_threshold = time(10, 0)
             return checkin_time < early_threshold
 

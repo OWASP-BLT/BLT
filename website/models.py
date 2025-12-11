@@ -962,7 +962,6 @@ class UserDailyChallenge(models.Model):
         unique_together = [["user", "challenge_date"]]
         ordering = ["-challenge_date", "status"]
         indexes = [
-            models.Index(fields=["user", "challenge_date"]),
             models.Index(fields=["status", "challenge_date"]),
         ]
 
