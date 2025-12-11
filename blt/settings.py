@@ -102,7 +102,7 @@ INSTALLED_APPS = (
     "storages",
     "channels",
 )
-if DEBUG:
+if DEBUG and not TESTING:
     INSTALLED_APPS += ("debug_toolbar", "livereload", "silk")
 
 
