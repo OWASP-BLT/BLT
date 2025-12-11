@@ -311,4 +311,18 @@ class SearchHistorySerializer(serializers.ModelSerializer):
 class BountySerializer(serializers.ModelSerializer):
     class Meta:
         model = Bounty
-        fields = "__all__"
+        fields = [
+            "id",
+            "repo_full_name",
+            "issue_number",
+            "issue_url",
+            "sponsor_github",
+            "sponsor_user",
+            "amount",
+            "currency",
+            "created_at",
+            "paid",
+            "paid_at",
+            "origin_comment_id",
+        ]
+        read_only_fields = ["id", "created_at", "paid", "paid_at"]
