@@ -8,7 +8,7 @@
     About Page | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
-    {% trans "OWASP Bug Logging Tool (BLT) - A community-driven platform for bug reporting and bounty hunting" %}
+    {% trans "OWASP Bug Logging Tool (BLT) - A gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more" %}
 {% endblock description %}
 {% block keywords %}
     bug reporting, bug bounty, security testing, OWASP, open source, community platform
@@ -17,7 +17,7 @@
     About Us - {% env 'PROJECT_NAME' %}
 {% endblock og_title %}
 {% block og_description %}
-    {% trans "Learn about BLT - The open-source bug logging platform that rewards security researchers and helps organizations maintain secure software" %}
+    {% trans "Learn about BLT - The gamified crowd-sourced QA testing and vulnerability disclosure platform with AI-powered tools for efficient testing and development" %}
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -27,7 +27,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-8">
                 <h1 class="text-4xl font-bold mb-4">{% trans "About" %} {% env 'PROJECT_NAME' %}</h1>
                 <div class="text-xl text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {% env 'PROJECT_NAME' %} {% trans "is a 100% free to use, open-source, non-commercial and non-profit initiative dedicated to improving software security through community-driven bug reporting. Every reward goes directly to the security researchers(bug hunters) who find and report vulnerabilities." %}
+                    {% env 'PROJECT_NAME' %} {% trans "is a 100% free to use, open-source, non-commercial and non-profit gamified crowd-sourced QA testing and vulnerability disclosure platform. We support testing across websites, apps, git repositories, projects, and more. Our team has created dozens of open-source tools and embraces AI-powered processes for efficient testing and development. Every reward goes directly to the testers and security researchers who find and report issues." %}
                 </div>
             </div>
             <!-- Mission & Vision -->

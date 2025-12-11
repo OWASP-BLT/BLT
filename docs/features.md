@@ -1,5 +1,7 @@
 # OWASP BLT — Features (Up to Date)
 
+OWASP BLT is a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, projects, and more. Our team has created dozens of open-source tools to assist in our main vision, including tools specific to the OWASP foundation. We embrace the AI revolution and have developed AI-powered tools and processes for efficient coding in harmony between humans and AI.
+
 This document summarizes BLT features implemented or surfaced in the current codebase. Use website/templates/features.html as the UI source-of-truth and the referenced code files for implementation details.
 
 Core
@@ -12,7 +14,8 @@ Authentication & Access
 - Local accounts and OAuth providers supported.
 - Teams, Organizations, Projects, and Repository membership modeled and surfaced in UI.
 
-Reporting & Discovery
+QA Testing & Vulnerability Disclosure
+- Gamified crowd-sourced testing across websites, apps, git repositories, and projects.
 - Bug discovery, reporting, and issue tracking UIs implemented.
 - Repository discovery and basic scanning logic implemented in website/management/commands/fetch_os_repos.py.
 
