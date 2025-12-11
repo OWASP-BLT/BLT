@@ -185,17 +185,27 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Makes it easy to see which PRs need author attention vs. maintainer review.
 
 #### 2.4 Add Migrations Label (`add-migrations-label.yml`)
-**Purpose**: Flag PRs containing database migrations
+**Purpose**: Flag PRs containing database migrations and detect migration conflicts
 
 **Triggers**:
 - Pull request opened, synchronized, or reopened
 
 **Key Features**:
 - Detects migration files in `website/migrations/` or `comments/migrations/`
-- Adds `migrations` label (yellow) for visibility
-- Removes label if migrations are removed from PR
+- Compares PR migration numbers with base branch to detect conflicts
+- Applies intelligent labels based on migration status:
+  - `migration: sequence-ok` (green) - migrations are correctly sequenced with no conflicts
+  - `migration: clash` (red) - migration numbers conflict with existing migrations in base branch
+- Posts a detailed comment when conflicts are detected with resolution instructions
+- Automatically removes outdated migration labels (including old `migrations` label)
 
-**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files.
+**Conflict Resolution Comment Includes**:
+- List of conflicting migration files
+- Step-by-step instructions to resolve using `makemigrations --merge`
+- Alternative solutions (regenerate migrations with new number or use `regenerate-migrations` label)
+- Link to Django documentation on migration conflicts
+
+**AI Relevance**: Critical for database changes—detects conflicts early and provides clear guidance to developers, preventing migration issues before merge.
 
 #### 2.5 Check PR Conflicts (`check-pr-conflicts.yml`)
 **Purpose**: Detect and notify about merge conflicts
