@@ -32,8 +32,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import viewsets, status
-from django.db.models import Sum
+
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
@@ -58,6 +57,7 @@ from website.models import (
 )
 from website.serializers import (
     ActivityLogSerializer,
+    BountySerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
     ContributorSerializer,
@@ -74,9 +74,9 @@ from website.serializers import (
     UserProfileSerializer,
 )
 from website.utils import image_validator
-from website.views.user import LeaderboardBase
 from website.views.models_bounty import Bounty
-from website.serializers import BountySerializer
+from website.views.user import LeaderboardBase
+
 logger = logging.getLogger(__name__)
 # API's
 
@@ -1954,32 +1954,23 @@ class DebugPanelStatusApiView(APIView):
         )
 
 
-
-
-
 class BountyViewSet(viewsets.ModelViewSet):
     """
     API to create and list bounties.
     Used by GitHub Action & Slack integration.
     """
+
     queryset = Bounty.objects.all()
     serializer_class = BountySerializer
 
+    permission_classes = [IsAuthenticated]
+
     def create(self, request, *args, **kwargs):
-        """
-        POST /api/bounties/
-
-        Stores a bounty contribution.
-        Prevents duplicate creation using origin_comment_id
-        (GitHub often sends duplicate events).
-        """
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         origin_comment_id = serializer.validated_data.get("origin_comment_id")
 
-        # Prevent duplicate entries
         if origin_comment_id and Bounty.objects.filter(origin_comment_id=origin_comment_id).exists():
             return Response(
                 {"detail": "Bounty for this GitHub comment already exists."},
@@ -1991,11 +1982,6 @@ class BountyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="issue-total")
     def issue_total(self, request):
-        """
-        GET /api/bounties/issue-total/?repo=org/repo&issue_number=123
-
-        Returns total bounty amount for a specific issue.
-        """
         repo = request.query_params.get("repo")
         issue_number = request.query_params.get("issue_number")
 
@@ -2005,17 +1991,26 @@ class BountyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+
+        try:
+            issue_number = int(issue_number)
+        except (ValueError, TypeError):
+            return Response(
+                {"detail": "Parameter 'issue_number' must be a valid integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         total = (
-            Bounty.objects
-            .filter(repo_full_name=repo, issue_number=issue_number)
+            Bounty.objects.filter(repo_full_name=repo, issue_number=issue_number)
             .aggregate(total=Sum("amount"))
-            .get("total") or 0
+            .get("total")
+            or 0
         )
 
         return Response(
             {
                 "repo": repo,
-                "issue_number": int(issue_number),
-                "total": float(total)
+                "issue_number": issue_number,
+                "total": float(total),
             }
         )

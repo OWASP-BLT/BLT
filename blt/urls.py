@@ -22,6 +22,7 @@ import comments.views
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
+    BountyViewSet,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CheckDuplicateBugApiView,
@@ -370,8 +371,7 @@ from website.views.user import (
     view_thread,
 )
 from website.views.video_call import video_call
-from rest_framework import routers
-from website.api.views import BountyViewSet
+
 admin.autodiscover()
 
 # Use the drf_yasg schema view
@@ -390,7 +390,7 @@ schema_view = get_schema_view(
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
 
-router = routers.DefaultRouter()
+router.register(r"bounties", BountyViewSet, basename="bounty")
 router.register(r"issues", IssueViewSet, basename="issues")
 router.register(r"userissues", UserIssueViewSet, basename="userissues")
 router.register(r"profile", UserProfileViewSet, basename="profile")
@@ -400,7 +400,8 @@ router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
 router = routers.DefaultRouter()
-router.register(r"bounties", BountyViewSet, basename="bounty")
+router.register(r"issues", IssueViewSet, basename="issues")
+router.register(r"userissues", UserIssueViewSet, basename="userissues")
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 

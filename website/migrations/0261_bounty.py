@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0260_add_username_to_slackbotactivity"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

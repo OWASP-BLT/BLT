@@ -22,7 +22,6 @@ from website.models import (
     User,
     UserProfile,
 )
-from rest_framework import serializers
 from website.views.models_bounty import Bounty
 
 
