@@ -1,7 +1,12 @@
 # Service file: website/services/daily_challenge_service.py
 
 import logging
+<<<<<<< HEAD
 from datetime import time
+=======
+import random
+from datetime import time, timedelta
+>>>>>>> a89131ef (style: Fix import order in daily_challenge_service.py)
 
 import pytz
 from django.utils import timezone
