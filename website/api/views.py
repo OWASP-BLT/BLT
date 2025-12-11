@@ -1712,7 +1712,9 @@ def _run_github_sync():
             except Exception as e:
                 logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
                 _github_sync_last_error = (
-                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                    (_github_sync_last_error + "; check_owasp_projects_failed")
+                    if _github_sync_last_error
+                    else "check_owasp_projects_failed"
                 )
 
             try:
@@ -1721,7 +1723,9 @@ def _run_github_sync():
             except Exception as e:
                 logger.error("Error running update_github_issues: %s", e, exc_info=True)
                 _github_sync_last_error = (
-                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                    (_github_sync_last_error + "; update_github_issues_failed")
+                    if _github_sync_last_error
+                    else "update_github_issues_failed"
                 )
 
             try:
@@ -1730,7 +1734,9 @@ def _run_github_sync():
             except Exception as e:
                 logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
                 _github_sync_last_error = (
-                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                    (_github_sync_last_error + "; fetch_pr_reviews_failed")
+                    if _github_sync_last_error
+                    else "fetch_pr_reviews_failed"
                 )
 
             try:
@@ -1739,7 +1745,9 @@ def _run_github_sync():
             except Exception as e:
                 logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
                 _github_sync_last_error = (
-                    (_github_sync_last_error + "; " + str(e)) if _github_sync_last_error else str(e)
+                    (_github_sync_last_error + "; update_contributor_stats_failed")
+                    if _github_sync_last_error
+                    else "update_contributor_stats_failed"
                 )
 
             logger.info("Background GitHub sync completed with messages: %s", status_messages)
@@ -2060,7 +2068,8 @@ class DebugSyncGithubDataApiView(APIView):
                     _github_sync_running = False
                     _github_sync_thread = None
                     _github_sync_started_at = None
-                    _github_sync_last_error = str(start_err)
+                    # Store a generic code, not exception details
+                    _github_sync_last_error = "thread_start_failed"
                     logger.error("Failed to start background GitHub sync thread: %s", start_err, exc_info=True)
                     return Response(
                         {"success": False, "error": "Failed to start background sync thread"},
@@ -2088,7 +2097,8 @@ class DebugSyncGithubDataApiView(APIView):
             _github_sync_running = False
             _github_sync_thread = None
             _github_sync_started_at = None
-            _github_sync_last_error = str(e)
+            # Do not expose exception details to clients
+            _github_sync_last_error = "sync_failed"
             return Response(
                 {"success": False, "error": "Failed to sync GitHub data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
