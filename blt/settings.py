@@ -101,6 +101,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "silk",
 )
 if DEBUG:
     INSTALLED_APPS += ("silk", "debug_toolbar", "livereload")
@@ -128,6 +129,7 @@ MIDDLEWARE = [
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
 
 

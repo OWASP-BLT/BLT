@@ -1,8 +1,13 @@
+import logging
 from pathlib import Path
 
 from PIL import Image
 
-# List of image paths you want to convert (relative to repo root)
+# Setup basic logging
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+
+# List of image paths to convert
 TARGET_FILES = [
     "website/static/images/dummy-user.png",
     "website/static/images/bacon.png",
@@ -19,14 +24,16 @@ if features_dir.exists():
 def convert_to_webp(png_path_str):
     png_path = Path(png_path_str)
     if not png_path.exists():
+        logger.warning(f"Not found: {png_path}")
         return
 
     webp_path = png_path.with_suffix(".webp")
     try:
         img = Image.open(png_path).convert("RGBA")
         img.save(webp_path, "webp", quality=85, method=6)
-    except Exception:
-        pass  # Silent failure (CI-safe)
+        logger.info(f"Converted: {png_path} → {webp_path}")
+    except Exception as e:
+        logger.error(f"Failed: {png_path} — {e}")
 
 
 def main():
