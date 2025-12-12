@@ -656,6 +656,13 @@
                     
                     const formData = new FormData(checkInForm);
                     const submitButton = checkInForm.querySelector('button[type="submit"]');
+                    
+                    // Guard: ensure submit button exists
+                    if (!submitButton) {
+                        console.warn('Submit button not found in form. Aborting submission.');
+                        return;
+                    }
+                    
                     const originalText = submitButton.textContent.trim();
                     
                     // Disable submit button
