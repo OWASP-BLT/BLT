@@ -2,7 +2,9 @@ from urllib.parse import urlparse
 
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
@@ -100,14 +102,7 @@ from website.models import (
     Winner,
 )
 
-from django.contrib import admin
-from django.contrib.auth import get_user_model
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.utils.html import format_html
-
 User = get_user_model()
-
-
 
 
 class UserResource(resources.ModelResource):
@@ -1282,11 +1277,10 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
     )
 
 
-
-
 @admin.action(description="Deactivate selected users")
 def deactivate_users(modeladmin, request, queryset):
     queryset.update(is_active=False)
+
 
 class ActivityStatusFilter(admin.SimpleListFilter):
     title = "Activity Status"
@@ -1305,7 +1299,9 @@ class ActivityStatusFilter(admin.SimpleListFilter):
             return queryset.filter(last_login__isnull=True)
         return queryset
 
+
 admin.site.unregister(User)
+
 
 class CustomUserAdmin(DjangoUserAdmin):
     actions = [deactivate_users]
@@ -1329,12 +1325,10 @@ class CustomUserAdmin(DjangoUserAdmin):
 
     def activity_status(self, obj):
         if obj.last_login:
-            return format_html(
-                '<span style="color: green; font-weight: 600;">Active</span>'
-            )
-        return format_html(
-            '<span style="color: red; font-weight: 600;">Inactive</span>'
-        )
+            return format_html('<span style="color: green; font-weight: 600;">Active</span>')
+        return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
 
     activity_status.short_description = "Activity"
+
+
 admin.site.register(User, CustomUserAdmin)
