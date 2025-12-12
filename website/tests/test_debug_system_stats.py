@@ -415,3 +415,38 @@ class DebugPanelAPITest(TestCase):
             self.assertIn("thread_start_failed", last_error)
         else:
             self.assertTrue(isinstance(last_error, str) and "thread_start_failed" in last_error)
+
+    @override_settings(DEBUG=True)
+    def test_sync_github_data_already_running(self):
+        """Test that concurrent sync requests return 409 Conflict"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        # Simulate sync already running
+        views._github_sync_running = True
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        data = response.json()
+        self.assertFalse(data.get("success"))
+        self.assertIn("already running", data.get("message", "").lower())
+
+        # Cleanup
+        views._github_sync_running = False
+
+    @override_settings(DEBUG=True)
+    @patch("website.api.views._github_sync_lock")
+    def test_sync_lock_acquisition_timeout(self, mock_lock):
+        """Test handling when lock acquisition times out"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        # Simulate lock timeout
+        mock_lock.acquire.return_value = False
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data = response.json()
+        self.assertFalse(data.get("success"))
