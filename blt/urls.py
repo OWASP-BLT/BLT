@@ -68,6 +68,7 @@ from website.views.bitcoin import (
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
+from website.views.chatbot_api import chatbot_api
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -1240,6 +1241,8 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    # Chatbot API endpoint
+    path("api/chatbot/", chatbot_api, name="chatbot_api"),
 ]
 
 if settings.DEBUG:
