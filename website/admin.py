@@ -100,6 +100,15 @@ from website.models import (
     Winner,
 )
 
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.utils.html import format_html
+
+User = get_user_model()
+
+
+
 
 class UserResource(resources.ModelResource):
     class Meta:
@@ -1271,3 +1280,61 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+
+
+@admin.action(description="Deactivate selected users")
+def deactivate_users(modeladmin, request, queryset):
+    queryset.update(is_active=False)
+
+class ActivityStatusFilter(admin.SimpleListFilter):
+    title = "Activity Status"
+    parameter_name = "activity"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("active", "Active"),
+            ("inactive", "Inactive"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "active":
+            return queryset.exclude(last_login__isnull=True)
+        if self.value() == "inactive":
+            return queryset.filter(last_login__isnull=True)
+        return queryset
+
+admin.site.unregister(User)
+
+class CustomUserAdmin(DjangoUserAdmin):
+    actions = [deactivate_users]
+
+    list_display = (
+        "username",
+        "email",
+        "is_active",
+        "activity_status",
+        "last_login",
+        "date_joined",
+    )
+
+    list_filter = (
+        "is_active",
+        ActivityStatusFilter,
+    )
+
+    search_fields = ("username", "email")
+    ordering = ("-last_login",)
+
+    def activity_status(self, obj):
+        if obj.last_login:
+            return format_html(
+                '<span style="color: green; font-weight: 600;">Active</span>'
+            )
+        return format_html(
+            '<span style="color: red; font-weight: 600;">Inactive</span>'
+        )
+
+    activity_status.short_description = "Activity"
+admin.site.register(User, CustomUserAdmin)
