@@ -462,7 +462,7 @@ async function downloadReport(event) {
         doc.text('Total Years', 40, 55, { align: 'center' });
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text(window.gsocData.summary.total_years || '0', 40, 65, { align: 'center' });
+        doc.text(String(window.gsocData.summary.total_years || 0), 40, 65, { align: 'center' });
         
         // Total Repos
         doc.rect(65, 50, 40, 20, 'FD');
@@ -471,7 +471,7 @@ async function downloadReport(event) {
         doc.text('Active Repos', 85, 55, { align: 'center' });
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text(window.gsocData.summary.total_repos || '0', 85, 65, { align: 'center' });
+        doc.text(String(window.gsocData.summary.total_repos || 0), 85, 65, { align: 'center' });
         
         // Total PRs
         doc.rect(110, 50, 40, 20, 'FD');
@@ -480,7 +480,7 @@ async function downloadReport(event) {
         doc.text('Total PRs', 130, 55, { align: 'center' });
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text(window.gsocData.summary.total_prs || '0', 130, 65, { align: 'center' });
+        doc.text(String(window.gsocData.summary.total_prs || 0), 130, 65, { align: 'center' });
         
         // Avg PRs/Year
         doc.rect(155, 50, 40, 20, 'FD');
@@ -489,7 +489,7 @@ async function downloadReport(event) {
         doc.text('Avg PRs/Year', 175, 55, { align: 'center' });
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text(window.gsocData.summary.avg_prs_per_year || '0', 175, 65, { align: 'center' });
+        doc.text(String(window.gsocData.summary.avg_prs_per_year || 0), 175, 65, { align: 'center' });
         
         // Add charts section
         doc.addPage();
@@ -577,6 +577,7 @@ async function downloadReport(event) {
         
         // Restore button state on error
         const button = event.target.closest('button');
+        if (!button) throw new Error('Download button not found');
         button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Download Report';
         button.disabled = false;
     }
@@ -596,6 +597,14 @@ function loadScript(src) {
         script.onerror = reject;
         document.head.appendChild(script);
     });
+}
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // Alternative simple HTML report download
@@ -632,7 +641,7 @@ function downloadHTMLReport() {
         </head>
         <body>
             <h1>Google Summer of Code - PR Analysis Report</h1>
-            <p><strong>Period:</strong> ${reportData.summary.start_year || 'N/A'} - ${reportData.summary.end_year || 'N/A'}</p>
+            <p><strong>Period:</strong> ${escapeHtml(reportData.summary.start_year || 'N/A')} - ${escapeHtml(reportData.summary.end_year || 'N/A')}</p>
             <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
             
             <div class="summary">
@@ -694,7 +703,7 @@ function downloadHTMLReport() {
                 year.repos.forEach(repo => {
                     htmlContent += `
                         <tr>
-                            <td>${repo.repo__name || 'Unknown'}</td>
+                            <td>${escapeHtml(repo.repo__name || 'Unknown')}</td>
                             <td>${repo.pr_count || 0}</td>
                             <td>${repo.unique_contributors || 0}</td>
                         </tr>
@@ -740,12 +749,11 @@ function viewRawData() {
     const dataWindow = window.open('', '_blank');
 
     if (dataWindow) {
-        dataWindow.document.write(
-            '<pre>' + JSON.stringify(window.gsocData, null, 2) + '</pre>'
-                );
-                dataWindow.document.close();
-            } else {
-                alert('Popup blocked. Please allow popups for this site.');
-            }
-        }
+        const pre = dataWindow.document.createElement('pre');
+        pre.textContent = JSON.stringify(window.gsocData, null, 2);
+        dataWindow.document.body.appendChild(pre);
+    } else {
+        alert('Popup blocked. Please allow popups for this site.');
+    }
+}
     

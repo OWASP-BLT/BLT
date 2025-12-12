@@ -2199,8 +2199,8 @@ class RepoBadgeView(APIView):
 
 def gsoc_pr_report(request):
     try:
-        current_year = datetime.now().year
-        start_year = current_year - 10
+        current_year = timezone.now().year
+        start_year = current_year - 9  # inclusive range => 10 years
 
         report_data = []
 
@@ -2233,8 +2233,8 @@ def gsoc_pr_report(request):
                 report_data.append(
                     {
                         "year": year,
-                        "repos": list(repos_with_prs),
-                        "total_prs": sum(r["pr_count"] for r in repos_with_prs),
+                        "repos": list(repos_with_prs),  # will be empty list if none
+                        "total_prs": sum(r["pr_count"] for r in repos_with_prs) if repos_with_prs else 0,
                     }
                 )
 
@@ -2265,12 +2265,15 @@ def gsoc_pr_report(request):
 
         total_repos = len(all_repos)
 
+        avg_prs_per_year = round(total_prs / total_years, 2) if total_years else 0
         summary_data = {
+            "start_year": start_year,
+            "end_year": current_year,
             "total_years": total_years,
             "total_repos": total_repos,
             "total_prs": total_prs,
+            "avg_prs_per_year": avg_prs_per_year,
         }
-        avg_prs_per_year = round(total_prs / total_years, 2) if total_years else 0
         # Convert report_data list to gsoc_data dict keyed by year
         gsoc_data = {}
         for entry in report_data:
