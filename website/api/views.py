@@ -1698,6 +1698,33 @@ def safe_sync_state_lock(timeout: float = 2.0, raise_on_fail: bool = False):
                 logger.exception("Failed releasing _github_sync_lock in safe_sync_state_lock")
 
 
+def _finalize_sync_state():
+    """Finalize GitHub sync state and keep alias globals in sync.
+
+    Safe to call with or without holding the lock; caller should acquire
+    the lock when possible to avoid races.
+    """
+    global _github_sync_running, _github_sync_thread, _github_sync_last_finished_at, _github_sync_last_error
+    try:
+        _github_sync_last_finished_at = timezone.now().isoformat()
+    except Exception:
+        _github_sync_last_finished_at = datetime.utcnow().isoformat()
+
+    _github_sync_running = False
+    _github_sync_thread = None
+    # Keep errors as a list; ensure copy for alias
+    try:
+        _github_sync_last_error = list(_github_sync_last_error)
+    except Exception:
+        pass
+
+    # Sync alias globals for tests
+    globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
+    globals()["github_sync_running"] = _github_sync_running
+    globals()["github_sync_thread"] = _github_sync_thread
+    globals()["github_sync_last_error"] = list(_github_sync_last_error)
+
+
 # Helper function to run GitHub sync commands in a background thread (for debug endpoint)
 def _run_github_sync():
     """
@@ -1773,22 +1800,7 @@ def _run_github_sync():
                     # Small backoff to reduce immediate contention
                     time.sleep(0.1)
                     continue
-                try:
-                    _github_sync_last_finished_at = timezone.now().isoformat()
-                except Exception:
-                    _github_sync_last_finished_at = datetime.utcnow().isoformat()
-
-                _github_sync_running = False
-                _github_sync_thread = None
-                # sync aliases
-                globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
-                globals()["github_sync_running"] = _github_sync_running
-                globals()["github_sync_thread"] = _github_sync_thread
-                # Keep errors as a list; snapshots copy when needed
-                try:
-                    _github_sync_last_error = list(_github_sync_last_error)
-                except Exception as e:
-                    logger.error("Failed to copy _github_sync_last_error list: %s", e, exc_info=True)
+                _finalize_sync_state()
                 finalized = True
                 break
         if not finalized:
@@ -1798,27 +1810,14 @@ def _run_github_sync():
             )
             with safe_sync_state_lock(timeout=0.5) as acquired_last:
                 if acquired_last:
-                    try:
-                        _github_sync_last_finished_at = timezone.now().isoformat()
-                    except Exception:
-                        _github_sync_last_finished_at = datetime.utcnow().isoformat()
-                    _github_sync_running = False
-                    _github_sync_thread = None
-                    globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
-                    globals()["github_sync_running"] = _github_sync_running
-                    globals()["github_sync_thread"] = _github_sync_thread
+                    _finalize_sync_state()
                 else:
-                    # Proceeding to clear state without the lock to avoid wedged status.
+                    # Could not acquire the lock after multiple attempts; performing unlock-free cleanup.
                     # NOTE: This can introduce a transient race if another thread reads these values simultaneously.
-                    _github_sync_running = False
-                    _github_sync_thread = None
-                    try:
-                        _github_sync_last_finished_at = timezone.now().isoformat()
-                    except Exception:
-                        _github_sync_last_finished_at = datetime.utcnow().isoformat()
-                    globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
-                    globals()["github_sync_running"] = _github_sync_running
-                    globals()["github_sync_thread"] = _github_sync_thread
+                    _finalize_sync_state()
+                    logger.error(
+                        "Failed to acquire sync state lock after multiple attempts; cleared state without lock."
+                    )
 
 
 def debug_required(func):
@@ -2255,18 +2254,9 @@ class DebugSyncGithubDataApiView(APIView):
                         globals()["github_sync_started_at"] = _github_sync_started_at
                         globals()["github_sync_last_error"] = list(_github_sync_last_error)
                     else:
-                        logger.warning(
-                            "Could not acquire _github_sync_lock during thread.start() failure cleanup; clearing state without lock."
+                        logger.error(
+                            "Could not acquire _github_sync_lock during thread.start() failure cleanup; state may be inconsistent and could not be reset."
                         )
-                        # Last-resort best-effort cleanup to avoid wedged UI.
-                        _github_sync_running = False
-                        _github_sync_thread = None
-                        _github_sync_started_at = None
-                        _github_sync_last_error = ["thread_start_failed"]
-                        globals()["github_sync_running"] = _github_sync_running
-                        globals()["github_sync_thread"] = _github_sync_thread
-                        globals()["github_sync_started_at"] = _github_sync_started_at
-                        globals()["github_sync_last_error"] = list(_github_sync_last_error)
 
                 # Provide a slightly more detailed error payload in DEBUG so developers can triage; keep it generic in production.
                 error_response = {"success": False, "error": "Failed to start background sync thread"}

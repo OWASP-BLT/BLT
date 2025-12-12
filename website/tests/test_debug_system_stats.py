@@ -26,11 +26,11 @@ class DebugPanelAPITest(TestCase):
 
         # Reset GitHub sync module state between tests.
         for attr, value in [
-            ("github_sync_running", False),
-            ("github_sync_thread", None),
-            ("github_sync_started_at", None),
-            ("github_sync_last_finished_at", None),
-            ("github_sync_last_error", []),
+            ("_github_sync_running", False),
+            ("_github_sync_thread", None),
+            ("_github_sync_started_at", None),
+            ("_github_sync_last_finished_at", None),
+            ("_github_sync_last_error", []),
         ]:
             if hasattr(views, attr):
                 setattr(views, attr, value)
@@ -406,10 +406,10 @@ class DebugPanelAPITest(TestCase):
 
         # Verify cleanup of module-level sync state after a start failure
         # (these globals are defined in website.api.views)
-        self.assertFalse(getattr(views, "github_sync_running", True))
-        self.assertIsNone(getattr(views, "github_sync_thread", None))
-        self.assertIsNone(getattr(views, "github_sync_started_at", None))
-        last_error = getattr(views, "github_sync_last_error", None)
+        self.assertFalse(getattr(views, "_github_sync_running", True))
+        self.assertIsNone(getattr(views, "_github_sync_thread", None))
+        self.assertIsNone(getattr(views, "_github_sync_started_at", None))
+        last_error = getattr(views, "_github_sync_last_error", None)
         # Accept list-based representation or legacy string, but prefer list and check for token
         if isinstance(last_error, list):
             self.assertIn("thread_start_failed", last_error)

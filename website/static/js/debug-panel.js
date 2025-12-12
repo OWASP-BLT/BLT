@@ -457,20 +457,51 @@ DB Connections: ${stats.database?.connections || "N/A"}
         try {
           if (!data || !data.data) {
             this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: null });
+            this.adjustPollIntervalAfterUpdate(false);
             return;
           }
           const sync = data.data.github_sync || {};
           this.updateGithubStatusBadge(sync);
+          this.adjustPollIntervalAfterUpdate(Boolean(sync.running));
         } catch (e) {
           // if any parsing error occurs, show unavailable
           this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: "parse error" });
+          this.adjustPollIntervalAfterUpdate(false);
         }
       },
       (error) => {
         // network or auth error: show unavailable status
         this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: error });
+        this.adjustPollIntervalAfterUpdate(false);
       }
     );
+  },
+
+  /**
+   * Adjust poll interval based on sync state
+   * This is called after the badge is updated, avoiding timer manipulation during callback execution
+   */
+  adjustPollIntervalAfterUpdate(isRunning) {
+    try {
+      const desiredInterval = isRunning ? 1000 : (this._defaultPollInterval || 5000);
+      if (this._currentPollInterval !== desiredInterval) {
+        // Schedule the interval change for the next tick to avoid manipulating timer during callback
+        setTimeout(() => {
+          if (this._currentPollInterval === desiredInterval) {
+            // Interval was already adjusted (unlikely but safe)
+            return;
+          }
+          // Only restart if timer is still active
+          if (this.githubStatusTimer) {
+            clearInterval(this.githubStatusTimer);
+            this._currentPollInterval = desiredInterval;
+            this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
+          }
+        }, 0);
+      }
+    } catch (e) {
+      // ignore timer adjustment errors
+    }
   },
 
   /**
@@ -524,21 +555,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
       "text-black",
       "text-white"
     );
-
-    // Adaptive polling: speed up when running, slow down when idle
-    try {
-      const desiredInterval = isRunning ? 1000 : (this._defaultPollInterval || 5000);
-      if (this._currentPollInterval !== desiredInterval) {
-        // Restart poll timer with new interval
-        if (this.githubStatusTimer) {
-          clearInterval(this.githubStatusTimer);
-        }
-        this._currentPollInterval = desiredInterval;
-        this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
-      }
-    } catch (e) {
-      // ignore timer adjustment errors
-    }
 
     if (isRunning) {
       badge.textContent = `Sync: RUNNING (started: ${this.formatTimestamp(sync.started_at)})`;
