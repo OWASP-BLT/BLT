@@ -1726,6 +1726,8 @@ def _run_github_sync():
         try:
             call_command("check_owasp_projects", stdout=StringIO())
             status_messages.append("✓ Synced OWASP projects")
+            if len(status_messages) > 200:
+                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1735,6 +1737,8 @@ def _run_github_sync():
         try:
             call_command("update_github_issues", stdout=StringIO())
             status_messages.append("✓ Updated GitHub issues")
+            if len(status_messages) > 200:
+                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running update_github_issues: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1744,6 +1748,8 @@ def _run_github_sync():
         try:
             call_command("fetch_pr_reviews", stdout=StringIO())
             status_messages.append("✓ Fetched PR reviews")
+            if len(status_messages) > 200:
+                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1753,6 +1759,8 @@ def _run_github_sync():
         try:
             call_command("update_contributor_stats", stdout=StringIO())
             status_messages.append("✓ Updated contributor stats")
+            if len(status_messages) > 200:
+                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1772,19 +1780,20 @@ def _run_github_sync():
                 except Exception:
                     _github_sync_last_finished_at = datetime.utcnow().isoformat()
 
-                    _github_sync_running = False
-                    _github_sync_thread = None
-                    # Keep errors as a list; snapshots copy when needed
-                    try:
-                        _github_sync_last_error = list(_github_sync_last_error)
-                    except Exception as e:
-                        logger.error("Failed to copy _github_sync_last_error list: %s", e, exc_info=True)
-                    finalized = True
-                    break
+                _github_sync_running = False
+                _github_sync_thread = None
+                # Keep errors as a list; snapshots copy when needed
+                try:
+                    _github_sync_last_error = list(_github_sync_last_error)
+                except Exception as e:
+                    logger.error("Failed to copy _github_sync_last_error list: %s", e, exc_info=True)
+                finalized = True
+                break
         if not finalized:
             # As a last resort, clear running state without the lock to avoid stale status
             logger.warning("Finalization lock acquisition failed; clearing running state without lock.")
             _github_sync_running = False
+            _github_sync_thread = None
             try:
                 _github_sync_last_finished_at = timezone.now().isoformat()
             except Exception:
@@ -1902,13 +1911,43 @@ class DebugSystemStatsApiView(APIView):
             if cached_counts:
                 db_counts = cached_counts
             else:
-                db_counts = {
-                    "user_count": User.objects.count(),
-                    "issue_count": Issue.objects.count(),
-                    "org_count": Organization.objects.count(),
-                    "domain_count": Domain.objects.count(),
-                    "repo_count": Repo.objects.count(),
-                }
+                # Optimize: fetch all counts in a single DB round-trip using raw SQL subselects
+                try:
+                    user_table = User._meta.db_table
+                    issue_table = Issue._meta.db_table
+                    org_table = Organization._meta.db_table
+                    domain_table = Domain._meta.db_table
+                    repo_table = Repo._meta.db_table
+
+                    with connection.cursor() as cursor:
+                        sql = (
+                            "SELECT "
+                            f"(SELECT COUNT(*) FROM {user_table}) AS user_count, "
+                            f"(SELECT COUNT(*) FROM {issue_table}) AS issue_count, "
+                            f"(SELECT COUNT(*) FROM {org_table}) AS org_count, "
+                            f"(SELECT COUNT(*) FROM {domain_table}) AS domain_count, "
+                            f"(SELECT COUNT(*) FROM {repo_table}) AS repo_count"
+                        )
+                        cursor.execute(sql)
+                        row = cursor.fetchone()
+                        db_counts = {
+                            "user_count": row[0],
+                            "issue_count": row[1],
+                            "org_count": row[2],
+                            "domain_count": row[3],
+                            "repo_count": row[4],
+                        }
+                except Exception as e:
+                    logger.warning("Could not fetch counts with optimized query: %s", e)
+                    # Fallback to original method
+                    db_counts = {
+                        "user_count": User.objects.count(),
+                        "issue_count": Issue.objects.count(),
+                        "org_count": Organization.objects.count(),
+                        "domain_count": Domain.objects.count(),
+                        "repo_count": Repo.objects.count(),
+                    }
+
                 # Cache for a short time (30 seconds) to reduce noise during rapid page reloads
                 try:
                     cache.set("debug_system_counts", db_counts, timeout=30)
@@ -1918,13 +1957,15 @@ class DebugSystemStatsApiView(APIView):
 
             # Acquire lock briefly to read consistent GitHub sync state
             try:
+                acquired = False
                 acquired = _github_sync_lock.acquire(timeout=2)
                 if acquired:
                     github_sync_status = {
                         "running": bool(_github_sync_running),
                         "started_at": _github_sync_started_at,
                         "last_finished_at": _github_sync_last_finished_at,
-                        # Expose joined string for backward compatibility but keep internal list for structure
+                        # Provide both structured list and display string consistently
+                        "last_error_list": list(_github_sync_last_error) if _github_sync_last_error else [],
                         "last_error": "; ".join(list(_github_sync_last_error)) if _github_sync_last_error else None,
                     }
                 else:
@@ -1933,11 +1974,12 @@ class DebugSystemStatsApiView(APIView):
                         "running": None,
                         "started_at": None,
                         "last_finished_at": None,
+                        "last_error_list": [],
                         "last_error": "Lock acquisition timed out",
                     }
             finally:
                 try:
-                    if "acquired" in locals() and acquired:
+                    if acquired:
                         _github_sync_lock.release()
                 except Exception:
                     logger.exception("Failed to release _github_sync_lock after reading status")
@@ -1959,7 +2001,7 @@ class DebugSystemStatsApiView(APIView):
                             "org_count": db_counts["org_count"],
                             "domain_count": db_counts["domain_count"],
                             "repo_count": db_counts["repo_count"],
-                            # Active DB connections for this PostgreSQL database (not per-request queries)
+                            # Total active connections to the PostgreSQL database (from all sources, not just this application)
                             "connections": active_connections,
                         },
                         "memory": memory_stats,
@@ -2102,6 +2144,7 @@ class DebugPanelStatusApiView(APIView):
                         "running": None,
                         "started_at": None,
                         "last_finished_at": None,
+                        "last_error_list": [],
                         "last_error": None,
                         "note": "status unavailable (lock timeout)",
                     },
@@ -2112,9 +2155,9 @@ class DebugPanelStatusApiView(APIView):
                 "running": _github_sync_running,
                 "started_at": _github_sync_started_at,
                 "last_finished_at": _github_sync_last_finished_at,
-                "last_error": list(_github_sync_last_error)
-                if isinstance(_github_sync_last_error, list)
-                else _github_sync_last_error,
+                # Provide both structured list and display string consistently
+                "last_error_list": list(_github_sync_last_error) if isinstance(_github_sync_last_error, list) else [],
+                "last_error": "; ".join(list(_github_sync_last_error)) if _github_sync_last_error else None,
             }
         finally:
             try:

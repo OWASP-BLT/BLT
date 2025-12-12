@@ -331,9 +331,10 @@ DB Connections: ${stats.database?.connections || "N/A"}
       { confirm: true },
       (data) => {
         if (data.success) {
+          const baseMsg = data.message ? data.message : "GitHub sync started in background.";
+          const infoMsg = `${baseMsg} Check the sync status badge above for progress.`;
           this.showStatus(
-            data.message ? data.message : "GitHub data synced successfully!",
-            "success"
+            infoMsg,
           );
         } else {
           this.showStatus(
