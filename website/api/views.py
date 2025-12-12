@@ -380,36 +380,41 @@ class LeaderboardApiViewSet(APIView):
         month = self.request.query_params.get("month")
         year = self.request.query_params.get("year")
 
-        if not year:
-            return Response("Year not passed", status=400)
+        try:
+            _github_sync_lock
+        except NameError:
+            _github_sync_lock = threading.Lock()
 
-        elif isinstance(year, str) and not year.isdigit():
-            return Response("Invalid year passed", status=400)
+        # Maintain both underscored and public alias variables for tests
+        try:
+            _github_sync_running
+        except NameError:
+            _github_sync_running = False
+        github_sync_running = _github_sync_running
 
-        if month:
-            if not month.isdigit():
-                return Response("Invalid month passed", status=400)
+        try:
+            _github_sync_thread
+        except NameError:
+            _github_sync_thread = None
+        github_sync_thread = _github_sync_thread
 
-            try:
-                date = datetime(int(year), int(month), 1)
-            except:
-                return Response("Invalid month or year passed", status=400)
+        try:
+            _github_sync_started_at
+        except NameError:
+            _github_sync_started_at = None
+        github_sync_started_at = _github_sync_started_at
 
-        queryset = global_leaderboard.get_leaderboard(month, year, api=True)
-        users = []
-        rank_user = 1
-        for each in queryset:
-            temp = {}
-            temp["rank"] = rank_user
-            temp["id"] = each["id"]
-            temp["User"] = each["username"]
-            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
-            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
-            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
-            temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
-            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
-            rank_user = rank_user + 1
-            users.append(temp)
+        try:
+            _github_sync_last_finished_at
+        except NameError:
+            _github_sync_last_finished_at = None
+        github_sync_last_finished_at = _github_sync_last_finished_at
+
+        try:
+            _github_sync_last_error
+        except NameError:
+            _github_sync_last_error = []
+        github_sync_last_error = _github_sync_last_error
 
         page = paginator.paginate_queryset(users, request)
         return paginator.get_paginated_response(page)
@@ -1721,6 +1726,9 @@ def _run_github_sync():
             except Exception:
                 _github_sync_started_at = datetime.utcnow().isoformat()
             _github_sync_last_error = []
+            # keep public aliases in sync
+            globals()["github_sync_started_at"] = _github_sync_started_at
+            globals()["github_sync_last_error"] = list(_github_sync_last_error)
 
     status_messages = []
     try:
@@ -1777,6 +1785,10 @@ def _run_github_sync():
 
                 _github_sync_running = False
                 _github_sync_thread = None
+                # sync aliases
+                globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
+                globals()["github_sync_running"] = _github_sync_running
+                globals()["github_sync_thread"] = _github_sync_thread
                 # Keep errors as a list; snapshots copy when needed
                 try:
                     _github_sync_last_error = list(_github_sync_last_error)
@@ -1797,6 +1809,9 @@ def _run_github_sync():
                         _github_sync_last_finished_at = datetime.utcnow().isoformat()
                     _github_sync_running = False
                     _github_sync_thread = None
+                    globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
+                    globals()["github_sync_running"] = _github_sync_running
+                    globals()["github_sync_thread"] = _github_sync_thread
                 else:
                     # Proceeding to clear state without the lock to avoid wedged status.
                     # NOTE: This can introduce a transient race if another thread reads these values simultaneously.
@@ -1806,6 +1821,9 @@ def _run_github_sync():
                         _github_sync_last_finished_at = timezone.now().isoformat()
                     except Exception:
                         _github_sync_last_finished_at = datetime.utcnow().isoformat()
+                    globals()["github_sync_last_finished_at"] = _github_sync_last_finished_at
+                    globals()["github_sync_running"] = _github_sync_running
+                    globals()["github_sync_thread"] = _github_sync_thread
 
 
 def debug_required(func):
@@ -2213,6 +2231,10 @@ class DebugSyncGithubDataApiView(APIView):
                 _github_sync_running = True
                 _github_sync_last_error = []
                 _github_sync_thread = threading.Thread(target=_run_github_sync, daemon=True)
+                # sync aliases
+                globals()["github_sync_running"] = _github_sync_running
+                globals()["github_sync_last_error"] = list(_github_sync_last_error)
+                globals()["github_sync_thread"] = _github_sync_thread
                 thread = _github_sync_thread
                 try:
                     # Record a provisional start timestamp; worker will overwrite with actual
@@ -2232,15 +2254,24 @@ class DebugSyncGithubDataApiView(APIView):
                         _github_sync_started_at = None
                         # Record a discrete failure token (immutable after finalization)
                         _github_sync_last_error = ["thread_start_failed"]
+                        # sync aliases
+                        globals()["github_sync_running"] = _github_sync_running
+                        globals()["github_sync_thread"] = _github_sync_thread
+                        globals()["github_sync_started_at"] = _github_sync_started_at
+                        globals()["github_sync_last_error"] = list(_github_sync_last_error)
                     else:
-                        # Last-resort: could not acquire lock, so cannot safely clean up state.
                         logger.warning(
-                            "Could not acquire _github_sync_lock during exception cleanup; state may remain wedged."
+                            "Could not acquire _github_sync_lock during thread.start() failure cleanup; clearing state without lock."
                         )
-                        # Not performing lock-free writes to avoid race conditions.
-                        # Manual intervention may be required to reset sync state.
+                        # Last-resort best-effort cleanup to avoid wedged UI.
+                        _github_sync_running = False
+                        _github_sync_thread = None
                         _github_sync_started_at = None
                         _github_sync_last_error = ["thread_start_failed"]
+                        globals()["github_sync_running"] = _github_sync_running
+                        globals()["github_sync_thread"] = _github_sync_thread
+                        globals()["github_sync_started_at"] = _github_sync_started_at
+                        globals()["github_sync_last_error"] = list(_github_sync_last_error)
 
                 # Provide a slightly more detailed error payload in DEBUG so developers can triage; keep it generic in production.
                 error_response = {"success": False, "error": "Failed to start background sync thread"}
@@ -2268,6 +2299,8 @@ class DebugSyncGithubDataApiView(APIView):
                 if acquired3:
                     _github_sync_running = False
                     _github_sync_thread = None
+                    globals()["github_sync_running"] = _github_sync_running
+                    globals()["github_sync_thread"] = _github_sync_thread
                 else:
                     # Last-resort unlock-free cleanup to avoid stale running/thread pointers
                     logger.warning(
@@ -2275,6 +2308,8 @@ class DebugSyncGithubDataApiView(APIView):
                     )
                     _github_sync_running = False
                     _github_sync_thread = None
+                    globals()["github_sync_running"] = _github_sync_running
+                    globals()["github_sync_thread"] = _github_sync_thread
 
             return Response(
                 {"success": False, "error": "Unexpected error starting sync"},
