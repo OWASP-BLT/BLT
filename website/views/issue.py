@@ -1358,6 +1358,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+
+            # Auto-hide issues from new users for review
+            if obj.user and hasattr(obj.user, "date_joined") and obj.user.date_joined:
+                user_age = timezone.now() - obj.user.date_joined
+                if user_age.days < settings.BUG_REVIEW_QUEUE_NEW_USER_DAYS:
+                    obj.is_hidden = True
+
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
@@ -2660,3 +2667,101 @@ def refresh_gsoc_project(request):
     DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
 
     return redirect("gsoc")
+
+
+@login_required(login_url="/accounts/login")
+def bug_review_queue(request):
+    """
+    View for bug verifiers to review hidden issues from new users.
+    Only accessible to users with 'can_verify_bugs' permission.
+    """
+    # Check if user has permission to verify bugs
+    if not request.user.has_perm("website.can_verify_bugs"):
+        messages.error(request, "You don't have permission to access the bug review queue.")
+        return redirect("/")
+
+    # Get hidden issues from new users that need review
+    # Filter for issues from users within the configured threshold
+    new_user_threshold = timezone.now() - timedelta(days=settings.BUG_REVIEW_QUEUE_NEW_USER_DAYS)
+    hidden_issues = (
+        Issue.objects.filter(is_hidden=True, user__date_joined__gte=new_user_threshold)
+        .select_related("user", "domain")
+        .order_by("-created")
+    )
+
+    # Pagination
+    paginator = Paginator(hidden_issues, 20)
+    page = request.GET.get("page", 1)
+
+    try:
+        issues = paginator.page(page)
+    except PageNotAnInteger:
+        issues = paginator.page(1)
+    except EmptyPage:
+        issues = paginator.page(paginator.num_pages)
+
+    context = {
+        "issues": issues,
+        "total_pending": hidden_issues.count(),
+    }
+
+    return render(request, "bug_review_queue.html", context)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def approve_bug(request, issue_id):
+    """
+    Approve and publish a bug report from the review queue.
+    Only accessible to users with 'can_verify_bugs' permission.
+    """
+    # Check if user has permission to verify bugs
+    if not request.user.has_perm("website.can_verify_bugs"):
+        messages.error(request, "You don't have permission to approve bugs.")
+        return redirect("/")
+
+    issue = get_object_or_404(Issue, id=issue_id)
+
+    # Only allow approving hidden issues
+    if not issue.is_hidden:
+        messages.warning(request, "This issue is already published.")
+        return redirect("bug_review_queue")
+
+    # Approve the issue by making it visible
+    issue.is_hidden = False
+    issue.save()
+
+    # Log the approval
+    logger.info(f"Bug #{issue.id} approved by user {request.user.username}")
+
+    messages.success(request, f"Bug report #{issue.id} has been approved and published.")
+    return redirect("bug_review_queue")
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def reject_bug(request, issue_id):
+    """
+    Reject a bug report from the review queue.
+    Only accessible to users with 'can_verify_bugs' permission.
+    """
+    # Check if user has permission to verify bugs
+    if not request.user.has_perm("website.can_verify_bugs"):
+        messages.error(request, "You don't have permission to reject bugs.")
+        return redirect("/")
+
+    issue = get_object_or_404(Issue, id=issue_id)
+
+    # Only allow rejecting hidden issues
+    if not issue.is_hidden:
+        messages.warning(request, "This issue is already published.")
+        return redirect("bug_review_queue")
+
+    # Delete the rejected issue
+    issue.delete()
+
+    # Log the rejection
+    logger.info(f"Bug #{issue.id} rejected and deleted by user {request.user.username}")
+
+    messages.success(request, f"Bug report #{issue.id} has been rejected and deleted.")
+    return redirect("bug_review_queue")
