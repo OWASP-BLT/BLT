@@ -720,7 +720,7 @@
                         
                         const data = await response.json();
                         
-                        if (data.success === 'true') {
+                        if (data.success === true) {
                             // Show success message first, then reload immediately
                             const successMessage = document.getElementById('success-message');
                             const successTitle = document.getElementById('success-title');
