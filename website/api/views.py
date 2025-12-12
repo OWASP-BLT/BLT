@@ -2229,7 +2229,7 @@ class DebugSyncGithubDataApiView(APIView):
                     _github_sync_started_at = timezone.now().isoformat()
                 except Exception:
                     _github_sync_started_at = datetime.utcnow().isoformat()
-
+                globals()["github_sync_started_at"] = _github_sync_started_at
             # Start the thread after releasing the lock
             try:
                 thread.start()
@@ -2287,8 +2287,12 @@ class DebugSyncGithubDataApiView(APIView):
                 if acquired3:
                     _github_sync_running = False
                     _github_sync_thread = None
+                    _github_sync_started_at = None
+                    _github_sync_last_error = ["unexpected_start_error"]
                     globals()["github_sync_running"] = _github_sync_running
                     globals()["github_sync_thread"] = _github_sync_thread
+                    globals()["github_sync_started_at"] = _github_sync_started_at
+                    globals()["github_sync_last_error"] = list(_github_sync_last_error)
                 else:
                     # Last-resort unlock-free cleanup to avoid stale running/thread pointers
                     logger.warning(
@@ -2296,8 +2300,12 @@ class DebugSyncGithubDataApiView(APIView):
                     )
                     _github_sync_running = False
                     _github_sync_thread = None
+                    _github_sync_started_at = None
+                    _github_sync_last_error = ["unexpected_start_error"]
                     globals()["github_sync_running"] = _github_sync_running
                     globals()["github_sync_thread"] = _github_sync_thread
+                    globals()["github_sync_started_at"] = _github_sync_started_at
+                    globals()["github_sync_last_error"] = list(_github_sync_last_error)
 
             return Response(
                 {"success": False, "error": "Unexpected error starting sync"},
