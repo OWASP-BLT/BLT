@@ -2200,16 +2200,16 @@ class RepoBadgeView(APIView):
 def gsoc_pr_report(request):
     try:
         current_year = timezone.now().year
-        start_year = current_year - 9  # inclusive range => 10 years
+        start_year = current_year - 9  # inclusive → exactly 10 years
 
         report_data = []
 
-        # Query all GSOC PRs at once and group by year
+        # Build data for every year (including years with 0 PRs)
         for year in range(start_year, current_year + 1):
             start_date = timezone.make_aware(datetime(year, 5, 1))
             end_date = timezone.make_aware(datetime(year, 9, 30, 23, 59, 59))
 
-            repos_with_prs = (
+            repos_qs = (
                 GitHubIssue.objects.filter(
                     type="pull_request",
                     is_merged=True,
@@ -2229,17 +2229,18 @@ def gsoc_pr_report(request):
                 .order_by("-pr_count")
             )
 
-            if repos_with_prs:
-                report_data.append(
-                    {
-                        "year": year,
-                        "repos": list(repos_with_prs),  # will be empty list if none
-                        "total_prs": sum(r["pr_count"] for r in repos_with_prs) if repos_with_prs else 0,
-                    }
-                )
+            repos = list(repos_qs)
 
-        #  SUMMARY + CHART CALCULATIONS
-        total_years = len(report_data)
+            report_data.append(
+                {
+                    "year": year,
+                    "repos": repos,  # may be empty
+                    "total_prs": sum(r["pr_count"] for r in repos),
+                }
+            )
+
+        # Always exactly 10 years
+        total_years = current_year - start_year + 1
 
         all_repos = set()
         total_prs = 0
@@ -2252,8 +2253,8 @@ def gsoc_pr_report(request):
             for repo in year_block["repos"]:
                 all_repos.add(repo["repo__name"])
 
+        # Top repos across all years
         repo_totals = defaultdict(int)
-
         for year_block in report_data:
             for repo in year_block["repos"]:
                 repo_totals[repo["repo__name"]] += repo["pr_count"]
@@ -2264,8 +2265,8 @@ def gsoc_pr_report(request):
         ]
 
         total_repos = len(all_repos)
-
         avg_prs_per_year = round(total_prs / total_years, 2) if total_years else 0
+
         summary_data = {
             "start_year": start_year,
             "end_year": current_year,
@@ -2274,7 +2275,8 @@ def gsoc_pr_report(request):
             "total_prs": total_prs,
             "avg_prs_per_year": avg_prs_per_year,
         }
-        # Convert report_data list to gsoc_data dict keyed by year
+
+        # Convert report_data into dict keyed by year
         gsoc_data = {}
         for entry in report_data:
             repos_dict = {
@@ -2303,7 +2305,8 @@ def gsoc_pr_report(request):
         }
 
         return render(request, "projects/gsoc_pr_report.html", context)
-    except Exception as e:
-        logger.error(f"Error generating GSOC PR report: {e}")
+
+    except Exception:
+        logger.exception("Error generating GSOC PR report")
         messages.error(request, "An error occurred while generating the report. Please try again later.")
         return redirect("project_list")

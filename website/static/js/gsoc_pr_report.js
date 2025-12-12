@@ -6,18 +6,84 @@ window.gsocData = {
     reportData: []
 };
 
+// Function to extract chart data (callable from both chart rendering and PDF generation)
+function getChartData() {
+    let yearlyCategories = [];
+    let yearlySeriesData = [];
+    let topReposLabels = [];
+    let topReposSeries = [];
+    
+    // Process Yearly Chart Data
+    if (window.gsocData.yearlyChart) {
+        if (Array.isArray(window.gsocData.yearlyChart) && window.gsocData.yearlyChart.length > 0) {
+            yearlyCategories = window.gsocData.yearlyChart.map(item => String(item.year || item.label || item.name || ''));
+            yearlySeriesData = window.gsocData.yearlyChart.map(item => Number(item.prs || item.value || item.count || 0));
+        } else if (typeof window.gsocData.yearlyChart === 'object' && window.gsocData.yearlyChart !== null) {
+            if (window.gsocData.yearlyChart.years && window.gsocData.yearlyChart.pr_counts) {
+                yearlyCategories = window.gsocData.yearlyChart.years.map(String);
+                yearlySeriesData = window.gsocData.yearlyChart.pr_counts.map(Number);
+            } else if (window.gsocData.yearlyChart.labels && window.gsocData.yearlyChart.data) {
+                yearlyCategories = window.gsocData.yearlyChart.labels.map(String);
+                yearlySeriesData = window.gsocData.yearlyChart.data.map(Number);
+            } else {
+                const keys = Object.keys(window.gsocData.yearlyChart);
+                if (keys.length > 0) {
+                    yearlyCategories = keys;
+                    yearlySeriesData = keys.map(key => Number(window.gsocData.yearlyChart[key]) || 0);
+                }
+            }
+        }
+    }
+    
+    // Process Top Repos Data
+    if (window.gsocData.topReposChart) {
+        if (Array.isArray(window.gsocData.topReposChart)) {
+            topReposLabels = window.gsocData.topReposChart.map(item =>
+                String(item.repo || item.label || item.name || 'Unknown').substring(0, 30)
+            );
+            topReposSeries = window.gsocData.topReposChart.map(item =>
+                Number(item.prs || item.value || item.count || 0)
+            );
+        } else if (window.gsocData.topReposChart.repos && window.gsocData.topReposChart.counts) {
+            topReposLabels = window.gsocData.topReposChart.repos.map(name =>
+                String(name).substring(0, 30)
+            );
+            topReposSeries = window.gsocData.topReposChart.counts.map(Number);
+        } else if (window.gsocData.topReposChart.labels && window.gsocData.topReposChart.data) {
+            topReposLabels = window.gsocData.topReposChart.labels.map(name =>
+                String(name).substring(0, 30)
+            );
+            topReposSeries = window.gsocData.topReposChart.data.map(Number);
+        }
+    }
+    
+    return {
+        yearlyCategories,
+        yearlySeriesData,
+        topReposLabels,
+        topReposSeries
+    };
+}
+
 // Helper function to parse escaped JSON
 function parseEscapedJSON(str) {
-    if (!str) return {};
+    if (!str) return null;
 
     try {
-        let fixed = str.replace(/\\\\/g, '\\');
-        fixed = fixed.replace(/\\u([0-9A-Fa-f]{4})/g, (_, hex) =>
+        // First, unescape the string (convert \u0022 to ", etc.)
+        const unescapedStr = str.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => 
             String.fromCharCode(parseInt(hex, 16))
         );
-        return JSON.parse(fixed);
-    } catch (e) {
-        return {};
+        // Also handle other common escapes
+        const finalStr = unescapedStr
+            .replace(/\\"/g, '"')
+            .replace(/\\'/g, "'")
+            .replace(/\\\\/g, '\\');
+        
+        return JSON.parse(finalStr);
+    } catch (err) {
+        console.error("JSON parse failed:", err, str);
+        return null;
     }
 }
 
@@ -26,12 +92,17 @@ function parseDataFromDOM() {
     const dataDiv = document.getElementById('gsocData');
     if (dataDiv) {
         try {
-            window.gsocData.summary = parseEscapedJSON(dataDiv.dataset.summary);
-            window.gsocData.yearlyChart = parseEscapedJSON(dataDiv.dataset.yearlyChart);
-            window.gsocData.topReposChart = parseEscapedJSON(dataDiv.dataset.topRepos);
-            window.gsocData.reportData = parseEscapedJSON(dataDiv.dataset.reportData);
+            window.gsocData.summary = parseEscapedJSON(dataDiv.dataset.summary) || {};
+            window.gsocData.yearlyChart = parseEscapedJSON(dataDiv.dataset.yearlyChart) || {};
+            window.gsocData.topReposChart = parseEscapedJSON(dataDiv.dataset.topRepos) || {};
+            window.gsocData.reportData = parseEscapedJSON(dataDiv.dataset.reportData) || [];
         } catch (e) {
-            // Silent error handling
+            console.error("Error parsing DOM data:", e);
+            // Initialize with empty values
+            window.gsocData.summary = {};
+            window.gsocData.yearlyChart = {};
+            window.gsocData.topReposChart = {};
+            window.gsocData.reportData = [];
         }
     }
 }
@@ -43,61 +114,57 @@ function parseDataDirectly() {
         const yearlyChart = dataDiv.getAttribute('data-yearly-chart');
         const topRepos = dataDiv.getAttribute('data-top-repos');
         const reportData = dataDiv.getAttribute('data-report-data');
-        
-        window.gsocData.summary = parseEscapedJSON(summary);
-        window.gsocData.yearlyChart = parseEscapedJSON(yearlyChart);
-        window.gsocData.topReposChart = parseEscapedJSON(topRepos);
-        window.gsocData.reportData = parseEscapedJSON(reportData);
+
+        window.gsocData.summary = parseEscapedJSON(summary) || {};
+        window.gsocData.yearlyChart = parseEscapedJSON(yearlyChart) || {};
+        window.gsocData.topReposChart = parseEscapedJSON(topRepos) || {};
+        window.gsocData.reportData = parseEscapedJSON(reportData) || [];
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     parseDataFromDOM();
-    
-    if (Object.keys(window.gsocData.yearlyChart).length === 0 && 
-        Object.keys(window.gsocData.topReposChart).length === 0) {
+
+    // Check if we have valid data (not just empty objects/arrays)
+    const hasYearlyChart = window.gsocData.yearlyChart &&
+        ((Array.isArray(window.gsocData.yearlyChart) && window.gsocData.yearlyChart.length > 0) ||
+            (typeof window.gsocData.yearlyChart === 'object' && Object.keys(window.gsocData.yearlyChart).length > 0));
+
+    const hasTopReposChart = window.gsocData.topReposChart &&
+        ((Array.isArray(window.gsocData.topReposChart) && window.gsocData.topReposChart.length > 0) ||
+            (typeof window.gsocData.topReposChart === 'object' && Object.keys(window.gsocData.topReposChart).length > 0));
+
+    if (!hasYearlyChart && !hasTopReposChart) {
         parseDataDirectly();
     }
+
+    // Get chart data
+    const { yearlyCategories, yearlySeriesData, topReposLabels, topReposSeries } = getChartData();
     
-    // Process Yearly Chart Data
-    let yearlyCategories = [];
-    let yearlySeriesData = [];
-    
-    if (window.gsocData.yearlyChart) {
-        if (Array.isArray(window.gsocData.yearlyChart)) {
-            yearlyCategories = window.gsocData.yearlyChart.map(item => String(item.year || item.label || item.name));
-            yearlySeriesData = window.gsocData.yearlyChart.map(item => Number(item.prs || item.value || item.count || 0));
-        } else if (window.gsocData.yearlyChart.years && window.gsocData.yearlyChart.pr_counts) {
-            yearlyCategories = window.gsocData.yearlyChart.years.map(String);
-            yearlySeriesData = window.gsocData.yearlyChart.pr_counts.map(Number);
-        } else if (window.gsocData.yearlyChart.labels && window.gsocData.yearlyChart.data) {
-            yearlyCategories = window.gsocData.yearlyChart.labels.map(String);
-            yearlySeriesData = window.gsocData.yearlyChart.data.map(Number);
-        } else {
-            const keys = Object.keys(window.gsocData.yearlyChart);
-            if (keys.length > 0) {
-                yearlyCategories = keys;
-                yearlySeriesData = keys.map(key => Number(window.gsocData.yearlyChart[key]) || 0);
-            }
-        }
-    }
-    
+    // Store the chart data globally for PDF generation
+    window.chartData = {
+        yearlyCategories,
+        yearlySeriesData,
+        topReposLabels,
+        topReposSeries
+    };
+
     const yearlyChartElement = document.querySelector("#yearlyPrChart");
     if (yearlyChartElement) {
         if (yearlyCategories.length > 0 && yearlySeriesData.length > 0) {
             const maxValue = Math.max(...yearlySeriesData);
             const yAxisMax = Math.ceil(maxValue * 1.1);
-            
+
             const isDarkMode = document.documentElement.classList.contains('dark');
             const textColor = isDarkMode ? '#E5E7EB' : '#374151';
             const gridColor = isDarkMode ? '#4B5563' : '#E5E7EB';
             const labelColor = isDarkMode ? '#9CA3AF' : '#6B7280';
-            
+
             const yearlyOptions = {
-                chart: { 
-                    type: 'bar', 
+                chart: {
+                    type: 'bar',
                     height: 350,
-                    toolbar: { 
+                    toolbar: {
                         show: true,
                         tools: {
                             download: true,
@@ -113,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     foreColor: textColor
                 },
                 states: {
-                    normal: { filter: { type: 'none' } }, 
+                    normal: { filter: { type: 'none' } },
                     hover: { filter: { type: 'none' } },
                     active: { filter: { type: 'none' } }
                 },
@@ -125,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     categories: yearlyCategories,
                     title: {
                         text: 'Year',
-                        style: { 
+                        style: {
                             color: labelColor,
                             fontSize: '12px',
                             fontWeight: 600
@@ -150,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 yaxis: {
                     title: {
                         text: 'Number of PRs',
-                        style: { 
+                        style: {
                             color: labelColor,
                             fontSize: '12px',
                             fontWeight: 600
@@ -165,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             colors: labelColor,
                             fontSize: '11px'
                         },
-                        formatter: function(val) {
+                        formatter: function (val) {
                             return Math.round(val);
                         }
                     },
@@ -196,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     background: {
                         enabled: false
                     },
-                    formatter: function(val) {
+                    formatter: function (val) {
                         return val;
                     }
                 },
@@ -220,57 +287,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         fontSize: '12px'
                     },
                     y: {
-                        formatter: function(val) {
+                        formatter: function (val) {
                             return val + ' PRs';
                         },
                         title: {
-                            formatter: function() {
+                            formatter: function () {
                                 return 'Count:';
                             }
                         }
                     }
                 }
             };
-            
+
             try {
                 const yearlyChart = new ApexCharts(yearlyChartElement, yearlyOptions);
                 yearlyChart.render();
                 window.yearlyApexChart = yearlyChart; // Store for PDF generation
             } catch (e) {
-                yearlyChartElement.innerHTML = 
+                yearlyChartElement.innerHTML =
                     '<div class="text-center py-8 text-red-500">Error loading yearly chart</div>';
             }
         } else {
-            yearlyChartElement.innerHTML = 
+            yearlyChartElement.innerHTML =
                 '<div class="text-center py-8 text-gray-500">No yearly data available for the selected period</div>';
         }
     }
-    
-    // Process Top Repos Data
-    let topReposLabels = [];
-    let topReposSeries = [];
-    
-    if (window.gsocData.topReposChart) {
-        if (Array.isArray(window.gsocData.topReposChart)) {
-            topReposLabels = window.gsocData.topReposChart.map(item => 
-                String(item.repo || item.label || item.name || 'Unknown').substring(0, 30)
-            );
-            topReposSeries = window.gsocData.topReposChart.map(item => 
-                Number(item.prs || item.value || item.count || 0)
-            );
-        } else if (window.gsocData.topReposChart.repos && window.gsocData.topReposChart.counts) {
-            topReposLabels = window.gsocData.topReposChart.repos.map(name => 
-                String(name).substring(0, 30)
-            );
-            topReposSeries = window.gsocData.topReposChart.counts.map(Number);
-        } else if (window.gsocData.topReposChart.labels && window.gsocData.topReposChart.data) {
-            topReposLabels = window.gsocData.topReposChart.labels.map(name => 
-                String(name).substring(0, 30)
-            );
-            topReposSeries = window.gsocData.topReposChart.data.map(Number);
-        }
-    }
-    
+
     // Top Repositories Chart - IMPROVED VISUALS
     const topReposChartElement = document.querySelector("#topReposChart");
     if (topReposChartElement) {
@@ -278,10 +320,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const isDarkMode = document.documentElement.classList.contains('dark');
             const textColor = isDarkMode ? '#E5E7EB' : '#374151';
             const labelColor = isDarkMode ? '#9CA3AF' : '#6B7280';
-            
+
             const topReposOptions = {
-                chart: { 
-                    type: 'donut', 
+                chart: {
+                    type: 'donut',
                     height: 350,
                     background: 'transparent',
                     foreColor: textColor
@@ -306,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     fontSize: '20px',
                                     fontWeight: 700,
                                     color: textColor,
-                                    formatter: function(val) {
+                                    formatter: function (val) {
                                         return val;
                                     }
                                 },
@@ -317,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     fontSize: '14px',
                                     fontWeight: 600,
                                     color: labelColor,
-                                    formatter: function(w) {
+                                    formatter: function (w) {
                                         return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
                                     }
                                 }
@@ -341,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 dataLabels: {
                     enabled: true,
-                    formatter: function(val, opts) {
+                    formatter: function (val, opts) {
                         return Math.round(val) + '%';
                     },
                     style: {
@@ -364,11 +406,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         fontSize: '12px'
                     },
                     y: {
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return value + ' PRs';
                         },
                         title: {
-                            formatter: function(seriesName) {
+                            formatter: function (seriesName) {
                                 return seriesName;
                             }
                         }
@@ -386,17 +428,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }]
             };
-            
+
             try {
                 const topReposChart = new ApexCharts(topReposChartElement, topReposOptions);
                 topReposChart.render();
                 window.topReposApexChart = topReposChart; // Store for PDF generation
             } catch (e) {
-                topReposChartElement.innerHTML = 
+                topReposChartElement.innerHTML =
                     '<div class="text-center py-8 text-red-500">Error loading repository chart</div>';
             }
         } else {
-            topReposChartElement.innerHTML = 
+            topReposChartElement.innerHTML =
                 '<div class="text-center py-8 text-gray-500">No repository data available</div>';
         }
     }
@@ -410,51 +452,102 @@ function exportChartData() {
         reportData: window.gsocData.reportData,
         summary: window.gsocData.summary
     };
-    
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+
+    // Use Blob instead of data URL
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json;charset=utf-8"
+    });
+    const url = URL.createObjectURL(blob);
+
     const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `gsoc_pr_report_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.href = url;
+    downloadAnchor.download = `gsoc_pr_report_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     document.body.removeChild(downloadAnchor);
+
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+// Helper function for fallback chart
+async function addFallbackChart(doc, categories, series, x, y) {
+    if (!categories || !series || categories.length === 0) return;
+    
+    // Draw a simple bar chart representation
+    const maxValue = Math.max(...series);
+    const chartWidth = 150;
+    const chartHeight = 50;
+    const barWidth = chartWidth / categories.length;
+    
+    // Draw bars
+    series.forEach((value, index) => {
+        const barHeight = (value / maxValue) * chartHeight;
+        const barX = x + (index * barWidth);
+        const barY = y + chartHeight - barHeight;
+        
+        doc.setFillColor(220, 38, 38); // Red color
+        doc.rect(barX, barY, barWidth - 2, barHeight, 'F');
+        
+        // Add value label
+        doc.setFontSize(6);
+        doc.setTextColor(0, 0, 0);
+        doc.text(String(value), barX + (barWidth / 2), barY - 2, { align: 'center' });
+    });
+    
+    // Draw X axis
+    categories.forEach((label, index) => {
+        const labelX = x + (index * barWidth) + (barWidth / 2);
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text(String(label).substring(0, 4), labelX, y + chartHeight + 5, { align: 'center' });
+    });
 }
 
 // Download Report as PDF
 async function downloadReport(event) {
+    let button;
+    let originalText;
     try {
         // Show loading state
-        const button = event.target.closest('button');
-        const originalText = button.innerHTML;
+        button = event.target.closest('button');
+        if (!button) {
+            alert("Download button not found.");
+            return;
+        }
+        originalText = button.innerHTML;
         button.innerHTML = '<svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating PDF...';
         button.disabled = true;
-        
+
         // Include jsPDF and html2canvas libraries dynamically
-        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-        
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', {
+            integrity: 'sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=='
+        });
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', {
+            integrity: 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=='
+        });
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        
+
         // Add title
         doc.setFontSize(20);
         doc.setTextColor(220, 38, 38); // Red color
         doc.text('GSOC PR Analysis Report', 105, 20, { align: 'center' });
-        
+
         // Add subtitle
         doc.setFontSize(12);
         doc.setTextColor(100, 100, 100);
         doc.text(`Pull requests merged during GSOC periods (${window.gsocData.summary.start_year || 'N/A'} - ${window.gsocData.summary.end_year || 'N/A'})`, 105, 30, { align: 'center' });
-        
+
         // Add summary section
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
         doc.text('Summary Statistics', 20, 45);
-        
+
         // Summary boxes
         doc.setDrawColor(220, 38, 38);
         doc.setFillColor(255, 255, 255);
-        
+
         // Total Years
         doc.rect(20, 50, 40, 20, 'FD');
         doc.setFontSize(10);
@@ -463,7 +556,7 @@ async function downloadReport(event) {
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.text(String(window.gsocData.summary.total_years || 0), 40, 65, { align: 'center' });
-        
+
         // Total Repos
         doc.rect(65, 50, 40, 20, 'FD');
         doc.setFontSize(10);
@@ -472,7 +565,7 @@ async function downloadReport(event) {
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.text(String(window.gsocData.summary.total_repos || 0), 85, 65, { align: 'center' });
-        
+
         // Total PRs
         doc.rect(110, 50, 40, 20, 'FD');
         doc.setFontSize(10);
@@ -481,7 +574,7 @@ async function downloadReport(event) {
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.text(String(window.gsocData.summary.total_prs || 0), 130, 65, { align: 'center' });
-        
+
         // Avg PRs/Year
         doc.rect(155, 50, 40, 20, 'FD');
         doc.setFontSize(10);
@@ -490,54 +583,80 @@ async function downloadReport(event) {
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.text(String(window.gsocData.summary.avg_prs_per_year || 0), 175, 65, { align: 'center' });
-        
+
         // Add charts section
         doc.addPage();
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
         doc.text('Yearly PR Contributions', 20, 20);
-        
+
+        // Get chart data from stored global variable or extract fresh
+        const chartData = window.chartData || getChartData();
+        const { yearlyCategories, yearlySeriesData, topReposLabels, topReposSeries } = chartData;
+
         // Add yearly chart image if available
         if (window.yearlyApexChart) {
             try {
                 const yearlyChartImg = await window.yearlyApexChart.dataURI();
-                doc.addImage(yearlyChartImg.imgURI, 'PNG', 20, 30, 170, 80);
+                if (yearlyChartImg && yearlyChartImg.imgURI) {
+                    doc.addImage(yearlyChartImg.imgURI, 'PNG', 20, 30, 170, 80);
+                } else {
+                    // Fallback: Create a simple chart representation
+                    doc.setFontSize(12);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text('Yearly chart preview not available', 105, 70, { align: 'center' });
+                    // Use the fallback chart function
+                    await addFallbackChart(doc, yearlyCategories, yearlySeriesData, 20, 30);
+                }
             } catch (e) {
-                doc.text('Yearly chart not available', 20, 40);
+                doc.setFontSize(12);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Yearly chart not available', 105, 70, { align: 'center' });
             }
         }
-        
+
         doc.text('Top Repositories', 20, 130);
-        
+
         // Add top repos chart image if available
         if (window.topReposApexChart) {
             try {
                 const topReposChartImg = await window.topReposApexChart.dataURI();
-                doc.addImage(topReposChartImg.imgURI, 'PNG', 20, 140, 170, 80);
+                if (topReposChartImg && topReposChartImg.imgURI) {
+                    doc.addImage(topReposChartImg.imgURI, 'PNG', 20, 140, 170, 80);
+                } else {
+                    // Fallback: Create a simple bar chart representation
+                    doc.setFontSize(12);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text('Top repos chart preview not available', 105, 180, { align: 'center' });
+                    // Use the fallback chart function
+                    await addFallbackChart(doc, topReposLabels, topReposSeries, 20, 140);
+                }
             } catch (e) {
-                doc.text('Top repositories chart not available', 20, 150);
+                doc.setFontSize(12);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Top repositories chart not available', 105, 180, { align: 'center' });
             }
         }
-        
+
         // Add detailed data
         if (window.gsocData.reportData && window.gsocData.reportData.length > 0) {
             doc.addPage();
             doc.setFontSize(16);
             doc.setTextColor(220, 38, 38);
             doc.text('Year-by-Year Analysis', 20, 20);
-            
+
             let yPosition = 30;
             window.gsocData.reportData.forEach((year, index) => {
                 if (yPosition > 250) {
                     doc.addPage();
                     yPosition = 20;
                 }
-                
+
                 doc.setFontSize(12);
                 doc.setTextColor(0, 0, 0);
                 doc.text(`GSOC ${year.year} (${year.total_prs || 0} PRs, ${year.repos?.length || 0} Repositories)`, 20, yPosition);
                 yPosition += 10;
-                
+
                 if (year.repos && year.repos.length > 0) {
                     doc.setFontSize(9);
                     year.repos.forEach((repo, repoIndex) => {
@@ -552,7 +671,7 @@ async function downloadReport(event) {
                 yPosition += 5;
             });
         }
-        
+
         // Add footer
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
@@ -563,41 +682,63 @@ async function downloadReport(event) {
             doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 292, { align: 'center' });
             doc.text('GSOC PR Analysis Report', 20, 292);
         }
-        
+
         // Save the PDF
         const fileName = `gsoc_pr_report_${window.gsocData.summary.start_year || ''}_${window.gsocData.summary.end_year || ''}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
-        
+
         // Restore button state
         button.innerHTML = originalText;
         button.disabled = false;
-        
+
     } catch (error) {
+        console.error('PDF generation error:', error);
         alert('Error generating PDF report. Please try again.');
-        
-        // Restore button state on error
-        const button = event.target.closest('button');
-        if (!button) throw new Error('Download button not found');
-        button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Download Report';
-        button.disabled = false;
+
+        // Restore button state on error 
+        if (button) {
+            button.innerHTML = originalText || '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Download Report';
+            button.disabled = false;
+        }
     }
 }
 
 // Helper function to load external scripts
-function loadScript(src) {
+function loadScript(src, options = {}) {  // Add default parameter
     return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${src}"]`)) {
             resolve();
             return;
         }
-        
+
         const script = document.createElement('script');
         script.src = src;
-        script.onload = resolve;
-        script.onerror = reject;
+        // Add SRI if provided
+        if (options.integrity) {
+            script.integrity = options.integrity;
+            script.crossOrigin = 'anonymous';
+        }
+
+        // Add timeout
+        const timeoutId = setTimeout(() => {
+            reject(new Error(`Script load timeout for ${src}`));
+        }, 10000); // 10 second timeout
+
+        script.onload = () => {
+            clearTimeout(timeoutId);
+            resolve();
+        };
+
+        script.onerror = (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+        };
+
         document.head.appendChild(script);
     });
 }
+
+// Add this function at the top of your script
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -607,10 +748,10 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
-// Alternative simple HTML report download
+// Update the HTML report function - FIXED VERSION:
 function downloadHTMLReport() {
     const reportData = window.gsocData;
-    
+
     // Create HTML content
     let htmlContent = `
         <!DOCTYPE html>
@@ -637,29 +778,29 @@ function downloadHTMLReport() {
                     .no-print { display: none; }
                     body { margin: 20px; }
                 }
-</style>
+            </style>
         </head>
         <body>
             <h1>Google Summer of Code - PR Analysis Report</h1>
             <p><strong>Period:</strong> ${escapeHtml(reportData.summary.start_year || 'N/A')} - ${escapeHtml(reportData.summary.end_year || 'N/A')}</p>
-            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            <p><strong>Generated:</strong> ${escapeHtml(new Date().toLocaleString())}</p>
             
             <div class="summary">
                 <div class="summary-box">
                     <div class="summary-label">Total Years</div>
-                    <div class="summary-value">${reportData.summary.total_years || '0'}</div>
+                    <div class="summary-value">${escapeHtml(reportData.summary.total_years || '0')}</div>
                 </div>
                 <div class="summary-box">
                     <div class="summary-label">Active Repositories</div>
-                    <div class="summary-value">${reportData.summary.total_repos || '0'}</div>
+                    <div class="summary-value">${escapeHtml(reportData.summary.total_repos || '0')}</div>
                 </div>
                 <div class="summary-box">
                     <div class="summary-label">Total PRs</div>
-                    <div class="summary-value">${reportData.summary.total_prs || '0'}</div>
+                    <div class="summary-value">${escapeHtml(reportData.summary.total_prs || '0')}</div>
                 </div>
                 <div class="summary-box">
                     <div class="summary-label">Avg PRs/Year</div>
-                    <div class="summary-value">${reportData.summary.avg_prs_per_year || '0'}</div>
+                    <div class="summary-value">${escapeHtml(reportData.summary.avg_prs_per_year || '0')}</div>
                 </div>
             </div>
             
@@ -675,18 +816,18 @@ function downloadHTMLReport() {
             
             <h2>Year-by-Year Analysis</h2>
     `;
-    
+
     // Add yearly data
     if (reportData.reportData && Array.isArray(reportData.reportData)) {
         reportData.reportData.forEach(year => {
             htmlContent += `
                 <div class="year-section">
                     <div class="year-header">
-                        <h3>GSOC ${year.year} (May - September)</h3>
-                        <p>Total PRs: ${year.total_prs || 0} | Repositories: ${year.repos?.length || 0}</p>
+                        <h3>GSOC ${escapeHtml(year.year)} (May - September)</h3>
+                        <p>Total PRs: ${escapeHtml(year.total_prs || 0)} | Repositories: ${escapeHtml(year.repos?.length || 0)}</p>
                     </div>
             `;
-            
+
             if (year.repos && year.repos.length > 0) {
                 htmlContent += `
                     <table>
@@ -699,17 +840,17 @@ function downloadHTMLReport() {
                         </thead>
                         <tbody>
                 `;
-                
+
                 year.repos.forEach(repo => {
                     htmlContent += `
                         <tr>
                             <td>${escapeHtml(repo.repo__name || 'Unknown')}</td>
-                            <td>${repo.pr_count || 0}</td>
-                            <td>${repo.unique_contributors || 0}</td>
+                            <td>${escapeHtml(repo.pr_count || 0)}</td>
+                            <td>${escapeHtml(repo.unique_contributors || 0)}</td>
                         </tr>
                     `;
                 });
-                
+
                 htmlContent += `
                         </tbody>
                     </table>
@@ -717,13 +858,13 @@ function downloadHTMLReport() {
             } else {
                 htmlContent += `<p>No pull requests found for this year.</p>`;
             }
-            
+
             htmlContent += `</div>`;
         });
     } else {
         htmlContent += `<p>No yearly data available.</p>`;
     }
-    
+
     // Close HTML
     htmlContent += `
             <div class="footer">
@@ -733,27 +874,28 @@ function downloadHTMLReport() {
         </body>
         </html>
     `;
-    
+
     // Create and trigger download
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gsoc_pr_report_${reportData.summary.start_year || ''}_${reportData.summary.end_year || ''}_${new Date().toISOString().split('T')[0]}.html`;
+    a.download = `gsoc_pr_report_${escapeHtml(reportData.summary.start_year || '')}_${escapeHtml(reportData.summary.end_year || '')}_${new Date().toISOString().split('T')[0]}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
-function viewRawData() {
-    const dataWindow = window.open('', '_blank');
 
-    if (dataWindow) {
-        const pre = dataWindow.document.createElement('pre');
-        pre.textContent = JSON.stringify(window.gsocData, null, 2);
-        dataWindow.document.body.appendChild(pre);
-    } else {
-        alert('Popup blocked. Please allow popups for this site.');
+function viewRawData() {
+    const win = window.open("", "_blank");
+
+    if (!win) {
+        alert("Popup blocked. Please allow popups for this site.");
+        return;
     }
+
+    const pre = win.document.createElement("pre");
+    pre.textContent = JSON.stringify(window.gsocData, null, 2);
+    win.document.body.appendChild(pre);
 }
-    
