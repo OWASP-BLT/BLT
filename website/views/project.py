@@ -2210,7 +2210,8 @@ def gsoc_pr_report(request):
             end_date = timezone.make_aware(datetime(year, 10, 1))
 
             repos_qs = (
-                GitHubIssue.objects.filter(
+                GitHubIssue.objects.select_related("repo", "contributor")
+                .filter(
                     type="pull_request",
                     is_merged=True,
                     merged_at__gte=start_date,
