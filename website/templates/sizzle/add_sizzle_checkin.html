@@ -738,8 +738,17 @@
                         if (data.success === true) {
                             // Show success message first, then reload immediately
                             const successMessage = document.getElementById('success-message');
+                            const successCard = document.getElementById('success-message-card'); // inner card
                             const successTitle = document.getElementById('success-title');
                             const challengesCompleted = document.getElementById('challenges-completed');
+                            
+                            // Restore green styling by removing red classes and adding green classes
+                            successCard?.classList.remove('bg-red-50', 'border-red-200', 'dark:bg-red-900/20', 'dark:border-red-800');
+                            successCard?.classList.add('bg-green-50', 'border-green-200', 'dark:bg-green-900/20', 'dark:border-green-800');
+                            
+                            // Restore green title styling
+                            successTitle.classList.remove('text-red-800', 'dark:text-red-200');
+                            successTitle.classList.add('text-green-800', 'dark:text-green-200');
                             
                             if (data.completed_challenges && data.completed_challenges.length > 0) {
                                 successTitle.textContent = `🎉 Great job! You completed ${data.completed_challenges.length} challenge(s)!`;
