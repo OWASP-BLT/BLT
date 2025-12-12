@@ -117,4 +117,3 @@ class Command(BaseCommand):
                 f"Skipped: {skipped_count}, Errors: {error_count}",
             ),
         )
-

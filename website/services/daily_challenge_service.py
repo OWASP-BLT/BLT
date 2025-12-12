@@ -45,8 +45,6 @@ class DailyChallengeService:
         Args:
             user: User instance (must be authenticated)
         """
-        from datetime import timedelta
-
         from website.models import DailyStatusReport
 
         if not user or not user.is_authenticated:
@@ -99,8 +97,6 @@ class DailyChallengeService:
         Returns:
             UserDailyChallenge instance or None if no active challenges exist
         """
-        import random
-
         from django.db import transaction
 
         from website.models import DailyChallenge, UserDailyChallenge
@@ -117,10 +113,8 @@ class DailyChallengeService:
             "goal_achiever",
             "detailed_planner",
         ]
-        active_challenges = DailyChallenge.objects.filter(
-            is_active=True, challenge_type__in=daily_completable_types
-        )
-        
+        active_challenges = DailyChallenge.objects.filter(is_active=True, challenge_type__in=daily_completable_types)
+
         if not active_challenges.exists():
             logger.warning(f"No active daily challenges available for user {user.username}")
             return None
@@ -289,9 +283,7 @@ class DailyChallengeService:
             try:
                 user_tz = pytz.timezone(user_tz_str)
             except pytz.exceptions.UnknownTimeZoneError:
-                logger.warning(
-                    f"Unknown timezone '{user_tz_str}' for user {user.username}, using UTC"
-                )
+                logger.warning(f"Unknown timezone '{user_tz_str}' for user {user.username}, using UTC")
                 user_tz = pytz.UTC
 
             # Convert check-in time to user's timezone
