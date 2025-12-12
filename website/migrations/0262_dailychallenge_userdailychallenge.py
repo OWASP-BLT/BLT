@@ -38,6 +38,8 @@ def remove_duplicate_daily_status_reports(apps, schema_editor):
             deleted_count += count
 
     if deleted_count > 0:
+        # Log migration progress (RunPython doesn't have direct stdout access, so use print)
+        # This is acceptable for migration feedback
         print(f"Removed {deleted_count} duplicate DailyStatusReport entries")
 
 

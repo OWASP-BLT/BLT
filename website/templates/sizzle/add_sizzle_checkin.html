@@ -805,7 +805,7 @@
                             // Reload page immediately to show updated points and "already submitted" state
                             // Use cache-busting to ensure fresh data is loaded
                             setTimeout(() => {
-                                window.location.reload(true); // Force reload from server
+                                window.location.reload(); // Force reload from server
                             }, 500);
                         } else {
                             // Show error message inline instead of alert
@@ -835,7 +835,7 @@
                         console.error('Error:', error);
                         // Show error message inline instead of alert
                         const successMessage = document.getElementById('success-message');
-                        const successCard = successMessage?.querySelector(':scope > div'); // inner card
+                        const successCard = document.getElementById('success-message-card'); // inner card - use getElementById for consistency
                         const successTitle = document.getElementById('success-title');
                         const challengesCompleted = document.getElementById('challenges-completed');
                         

@@ -2,6 +2,7 @@
 
 import logging
 import random
+import re
 from datetime import time, timedelta
 
 import pytz
@@ -11,15 +12,25 @@ from website.models import UserDailyChallenge, UserProfile
 
 logger = logging.getLogger(__name__)
 
+# Constants for challenge validation
+MIN_WORD_COUNT_FOR_DETAILED = 200
+EARLY_CHECKIN_THRESHOLD_HOUR = 10
+CHALLENGE_RESET_HOURS = 24
+
 
 class DailyChallengeService:
     """Service for handling daily challenge logic and validation."""
 
     @staticmethod
-    def get_active_challenges_for_user(user, challenge_date=None):
+    def get_active_challenges_for_user(user, challenge_date=None, skip_assignment_check=False):
         """
         Get active challenges for a user on a specific date.
         Also checks if 24 hours have passed and assigns a new challenge if needed.
+        
+        Args:
+            user: User instance
+            challenge_date: Date for which to get challenges (defaults to today)
+            skip_assignment_check: If True, skip the assignment check to prevent recursion
         """
         if not user or not user.is_authenticated:
             return UserDailyChallenge.objects.none()
@@ -28,7 +39,9 @@ class DailyChallengeService:
             challenge_date = timezone.now().date()
 
         # Check if user needs a new challenge (24 hours have passed)
-        DailyChallengeService._check_and_assign_new_challenge_if_needed(user)
+        # Skip this check if called from within assignment logic to prevent recursion
+        if not skip_assignment_check:
+            DailyChallengeService._check_and_assign_new_challenge_if_needed(user)
 
         return UserDailyChallenge.objects.filter(
             user=user,
@@ -133,31 +146,28 @@ class DailyChallengeService:
 
         selected_challenge = random.choice(challenge_list)
 
-        # Check if challenge already exists for this date
+        # Use get_or_create to handle race conditions atomically
         try:
             with transaction.atomic():
-                existing = UserDailyChallenge.objects.filter(
+                user_challenge, created = UserDailyChallenge.objects.get_or_create(
                     user=user,
                     challenge_date=challenge_date,
-                ).first()
-
-                if existing:
+                    defaults={
+                        "challenge": selected_challenge,
+                        "status": "assigned",
+                    }
+                )
+                
+                if not created:
                     # Update existing challenge
-                    existing.challenge = selected_challenge
-                    existing.status = "assigned"
-                    existing.completed_at = None
-                    existing.points_awarded = 0
-                    existing.next_challenge_at = None
-                    existing.save()
-                    return existing
-                else:
-                    # Create new challenge
-                    return UserDailyChallenge.objects.create(
-                        user=user,
-                        challenge=selected_challenge,
-                        challenge_date=challenge_date,
-                        status="assigned",
-                    )
+                    user_challenge.challenge = selected_challenge
+                    user_challenge.status = "assigned"
+                    user_challenge.completed_at = None
+                    user_challenge.points_awarded = 0
+                    user_challenge.next_challenge_at = None
+                    user_challenge.save()
+                
+                return user_challenge
         except Exception as e:
             logger.error(
                 f"Error assigning challenge to user {user.username} for date {challenge_date}: {e}",
@@ -196,6 +206,7 @@ class DailyChallengeService:
             active_challenges = DailyChallengeService.get_active_challenges_for_user(
                 user,
                 challenge_date,
+                skip_assignment_check=True,  # Prevent recursion
             )
 
             completed_challenges = []
@@ -308,8 +319,8 @@ class DailyChallengeService:
             checkin_user_tz = checkin_utc.astimezone(user_tz)
             checkin_time = checkin_user_tz.time()
 
-            # Check if before 10 AM in user's timezone
-            early_threshold = time(10, 0)  # 10:00 AM
+            # Check if before threshold hour in user's timezone
+            early_threshold = time(EARLY_CHECKIN_THRESHOLD_HOUR, 0)
             return checkin_time < early_threshold
 
         except Exception as e:
@@ -328,7 +339,7 @@ class DailyChallengeService:
             if timezone.is_naive(checkin_utc):
                 checkin_utc = timezone.make_aware(checkin_utc)
             checkin_time = checkin_utc.astimezone(pytz.UTC).time()
-            early_threshold = time(10, 0)
+            early_threshold = time(EARLY_CHECKIN_THRESHOLD_HOUR, 0)
             return checkin_time < early_threshold
 
     @staticmethod
@@ -393,15 +404,18 @@ class DailyChallengeService:
     @staticmethod
     def _check_detailed_reporter(daily_status_report):
         """
-        Check if user wrote at least 200 words in previous_work field.
+        Check if user wrote at least MIN_WORD_COUNT_FOR_DETAILED words in previous_work field.
         This encourages detailed reporting of work done.
+        Uses regex to properly count words (handles punctuation correctly).
         """
         if not daily_status_report or not daily_status_report.previous_work:
             return False
 
         previous_work = daily_status_report.previous_work.strip()
-        word_count = len(previous_work.split())
-        return word_count >= 200
+        # Use regex to count words properly (handles punctuation, multiple spaces, etc.)
+        words = re.findall(r'\b\w+\b', previous_work)
+        word_count = len(words)
+        return word_count >= MIN_WORD_COUNT_FOR_DETAILED
 
     @staticmethod
     def _check_goal_achiever(daily_status_report):
@@ -417,12 +431,15 @@ class DailyChallengeService:
     @staticmethod
     def _check_detailed_planner(daily_status_report):
         """
-        Check if user wrote at least 200 words in next_plan field.
+        Check if user wrote at least MIN_WORD_COUNT_FOR_DETAILED words in next_plan field.
         This encourages detailed planning for upcoming work.
+        Uses regex to properly count words (handles punctuation correctly).
         """
         if not daily_status_report or not daily_status_report.next_plan:
             return False
 
         next_plan = daily_status_report.next_plan.strip()
-        word_count = len(next_plan.split())
-        return word_count >= 200
+        # Use regex to count words properly (handles punctuation, multiple spaces, etc.)
+        words = re.findall(r'\b\w+\b', next_plan)
+        word_count = len(words)
+        return word_count >= MIN_WORD_COUNT_FOR_DETAILED

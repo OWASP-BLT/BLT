@@ -1374,6 +1374,19 @@ def sizzle_daily_log(request):
                     status=400,
                 )
             
+            # Validate max length to prevent DoS attacks
+            MAX_FIELD_LENGTH = 10000  # Reasonable limit for text fields
+            if len(previous_work) > MAX_FIELD_LENGTH:
+                return JsonResponse(
+                    {"success": False, "message": f"Previous work field exceeds maximum length of {MAX_FIELD_LENGTH} characters."},
+                    status=400,
+                )
+            if len(next_plan) > MAX_FIELD_LENGTH:
+                return JsonResponse(
+                    {"success": False, "message": f"Next plan field exceeds maximum length of {MAX_FIELD_LENGTH} characters."},
+                    status=400,
+                )
+            
             blockers_type = request.POST.get("blockers")
             blockers_other = request.POST.get("blockers_other", "")
             # Combine blockers: if "other" selected, require blockers_other to be non-empty
@@ -1519,9 +1532,10 @@ def sizzle_daily_log(request):
             except Exception as e:
                 logger.error("Error checking challenges", exc_info=True)
 
-            # Set next_challenge_at to 24 hours from now for today's challenges
+            # Set next_challenge_at to CHALLENGE_RESET_HOURS from now for today's challenges
             # This must be done AFTER challenge assignment to ensure newly assigned challenges are updated
-            next_challenge_time = now() + timedelta(hours=24)
+            from website.services.daily_challenge_service import CHALLENGE_RESET_HOURS
+            next_challenge_time = now() + timedelta(hours=CHALLENGE_RESET_HOURS)
             UserDailyChallenge.objects.filter(
                 user=request.user,
                 challenge_date=today,
@@ -2358,7 +2372,8 @@ def add_sizzle_checkIN(request):
                     DailyStatusReport.objects.filter(user=request.user).order_by("-created").first()
                 )
                 if last_checkin_for_timer:
-                    next_challenge_at = last_checkin_for_timer.created + timedelta(hours=24)
+                    from website.services.daily_challenge_service import CHALLENGE_RESET_HOURS
+                    next_challenge_at = last_checkin_for_timer.created + timedelta(hours=CHALLENGE_RESET_HOURS)
                 else:
                     # If no check-in, check if there's a next_challenge_at set
                     current_challenge = UserDailyChallenge.objects.filter(
