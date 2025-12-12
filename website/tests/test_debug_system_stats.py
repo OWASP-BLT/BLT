@@ -1,6 +1,7 @@
+import threading
 from importlib import reload
 from unittest.mock import patch
-import threading
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import NoReverseMatch, clear_url_caches, reverse
