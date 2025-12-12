@@ -2207,7 +2207,7 @@ def gsoc_pr_report(request):
         # Build data for every year (including years with 0 PRs)
         for year in range(start_year, current_year + 1):
             start_date = timezone.make_aware(datetime(year, 5, 1))
-            end_date = timezone.make_aware(datetime(year, 9, 30, 23, 59, 59))
+            end_date = timezone.make_aware(datetime(year, 10, 1))
 
             repos_qs = (
                 GitHubIssue.objects.filter(
@@ -2216,6 +2216,7 @@ def gsoc_pr_report(request):
                     merged_at__gte=start_date,
                     merged_at__lte=end_date,
                 )
+                .exclude(merged_at__isnull=True)
                 # remove NULL contributors BEFORE bot filters
                 .exclude(contributor__isnull=True)
                 # Existing bot exclusion (now safe)

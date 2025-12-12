@@ -483,13 +483,14 @@ async function addFallbackChart(doc, categories, series, x, y) {
 
     // Draw a simple bar chart representation
     const maxValue = Math.max(...series);
+    const safeMax = maxValue > 0 ? maxValue : 1;
     const chartWidth = 150;
     const chartHeight = 50;
     const barWidth = chartWidth / categories.length;
 
     // Draw bars
     series.forEach((value, index) => {
-        const barHeight = (value / maxValue) * chartHeight;
+        const barHeight = (value / safeMax) * chartHeight;
         const barX = x + (index * barWidth);
         const barY = y + chartHeight - barHeight;
 
