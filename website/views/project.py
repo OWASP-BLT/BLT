@@ -2246,18 +2246,24 @@ def gsoc_pr_report(request):
         total_prs = 0
         yearly_chart_data = []
 
+        def _repo_key(repo_row):
+            return repo_row.get("repo__name") or "Unknown repo"
+
+        def _repo_url(repo_row):
+            return repo_row.get("repo__repo_url") or ""
+
         for year_block in report_data:
             total_prs += year_block["total_prs"]
             yearly_chart_data.append({"year": year_block["year"], "prs": year_block["total_prs"]})
 
             for repo in year_block["repos"]:
-                all_repos.add(repo["repo__name"])
+                all_repos.add(_repo_key(repo))
 
         # Top repos across all years
         repo_totals = defaultdict(int)
         for year_block in report_data:
             for repo in year_block["repos"]:
-                repo_totals[repo["repo__name"]] += repo["pr_count"]
+                repo_totals[_repo_key(repo)] += repo["pr_count"]
 
         top_repos_chart_data = [
             {"repo": repo, "prs": count}
@@ -2279,14 +2285,13 @@ def gsoc_pr_report(request):
         # Convert report_data into dict keyed by year
         gsoc_data = {}
         for entry in report_data:
-            repos_dict = {
-                repo["repo__name"]: {
+            repos_dict = {}
+            for repo in entry["repos"]:
+                repos_dict[_repo_key(repo)] = {
                     "count": repo["pr_count"],
-                    "url": repo["repo__repo_url"],
+                    "url": _repo_url(repo),
                     "contributors": repo["unique_contributors"],
                 }
-                for repo in entry["repos"]
-            }
             gsoc_data[entry["year"]] = {"repos": repos_dict, "total_prs": entry["total_prs"]}
 
         context = {

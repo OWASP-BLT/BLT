@@ -6,8 +6,12 @@ window.gsocData = {
     reportData: []
 };
 
-// Silent logger (replaces console.error)
-function safeLog() {}
+// Safe error logging
+function safeLog(message, ...args) {
+    if (window.Sentry && typeof window.Sentry.captureMessage === 'function') {
+        window.Sentry.captureMessage(message, { extra: { args } });
+    }
+}
 
 // Function to extract chart data (callable from both chart rendering and PDF generation)
 function getChartData() {
@@ -15,7 +19,7 @@ function getChartData() {
     let yearlySeriesData = [];
     let topReposLabels = [];
     let topReposSeries = [];
-    
+
     // Process Yearly Chart Data
     if (window.gsocData.yearlyChart) {
         if (Array.isArray(window.gsocData.yearlyChart) && window.gsocData.yearlyChart.length > 0) {
@@ -37,7 +41,7 @@ function getChartData() {
             }
         }
     }
-    
+
     // Process Top Repos Data
     if (window.gsocData.topReposChart) {
         if (Array.isArray(window.gsocData.topReposChart)) {
@@ -59,7 +63,7 @@ function getChartData() {
             topReposSeries = window.gsocData.topReposChart.data.map(Number);
         }
     }
-    
+
     return {
         yearlyCategories,
         yearlySeriesData,
@@ -74,7 +78,7 @@ function parseEscapedJSON(str) {
 
     try {
         // First, unescape the string (convert \u0022 to ", etc.)
-        const unescapedStr = str.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => 
+        const unescapedStr = str.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) =>
             String.fromCharCode(parseInt(hex, 16))
         );
         // Also handle other common escapes
@@ -82,7 +86,7 @@ function parseEscapedJSON(str) {
             .replace(/\\"/g, '"')
             .replace(/\\'/g, "'")
             .replace(/\\\\/g, '\\');
-        
+
         return JSON.parse(finalStr);
     } catch (err) {
         safeLog("JSON parse failed:", err, str);
@@ -143,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Get chart data
     const { yearlyCategories, yearlySeriesData, topReposLabels, topReposSeries } = getChartData();
-    
+
     // Store the chart data globally for PDF generation
     window.chartData = {
         yearlyCategories,
@@ -156,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yearlyChartElement) {
         if (yearlyCategories.length > 0 && yearlySeriesData.length > 0) {
             const maxValue = Math.max(...yearlySeriesData);
-            const yAxisMax = Math.ceil(maxValue * 1.1);
+            const yAxisMax = Math.max(5, Math.ceil(maxValue * 1.1)); // minimum scale of 5
 
             const isDarkMode = document.documentElement.classList.contains('dark');
             const textColor = isDarkMode ? '#E5E7EB' : '#374151';
@@ -476,28 +480,28 @@ function exportChartData() {
 // Helper function for fallback chart
 async function addFallbackChart(doc, categories, series, x, y) {
     if (!categories || !series || categories.length === 0) return;
-    
+
     // Draw a simple bar chart representation
     const maxValue = Math.max(...series);
     const chartWidth = 150;
     const chartHeight = 50;
     const barWidth = chartWidth / categories.length;
-    
+
     // Draw bars
     series.forEach((value, index) => {
         const barHeight = (value / maxValue) * chartHeight;
         const barX = x + (index * barWidth);
         const barY = y + chartHeight - barHeight;
-        
+
         doc.setFillColor(220, 38, 38); // Red color
         doc.rect(barX, barY, barWidth - 2, barHeight, 'F');
-        
+
         // Add value label
         doc.setFontSize(6);
         doc.setTextColor(0, 0, 0);
         doc.text(String(value), barX + (barWidth / 2), barY - 2, { align: 'center' });
     });
-    
+
     // Draw X axis
     categories.forEach((label, index) => {
         const labelX = x + (index * barWidth) + (barWidth / 2);
@@ -529,6 +533,9 @@ async function downloadReport(event) {
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', {
             integrity: 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=='
         });
+        if (!window.jspdf || !window.html2canvas) {
+            throw new Error('Required libraries failed to load. Please check your connection or disable ad blockers.');
+        }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
 
@@ -657,7 +664,7 @@ async function downloadReport(event) {
 
                 doc.setFontSize(12);
                 doc.setTextColor(0, 0, 0);
-                doc.text(`GSOC ${year.year} (${year.total_prs || 0} PRs, ${year.repos?.length || 0} Repositories)`, 20, yPosition);
+                doc.text(`GSOC ${String(year.year)} (${String(year.total_prs || 0)} PRs, ${String(year.repos?.length || 0)} Repositories)`, 20, yPosition);
                 yPosition += 10;
 
                 if (year.repos && year.repos.length > 0) {
@@ -667,7 +674,7 @@ async function downloadReport(event) {
                             doc.addPage();
                             yPosition = 20;
                         }
-                        doc.text(`• ${repo.repo__name || 'Unknown'}: ${repo.pr_count || 0} PRs (${repo.unique_contributors || 0} contributors)`, 25, yPosition);
+                        doc.text(`• ${String(repo.repo__name || 'Unknown')}: ${String(repo.pr_count || 0)} PRs (${String(repo.unique_contributors || 0)} contributors)`, 25, yPosition);
                         yPosition += 7;
                     });
                 }
@@ -687,7 +694,8 @@ async function downloadReport(event) {
         }
 
         // Save the PDF
-        const fileName = `gsoc_pr_report_${window.gsocData.summary.start_year || ''}_${window.gsocData.summary.end_year || ''}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const fileName = `gsoc_pr_report_${window.gsocData.summary.start_year || 'unknown'}_${window.gsocData.summary.end_year || 'unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+
         doc.save(fileName);
 
         // Restore button state
@@ -883,7 +891,7 @@ function downloadHTMLReport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `gsoc_pr_report_${escapeHtml(reportData.summary.start_year || '')}_${escapeHtml(reportData.summary.end_year || '')}_${new Date().toISOString().split('T')[0]}.html`;
+    a.download = `gsoc_pr_report_${reportData.summary.start_year || 'unknown'}_${reportData.summary.end_year || 'unknown'}_${new Date().toISOString().split('T')[0]}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
