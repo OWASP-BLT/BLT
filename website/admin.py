@@ -1,7 +1,9 @@
+from typing import ClassVar
 from urllib.parse import urlparse
 
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
@@ -1279,7 +1281,19 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
 
 @admin.action(description="Deactivate selected users")
 def deactivate_users(modeladmin, request, queryset):
-    queryset.update(is_active=False)
+    if not request.user.is_superuser:
+        modeladmin.message_user(
+            request,
+            "Only superusers can deactivate users.",
+            level="ERROR",
+        )
+        return
+
+    updated = queryset.update(is_active=False)
+    modeladmin.message_user(
+        request,
+        f"Deactivated {updated} user(s).",
+    )
 
 
 class ActivityStatusFilter(admin.SimpleListFilter):
@@ -1300,11 +1314,14 @@ class ActivityStatusFilter(admin.SimpleListFilter):
         return queryset
 
 
-admin.site.unregister(User)
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
 
 
 class CustomUserAdmin(DjangoUserAdmin):
-    actions = [deactivate_users]
+    actions: ClassVar[list] = [deactivate_users]
 
     list_display = (
         "username",
@@ -1322,6 +1339,21 @@ class CustomUserAdmin(DjangoUserAdmin):
 
     search_fields = ("username", "email")
     ordering = ("-last_login",)
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            actions.pop("deactivate_users", None)
+        return actions
 
     def activity_status(self, obj):
         if obj.last_login:
