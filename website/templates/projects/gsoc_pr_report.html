@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}GSOC PR Report{% endblock %}
 {% block content %}
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/apexcharts@5.3.6/dist/apexcharts.css">
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@5.3.6/dist/apexcharts.min.js"></script>
     {% include "includes/sidenav.html" %}
     <!-- Hidden data storage for JavaScript -->
@@ -126,7 +129,7 @@
                 Export Charts
             </button>
             <!-- Download Report -->
-            <button onclick="downloadReport()"
+            <button onclick="downloadReport(event)"
                     class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium transition duration-200 flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -305,119 +308,5 @@
             </div>
         {% endfor %}
     </div>
-    <script>
-    // Initialize global data object
-    window.gsocData = {
-        summary: {},
-        yearlyChart: {},
-        topReposChart: {},
-        reportData: []
-    };
-
-    // Parse data from hidden div
-    function parseDataFromDOM() {
-        const dataDiv = document.getElementById('gsocData');
-        if (dataDiv) {
-            try {
-                window.gsocData.summary = JSON.parse(dataDiv.dataset.summary || '{}');
-                window.gsocData.yearlyChart = JSON.parse(dataDiv.dataset.yearlyChart || '{}');
-                window.gsocData.topReposChart = JSON.parse(dataDiv.dataset.topRepos || '{}');
-                window.gsocData.reportData = JSON.parse(dataDiv.dataset.reportData || '[]');
-            } catch (e) {
-                console.error('Error parsing GSOC data:', e);
-            }
-        }
-    }
-
-    (function () {
-        // ✅ Parse data once
-        parseDataFromDOM();
-
-        // NORMALIZE YEARLY DATA
-        const rawYearly = Array.isArray(window.gsocData.yearlyChart)
-            ? window.gsocData.yearlyChart
-            : [];
-
-        window.gsocData.yearlyChart = {
-            years: rawYearly.map(d => d.year),
-            pr_counts: rawYearly.map(d => d.prs),
-        };
-
-        // NORMALIZE TOP REPOS DATA
-        const rawTop = Array.isArray(window.gsocData.topReposChart)
-            ? window.gsocData.topReposChart
-            : [];
-
-        window.gsocData.topReposChart = {
-            repos: rawTop.map(d => d.repo),
-            counts: rawTop.map(d => d.prs),
-        };
-
-        // Yearly PR Chart
-        if (window.gsocData.yearlyChart.years.length > 0) {
-            const yearlyOptions = {
-                chart: { type: 'bar', height: '100%' },
-                series: [{
-                    name: 'PR Count',
-                    data: window.gsocData.yearlyChart.pr_counts
-                }],
-                xaxis: {
-                    categories: window.gsocData.yearlyChart.years
-                },
-                colors: ['#DC2626']
-            };
-
-            new ApexCharts(
-                document.querySelector("#yearlyPrChart"),
-                yearlyOptions
-            ).render();
-        }
-
-        // Top Repositories Chart
-        if (window.gsocData.topReposChart.repos.length > 0) {
-            const topReposOptions = {
-                chart: { type: 'donut', height: '100%' },
-                series: window.gsocData.topReposChart.counts,
-                labels: window.gsocData.topReposChart.repos,
-                colors: ['#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FECACA']
-            };
-
-            new ApexCharts(
-                document.querySelector("#topReposChart"),
-                topReposOptions
-            ).render();
-        }
-    })();
-    
-    function exportChartData() {
-        const data = {
-            yearlyData: window.gsocData.yearlyChart,
-            topReposData: window.gsocData.topReposChart,
-            reportData: window.gsocData.reportData,
-            summary: window.gsocData.summary
-        };
-        
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `gsoc_pr_report_${new Date().toISOString().split('T')[0]}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        document.body.removeChild(downloadAnchor);
-    }
-    
-    function downloadReport() {
-        alert("Download report is disabled until template refactor is complete.");
-    }
-    
-    function viewRawData() {
-        const dataWindow = window.open('', '_blank');
-         if (dataWindow) {
-            dataWindow.document.write('<pre>' + JSON.stringify(window.gsocData, null, 2) + '</pre>');
-            dataWindow.document.close();
-        } else {
-            alert('Popup blocked. Please allow popups for this site.');
-        }
-     }
-    </script>
+    <script src="{% static 'js/gsoc_pr_report.js' %}"></script>
 {% endblock %}

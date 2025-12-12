@@ -2271,10 +2271,23 @@ def gsoc_pr_report(request):
             "total_prs": total_prs,
         }
         avg_prs_per_year = round(total_prs / total_years, 2) if total_years else 0
+        # Convert report_data list to gsoc_data dict keyed by year
+        gsoc_data = {}
+        for entry in report_data:
+            repos_dict = {
+                repo["repo__name"]: {
+                    "count": repo["pr_count"],
+                    "url": repo["repo__repo_url"],
+                    "contributors": repo["unique_contributors"],
+                }
+                for repo in entry["repos"]
+            }
+            gsoc_data[entry["year"]] = {"repos": repos_dict, "total_prs": entry["total_prs"]}
 
         context = {
             "report_data": report_data,
             "report_data_json": json.dumps(report_data),
+            "gsoc_data": gsoc_data,
             "start_year": start_year,
             "end_year": current_year,
             "total_years": total_years,
