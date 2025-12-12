@@ -3528,6 +3528,8 @@ class Bounty(models.Model):
         on_delete=models.CASCADE,
         related_name="bounties",
         db_index=True,
+        null=True,       
+        blank=True,      
     )
     sponsor = models.ForeignKey(
         settings.AUTH_USER_MODEL,

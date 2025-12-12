@@ -1887,7 +1887,7 @@ class BountyViewSet(viewsets.ModelViewSet):
     list: List bounties (optionally filtered).
     """
 
-    queryset = Bounty.objects.all().select_related("issue", "sponsor")
+    queryset = Bounty.objects.all()
     serializer_class = BountySerializer
 
     authentication_classes = [SessionAuthentication, TokenAuthentication]

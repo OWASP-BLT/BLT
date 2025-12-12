@@ -340,8 +340,19 @@ class BountySerializer(serializers.ModelSerializer):
             "sponsor_id",
             "sponsor_username",
         ]
+        extra_kwargs = {
+            "issue": {"required": False, "allow_null": True},
+        }
 
     def validate_amount(self, value):
+        """
+        Allow creating a bounty with only github_issue_url + amount + github_username.
+        'issue' is optional; we can link it later if needed.
+        """
+        if not value.get("github_issue_url"):
+            raise serializers.ValidationError(
+                {"github_issue_url": "This field is required."}
+            )
         if value <= 0:
             raise serializers.ValidationError("Bounty amount must be positive.")
         if value > 100000:  # arbitrary reasonable max, tweak as needed
