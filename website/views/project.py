@@ -2210,17 +2210,14 @@ def gsoc_pr_report(request):
             end_date = timezone.make_aware(datetime(year, 10, 1))
 
             repos_qs = (
-                GitHubIssue.objects.select_related("repo", "contributor")
-                .filter(
+                GitHubIssue.objects.filter(
                     type="pull_request",
                     is_merged=True,
                     merged_at__gte=start_date,
-                    merged_at__lte=end_date,
+                    merged_at__lt=end_date,
                 )
                 .exclude(merged_at__isnull=True)
-                # remove NULL contributors BEFORE bot filters
-                .exclude(contributor__isnull=True)
-                # Existing bot exclusion (now safe)
+                # Exclude bots when contributor data exists; keep NULL contributors so PR totals stay accurate.
                 .exclude(
                     Q(contributor__contributor_type__iexact="Bot")
                     | Q(contributor__name__iendswith="[bot]")
