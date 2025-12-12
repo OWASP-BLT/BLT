@@ -278,12 +278,20 @@ class DailyChallengeService:
             return False
 
         try:
-            # Get user's timezone from profile, default to UTC
-            try:
-                profile = UserProfile.objects.get(user=user)
-                user_tz_str = profile.timezone or "UTC"
-            except UserProfile.DoesNotExist:
-                user_tz_str = "UTC"
+            # Get user's timezone from profile, create profile if it doesn't exist
+            # UserProfile uses AutoOneToOneField, but handle edge cases where it might not exist
+            # (e.g., legacy users, profile creation failures, or race conditions)
+            profile, created = UserProfile.objects.get_or_create(
+                user=user,
+                defaults={"timezone": "UTC"}
+            )
+            user_tz_str = profile.timezone or "UTC"
+            
+            if created:
+                logger.info(
+                    f"Created UserProfile for user {user.username} with UTC timezone default. "
+                    f"User should update their timezone in profile settings for accurate challenge validation."
+                )
 
             # Get timezone object
             try:
@@ -310,6 +318,12 @@ class DailyChallengeService:
                 exc_info=True,
             )
             # Fallback to UTC if timezone conversion fails
+            # Log warning that we're using UTC fallback, which may be incorrect for user's timezone
+            logger.warning(
+                f"Using UTC fallback for early check-in validation for user {user.username}. "
+                f"This may cause incorrect challenge validation if user is not in UTC timezone. "
+                f"Check-in time will be evaluated against 10:00 AM UTC instead of user's local timezone."
+            )
             checkin_utc = daily_status_report.created
             if timezone.is_naive(checkin_utc):
                 checkin_utc = timezone.make_aware(checkin_utc)
