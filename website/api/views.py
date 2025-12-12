@@ -1717,28 +1717,48 @@ def _run_github_sync():
             status_messages.append("✓ Synced OWASP projects")
         except Exception as e:
             logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
-            _github_sync_last_error.append("check_owasp_projects_failed")
+            try:
+                _github_sync_lock.acquire(timeout=1)
+                _github_sync_last_error.append("check_owasp_projects_failed")
+            finally:
+                if _github_sync_lock.locked():
+                    _github_sync_lock.release()
 
         try:
             call_command("update_github_issues", stdout=StringIO())
             status_messages.append("✓ Updated GitHub issues")
         except Exception as e:
             logger.error("Error running update_github_issues: %s", e, exc_info=True)
-            _github_sync_last_error.append("update_github_issues_failed")
+            try:
+                _github_sync_lock.acquire(timeout=1)
+                _github_sync_last_error.append("update_github_issues_failed")
+            finally:
+                if _github_sync_lock.locked():
+                    _github_sync_lock.release()
 
         try:
             call_command("fetch_pr_reviews", stdout=StringIO())
             status_messages.append("✓ Fetched PR reviews")
         except Exception as e:
             logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
-            _github_sync_last_error.append("fetch_pr_reviews_failed")
+            try:
+                _github_sync_lock.acquire(timeout=1)
+                _github_sync_last_error.append("fetch_pr_reviews_failed")
+            finally:
+                if _github_sync_lock.locked():
+                    _github_sync_lock.release()
 
         try:
             call_command("update_contributor_stats", stdout=StringIO())
             status_messages.append("✓ Updated contributor stats")
         except Exception as e:
             logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
-            _github_sync_last_error.append("update_contributor_stats_failed")
+            try:
+                _github_sync_lock.acquire(timeout=1)
+                _github_sync_last_error.append("update_contributor_stats_failed")
+            finally:
+                if _github_sync_lock.locked():
+                    _github_sync_lock.release()
 
         logger.info("Background GitHub sync completed with messages: %s", status_messages)
     finally:
@@ -1757,8 +1777,8 @@ def _run_github_sync():
                     # Freeze errors to an immutable tuple to avoid accidental mutation post-finish
                     try:
                         _github_sync_last_error = tuple(_github_sync_last_error)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.error("Failed to freeze _github_sync_last_error to tuple: %s", e, exc_info=True)
                     finalized = True
                     break
                 finally:
@@ -1907,17 +1927,28 @@ class DebugSystemStatsApiView(APIView):
 
             # Acquire lock briefly to read consistent GitHub sync state
             try:
-                _github_sync_lock.acquire()
-                github_sync_status = {
-                    "running": bool(_github_sync_running),
-                    "started_at": _github_sync_started_at,
-                    "last_finished_at": _github_sync_last_finished_at,
-                    # Expose joined string for backward compatibility but keep internal list for structure
-                    "last_error": "; ".join(_github_sync_last_error) if _github_sync_last_error else None,
-                }
+                acquired = _github_sync_lock.acquire(timeout=2)
+                if acquired:
+                    github_sync_status = {
+                        "running": bool(_github_sync_running),
+                        "started_at": _github_sync_started_at,
+                        "last_finished_at": _github_sync_last_finished_at,
+                        # Expose joined string for backward compatibility but keep internal list for structure
+                        "last_error": "; ".join(list(_github_sync_last_error)) if _github_sync_last_error else None,
+                    }
+                else:
+                    logger.warning("Could not acquire _github_sync_lock to read GitHub sync status.")
+                    github_sync_status = {
+                        "running": None,
+                        "started_at": None,
+                        "last_finished_at": None,
+                        "last_error": "Lock acquisition timed out",
+                    }
             finally:
                 try:
-                    _github_sync_lock.release()
+                    acquired = _github_sync_lock.acquire(timeout=2)
+                    if "acquired" in locals() and acquired:
+                        _github_sync_lock.release()
                 except Exception:
                     logger.exception("Failed to release _github_sync_lock after reading status")
 
@@ -2072,7 +2103,7 @@ class DebugPanelStatusApiView(APIView):
     def get(self, request, *args, **kwargs):
         # Snapshot sync status atomically
         try:
-            _github_sync_lock.acquire()
+            _github_sync_lock.acquire(timeout=2)
             status_snapshot = {
                 "running": _github_sync_running,
                 "started_at": _github_sync_started_at,
@@ -2142,7 +2173,7 @@ class DebugSyncGithubDataApiView(APIView):
             except Exception as start_err:
                 # If starting the thread fails, reacquire the lock and clean up state
                 try:
-                    _github_sync_lock.acquire()
+                    _github_sync_lock.acquire(timeout=2)
                     _github_sync_running = False
                     _github_sync_thread = None
                     _github_sync_started_at = None
@@ -2177,7 +2208,7 @@ class DebugSyncGithubDataApiView(APIView):
             logger.error("Unexpected error starting GitHub sync: %s", e, exc_info=True)
             # Attempt cleanup
             try:
-                _github_sync_lock.acquire()
+                _github_sync_lock.acquire(timeout=2)
                 _github_sync_running = False
                 _github_sync_thread = None
             finally:

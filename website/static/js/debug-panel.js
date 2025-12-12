@@ -209,7 +209,7 @@ const DebugPanel = {
           }
           if (cacheHitRatioEl) {
             const hitRatio = parseFloat(cacheInfo.hit_ratio);
-            cacheHitRatioEl.textContent = isNaN(hitRatio) ? "N/A" : `${hitRatio.toFixed(2)}%`;
+            cacheHitRatioEl.textContent = Number.isNaN(hitRatio) ? "N/A" : `${hitRatio.toFixed(2)}%`;
           }
         }
       }
@@ -385,7 +385,8 @@ DB Connections: ${stats.database?.connections || "N/A"}
     const timestamp = new Date().toLocaleTimeString();
     const colorClass = this.getStatusColor(type);
     const messageDiv = document.createElement("div");
-    messageDiv.className = `text-${colorClass} mb-2`;
+    // Use explicit Tailwind classes to avoid purge issues
+    messageDiv.className = `${colorClass} mb-2`;
     messageDiv.textContent = `[${timestamp}] ${message}`;
     statusContent.appendChild(messageDiv);
     statusContent.scrollTop = statusContent.scrollHeight;
@@ -395,11 +396,12 @@ DB Connections: ${stats.database?.connections || "N/A"}
    * Get status color class
    */
   getStatusColor(type) {
+    // Map to explicit Tailwind classes so the JIT scanner picks them up
     const colors = {
-      success: "green-400",
-      error: "red-400",
-      info: "blue-400",
-      warning: "yellow-400",
+      success: "text-green-400",
+      error: "text-red-400",
+      info: "text-blue-400",
+      warning: "text-yellow-400",
     };
     return colors[type] || colors.info;
   },

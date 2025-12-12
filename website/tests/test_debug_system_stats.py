@@ -24,6 +24,17 @@ class DebugPanelAPITest(TestCase):
             username="admin", email="admin@example.com", password="adminpass123"
         )
 
+        # Ensure GitHub sync debug state is reset between tests so tests don't depend on module-level globals from prior runs.
+        for attr, value in [
+            ("_github_sync_running", False),
+            ("_github_sync_thread", None),
+            ("_github_sync_started_at", None),
+            ("_github_sync_last_finished_at", None),
+            ("_github_sync_last_error", []),
+        ]:
+            if hasattr(views, attr):
+                setattr(views, attr, value)
+
     def reload_urls(self):
         clear_url_caches()
         import blt.urls
