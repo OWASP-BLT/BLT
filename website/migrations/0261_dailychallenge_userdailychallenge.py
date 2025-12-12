@@ -11,7 +11,7 @@ from django.db import migrations, models
 def remove_duplicate_daily_status_reports(apps, schema_editor):
     """
     Remove duplicate DailyStatusReport entries before applying unique_together constraint.
-    For each (user, date) group, keep the record with the earliest created_at timestamp
+    For each (user, date) group, keep the record with the earliest created timestamp
     and delete the rest.
     """
     DailyStatusReport = apps.get_model("website", "DailyStatusReport")
@@ -26,10 +26,10 @@ def remove_duplicate_daily_status_reports(apps, schema_editor):
         user_id = group["user"]
         date = group["date"]
 
-        # Get all records for this (user, date) group, ordered by created_at
-        records = DailyStatusReport.objects.filter(user_id=user_id, date=date).order_by("created_at")
+        # Get all records for this (user, date) group, ordered by created
+        records = DailyStatusReport.objects.filter(user_id=user_id, date=date).order_by("created")
 
-        # Keep the first one (earliest created_at), delete the rest
+        # Keep the first one (earliest created), delete the rest
         keep_record = records.first()
         if keep_record:
             records_to_delete = records.exclude(id=keep_record.id)
@@ -125,9 +125,22 @@ def create_initial_daily_challenges(apps, schema_editor):
 
 
 def reverse_create_challenges(apps, schema_editor):
-    """Reverse migration - remove all DailyChallenge records"""
+    """Reverse migration - remove only the seeded DailyChallenge records"""
     DailyChallenge = apps.get_model("website", "DailyChallenge")
-    DailyChallenge.objects.all().delete()
+    # Only delete the challenge types that were seeded by this migration
+    # This prevents wiping challenges created/edited post-deploy
+    DailyChallenge.objects.filter(
+        challenge_type__in=[
+            "early_checkin",
+            "positive_mood",
+            "complete_all_fields",
+            "streak_milestone",
+            "no_blockers",
+            "detailed_reporter",
+            "goal_achiever",
+            "detailed_planner",
+        ]
+    ).delete()
 
 
 class Migration(migrations.Migration):

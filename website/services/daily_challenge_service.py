@@ -331,8 +331,9 @@ class DailyChallengeService:
         mood = daily_status_report.current_mood.strip()
 
         # Check for positive emojis (ratings 1 and 2)
-        positive_emojis = ["😊", "😄"]  # Happy and Smile
-        return mood in positive_emojis
+        # The stored value may be "Happy 😊" or just "😊", so check if emoji is in the string
+        positive_emojis = ("😊", "😄")  # Happy and Smile
+        return any(emoji in mood for emoji in positive_emojis)
 
     @staticmethod
     def _check_complete_all_fields(daily_status_report):

@@ -18,6 +18,7 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import IntegrityError
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -1433,12 +1434,25 @@ def sizzle_daily_log(request):
                     return JsonResponse(
                         {
                             "success": False,
-                            "message": "You have already submitted a check-in for today. Please wait 24 hours from your last submission to submit again.",
+                            "message": "You have already submitted a check-in for today. Please submit again tomorrow.",
                         },
                         status=400,
                     )
 
                 logger.info(f"Created new check-in for user {request.user.username} on {today}")
+            except IntegrityError as e:
+                # Concurrent insert raised IntegrityError (unique constraint violation)
+                logger.warning(
+                    f"IntegrityError creating daily status report for user {request.user.username} on {today}: {e}",
+                    exc_info=True,
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "You have already submitted a check-in for today. Please submit again tomorrow.",
+                    },
+                    status=400,
+                )
             except Exception as e:
                 # Unexpected database error (not a duplicate)
                 logger.error(
@@ -1452,14 +1466,6 @@ def sizzle_daily_log(request):
                     },
                     status=500,
                 )
-
-            # Set next_challenge_at to 24 hours from now for today's challenges only
-            next_challenge_time = now() + timedelta(hours=24)
-            UserDailyChallenge.objects.filter(
-                user=request.user,
-                challenge_date=today,
-                status="assigned",
-            ).update(next_challenge_at=next_challenge_time)
 
             # Check and complete daily challenges
             completed_challenges_data = []
@@ -1498,6 +1504,15 @@ def sizzle_daily_log(request):
 
             except Exception as e:
                 logger.error(f"Error checking challenges: {e}")
+
+            # Set next_challenge_at to 24 hours from now for today's challenges
+            # This must be done AFTER challenge assignment to ensure newly assigned challenges are updated
+            next_challenge_time = now() + timedelta(hours=24)
+            UserDailyChallenge.objects.filter(
+                user=request.user,
+                challenge_date=today,
+                status="assigned",
+            ).update(next_challenge_at=next_challenge_time)
 
             return JsonResponse(
                 {
