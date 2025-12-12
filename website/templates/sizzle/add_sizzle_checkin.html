@@ -605,8 +605,9 @@
             const blockersSelect = document.getElementById('blockers_card');
             const blockersOther = document.getElementById('blockers_other');
             if (blockersSelect && blockersOther) {
-                blockersSelect.addEventListener('change', function() {
-                    if (this.value === 'other') {
+                // Initialize textarea state based on current select value on page load
+                function updateBlockersOtherVisibility() {
+                    if (blockersSelect.value === 'other') {
                         blockersOther.classList.remove('hidden');
                         blockersOther.required = true;
                     } else {
@@ -614,7 +615,13 @@
                         blockersOther.required = false;
                         blockersOther.value = '';
                     }
-                });
+                }
+                
+                // Check initial state on page load
+                updateBlockersOtherVisibility();
+                
+                // Handle changes
+                blockersSelect.addEventListener('change', updateBlockersOtherVisibility);
             }
 
             {% if yesterday_report %}
@@ -813,6 +820,10 @@
                             // Reset form
                             checkInForm.reset();
                             
+                            // Keep button disabled and update text to prevent duplicate submissions
+                            submitButton.disabled = true;
+                            submitButton.textContent = 'Submitted';
+                            
                             // Reload page immediately to show updated points and "already submitted" state
                             // Use cache-busting to ensure fresh data is loaded
                             setTimeout(() => {
@@ -841,6 +852,10 @@
                             
                             successMessage.classList.remove('hidden');
                             successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            
+                            // Re-enable submit button for retry
+                            submitButton.disabled = false;
+                            submitButton.textContent = originalText;
                         }
                     } catch (error) {
                         console.error('Error:', error);
@@ -879,10 +894,6 @@
                         
                         successMessage.classList.remove('hidden');
                         successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    } finally {
-                        // Re-enable submit button
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText;
                     }
                 });
             }
