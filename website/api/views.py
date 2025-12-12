@@ -2254,9 +2254,18 @@ class DebugSyncGithubDataApiView(APIView):
                         globals()["github_sync_started_at"] = _github_sync_started_at
                         globals()["github_sync_last_error"] = list(_github_sync_last_error)
                     else:
-                        logger.error(
-                            "Could not acquire _github_sync_lock during thread.start() failure cleanup; state may be inconsistent and could not be reset."
+                        logger.warning(
+                            "Could not acquire _github_sync_lock during thread.start() failure cleanup; clearing state without lock to avoid wedged status."
                         )
+                        # Last-resort best-effort cleanup to avoid wedged UI.
+                        _github_sync_running = False
+                        _github_sync_thread = None
+                        _github_sync_started_at = None
+                        _github_sync_last_error = ["thread_start_failed"]
+                        globals()["github_sync_running"] = _github_sync_running
+                        globals()["github_sync_thread"] = _github_sync_thread
+                        globals()["github_sync_started_at"] = _github_sync_started_at
+                        globals()["github_sync_last_error"] = list(_github_sync_last_error)
 
                 # Provide a slightly more detailed error payload in DEBUG so developers can triage; keep it generic in production.
                 error_response = {"success": False, "error": "Failed to start background sync thread"}
