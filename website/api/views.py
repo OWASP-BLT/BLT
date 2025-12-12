@@ -2155,31 +2155,28 @@ class DebugPanelStatusApiView(APIView):
     @debug_required
     def get(self, request, *args, **kwargs):
         # Snapshot sync status atomically; if lock not acquired, return unavailable
+        status_snapshot = {
+            "running": None,
+            "started_at": None,
+            "last_finished_at": None,
+            "last_error_list": [],
+            "last_error": None,
+            "note": "status unavailable",
+        }
         acquired = False
         try:
             acquired = _github_sync_lock.acquire(timeout=2)
             if not acquired:
-                data = {
-                    "debug_mode": True,
-                    "github_sync": {
-                        "running": None,
-                        "started_at": None,
-                        "last_finished_at": None,
-                        "last_error_list": [],
-                        "last_error": None,
-                        "note": "status unavailable (lock timeout)",
-                    },
+                status_snapshot["note"] = "status unavailable (lock timeout)"
+            else:
+                status_snapshot = {
+                    "running": _github_sync_running,
+                    "started_at": _github_sync_started_at,
+                    "last_finished_at": _github_sync_last_finished_at,
+                    # Provide both structured list and display string consistently
+                    "last_error_list": list(_github_sync_last_error) if _github_sync_last_error else [],
+                    "last_error": "; ".join(list(_github_sync_last_error)) if _github_sync_last_error else None,
                 }
-                return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
-
-            status_snapshot = {
-                "running": _github_sync_running,
-                "started_at": _github_sync_started_at,
-                "last_finished_at": _github_sync_last_finished_at,
-                # Provide both structured list and display string consistently
-                "last_error_list": list(_github_sync_last_error) if _github_sync_last_error else [],
-                "last_error": "; ".join(list(_github_sync_last_error)) if _github_sync_last_error else None,
-            }
         finally:
             try:
                 if acquired:
@@ -2187,10 +2184,7 @@ class DebugPanelStatusApiView(APIView):
             except Exception:
                 logger.exception("Failed releasing _github_sync_lock in panel status")
 
-        data = {
-            "debug_mode": True,
-            "github_sync": status_snapshot,
-        }
+        data = {"debug_mode": True, "github_sync": status_snapshot}
         return Response({"success": True, "data": data}, status=status.HTTP_200_OK)
 
 
