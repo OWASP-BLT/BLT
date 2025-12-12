@@ -32,7 +32,6 @@ jobs:
             const m = comment.match(/\/bounty\s*\$?([0-9]+(?:\.[0-9]{1,2})?)/i);
             if (!m) {
               core.info("No /bounty command found.");
-              core.setOutput('found', 'false');
               return {
                 found: "false",
               };

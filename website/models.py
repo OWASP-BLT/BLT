@@ -3513,6 +3513,7 @@ class StakingTransaction(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
 
+
 class Bounty(models.Model):
     STATUS_PENDING = "pending"
     STATUS_PAID = "paid"
@@ -3527,9 +3528,8 @@ class Bounty(models.Model):
         Issue,
         on_delete=models.CASCADE,
         related_name="bounties",
-        db_index=True,
-        null=True,       
-        blank=True,      
+        null=True,  # ← 🔑 allow NULL in DB
+        blank=True,  # ← 🔑 allow empty in forms/serializer
     )
     sponsor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -3602,13 +3602,3 @@ class Bounty(models.Model):
             .distinct()
             .count()
         )
-
-class SlackGithubLink(models.Model):
-    slack_user_id = models.CharField(max_length=64, unique=True)
-    slack_username = models.CharField(max_length=255, blank=True)
-    github_username = models.CharField(max_length=255)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.slack_user_id} -> {self.github_username}"

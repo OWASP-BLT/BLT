@@ -13,17 +13,18 @@ import psutil
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection,models
+from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework import filters, status, viewsets ,permissions, authentication
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
@@ -1881,6 +1882,7 @@ class DebugPanelStatusApiView(APIView):
             }
         )
 
+
 class BountyViewSet(viewsets.ModelViewSet):
     """
     create: Create a new bounty.
@@ -1912,7 +1914,7 @@ class BountyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         total = Bounty.total_for_issue_url(github_issue_url)
-        return Response({"github_issue_url": github_issue_url, "total_amount": total})
+        return Response({"github_issue_url": github_issue_url, "total": total})
 
     @action(detail=False, methods=["get"], url_path="sponsor-stats")
     def sponsor_stats(self, request):
@@ -1925,10 +1927,6 @@ class BountyViewSet(viewsets.ModelViewSet):
 
         qs = Bounty.objects.filter(github_sponsor_username=sponsor_username)
         total_placed = qs.aggregate(total=models.Sum("amount"))["total"] or 0
-
-        # unique developers sponsored (using the helper)
-        # NOTE: this uses Django auth User; adjust to your domain model if needed.
-        from django.contrib.auth import get_user_model
 
         User = get_user_model()
         # Distinct issue assignees with paid bounties from this sponsor:

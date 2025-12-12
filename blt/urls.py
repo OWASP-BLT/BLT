@@ -311,7 +311,7 @@ from website.views.project import (
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
-from website.views.slack_handlers import slack_commands, slack_events
+from website.views.slack_handlers import slack_bounty_command, slack_commands, slack_events
 from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
 from website.views.staking_competitive import (
@@ -445,6 +445,7 @@ urlpatterns = [
     ),
     path("slack/", slack_landing_page, name="slack_landing_page"),
     path("slack/commands/", slack_commands, name="slack_commands"),
+    path("slack/commands/bounty/", slack_bounty_command, name="slack_bounty_command"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
@@ -694,7 +695,7 @@ urlpatterns = [
     path("adventures/<slug:slug>/task/<int:task_id>/submit/", submit_task, name="submit_task"),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
-    re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),    
+    re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
     path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
     re_path(r"^invite/$", invite_organization, name="invite"),

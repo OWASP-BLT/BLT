@@ -2,19 +2,16 @@ import json
 import logging
 import os
 import secrets
+from decimal import Decimal
 
 import requests
+from django.contrib.auth import get_user_model
+from django.db.models import F
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from website.models import GitHubIssue, Repo
-
-from django.db.models import F  
-from decimal import Decimal
-from website.models import Bounty  
-from website.models import UserProfile  
-from django.contrib.auth import get_user_model
+from website.models import Bounty, GitHubIssue, Repo, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +53,7 @@ def bounty_payout(request):
         try:
             issue_number = int(data["issue_number"])
             pr_number = int(data["pr_number"])
-            bounty_amount = int(data["bounty_amount"])   # in cents
+            bounty_amount = int(data["bounty_amount"])  # in cents
         except (ValueError, TypeError):
             logger.warning("Invalid numeric fields in request")
             return JsonResponse({"status": "error", "message": "Invalid numeric fields"}, status=400)
@@ -122,9 +119,7 @@ def bounty_payout(request):
         )
 
         # Update status in bulk
-        updated_count = pending_bounties.update(
-            status=Bounty.STATUS_PAID
-        )
+        updated_count = pending_bounties.update(status=Bounty.STATUS_PAID)
         logger.info(f"Marked {updated_count} bounty record(s) as PAID for {issue_url}")
 
         # =====================================================================
@@ -135,19 +130,15 @@ def bounty_payout(request):
         payout_amount = Decimal(bounty_amount) / Decimal("100.0")
 
         User = get_user_model()
-        contributor = User.objects.filter(github_username=contributor_username).first()
+        contributor = User.objects.filter(username=contributor_username).first()
         # ^^^ adjust field name if GitHub username is stored differently
 
         if contributor:
             try:
                 profile = UserProfile.objects.get(user=contributor)
                 # Atomic increment to avoid race conditions
-                UserProfile.objects.filter(pk=profile.pk).update(
-                    winnings=F("winnings") + payout_amount
-                )
-                logger.info(
-                    f"Updated winnings for {contributor_username} by {payout_amount}"
-                )
+                UserProfile.objects.filter(pk=profile.pk).update(winnings=F("winnings") + payout_amount)
+                logger.info(f"Updated winnings for {contributor_username} by {payout_amount}")
             except UserProfile.DoesNotExist:
                 logger.warning(f"No UserProfile found for {contributor_username}; skipping winnings update")
         else:
@@ -394,7 +385,6 @@ def process_github_sponsors_payment(username, amount, note=""):
         str: Sponsorship transaction ID if successful, None otherwise
     """
     try:
-        # The sponsor payer is DonnieBLT (who pays the bounty)
         sponsor_payer = os.environ.get("GITHUB_SPONSORS_RECIPIENT", "DonnieBLT")
         logger.info(f"Processing payment of ${amount / 100:.2f} from {sponsor_payer} to {username}")
 

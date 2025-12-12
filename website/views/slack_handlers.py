@@ -11,15 +11,15 @@ from urllib.parse import quote_plus
 
 import requests
 import yaml
+from django.conf import settings
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponse, JsonResponse,HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
-from django.conf import settings
+
 from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
-from website.utils import get_github_username_for_slack_user
 
 logger = logging.getLogger(__name__)
 
@@ -3022,19 +3022,36 @@ def handle_committee_pagination(action, body, client):
         logger.error(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
-BOUNTY_REGEX = re.compile(r"^\$?(\d+(\.\d+)?)\s+(\S+)$")
+
+BOUNTY_REGEX = re.compile(
+    r"""^\s*
+        \$?(?P<amount>[0-9]+(?:\.[0-9]{1,2})?)   # amount, optional leading $
+        \s+
+        (?P<issue_url>https?://\S+)              # GitHub issue URL
+        \s+
+        (?P<github_username>[A-Za-z0-9_-]+)      # GitHub username
+        \s*$
+    """,
+    re.VERBOSE,
+)
+
 
 @csrf_exempt
 def slack_bounty_command(request):
     """
-    Handle `/bounty $X <issue-url>` Slack command.
+    Handle `/bounty` Slack command.
 
-    Example text: "$10 https://github.com/OWASP-BLT/BLT/issues/123"
+    New format (no Slack→GitHub mapping):
+      /bounty <amount> <issue-url> <github-username>
+
+    Examples:
+      /bounty 10 https://github.com/org/repo/issues/123 yourgithub
+      /bounty $12.50 https://github.com/org/repo/issues/123 yourgithub
     """
     if request.method != "POST":
         return HttpResponseBadRequest("Invalid method")
 
-    text = request.POST.get("text", "").strip()
+    text = (request.POST.get("text") or "").strip()
     user_id = request.POST.get("user_id")
     response_url = request.POST.get("response_url")
 
@@ -3043,14 +3060,29 @@ def slack_bounty_command(request):
         return JsonResponse(
             {
                 "response_type": "ephemeral",
-                "text": "Usage: `/bounty $10 https://github.com/org/repo/issues/123`",
+                "text": (
+                    "Usage: `/bounty <amount> <github_issue_url> <github_username>`\n"
+                    "Example: `/bounty 10 https://github.com/org/repo/issues/123 yourgithub`"
+                ),
             }
         )
 
-    amount_str, _, issue_url = m.groups()
-    amount = float(amount_str)
+    amount_str = m.group("amount")
+    issue_url = m.group("issue_url")
+    github_username = m.group("github_username")
 
-    if amount <= 0:
+    # Basic amount validation
+    try:
+        amount_val = float(amount_str)
+    except ValueError:
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "Bounty amount must be a valid number.",
+            }
+        )
+
+    if amount_val <= 0:
         return JsonResponse(
             {
                 "response_type": "ephemeral",
@@ -3058,19 +3090,11 @@ def slack_bounty_command(request):
             }
         )
 
-    github_username = get_github_username_for_slack_user(user_id)
-    if not github_username:
-        return JsonResponse(
-            {
-                "response_type": "ephemeral",
-                "text": "Could not determine your GitHub username. Please link your account first.",
-            }
-        )
-
     # Call BLT API to create bounty
-    api_base = getattr(settings, "BLT_API_BASE_URL", "https://blt.example.com/api")
-    api_token = getattr(settings, "BLT_API_TOKEN", None)
-    if not api_token:
+    api_base = getattr(settings, "BLT_API_BASE_URL", os.environ.get("BLT_API_BASE_URL", "")).rstrip("/")
+    api_token = getattr(settings, "BLT_API_TOKEN", os.environ.get("BLT_API_TOKEN"))
+
+    if not api_base or not api_token:
         return JsonResponse(
             {
                 "response_type": "ephemeral",
@@ -3083,11 +3107,11 @@ def slack_bounty_command(request):
         "Content-Type": "application/json",
     }
 
-    import json
+    # IMPORTANT: send amount as string, and include github_username
     payload = {
-        "amount": amount,
+        "amount": amount_str,
         "github_issue_url": issue_url,
-        # Backend can resolve issue from URL or you send issue_id if you have it.
+        "github_username": github_username,
     }
 
     try:
@@ -3116,12 +3140,12 @@ def slack_bounty_command(request):
             params={"github_issue_url": issue_url},
         )
         total_json = total_res.json() if total_res.ok else {}
-        total_amount = total_json.get("total_amount", amount)
+        # Our issue_total view returns {"github_issue_url": ..., "total_amount": ...}
+        total_amount = total_json.get("total_amount", amount_str)
     except Exception:
-        total_amount = amount
+        total_amount = amount_str
 
-    # Public channel message via Slack API is typically done by a bot using Slack WebClient.
-    # Here we just return an ephemeral + "in_channel" style response.
+    # Public in-channel response
     return JsonResponse(
         {
             "response_type": "in_channel",
@@ -3131,9 +3155,9 @@ def slack_bounty_command(request):
                     "text": {
                         "type": "mrkdwn",
                         "text": (
-                            f"💰 *New bounty placed!* \n"
-                            f"*Amount:* ${amount} \n"
-                            f"*Sponsor:* `{github_username}` \n"
+                            "💰 *New bounty placed!* \n"
+                            f"*Amount:* ${amount_str} \n"
+                            f"*Sponsor:* `@{github_username}` \n"
                             f"*Issue:* {issue_url} \n"
                             f"*Total bounty on this issue:* ${total_amount}"
                         ),
