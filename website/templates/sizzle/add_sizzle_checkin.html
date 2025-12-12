@@ -536,6 +536,7 @@
             if (!nextChallengeStr || nextChallengeStr.trim() === '') {
                 timerElements.forEach(el => {
                     el.textContent = 'Available now!';
+                    el.classList.remove('text-red-800', 'dark:text-red-200');
                     el.classList.add('text-green-600', 'dark:text-green-400');
                 });
                 return;
