@@ -573,7 +573,6 @@ async function downloadReport(event) {
         button.disabled = false;
         
     } catch (error) {
-        console.error('Error generating PDF:', error);
         alert('Error generating PDF report. Please try again.');
         
         // Restore button state on error
