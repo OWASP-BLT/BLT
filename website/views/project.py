@@ -2249,7 +2249,7 @@ def gsoc_pr_report(request):
         yearly_chart_data = []
 
         def _repo_key(repo_row):
-            return repo_row.get("repo__name") or "Unknown repo"
+            return repo_row.get("repo__repo_url") or repo_row.get("repo__name") or "Unknown repo"
 
         def _repo_url(repo_row):
             return repo_row.get("repo__repo_url") or ""
