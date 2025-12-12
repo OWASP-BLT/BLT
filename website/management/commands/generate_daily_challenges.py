@@ -56,9 +56,7 @@ class Command(BaseCommand):
             "goal_achiever",
             "detailed_planner",
         ]
-        active_challenges = DailyChallenge.objects.filter(
-            is_active=True, challenge_type__in=daily_completable_types
-        )
+        active_challenges = DailyChallenge.objects.filter(is_active=True, challenge_type__in=daily_completable_types)
         if not active_challenges.exists():
             self.stdout.write(
                 self.style.WARNING(
