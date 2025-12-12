@@ -1726,8 +1726,6 @@ def _run_github_sync():
         try:
             call_command("check_owasp_projects", stdout=StringIO())
             status_messages.append("✓ Synced OWASP projects")
-            if len(status_messages) > 200:
-                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running check_owasp_projects: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1737,8 +1735,6 @@ def _run_github_sync():
         try:
             call_command("update_github_issues", stdout=StringIO())
             status_messages.append("✓ Updated GitHub issues")
-            if len(status_messages) > 200:
-                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running update_github_issues: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1748,8 +1744,6 @@ def _run_github_sync():
         try:
             call_command("fetch_pr_reviews", stdout=StringIO())
             status_messages.append("✓ Fetched PR reviews")
-            if len(status_messages) > 200:
-                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running fetch_pr_reviews: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1759,8 +1753,6 @@ def _run_github_sync():
         try:
             call_command("update_contributor_stats", stdout=StringIO())
             status_messages.append("✓ Updated contributor stats")
-            if len(status_messages) > 200:
-                status_messages.pop(0)
         except Exception as e:
             logger.error("Error running update_contributor_stats: %s", e, exc_info=True)
             with safe_sync_state_lock(timeout=1.0) as acquired:
@@ -1771,9 +1763,11 @@ def _run_github_sync():
     finally:
         # Acquire the lock with small retries to finalize finish state
         finalized = False
-        for _ in range(3):
+        for attempt in range(3):
             with safe_sync_state_lock(timeout=0.5) as acquired_finalize:
                 if not acquired_finalize:
+                    # Small backoff to reduce immediate contention
+                    time.sleep(0.1)
                     continue
                 try:
                     _github_sync_last_finished_at = timezone.now().isoformat()
@@ -1790,14 +1784,27 @@ def _run_github_sync():
                 finalized = True
                 break
         if not finalized:
-            # As a last resort, clear running state without the lock to avoid stale status
-            logger.warning("Finalization lock acquisition failed; clearing running state without lock.")
-            _github_sync_running = False
-            _github_sync_thread = None
-            try:
-                _github_sync_last_finished_at = timezone.now().isoformat()
-            except Exception:
-                _github_sync_last_finished_at = datetime.utcnow().isoformat()
+            # As a last resort, try one more time to acquire the lock before clearing running state without it.
+            logger.warning(
+                "Finalization lock acquisition failed; attempting one last lock before clearing running state."
+            )
+            with safe_sync_state_lock(timeout=0.5) as acquired_last:
+                if acquired_last:
+                    try:
+                        _github_sync_last_finished_at = timezone.now().isoformat()
+                    except Exception:
+                        _github_sync_last_finished_at = datetime.utcnow().isoformat()
+                    _github_sync_running = False
+                    _github_sync_thread = None
+                else:
+                    # Proceeding to clear state without the lock to avoid wedged status.
+                    # NOTE: This can introduce a transient race if another thread reads these values simultaneously.
+                    _github_sync_running = False
+                    _github_sync_thread = None
+                    try:
+                        _github_sync_last_finished_at = timezone.now().isoformat()
+                    except Exception:
+                        _github_sync_last_finished_at = datetime.utcnow().isoformat()
 
 
 def debug_required(func):
@@ -1918,15 +1925,16 @@ class DebugSystemStatsApiView(APIView):
                     org_table = Organization._meta.db_table
                     domain_table = Domain._meta.db_table
                     repo_table = Repo._meta.db_table
+                    qn = connection.ops.quote_name
 
                     with connection.cursor() as cursor:
                         sql = (
                             "SELECT "
-                            f"(SELECT COUNT(*) FROM {user_table}) AS user_count, "
-                            f"(SELECT COUNT(*) FROM {issue_table}) AS issue_count, "
-                            f"(SELECT COUNT(*) FROM {org_table}) AS org_count, "
-                            f"(SELECT COUNT(*) FROM {domain_table}) AS domain_count, "
-                            f"(SELECT COUNT(*) FROM {repo_table}) AS repo_count"
+                            f"(SELECT COUNT(*) FROM {qn(user_table)}) AS user_count, "
+                            f"(SELECT COUNT(*) FROM {qn(issue_table)}) AS issue_count, "
+                            f"(SELECT COUNT(*) FROM {qn(org_table)}) AS org_count, "
+                            f"(SELECT COUNT(*) FROM {qn(domain_table)}) AS domain_count, "
+                            f"(SELECT COUNT(*) FROM {qn(repo_table)}) AS repo_count"
                         )
                         cursor.execute(sql)
                         row = cursor.fetchone()
@@ -1995,7 +2003,7 @@ class DebugSystemStatsApiView(APIView):
                             "name": db_name,
                             "version": db_version,
                             # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
-                            # This could be slow for large datasets as 5 separate COUNT queries are executed.
+                            # These counts are efficiently fetched in a single database round-trip using subselects.
                             "user_count": db_counts["user_count"],
                             "issue_count": db_counts["issue_count"],
                             "org_count": db_counts["org_count"],
@@ -2224,12 +2232,12 @@ class DebugSyncGithubDataApiView(APIView):
                         # Record a discrete failure token (immutable after finalization)
                         _github_sync_last_error = ["thread_start_failed"]
                     else:
-                        # Last-resort unlock-free cleanup to prevent wedged running state
+                        # Last-resort: could not acquire lock, so cannot safely clean up state.
                         logger.warning(
-                            "Could not reacquire _github_sync_lock to clean up after thread.start() failure; clearing state without lock."
+                            "Could not acquire _github_sync_lock during exception cleanup; state may remain wedged."
                         )
-                        _github_sync_running = False
-                        _github_sync_thread = None
+                        # Not performing lock-free writes to avoid race conditions.
+                        # Manual intervention may be required to reset sync state.
                         _github_sync_started_at = None
                         _github_sync_last_error = ["thread_start_failed"]
 
