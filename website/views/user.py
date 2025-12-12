@@ -213,7 +213,7 @@ def profile_edit(request):
 
                 messages.info(
                     request,
-                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                    "A verification link has been sent to your new email. Please verify to complete the update.",
                 )
                 return redirect("profile", slug=request.user.username)
 

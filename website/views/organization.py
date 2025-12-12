@@ -1366,27 +1366,33 @@ def sizzle_daily_log(request):
         if request.method == "POST":
             previous_work = request.POST.get("previous_work", "").strip()
             next_plan = request.POST.get("next_plan", "").strip()
-            
+
             # Server-side validation for required fields
             if not previous_work or not next_plan:
                 return JsonResponse(
                     {"success": False, "message": "Previous work and next plan are required."},
                     status=400,
                 )
-            
+
             # Validate max length to prevent DoS attacks
             MAX_FIELD_LENGTH = 10000  # Reasonable limit for text fields
             if len(previous_work) > MAX_FIELD_LENGTH:
                 return JsonResponse(
-                    {"success": False, "message": f"Previous work field exceeds maximum length of {MAX_FIELD_LENGTH} characters."},
+                    {
+                        "success": False,
+                        "message": f"Previous work field exceeds maximum length of {MAX_FIELD_LENGTH} characters.",
+                    },
                     status=400,
                 )
             if len(next_plan) > MAX_FIELD_LENGTH:
                 return JsonResponse(
-                    {"success": False, "message": f"Next plan field exceeds maximum length of {MAX_FIELD_LENGTH} characters."},
+                    {
+                        "success": False,
+                        "message": f"Next plan field exceeds maximum length of {MAX_FIELD_LENGTH} characters.",
+                    },
                     status=400,
                 )
-            
+
             blockers_type = request.POST.get("blockers")
             blockers_other = request.POST.get("blockers_other", "")
             # Combine blockers: if "other" selected, require blockers_other to be non-empty
@@ -1535,6 +1541,7 @@ def sizzle_daily_log(request):
             # Set next_challenge_at to CHALLENGE_RESET_HOURS from now for today's challenges
             # This must be done AFTER challenge assignment to ensure newly assigned challenges are updated
             from website.services.daily_challenge_service import CHALLENGE_RESET_HOURS
+
             next_challenge_time = now() + timedelta(hours=CHALLENGE_RESET_HOURS)
             UserDailyChallenge.objects.filter(
                 user=request.user,
@@ -2373,6 +2380,7 @@ def add_sizzle_checkIN(request):
                 )
                 if last_checkin_for_timer:
                     from website.services.daily_challenge_service import CHALLENGE_RESET_HOURS
+
                     next_challenge_at = last_checkin_for_timer.created + timedelta(hours=CHALLENGE_RESET_HOURS)
                 else:
                     # If no check-in, check if there's a next_challenge_at set

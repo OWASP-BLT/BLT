@@ -3,7 +3,7 @@
 import logging
 import random
 import re
-from datetime import time, timedelta
+from datetime import time
 
 import pytz
 from django.utils import timezone
@@ -26,7 +26,7 @@ class DailyChallengeService:
         """
         Get active challenges for a user on a specific date.
         Also checks if 24 hours have passed and assigns a new challenge if needed.
-        
+
         Args:
             user: User instance
             challenge_date: Date for which to get challenges (defaults to today)
@@ -155,9 +155,9 @@ class DailyChallengeService:
                     defaults={
                         "challenge": selected_challenge,
                         "status": "assigned",
-                    }
+                    },
                 )
-                
+
                 if not created:
                     # Update existing challenge
                     user_challenge.challenge = selected_challenge
@@ -166,7 +166,7 @@ class DailyChallengeService:
                     user_challenge.points_awarded = 0
                     user_challenge.next_challenge_at = None
                     user_challenge.save()
-                
+
                 return user_challenge
         except Exception as e:
             logger.error(
@@ -292,12 +292,9 @@ class DailyChallengeService:
             # Get user's timezone from profile, create profile if it doesn't exist
             # UserProfile uses AutoOneToOneField, but handle edge cases where it might not exist
             # (e.g., legacy users, profile creation failures, or race conditions)
-            profile, created = UserProfile.objects.get_or_create(
-                user=user,
-                defaults={"timezone": "UTC"}
-            )
+            profile, created = UserProfile.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
             user_tz_str = profile.timezone or "UTC"
-            
+
             if created:
                 logger.info(
                     f"Created UserProfile for user {user.username} with UTC timezone default. "
@@ -413,7 +410,7 @@ class DailyChallengeService:
 
         previous_work = daily_status_report.previous_work.strip()
         # Use regex to count words properly (handles punctuation, multiple spaces, etc.)
-        words = re.findall(r'\b\w+\b', previous_work)
+        words = re.findall(r"\b\w+\b", previous_work)
         word_count = len(words)
         return word_count >= MIN_WORD_COUNT_FOR_DETAILED
 
@@ -440,6 +437,6 @@ class DailyChallengeService:
 
         next_plan = daily_status_report.next_plan.strip()
         # Use regex to count words properly (handles punctuation, multiple spaces, etc.)
-        words = re.findall(r'\b\w+\b', next_plan)
+        words = re.findall(r"\b\w+\b", next_plan)
         word_count = len(words)
         return word_count >= MIN_WORD_COUNT_FOR_DETAILED

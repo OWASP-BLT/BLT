@@ -151,7 +151,11 @@ class ProjectAggregationTestCase(TestCase):
         """Verify stars/forks are properly aggregated from multiple repos"""
         # Create another repo for the first project
         Repo.objects.create(
-            project=self.project_with_repos, name="asgiref", repo_url="https://github.com/django/asgiref", stars=1000, forks=200
+            project=self.project_with_repos,
+            name="asgiref",
+            repo_url="https://github.com/django/asgiref",
+            stars=1000,
+            forks=200,
         )
         # New total: 56000 stars, 21200 forks
 
