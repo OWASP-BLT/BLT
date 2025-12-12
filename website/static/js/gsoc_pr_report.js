@@ -6,6 +6,9 @@ window.gsocData = {
     reportData: []
 };
 
+// Silent logger (replaces console.error)
+function safeLog() {}
+
 // Function to extract chart data (callable from both chart rendering and PDF generation)
 function getChartData() {
     let yearlyCategories = [];
@@ -82,7 +85,7 @@ function parseEscapedJSON(str) {
         
         return JSON.parse(finalStr);
     } catch (err) {
-        console.error("JSON parse failed:", err, str);
+        safeLog("JSON parse failed:", err, str);
         return null;
     }
 }
@@ -97,7 +100,7 @@ function parseDataFromDOM() {
             window.gsocData.topReposChart = parseEscapedJSON(dataDiv.dataset.topRepos) || {};
             window.gsocData.reportData = parseEscapedJSON(dataDiv.dataset.reportData) || [];
         } catch (e) {
-            console.error("Error parsing DOM data:", e);
+            safeLog("Error parsing DOM data:", e);
             // Initialize with empty values
             window.gsocData.summary = {};
             window.gsocData.yearlyChart = {};
@@ -692,7 +695,7 @@ async function downloadReport(event) {
         button.disabled = false;
 
     } catch (error) {
-        console.error('PDF generation error:', error);
+        safeLog('PDF generation error:', error);
         alert('Error generating PDF report. Please try again.');
 
         // Restore button state on error 
