@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 series: topReposSeries,
                 labels: topReposLabels,
-                colors: ['#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FECACA', '#FEE2E2'],
+                colors: ['#DC2626', '#F97316', '#F59E0B', '#10B981', '#3C50E0', '#8B5CF6', '#EC4899',],
                 plotOptions: {
                     pie: {
                         donut: {
