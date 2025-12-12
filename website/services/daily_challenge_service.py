@@ -39,8 +39,11 @@ class DailyChallengeService:
     @staticmethod
     def _check_and_assign_new_challenge_if_needed(user):
         """
-        Check if 24 hours have passed since last check-in submission.
-        If so, assign a new random challenge.
+        Check if a new challenge should be assigned for today.
+        Assigns a new challenge if:
+        1. User has no check-ins yet, OR
+        2. User's last check-in was on a different date (new day), OR
+        3. User's last check-in was more than 24 hours ago
 
         Args:
             user: User instance (must be authenticated)
@@ -52,32 +55,51 @@ class DailyChallengeService:
 
         try:
             now = timezone.now()
+            today = now.date()
 
             # Get the most recent check-in
             last_checkin = DailyStatusReport.objects.filter(user=user).order_by("-created").first()
 
             if not last_checkin:
                 # No check-ins yet, assign first challenge
-                DailyChallengeService._assign_random_challenge(user, now.date())
-                return
-
-            # Check if 24 hours have passed since last check-in
-            time_since_checkin = now - last_checkin.created
-            if time_since_checkin < timedelta(hours=24):
-                # Less than 24 hours, don't assign new challenge yet
-                return
-
-            # 24 hours have passed, check if user already has a challenge for today
-            today = now.date()
-            existing_challenge = UserDailyChallenge.objects.filter(
-                user=user,
-                challenge_date=today,
-                status="assigned",
-            ).first()
-
-            if not existing_challenge:
-                # No challenge for today, assign a new one
                 DailyChallengeService._assign_random_challenge(user, today)
+                return
+
+            # Check if last check-in was on a different date (new day)
+            last_checkin_date = last_checkin.date
+            if last_checkin_date < today:
+                # Last check-in was on a previous day, assign new challenge for today
+                existing_challenge = UserDailyChallenge.objects.filter(
+                    user=user,
+                    challenge_date=today,
+                    status="assigned",
+                ).first()
+
+                if not existing_challenge:
+                    DailyChallengeService._assign_random_challenge(user, today)
+                return
+
+            # If last check-in was today, check if 24 hours have passed since creation
+            # This handles edge cases where check-in was created earlier today
+            # but user is checking again (shouldn't assign duplicate challenge for same day)
+            if last_checkin_date == today:
+                # Already have a check-in for today, don't assign new challenge
+                # The challenge assignment happens when the check-in is submitted
+                return
+
+            # Fallback: Check if 24 hours have passed (for edge cases)
+            time_since_checkin = now - last_checkin.created
+            if time_since_checkin >= timedelta(hours=24):
+                # 24 hours have passed, check if user already has a challenge for today
+                existing_challenge = UserDailyChallenge.objects.filter(
+                    user=user,
+                    challenge_date=today,
+                    status="assigned",
+                ).first()
+
+                if not existing_challenge:
+                    # No challenge for today, assign a new one
+                    DailyChallengeService._assign_random_challenge(user, today)
         except Exception as e:
             logger.error(
                 f"Error checking and assigning new challenge for user {user.username}: {e}",
