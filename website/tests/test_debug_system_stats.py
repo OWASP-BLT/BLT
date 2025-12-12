@@ -31,6 +31,7 @@ class DebugPanelAPITest(TestCase):
             ("_github_sync_started_at", None),
             ("_github_sync_last_finished_at", None),
             ("_github_sync_last_error", []),
+            ("_github_sync_lock", views._github_sync_lock),
         ]:
             if hasattr(views, attr):
                 setattr(views, attr, value)

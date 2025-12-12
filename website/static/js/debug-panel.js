@@ -481,10 +481,10 @@ DB Connections: ${stats.database?.connections || "N/A"}
     if (!iso) return "N/A";
     try {
       const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return iso;
+      if (Number.isNaN(d.getTime())) return "Invalid date";
       return d.toLocaleString();
     } catch (e) {
-      return iso;
+      return "Invalid date";
     }
   },
 

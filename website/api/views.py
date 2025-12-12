@@ -1774,7 +1774,7 @@ def _run_github_sync():
 
                     _github_sync_running = False
                     _github_sync_thread = None
-                    # Freeze errors to an immutable tuple to avoid accidental mutation post-finish
+                    # Freeze errors to an tuple to avoid accidental mutation post-finish
                     try:
                         _github_sync_last_error = tuple(_github_sync_last_error)
                     except Exception as e:
@@ -1946,7 +1946,6 @@ class DebugSystemStatsApiView(APIView):
                     }
             finally:
                 try:
-                    acquired = _github_sync_lock.acquire(timeout=2)
                     if "acquired" in locals() and acquired:
                         _github_sync_lock.release()
                 except Exception:
@@ -2103,7 +2102,7 @@ class DebugPanelStatusApiView(APIView):
     def get(self, request, *args, **kwargs):
         # Snapshot sync status atomically
         try:
-            _github_sync_lock.acquire(timeout=2)
+            acquired = _github_sync_lock.acquire(timeout=2)
             status_snapshot = {
                 "running": _github_sync_running,
                 "started_at": _github_sync_started_at,
@@ -2114,7 +2113,8 @@ class DebugPanelStatusApiView(APIView):
             }
         finally:
             try:
-                _github_sync_lock.release()
+                if acquired:
+                    _github_sync_lock.release()
             except Exception:
                 logger.exception("Failed releasing _github_sync_lock in panel status")
 
@@ -2138,9 +2138,10 @@ class DebugSyncGithubDataApiView(APIView):
             # Acquire the lock briefly to set start state atomically
             if not _github_sync_lock.acquire(timeout=2):
                 logger.warning("Could not acquire _github_sync_lock in POST handler")
+                # Treat lock acquisition failure as an internal error for consistency with tests
                 return Response(
-                    {"success": False, "error": "Sync is busy. Please try again shortly."},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    {"success": False, "error": "Unable to start sync at this time"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
             try:
