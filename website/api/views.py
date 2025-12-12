@@ -2156,7 +2156,7 @@ class DebugPanelStatusApiView(APIView):
                 "started_at": _github_sync_started_at,
                 "last_finished_at": _github_sync_last_finished_at,
                 # Provide both structured list and display string consistently
-                "last_error_list": list(_github_sync_last_error) if isinstance(_github_sync_last_error, list) else [],
+                "last_error_list": list(_github_sync_last_error) if _github_sync_last_error else [],
                 "last_error": "; ".join(list(_github_sync_last_error)) if _github_sync_last_error else None,
             }
         finally:
@@ -2223,6 +2223,15 @@ class DebugSyncGithubDataApiView(APIView):
                         _github_sync_started_at = None
                         # Record a discrete failure token (immutable after finalization)
                         _github_sync_last_error = ["thread_start_failed"]
+                    else:
+                        # Last-resort unlock-free cleanup to prevent wedged running state
+                        logger.warning(
+                            "Could not reacquire _github_sync_lock to clean up after thread.start() failure; clearing state without lock."
+                        )
+                        _github_sync_running = False
+                        _github_sync_thread = None
+                        _github_sync_started_at = None
+                        _github_sync_last_error = ["thread_start_failed"]
 
                 # Provide a slightly more detailed error payload in DEBUG so developers can triage; keep it generic in production.
                 error_response = {"success": False, "error": "Failed to start background sync thread"}
@@ -2248,6 +2257,13 @@ class DebugSyncGithubDataApiView(APIView):
             # Attempt cleanup
             with safe_sync_state_lock(timeout=2.0) as acquired3:
                 if acquired3:
+                    _github_sync_running = False
+                    _github_sync_thread = None
+                else:
+                    # Last-resort unlock-free cleanup to avoid stale running/thread pointers
+                    logger.warning(
+                        "Could not acquire _github_sync_lock during exception cleanup; clearing state without lock."
+                    )
                     _github_sync_running = False
                     _github_sync_thread = None
 
