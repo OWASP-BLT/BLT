@@ -2212,7 +2212,7 @@ class DebugSyncGithubDataApiView(APIView):
                 if _github_sync_running:
                     return Response(
                         {"success": False, "message": "GitHub sync is already running"},
-                        status=status.HTTP_200_OK,
+                        status=status.HTTP_409_CONFLICT,
                     )
 
                 # Initialize sync state
