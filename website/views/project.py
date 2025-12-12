@@ -2213,6 +2213,7 @@ def gsoc_pr_report(request):
                 GitHubIssue.objects.filter(
                     type="pull_request", is_merged=True, merged_at__gte=start_date, merged_at__lte=end_date
                 )
+                .exclude(contributor__contributor_type="Bot")  # ← removes bot PRs
                 .values("repo__name", "repo__repo_url")
                 .annotate(pr_count=Count("id"), unique_contributors=Count("contributor", distinct=True))
                 .order_by("-pr_count")
