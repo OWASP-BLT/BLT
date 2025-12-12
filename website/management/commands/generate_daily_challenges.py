@@ -44,12 +44,25 @@ class Command(BaseCommand):
         else:
             target_date = timezone.now().date()
 
-        # Get active challenge types
-        active_challenges = DailyChallenge.objects.filter(is_active=True)
+        # Get active challenge types, excluding streak_milestone
+        # Streak milestones should be handled separately as they only complete on specific days
+        # Only include challenges that can be completed on any day
+        daily_completable_types = [
+            "early_checkin",
+            "positive_mood",
+            "complete_all_fields",
+            "no_blockers",
+            "detailed_reporter",
+            "goal_achiever",
+            "detailed_planner",
+        ]
+        active_challenges = DailyChallenge.objects.filter(
+            is_active=True, challenge_type__in=daily_completable_types
+        )
         if not active_challenges.exists():
             self.stdout.write(
                 self.style.WARNING(
-                    "No active challenge types found. Create challenge types in admin first.",
+                    "No active daily-completable challenge types found. Create challenge types in admin first.",
                 ),
             )
             return
