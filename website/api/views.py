@@ -380,41 +380,36 @@ class LeaderboardApiViewSet(APIView):
         month = self.request.query_params.get("month")
         year = self.request.query_params.get("year")
 
-        try:
-            _github_sync_lock
-        except NameError:
-            _github_sync_lock = threading.Lock()
+        if not year:
+            return Response("Year not passed", status=400)
 
-        # Maintain both underscored and public alias variables for tests
-        try:
-            _github_sync_running
-        except NameError:
-            _github_sync_running = False
-        github_sync_running = _github_sync_running
+        elif isinstance(year, str) and not year.isdigit():
+            return Response("Invalid year passed", status=400)
 
-        try:
-            _github_sync_thread
-        except NameError:
-            _github_sync_thread = None
-        github_sync_thread = _github_sync_thread
+        if month:
+            if not month.isdigit():
+                return Response("Invalid month passed", status=400)
 
-        try:
-            _github_sync_started_at
-        except NameError:
-            _github_sync_started_at = None
-        github_sync_started_at = _github_sync_started_at
+            try:
+                date = datetime(int(year), int(month), 1)
+            except:
+                return Response("Invalid month or year passed", status=400)
 
-        try:
-            _github_sync_last_finished_at
-        except NameError:
-            _github_sync_last_finished_at = None
-        github_sync_last_finished_at = _github_sync_last_finished_at
-
-        try:
-            _github_sync_last_error
-        except NameError:
-            _github_sync_last_error = []
-        github_sync_last_error = _github_sync_last_error
+        queryset = global_leaderboard.get_leaderboard(month, year, api=True)
+        users = []
+        rank_user = 1
+        for each in queryset:
+            temp = {}
+            temp["rank"] = rank_user
+            temp["id"] = each["id"]
+            temp["User"] = each["username"]
+            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
+            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
+            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
+            temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
+            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
+            rank_user = rank_user + 1
+            users.append(temp)
 
         page = paginator.paginate_queryset(users, request)
         return paginator.get_paginated_response(page)
