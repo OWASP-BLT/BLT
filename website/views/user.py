@@ -1240,7 +1240,11 @@ def safe_parse_github_datetime(value, *, default=None, field_name=""):
     if not value:
         return default
     try:
-        return dateutil_parser.parse(value)
+        parsed = dateutil_parser.parse(value)
+        # Ensure timezone awareness
+        if timezone.is_naive(parsed):
+            parsed = timezone.make_aware(parsed)
+        return parsed
     except (ParserError, ValueError, TypeError, OverflowError) as exc:
         logger.warning(
             "Failed to parse GitHub datetime for %s: %r (%s)",
@@ -1518,11 +1522,17 @@ def handle_issue_event(payload):
 
             # Update closed_at timestamp if the issue was closed
             if action == "closed" and issue_data.get("closed_at"):
-                github_issue.closed_at = dateutil_parser.parse(issue_data["closed_at"])
+                parsed_closed = dateutil_parser.parse(issue_data["closed_at"])
+                if timezone.is_naive(parsed_closed):
+                    parsed_closed = timezone.make_aware(parsed_closed)
+                github_issue.closed_at = parsed_closed
 
             # Update updated_at timestamp
             if issue_data.get("updated_at"):
-                github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
+                parsed_updated = dateutil_parser.parse(issue_data["updated_at"])
+                if timezone.is_naive(parsed_updated):
+                    parsed_updated = timezone.make_aware(parsed_updated)
+                github_issue.updated_at = parsed_updated
 
             github_issue.save()
             logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")

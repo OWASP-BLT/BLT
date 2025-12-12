@@ -145,7 +145,7 @@ def reverse_create_challenges(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0260_add_username_to_slackbotactivity"),
+        ("website", "0261_add_connected_action_type"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

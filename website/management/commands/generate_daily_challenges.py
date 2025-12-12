@@ -56,8 +56,8 @@ class Command(BaseCommand):
             "goal_achiever",
             "detailed_planner",
         ]
-        active_challenges = DailyChallenge.objects.filter(is_active=True, challenge_type__in=daily_completable_types)
-        if not active_challenges.exists():
+        challenge_list = list(DailyChallenge.objects.filter(is_active=True, challenge_type__in=daily_completable_types))
+        if not challenge_list:
             self.stdout.write(
                 self.style.WARNING(
                     "No active daily-completable challenge types found. Create challenge types in admin first.",
@@ -66,18 +66,16 @@ class Command(BaseCommand):
             return
 
         # Get all active users
-        users = User.objects.filter(is_active=True)
-        if not users.exists():
+        users_list = list(User.objects.filter(is_active=True))
+        if not users_list:
             self.stdout.write(self.style.WARNING("No active users found."))
             return
-
-        challenge_list = list(active_challenges)
         created_count = 0
         updated_count = 0
         skipped_count = 0
         error_count = 0
 
-        for user in users:
+        for user in users_list:
             # Check if challenge already exists
             existing = UserDailyChallenge.objects.filter(
                 user=user,

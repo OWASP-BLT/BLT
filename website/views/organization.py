@@ -1364,8 +1364,16 @@ def sizzle_daily_log(request):
             return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
 
         if request.method == "POST":
-            previous_work = request.POST.get("previous_work")
-            next_plan = request.POST.get("next_plan")
+            previous_work = request.POST.get("previous_work", "").strip()
+            next_plan = request.POST.get("next_plan", "").strip()
+            
+            # Server-side validation for required fields
+            if not previous_work or not next_plan:
+                return JsonResponse(
+                    {"success": False, "message": "Previous work and next plan are required."},
+                    status=400,
+                )
+            
             blockers_type = request.POST.get("blockers")
             blockers_other = request.POST.get("blockers_other", "")
             # Combine blockers: if "other" selected, require blockers_other to be non-empty
@@ -1509,7 +1517,7 @@ def sizzle_daily_log(request):
                         total_points_awarded += uc.points_awarded
 
             except Exception as e:
-                logger.error(f"Error checking challenges: {e}")
+                logger.error("Error checking challenges", exc_info=True)
 
             # Set next_challenge_at to 24 hours from now for today's challenges
             # This must be done AFTER challenge assignment to ensure newly assigned challenges are updated
