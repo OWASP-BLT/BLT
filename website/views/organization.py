@@ -1407,8 +1407,14 @@ def sizzle_daily_log(request):
                     {"success": False, "message": "Mood selection is required."},
                     status=400,
                 )
+            # Log only non-sensitive metadata to avoid PII/secrets in logs
             logger.debug(
-                f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
+                f"Check-in submission: previous_work_length={len(previous_work) if previous_work else 0}, "
+                f"next_plan_length={len(next_plan) if next_plan else 0}, "
+                f"blockers_type={blockers_type}, "
+                f"blockers_length={len(blockers) if blockers else 0}, "
+                f"goal_accomplished={goal_accomplished}, "
+                f"current_mood={current_mood}"
             )
 
             # Use get_or_create to handle concurrent submissions gracefully
