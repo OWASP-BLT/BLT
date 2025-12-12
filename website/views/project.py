@@ -2216,6 +2216,9 @@ def gsoc_pr_report(request):
                     merged_at__gte=start_date,
                     merged_at__lte=end_date,
                 )
+                # remove NULL contributors BEFORE bot filters
+                .exclude(contributor__isnull=True)
+                # Existing bot exclusion (now safe)
                 .exclude(
                     Q(contributor__contributor_type__iexact="Bot")
                     | Q(contributor__name__iendswith="[bot]")
