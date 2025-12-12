@@ -63,10 +63,12 @@ from website.models import (
     TimeLog,
     Trademark,
     UserBadge,
+    UserDailyChallenge,
     Wallet,
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
+from website.services.daily_challenge_service import DailyChallengeService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title, rebuild_safe_url, validate_file_type
 
 logger = logging.getLogger(__name__)
@@ -1370,7 +1372,7 @@ def sizzle_daily_log(request):
                 if not blockers_other or not blockers_other.strip():
                     return JsonResponse(
                         {
-                            "success": "false",
+                            "success": False,
                             "message": "Please provide a description when selecting 'Other' for blockers.",
                         },
                         status=400,
@@ -1383,7 +1385,7 @@ def sizzle_daily_log(request):
             else:
                 # Server-side validation: blockers is required
                 return JsonResponse(
-                    {"success": "false", "message": "Blockers field is required."},
+                    {"success": False, "message": "Blockers field is required."},
                     status=400,
                 )
             # Handle goal_accomplished as radio button (yes/no) - require explicit selection
@@ -1391,13 +1393,19 @@ def sizzle_daily_log(request):
             if goal_accomplished_value not in ["yes", "no"]:
                 return JsonResponse(
                     {
-                        "success": "false",
+                        "success": False,
                         "message": "Goal accomplished field is required. Please select 'Yes' or 'No'.",
                     },
                     status=400,
                 )
             goal_accomplished = goal_accomplished_value == "yes"
             current_mood = request.POST.get("feeling")
+            # Validate mood field
+            if not current_mood or not current_mood.strip():
+                return JsonResponse(
+                    {"success": False, "message": "Mood selection is required."},
+                    status=400,
+                )
             logger.debug(
                 f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
             )
@@ -1424,7 +1432,7 @@ def sizzle_daily_log(request):
                     )
                     return JsonResponse(
                         {
-                            "success": "false",
+                            "success": False,
                             "message": "You have already submitted a check-in for today. Please wait 24 hours from your last submission to submit again.",
                         },
                         status=400,
@@ -1439,15 +1447,13 @@ def sizzle_daily_log(request):
                 )
                 return JsonResponse(
                     {
-                        "success": "false",
+                        "success": False,
                         "message": "An error occurred while submitting your check-in. Please try again.",
                     },
                     status=500,
                 )
 
             # Set next_challenge_at to 24 hours from now for today's challenges only
-            from website.models import UserDailyChallenge
-
             next_challenge_time = now() + timedelta(hours=24)
             UserDailyChallenge.objects.filter(
                 user=request.user,
@@ -1459,8 +1465,6 @@ def sizzle_daily_log(request):
             completed_challenges_data = []
             total_points_awarded = 0
             try:
-                from website.services.daily_challenge_service import DailyChallengeService
-
                 completed_challenges = DailyChallengeService.check_and_complete_challenges(
                     request.user,
                     daily_status,
@@ -1468,8 +1472,6 @@ def sizzle_daily_log(request):
 
                 if completed_challenges:
                     # Get details of completed challenges using timezone-aware today
-                    from website.models import UserDailyChallenge
-
                     # Get challenge titles to filter at DB level
                     challenge_titles = list(completed_challenges)
 
@@ -1499,7 +1501,7 @@ def sizzle_daily_log(request):
 
             return JsonResponse(
                 {
-                    "success": "true",
+                    "success": True,
                     "message": "Daily status report submitted successfully.",
                     "completed_challenges": completed_challenges_data,
                     "total_points": total_points_awarded,
@@ -2282,11 +2284,6 @@ def truncate_text(text, length=15):
 @login_required
 def add_sizzle_checkIN(request):
     try:
-        from datetime import timedelta
-
-        from website.models import DailyStatusReport, UserDailyChallenge
-        from website.services.daily_challenge_service import DailyChallengeService
-
         # Fetch yesterday's report
         yesterday = now().date() - timedelta(days=1)
         yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
