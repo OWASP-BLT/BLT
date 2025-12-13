@@ -62,7 +62,7 @@
                 <div class="flex flex-row gap-4">
                     <button onclick="openFollowingModal();"
                             class="font-medium font-lg text-black dark:text-white hover:text-red-600 group/f transition-all duration-200">
-                        {{ following|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800 dark:text-gray-200"> {% trans "Follwings" %} </span>
+                        {{ following|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800 dark:text-gray-200"> {% trans "Following" %} </span>
                     </button>
                     <button onclick="openFollowers();"
                             class="font-medium font-lg text-black dark:text-white hover:text-red-600 group/f transition-all duration-200">
@@ -326,7 +326,7 @@
                                                  width="30"
                                                  class="rounded-full size-[32px]"
                                                  alt="Organization logo"
-                                                 onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                 onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                         </a>
                                         <div>
                                             @{{ activity.user|default:"Anonymous" }}
@@ -474,7 +474,7 @@
                                              width="20"
                                              class="size-11"
                                              alt="Organization logo"
-                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                     </a>
                                     <a class="hover:text-red-600"
                                        href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:20 }}</a>
@@ -584,7 +584,7 @@
                                         <div class="flex justify-between items-center p-4 hover:bg-gray-50 transition-all duration-200">
                                             <a href="{{ pr.url }}"
                                                class="text-blue-600 hover:text-red-600 font-medium hover:underline transition-all duration-200">{{ pr.title }}</a>
-                                            <span class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} = text-purple-700 {% elif pr.state == 'open' %} text-yellow-700 {% else %} text-red-700 {% endif %} text-lg">
+                                            <span class="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium {% if pr.is_merged %} text-purple-700 {% elif pr.state == 'open' %} text-yellow-700 {% else %} text-red-700 {% endif %} text-lg">
                                                 {% if pr.is_merged %}
                                                     <i class="fas fa-check-circle rounded-full text-lg"></i>
                                                 {% elif pr.state == 'open' %}
@@ -779,7 +779,7 @@
                                 <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
                                     <div class="flex items-center">
                                         <a href="{% url 'domain' slug=activity.domain_name %}">
-                                            <img src="https://www.{{ activity.domain_name }}/favicon.ico" height="30" width="30" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            <img src="https://www.{{ activity.domain_name }}/favicon.ico" height="30" width="30" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                         </a>
                                         <div class="w-[80%]">
                                             <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
@@ -929,7 +929,7 @@
                                 <li class="flex justify-between mb-3 items-center">
                                     <div class="flex w-full">
                                         <a href="{% url 'domain' slug=website.name %}">
-                                            <img src="https://www.{{ website.name }}/favicon.ico" height="20" width="20" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            <img src="https://www.{{ website.name }}/favicon.ico" height="20" width="20" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                         </a>
                                         <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
                                     </div>
