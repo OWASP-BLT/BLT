@@ -14,11 +14,13 @@
         </div>
         <div class="flex items-center gap-2">
             <button id="toggle-history"
+                    type="button"
                     class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
                 <i class="fas fa-eye"></i>
                 <span class="hidden sm:inline">Show/Hide</span>
             </button>
             <button id="export-history"
+                    type="button"
                     class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2">
                 <i class="fas fa-download"></i>
                 <span class="hidden sm:inline">Export</span>
@@ -155,7 +157,8 @@
                                             {{ h.old_value|truncatechars:50 }}
                                         </div>
                                         {% if h.old_value|length > 50 %}
-                                            <button class="text-xs text-red-600 dark:text-red-400 mt-1 hover:underline show-full-value">
+                                            <button type="button"
+                                                    class="text-xs text-red-600 dark:text-red-400 mt-1 hover:underline show-full-value">
                                                 Show
                                                 more
                                             </button>
@@ -207,12 +210,15 @@
                                             title="Copy new value">
                                         <i class="fas fa-copy mr-1"></i> New
                                     </button>
-                                    <button class="text-xs px-3 py-1 text-[#e74c3c] bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors duration-200 revert-change"
-                                            data-field="{{ h.field_name }}"
-                                            data-old-value="{{ h.old_value }}"
-                                            title="Revert this change">
-                                        <i class="fas fa-undo mr-1"></i> Revert
-                                    </button>
+                                    {% if HISTORY_REVERT_ENABLED %}
+                                        <button type="button"
+                                                class="text-xs px-3 py-1 text-[#e74c3c] bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors duration-200 revert-change"
+                                                data-field="{{ h.field_name }}"
+                                                data-old-value="{{ h.old_value }}"
+                                                title="Revert this change">
+                                            <i class="fas fa-undo mr-1"></i> Revert
+                                        </button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -252,7 +258,8 @@
                     modified.
                 </p>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <button class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
+                    <button type="button"
+                            class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
                         <i class="fas fa-plus-circle"></i>
                         Make First Change
                     </button>
@@ -301,10 +308,6 @@
         }
     }
 
-    .timeline-dot {
-        animation: timelinePulse 2s infinite;
-    }
-
     /* Truncated text expansion */
     .text-expanded {
         max-height: none;
@@ -316,17 +319,6 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .history-card {
-            padding: 1rem;
-        }
-
-        .history-grid {
-            grid-template-columns: 1fr;
-        }
     }
 </style>
 <script>
@@ -437,9 +429,10 @@
         copyButtons.forEach(button => {
             button.addEventListener('click', function () {
                 const value = this.dataset.value;
-                navigator.clipboard.writeText(value).then(() => {
-                    showToast('Value copied to clipboard', 'success');
-                });
+                navigator.clipboard.writeText(value)
+                    .then(() => showToast('Value copied to clipboard', 'success'))
+                    .catch(() => showToast('Copy failed (clipboard unavailable)', 'error'));
+             });
             });
         });
         const HISTORY_REALTIME_ENABLED = false;
@@ -487,7 +480,10 @@
 
         function checkForUpdates() {
             fetch(`${INCIDENT_API_BASE}history/updates/?since=${lastUpdate}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
                 .then(data => {
                     if (data.updates && data.updates.length > 0) {
                         lastUpdate = new Date().toISOString();
