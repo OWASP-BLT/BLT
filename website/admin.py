@@ -7,7 +7,6 @@ from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
 from django.utils.html import format_html
