@@ -1,10 +1,15 @@
 import json
 import logging
+import os
 import smtplib
+import sys
 import uuid
 from datetime import datetime
+from functools import wraps
 from urllib.parse import urlparse
 
+import django
+import psutil
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
@@ -12,7 +17,10 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.core.management import call_command
+from django.db import connection
+from django.db.models import Count, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -742,33 +750,73 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.prefetch_related("contributors").all()
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        )
+
+        stars = request.query_params.get("stars")
+        forks = request.query_params.get("forks")
+
+        if stars is not None:
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if forks is not None:
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         project_data = []
         for project in projects:
             contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
+            contributors_manager = getattr(project, "contributors", None)
+            if contributors_manager:
+                for contributor in contributors_manager.all():
+                    contributor_info = ContributorSerializer(contributor)
+                    contributors_data.append(contributor_info.data)
+
+            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
 
-        return Response(
-            {"count": len(project_data), "projects": project_data},
-            status=200,
-        )
+        return Response({"results": project_data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
-        projects = Project.objects.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+
+        projects_qs = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
+
+        projects = projects_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
         ).distinct()
 
         project_data = []
@@ -777,7 +825,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -794,14 +844,48 @@ class ProjectViewSet(viewsets.ModelViewSet):
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
-        projects = Project.objects.all()
+        # Annotate Project with aggregated stars and forks from related Repos
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
 
+        # Freshness is NOT a DB field (SerializerMethodField)
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            pass  # Safe no-op
+
+        # SAFE stars validation
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # SAFE forks validation
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -811,7 +895,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -1055,7 +1141,7 @@ class OwaspComplianceChecker(APIView):
         if not url:
             return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Run all compliance checks
+        # Rerun all compliance checks
         github_check = self.check_github_compliance(url)
         website_check = self.check_website_compliance(url)
         vendor_check = self.check_vendor_neutrality(url)
@@ -1561,3 +1647,306 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+def _is_local_host(host: str, db_name: str | None = None) -> bool:
+    """
+    Determine if a request host represents a local environment.
+    Optionally treats SQLite in-memory DB as local for redaction logic.
+    """
+    host_lower = (host or "").lower()
+    host_without_port = host_lower.split(":")[0]
+    return (
+        "localhost" in host_lower
+        or host_without_port == "127.0.0.1"
+        or host_without_port.startswith("127.")
+        or host_lower == "testserver"
+        or (db_name == ":memory:" if db_name is not None else False)
+    )
+
+
+def debug_required(func):
+    """
+    Decorator to ensure endpoint only works in DEBUG mode and local environment.
+    Adds additional protection beyond just DEBUG flag.
+    """
+
+    @wraps(func)
+    def wrapper(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            return Response(
+                {"success": False, "error": "This endpoint is only available in DEBUG mode."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        host = request.get_host()
+        if not _is_local_host(host):
+            logger.warning("Debug endpoint accessed from non-local environment: %s", host)
+            return Response(
+                {"success": False, "error": "This endpoint is only available in local development."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return func(self, request, *args, **kwargs)
+
+    return wrapper
+
+
+class DebugSystemStatsApiView(APIView):
+    """Get current system statistics for debug panel"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get database name
+            db_name = settings.DATABASES["default"]["NAME"]
+
+            # Redact database name in non-local environments (defense-in-depth)
+            if not _is_local_host(request.get_host(), db_name=db_name):
+                db_name = "[REDACTED]"
+
+            # Get database version with error handling
+            db_version = "Unknown"
+            try:
+                with connection.cursor() as cursor:
+                    if connection.vendor == "postgresql":
+                        cursor.execute("SELECT version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "sqlite":
+                        cursor.execute("SELECT sqlite_version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "mysql":
+                        cursor.execute("SELECT VERSION();")
+                        db_version = cursor.fetchone()[0]
+            except Exception as e:
+                logger.error("Failed to get database version: %s", e, exc_info=True)
+
+            # Get system stats with error handling
+            memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+
+            try:
+                memory = psutil.virtual_memory()
+                memory_stats = {
+                    "total": f"{memory.total / (1024**3):.2f} GB",
+                    "used": f"{memory.used / (1024**3):.2f} GB",
+                    "percent": f"{memory.percent}%",
+                }
+            except Exception as mem_error:
+                logger.warning("Could not fetch memory stats: %s", mem_error)
+
+            try:
+                disk = psutil.disk_usage("/")
+                disk_stats = {
+                    "total": f"{disk.total / (1024**3):.2f} GB",
+                    "used": f"{disk.used / (1024**3):.2f} GB",
+                    "percent": f"{disk.percent}%",
+                }
+            except Exception as disk_error:
+                logger.warning("Could not fetch disk stats: %s", disk_error)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+                        "django_version": django.get_version(),
+                        "database": {
+                            "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
+                            "name": db_name,
+                            "version": db_version,
+                        },
+                        "memory": memory_stats,
+                        "disk": disk_stats,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error("Error fetching system stats: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch system statistics"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCacheInfoApiView(APIView):
+    """Get cache backend information and statistics"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache_backend = settings.CACHES["default"]["BACKEND"].split(".")[-1]
+
+            # Security: Don't expose actual cache keys as they may contain sensitive data
+            keys_count = 0
+
+            # Only attempt key listing for Redis backend; for other backends just log a note.
+            if "redis" in cache_backend.lower():
+                try:
+                    if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
+                        all_keys = list(cache._cache.keys("*"))
+                        keys_count = len(all_keys)
+                except Exception:
+                    logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
+            else:
+                logger.info("Cache key listing not supported for backend: %s", cache_backend)
+
+            hit_ratio = "N/A"
+            try:
+                if hasattr(cache, "get_stats"):
+                    stats = cache.get_stats()
+                    hits = stats.get("hits", 0)
+                    misses = stats.get("misses", 0)
+                    total = hits + misses
+                    if total > 0:
+                        hit_ratio = f"{(hits/total)*100:.2f}%"
+            except Exception:
+                logger.warning("Failed to retrieve cache hit ratio stats", exc_info=True)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "backend": cache_backend,
+                        "keys_count": keys_count,
+                        "hit_ratio": hit_ratio,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error("Error fetching cache info: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch cache information"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPopulateDataApiView(APIView):
+    """Populate database with test data"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            # Load initial data fixture from a resolved path and fail gracefully if missing
+            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
+            if not os.path.exists(fixture_path):
+                return Response(
+                    {"success": False, "error": "Fixture file not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            call_command("loaddata", fixture_path, verbosity=0)
+
+            return Response({"success": True, "message": "Test data populated successfully"})
+        except Exception as e:
+            logger.error("Error populating test data: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugClearCacheApiView(APIView):
+    """Clear all cache data"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache.clear()
+
+            return Response({"success": True, "message": "Cache cleared successfully"})
+        except Exception as e:
+            logger.error("Error clearing cache: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DebugRunMigrationsApiView(APIView):
+    """Run pending database migrations"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        # Extra safety: restrict to superusers and require an explicit confirmation flag
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only superusers can run migrations"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        confirm = request.data.get("confirm")
+        if confirm is not True:
+            return Response(
+                {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            call_command("migrate", interactive=False, verbosity=0)
+
+            return Response({"success": True, "message": "Migrations completed successfully"})
+        except Exception as e:
+            logger.error("Error running migrations: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to run migrations. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCollectStaticApiView(APIView):
+    """Collect static files"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        # Restrict collectstatic to superusers to avoid accidental abuse
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only superusers can collect static files"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            call_command("collectstatic", interactive=False, verbosity=0)
+
+            return Response({"success": True, "message": "Static files collected successfully"})
+        except Exception as e:
+            logger.error("Error collecting static files: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to collect static files. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPanelStatusApiView(APIView):
+    """Get overall debug panel status"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "debug_mode": settings.DEBUG,
+                    "testing_mode": getattr(settings, "TESTING", False),
+                    "environment": "local" if _is_local_host(request.get_host()) else "unknown",
+                },
+            }
+        )

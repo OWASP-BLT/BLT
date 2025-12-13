@@ -25,6 +25,13 @@ from website.api.views import (
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CheckDuplicateBugApiView,
+    DebugCacheInfoApiView,
+    DebugClearCacheApiView,
+    DebugCollectStaticApiView,
+    DebugPanelStatusApiView,
+    DebugPopulateDataApiView,
+    DebugRunMigrationsApiView,
+    DebugSystemStatsApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -1246,5 +1253,17 @@ if settings.DEBUG:
 
     urlpatterns = [
         re_path(r"^__debug__/", include(debug_toolbar.urls)),
+        # ⚠️ WARNING: Debug Panel APIs - ONLY FOR LOCAL DEVELOPMENT
+        # These endpoints expose sensitive system information and must NEVER be
+        # accessible in production. Ensure DEBUG=False in production settings.
+        # Endpoints are protected by @debug_required decorator.
+        path("api/debug/system-stats/", DebugSystemStatsApiView.as_view(), name="api_debug_system_stats"),
+        path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
+        path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
+        path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
+        path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
+        path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
+        path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
     ] + urlpatterns
+
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
