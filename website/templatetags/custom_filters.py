@@ -28,7 +28,10 @@ def to_json(value):
 @register.filter
 def replace(value, arg):
     """Replace substring. Usage: {{ value|replace:"old|new" }}"""
-    parts = arg.split("|")
-    if len(parts) == 2:
-        return str(value).replace(parts[0], parts[1])
+    if arg is None:
+        return value
+    old_new = str(arg).split("|", 1)
+    if len(old_new) == 2:
+        old, new = old_new
+        return str(value).replace(old, new)
     return value

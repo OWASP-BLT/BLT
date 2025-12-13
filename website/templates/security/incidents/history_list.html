@@ -25,14 +25,14 @@
         </div>
     </div>
     <div id="history-container" class="transition-all duration-300">
-        {% if incident.history.all %}
+        {% if history_entries %}
             <!-- History Summary Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-5">
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                                {{ incident.history.all|length
+                                {{ history_entries|length
                                 }}
                             </div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Total Changes</div>
@@ -46,7 +46,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                                {% with last=incident.history.all|first %}
+                                {% with last=history_entries|first %}
                                     {% if last.changed_by %}
                                         {{ last.changed_by.username }}
                                     {% else %}
@@ -65,7 +65,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                                {{ incident.history.all|slice:"0:1"|first.changed_at|date:"M j" }}
+                                {{ history_entries|slice:"0:1"|first.changed_at|date:"M j" }}
                             </div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Last Updated</div>
                         </div>
@@ -93,7 +93,7 @@
                 </div>
                 <!-- History Items -->
                 <div class="space-y-6">
-                    {% for h in incident.history.all %}
+                    {% for h in history_entries %}
                         <div class="history-item relative pl-12 md:pl-16 group"
                              data-field="{{ h.field_name }}">
                             <!-- Timeline Dot -->
@@ -223,7 +223,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="text-sm text-gray-600 dark:text-gray-400">
                         <i class="fas fa-filter mr-2"></i>
-                        Showing {{ incident.history.all|length }} changes
+                        Showing {{ history_entries|length }} changes
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <button class="filter-btn px-3 py-1 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -329,6 +329,7 @@
     }
 </style>
 <script>
+    const INCIDENT_API_BASE = `/api/v1/security-incidents/{{ incident.id }}/`;
     document.addEventListener("DOMContentLoaded", function () {
         // Toggle history visibility
         const toggleBtn = document.getElementById('toggle-history');
@@ -453,7 +454,7 @@
 
                         if (confirm(`Are you sure you want to revert ${field} to "${oldValue}"?`)) {
                             // Make API call to revert change
-                            fetch(`/api/incident/{{ incident.id }}/revert/`, {
+                            fetch(`${INCIDENT_API_BASE}revert/`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -484,7 +485,7 @@
         let lastUpdate = new Date().toISOString();
 
         function checkForUpdates() {
-            fetch(`/api/incident/{{ incident.id }}/history/updates/?since=${lastUpdate}`)
+            fetch(`${INCIDENT_API_BASE}history/updates/?since=${lastUpdate}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.updates && data.updates.length > 0) {
@@ -505,7 +506,7 @@
         }
 
         // Check for updates every 30 seconds
-        if (HISTORY_REALTIME_ENABLED && "{{ incident.history.all|length }}" > 0) {
+        if (HISTORY_REALTIME_ENABLED && {{ history_count }} > 0) {
             setInterval(checkForUpdates, 30000);
          }
 
@@ -570,7 +571,7 @@
         searchInput.className = 'w-full md:w-64 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent';
 
         // Insert search box if there are history items
-        if ("{{ incident.history.all|length }}" > 0) {
+        if ({{ history_count }} > 0) {
             const headerActions = document.querySelector('.flex.items-center.justify-between');
             if (headerActions) {
                 headerActions.insertBefore(searchInput, headerActions.firstChild);

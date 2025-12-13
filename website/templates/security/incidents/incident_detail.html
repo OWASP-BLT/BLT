@@ -592,4 +592,5 @@ if (printButton) {
     });
 });
     </script>
+    {{ history_json|json_script:"history-data" }}
 {% endblock extra_js %}
