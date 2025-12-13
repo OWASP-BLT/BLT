@@ -29,7 +29,10 @@ class BugsListTest(TestCase):
 
         # Create some test issues
         self.visible_issue = Issue.objects.create(
-            url="http://example.com/visible", description="Visible Test Issue", user=self.verified_user, is_hidden=False
+            url="http://example.com/visible",
+            description="Visible Test Issue",
+            user=self.verified_user,
+            is_hidden=False,
         )
 
         self.hidden_issue = Issue.objects.create(
@@ -74,7 +77,7 @@ class BugsListTest(TestCase):
 
     def test_bugs_list_verified_user(self):
         """Test bugs_list page for verified users"""
-        self.client.login(username="verified_user", password="testpass123")
+        self.client.login(email="verified@example.com", password="testpass123")
         url = reverse("issues")
         response = self.client.get(url)
 
@@ -96,7 +99,7 @@ class BugsListTest(TestCase):
 
     def test_bugs_list_unverified_user(self):
         """Test bugs_list page for unverified users"""
-        self.client.login(username="unverified_user", password="testpass123")
+        self.client.login(email="unverified@example.com", password="testpass123")
         url = reverse("issues")
         response = self.client.get(url)
 

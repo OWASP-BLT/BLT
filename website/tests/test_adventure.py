@@ -12,7 +12,7 @@ class AdventureListViewTest(TestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
         self.adventure = Adventure.objects.create(
             title="Test Adventure",
             slug="test-adventure",
@@ -24,7 +24,7 @@ class AdventureListViewTest(TestCase):
 
     def test_adventure_list_view_without_user_progress(self):
         """Test that adventure list view works without user progress."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
         response = self.client.get(reverse("adventure_list"))
         self.assertEqual(response.status_code, 200)
         self.assertIn("adventures", response.context)
@@ -35,7 +35,7 @@ class AdventureListViewTest(TestCase):
         UserAdventureProgress.objects.create(user=self.user, adventure=self.adventure)
 
         # Login and access the view
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
         response = self.client.get(reverse("adventure_list"))
 
         # Should not raise TypeError: Direct assignment to the reverse side of a related set is prohibited

@@ -133,15 +133,17 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_login(self):
-        # Email verification is now handled in setUp
+        user_email = "bugbug@bugbug.com"
+        user_name = "bugbug"
+        self._ensure_bugbug_user_verified()
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+        self.selenium.find_element(By.NAME, "login").send_keys(user_email)
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
+        body = self.selenium.find_element(By.TAG_NAME, "body")
         # Check for current header format: @username and separate Points display
-        self.assertIn("@bugbug", body.text)
+        self.assertIn(f"@{user_name}", body.text)
         self.assertIn("0 Points", body.text)
 
     @override_settings(DEBUG=True, IS_TEST=True)
@@ -150,7 +152,7 @@ class MySeleniumTests(LiveServerTestCase):
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug@bugbug.com")
         self.selenium.find_element(By.NAME, "password").send_keys("secret")
         self.selenium.find_element(By.NAME, "login_button").click()
 
@@ -190,7 +192,7 @@ class MySeleniumTests(LiveServerTestCase):
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
-        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug@bugbug.com")
         self.selenium.find_element(By.NAME, "password").send_keys("secret")
         self.selenium.find_element(By.NAME, "login_button").click()
 
@@ -248,6 +250,25 @@ class MySeleniumTests(LiveServerTestCase):
         bug_exists = Issue.objects.filter(user__username="bugbug", description="XSS Attack on Google").exists()
         self.assertTrue(bug_exists, "Bug report was not found in database after submission")
 
+    def _ensure_bugbug_user_verified(self):
+        """Helper method to create and verify the bugbug test user."""
+        from allauth.account.models import EmailAddress
+
+        # Get or create the bugbug user
+        bugbug_user, created = User.objects.get_or_create(username="bugbug", defaults={"email": "bugbug@bugbug.com"})
+        if created:
+            bugbug_user.set_password("secret")
+            bugbug_user.save()
+
+        # Verify the email
+        email_address, created = EmailAddress.objects.get_or_create(
+            user=bugbug_user, email="bugbug@bugbug.com", defaults={"verified": True, "primary": True}
+        )
+        if not created:
+            email_address.verified = True
+            email_address.primary = True
+            email_address.save()
+
     def setUp(self):
         super().setUp()
         # Verify emails for all test users
@@ -304,8 +325,10 @@ class HideImage(TestCase):
 class RemoveUserFromIssueTest(TestCase):
     def setUp(self):
         # Create a user, an anonymous user, and an issue
-        self.user = User.objects.create_user(username="testuser", password="password")
-        self.anonymous_user = User.objects.create_user(username="anonymous", password="password")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="password")
+        self.anonymous_user = User.objects.create_user(
+            username="anonymous", email="anonymous@example.com", password="password"
+        )
 
         self.issue = Issue.objects.create(user=self.user, description="Test Issue")
 
@@ -318,17 +341,21 @@ class RemoveUserFromIssueTest(TestCase):
 
     def test_remove_user_from_issue(self):
         # Only the issue poster can delete own issue
-        self.client.login(username="testuser", password="password")
+        self.client.login(email="test@example.com", password="password")
 
         url = reverse("remove_user_from_issue", args=[self.issue.id])
         self.client.post(url, follow=True)  # Remove unused response variable
 
         self.issue.refresh_from_db()
-        self.activity.refresh_from_db()
 
-        # Activity user should be set to anonymous and issue user to None
-        self.assertEqual(self.activity.user.username, "anonymous")
+        # Issue user should be set to None
         self.assertIsNone(self.issue.user)
+
+        # Check that the first activity for this issue has been updated to anonymous user
+        issue_activity = Activity.objects.filter(
+            content_type=ContentType.objects.get_for_model(Issue), object_id=self.issue.id
+        ).first()
+        self.assertEqual(issue_activity.user.username, "anonymous")
 
 
 class LeaderboardTests(TestCase):
@@ -479,7 +506,7 @@ class ProjectPageTest(TestCase):
 class OrganizationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
-        self.client.login(username="testuser", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
 
     def test_create_and_list_organization(self):
         # Test organization creation

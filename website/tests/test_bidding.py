@@ -26,7 +26,7 @@ class BiddingTestCase(TestCase):
     def test_add_bid_authenticated_user(self):
         """Test adding a bid with an authenticated user."""
         # Log in the user
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(email="test@example.com", password="testpassword")
 
         # Make a POST request to the bidding endpoint
         response = self.client.post(
@@ -67,7 +67,7 @@ class BiddingTestCase(TestCase):
     def test_add_bid_with_github_username(self):
         """Test adding a bid with a GitHub username that doesn't match a user in the system."""
         # Log in the user
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(email="test@example.com", password="testpassword")
 
         # Make a POST request with a different GitHub username
         github_username = "github_user"
@@ -92,7 +92,7 @@ class BiddingTestCase(TestCase):
 
     def test_view_bidding_page(self):
         """Test that the bidding page can be viewed successfully."""
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(email="test@example.com", password="testpassword")
         response = self.client.get(reverse("BiddingData"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "bidding.html")
@@ -128,7 +128,7 @@ class BiddingTestCase(TestCase):
     def test_add_bid_with_github_url_in_profile(self):
         """Test that a bid can be added using the GitHub username from the user's profile."""
         # Login the user
-        self.client.login(username="testuser", password="testpassword")
+        self.client.login(email="test@example.com", password="testpassword")
 
         # Set GitHub URL in the user's profile
         user = User.objects.get(username="testuser")

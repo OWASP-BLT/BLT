@@ -11,10 +11,10 @@ from website.models import Issue, UserProfile
 @override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
 class IssueCommentTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="12345")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="12345")
         self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
         self.issue = Issue.objects.create(url="http://example.com", description="Test Issue", user=self.user)
-        self.client.login(username="testuser", password="12345")
+        self.client.login(email="test@example.com", password="12345")
 
     def test_add_comment(self):
         url = reverse("comment_on_content", args=[self.issue.pk])

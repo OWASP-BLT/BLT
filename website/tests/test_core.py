@@ -11,9 +11,9 @@ from website.models import ForumCategory, ForumPost, GitHubIssue, Repo, UserProf
 class ForumTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass")
         self.category = ForumCategory.objects.create(name="Test Category", description="Test Description")
-        self.client.login(username="testuser", password="testpass")
+        self.client.login(email="test@example.com", password="testpass")
 
         self.post_data = {"title": "Test Post", "category": self.category.id, "description": "Test Description"}
 

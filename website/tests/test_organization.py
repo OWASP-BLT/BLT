@@ -122,8 +122,8 @@ class SizzleCheckInViewTests(TestCase):
     def setUp(self):
         # Create test user
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
-        self.client.login(username="testuser", password="testpass123")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.client.login(email="test@example.com", password="testpass123")
 
     def test_add_sizzle_checkin_view_loads(self):
         """Test that the add sizzle check-in view loads correctly"""
