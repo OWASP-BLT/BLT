@@ -335,6 +335,12 @@ class BountySerializer(serializers.ModelSerializer):
     )
     sponsor_id = serializers.IntegerField(source="sponsor.id", read_only=True)
 
+    github_username = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        help_text="GitHub username of the sponsor (used for display/attribution).",
+    )
     class Meta:
         model = Bounty
         fields = [
@@ -348,6 +354,7 @@ class BountySerializer(serializers.ModelSerializer):
             "status",
             "created_at",
             "updated_at",
+            "github_username",
         ]
         read_only_fields = [
             "id",
@@ -389,7 +396,15 @@ class BountySerializer(serializers.ModelSerializer):
         sponsor = request.user
         validated_data["sponsor"] = sponsor
 
-        if "github_sponsor_username" not in validated_data:
+        # Pull out github_username if present (Slack / BLT-Action)
+        github_username = validated_data.pop("github_username", "").strip()
+
+        if github_username:
+            # If the caller explicitly told us who the GitHub sponsor is,
+            # trust that for attribution.
+            validated_data["github_sponsor_username"] = github_username
+
+        elif "github_sponsor_username" not in validated_data:
             validated_data["github_sponsor_username"] = getattr(
                 sponsor,
                 "github_username",

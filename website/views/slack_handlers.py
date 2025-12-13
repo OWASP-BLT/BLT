@@ -3120,7 +3120,7 @@ def slack_bounty_command(request):
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
-                    "text": f"Failed to create bounty: {r.status_code} {r.text}",
+                    "text": "Failed to create bounty. Please check your input and try again.",
                 }
             )
         bounty_data = r.json()
@@ -3128,7 +3128,7 @@ def slack_bounty_command(request):
         return JsonResponse(
             {
                 "response_type": "ephemeral",
-                "text": f"Error contacting BLT API: {e}",
+                "text": "Error creating bounty. Please try again later." ,
             }
         )
 
@@ -3140,8 +3140,18 @@ def slack_bounty_command(request):
             params={"github_issue_url": issue_url},
         )
         total_json = total_res.json() if total_res.ok else {}
-        # Our issue_total view returns {"github_issue_url": ..., "total_amount": ...}
-        total_amount = total_json.get("total_amount", amount_str)
+
+        # issue_total returns {"github_issue_url": ..., "total": ...}
+        # but we also accept "total_amount" for backwards compatibility.
+        raw_total = total_json.get("total")
+        if raw_total is None:
+            raw_total = total_json.get("total_amount")
+
+        # If API didn't give us anything usable, fall back to this bounty amount
+        if raw_total in (None, ""):
+            total_amount = amount_str
+        else:
+            total_amount = str(raw_total)
     except Exception:
         total_amount = amount_str
 

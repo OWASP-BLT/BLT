@@ -57,7 +57,7 @@ jobs:
 
       - name: Call BLT-Action composite bounty processor
         if: steps.parse.outputs.found == 'true'
-        uses: Jayant2908/BLT-ACTION/Bounty_Processor@Bounty_Command
+        uses: OWASP-BLT/BLT-ACTION/Bounty_Processor@Main
         with:
           api_base_url: ${{ secrets.API_BASE_URL }}      # e.g. https://<ngrok>.ngrok.io/api/v1
           blt_api_token: ${{ secrets.BLT_API_TOKEN }}    # Django Token
