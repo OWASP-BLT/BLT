@@ -78,6 +78,21 @@ class DailyChallengeService:
                 DailyChallengeService._assign_random_challenge(user, today)
                 return
 
+            # Check if 24-hour cooldown period has passed by checking next_challenge_at
+            # Get the most recent challenge with next_challenge_at set
+            recent_challenge = (
+                UserDailyChallenge.objects.filter(
+                    user=user,
+                    next_challenge_at__isnull=False,
+                )
+                .order_by("-next_challenge_at")
+                .first()
+            )
+
+            if recent_challenge and recent_challenge.next_challenge_at > now:
+                # 24-hour cooldown period has not passed yet, don't assign new challenge
+                return
+
             # Check if last check-in was on a different date (new day)
             last_checkin_date = last_checkin.date
             if last_checkin_date < today:
