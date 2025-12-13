@@ -1,0 +1,98 @@
+name: Selenium Tests
+
+# Run Selenium tests separately from main CI/CD pipeline
+# These tests are slower as they navigate through multiple pages with browser automation
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  # Run weekly to catch any issues
+  schedule:
+    - cron: '0 0 * * 0'  # Run every Sunday at midnight UTC
+
+env:
+  FORCE_COLOR: 1
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
+
+# Default permissions for the workflow
+permissions:
+  contents: read
+
+concurrency:
+  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+jobs:
+  selenium-test:
+    name: Run Selenium Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.2
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-poetry-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+
+      - name: Install Python dependencies
+        run: |
+          pip install poetry
+          poetry lock
+          poetry install --with dev
+
+      - name: Collect static files
+        run: poetry run python manage.py collectstatic --noinput
+
+      - name: Run Selenium tests
+        id: run-selenium-tests
+        shell: bash
+        run: |
+          set +e
+          poetry run xvfb-run --auto-servernum python manage.py test --tag=selenium -v 3 --failfast 2>&1 | tee selenium-test-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          exit 0
+        continue-on-error: true
+
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-test-output
+          path: selenium-test-output.txt
+          retention-days: 7
+
+      - name: Fail the job if tests failed
+        if: steps.run-selenium-tests.outputs.exit_code != '0'
+        run: exit 1
+
+      - name: Print memory usage
+        if: always()
+        run: free -h
