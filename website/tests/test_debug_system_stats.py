@@ -7,16 +7,33 @@ from django.urls import NoReverseMatch, clear_url_caches, reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
+import website.api.views as views
+
 User = get_user_model()
 
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class DebugPanelAPITest(TestCase):
-    """Test debug panel API endpoints"""
+    """Tests for debug panel API endpoints"""
 
     def setUp(self):
+        """Set up test fixtures"""
         self.client = APIClient()
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.superuser = User.objects.create_superuser(
+            username="admin", email="admin@example.com", password="adminpass123"
+        )
+
+        # Reset GitHub sync module state between tests.
+        for attr, value in [
+            ("_github_sync_running", False),
+            ("_github_sync_thread", None),
+            ("_github_sync_started_at", None),
+            ("_github_sync_last_finished_at", None),
+            ("_github_sync_last_error", []),
+        ]:
+            if hasattr(views, attr):
+                setattr(views, attr, value)
 
     def reload_urls(self):
         clear_url_caches()
@@ -44,6 +61,24 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         with self.assertRaises(NoReverseMatch):
             reverse("api_debug_system_stats")
+
+    @override_settings(DEBUG=False)
+    def test_all_debug_endpoints_blocked_in_production(self):
+        """Ensure all debug endpoints are not registered when DEBUG=False"""
+        self.reload_urls()
+        endpoints = [
+            "api_debug_system_stats",
+            "api_debug_cache_info",
+            "api_debug_clear_cache",
+            "api_debug_populate_data",
+            "api_debug_panel_status",
+            "api_debug_sync_github",
+        ]
+
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(NoReverseMatch):
+                    reverse(endpoint)
 
     @override_settings(DEBUG=True)
     def test_get_cache_info_success(self):
@@ -127,103 +162,6 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    def test_run_migrations_requires_superuser(self):
-        """Test that running migrations requires superuser privileges"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_run_migrations_requires_confirm_flag(self):
-        """Test that migrations require an explicit confirm flag"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_run_migrations_success_for_superuser(self):
-        """Test that a superuser can run migrations with confirmation"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_run_migrations_handles_errors(self, mock_call_command):
-        """Test that migration errors are handled gracefully"""
-        self.reload_urls()
-        mock_call_command.side_effect = Exception("Migration failed")
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_collect_static_requires_superuser(self):
-        """Test that collectstatic endpoint requires superuser privileges"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_collect_static_success_for_superuser(self):
-        """Test that a superuser can call collectstatic successfully"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_collect_static_handles_errors(self, mock_call_command):
-        """Test that collectstatic errors are handled gracefully"""
-        self.reload_urls()
-        mock_call_command.side_effect = Exception("Collectstatic failed")
-
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
     def test_get_debug_panel_status(self):
         """Test getting debug panel status"""
         self.reload_urls()
@@ -235,39 +173,102 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["data"]["debug_mode"])
 
     @override_settings(DEBUG=True)
-    def test_post_endpoints_require_authentication(self):
-        """Test that POST debug endpoints require authentication when in debug mode"""
-        self.reload_urls()
-        post_endpoints = [
-            "api_debug_clear_cache",
-            "api_debug_populate_data",
-            "api_debug_run_migrations",
-            "api_debug_collect_static",
-        ]
-
-        for endpoint in post_endpoints:
-            with self.subTest(endpoint=endpoint):
-                response = self.client.post(reverse(endpoint))
-                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    @override_settings(DEBUG=False)
-    def test_all_endpoints_require_debug_mode(self):
-        """Test that all debug endpoints are blocked in production"""
+    def test_debug_endpoint_requires_authentication(self):
+        """Test that debug endpoints require authentication even locally"""
         self.reload_urls()
         endpoints = [
             "api_debug_system_stats",
             "api_debug_cache_info",
             "api_debug_panel_status",
-            "api_debug_clear_cache",
-            "api_debug_populate_data",
-            "api_debug_run_migrations",
-            "api_debug_collect_static",
         ]
 
         for endpoint in endpoints:
             with self.subTest(endpoint=endpoint):
-                with self.assertRaises(NoReverseMatch):
-                    reverse(endpoint)
+                response = self.client.get(reverse(endpoint))
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_403_FORBIDDEN,
+                    f"{endpoint} should return 403 for unauthenticated requests",
+                )
+
+    @override_settings(DEBUG=True)
+    def test_post_endpoints_require_authentication(self):
+        """Test that POST debug endpoints require authentication when in debug mode"""
+        self.reload_urls()
+        endpoints = [
+            "api_debug_clear_cache",
+            "api_debug_populate_data",
+            "api_debug_sync_github",
+        ]
+
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.post(reverse(endpoint))
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_403_FORBIDDEN,
+                    f"{endpoint} should return 403 for unauthenticated POST requests",
+                )
+
+    @override_settings(DEBUG=True)
+    def test_authenticated_user_can_access_debug_endpoints(self):
+        """Test that authenticated users can access debug endpoints"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse("api_debug_system_stats"))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+            "Authenticated user should access system stats endpoint",
+        )
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoints_return_correct_data_structure(self):
+        """Test that debug endpoints return data in expected format"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse("api_debug_system_stats"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertIn("success", data)
+        self.assertIn("data", data)
+        self.assertTrue(data["success"])
+
+        stats = data["data"]
+        self.assertIn("memory", stats)
+        self.assertIn("disk", stats)
+        self.assertIn("python_version", stats)
+        self.assertIn("django_version", stats)
+
+    @override_settings(DEBUG=True)
+    def test_cache_info_endpoint_returns_cache_stats(self):
+        """Test that cache info endpoint returns cache statistics"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse("api_debug_cache_info"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("backend", data["data"])
+        self.assertIn("keys_count", data["data"])
+        self.assertIn("hit_ratio", data["data"])
+
+    @override_settings(DEBUG=True)
+    def test_clear_cache_endpoint_clears_cache(self):
+        """Test that clear cache endpoint works"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(reverse("api_debug_clear_cache"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertTrue(data["success"])
 
     @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_non_local_host(self):
@@ -349,9 +350,103 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    def test_debug_endpoint_requires_authentication(self):
-        """Test that debug endpoints require authentication even locally"""
+    @patch("website.api.views._run_github_sync")
+    def test_sync_github_data_success(self, mock_sync):
+        """Test that GitHub sync endpoint works"""
         self.reload_urls()
-        # Don't authenticate
-        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="localhost:8000")
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.force_authenticate(self.user)
+
+        # Make the background thread execute the sync target synchronously
+        # by patching threading.Thread.start to call our mock_sync directly.
+        with patch("website.api.views.threading.Thread") as mock_thread:
+            mock_thread.return_value.start.side_effect = lambda: mock_sync()
+
+            response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("message", data)
+
+        # Background function should have been invoked (synchronously via the start patch)
+        mock_sync.assert_called_once()
+
+    @override_settings(DEBUG=True)
+    def test_sync_github_data_requires_authentication(self):
+        """Test that GitHub sync requires authentication"""
+        self.reload_urls()
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @override_settings(DEBUG=True)
+    @patch("website.api.views.threading.Thread")
+    def test_sync_github_data_handles_errors(self, mock_thread):
+        """Test GitHub sync error handling"""
+        self.reload_urls()
+        mock_thread.return_value.start.side_effect = Exception("Thread start failed")
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Verify the response payload indicates failure and contains an error message
+        data = response.json()
+        self.assertFalse(data.get("success", True))
+        # Accept either a generic failure message or the specific implementation text
+        error_text = data.get("error", "") or data.get("message", "")
+        self.assertTrue(
+            isinstance(error_text, str) and len(error_text) > 0,
+            "Expected non-empty error text in response",
+        )
+
+        # Ensure the Thread class was instantiated
+        mock_thread.assert_called_once()
+
+        # Verify cleanup of module-level sync state after a start failure
+        # (these globals are defined in website.api.views)
+        self.assertFalse(getattr(views, "_github_sync_running", True))
+        self.assertIsNone(getattr(views, "_github_sync_thread", None))
+        self.assertIsNone(getattr(views, "_github_sync_started_at", None))
+        last_error = getattr(views, "_github_sync_last_error", None)
+        # Accept list-based representation or legacy string, but prefer list and check for token
+        if isinstance(last_error, list):
+            self.assertIn("thread_start_failed", last_error)
+        else:
+            self.assertTrue(isinstance(last_error, str) and "thread_start_failed" in last_error)
+
+    @override_settings(DEBUG=True)
+    def test_sync_github_data_already_running(self):
+        """Test that concurrent sync requests return 409 Conflict"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        # Simulate sync already running
+        views._github_sync_running = True
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        data = response.json()
+        self.assertFalse(data.get("success"))
+        self.assertIn("already running", data.get("message", "").lower())
+
+        # Cleanup
+        views._github_sync_running = False
+
+    @override_settings(DEBUG=True)
+    @patch("website.api.views._github_sync_lock")
+    def test_sync_lock_acquisition_timeout(self, mock_lock):
+        """Test handling when lock acquisition times out"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        # Simulate lock timeout
+        mock_lock.acquire.return_value = False
+
+        response = self.client.post(reverse("api_debug_sync_github"))
+
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        data = response.json()
+        self.assertFalse(data.get("success"))
