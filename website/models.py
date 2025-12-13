@@ -3627,3 +3627,9 @@ class SecurityIncidentHistory(models.Model):
 
     class Meta:
         ordering = ["-changed_at"]
+        indexes = [
+            models.Index(
+                fields=["incident", "-changed_at"],
+                name="history_incident_changedat_idx",
+            ),
+        ]

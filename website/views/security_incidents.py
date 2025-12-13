@@ -28,6 +28,7 @@ class SecurityIncidentCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateV
 
     @transaction.atomic
     def form_valid(self, form):
+        form.instance.reporter = self.request.user
         return super().form_valid(form)
 
 
@@ -71,7 +72,7 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         return response
 
 
-class SecurityIncidentDetailView(LoginRequiredMixin, DetailView):
+class SecurityIncidentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailView):
     model = SecurityIncident
     template_name = "security/incidents/incident_detail.html"
 

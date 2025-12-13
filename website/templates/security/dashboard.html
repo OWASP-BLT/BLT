@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Security Dashboard{% endblock %}
 {% block content %}
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js" integrity="sha384-TJw1v5R3zE4dBfZzQGmyJ3Xr8m0I1Zc3V9dElyj8l0mdgYcl7GmIuYHX7X9a5E8+" crossorigin="anonymous">
+    </script>
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">Security Dashboard</h1>
@@ -68,7 +69,7 @@
                 <a href="{{ request.get_full_path }}"
                    class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded shadow text-sm font-medium">🔄 Refresh</a>
                 <!-- Export CSV -->
-                <a href="?export=csv{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
+                <a href="{{ export_csv_url }}"
                    class="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm font-medium">📄 Export CSV</a>
                 <!-- Add Incident (Next PR) -->
                 <!-- Add Incident -->
@@ -177,7 +178,7 @@
                             <span class="inline-block w-3 h-3 rounded-full flex-shrink-0 mt-1 {% if i.severity == 'low' %} bg-green-500 {% elif i.severity == 'medium' %} bg-yellow-500 {% elif i.severity == 'high' %} bg-orange-500 {% elif i.severity == 'critical' %} bg-red-600 {% endif %}">
                             </span>
                         </div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ i.created_at }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ i.created_at|date:"M j, Y, g:i A" }}</p>
                         <div class="space-y-3">
                             <div class="flex justify-between items-center">
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Severity:</span>

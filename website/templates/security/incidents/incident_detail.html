@@ -301,7 +301,7 @@
                         {% endif %}
                         <div class="text-center">
                             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
-                                <div class="w-2 h-2 rounded-full {% if incident.status == 'resolved' %}bg-green-500 {% elif incident.status == 'in_progress' %}bg-blue-500 {% elif incident.status == 'investigating' %}bg-yellow-500 {% else %}bg-gray-500{% endif %}">
+                                <div class="w-2 h-2 rounded-full {% if incident.status == 'resolved' %}bg-green-500 {% elif incident.status == 'open' %}bg-blue-500 {% elif incident.status == 'investigating' %}bg-yellow-500 {% else %}bg-gray-500{% endif %}">
                                 </div>
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ incident.get_status_display }}</span>
                             </div>
@@ -432,11 +432,11 @@ document.addEventListener("DOMContentLoaded", function() {
     if (copyButton) {
         copyButton.addEventListener('click', function() {
             const incidentDetails = {
-                title: "{{ incident.title }}",
-                severity: "{{ incident.get_severity_display }}",
-                status: "{{ incident.get_status_display }}",
+                title: "{{ incident.title|escapejs }}",
+                severity: "{{ incident.get_severity_display|escapejs }}",
+                status: "{{ incident.get_status_display|escapejs }}",
                 created: "{{ incident.created_at|date:'Y-m-d H:i' }}",
-                affected: "{{ incident.affected_systems|striptags }}"
+                affected: "{{ incident.affected_systems|striptags|escapejs }}"
             };
             
             const detailsText = `Incident Details:
@@ -451,63 +451,54 @@ Affected Systems: ${incidentDetails.affected}`;
             });
         });
     }
-    
-    // Status update simulation (for demo purposes)
-    const statusBadge = document.querySelector('.status-badge');
-    if (statusBadge && "{{ incident.status }}" !== 'resolved') {
-        // Add pulsing animation to active incidents
-        statusBadge.classList.add('animate-pulse');
-        
-        // Simulate status check every 30 seconds
-        setInterval(() => {
-            fetch(`/api/incident/{{ incident.id }}/status/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status !== "{{ incident.status }}") {
-                        showToast('Incident status updated', 'info');
-                        // Refresh page or update status dynamically
-                        location.reload();
-                    }
-                })
-                .catch(() => {
-                    // Silently fail for demo
-                });
-        }, 30000);
-    }
+
     
     // Toast notification function
     function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        const colors = {
-            success: 'bg-green-500',
-            error: 'bg-red-500',
-            warning: 'bg-yellow-500',
-            info: 'bg-blue-500'
-        };
-        
-        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
-        toast.innerHTML = `
-            <div class="flex items-center gap-3">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // Animate in
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Remove after 5 seconds
-        setTimeout(() => {
-            toast.classList.add('translate-x-full');
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 300);
-        }, 5000);
-    }
+    const toast = document.createElement('div');
+
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+    };
+
+    toast.className =
+        `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg 
+         z-50 transform transition-transform duration-300 translate-x-full`;
+
+    // Build toast content using DOM APIs (no HTML injection)
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-center gap-3';
+
+    const icon = document.createElement('i');
+    icon.classList.add('fas');
+
+    if (type === 'success') icon.classList.add('fa-check-circle');
+    else if (type === 'error') icon.classList.add('fa-exclamation-circle');
+    else if (type === 'warning') icon.classList.add('fa-exclamation-triangle');
+    else icon.classList.add('fa-info-circle');
+
+    const text = document.createElement('span');
+    text.textContent = message; // SAFE — no HTML parsing
+
+    wrapper.appendChild(icon);
+    wrapper.appendChild(text);
+    toast.appendChild(wrapper);
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => toast.classList.remove('translate-x-full'), 50);
+
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
     
     // Print incident details
     const printButton = document.getElementById('print-incident');

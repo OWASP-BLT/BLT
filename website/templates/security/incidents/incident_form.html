@@ -160,12 +160,32 @@
                             {% endif %}
                             <p class="text-xs text-gray-500 dark:text-gray-400">List the systems impacted by this incident</p>
                         </div>
+                        <!-- Description Field -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-align-left text-[#e74c3c] mr-2"></i>
+                                Description
+                            </label>
+                            <div class="relative">
+                                {{ form.description }}
+                                <div class="absolute inset-y-0 left-0 pl-3 pt-3 pointer-events-none">
+                                    <i class="fas fa-pen text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.description.errors %}
+                                <div class="text-sm text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ form.description.errors }}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Add context, impact, and remediation notes</p>
+                        </div>
                         <!-- Action Buttons -->
                         <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div class="text-sm text-gray-500 dark:text-gray-400">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    All fields are required
+                                    Please fill in the required fields
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <a href="{% url 'security_dashboard' %}"
@@ -470,41 +490,57 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Toast notification function
     function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        const colors = {
-            success: 'bg-green-500',
-            error: 'bg-red-500',
-            warning: 'bg-yellow-500',
-            info: 'bg-blue-500'
-        };
-        
-        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
-        toast.innerHTML = `
-            <div class="flex items-center gap-3">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // Animate in
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Remove after 5 seconds
-        setTimeout(() => {
-            toast.classList.add('translate-x-full');
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 300);
-        }, 5000);
-    }
-    
+    const toast = document.createElement('div');
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+    };
+
+    toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
+
+    // Build the inner layout without innerHTML
+    const row = document.createElement('div');
+    row.className = "flex items-center gap-3";
+
+    const icon = document.createElement("i");
+    icon.className = "fas " + (
+        type === "success" ? "fa-check-circle" :
+        type === "error" ? "fa-exclamation-circle" :
+        type === "warning" ? "fa-exclamation-triangle" :
+        "fa-info-circle"
+    );
+
+    const text = document.createElement("span");
+    text.textContent = message;  // SAFE
+
+    row.appendChild(icon);
+    row.appendChild(text);
+    toast.appendChild(row);
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.remove("translate-x-full"), 100);
+
+    setTimeout(() => {
+        toast.classList.add("translate-x-full");
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
     // Add auto-save functionality (optional)
     let autoSaveTimeout;
     const formData = new FormData();
+    let lastAutosaveToast = 0;
+
+function showAutosaveToast() {
+    const now = Date.now();
+    if (now - lastAutosaveToast < 10000) return; // Show max once / 10 seconds
+    lastAutosaveToast = now;
+    showToast("Draft saved", "info");
+}
+
     
     function autoSave() {
         if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
@@ -519,7 +555,7 @@ document.addEventListener("DOMContentLoaded", function() {
             
             // Here you could make an API call to auto-save
             // For now, just show a toast
-            showToast('Draft saved', 'info');
+            showAutosaveToast();
         }, 2000); // Save after 2 seconds of inactivity
     }
     
