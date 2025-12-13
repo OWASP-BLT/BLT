@@ -2,13 +2,16 @@ import json
 import logging
 import os
 import secrets
+from decimal import Decimal
 
 import requests
+from django.contrib.auth import get_user_model
+from django.db.models import F
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from website.models import GitHubIssue, Repo
+from website.models import Bounty, GitHubIssue, Repo, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +22,7 @@ def bounty_payout(request):
     """
     Minimal working version: Handle bounty payout webhook from GitHub Action.
     Processes payment and updates issue with comment and labels.
+    Also: marks related Bounty records as PAID and updates contributor winnings.
     """
     try:
         # Validate API token using constant-time comparison
@@ -49,7 +53,7 @@ def bounty_payout(request):
         try:
             issue_number = int(data["issue_number"])
             pr_number = int(data["pr_number"])
-            bounty_amount = int(data["bounty_amount"])
+            bounty_amount = int(data["bounty_amount"])  # in cents
         except (ValueError, TypeError):
             logger.warning("Invalid numeric fields in request")
             return JsonResponse({"status": "error", "message": "Invalid numeric fields"}, status=400)
@@ -100,6 +104,47 @@ def bounty_payout(request):
         # Save transaction ID to database
         github_issue.sponsors_tx_id = transaction_id
         github_issue.save()
+
+        # =====================================================================
+        # 🆕 Phase 1 - Task 3: Mark related Bounty records as PAID
+        # =====================================================================
+
+        # Build canonical GitHub issue URL in same format used when creating Bounty
+        issue_url = f"https://github.com/{owner_name}/{repo_name}/issues/{issue_number}"
+
+        # Mark all pending bounties for this issue as PAID
+        pending_bounties = Bounty.objects.filter(
+            github_issue_url=issue_url,
+            status=Bounty.STATUS_PENDING,
+        )
+
+        # Update status in bulk
+        updated_count = pending_bounties.update(status=Bounty.STATUS_PAID)
+        logger.info(f"Marked {updated_count} bounty record(s) as PAID for {issue_url}")
+
+        # =====================================================================
+        # 🆕 Phase 1 - Task 3: Update contributor's winnings
+        # =====================================================================
+
+        # Convert cents -> dollars (or whatever unit your winnings use)
+        payout_amount = Decimal(bounty_amount) / Decimal("100.0")
+
+        User = get_user_model()
+        contributor = User.objects.filter(username=contributor_username).first()
+        # ^^^ adjust field name if GitHub username is stored differently
+
+        if contributor:
+            try:
+                profile = UserProfile.objects.get(user=contributor)
+                # Atomic increment to avoid race conditions
+                UserProfile.objects.filter(pk=profile.pk).update(winnings=F("winnings") + payout_amount)
+                logger.info(f"Updated winnings for {contributor_username} by {payout_amount}")
+            except UserProfile.DoesNotExist:
+                logger.warning(f"No UserProfile found for {contributor_username}; skipping winnings update")
+        else:
+            logger.warning(f"No local user found for GitHub username {contributor_username}; skipping winnings update")
+
+        # =====================================================================
 
         # Add comment and labels to GitHub issue
         github_token = os.environ.get("GITHUB_TOKEN")
@@ -340,7 +385,6 @@ def process_github_sponsors_payment(username, amount, note=""):
         str: Sponsorship transaction ID if successful, None otherwise
     """
     try:
-        # The sponsor payer is DonnieBLT (who pays the bounty)
         sponsor_payer = os.environ.get("GITHUB_SPONSORS_RECIPIENT", "DonnieBLT")
         logger.info(f"Processing payment of ${amount / 100:.2f} from {sponsor_payer} to {username}")
 

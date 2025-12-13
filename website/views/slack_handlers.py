@@ -11,8 +11,9 @@ from urllib.parse import quote_plus
 
 import requests
 import yaml
+from django.conf import settings
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
@@ -3020,3 +3021,148 @@ def handle_committee_pagination(action, body, client):
     except Exception as e:
         logger.error(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
+
+
+BOUNTY_REGEX = re.compile(
+    r"""^\s*
+        \$?(?P<amount>[0-9]+(?:\.[0-9]{1,2})?)   # amount, optional leading $
+        \s+
+        (?P<issue_url>https?://\S+)              # GitHub issue URL
+        \s+
+        (?P<github_username>[A-Za-z0-9_-]+)      # GitHub username
+        \s*$
+    """,
+    re.VERBOSE,
+)
+
+
+@csrf_exempt
+def slack_bounty_command(request):
+    """
+    Handle `/bounty` Slack command.
+
+    New format (no Slack→GitHub mapping):
+      /bounty <amount> <issue-url> <github-username>
+
+    Examples:
+      /bounty 10 https://github.com/org/repo/issues/123 yourgithub
+      /bounty $12.50 https://github.com/org/repo/issues/123 yourgithub
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("Invalid method")
+
+    text = (request.POST.get("text") or "").strip()
+    user_id = request.POST.get("user_id")
+    response_url = request.POST.get("response_url")
+
+    m = BOUNTY_REGEX.match(text)
+    if not m:
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": (
+                    "Usage: `/bounty <amount> <github_issue_url> <github_username>`\n"
+                    "Example: `/bounty 10 https://github.com/org/repo/issues/123 yourgithub`"
+                ),
+            }
+        )
+
+    amount_str = m.group("amount")
+    issue_url = m.group("issue_url")
+    github_username = m.group("github_username")
+
+    # Basic amount validation
+    try:
+        amount_val = float(amount_str)
+    except ValueError:
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "Bounty amount must be a valid number.",
+            }
+        )
+
+    if amount_val <= 0:
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "Bounty amount must be positive.",
+            }
+        )
+
+    # Call BLT API to create bounty
+    api_base = getattr(settings, "BLT_API_BASE_URL", os.environ.get("BLT_API_BASE_URL", "")).rstrip("/")
+    api_token = getattr(settings, "BLT_API_TOKEN", os.environ.get("BLT_API_TOKEN"))
+
+    if not api_base or not api_token:
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "BLT API is not configured. Please contact maintainers.",
+            }
+        )
+
+    headers = {
+        "Authorization": f"Token {api_token}",
+        "Content-Type": "application/json",
+    }
+
+    # IMPORTANT: send amount as string, and include github_username
+    payload = {
+        "amount": amount_str,
+        "github_issue_url": issue_url,
+        "github_username": github_username,
+    }
+
+    try:
+        r = requests.post(f"{api_base}/bounties/", headers=headers, data=json.dumps(payload))
+        if r.status_code not in (200, 201):
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"Failed to create bounty: {r.status_code} {r.text}",
+                }
+            )
+        bounty_data = r.json()
+    except Exception as e:
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": f"Error contacting BLT API: {e}",
+            }
+        )
+
+    # Fetch current totals for channel message
+    try:
+        total_res = requests.get(
+            f"{api_base}/bounties/issue-total/",
+            headers=headers,
+            params={"github_issue_url": issue_url},
+        )
+        total_json = total_res.json() if total_res.ok else {}
+        # Our issue_total view returns {"github_issue_url": ..., "total_amount": ...}
+        total_amount = total_json.get("total_amount", amount_str)
+    except Exception:
+        total_amount = amount_str
+
+    # Public in-channel response
+    return JsonResponse(
+        {
+            "response_type": "in_channel",
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": (
+                            "💰 *New bounty placed!* \n"
+                            f"*Amount:* ${amount_str} \n"
+                            f"*Sponsor:* `@{github_username}` \n"
+                            f"*Issue:* {issue_url} \n"
+                            f"*Total bounty on this issue:* ${total_amount}"
+                        ),
+                    },
+                }
+            ],
+        }
+    )

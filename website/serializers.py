@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from website.models import (
     ActivityLog,
+    Bounty,
     Contributor,
     Domain,
     Hunt,
@@ -305,3 +306,107 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+
+
+class BountySerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and retrieving Bounty objects.
+
+    This serializer supports:
+    - Creating a bounty with or without linking an Issue immediately.
+    - Automatically attaching the sponsor (request.user).
+    - Returning sponsor metadata and issue metadata.
+    - Validating bounty amount for sensible ranges.
+    """
+
+    issue_id = serializers.PrimaryKeyRelatedField(
+        source="issue",
+        queryset=Issue.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+        help_text="Optional issue ID to link this bounty to.",
+    )
+    issue = serializers.StringRelatedField(read_only=True)
+    sponsor_username = serializers.CharField(
+        source="github_sponsor_username",
+        read_only=True,
+    )
+    sponsor_id = serializers.IntegerField(source="sponsor.id", read_only=True)
+
+    class Meta:
+        model = Bounty
+        fields = [
+            "id",
+            "issue",
+            "issue_id",
+            "sponsor_id",
+            "sponsor_username",
+            "amount",
+            "github_issue_url",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "status",
+            "created_at",
+            "updated_at",
+            "sponsor_id",
+            "sponsor_username",
+        ]
+        extra_kwargs = {
+            "status": {"read_only": True},
+            "created_at": {"read_only": True},
+            "updated_at": {"read_only": True},
+        }
+
+    def validate_amount(self, value):
+        """
+        Validate the bounty amount.
+        Ensures:
+        - The amount is positive.
+        - The amount is not excessively large.
+        """
+        if value <= 0:
+            raise serializers.ValidationError("Bounty amount must be positive.")
+        if value > 100000:
+            raise serializers.ValidationError("Bounty amount is unreasonably large.")
+        return value
+
+    def create(self, validated_data):
+        """
+        Create a new Bounty instance.
+
+        - Automatically sets the sponsor to the authenticated user.
+        - Fills github_sponsor_username.
+        - If github_issue_url is present, attach the corresponding Issue
+          object so Bounty.issue is never NULL.
+        """
+        request = self.context["request"]
+        sponsor = request.user
+        validated_data["sponsor"] = sponsor
+
+        if "github_sponsor_username" not in validated_data:
+            validated_data["github_sponsor_username"] = getattr(
+                sponsor,
+                "github_username",
+                sponsor.username,
+            )
+
+        github_issue_url = validated_data.get("github_issue_url")
+        if github_issue_url:
+            # Use Issue.github_url as the canonical link to the GitHub issue
+            issue_obj, _ = Issue.objects.get_or_create(
+                github_url=github_issue_url,
+                defaults={
+                    # Minimal valid data for Issue:
+                    # url and description are required fields.
+                    "url": github_issue_url,
+                    "description": f"GitHub issue: {github_issue_url}",
+                },
+            )
+            validated_data["issue"] = issue_obj
+
+        return super().create(validated_data)

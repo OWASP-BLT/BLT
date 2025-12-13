@@ -28,6 +28,7 @@ from website.models import DailyStats
 
 from .models import PRAnalysisReport
 
+logger = logging.getLogger(__name__)
 # Only initialize OpenAI client if API key is available and valid
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if openai_api_key and openai_api_key.startswith("sk-"):

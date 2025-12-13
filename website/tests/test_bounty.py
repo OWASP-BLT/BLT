@@ -1,11 +1,14 @@
 import json
 import os
+from decimal import Decimal
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.test.utils import override_settings
+from rest_framework.authtoken.models import Token
 
-from website.models import GitHubIssue, Organization, Repo
+from website.models import Bounty, GitHubIssue, Organization, Repo
 
 
 class BountyPayoutTestCase(TestCase):
@@ -16,11 +19,16 @@ class BountyPayoutTestCase(TestCase):
         self.client = Client()
 
         # Create organization
-        self.org = Organization.objects.create(name="TestOrg", url="https://github.com/TestOrg")
+        self.org = Organization.objects.create(
+            name="TestOrg",
+            url="https://github.com/TestOrg",
+        )
 
         # Create repository
         self.repo = Repo.objects.create(
-            name="TestRepo", organization=self.org, repo_url="https://github.com/TestOrg/TestRepo"
+            name="TestRepo",
+            organization=self.org,
+            repo_url="https://github.com/TestOrg/TestRepo",
         )
 
         # Create GitHub issue with bounty
@@ -36,15 +44,31 @@ class BountyPayoutTestCase(TestCase):
             repo=self.repo,
         )
 
-        # Set up API token for tests
+        # API token used both in settings and header
         self.api_token = "test_token_12345"
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch.dict(
+        os.environ,
+        {
+            "BLT_API_TOKEN": "test_token_12345",
+            "GITHUB_TOKEN": "test_github_token",
+        },
+        clear=False,
+    )
     @patch("website.views.bounty.process_github_sponsors_payment")
     def test_bounty_payout_success(self, mock_payment):
-        """Test successful bounty payout with mocked GitHub Sponsors API."""
-        # Mock successful payment
+        """
+        Happy path: valid token, valid payload, Sponsors payment succeeds.
+
+        We expect:
+        - HTTP 200
+        - status: "success"
+        - amount and recipient echoed back
+        - transaction_id filled
+        - GitHubIssue.sponsors_tx_id updated
+        - process_github_sponsors_payment called once with correct args
+        """
         mock_payment.return_value = "SPONSORSHIP_ID_12345"
 
         payload = {
@@ -53,7 +77,7 @@ class BountyPayoutTestCase(TestCase):
             "owner": "TestOrg",
             "contributor_username": "testuser",
             "pr_number": 456,
-            "bounty_amount": 5000,  # $50.00
+            "bounty_amount": 5000,  # cents / minor units
         }
 
         response = self.client.post(
@@ -64,28 +88,32 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "success")
-        self.assertEqual(response_data["amount"], 5000)
-        self.assertEqual(response_data["recipient"], "testuser")
-        self.assertIn("transaction_id", response_data)
-        self.assertEqual(response_data["transaction_id"], "SPONSORSHIP_ID_12345")
+        data = response.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["amount"], 5000)
+        self.assertEqual(data["recipient"], "testuser")
+        self.assertEqual(data["transaction_id"], "SPONSORSHIP_ID_12345")
 
-        # Verify database was updated
+        # DB updated
         self.issue.refresh_from_db()
         self.assertEqual(self.issue.sponsors_tx_id, "SPONSORSHIP_ID_12345")
 
-        # Verify payment function was called with correct parameters
+        # Payment called correctly
         mock_payment.assert_called_once()
-        call_args = mock_payment.call_args
-        self.assertEqual(call_args[1]["username"], "testuser")
-        self.assertEqual(call_args[1]["amount"], 5000)
+        _, kwargs = mock_payment.call_args
+        self.assertEqual(kwargs["username"], "testuser")
+        self.assertEqual(kwargs["amount"], 5000)
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"}, clear=False)
     def test_bounty_payout_duplicate_payment(self):
-        """Test that duplicate payments are rejected."""
-        # Set transaction ID to simulate previous payment
+        """
+        If sponsors_tx_id is already set on the issue, the endpoint should be idempotent:
+        - HTTP 200
+        - status: "warning"
+        - message mentions already processed
+        - no further payment is attempted (implicitly: we don't clear sponsors_tx_id)
+        """
         self.issue.sponsors_tx_id = "TXN-123-456"
         self.issue.save()
 
@@ -106,13 +134,19 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "warning")
-        self.assertIn("already processed", response_data["message"])
+        data = response.json()
+        self.assertEqual(data["status"], "warning")
+        self.assertIn("already processed", data["message"])
 
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+        # sponsors_tx_id remains unchanged
+        self.issue.refresh_from_db()
+        self.assertEqual(self.issue.sponsors_tx_id, "TXN-123-456")
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"}, clear=False)
     def test_bounty_payout_unauthorized(self):
-        """Test that invalid API token is rejected."""
+        """
+        Wrong X_BLT_API_TOKEN header -> 403 error.
+        """
         payload = {
             "issue_number": 123,
             "repo": "TestRepo",
@@ -130,18 +164,20 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "error")
-        self.assertEqual(response_data["message"], "Unauthorized")
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertEqual(data["message"], "Unauthorized")
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"}, clear=False)
     def test_bounty_payout_missing_fields(self):
-        """Test that missing fields are rejected."""
+        """
+        Missing required fields -> 400 with clear error.
+        """
         payload = {
             "issue_number": 123,
             "repo": "TestRepo",
-            # Missing owner, contributor_username, pr_number, bounty_amount
+            # owner, contributor_username, pr_number, bounty_amount missing
         }
 
         response = self.client.post(
@@ -152,14 +188,16 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "error")
-        self.assertIn("Missing required fields", response_data["message"])
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("Missing required fields", data["message"])
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"}, clear=False)
     def test_bounty_payout_repo_not_found(self):
-        """Test that non-existent repository is handled."""
+        """
+        Repo in payload does not exist -> 404.
+        """
         payload = {
             "issue_number": 123,
             "repo": "NonExistentRepo",
@@ -177,14 +215,16 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "error")
-        self.assertIn("Repository not found", response_data["message"])
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("Repository not found", data["message"])
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"}, clear=False)
     def test_bounty_payout_issue_not_found(self):
-        """Test that non-existent issue is handled."""
+        """
+        Issue number does not exist for the given repo -> 404.
+        """
         payload = {
             "issue_number": 999,  # Non-existent issue
             "repo": "TestRepo",
@@ -202,16 +242,21 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "error")
-        self.assertIn("Issue not found", response_data["message"])
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("Issue not found", data["message"])
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
-    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch.dict(
+        os.environ,
+        {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"},
+        clear=False,
+    )
     @patch("website.views.bounty.process_github_sponsors_payment")
     def test_bounty_payout_payment_failure(self, mock_payment):
-        """Test that payment processing failure is handled correctly."""
-        # Mock failed payment (returns None)
+        """
+        Sponsors payment returns None / fails -> 500 and DB not updated.
+        """
         mock_payment.return_value = None
 
         payload = {
@@ -231,10 +276,135 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 500)
-        response_data = response.json()
-        self.assertEqual(response_data["status"], "error")
-        self.assertIn("Payment processing failed", response_data["message"])
+        data = response.json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("Payment processing failed", data["message"])
 
-        # Verify database was NOT updated
         self.issue.refresh_from_db()
         self.assertIsNone(self.issue.sponsors_tx_id)
+
+
+# ---------------------------------------------------------------------------
+# New tests: Bounty API (/api/v1/bounties/) behaviour
+# ---------------------------------------------------------------------------
+class BountyApiTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        self.org = Organization.objects.create(
+            name="TestOrg",
+            url="https://github.com/TestOrg",
+        )
+        self.repo = Repo.objects.create(
+            name="TestRepo",
+            organization=self.org,
+            repo_url="https://github.com/TestOrg/TestRepo",
+        )
+
+        # Raw GitHub issue data (used by API & tests)
+        self.github_issue = GitHubIssue.objects.create(
+            issue_id=123,
+            title="Issue for Bounties",
+            body="body",
+            state="open",
+            created_at="2025-01-01T00:00:00Z",
+            updated_at="2025-01-01T00:00:00Z",
+            url="https://github.com/TestOrg/TestRepo/issues/123",
+            has_dollar_tag=True,
+            repo=self.repo,
+        )
+
+        # API user + token used for DRF TokenAuthentication
+        User = get_user_model()
+        self.api_user, _ = User.objects.get_or_create(
+            username="api-user",
+            defaults={"email": "api-user@example.com"},
+        )
+        self.api_token, _ = Token.objects.get_or_create(user=self.api_user)
+
+    def _auth_headers(self):
+        # DRF TokenAuthentication expects this header
+        return {"HTTP_AUTHORIZATION": f"Token {self.api_token.key}"}
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    def test_create_bounty_for_issue_via_api(self):
+        """
+        POST /api/v1/bounties/ with github_issue_url, amount and username
+        should create a Bounty linked to a non-null Issue, and preserve
+        github_issue_url.
+        """
+        payload = {
+            "github_issue_url": self.github_issue.url,
+            "amount": "25.00",
+            "github_username": "testuser",
+        }
+
+        response = self.client.post(
+            "/api/v1/bounties/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **self._auth_headers(),
+        )
+
+        self.assertIn(response.status_code, (200, 201))
+        data = response.json()
+        self.assertEqual(data["github_issue_url"], self.github_issue.url)
+
+        bounties = Bounty.objects.all()
+        self.assertEqual(bounties.count(), 1)
+        bounty = bounties.first()
+
+        # issue_id must not be NULL
+        self.assertIsNotNone(bounty.issue_id)
+        self.assertIsNotNone(bounty.issue)
+
+        # ensure it is tied to the correct GitHub issue URL
+        self.assertEqual(bounty.github_issue_url, self.github_issue.url)
+        self.assertEqual(bounty.amount, Decimal("25.00"))
+
+    @override_settings(BLT_API_TOKEN="test_token_12345")
+    def test_issue_total_endpoint_sums_bounties(self):
+        """
+        GET /api/v1/bounties/issue-total/?github_issue_url=... should return
+        the sum of all bounties for that issue.
+        We create the bounties via the public API to mirror real usage.
+        """
+        # First bounty: 10.00
+        payload1 = {
+            "github_issue_url": self.github_issue.url,
+            "amount": "10.00",
+            "github_username": "user1",
+        }
+        resp1 = self.client.post(
+            "/api/v1/bounties/",
+            data=json.dumps(payload1),
+            content_type="application/json",
+            **self._auth_headers(),
+        )
+        self.assertIn(resp1.status_code, (200, 201))
+
+        # Second bounty: 5.50
+        payload2 = {
+            "github_issue_url": self.github_issue.url,
+            "amount": "5.50",
+            "github_username": "user2",
+        }
+        resp2 = self.client.post(
+            "/api/v1/bounties/",
+            data=json.dumps(payload2),
+            content_type="application/json",
+            **self._auth_headers(),
+        )
+        self.assertIn(resp2.status_code, (200, 201))
+
+        encoded_url = self.github_issue.url  # view handles quoting itself
+
+        response = self.client.get(
+            f"/api/v1/bounties/issue-total/?github_issue_url={encoded_url}",
+            **self._auth_headers(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # 10.00 + 5.50 = 15.50
+        self.assertEqual(Decimal(str(data["total"])), Decimal("15.50"))
