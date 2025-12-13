@@ -408,10 +408,14 @@ class DailyChallengeService:
     @staticmethod
     def _check_no_blockers(daily_status_report):
         """Check if user reported no blockers."""
-        if not daily_status_report or not daily_status_report.blockers:
+        if not daily_status_report:
             return False
 
         blockers = daily_status_report.blockers.strip().lower()
+
+        # Empty or whitespace-only blockers field counts as "no blockers"
+        if not blockers:
+            return True
 
         # Check for exact match with "no blockers" or "no_blockers"
         return blockers in ["no blockers", "no_blockers"]
