@@ -1318,6 +1318,11 @@ try:
 except NotRegistered:
     pass
 
+from typing import ClassVar
+from django.db.models import Count
+from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+
 
 class CustomUserAdmin(DjangoUserAdmin):
     actions: ClassVar[list] = [deactivate_users]
@@ -1326,6 +1331,8 @@ class CustomUserAdmin(DjangoUserAdmin):
         "username",
         "email",
         "is_active",
+        "bug_count",
+        "forum_comment_count",
         "activity_status",
         "last_login",
         "date_joined",
@@ -1339,6 +1346,7 @@ class CustomUserAdmin(DjangoUserAdmin):
     search_fields = ("username", "email")
     ordering = ("-last_login",)
 
+    # 🔒 Superuser-only dashboard
     def has_module_permission(self, request):
         return request.user.is_superuser
 
@@ -1354,10 +1362,34 @@ class CustomUserAdmin(DjangoUserAdmin):
             actions.pop("deactivate_users", None)
         return actions
 
+    # 📊 Activity metrics (single optimized query)
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            bug_count=Count("issue", distinct=True),
+            forum_comment_count=Count("forumcomment", distinct=True),
+        )
+
+    def bug_count(self, obj):
+        return obj.bug_count
+
+    bug_count.short_description = "Bugs Reported"
+    bug_count.admin_order_field = "bug_count"
+
+    def forum_comment_count(self, obj):
+        return obj.forum_comment_count
+
+    forum_comment_count.short_description = "Forum Comments"
+    forum_comment_count.admin_order_field = "forum_comment_count"
+
     def activity_status(self, obj):
         if obj.last_login:
-            return format_html('<span style="color: green; font-weight: 600;">Active</span>')
-        return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
+            return format_html(
+                '<span style="color: green; font-weight: 600;">Active</span>'
+            )
+        return format_html(
+            '<span style="color: red; font-weight: 600;">Inactive</span>'
+        )
 
     activity_status.short_description = "Activity"
 
