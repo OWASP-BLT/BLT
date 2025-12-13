@@ -6,7 +6,7 @@ import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
-from django.test import Client, LiveServerTestCase, TestCase
+from django.test import Client, LiveServerTestCase, TestCase, tag
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -37,6 +37,7 @@ from ..models import (
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 
+@tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
