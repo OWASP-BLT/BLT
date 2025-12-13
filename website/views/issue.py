@@ -1110,6 +1110,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
             obj = form.save(commit=False)
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
+            report_private = self.request.POST.get("report_private", "off") == "on"
 
             if report_anonymous:
                 obj.user = None
@@ -1181,8 +1182,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 domain = Domain.objects.create(name=clean_domain_no_www, url=clean_domain)
                 domain.save()
 
-            # Don't save issue if security vulnerability
-            if form.instance.label == "4" or form.instance.label == 4:
+            # Don't save issue if security vulnerability or private report
+            if form.instance.label == 4 or report_private:
                 dest_email = getattr(domain, "email", None)
                 if not dest_email and domain.organization:
                     dest_email = getattr(domain.organization, "email", None)
@@ -1239,14 +1240,21 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         shutil.copy(orig_path, dest_path)
                                         screenshot_paths.append(dest_path)
 
+                            # Determine report type for email content
+                            is_security = form.instance.label == 4
+                            report_type = "Security Vulnerability Report" if is_security else "Private Bug Report"
+
                             details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
                             with open(details_md_path, "w", encoding="utf-8") as f:
-                                f.write("# Security Vulnerability Report\n\n")
+                                f.write(f"# {report_type}\n\n")
                                 f.write(f"**URL:** {obj.url}\n")
                                 f.write(f"**Domain:** {clean_domain}\n")
 
                                 if obj.cve_id:
                                     f.write(f"**CVE ID:** {obj.cve_id}\n")
+
+                                if report_private:
+                                    f.write("**Report Type:** Private\n")
 
                                 f.write("\n**Description:**\n")
                                 f.write(f"{obj.description}\n\n")
@@ -1292,13 +1300,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                 for file in screenshot_paths:
                                     zipf.write(file, arcname=os.path.basename(file))
 
-                            email_subject = f"Security Vulnerability Report for {clean_domain}"
+                            email_subject = f"{report_type} for {clean_domain}"
                             html_body = render_to_string(
                                 "email/security_report.html",
-                                {"clean_domain": clean_domain, "password": password},
+                                {"clean_domain": clean_domain, "report_type": report_type},
                             )
 
                             try:
+                                # Prepare both emails first
                                 email = EmailMessage(
                                     subject=email_subject,
                                     body=html_body,
@@ -1310,18 +1319,59 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                 with open(zip_path, "rb") as f:
                                     email.attach("security_report.zip", f.read(), "application/zip")
 
-                                email.send(fail_silently=False)
+                                # Prepare password email
+                                password_subject = f"Password for {report_type} - {clean_domain}"
+                                password_body = render_to_string(
+                                    "email/security_report_password.html",
+                                    {"clean_domain": clean_domain, "password": password, "report_type": report_type},
+                                )
 
+                                password_email = EmailMessage(
+                                    subject=password_subject,
+                                    body=password_body,
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
+                                    to=[dest_email],
+                                )
+                                password_email.content_subtype = "html"
+
+                                # Send both emails and track success
+                                try:
+                                    email.send(fail_silently=False)
+                                    password_email.send(fail_silently=False)
+                                except Exception as email_error:
+                                    logger.error(f"Error sending report or password email: {email_error}")
+                                    error_msg = "private bug report" if report_private else "security report"
+                                    messages.error(
+                                        self.request,
+                                        f"Failed to send complete {error_msg}. Please try again or contact support.",
+                                    )
+                                    return HttpResponseRedirect("/")
+
+                                # Increment private reports count if this is a private report
+                                if report_private and self.request.user.is_authenticated and not report_anonymous:
+                                    try:
+                                        user_prof = UserProfile.objects.get(user=self.request.user)
+                                        user_prof.private_reports_count += 1
+                                        user_prof.save()
+                                    except UserProfile.DoesNotExist:
+                                        logger.warning(
+                                            f"UserProfile does not exist for user {self.request.user.id}, skipping private_reports_count increment"
+                                        )
+
+                                success_msg = (
+                                    "Private bug report" if report_private else "Security vulnerability report"
+                                )
                                 messages.success(
                                     self.request,
-                                    "Security vulnerability report sent securely to the organization. Thank you for your report.",
+                                    f"{success_msg} sent securely to the organization. Thank you for your report.",
                                 )
                                 return HttpResponseRedirect("/")
                             except Exception as e:
                                 logger.error(f"Error while sending email: {e}")
+                                error_msg = "private bug report" if report_private else "security report"
                                 messages.error(
                                     self.request,
-                                    "Could not mail security report. Please try again later.",
+                                    f"Could not mail {error_msg}. Please try again later.",
                                 )
                                 return HttpResponseRedirect("/")
 
@@ -1331,9 +1381,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         return HttpResponseRedirect("/")
 
                 else:
+                    report_msg = "private bug report" if report_private else "security vulnerability report"
                     messages.warning(
                         self.request,
-                        "Could not send security vulnerability report as no contact email is available for this domain.",
+                        f"Could not send {report_msg} as no contact email is available for this domain.",
                     )
                     return HttpResponseRedirect("/")
 
