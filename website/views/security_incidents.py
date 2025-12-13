@@ -79,4 +79,15 @@ class SecurityIncidentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["incident"] = self.object
+        history_qs = self.object.history.order_by("-changed_at").values(
+            "id",
+            "field_name",
+            "old_value",
+            "new_value",
+            "changed_by_id",
+            "changed_at",
+        )
+        context["history_json"] = json.dumps(list(history_qs))
+        if hasattr(self.object, "history"):
+            context["unique_editors_count"] = self.object.history.values("changed_by").order_by().distinct().count()
         return context
