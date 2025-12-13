@@ -372,10 +372,10 @@ document.addEventListener("DOMContentLoaded", function() {
             const length = titleInput.value.length;
             titleCounter.textContent = `${length}/200 characters`;
             
-            if (length > 180) {
+            if (length > 190) {
+                itleCounter.className = 'text-xs text-red-600 dark:text-red-400 mt-1 text-right';
+            } else if (length > 180) {
                 titleCounter.className = 'text-xs text-yellow-600 dark:text-yellow-400 mt-1 text-right';
-            } else if (length > 190) {
-                titleCounter.className = 'text-xs text-red-600 dark:text-red-400 mt-1 text-right';
             } else {
                 titleCounter.className = 'text-xs text-gray-500 dark:text-gray-400 mt-1 text-right';
             }
@@ -529,39 +529,41 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 5000);
 }
 
-    // Add auto-save functionality (optional)
-    let autoSaveTimeout;
-    const formData = new FormData();
-    let lastAutosaveToast = 0;
+// Feature flag — reviewer request
+const AUTOSAVE_ENABLED = false;
+
+// Add auto-save functionality (optional)
+let autoSaveTimeout;
+let lastAutosaveToast = 0;
 
 function showAutosaveToast() {
     const now = Date.now();
-    if (now - lastAutosaveToast < 10000) return; // Show max once / 10 seconds
+    if (now - lastAutosaveToast < 10000) return; // max once per 10 sec
     lastAutosaveToast = now;
     showToast("Draft saved", "info");
 }
 
-    
-    function autoSave() {
-        if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
-        
-        autoSaveTimeout = setTimeout(() => {
-            const formData = new FormData(form);
-            // Convert to JSON for API call (optional)
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-            
-            // Here you could make an API call to auto-save
-            // For now, just show a toast
-            showAutosaveToast();
-        }, 2000); // Save after 2 seconds of inactivity
-    }
-    
-    // Listen for form changes
-    form?.addEventListener('input', autoSave);
-    form?.addEventListener('change', autoSave);
-});
+function autoSave() {
+    if (!AUTOSAVE_ENABLED) return;   // <── KEY FIX
+
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+
+    autoSaveTimeout = setTimeout(() => {
+        const data = {};
+        new FormData(form).forEach((value, key) => {
+            data[key] = value;
+        });
+
+        // Future: send data to backend
+        showAutosaveToast();
+    }, 2000);
+}
+
+// Listen only if autosave is enabled
+if (AUTOSAVE_ENABLED) {
+    form?.addEventListener("input", autoSave);
+    form?.addEventListener("change", autoSave);
+}
+
     </script>
 {% endblock extra_js %}

@@ -48,19 +48,19 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
     @transaction.atomic
     def form_valid(self, form):
         # Capture old state before save
-        old_instance = SecurityIncident.objects.get(pk=self.object.pk)
+        old_instance = SecurityIncident.objects.select_for_update().get(pk=self.object.pk)
 
         # Save the updated incident
         response = super().form_valid(form)
 
         # Create history records for changed fields
-        fields_to_track = ["title", "severity", "status", "affected_systems", "description", "resolved_at"]
+        fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
 
         for field in fields_to_track:
             old_val = getattr(old_instance, field)
             new_val = getattr(self.object, field)
 
-            if str(old_val) != str(new_val):
+            if old_val != new_val:
                 SecurityIncidentHistory.objects.create(
                     incident=self.object,
                     field_name=field,
