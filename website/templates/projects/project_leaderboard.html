@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Project Leaderboard{% endblock %}
+{% block content %}
+    <div class="max-w-6xl mx-auto px-4">
+        <h1 class="text-2xl font-semibold text-red-500 mb-6">Project Leaderboard</h1>
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6 border-b border-gray-700 pb-2">
+            <button class="tab-btn px-4 py-2 text-sm rounded-md font-medium transition bg-red-600 text-white"
+                    data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn px-4 py-2 text-sm rounded-md font-medium transition bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
+                    data-tab="projects">Projects</button>
+            <button class="tab-btn px-4 py-2 text-sm rounded-md font-medium transition bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
+                    data-tab="activity">Activity</button>
+        </div>
+        <!-- Dashboard -->
+        <div id="dashboard" class="tab-content space-y-3">
+            {% for project in dashboard_projects %}
+                <div class="flex justify-between items-center p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                    <span class="font-medium">{{ project.name }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">
+                        Stars: {{ project.total_stars|default:0 }} |
+                        Forks: {{ project.total_forks|default:0 }}
+                    </span>
+                </div>
+            {% empty %}
+                <p class="text-sm text-gray-500">No data available.</p>
+            {% endfor %}
+        </div>
+        <!-- Projects -->
+        <div id="projects" class="tab-content hidden space-y-3">
+            {% for project in projects %}
+                <div class="flex justify-between items-center p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                    <span class="font-medium">{{ project.name }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Repositories: {{ project.repo_count }}</span>
+                </div>
+            {% empty %}
+                <p class="text-sm text-gray-500">No data available.</p>
+            {% endfor %}
+        </div>
+        <!-- Activity -->
+        <div id="activity" class="tab-content hidden space-y-3">
+            {% for project in activity %}
+                <div class="flex justify-between items-center p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                    <span class="font-medium">{{ project.name }}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Open Issues: {{ project.open_issues|default:0 }}</span>
+                </div>
+            {% empty %}
+                <p class="text-sm text-gray-500">No data available.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const buttons = document.querySelectorAll(".tab-btn");
+  const tabs = document.querySelectorAll(".tab-content");
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // hide all tabs
+      tabs.forEach(t => t.classList.add("hidden"));
+
+      // reset button styles
+      buttons.forEach(b => {
+        b.classList.remove("bg-red-600", "text-white");
+        b.classList.add(
+          "bg-gray-200",
+          "dark:bg-gray-800",
+          "text-gray-700",
+          "dark:text-gray-300"
+        );
+      });
+
+      // show selected tab
+      document.getElementById(btn.dataset.tab).classList.remove("hidden");
+
+      // activate button
+      btn.classList.remove(
+        "bg-gray-200",
+        "dark:bg-gray-800",
+        "text-gray-700",
+        "dark:text-gray-300"
+      );
+      btn.classList.add("bg-red-600", "text-white");
+    });
+  });
+});
+    </script>
+{% endblock %}

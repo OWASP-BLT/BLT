@@ -1,9 +1,12 @@
+from typing import ClassVar
 from urllib.parse import urlparse
 
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.sites import NotRegistered
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
 from django.utils.html import format_html
@@ -99,6 +102,8 @@ from website.models import (
     Wallet,
     Winner,
 )
+
+User = get_user_model()
 
 
 class UserResource(resources.ModelResource):
@@ -1271,3 +1276,90 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+@admin.action(description="Deactivate selected users")
+def deactivate_users(modeladmin, request, queryset):
+    if not request.user.is_superuser:
+        modeladmin.message_user(
+            request,
+            "Only superusers can deactivate users.",
+            level="ERROR",
+        )
+        return
+
+    updated = queryset.update(is_active=False)
+    modeladmin.message_user(
+        request,
+        f"Deactivated {updated} user(s).",
+    )
+
+
+class ActivityStatusFilter(admin.SimpleListFilter):
+    title = "Activity Status"
+    parameter_name = "activity"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("active", "Active"),
+            ("inactive", "Inactive"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "active":
+            return queryset.exclude(last_login__isnull=True)
+        if self.value() == "inactive":
+            return queryset.filter(last_login__isnull=True)
+        return queryset
+
+
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
+
+
+class CustomUserAdmin(DjangoUserAdmin):
+    actions: ClassVar[list] = [deactivate_users]
+
+    list_display = (
+        "username",
+        "email",
+        "is_active",
+        "activity_status",
+        "last_login",
+        "date_joined",
+    )
+
+    list_filter = (
+        "is_active",
+        ActivityStatusFilter,
+    )
+
+    search_fields = ("username", "email")
+    ordering = ("-last_login",)
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            actions.pop("deactivate_users", None)
+        return actions
+
+    def activity_status(self, obj):
+        if obj.last_login:
+            return format_html('<span style="color: green; font-weight: 600;">Active</span>')
+        return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
+
+    activity_status.short_description = "Activity"
+
+
+admin.site.register(User, CustomUserAdmin)
