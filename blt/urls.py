@@ -300,6 +300,7 @@ from website.views.project import (
     repo_activity_data,
     select_contribution,
 )
+from website.views.project_leaderboard import ProjectLeaderboardView
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
@@ -397,6 +398,11 @@ handler500 = "website.views.core.handler500"
 
 urlpatterns = [
     path("simulation/", dashboard, name="simulation_dashboard"),
+    path(
+        "project_leaderboard/",
+        ProjectLeaderboardView.as_view(),
+        name="project_leaderboard",
+    ),
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
