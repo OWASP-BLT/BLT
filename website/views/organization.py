@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import logging
+import os
 import re
 import time
 from collections import defaultdict
@@ -1184,7 +1185,9 @@ class HuntCreate(CreateView):
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
         data = request.body
-        for event in json.loads(data):
+        events = json.loads(data)
+
+        for event in events:
             try:
                 # Try to find a matching domain first
                 domain = Domain.objects.filter(email__iexact=event.get("email")).first()
@@ -1222,7 +1225,61 @@ class InboundParseWebhookView(View):
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
                 logger.error(f"Error processing SendGrid webhook event: {str(e)}")
 
+        # Send events to Slack webhook
+        self._send_to_slack(events)
+
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
+
+    def _send_to_slack(self, events):
+        """
+        Send SendGrid webhook events to Slack webhook.
+
+        Args:
+            events: List of SendGrid webhook event dictionaries
+        """
+        try:
+            slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+
+            if not slack_webhook_url:
+                logger.debug("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
+                return
+
+            # Format events for Slack
+            for event in events:
+                event_type = event.get("event", "unknown")
+                email = event.get("email", "unknown")
+                timestamp = event.get("timestamp", "")
+
+                # Create a formatted message for this event
+                event_text = f"*📧 SendGrid Event: {event_type.upper()}*\n"
+                event_text += f"*Email:* {email}\n"
+                event_text += f"*Timestamp:* {timestamp}\n"
+
+                # Add additional details based on event type
+                if event_type == "bounce":
+                    reason = event.get("reason", "Unknown")
+                    event_text += f"*Reason:* {reason}\n"
+                elif event_type == "click":
+                    url = event.get("url", "N/A")
+                    event_text += f"*URL:* {url}\n"
+
+                # Add any other relevant fields
+                if "sg_message_id" in event:
+                    event_text += f"*Message ID:* {event.get('sg_message_id')}\n"
+
+                # Prepare Slack payload
+                payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": event_text}}]}
+
+                # Send to Slack
+                response = requests.post(slack_webhook_url, json=payload, timeout=5)
+                response.raise_for_status()
+
+            logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error sending to Slack: {str(e)}")
 
 
 class CreateHunt(TemplateView):
