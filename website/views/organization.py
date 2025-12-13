@@ -2402,8 +2402,11 @@ def add_sizzle_checkIN(request):
                     next_challenge_at = last_checkin_for_timer.created + timedelta(hours=CHALLENGE_RESET_HOURS)
                 else:
                     # If no check-in, check if there's a next_challenge_at set
+                    # Scope to today's challenge to avoid returning challenges from previous days
+                    today = now().date()
                     current_challenge = UserDailyChallenge.objects.filter(
                         user=request.user,
+                        challenge_date=today,
                         status="assigned",
                     ).first()
                     if current_challenge and current_challenge.next_challenge_at:
