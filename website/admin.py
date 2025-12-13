@@ -1320,6 +1320,11 @@ try:
 except NotRegistered:
     pass
 
+from typing import ClassVar
+from django.db.models import Count
+from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+
 
 class CustomUserAdmin(DjangoUserAdmin):
     actions: ClassVar[list] = [deactivate_users]
@@ -1342,6 +1347,7 @@ class CustomUserAdmin(DjangoUserAdmin):
 
     search_fields = ("username", "email")
     ordering = ("-last_login",)
+
 
 
     def has_module_permission(self, request):
