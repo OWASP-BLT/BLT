@@ -71,10 +71,11 @@
                 <a href="?export=csv{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
                    class="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm font-medium">📄 Export CSV</a>
                 <!-- Add Incident (Next PR) -->
-                <button disabled
-                        class="bg-green-500/30 text-green-900 dark:text-green-200 px-4 py-2 rounded shadow text-sm font-medium cursor-not-allowed">
+                <!-- Add Incident -->
+                <a href="{% url 'security_incident_add' %}"
+                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition duration-200">
                     ➕ Add Incident
-                </button>
+                </a>
             </div>
             <!-- Filters -->
             <form method="get" class="mb-8 bg-gray-50 dark:bg-gray-900 rounded-lg p-6">

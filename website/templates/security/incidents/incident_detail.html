@@ -1,0 +1,592 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}
+    {{ incident.title }} - Incident Details
+{% endblock title %}
+{% block description %}
+    View detailed information about security incident: {{ incident.title }}. Includes severity, status, affected systems, and timeline.
+{% endblock description %}
+{% block keywords %}
+    Security Incident, Incident Details, {{ incident.get_severity_display }}, {{ incident.get_status_display }}, Affected Systems
+{% endblock keywords %}
+{% block og_title %}
+    {{ incident.title }} - Security Incident Details
+{% endblock og_title %}
+{% block og_description %}
+    Detailed view of security incident including severity level, current status, and affected systems.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 {% if incident.severity == 'critical' %}bg-red-500{% elif incident.severity == 'high' %}bg-orange-500{% elif incident.severity == 'medium' %}bg-yellow-500{% else %}bg-green-500{% endif %} rounded-full flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">{{ incident.title }}</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2">Security Incident Details</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{% url 'security_incident_edit' incident.id %}"
+                           class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] transition-colors duration-300 flex items-center gap-2">
+                            <i class="fas fa-edit"></i>
+                            Edit Incident
+                        </a>
+                        <a href="{% url 'security_dashboard' %}"
+                           class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Main Incident Details Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-8">
+                <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-info-circle text-[#e74c3c] mr-2"></i>
+                        Incident Overview
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <!-- Status and Severity Badges -->
+                    <div class="flex flex-wrap items-center gap-4 mb-8">
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400">Severity</div>
+                            <span class="px-4 py-2 rounded-full font-semibold text-sm {% if incident.severity == 'critical' %} bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800 {% elif incident.severity == 'high' %} bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800 {% elif incident.severity == 'medium' %} bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800 {% else %} bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800 {% endif %}">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                {{ incident.get_severity_display|upper }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400">Status</div>
+                            <span class="px-4 py-2 rounded-full font-semibold text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                <i class="fas fa-tasks mr-2"></i>
+                                {{ incident.get_status_display|upper }}
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Incident Information Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Created At -->
+                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-calendar-plus text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Created At</div>
+                                    <div class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ incident.created_at|date:"F j, Y" }}</div>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-clock mr-2"></i>
+                                {{ incident.created_at|date:"g:i A" }}
+                            </div>
+                        </div>
+                        <!-- Last Updated -->
+                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-history text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</div>
+                                    <div class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ incident.updated_at|date:"F j, Y" }}</div>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-clock mr-2"></i>
+                                {{ incident.updated_at|date:"g:i A" }}
+                            </div>
+                        </div>
+                        <!-- Resolved At (if exists) -->
+                        {% if incident.resolved_at %}
+                            <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-5 md:col-span-2">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-check-circle text-green-600 dark:text-green-400"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Resolved At</div>
+                                        <div class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ incident.resolved_at|date:"F j, Y" }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    {{ incident.resolved_at|date:"g:i A" }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- Affected Systems -->
+                    <div class="mb-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                                <i class="fas fa-server text-red-600 dark:text-red-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Affected Systems</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Systems impacted by this incident</p>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                            <div class="prose dark:prose-invert max-w-none">{{ incident.affected_systems|linebreaks }}</div>
+                        </div>
+                    </div>
+                    <!-- Incident Timeline -->
+                    <div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                                <i class="fas fa-stream text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">Incident Timeline</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Key events in chronological order</p>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <!-- Timeline Line -->
+                            <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+                            <!-- Timeline Items -->
+                            <div class="space-y-8">
+                                <!-- Created Event -->
+                                <div class="relative pl-12">
+                                    <div class="absolute left-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-plus text-white text-sm"></i>
+                                    </div>
+                                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200">Incident Created</h4>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ incident.created_at|date:"M j, g:i A" }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            Initial incident report created with {{ incident.get_severity_display }} severity
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Status Updates -->
+                                <div class="relative pl-12">
+                                    <div class="absolute left-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-sync-alt text-white text-sm"></i>
+                                    </div>
+                                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200">Status Updated</h4>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ incident.updated_at|date:"M j, g:i A" }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            Incident status updated to <span class="font-semibold">{{ incident.get_status_display }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Resolved Event (if exists) -->
+                                {% if incident.resolved_at %}
+                                    <div class="relative pl-12">
+                                        <div class="absolute left-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-white text-sm"></i>
+                                        </div>
+                                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <h4 class="font-semibold text-gray-800 dark:text-gray-200">Incident Resolved</h4>
+                                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ incident.resolved_at|date:"M j, g:i A" }}</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">Incident marked as resolved</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Action Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Quick Actions Card -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl shadow-md p-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bolt text-blue-600 dark:text-blue-300 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Quick Actions</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Manage this incident</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <a href="{% url 'security_incident_edit' incident.id %}"
+                           class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 group">
+                            <div class="w-8 h-8 bg-[#e74c3c] bg-opacity-10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-edit text-[#e74c3c] group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-800 dark:text-gray-200">Edit Incident</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Update details and status</div>
+                            </div>
+                        </a>
+                        <a href="{% url 'security_dashboard' %}"
+                           class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 group">
+                            <div class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                <i class="fas fa-list text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-800 dark:text-gray-200">View All Incidents</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Return to dashboard</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <!-- Severity Info Card -->
+                <div class="bg-gradient-to-br from-{% if incident.severity == 'critical' %}red{% elif incident.severity == 'high' %}orange{% elif incident.severity == 'medium' %}yellow{% else %}green{% endif %}-50 to-{% if incident.severity == 'critical' %}red{% elif incident.severity == 'high' %}orange{% elif incident.severity == 'medium' %}yellow{% else %}green{% endif %}-100 dark:from-{% if incident.severity == 'critical' %}red{% elif incident.severity == 'high' %}orange{% elif incident.severity == 'medium' %}yellow{% else %}green{% endif %}-900/20 dark:to-{% if incident.severity == 'critical' %}red{% elif incident.severity == 'high' %}orange{% elif incident.severity == 'medium' %}yellow{% else %}green{% endif %}-800/20 rounded-xl shadow-md p-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 {% if incident.severity == 'critical' %}bg-red-100 dark:bg-red-800{% elif incident.severity == 'high' %}bg-orange-100 dark:bg-orange-800{% elif incident.severity == 'medium' %}bg-yellow-100 dark:bg-yellow-800{% else %}bg-green-100 dark:bg-green-800{% endif %} rounded-full flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle {% if incident.severity == 'critical' %}text-red-600 dark:text-red-300{% elif incident.severity == 'high' %}text-orange-600 dark:text-orange-300{% elif incident.severity == 'medium' %}text-yellow-600 dark:text-yellow-300{% else %}text-green-600 dark:text-green-300{% endif %} text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Severity Level</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Current: {{ incident.get_severity_display|upper }}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Impact Level</div>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="h-2 rounded-full {% if incident.severity == 'critical' %}bg-red-500 w-full {% elif incident.severity == 'high' %}bg-orange-500 w-3/4 {% elif incident.severity == 'medium' %}bg-yellow-500 w-1/2 {% else %}bg-green-500 w-1/4{% endif %}">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            {% if incident.severity == 'critical' %}
+                                Critical incidents require immediate attention and may cause severe business disruption.
+                            {% elif incident.severity == 'high' %}
+                                High severity incidents need prompt attention and may significantly impact operations.
+                            {% elif incident.severity == 'medium' %}
+                                Medium severity incidents require attention but allow for normal business processes.
+                            {% else %}
+                                Low severity incidents have minimal impact and can be addressed during regular maintenance.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <!-- Status Card -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl shadow-md p-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-chart-line text-green-600 dark:text-green-300 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Status Metrics</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Incident Progress</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm font-medium text-gray-600 dark:text-gray-400">Time Since Creation</div>
+                            <div class="text-lg font-bold text-gray-800 dark:text-gray-200">{{ incident.created_at|timesince }}</div>
+                        </div>
+                        {% if incident.resolved_at %}
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-medium text-gray-600 dark:text-gray-400">Resolution Time</div>
+                                <div class="text-lg font-bold text-green-600 dark:text-green-400">
+                                    {{ incident.created_at|timesince:incident.resolved_at }}
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="text-center">
+                            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
+                                <div class="w-2 h-2 rounded-full {% if incident.status == 'resolved' %}bg-green-500 {% elif incident.status == 'in_progress' %}bg-blue-500 {% elif incident.status == 'investigating' %}bg-yellow-500 {% else %}bg-gray-500{% endif %}">
+                                </div>
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ incident.get_status_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_css %}
+    <style>
+/* Custom styling for timeline */
+.timeline-item {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #e5e7eb, transparent);
+}
+
+.dark .timeline-item::before {
+    background: linear-gradient(to bottom, #4b5563, transparent);
+}
+
+/* Severity indicator animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.severity-critical {
+    animation: pulse 2s infinite;
+}
+
+/* Card hover effects */
+.action-card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+/* Status badge animation */
+.status-badge {
+    position: relative;
+    overflow: hidden;
+}
+
+.status-badge::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) rotate(45deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline-item {
+        padding-left: 1.5rem;
+    }
+    
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+{% endblock extra_css %}
+{% block extra_js %}
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Update relative time displays
+    function updateRelativeTimes() {
+        const timeElements = document.querySelectorAll('[data-time]');
+        timeElements.forEach(el => {
+            const timestamp = new Date(el.getAttribute('data-time')).getTime();
+            const now = new Date().getTime();
+            const diff = now - timestamp;
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            let text = '';
+            if (days > 0) {
+                text = `${days} day${days !== 1 ? 's' : ''} ago`;
+            } else if (hours > 0) {
+                text = `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            } else if (minutes > 0) {
+                text = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            } else {
+                text = 'Just now';
+            }
+            
+            el.textContent = text;
+        });
+    }
+    
+    // Update time every minute
+    updateRelativeTimes();
+    setInterval(updateRelativeTimes, 60000);
+    
+    // Copy incident details
+    const copyButton = document.getElementById('copy-details');
+    if (copyButton) {
+        copyButton.addEventListener('click', function() {
+            const incidentDetails = {
+                title: "{{ incident.title }}",
+                severity: "{{ incident.get_severity_display }}",
+                status: "{{ incident.get_status_display }}",
+                created: "{{ incident.created_at|date:'Y-m-d H:i' }}",
+                affected: "{{ incident.affected_systems|striptags }}"
+            };
+            
+            const detailsText = `Incident Details:
+Title: ${incidentDetails.title}
+Severity: ${incidentDetails.severity}
+Status: ${incidentDetails.status}
+Created: ${incidentDetails.created}
+Affected Systems: ${incidentDetails.affected}`;
+            
+            navigator.clipboard.writeText(detailsText).then(() => {
+                showToast('Incident details copied to clipboard', 'success');
+            });
+        });
+    }
+    
+    // Status update simulation (for demo purposes)
+    const statusBadge = document.querySelector('.status-badge');
+    if (statusBadge && "{{ incident.status }}" !== 'resolved') {
+        // Add pulsing animation to active incidents
+        statusBadge.classList.add('animate-pulse');
+        
+        // Simulate status check every 30 seconds
+        setInterval(() => {
+            fetch(`/api/incident/{{ incident.id }}/status/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== "{{ incident.status }}") {
+                        showToast('Incident status updated', 'info');
+                        // Refresh page or update status dynamically
+                        location.reload();
+                    }
+                })
+                .catch(() => {
+                    // Silently fail for demo
+                });
+        }, 30000);
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            warning: 'bg-yellow-500',
+            info: 'bg-blue-500'
+        };
+        
+        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 5000);
+    }
+    
+    // Print incident details
+    const printButton = document.getElementById('print-incident');
+    if (printButton) {
+        printButton.addEventListener('click', function() {
+            const printContent = document.querySelector('.container').innerHTML;
+            const originalContent = document.body.innerHTML;
+            
+            document.body.innerHTML = `
+                <div class="p-8">
+                    <div class="mb-6 text-center">
+                        <h1 class="text-2xl font-bold">{{ incident.title }}</h1>
+                        <p class="text-gray-600">Security Incident Report - Printed on ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    ${printContent}
+                </div>
+            `;
+            
+            window.print();
+            document.body.innerHTML = originalContent;
+        });
+    }
+    
+    // Share incident via Web Share API (if supported)
+    const shareButton = document.getElementById('share-incident');
+    if (shareButton && navigator.share) {
+        shareButton.style.display = 'inline-flex';
+        shareButton.addEventListener('click', async () => {
+            try {
+                await navigator.share({
+                    title: "{{ incident.title }}",
+                    text: "Security Incident: {{ incident.title }} - Severity: {{ incident.get_severity_display }}",
+                    url: window.location.href,
+                });
+                showToast('Incident shared successfully', 'success');
+            } catch (err) {
+                console.log('Error sharing:', err);
+            }
+        });
+    }
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + E to edit
+        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+            e.preventDefault();
+            window.location.href = "{% url 'security_incident_edit' incident.id %}";
+        }
+        
+        // Ctrl/Cmd + B to go back
+        if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+            e.preventDefault();
+            window.location.href = "{% url 'security_dashboard' %}";
+        }
+        
+        // Escape key to go back
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'security_dashboard' %}";
+        }
+    });
+    
+    // Initialize tooltips
+    const tooltips = document.querySelectorAll('[data-tooltip]');
+    tooltips.forEach(el => {
+        el.addEventListener('mouseenter', function() {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'absolute z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg';
+            tooltip.textContent = this.getAttribute('data-tooltip');
+            tooltip.style.top = `${this.offsetTop - 40}px`;
+            tooltip.style.left = `${this.offsetLeft + this.offsetWidth / 2}px`;
+            tooltip.style.transform = 'translateX(-50%)';
+            
+            this.appendChild(tooltip);
+            
+            this.addEventListener('mouseleave', () => {
+                tooltip.remove();
+            }, { once: true });
+        });
+    });
+});
+    </script>
+{% endblock extra_js %}

@@ -3578,3 +3578,15 @@ class SecurityIncident(models.Model):
             models.Index(fields=["status"], name="incident_status_idx"),
             models.Index(fields=["-created_at"], name="incident_created_idx"),
         ]
+
+
+class SecurityIncidentHistory(models.Model):
+    incident = models.ForeignKey(SecurityIncident, on_delete=models.CASCADE, related_name="history")
+    field_name = models.CharField(max_length=100)
+    old_value = models.TextField(null=True, blank=True)
+    new_value = models.TextField(null=True, blank=True)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at"]

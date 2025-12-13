@@ -24,7 +24,6 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
-from rest_framework import filters, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
@@ -1906,6 +1905,8 @@ class DebugPanelStatusApiView(APIView):
                 },
             }
         )
+
+
 # Security Incident API
 class SecurityIncidentViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]

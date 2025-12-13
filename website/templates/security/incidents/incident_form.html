@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    {{ form_title }} - Security Incident
+{% endblock title %}
+{% block description %}
+    Create or update security incident details. Track severity, status, and affected systems.
+{% endblock description %}
+{% block keywords %}
+    Security Incident, Incident Management, Severity, Status, Affected Systems
+{% endblock keywords %}
+{% block og_title %}
+    {{ form_title }} - Security Incident Management
+{% endblock og_title %}
+{% block og_description %}
+    Manage security incident details including severity, status, and affected systems.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">{{ form_title }}</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2">Track and manage security incidents with detailed information</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="{% url 'security_dashboard' %}"
+                           class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Incident Form Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-edit text-[#e74c3c] mr-2"></i>
+                        Incident Details
+                    </h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Fill in the incident information below</p>
+                </div>
+                <div class="p-6">
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mb-6">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                                    <div>
+                                        <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Form Errors</h3>
+                                        <div class="mt-2 text-sm text-red-700 dark:text-red-300">{{ form.non_field_errors }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <!-- Title Field -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-heading text-[#e74c3c] mr-2"></i>
+                                Title
+                            </label>
+                            <div class="relative">
+                                {{ form.title }}
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-file-signature text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.title.errors %}
+                                <div class="text-sm text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ form.title.errors }}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Enter a descriptive title for the incident</p>
+                        </div>
+                        <!-- Severity Field -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-exclamation-triangle text-[#e74c3c] mr-2"></i>
+                                Severity
+                            </label>
+                            <div class="relative">
+                                {{ form.severity }}
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.severity.errors %}
+                                <div class="text-sm text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ form.severity.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                    <span class="text-xs text-gray-600 dark:text-gray-400">Low</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                    <span class="text-xs text-gray-600 dark:text-gray-400">Medium</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+                                    <span class="text-xs text-gray-600 dark:text-gray-400">High</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <span class="text-xs text-gray-600 dark:text-gray-400">Critical</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Status Field -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-tasks text-[#e74c3c] mr-2"></i>
+                                Status
+                            </label>
+                            <div class="relative">
+                                {{ form.status }}
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.status.errors %}
+                                <div class="text-sm text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ form.status.errors }}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Current status of the incident</p>
+                        </div>
+                        <!-- Affected Systems Field -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fas fa-server text-[#e74c3c] mr-2"></i>
+                                Affected Systems
+                            </label>
+                            <div class="relative">
+                                {{ form.affected_systems }}
+                                <div class="absolute inset-y-0 left-0 pl-3 pt-3 pointer-events-none">
+                                    <i class="fas fa-network-wired text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.affected_systems.errors %}
+                                <div class="text-sm text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {{ form.affected_systems.errors }}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400">List the systems impacted by this incident</p>
+                        </div>
+                        <!-- Action Buttons -->
+                        <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    All fields are required
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <a href="{% url 'security_dashboard' %}"
+                                       class="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2">
+                                        <i class="fas fa-times"></i>
+                                        Cancel
+                                    </a>
+                                    <button type="submit"
+                                            class="px-6 py-3 text-sm font-medium text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] transition-colors duration-300 flex items-center gap-2">
+                                        <i class="fas fa-save"></i>
+                                        Save Incident
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Help Information Card -->
+            <div class="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl shadow-md p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-lightbulb text-blue-600 dark:text-blue-300 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                            <i class="fas fa-question-circle text-blue-500 mr-2"></i>
+                            Best Practices for Incident Reporting
+                        </h3>
+                        <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-green-500 mt-1 flex-shrink-0"></i>
+                                <span>Be specific and descriptive in the title</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-green-500 mt-1 flex-shrink-0"></i>
+                                <span>Accurately assess the severity level</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-green-500 mt-1 flex-shrink-0"></i>
+                                <span>Keep status updated as incident progresses</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check-circle text-green-500 mt-1 flex-shrink-0"></i>
+                                <span>List all affected systems comprehensively</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_css %}
+    <style>
+/* Custom form styling */
+select, textarea, input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background-color: white;
+    color: #374151;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.dark select,
+.dark textarea,
+.dark input {
+    border-color: #4b5563;
+    background-color: #374151;
+    color: #d1d5db;
+}
+
+select:focus,
+textarea:focus,
+input:focus {
+    outline: none;
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+.dark select:focus,
+.dark textarea:focus,
+.dark input:focus {
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+    padding-top: 2.5rem;
+}
+
+/* Custom select styling */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+}
+
+.dark select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Severity color coding */
+select option[value="low"] {
+    color: #10b981;
+}
+
+select option[value="medium"] {
+    color: #f59e0b;
+}
+
+select option[value="high"] {
+    color: #f97316;
+}
+
+select option[value="critical"] {
+    color: #ef4444;
+}
+
+/* Form label styling */
+.form-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Error styling */
+.errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.errorlist li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Button hover effects */
+button:hover, a:hover {
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+    </style>
+{% endblock extra_css %}
+{% block extra_js %}
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Add dynamic behavior to form fields
+    const severitySelect = document.querySelector('select[name="severity"]');
+    const statusSelect = document.querySelector('select[name="status"]');
+    const titleInput = document.querySelector('input[name="title"]');
+    const affectedSystemsTextarea = document.querySelector('textarea[name="affected_systems"]');
+    
+    // Add character counter to title
+    if (titleInput) {
+        const titleCounter = document.createElement('div');
+        titleCounter.className = 'text-xs text-gray-500 dark:text-gray-400 mt-1 text-right';
+        titleInput.parentNode.appendChild(titleCounter);
+        
+        function updateTitleCounter() {
+            const length = titleInput.value.length;
+            titleCounter.textContent = `${length}/200 characters`;
+            
+            if (length > 180) {
+                titleCounter.className = 'text-xs text-yellow-600 dark:text-yellow-400 mt-1 text-right';
+            } else if (length > 190) {
+                titleCounter.className = 'text-xs text-red-600 dark:text-red-400 mt-1 text-right';
+            } else {
+                titleCounter.className = 'text-xs text-gray-500 dark:text-gray-400 mt-1 text-right';
+            }
+        }
+        
+        titleInput.addEventListener('input', updateTitleCounter);
+        updateTitleCounter(); // Initial update
+    }
+    
+    // Add character counter to affected systems
+    if (affectedSystemsTextarea) {
+        const systemsCounter = document.createElement('div');
+        systemsCounter.className = 'text-xs text-gray-500 dark:text-gray-400 mt-1 text-right';
+        affectedSystemsTextarea.parentNode.appendChild(systemsCounter);
+        
+        function updateSystemsCounter() {
+            const length = affectedSystemsTextarea.value.length;
+            systemsCounter.textContent = `${length}/1000 characters`;
+            
+            if (length > 900) {
+                systemsCounter.className = 'text-xs text-yellow-600 dark:text-yellow-400 mt-1 text-right';
+            } else if (length > 950) {
+                systemsCounter.className = 'text-xs text-red-600 dark:text-red-400 mt-1 text-right';
+            } else {
+                systemsCounter.className = 'text-xs text-gray-500 dark:text-gray-400 mt-1 text-right';
+            }
+        }
+        
+        affectedSystemsTextarea.addEventListener('input', updateSystemsCounter);
+        updateSystemsCounter(); // Initial update
+    }
+    
+    // Add severity indicator
+    if (severitySelect) {
+        const severityIndicator = document.createElement('div');
+        severityIndicator.className = 'flex items-center gap-2 mt-2';
+        severitySelect.parentNode.appendChild(severityIndicator);
+        
+        function updateSeverityIndicator() {
+            const value = severitySelect.value;
+            let color = 'bg-gray-300';
+            let text = 'Select severity';
+            
+            switch(value) {
+                case 'low':
+                    color = 'bg-green-500';
+                    text = 'Low Impact - Minimal business disruption';
+                    break;
+                case 'medium':
+                    color = 'bg-yellow-500';
+                    text = 'Medium Impact - Moderate business disruption';
+                    break;
+                case 'high':
+                    color = 'bg-orange-500';
+                    text = 'High Impact - Significant business disruption';
+                    break;
+                case 'critical':
+                    color = 'bg-red-500';
+                    text = 'Critical Impact - Severe business disruption';
+                    break;
+            }
+            
+            severityIndicator.innerHTML = `
+                <div class="w-4 h-4 rounded-full ${color}"></div>
+                <span class="text-sm text-gray-600 dark:text-gray-400">${text}</span>
+            `;
+        }
+        
+        severitySelect.addEventListener('change', updateSeverityIndicator);
+        updateSeverityIndicator(); // Initial update
+    }
+    
+    // Form validation enhancement
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('border-red-500', 'dark:border-red-500');
+                    
+                    // Add error message if not present
+                    if (!field.nextElementSibling?.classList.contains('text-red-600')) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'text-sm text-red-600 dark:text-red-400 mt-1 flex items-center gap-1';
+                        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> This field is required`;
+                        field.parentNode.appendChild(errorDiv);
+                    }
+                } else {
+                    field.classList.remove('border-red-500', 'dark:border-red-500');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                
+                // Scroll to first error
+                const firstError = form.querySelector('.border-red-500');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                
+                // Show toast notification
+                showToast('Please fill in all required fields', 'error');
+            }
+        });
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            warning: 'bg-yellow-500',
+            info: 'bg-blue-500'
+        };
+        
+        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 5000);
+    }
+    
+    // Add auto-save functionality (optional)
+    let autoSaveTimeout;
+    const formData = new FormData();
+    
+    function autoSave() {
+        if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+        
+        autoSaveTimeout = setTimeout(() => {
+            const formData = new FormData(form);
+            // Convert to JSON for API call (optional)
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            
+            // Here you could make an API call to auto-save
+            // For now, just show a toast
+            showToast('Draft saved', 'info');
+        }, 2000); // Save after 2 seconds of inactivity
+    }
+    
+    // Listen for form changes
+    form?.addEventListener('input', autoSave);
+    form?.addEventListener('change', autoSave);
+});
+    </script>
+{% endblock extra_js %}
