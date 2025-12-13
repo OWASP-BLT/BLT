@@ -173,7 +173,8 @@
                                             {{ h.new_value|truncatechars:50 }}
                                         </div>
                                         {% if h.new_value|length > 50 %}
-                                            <button class="text-xs text-green-600 dark:text-green-400 mt-1 hover:underline show-full-value">
+                                            <button type="button"
+                                                    class="text-xs text-green-600 dark:text-green-400 mt-1 hover:underline show-full-value">
                                                 Show
                                                 more
                                             </button>
@@ -200,12 +201,14 @@
                                 </div>
                                 <!-- Quick Actions -->
                                 <div class="mt-4 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <button class="text-xs px-3 py-1 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 copy-value"
+                                    <button type="button"
+                                            class="text-xs px-3 py-1 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 copy-value"
                                             data-value="{{ h.old_value }}"
                                             title="Copy old value">
                                         <i class="fas fa-copy mr-1"></i> Old
                                     </button>
-                                    <button class="text-xs px-3 py-1 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 copy-value"
+                                    <button type="button"
+                                            class="text-xs px-3 py-1 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 copy-value"
                                             data-value="{{ h.new_value }}"
                                             title="Copy new value">
                                         <i class="fas fa-copy mr-1"></i> New
@@ -263,7 +266,8 @@
                         <i class="fas fa-plus-circle"></i>
                         Make First Change
                     </button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2">
+                    <button type="button"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2">
                         <i class="fas fa-sync-alt"></i>
                         Refresh History
                     </button>
@@ -432,7 +436,6 @@
                 navigator.clipboard.writeText(value)
                     .then(() => showToast('Value copied to clipboard', 'success'))
                     .catch(() => showToast('Copy failed (clipboard unavailable)', 'error'));
-             });
             });
         });
         const HISTORY_REALTIME_ENABLED = false;
