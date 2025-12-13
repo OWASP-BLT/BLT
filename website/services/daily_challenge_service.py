@@ -80,6 +80,9 @@ class DailyChallengeService:
 
             # Check if 24-hour cooldown period has passed by checking next_challenge_at
             # Get the most recent challenge with next_challenge_at set
+            # Note: Both next_challenge_at and now are timezone-aware datetimes, so DST transitions
+            # are handled correctly. During DST shifts, the actual elapsed time may be 23 or 25 hours,
+            # but the comparison remains accurate since both timestamps are in the same timezone context.
             recent_challenge = (
                 UserDailyChallenge.objects.filter(
                     user=user,

@@ -6,7 +6,6 @@ from datetime import date
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db import transaction
 from django.utils import timezone
 
 from website.models import DailyChallenge, UserDailyChallenge
@@ -76,7 +75,7 @@ class Command(BaseCommand):
         error_count = 0
 
         for user in users_list:
-            # Check if challenge already exists
+            # Check if challenge already exists (for skip logic only)
             existing = UserDailyChallenge.objects.filter(
                 user=user,
                 challenge_date=target_date,
@@ -90,28 +89,28 @@ class Command(BaseCommand):
             selected_challenge = random.choice(challenge_list)
 
             try:
-                with transaction.atomic():
-                    if existing:
-                        # Update existing challenge
-                        existing.challenge = selected_challenge
-                        existing.status = "assigned"
-                        existing.completed_at = None
-                        existing.points_awarded = 0
-                        existing.save()
-                        updated_count += 1
-                    else:
-                        # Create new challenge
-                        UserDailyChallenge.objects.create(
-                            user=user,
-                            challenge=selected_challenge,
-                            challenge_date=target_date,
-                            status="assigned",
-                        )
-                        created_count += 1
+                # Use update_or_create for atomic operation to avoid race conditions
+                # This ensures the check-and-update/create is atomic, preventing partial state
+                user_challenge, created = UserDailyChallenge.objects.update_or_create(
+                    user=user,
+                    challenge_date=target_date,
+                    defaults={
+                        "challenge": selected_challenge,
+                        "status": "assigned",
+                        "completed_at": None,
+                        "points_awarded": 0,
+                        "next_challenge_at": None,
+                    },
+                )
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
             except Exception as e:
                 error_count += 1
                 logger.error(
-                    f"Error creating challenge for user {user.username}: {e}",
+                    f"Error creating/updating challenge for user {user.username}: {e}",
+                    exc_info=True,
                 )
                 self.stdout.write(
                     self.style.ERROR(
