@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, UpdateView
@@ -44,7 +45,7 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         context = super().get_context_data(**kwargs)
         context["form_title"] = "Edit Security Incident"
         if self.object and hasattr(self.object, "history"):
-            context["unique_editor_count"] = self.object.history.values("changed_by").order_by().distinct().count()
+            context["unique_editors_count"] = self.object.history.values("changed_by").order_by().distinct().count()
         return context
 
     @transaction.atomic
@@ -74,14 +75,26 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         return response
 
 
+from django.core.serializers.json import DjangoJSONEncoder
+
+
 class SecurityIncidentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailView):
     model = SecurityIncident
     template_name = "security/incidents/incident_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        history_qs = self.object.history.select_related("changed_by").order_by("-changed_at")
+
         context["incident"] = self.object
-        history_qs = self.object.history.order_by("-changed_at").values(
+        context["history_entries"] = history_qs
+        context["history_count"] = history_qs.count()
+        context["last_history"] = history_qs.first()
+
+        context["unique_editors_count"] = history_qs.values("changed_by").distinct().order_by().count()
+
+        history_json_qs = history_qs.values(
             "id",
             "field_name",
             "old_value",
@@ -89,7 +102,6 @@ class SecurityIncidentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailV
             "changed_by_id",
             "changed_at",
         )
-        context["history_json"] = json.dumps(list(history_qs))
-        if hasattr(self.object, "history"):
-            context["unique_editors_count"] = self.object.history.values("changed_by").order_by().distinct().count()
+        context["history_json"] = json.dumps(list(history_json_qs), cls=DjangoJSONEncoder)
+
         return context
