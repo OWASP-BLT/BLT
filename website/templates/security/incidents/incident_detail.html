@@ -502,26 +502,38 @@ Affected Systems: ${incidentDetails.affected}`;
     
     // Print incident details
     const printButton = document.getElementById('print-incident');
-    if (printButton) {
-        printButton.addEventListener('click', function() {
-            const printContent = document.querySelector('.container').innerHTML;
-            const originalContent = document.body.innerHTML;
-            
-            document.body.innerHTML = `
-                <div class="p-8">
-                    <div class="mb-6 text-center">
-                        <h1 class="text-2xl font-bold">{{ incident.title|escapejs }}</h1>
-                        <p class="text-gray-600">Security Incident Report - Printed on ${new Date().toLocaleDateString()}</p>
-                    </div>
-                    ${printContent}
-                </div>
-            `;
-            
-            window.print();
-            document.body.innerHTML = originalContent;
-        });
-    }
-    
+
+if (printButton) {
+    printButton.addEventListener('click', function () {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const content = document.querySelector('.container').innerHTML;
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>{{ incident.title|escapejs }}</title>
+                    <style>
+                        body {
+                            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+                            padding: 32px;
+                        }
+</style>
+                </head>
+                <body>
+                    ${content}
+                </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+    });
+}
+
     // Share incident via Web Share API (if supported)
     const shareButton = document.getElementById('share-incident');
     if (shareButton && navigator.share) {
