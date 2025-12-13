@@ -313,7 +313,23 @@ Workflows that build, test, and validate the application.
 
 **AI Relevance**: Migrations are complex. This workflow ensures they're correctly generated even if AI-assisted changes conflict with existing migrations.
 
-#### 3.3 CodeQL Security Analysis (`codeql.yml`)
+#### 3.3 Fix Poetry Lock (`fix-poetry-lock.yml`)
+**Purpose**: Automatically fix poetry.lock conflicts in PRs
+
+**Triggers**:
+- When `fix-poetry-lock` label is added
+- Manual workflow dispatch
+
+**Key Features**:
+- Runs `poetry lock --no-update` to resolve lock file conflicts
+- Does not update dependencies to newer versions
+- Commits updated poetry.lock back to PR branch
+- Comments on PR with status update
+- Automatically removes trigger label after execution
+
+**AI Relevance**: When multiple contributors (or AI tools) modify dependencies, poetry.lock conflicts are common. This workflow resolves them automatically without manual intervention.
+
+#### 3.4 CodeQL Security Analysis (`codeql.yml`)
 **Purpose**: Advanced security scanning for vulnerabilities
 
 **Triggers**:
@@ -596,5 +612,5 @@ In the age of AI-powered coding, these workflows are essential for maintaining h
 ---
 
 **Last Updated**: December 2024  
-**Total Workflows**: 27  
+**Total Workflows**: 29  
 **Maintained By**: OWASP BLT Team
