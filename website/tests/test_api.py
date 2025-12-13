@@ -68,7 +68,7 @@ class RebuildSafeUrlTestCase(TestCase):
         mock_getaddrinfo.return_value = [
             (2, 1, 6, "", ("93.184.216.34", 0))  # example.com's actual IP
         ]
-        
+
         print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
         test_cases = [
             # Test case with credentials and encoded control characters in the path.
