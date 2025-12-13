@@ -3,7 +3,7 @@ from django.db import transaction
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, UpdateView
 
-from website.models import SecurityIncident
+from website.models import SecurityIncident, SecurityIncidentHistory
 from website.security_incident_form import SecurityIncidentForm
 
 
