@@ -11,7 +11,7 @@ from dateutil.parser import ParserError
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -1885,3 +1885,31 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url="/admin/login/")
+def user_activity_dashboard(request):
+    """
+    Custom Admin Dashboard to show Active vs Inactive users.
+    Activity is defined as having reported at least one Issue.
+    """
+    if not request.user.is_superuser:
+        return redirect("admin:index")
+
+    User = get_user_model()
+    # Dynamically generate the admin URL name for the user model.
+    user_admin_url_name = f"admin:{User._meta.app_label}_{User._meta.model_name}_change"
+
+    users = User.objects.annotate(issue_count=Count("issue", distinct=True)).order_by("-date_joined")
+
+    active_users = users.filter(issue_count__gt=0)
+    inactive_users = users.filter(issue_count=0)
+
+    context = {
+        "active_users": active_users,
+        "inactive_users": inactive_users,
+        "title": "User Activity Dashboard",
+        "user_admin_url_name": user_admin_url_name,
+    }
+
+    return render(request, "admin/user_activity_dashboard.html", context)
