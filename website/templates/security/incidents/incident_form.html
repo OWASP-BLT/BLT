@@ -65,7 +65,8 @@
                         {% endif %}
                         <!-- Title Field -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="{{ form.title.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 <i class="fas fa-heading text-[#e74c3c] mr-2"></i>
                                 Title
                             </label>
@@ -85,7 +86,8 @@
                         </div>
                         <!-- Severity Field -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="{{ form.severity.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 <i class="fas fa-exclamation-triangle text-[#e74c3c] mr-2"></i>
                                 Severity
                             </label>
@@ -122,7 +124,8 @@
                         </div>
                         <!-- Status Field -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="{{ form.status.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 <i class="fas fa-tasks text-[#e74c3c] mr-2"></i>
                                 Status
                             </label>
@@ -142,7 +145,8 @@
                         </div>
                         <!-- Affected Systems Field -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="{{ form.affected_systems.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 <i class="fas fa-server text-[#e74c3c] mr-2"></i>
                                 Affected Systems
                             </label>
@@ -162,7 +166,8 @@
                         </div>
                         <!-- Description Field -->
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="{{ form.description.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 <i class="fas fa-align-left text-[#e74c3c] mr-2"></i>
                                 Description
                             </label>
@@ -243,112 +248,112 @@
     <style>
 /* Custom form styling */
 select, textarea, input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 3rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.75rem;
-    background-color: white;
-    color: #374151;
-    font-size: 0.875rem;
-    transition: all 0.3s ease;
+    width: 100% !important;
+    padding: 0.75rem 1rem 0.75rem 3rem !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 0.75rem !important;
+    background-color: white !important;
+    color: #374151 !important;
+    font-size: 0.875rem !important;
+    transition: all 0.3s ease !important;
 }
 
 .dark select,
 .dark textarea,
 .dark input {
-    border-color: #4b5563;
-    background-color: #374151;
-    color: #d1d5db;
+    border-color: #4b5563 !important;
+    background-color: #374151 !important;
+    color: #d1d5db !important;
 }
 
 select:focus,
 textarea:focus,
 input:focus {
-    outline: none;
-    border-color: #e74c3c;
-    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    outline: none !important;
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
 }
 
 .dark select:focus,
 .dark textarea:focus,
 .dark input:focus {
-    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2) !important;
 }
 
 textarea {
-    min-height: 120px;
-    resize: vertical;
-    padding-top: 2.5rem;
+    min-height: 120px !important;
+    resize: vertical !important;
+    padding-top: 2.5rem !important;
 }
 
 /* Custom select styling */
 select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 0.5rem center;
-    background-repeat: no-repeat;
-    background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+    background-position: right 0.5rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.5em 1.5em !important;
+    padding-right: 2.5rem !important;
 }
 
 .dark select {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
 }
 
 /* Severity color coding */
 select option[value="low"] {
-    color: #10b981;
+    color: #10b981 !important;
 }
 
 select option[value="medium"] {
-    color: #f59e0b;
+    color: #f59e0b !important;
 }
 
 select option[value="high"] {
-    color: #f97316;
+    color: #f97316 !important;
 }
 
 select option[value="critical"] {
-    color: #ef4444;
+    color: #ef4444 !important;
 }
 
 /* Form label styling */
 .form-label {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 500 !important;
 }
 
 /* Error styling */
 .errorlist {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .errorlist li {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.25rem;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-top: 0.25rem !important;
 }
 
 /* Button hover effects */
 button:hover, a:hover {
-    transform: translateY(-1px);
-    transition: transform 0.2s ease;
+    transform: translateY(-1px) !important;
+    transition: transform 0.2s ease !important;
 }
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
     .container {
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
     
     .card-body {
-        padding: 1.5rem;
+        padding: 1.5rem !important;
     }
 }
     </style>
@@ -373,7 +378,7 @@ document.addEventListener("DOMContentLoaded", function() {
             titleCounter.textContent = `${length}/200 characters`;
             
             if (length > 190) {
-                itleCounter.className = 'text-xs text-red-600 dark:text-red-400 mt-1 text-right';
+                titleCounter.className = 'text-xs text-red-600 dark:text-red-400 mt-1 text-right';
             } else if (length > 180) {
                 titleCounter.className = 'text-xs text-yellow-600 dark:text-yellow-400 mt-1 text-right';
             } else {
@@ -490,80 +495,80 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Toast notification function
     function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        warning: 'bg-yellow-500',
-        info: 'bg-blue-500'
-    };
+        const toast = document.createElement('div');
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            warning: 'bg-yellow-500',
+            info: 'bg-blue-500'
+        };
 
-    toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
+        toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
 
-    // Build the inner layout without innerHTML
-    const row = document.createElement('div');
-    row.className = "flex items-center gap-3";
+        // Build the inner layout without innerHTML
+        const row = document.createElement('div');
+        row.className = "flex items-center gap-3";
 
-    const icon = document.createElement("i");
-    icon.className = "fas " + (
-        type === "success" ? "fa-check-circle" :
-        type === "error" ? "fa-exclamation-circle" :
-        type === "warning" ? "fa-exclamation-triangle" :
-        "fa-info-circle"
-    );
+        const icon = document.createElement("i");
+        icon.className = "fas " + (
+            type === "success" ? "fa-check-circle" :
+            type === "error" ? "fa-exclamation-circle" :
+            type === "warning" ? "fa-exclamation-triangle" :
+            "fa-info-circle"
+        );
 
-    const text = document.createElement("span");
-    text.textContent = message;  // SAFE
+        const text = document.createElement("span");
+        text.textContent = message;  // SAFE
 
-    row.appendChild(icon);
-    row.appendChild(text);
-    toast.appendChild(row);
+        row.appendChild(icon);
+        row.appendChild(text);
+        toast.appendChild(row);
 
-    document.body.appendChild(toast);
+        document.body.appendChild(toast);
 
-    setTimeout(() => toast.classList.remove("translate-x-full"), 100);
+        setTimeout(() => toast.classList.remove("translate-x-full"), 100);
 
-    setTimeout(() => {
-        toast.classList.add("translate-x-full");
-        setTimeout(() => toast.remove(), 300);
-    }, 5000);
-}
+        setTimeout(() => {
+            toast.classList.add("translate-x-full");
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
 
-// Feature flag — reviewer request
-const AUTOSAVE_ENABLED = false;
+    // Feature flag — reviewer request
+    const AUTOSAVE_ENABLED = false;
 
-// Add auto-save functionality (optional)
-let autoSaveTimeout;
-let lastAutosaveToast = 0;
+    // Add auto-save functionality (optional)
+    let autoSaveTimeout;
+    let lastAutosaveToast = 0;
 
-function showAutosaveToast() {
-    const now = Date.now();
-    if (now - lastAutosaveToast < 10000) return; // max once per 10 sec
-    lastAutosaveToast = now;
-    showToast("Draft saved", "info");
-}
+    function showAutosaveToast() {
+        const now = Date.now();
+        if (now - lastAutosaveToast < 10000) return; // max once per 10 sec
+        lastAutosaveToast = now;
+        showToast("Draft saved", "info");
+    }
 
-function autoSave() {
-    if (!AUTOSAVE_ENABLED) return;   // <── KEY FIX
+    function autoSave() {
+        if (!AUTOSAVE_ENABLED) return;   // <── KEY FIX
 
-    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+        if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
 
-    autoSaveTimeout = setTimeout(() => {
-        const data = {};
-        new FormData(form).forEach((value, key) => {
-            data[key] = value;
-        });
+        autoSaveTimeout = setTimeout(() => {
+            const data = {};
+            new FormData(form).forEach((value, key) => {
+                data[key] = value;
+            });
 
-        // Future: send data to backend
-        showAutosaveToast();
-    }, 2000);
-}
+            // Future: send data to backend
+            showAutosaveToast();
+        }, 2000);
+    }
 
-// Listen only if autosave is enabled
-if (AUTOSAVE_ENABLED) {
-    form?.addEventListener("input", autoSave);
-    form?.addEventListener("change", autoSave);
-}
-
+    // Listen only if autosave is enabled
+    if (AUTOSAVE_ENABLED) {
+        form?.addEventListener("input", autoSave);
+        form?.addEventListener("change", autoSave);
+    }
+});
     </script>
 {% endblock extra_js %}
