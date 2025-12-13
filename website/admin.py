@@ -1,6 +1,5 @@
 from typing import ClassVar
 from urllib.parse import urlparse
-from django.db.models import Count
 
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
@@ -8,7 +7,6 @@ from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
 from django.utils.html import format_html
@@ -1349,8 +1347,6 @@ class CustomUserAdmin(DjangoUserAdmin):
     search_fields = ("username", "email")
     ordering = ("-last_login",)
 
-
-
     def has_module_permission(self, request):
         return request.user.is_superuser
 
@@ -1365,7 +1361,6 @@ class CustomUserAdmin(DjangoUserAdmin):
         if not request.user.is_superuser:
             actions.pop("deactivate_users", None)
         return actions
-
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -1392,4 +1387,6 @@ class CustomUserAdmin(DjangoUserAdmin):
         return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
 
     activity_status.short_description = "Activity"
+
+
 admin.site.register(User, CustomUserAdmin)
