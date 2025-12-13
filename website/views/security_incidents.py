@@ -42,7 +42,7 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         context = super().get_context_data(**kwargs)
         context["form_title"] = "Edit Security Incident"
         if self.object and hasattr(self.object, "history"):
-            context["unique_editor_count"] = self.object.history.values("changed_by").distinct().count()
+            context["unique_editor_count"] = self.object.history.values("changed_by").order_by().distinct().count()
         return context
 
     @transaction.atomic
