@@ -57,6 +57,10 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Wallet.objects.create(user=instance)
 
 
+# Email uniqueness is enforced at the database level via migration 0257_make_email_unique
+# The database constraint ensures that duplicate emails cannot be created
+
+
 class Subscription(models.Model):
     name = models.CharField(max_length=25, null=False, blank=True)
     charge_per_month = models.IntegerField(null=False, blank=True)
