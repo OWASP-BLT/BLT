@@ -1452,9 +1452,10 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     serializer_class = SecurityIncidentSerializer
     permission_classes = [IsAdminUser]
+    queryset = SecurityIncident.objects.all()
 
     def get_queryset(self):
-        queryset = SecurityIncident.objects.all().order_by("-created_at")
+        queryset = self.queryset  # Use class-level queryset
 
         request = self.request
         severity = request.query_params.get("severity")

@@ -219,5 +219,8 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context["status_breakdown"] = status_agg
 
         context["severity_chart_data"] = json.dumps(severity_agg)
+        params = self.request.GET.copy()
+        params["export"] = "csv"
+        context["export_csv_url"] = "?" + params.urlencode()
 
         return context

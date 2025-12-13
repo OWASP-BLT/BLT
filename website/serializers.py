@@ -314,6 +314,7 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "description",
             "severity",
             "status",
             "affected_systems",
