@@ -447,38 +447,38 @@
         // Revert change functionality
         if (HISTORY_REVERT_ENABLED) {
             const revertButtons = document.querySelectorAll('.revert-change');
-                revertButtons.forEach(button => {
-                    button.addEventListener('click', function () {
-                        const field = this.dataset.field;
-                        const oldValue = this.dataset.oldValue;
+            revertButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const field = this.dataset.field;
+                    const oldValue = this.dataset.oldValue;
 
-                        if (confirm(`Are you sure you want to revert ${field} to "${oldValue}"?`)) {
-                            // Make API call to revert change
-                            fetch(`${INCIDENT_API_BASE}revert/`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRFToken': getCookie('csrftoken')
-                                },
-                                body: JSON.stringify({
-                                    field: field,
-                                    value: oldValue
-                                })
+                    if (confirm(`Are you sure you want to revert ${field} to "${oldValue}"?`)) {
+                        // Make API call to revert change
+                        fetch(`${INCIDENT_API_BASE}revert/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: JSON.stringify({
+                                field: field,
+                                value: oldValue
                             })
-                                .then(response => {
-                                    if (response.ok) {
-                                        showToast(`Reverted ${field} successfully`, 'success');
-                                        setTimeout(() => location.reload(), 1500);
-                                    } else {
-                                        showToast('Failed to revert change', 'error');
-                                    }
-                                })
-                                .catch(() => {
-                                    showToast('Network error occurred', 'error');
-                                });
-                        }
-                    });
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    showToast(`Reverted ${field} successfully`, 'success');
+                                    setTimeout(() => location.reload(), 1500);
+                                } else {
+                                    showToast('Failed to revert change', 'error');
+                                }
+                            })
+                            .catch(() => {
+                                showToast('Network error occurred', 'error');
+                            });
+                    }
                 });
+            });
         }
 
         // Real-time updates for history
@@ -506,7 +506,7 @@
         }
 
         // Check for updates every 30 seconds
-        if (HISTORY_REALTIME_ENABLED && {{ history_count }} > 0) {
+        if (HISTORY_REALTIME_ENABLED && {{ history_count|default:0 }} > 0) {
             setInterval(checkForUpdates, 30000);
          }
 
@@ -571,7 +571,7 @@
         searchInput.className = 'w-full md:w-64 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent';
 
         // Insert search box if there are history items
-        if ({{ history_count }} > 0) {
+        if ({{ history_count|default:0 }} > 0) {
             const headerActions = document.querySelector('.flex.items-center.justify-between');
             if (headerActions) {
                 headerActions.insertBefore(searchInput, headerActions.firstChild);
