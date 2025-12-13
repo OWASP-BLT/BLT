@@ -1,0 +1,20 @@
+[
+  {
+    "name": "OWASP Example Tool",
+    "tags": [],
+    "type": "tool",
+    "level": "",
+    "pitch": "Short",
+    "repo_url": "https://github.com/owasp/example",
+    "last_commit": "2022-01-10"
+  },
+  {
+    "name": "OWASP Juice Shop",
+    "tags": ["appsec", "training", "nodejs"],
+    "type": "training",
+    "level": "beginner",
+    "pitch": "An intentionally insecure web application for security training.",
+    "repo_url": "https://github.com/juice-shop/juice-shop",
+    "last_commit": "2025-11-20"
+  }
+]
