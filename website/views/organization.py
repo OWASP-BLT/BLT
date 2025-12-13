@@ -1616,8 +1616,20 @@ def sizzle_daily_log(request):
             )
 
     except Exception as e:
-        messages.error(request, f"An error occurred: {e}")
-        return redirect("sizzle")
+        # Log full exception details for debugging, but don't expose to users
+        logger.error(
+            f"Unexpected error in sizzle_daily_log for user {request.user.username if request.user.is_authenticated else 'anonymous'}: {e}",
+            exc_info=True,
+        )
+        # Return appropriate response based on request method
+        if request.method == "POST":
+            return JsonResponse(
+                {"success": False, "message": "An error occurred while processing your request. Please try again."},
+                status=500,
+            )
+        else:
+            messages.error(request, "An error occurred. Please try again.")
+            return redirect("sizzle")
 
     return HttpResponseBadRequest("Invalid request method.")
 
