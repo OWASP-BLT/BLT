@@ -53,7 +53,7 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         response = super().form_valid(form)
 
         # Create history records for changed fields
-        fields_to_track = ["title", "severity", "status", "affected_systems", "resolved_at"]
+        fields_to_track = ["title", "severity", "status", "affected_systems", "description", "resolved_at"]
 
         for field in fields_to_track:
             old_val = getattr(old_instance, field)
