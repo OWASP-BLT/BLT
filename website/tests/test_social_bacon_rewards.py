@@ -158,7 +158,13 @@ class SocialBaconRewardTestCase(TestCase):
         # Create request
         request = self.factory.get("/")
         request.user = user
-        request.session = {}
+
+        # Use SessionMiddleware to attach a real session
+        from django.contrib.sessions.middleware import SessionMiddleware
+
+        middleware = SessionMiddleware(get_response=lambda r: None)
+        middleware.process_request(request)
+        request.session.save()
 
         # Mock messages framework
         from django.contrib.messages.storage.fallback import FallbackStorage
@@ -191,7 +197,13 @@ class SocialBaconRewardTestCase(TestCase):
         # Create request
         request = self.factory.get("/profile/")
         request.user = user
-        request.session = {}
+
+        # Use SessionMiddleware to attach a real session
+        from django.contrib.sessions.middleware import SessionMiddleware
+
+        middleware = SessionMiddleware(get_response=lambda r: None)
+        middleware.process_request(request)
+        request.session.save()
 
         # Mock messages framework
         from django.contrib.messages.storage.fallback import FallbackStorage
