@@ -1321,9 +1321,10 @@ except NotRegistered:
     pass
 
 from typing import ClassVar
+
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.db.models import Count
 from django.utils.html import format_html
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 
 class CustomUserAdmin(DjangoUserAdmin):
@@ -1387,12 +1388,8 @@ class CustomUserAdmin(DjangoUserAdmin):
 
     def activity_status(self, obj):
         if obj.last_login:
-            return format_html(
-                '<span style="color: green; font-weight: 600;">Active</span>'
-            )
-        return format_html(
-            '<span style="color: red; font-weight: 600;">Inactive</span>'
-        )
+            return format_html('<span style="color: green; font-weight: 600;">Active</span>')
+        return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
 
     activity_status.short_description = "Activity"
 admin.site.register(User, CustomUserAdmin)
