@@ -529,8 +529,8 @@ Affected Systems: ${incidentDetails.affected}`;
         shareButton.addEventListener('click', async () => {
             try {
                 await navigator.share({
-                    title: "{{ incident.title }}",
-                    text: "Security Incident: {{ incident.title }} - Severity: {{ incident.get_severity_display }}",
+                    title: "{{ incident.title|escapejs }}",
+                    text: "Security Incident: {{ incident.title|escapejs }} - Severity: {{ incident.get_severity_display|escapejs }}",
                     url: window.location.href,
                 });
                 showToast('Incident shared successfully', 'success');

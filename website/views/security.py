@@ -75,7 +75,7 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
     template_name = "security/dashboard.html"
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.user.is_staff or self.request.user.is_superuser
 
     def get(self, request, *args, **kwargs):
         if request.GET.get("export") == "csv":
