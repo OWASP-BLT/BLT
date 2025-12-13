@@ -1,7 +1,37 @@
 version: 2
 updates:
+  # Python dependencies via pip
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 100
+    groups:
+      django:
+        patterns:
+          - "django*"
+          - "dj-*"
+      security:
+        patterns:
+          - "cryptography"
+          - "pyjwt"
+          - "oauthlib"
+          - "requests"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      actions:
+        patterns:
+          - "*"
