@@ -1539,7 +1539,10 @@ def sizzle_daily_log(request):
                 logger.error("Error checking challenges", exc_info=True)
 
             # Set next_challenge_at to CHALLENGE_RESET_HOURS from now for today's challenges
-            # This must be done AFTER challenge assignment to ensure newly assigned challenges are updated
+            # This must be done AFTER challenge assignment/completion to ensure all challenges are updated.
+            # Include both "assigned" and "completed" statuses because:
+            # - Assigned challenges need next_challenge_at set for when they complete
+            # - Completed challenges need next_challenge_at set to enforce 24-hour cooldown
             # Note: Using timezone-aware now() + timedelta ensures DST transitions are handled correctly.
             # During DST shifts, the actual elapsed time may differ slightly (23-25 hours), but this is
             # acceptable as both timestamps remain in the same timezone context for accurate comparison.
@@ -1549,7 +1552,7 @@ def sizzle_daily_log(request):
             UserDailyChallenge.objects.filter(
                 user=request.user,
                 challenge_date=today,
-                status="assigned",
+                status__in=["assigned", "completed"],
             ).update(next_challenge_at=next_challenge_time)
 
             return JsonResponse(
