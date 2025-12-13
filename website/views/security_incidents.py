@@ -45,7 +45,9 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         context = super().get_context_data(**kwargs)
         context["form_title"] = "Edit Security Incident"
         if self.object and hasattr(self.object, "history"):
-            context["unique_editors_count"] = self.object.history.values("changed_by").order_by().distinct().count()
+            context["unique_editors_count"] = (
+                self.object.history.filter(changed_by__isnull=False).values("changed_by").order_by().distinct().count()
+            )
         return context
 
     @transaction.atomic
@@ -75,9 +77,6 @@ class SecurityIncidentUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateV
         return response
 
 
-from django.core.serializers.json import DjangoJSONEncoder
-
-
 class SecurityIncidentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailView):
     model = SecurityIncident
     template_name = "security/incidents/incident_detail.html"
@@ -92,7 +91,9 @@ class SecurityIncidentDetailView(LoginRequiredMixin, StaffRequiredMixin, DetailV
         context["history_count"] = history_qs.count()
         context["last_history"] = history_qs.first()
 
-        context["unique_editors_count"] = history_qs.values("changed_by").distinct().order_by().count()
+        context["unique_editors_count"] = (
+            history_qs.filter(changed_by__isnull=False).values("changed_by").distinct().order_by().count()
+        )
 
         history_json_qs = history_qs.values(
             "id",
