@@ -126,7 +126,6 @@ MIDDLEWARE = [
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
-    "blt.middleware.current_user.CurrentUserMiddleware",
 ]
 
 if DEBUG:
