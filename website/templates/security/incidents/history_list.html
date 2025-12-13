@@ -1,5 +1,6 @@
 <!-- Change History Section -->
 {% load custom_filters %}
+{{ history_json|json_script:"history-data" }}
 <div class="mt-12">
     <div class="flex items-center justify-between mb-8">
         <div class="flex items-center gap-4">
