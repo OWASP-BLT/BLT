@@ -16,6 +16,7 @@ from website.models import (
     Project,
     Repo,
     SearchHistory,
+    SecurityIncident,
     Tag,
     TimeLog,
     Trademark,
@@ -410,3 +411,17 @@ class BountySerializer(serializers.ModelSerializer):
             validated_data["issue"] = issue_obj
 
         return super().create(validated_data)
+class SecurityIncidentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecurityIncident
+        fields = [
+            "id",
+            "title",
+            "description",
+            "severity",
+            "status",
+            "affected_systems",
+            "created_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "resolved_at"]
