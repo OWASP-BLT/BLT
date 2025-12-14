@@ -14,6 +14,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -1723,6 +1724,7 @@ def debug_required(func):
 class DebugSystemStatsApiView(APIView):
     """Get current system statistics for debug panel"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1754,6 +1756,7 @@ class DebugSystemStatsApiView(APIView):
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
             disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            cpu_stats = {"percent": "N/A"}
 
             try:
                 memory = psutil.virtual_memory()
@@ -1775,6 +1778,78 @@ class DebugSystemStatsApiView(APIView):
             except Exception as disk_error:
                 logger.warning("Could not fetch disk stats: %s", disk_error)
 
+            try:
+                cpu = psutil.cpu_percent(interval=0)
+                cpu_stats = {"percent": f"{cpu}%"}
+            except Exception as cpu_error:
+                logger.warning("Could not fetch CPU stats: %s", cpu_error)
+
+            # Get active DB connections (PostgreSQL only)
+            active_connections = "N/A"
+            if connection.vendor == "postgresql":
+                try:
+                    with connection.cursor() as cursor:
+                        # Count active connections for the current database
+                        cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database();")
+                        active_connections = cursor.fetchone()[0]
+                except Exception as conn_error:
+                    logger.warning("Could not fetch active DB connections: %s", conn_error)
+                    active_connections = "Unavailable (error)"
+
+            # Attempt to use a short-lived cache to avoid repeated COUNT() queries during active development
+            try:
+                cached_counts = cache.get("debug_system_counts")
+            except Exception:
+                cached_counts = None
+
+            if cached_counts:
+                db_counts = cached_counts
+            else:
+                # Optimize: fetch all counts in a single DB round-trip using raw SQL subselects
+                try:
+                    user_table = User._meta.db_table
+                    issue_table = Issue._meta.db_table
+                    org_table = Organization._meta.db_table
+                    domain_table = Domain._meta.db_table
+                    repo_table = Repo._meta.db_table
+                    qn = connection.ops.quote_name
+
+                    with connection.cursor() as cursor:
+                        sql = (
+                            "SELECT "
+                            f"(SELECT COUNT(*) FROM {qn(user_table)}) AS user_count, "
+                            f"(SELECT COUNT(*) FROM {qn(issue_table)}) AS issue_count, "
+                            f"(SELECT COUNT(*) FROM {qn(org_table)}) AS org_count, "
+                            f"(SELECT COUNT(*) FROM {qn(domain_table)}) AS domain_count, "
+                            f"(SELECT COUNT(*) FROM {qn(repo_table)}) AS repo_count"
+                        )
+                        cursor.execute(sql)
+                        row = cursor.fetchone()
+                        db_counts = {
+                            "user_count": row[0],
+                            "issue_count": row[1],
+                            "org_count": row[2],
+                            "domain_count": row[3],
+                            "repo_count": row[4],
+                        }
+                except Exception as e:
+                    logger.warning("Could not fetch counts with optimized query: %s", e)
+                    # Fallback to original method
+                    db_counts = {
+                        "user_count": User.objects.count(),
+                        "issue_count": Issue.objects.count(),
+                        "org_count": Organization.objects.count(),
+                        "domain_count": Domain.objects.count(),
+                        "repo_count": Repo.objects.count(),
+                    }
+
+                # Cache for a short time (30 seconds) to reduce noise during rapid page reloads
+                try:
+                    cache.set("debug_system_counts", db_counts, timeout=30)
+                except Exception:
+                    # If cache not available, just continue with live counts
+                    pass
+
             return Response(
                 {
                     "success": True,
@@ -1785,9 +1860,19 @@ class DebugSystemStatsApiView(APIView):
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
                             "name": db_name,
                             "version": db_version,
+                            # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
+                            # These counts are efficiently fetched in a single database round-trip using subselects.
+                            "user_count": db_counts["user_count"],
+                            "issue_count": db_counts["issue_count"],
+                            "org_count": db_counts["org_count"],
+                            "domain_count": db_counts["domain_count"],
+                            "repo_count": db_counts["repo_count"],
+                            # Total active connections to the PostgreSQL database (from all sources, not just this application)
+                            "connections": active_connections,
                         },
                         "memory": memory_stats,
                         "disk": disk_stats,
+                        "cpu": cpu_stats,
                     },
                 }
             )
@@ -1802,6 +1887,7 @@ class DebugSystemStatsApiView(APIView):
 class DebugCacheInfoApiView(APIView):
     """Get cache backend information and statistics"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1858,6 +1944,7 @@ class DebugCacheInfoApiView(APIView):
 class DebugPopulateDataApiView(APIView):
     """Populate database with test data"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1885,6 +1972,7 @@ class DebugPopulateDataApiView(APIView):
 class DebugClearCacheApiView(APIView):
     """Clear all cache data"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1900,81 +1988,3 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class DebugRunMigrationsApiView(APIView):
-    """Run pending database migrations"""
-
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def post(self, request, *args, **kwargs):
-        # Extra safety: restrict to superusers and require an explicit confirmation flag
-        if not request.user.is_superuser:
-            return Response(
-                {"success": False, "error": "Only superusers can run migrations"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        confirm = request.data.get("confirm")
-        if confirm is not True:
-            return Response(
-                {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            call_command("migrate", interactive=False, verbosity=0)
-
-            return Response({"success": True, "message": "Migrations completed successfully"})
-        except Exception as e:
-            logger.error("Error running migrations: %s", e, exc_info=True)
-            return Response(
-                {"success": False, "error": "Failed to run migrations. Please check server logs."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class DebugCollectStaticApiView(APIView):
-    """Collect static files"""
-
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def post(self, request, *args, **kwargs):
-        # Restrict collectstatic to superusers to avoid accidental abuse
-        if not request.user.is_superuser:
-            return Response(
-                {"success": False, "error": "Only superusers can collect static files"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            call_command("collectstatic", interactive=False, verbosity=0)
-
-            return Response({"success": True, "message": "Static files collected successfully"})
-        except Exception as e:
-            logger.error("Error collecting static files: %s", e, exc_info=True)
-            return Response(
-                {"success": False, "error": "Failed to collect static files. Please check server logs."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class DebugPanelStatusApiView(APIView):
-    """Get overall debug panel status"""
-
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def get(self, request, *args, **kwargs):
-        return Response(
-            {
-                "success": True,
-                "data": {
-                    "debug_mode": settings.DEBUG,
-                    "testing_mode": getattr(settings, "TESTING", False),
-                    "environment": "local" if _is_local_host(request.get_host()) else "unknown",
-                },
-            }
-        )
