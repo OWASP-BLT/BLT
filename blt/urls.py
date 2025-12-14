@@ -24,7 +24,16 @@ from website.api.views import (
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
+    CheckDuplicateBugApiView,
+    DebugCacheInfoApiView,
+    DebugClearCacheApiView,
+    DebugCollectStaticApiView,
+    DebugPanelStatusApiView,
+    DebugPopulateDataApiView,
+    DebugRunMigrationsApiView,
+    DebugSystemStatsApiView,
     DomainViewSet,
+    FindSimilarBugsApiView,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
@@ -35,6 +44,7 @@ from website.api.views import (
     OrganizationViewSet,
     ProjectViewSet,
     PublicJobListViewSet,
+    SearchHistoryApiView,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -75,6 +85,7 @@ from website.views.company import (
     AddSlackIntegrationView,
     DomainView,
     EndBughuntView,
+    LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardIntegrations,
@@ -87,6 +98,7 @@ from website.views.company import (
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
+    TestSlackIntegrationView,
     accept_bug,
     check_domain_security_txt,
     create_job,
@@ -261,6 +273,7 @@ from website.views.organization import (
     hunt_results,
     join_room,
     like_activity,
+    link_slack_channel_to_project,
     load_more_issues,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -272,6 +285,7 @@ from website.views.organization import (
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
+    slack_channels_list,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
@@ -292,12 +306,14 @@ from website.views.ossh import (
 )
 from website.views.project import (
     ProjectBadgeView,
+    ProjectCompactListView,
     ProjectsDetailView,
     ProjectView,
     RepoBadgeView,
     RepoDetailView,
     blt_tomato,
     create_project,
+    delete_project,
     distribute_bacon,
     repo_activity_data,
     select_contribution,
@@ -547,6 +563,16 @@ urlpatterns = [
     ),
     re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
     re_path(
+        r"^dashboard/organization/slack-channels$",
+        slack_channels_list,
+        name="slack_channels_list",
+    ),
+    path(
+        "dashboard/organization/slack-channels/link",
+        link_slack_channel_to_project,
+        name="link_slack_channel_to_project",
+    ),
+    re_path(
         r"^dashboard/organization/settings$",
         OrganizationSettings.as_view(),
         name="organization-settings",
@@ -693,6 +719,7 @@ urlpatterns = [
         name="googleplayapp",
     ),
     re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
+    re_path(r"^projects/compact/$", ProjectCompactListView.as_view(), name="project_compact_list"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -928,6 +955,16 @@ urlpatterns = [
         name="add_slack_integration",
     ),
     path(
+        "organization/<int:id>/dashboard/test_slack_integration/",
+        TestSlackIntegrationView.as_view(),
+        name="test_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/lookup_slack_user/",
+        LookupSlackUserView.as_view(),
+        name="lookup_slack_user",
+    ),
+    path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
         AddDomainView.as_view(),
         name="edit_domain",
@@ -1104,6 +1141,7 @@ urlpatterns = [
     path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
     path("staking/create/", create_staking_pool, name="create_staking_pool"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
+    path("project/<slug:slug>/delete/", delete_project, name="delete_project"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
@@ -1213,6 +1251,15 @@ urlpatterns = [
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
     path("bounty_payout/", bounty_payout, name="bounty_payout"),
     path("api/trademarks/search/", trademark_search_api, name="api_trademark_search"),
+    # Duplicate Bug Checking API
+    path(
+        "duplicate-check-example/",
+        TemplateView.as_view(template_name="duplicate_check_example.html"),
+        name="duplicate_check_example",
+    ),
+    path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
+    path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
+    path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
 ]
 
 if settings.DEBUG:
@@ -1220,5 +1267,17 @@ if settings.DEBUG:
 
     urlpatterns = [
         re_path(r"^__debug__/", include(debug_toolbar.urls)),
+        # ⚠️ WARNING: Debug Panel APIs - ONLY FOR LOCAL DEVELOPMENT
+        # These endpoints expose sensitive system information and must NEVER be
+        # accessible in production. Ensure DEBUG=False in production settings.
+        # Endpoints are protected by @debug_required decorator.
+        path("api/debug/system-stats/", DebugSystemStatsApiView.as_view(), name="api_debug_system_stats"),
+        path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
+        path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
+        path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
+        path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
+        path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
+        path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
     ] + urlpatterns
+
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
