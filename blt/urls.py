@@ -398,7 +398,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
-
+router.register(r"bounties", BountyViewSet, basename="bounties")
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
