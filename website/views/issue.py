@@ -438,6 +438,9 @@ def search_issues(request, template="search.html"):
     elif query[:6] == "label:":
         stype = "label"
         query = query[6:]
+    elif query[:4].lower() == "cve:":
+        stype = "cve"
+        query = query[4:].strip()
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]

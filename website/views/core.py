@@ -1549,9 +1549,11 @@ def submit_roadmap_pr(request):
             return JsonResponse({"message": "PR submitted successfully"})
 
         except (IndexError, ValueError) as e:
-            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+            logger.error(f"Invalid URL format in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "Invalid URL format. Please check your PR and issue links."}, status=400)
         except Exception as e:
-            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+            logger.error(f"Unexpected error in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "An unexpected error occurred. Please try again later."}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 
