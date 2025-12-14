@@ -1,0 +1,698 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% load humanize %}
+{% block title %}
+    Organization Analytics | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    View comprehensive analytics and insights for your organization. Track bugs, security incidents, and performance metrics in one place.
+{% endblock description %}
+{% block keywords %}
+    Organization Analytics, Bug Tracking, Security Metrics, Performance Dashboard, Analytics Overview
+{% endblock keywords %}
+{% block og_title %}
+    Organization Analytics - Data-Driven Security Insights
+{% endblock og_title %}
+{% block og_description %}
+    Get a comprehensive view of your organization's security metrics, bug trends, and performance data with clear analytics and reporting.
+{% endblock og_description %}
+{% block body %}
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <!-- Header Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Analytics Dashboard</h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Track your organization's security metrics and performance</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Total Bugs Card -->
+                <a href="{% url 'organization_manage_bugs' organization %}"
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:bg-gray-700 transition-all duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Bugs</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ total_info.total_organization_bugs }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-bug text-[#e74c3c] text-xl"></i>
+                        </div>
+                    </div>
+                </a>
+                <!-- Bug Bounties Card -->
+                <a href="{% url 'organization_manage_bughunts' organization %}"
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:bg-gray-700 transition-all duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Bug Bounties</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ total_info.total_bug_hunts }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-flag text-[#e74c3c] text-xl"></i>
+                        </div>
+                    </div>
+                </a>
+                <!-- Domains Card -->
+                <a href="{% url 'organization_manage_domains' organization %}"
+                   class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:bg-gray-700 transition-all duration-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Domains</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ total_info.total_domains }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-globe text-[#e74c3c] text-xl"></i>
+                        </div>
+                    </div>
+                </a>
+                <!-- Money Distributed Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Money Distributed</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">${{ total_info.total_money_distributed|intcomma }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-dollar-sign text-[#e74c3c] text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Bug Types Distribution Chart -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Bug Types Distribution</h3>
+                    <div class="w-full h-[220px]">
+                        <canvas id="bugTypePie"></canvas>
+                    </div>
+                </div>
+                <!-- Reports by Domain Chart -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Reports by Domain</h3>
+                    <div class="w-full h-[220px]">
+                        <canvas id="domainPie"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Monthly Report Chart -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        Monthly Bug Reports - {{ get_current_year_monthly_reported_bar_data.current_year }}
+                    </h2>
+                </div>
+                <div class="p-4">
+                    <div class="w-full h-[260px]">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Weekly Trends -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Total Reported Bugs Trend -->
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/50 dark:border-blue-700/50 rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Total Reported This Week</h3>
+                        <span class="inline-flex items-center px-3 py-1 {% if bug_rate_increase_descrease_weekly.is_increasing %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300{% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300{% endif %} rounded-full text-sm font-semibold">
+                            <i class="fas fa-arrow-{% if bug_rate_increase_descrease_weekly.is_increasing %}up{% else %}down{% endif %} mr-1"></i>
+                            {{ bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <p class="text-4xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                        {{ bug_rate_increase_descrease_weekly.this_week_issue_count }}
+                    </p>
+                    <p class="text-sm text-blue-700/70 dark:text-blue-300/70">
+                        {% if bug_rate_increase_descrease_weekly.is_increasing %}
+                            Increasing
+                        {% else %}
+                            Decreasing
+                        {% endif %}
+                        compared to last week
+                    </p>
+                </div>
+                <!-- Accepted Bugs Trend -->
+                <div class="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/20 border border-green-200/50 dark:border-green-700/50 rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Accepted Bugs This Week</h3>
+                        <span class="inline-flex items-center px-3 py-1 {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300{% else %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300{% endif %} rounded-full text-sm font-semibold">
+                            <i class="fas fa-arrow-{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}up{% else %}down{% endif %} mr-1"></i>
+                            {{ accepted_bug_rate_increase_descrease_weekly.percent_increase|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <p class="text-4xl font-bold text-green-900 dark:text-green-100 mb-2">
+                        {{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}
+                    </p>
+                    <p class="text-sm text-green-700/70 dark:text-green-300/70">
+                        {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
+                            Increasing
+                        {% else %}
+                            Decreasing
+                        {% endif %}
+                        compared to last week
+                    </p>
+                </div>
+            </div>
+            <!-- Security Incidents Summary -->
+            <div id="security-incidents"
+                 class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Security Incidents Summary</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/20 border border-red-200/50 dark:border-red-700/50 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wide">Recent Incidents</p>
+                                <i class="fas fa-exclamation-circle text-red-500 dark:text-red-400 text-sm"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-red-900 dark:text-red-100 mb-1">{{ security_incidents_summary.recent_incidents }}</p>
+                            <p class="text-xs text-red-600/70 dark:text-red-300/70">Last 30 days</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-600/50 border border-gray-200/50 dark:border-gray-600/50 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">Total Security Issues</p>
+                                <i class="fas fa-shield-alt text-gray-500 dark:text-gray-400 text-sm"></i>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                                {{ security_incidents_summary.total_security_issues }}
+                            </p>
+                            <p class="text-xs text-gray-600/70 dark:text-gray-400/70">All time</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/50 dark:border-blue-700/50 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Avg Resolution Time</p>
+                                <i class="fas fa-clock text-blue-500 dark:text-blue-400 text-sm"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-1">
+                                {% if security_incidents_summary.avg_resolution_time %}
+                                    {{ security_incidents_summary.avg_resolution_time }}
+                                {% else %}
+                                    <span class="text-gray-400 dark:text-gray-500">N/A</span>
+                                {% endif %}
+                            </p>
+                            <p class="text-xs text-blue-600/70 dark:text-blue-300/70">Resolved issues</p>
+                        </div>
+                    </div>
+                    {% if security_incidents_summary.severity_distribution %}
+                        <div class="mb-6">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-[#e74c3c] rounded"></span>
+                                Severity Distribution
+                            </h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                                {% for severity in security_incidents_summary.severity_distribution %}
+                                    <div class="bg-gradient-to-br {% if severity.severity >= 9 %}from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-300 dark:border-red-700{% elif severity.severity >= 7 %}from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-300 dark:border-orange-700{% elif severity.severity >= 5 %}from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-300 dark:border-yellow-700{% elif severity.severity >= 3 %}from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-300 dark:border-blue-700{% else %}from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-300 dark:border-green-700{% endif %} border p-4 rounded-lg text-center shadow-sm">
+                                        <p class="text-xs font-semibold {% if severity.severity >= 9 %}text-red-700 dark:text-red-300{% elif severity.severity >= 7 %}text-orange-700 dark:text-orange-300{% elif severity.severity >= 5 %}text-yellow-700 dark:text-yellow-300{% elif severity.severity >= 3 %}text-blue-700 dark:text-blue-300{% else %}text-green-700 dark:text-green-300{% endif %} mb-2 uppercase">
+                                            Level {{ severity.severity }}
+                                        </p>
+                                        <p class="text-2xl font-bold {% if severity.severity >= 9 %}text-red-900 dark:text-red-100{% elif severity.severity >= 7 %}text-orange-900 dark:text-orange-100{% elif severity.severity >= 5 %}text-yellow-900 dark:text-yellow-100{% elif severity.severity >= 3 %}text-blue-900 dark:text-blue-100{% else %}text-green-900 dark:text-green-100{% endif %}">
+                                            {{ severity.count }}
+                                        </p>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-span-5 text-center py-6 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">No severity data available</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if security_incidents_summary.top_affected_domains %}
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                                <span class="w-1 h-4 bg-[#e74c3c] rounded"></span>
+                                Top Affected Domains
+                            </h3>
+                            <div class="space-y-2.5">
+                                {% for domain in security_incidents_summary.top_affected_domains %}
+                                    <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 p-3.5 rounded-lg transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-[#e74c3c]/10 rounded-md flex items-center justify-center">
+                                                <i class="fas fa-link text-[#e74c3c] text-xs"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ domain.domain__name }}</span>
+                                        </div>
+                                        <span class="inline-flex items-center px-3 py-1 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-xs font-semibold">
+                                            {{ domain.count }} incident{{ domain.count|pluralize }}
+                                        </span>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center py-6 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">No affected domains</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Threat Intelligence -->
+            <div id="threat-intelligence"
+                 class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Threat Intelligence</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-br {% if threat_intelligence.risk_score >= 75 %}from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-700{% elif threat_intelligence.risk_score >= 50 %}from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-700{% else %}from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-700{% endif %} border p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-xs font-medium {% if threat_intelligence.risk_score >= 75 %}text-red-700 dark:text-red-300{% elif threat_intelligence.risk_score >= 50 %}text-yellow-700 dark:text-yellow-300{% else %}text-green-700 dark:text-green-300{% endif %} uppercase tracking-wide">
+                                    Security Risk Score
+                                </p>
+                                <i class="fas fa-exclamation-triangle {% if threat_intelligence.risk_score >= 75 %}text-red-500 dark:text-red-400{% elif threat_intelligence.risk_score >= 50 %}text-yellow-500 dark:text-yellow-400{% else %}text-green-500 dark:text-green-400{% endif %} text-sm"></i>
+                            </div>
+                            <p class="text-4xl font-bold {% if threat_intelligence.risk_score >= 75 %}text-red-900 dark:text-red-100{% elif threat_intelligence.risk_score >= 50 %}text-yellow-900 dark:text-yellow-100{% else %}text-green-900 dark:text-green-100{% endif %} mb-3">
+                                {{ threat_intelligence.risk_score }}<span class="text-2xl text-gray-500 dark:text-gray-400 ml-1">/100</span>
+                            </p>
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="h-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}bg-red-600{% elif threat_intelligence.risk_score >= 50 %}bg-yellow-600{% else %}bg-green-600{% endif %}"
+                                     style="width: {{ threat_intelligence.risk_score }}%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">Top Issue Categories</p>
+                                <i class="fas fa-list-ul text-[#e74c3c] text-sm"></i>
+                            </div>
+                            <div class="space-y-2.5">
+                                {% if threat_intelligence.attack_vectors %}
+                                    {% for vector in threat_intelligence.attack_vectors|slice:":3" %}
+                                        <div class="flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-2.5 rounded-md hover:border-[#e74c3c]/30 dark:hover:bg-gray-600 transition-colors">
+                                            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ vector.vulnerability_type|truncatechars:20 }}</span>
+                                            <span class="inline-flex items-center justify-center w-7 h-7 bg-[#e74c3c]/10 text-[#e74c3c] rounded-full text-xs font-bold">{{ vector.count }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600">
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">No recent attack vectors</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-5 rounded-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">Recent Security Alerts</p>
+                                <i class="fas fa-bell text-[#e74c3c] text-sm"></i>
+                            </div>
+                            <div class="space-y-2.5">
+                                {% if threat_intelligence.recent_alerts %}
+                                    {% for alert in threat_intelligence.recent_alerts|slice:":3" %}
+                                        <div class="flex items-start gap-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-2.5 rounded-md hover:border-[#e74c3c]/30 dark:hover:bg-gray-600 transition-colors">
+                                            <span class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 {% if alert.cve_score and alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score and alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %} shadow-sm"></span>
+                                            <span class="text-sm text-gray-800 dark:text-gray-200 line-clamp-2 flex-1">{{ alert.description|truncatechars:55 }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600">
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">No recent alerts</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Support dark mode for chart text colors
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        
+        // Chart.js default configuration
+        if (typeof Chart !== 'undefined') {
+            Chart.defaults.font.family = "'Inter', 'system-ui', '-apple-system', 'sans-serif'";
+            Chart.defaults.color = isDarkMode ? '#D1D5DB' : '#4B5563';
+            Chart.defaults.elements.arc.borderWidth = 3;
+            Chart.defaults.elements.arc.borderColor = isDarkMode ? '#374151' : '#ffffff';
+        }
+
+        // Shared tooltip configuration
+        const sharedTooltipConfig = {
+            enabled: true,
+            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+            padding: 16,
+            cornerRadius: 12,
+            titleFont: { size: 15, weight: '700' },
+            bodyFont: { size: 14, weight: '500' },
+            titleColor: '#ffffff',
+            bodyColor: '#f9fafb',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            displayColors: true,
+            boxPadding: 8
+        };
+
+        // Helper function to parse and validate chart data
+        function parseChartData(labelsRaw, dataRaw, emptyMessage, errorIcon) {
+            if (!labelsRaw || labelsRaw.trim() === '' || labelsRaw === 'null') {
+                labelsRaw = '[]';
+            }
+            if (!dataRaw || dataRaw.trim() === '' || dataRaw === 'null') {
+                dataRaw = '[]';
+            }
+
+            try {
+                const labels = JSON.parse(labelsRaw);
+                const data = JSON.parse(dataRaw);
+
+                if (!Array.isArray(labels) || !Array.isArray(data) || labels.length === 0 || data.length === 0) {
+                    return { success: false, empty: true, message: emptyMessage, icon: errorIcon };
+                }
+
+                if (labels.length !== data.length) {
+                    console.warn('Labels and data length mismatch:', labels.length, 'vs', data.length);
+                }
+
+                return { success: true, labels, data };
+            } catch (error) {
+                console.error('JSON Parse Error:', error);
+                return { success: false, empty: false, message: 'Error loading chart data', icon: 'fas fa-exclamation-triangle' };
+            }
+        }
+
+        // Helper function to show empty/error message
+        function showChartMessage(element, message, icon) {
+            element.innerHTML = `<div class="flex flex-col items-center justify-center h-full"><div class="text-center"><i class="${icon} text-gray-300 dark:text-gray-500 text-4xl mb-3"></i><p class="text-gray-500 dark:text-gray-400 text-sm">${message}</p></div></div>`;
+        }
+
+        // Enhanced color palette with gradients
+        const pieColors = [
+            '#e74c3c', // Red (primary brand color)
+            '#3498db', // Blue
+            '#2ecc71', // Green
+            '#f39c12', // Orange
+            '#9b59b6', // Purple
+            '#1abc9c', // Teal
+            '#e67e22', // Dark Orange
+            '#34495e', // Dark Blue
+            '#16a085', // Dark Teal
+            '#27ae60'  // Dark Green
+        ];
+
+        // Shared pie chart configuration with enhanced design
+        const pieChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%', // Make it a donut chart with more space
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1500,
+                easing: 'easeOutQuart'
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index',
+                animationDuration: 0
+            },
+            elements: {
+                arc: {
+                    hoverBorderWidth: 3,
+                    hoverOffset: 0,
+                    hoverBorderColor: '#ffffff'
+                }
+            },
+            onHover: function(event) {
+                event.native.target.style.cursor = 'default';
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    align: 'center',
+                    onClick: function(e, legendItem, legend) {
+                        const chart = legend.chart;
+                        const index = legendItem.index;
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data[index].hidden = !meta.data[index].hidden;
+                        chart.update('active');
+                    },
+                    labels: {
+                        padding: 12,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 13, weight: '500' },
+                        color: isDarkMode ? '#D1D5DB' : '#374151',
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                const dataset = data.datasets[0];
+                                const meta = chart.getDatasetMeta(0);
+                                
+                                // Calculate total based on visible items only
+                                const visibleData = data.datasets[0].data.filter((val, idx) => {
+                                    return !meta.data[idx] || !meta.data[idx].hidden;
+                                });
+                                const visibleTotal = visibleData.reduce((a, b) => a + b, 0);
+                                
+                                return data.labels.map((label, i) => {
+                                    const value = dataset.data[i];
+                                    const isHidden = meta.data[i] ? meta.data[i].hidden : false;
+                                    
+                                    // Calculate percentage based on visible total
+                                    const percentage = visibleTotal > 0 && !isHidden 
+                                        ? ((value / visibleTotal) * 100).toFixed(1) 
+                                        : '0.0';
+                                    
+                                    return {
+                                        text: `${label}: ${value} (${percentage}%)`,
+                                        fillStyle: isHidden ? '#9CA3AF' : dataset.backgroundColor[i],
+                                        strokeStyle: isHidden ? '#D1D5DB' : dataset.borderColor,
+                                        lineWidth: isHidden ? 1 : dataset.borderWidth,
+                                        hidden: false, // Always show in legend
+                                        index: i,
+                                        fontColor: isHidden ? '#9CA3AF' : (isDarkMode ? '#D1D5DB' : '#374151'),
+                                        textDecoration: isHidden ? 'line-through' : 'none'
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    ...sharedTooltipConfig,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return [`Count: ${value}`, `Percentage: ${percentage}%`];
+                        }
+                    }
+                }
+            }
+        };
+
+        // Generic pie chart initializer
+        function initPieChart(canvasId, labelsRaw, dataRaw, emptyMessage, errorIcon) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            const result = parseChartData(labelsRaw, dataRaw, emptyMessage, errorIcon);
+            if (!result.success) {
+                showChartMessage(ctx.parentElement, result.message, result.icon);
+                return;
+            }
+
+            const chartColors = pieColors.slice(0, result.labels.length);
+            const pieDatasetConfig = {
+                data: result.data,
+                backgroundColor: chartColors,
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverBackgroundColor: chartColors,
+                hoverBorderColor: '#ffffff',
+                hoverBorderWidth: 3
+            };
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: result.labels,
+                    datasets: [pieDatasetConfig]
+                },
+                options: pieChartOptions
+            });
+        }
+
+        // Monthly Bar Chart with enhanced design
+        function initMonthlyChart() {
+            const ctx = document.getElementById('monthlyChart');
+            if (!ctx) return;
+
+            const result = parseChartData(
+                '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_labels|safe }}',
+                '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_data|safe }}',
+                'No monthly data available',
+                'fas fa-chart-bar'
+            );
+
+            if (!result.success) {
+                showChartMessage(ctx.parentElement, result.message, result.icon);
+                return;
+            }
+
+            const ctx2d = ctx.getContext('2d');
+            const gradient = ctx2d.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, '#e74c3c');
+            gradient.addColorStop(1, '#c0392b');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: result.labels,
+                    datasets: [{
+                        label: 'Bug Reports',
+                        data: result.data,
+                        backgroundColor: gradient,
+                        borderColor: '#e74c3c',
+                        borderWidth: 2,
+                        borderRadius: {
+                            topLeft: 8,
+                            topRight: 8,
+                            bottomLeft: 0,
+                            bottomRight: 0
+                        },
+                        borderSkipped: false,
+                        barThickness: 'flex',
+                        maxBarThickness: 50,
+                        hoverBackgroundColor: gradient,
+                        hoverBorderColor: '#e74c3c',
+                        hoverBorderWidth: 2,
+                        hoverOffset: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart',
+                        delay: function(context) {
+                            return context.dataIndex * 50;
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                        animationDuration: 0
+                    },
+                    elements: {
+                        bar: {
+                            hoverBorderWidth: 2,
+                            hoverBorderColor: '#e74c3c'
+                        }
+                    },
+                    onHover: function(event) {
+                        event.native.target.style.cursor = 'default';
+                    },
+                    plugins: {
+                        legend: { 
+                            display: false 
+                        },
+                        tooltip: {
+                            ...sharedTooltipConfig,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    return `Bug Reports: ${context.parsed.y}`;
+                                },
+                                labelColor: function(context) {
+                                    return {
+                                        borderColor: '#e74c3c',
+                                        backgroundColor: '#e74c3c',
+                                        borderWidth: 2
+                                    };
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: { size: 12, weight: '500' },
+                                color: isDarkMode ? '#9CA3AF' : '#6B7280',
+                                padding: 10,
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            },
+                            grid: { 
+                                color: isDarkMode ? '#4B5563' : '#E5E7EB',
+                                drawBorder: false,
+                                lineWidth: 1
+                            },
+                            border: {
+                                display: false
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 12, weight: '500' },
+                                color: isDarkMode ? '#9CA3AF' : '#6B7280',
+                                padding: 12
+                            },
+                            grid: { 
+                                display: false,
+                                drawBorder: false
+                            },
+                            border: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize all charts
+        function initializeAllCharts() {
+            if (typeof Chart === 'undefined') {
+                setTimeout(initializeAllCharts, 100);
+                return;
+            }
+
+            try {
+                initPieChart('bugTypePie', 
+                    '{{ bug_report_type_piechart_data.bug_report_type_labels|safe }}',
+                    '{{ bug_report_type_piechart_data.bug_report_type_data|safe }}',
+                    'No bug type data available', 'fas fa-chart-pie');
+                initPieChart('domainPie',
+                    '{{ reports_on_domain_piechart_data.bug_report_on_domains_labels|safe }}',
+                    '{{ reports_on_domain_piechart_data.bug_report_on_domains_data|safe }}',
+                    'No domain data available', 'fas fa-globe');
+                initMonthlyChart();
+            } catch (error) {
+                console.error('Error during chart initialization:', error);
+            }
+        }
+        // Start initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(initializeAllCharts, 200);
+            });
+        } else {
+            setTimeout(initializeAllCharts, 200);
+        }
+    </script>
+{% endblock scripts %}

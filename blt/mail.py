@@ -76,6 +76,7 @@ class SlackNotificationEmailBackend(SMTPBackend):
 
                 # Format recipient list
                 recipients = ", ".join(message.to)
+                bcc_count = len(message.bcc) if message.bcc else 0
 
                 # Email subject
                 subject = message.subject
@@ -85,6 +86,7 @@ class SlackNotificationEmailBackend(SMTPBackend):
                     f"*📧 Email Sent*\n"
                     f"*From:* {message.from_email}\n"
                     f"*To:* {recipients}\n"
+                    f"*BCC:* {bcc_count} recipient(s)\n"
                     f"*Subject:* {subject}"
                 )
 
@@ -120,10 +122,8 @@ class SlackNotificationEmailBackend(SMTPBackend):
                     f"*Subject:* {subject}"
                 )
 
-                # Prepare the message payload
                 payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": email_text}}]}
 
-                # Send the message
                 response = requests.post(slack_webhook_url, json=payload)
                 response.raise_for_status()
 

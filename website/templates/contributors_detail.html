@@ -13,6 +13,7 @@
     Explore the profile of {{ contributor.name }}, a contributor to the OWASP {% env 'PROJECT_NAME' %} project, with details about their contributions, repository, and social media links.
 {% endblock %}
 {% block natural_content %}
+    {% include "includes/sidenav.html" %}
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
           integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
@@ -22,11 +23,11 @@
        class="flex top-[100px] left-10 fixed w-[30px] h-[30px] bg-red-500 justify-center item-center rounded-[50px] hover:bg-red-700 hover:shadow-md no-underline">
         <i class="text-white scale-150 m-3 fa-sharp fa-solid fa-arrow-left cursor-pointer transition duration-200"></i>
     </a>
-    <section class="text-gray-700 body-font overflow-hidden bg-white">
+    <section class="text-gray-700 dark:text-gray-300 body-font overflow-hidden bg-white dark:bg-gray-800">
         <div class="container px-5 py-24 mx-auto">
             <div class="lg:w-4/5 mx-auto flex flex-wrap">
                 <img alt="ecommerce"
-                     class="lg:w-1/2 w-full object-cover object-center rounded border border-gray-200"
+                     class="lg:w-1/2 w-full object-cover object-center rounded border border-gray-200 dark:border-gray-700"
                      src="{{ contributor.img }}"
                      width="100%"
                      height="100%">

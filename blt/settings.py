@@ -24,7 +24,7 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
-
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
@@ -48,15 +48,15 @@ SERVER_EMAIL = os.environ.get("FROM_EMAIL", "blt-support@owasp.org")
 EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
 BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
-TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
+TWITTER_URL = os.environ.get("TWITTER_URL", "https://x.com/owasp_blt")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
+SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
 
-DEBUG = False
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
@@ -110,7 +110,7 @@ SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "blt.middleware.domain.DomainMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -119,16 +119,18 @@ MIDDLEWARE = (
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "website.middleware.BaconRewardMessageMiddleware",  # Show BACON reward messages after OAuth
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "blt.middleware.throttling.ThrottlingMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
-)
+]
 
 if DEBUG:
-    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+    MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
@@ -164,7 +166,7 @@ ROOT_URLCONF = "blt.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "website", "templates")],
         "APP_DIRS": False,
         "OPTIONS": {
             "debug": DEBUG,
@@ -317,9 +319,7 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
         },
     }
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-    if not TESTING:
-        DEBUG = True
+    # Removed DEBUG override - DEBUG should be controlled by environment variable
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
@@ -346,6 +346,9 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
+# Security: Do not send emails to unknown accounts during password reset
+# This prevents account enumeration attacks
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -496,8 +499,9 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user", "repo"],
+        "SCOPE": ["user:email"],  # Minimal scope - only email access for security
         "AUTH_PARAMS": {"access_type": "online"},
+        "VERIFIED_EMAIL": True,  # Require verified email from GitHub
     },
     "google": {
         "SCOPE": ["profile", "email"],
@@ -525,7 +529,13 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
-SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
+
+# Social account settings for better UX
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create account without extra form
+SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it from provider
+SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for social signups
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
@@ -599,6 +609,9 @@ BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 
+# OpenAI API Configuration
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
@@ -619,3 +632,12 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Throttling Middleware Configuration
+THROTTLE_LIMITS = {
+    "GET": 100,  # 100 GET requests per minute
+    "POST": 50,  # 50 POST requests per minute
+    "OTHER": 30,  # 30 other requests per minute
+}
+THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
+THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]

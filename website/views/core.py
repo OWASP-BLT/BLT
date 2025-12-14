@@ -1,11 +1,11 @@
 import argparse
+import hashlib
 import json
 import logging
 import os
 import re
 import subprocess
 import tracemalloc
-import urllib
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -28,19 +28,22 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
-from django.db import connection, models
-from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.core.validators import validate_email
+from django.db import DatabaseError, IntegrityError, connection, models, transaction
+from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -55,6 +58,7 @@ from website.models import (
     ForumVote,
     Hunt,
     InviteFriend,
+    InviteOrganization,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -62,6 +66,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SearchHistory,
     SlackBotActivity,
     Tag,
     User,
@@ -69,15 +74,15 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    rebuild_safe_url,
-    safe_redirect_allowed,
-    save_analysis_report,
-)
+from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
+
+logger = logging.getLogger(__name__)
+SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+
+# Constants
+SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 
 
 # ----------------------------------------------------------------------------------
@@ -94,21 +99,21 @@ def memory_usage_by_module(limit=1000):
     try:
         snapshot = tracemalloc.take_snapshot()
     except Exception as e:
-        print("Error taking memory snapshot: ", e)
+        logger.error(f"Error taking memory snapshot: {e}")
         return []
-    print("Memory snapshot taken. and it is: ", snapshot)
+    logger.debug(f"Memory snapshot taken: {snapshot}")
 
     stats = snapshot.statistics("traceback")
     for stat in stats[:10]:
-        print(stat.traceback.format())
-        print(f"Memory: {stat.size / 1024:.2f} KB")
+        logger.debug(stat.traceback.format())
+        logger.debug(f"Memory: {stat.size / 1024:.2f} KB")
 
     # Group memory usage by filename
     stats = snapshot.statistics("filename")
     module_usage = {}
 
     for stat in stats:
-        print("stat is: ", stat)
+        logger.debug(f"stat is: {stat}")
         if stat.traceback:
             filename = stat.traceback[0].filename
             # Accumulate memory usage
@@ -229,7 +234,7 @@ def status_page(request):
             bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
             try:
-                print("Checking Bitcoin RPC...")
+                logger.debug("Checking Bitcoin RPC...")
                 response = requests.post(
                     f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
                     json={
@@ -245,14 +250,14 @@ def status_page(request):
                     status_data["bitcoin"] = True
                     status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
             except requests.exceptions.RequestException as e:
-                print(f"Bitcoin RPC Error: {e}")
+                logger.error(f"Bitcoin RPC Error: {e}")
 
         # SendGrid API check
         if CHECK_SENDGRID:
             sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
             if sendgrid_api_key:
                 try:
-                    print("Checking SendGrid API...")
+                    logger.debug("Checking SendGrid API...")
                     response = requests.get(
                         "https://api.sendgrid.com/v3/user/account",
                         headers={"Authorization": f"Bearer {sendgrid_api_key}"},
@@ -260,14 +265,14 @@ def status_page(request):
                     )
                     status_data["sendgrid"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    print(f"SendGrid API Error: {e}")
+                    logger.error(f"SendGrid API Error: {e}")
 
         # GitHub API check
         if CHECK_GITHUB:
             github_token = os.getenv("GITHUB_TOKEN")
             if github_token:
                 try:
-                    print("Checking GitHub API...")
+                    logger.debug("Checking GitHub API...")
                     # Check basic API access
                     response = requests.get(
                         "https://api.github.com/user/repos",
@@ -324,7 +329,7 @@ def status_page(request):
                     else:
                         status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
-                    print(f"GitHub API Error: {e}")
+                    logger.error(f"GitHub API Error: {e}")
                     status_data["github_rate_limit"] = None
 
         # OpenAI API check
@@ -332,7 +337,7 @@ def status_page(request):
             openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
-                    print("Checking OpenAI API...")
+                    logger.debug("Checking OpenAI API...")
                     response = requests.get(
                         "https://api.openai.com/v1/models",
                         headers={"Authorization": f"Bearer {openai_api_key}"},
@@ -340,18 +345,27 @@ def status_page(request):
                     )
                     status_data["openai"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    print(f"OpenAI API Error: {e}")
+                    logger.error(f"OpenAI API Error: {e}")
 
         # Memory usage checks
         if CHECK_MEMORY:
-            print("Getting memory usage information...")
+            logger.debug("Getting memory usage information...")
             tracemalloc.start()
 
             # Get top memory consumers
             for proc in psutil.process_iter(["pid", "name", "memory_info"]):
                 try:
                     proc_info = proc.info
-                    proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                    mem = proc_info.get("memory_info")
+                    if mem is None:
+                        proc_info["memory_info"] = {"rss": 0, "vms": 0}
+                    elif hasattr(mem, "_asdict"):
+                        proc_info["memory_info"] = mem._asdict()
+                    else:
+                        proc_info["memory_info"] = {
+                            "rss": getattr(mem, "rss", 0),
+                            "vms": getattr(mem, "vms", 0),
+                        }
                     status_data["top_memory_consumers"].append(proc_info)
                 except (
                     psutil.NoSuchProcess,
@@ -374,7 +388,7 @@ def status_page(request):
 
         # Database connection check
         if CHECK_DATABASE:
-            print("Getting database connection count...")
+            logger.debug("Getting database connection count...")
             if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
@@ -382,7 +396,7 @@ def status_page(request):
 
         # Redis stats
         if CHECK_REDIS:
-            print("Getting Redis stats...")
+            logger.debug("Getting Redis stats...")
             redis_url = os.environ.get("REDISCLOUD_URL")
 
             if redis_url:
@@ -544,27 +558,6 @@ def status_page(request):
     return render(request, "status_page.html", {"status": status_data})
 
 
-def github_callback(request):
-    ALLOWED_HOSTS = ["github.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
-def google_callback(request):
-    ALLOWED_HOSTS = ["accounts.google.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
-def facebook_callback(request):
-    ALLOWED_HOSTS = ["www.facebook.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
-
-
 def find_key(request, token):
     if token == os.environ.get("ACME_TOKEN"):
         return HttpResponse(os.environ.get("ACME_KEY"))
@@ -581,131 +574,306 @@ def search(request, template="search.html"):
     context = {}
 
     if query:
-        # Search across multiple models
-        organizations = Organization.objects.filter(name__icontains=query)
-        issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
-        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-        users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        allowed_types = [
+            "all",
+            "issues",
+            "domains",
+            "users",
+            "labels",
+            "organizations",
+            "projects",
+            "repos",
+            "tags",
+            "languages",
+        ]
+        if not stype or stype not in allowed_types:
+            stype = "all"
 
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "organizations": organizations,
-            "domains": domains,
-            "users": users,
-            "issues": issues,
-            "projects": projects,
-            "repos": repos,
-        }
+        # Handle type='all' - search ALL models
+        if stype == "all":
+            organizations = Organization.objects.filter(name__icontains=query)
+            if request.user.is_authenticated:
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )
+            else:
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
 
-        # Get badges for each user
-        for user in users:
-            user.badges = UserBadge.objects.filter(user=user)
-            # Ensure user has a username for profile URL
-            user.username = user.username
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "organizations": organizations,
+                "domains": domains,
+                "users": users,
+                "issues": issues,
+                "projects": projects,
+                "repos": repos,
+            }
 
-        # Get domain URLs for organizations
-        for org in organizations:
-            d = Domain.objects.filter(organization=org).first()
-            if d:
-                org.absolute_url = d.get_absolute_url()
+        elif stype == "issues":
+            if request.user.is_authenticated:
+                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                )[0:20]
+            else:
+                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
+                    0:20
+                ]
 
-    elif stype == "issues":
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
-        }
-    elif stype == "domains":
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
-        }
-    elif stype == "users":
-        users = (
-            UserProfile.objects.filter(Q(user__username__icontains=query))
-            .annotate(total_score=Sum("user__points__score"))
-            .order_by("-total_score")[0:20]
-        )
-        for userprofile in users:
-            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
-        context = {
-            "request": request,
-            "query": query,
-            "type": stype,
-            "users": users,
-        }
-    elif stype == "labels":
-        context = {
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
-        }
-    elif stype == "organizations":
-        organizations = Organization.objects.filter(name__icontains=query)
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "issues": issues_qs,
+            }
 
-        for org in organizations:
-            d = Domain.objects.filter(organization=org).first()
-            if d:
-                org.absolute_url = d.get_absolute_url()
-        context = {
-            "query": query,
-            "type": stype,
-            "organizations": Organization.objects.filter(name__icontains=query),
-        }
-    elif stype == "projects":
-        context = {
-            "query": query,
-            "type": stype,
-            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
-        }
-    elif stype == "repos":
-        context = {
-            "query": query,
-            "type": stype,
-            "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
-        }
-    elif stype == "tags":
-        tags = Tag.objects.filter(name__icontains=query)
-        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-        matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-        matching_issues = Issue.objects.filter(tags__in=tags).distinct()
-        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-        matching_repos = Repo.objects.filter(tags__in=tags).distinct()
-        for org in matching_organizations:
-            d = Domain.objects.filter(organization=org).first()
-            if d:
-                org.absolute_url = d.get_absolute_url()
-        context = {
-            "query": query,
-            "type": stype,
-            "tags": tags,
-            "matching_organizations": matching_organizations,
-            "matching_domains": matching_domains,
-            "matching_issues": matching_issues,
-            "matching_user_profiles": matching_user_profiles,
-            "matching_repos": matching_repos,
-        }
-    elif stype == "languages":
-        context = {
-            "query": query,
-            "type": stype,
-            "repos": Repo.objects.filter(primary_language__icontains=query),
-        }
+        elif stype == "domains":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
+            }
+
+        elif stype == "users":
+            users = (
+                UserProfile.objects.filter(Q(user__username__icontains=query))
+                .annotate(total_score=Sum("user__points__score"))
+                .order_by("-total_score")[0:20]
+            )
+            for userprofile in users:
+                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "users": users,
+            }
+
+        elif stype == "labels":
+            # Map query to numeric label values (by id or display name)
+            label_values = []
+            q_lower = query.lower()
+
+            # Allow direct numeric id search, e.g. "3"
+            if query.isdigit():
+                label_values.append(int(query))
+
+            # Also match by human-readable label names (e.g. "Performance")
+            for value, name in Issue._meta.get_field("label").choices:
+                if q_lower in str(name).lower():
+                    label_values.append(value)
+
+            issues_base_qs = (
+                Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+            )
+
+            if request.user.is_authenticated:
+                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+            else:
+                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "issues": issues_qs,
+            }
+
+        elif stype == "organizations":
+            organizations = Organization.objects.filter(name__icontains=query)
+            for org in organizations:
+                d = Domain.objects.filter(organization=org).first()
+                if d:
+                    org.absolute_url = d.get_absolute_url()
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "organizations": organizations,
+            }
+
+        elif stype == "projects":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+            }
+
+        elif stype == "repos":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+            }
+
+        elif stype == "tags":
+            tags = Tag.objects.filter(name__icontains=query)
+            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+            matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+            if request.user.is_authenticated:
+                matching_issues = (
+                    Issue.objects.filter(tags__in=tags)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .distinct()
+                )
+            else:
+                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()
+            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+            matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+            for org in matching_organizations:
+                d = Domain.objects.filter(organization=org).first()
+                if d:
+                    org.absolute_url = d.get_absolute_url()
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "tags": tags,
+                "matching_organizations": matching_organizations,
+                "matching_domains": matching_domains,
+                "matching_issues": matching_issues,
+                "matching_user_profiles": matching_user_profiles,
+                "matching_repos": matching_repos,
+            }
+
+        elif stype == "languages":
+            context = {
+                "request": request,
+                "query": query,
+                "type": stype,
+                "repos": Repo.objects.filter(primary_language__icontains=query),
+            }
+
+    # Handle authenticated user features
     if request.user.is_authenticated:
-        context["wallet"] = Wallet.objects.get(user=request.user)
+        try:
+            context["wallet"] = Wallet.objects.get(user=request.user)
+        except Wallet.DoesNotExist:
+            context["wallet"] = None
+
+        # Log search history for authenticated users - LAZY EVALUATION
+        # Only calculate result count when we're actually going to log the search
+        if query:
+            search_type = stype if stype else "all"
+
+            # LAZY EVALUATION: Only calculate result count when we actually need it
+            # (after checking for duplicates and before creating the entry)
+
+            # Atomic operation: check for duplicates, create entry, and cleanup excess entries
+            if len(query) > 255:
+                # Store hash + preview for very long queries, ensuring we stay within max_length (255)
+                query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
+                # 228 + 27 ("... [hash:" + 16 hex chars + "]") = 255
+                truncated_query = f"{query[:228]}... [hash:{query_hash}]"
+            else:
+                truncated_query = query
+
+            try:
+                with transaction.atomic():
+                    # Lock user's search history to prevent race conditions
+                    user_history_ids = list(
+                        SearchHistory.objects.filter(user=request.user)
+                        .select_for_update()
+                        .order_by("-timestamp")
+                        .values_list("id", flat=True)
+                    )
+
+                    last_search_id = user_history_ids[0] if user_history_ids else None
+                    last_search = SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
+
+                    # Prevent consecutive duplicates
+                    if (
+                        not last_search
+                        or last_search.query != truncated_query
+                        or last_search.search_type != search_type
+                    ):
+                        # LAZY EVALUATION: Calculate result count only now, when we need it
+                        result_count = 0
+
+                        # Get result counts from context if available
+                        try:
+                            if search_type == "all" or not search_type:
+                                # Sum counts from all search results
+                                for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
+                                    if key in context:
+                                        items = context[key]
+                                        if hasattr(items, "count"):
+                                            result_count += items.count()
+                                        elif isinstance(items, list):
+                                            result_count += len(items)
+
+                            elif search_type == "tags":
+                                # Sum counts for tag search
+                                for key in [
+                                    "matching_organizations",
+                                    "matching_domains",
+                                    "matching_issues",
+                                    "matching_user_profiles",
+                                    "matching_repos",
+                                ]:
+                                    if key in context:
+                                        items = context[key]
+                                        if hasattr(items, "count"):
+                                            result_count += items.count()
+                                        elif isinstance(items, list):
+                                            result_count += len(items)
+
+                            else:
+                                # Map search types to their context keys
+                                type_to_key = {
+                                    "issues": "issues",
+                                    "domains": "domains",
+                                    "users": "users",
+                                    "labels": "issues",  # labels search returns issues
+                                    "organizations": "organizations",
+                                    "projects": "projects",
+                                    "repos": "repos",
+                                    "languages": "repos",  # languages search returns repos
+                                }
+                                key = type_to_key.get(search_type, search_type)
+                                items = context.get(key)
+                                if items:
+                                    if hasattr(items, "count"):
+                                        result_count = items.count()
+                                    elif isinstance(items, list):
+                                        result_count = len(items)
+
+                        except Exception:
+                            logger.exception("Error calculating result count")
+                            result_count = 0
+
+                        SearchHistory.objects.create(
+                            user=request.user,
+                            query=truncated_query,
+                            search_type=search_type,
+                            result_count=result_count,
+                        )
+
+                        # CLEANUP — keep last 50 (exact count)
+                        if len(user_history_ids) >= SEARCH_HISTORY_LIMIT:
+                            # Keep newest limit-1 old entries + new entry = limit total
+                            excess_ids = user_history_ids[SEARCH_HISTORY_LIMIT - 1 :]
+                            if excess_ids:
+                                SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
+
+            except (DatabaseError, IntegrityError):
+                # Log the error but don't break search
+                logger.exception(
+                    f"Error saving search history - user_id: {request.user.id}, "
+                    f"truncated_query: {(truncated_query[:50] if truncated_query else None)!r}, "
+                    f"search_type: {search_type}"
+                )
+
+        context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
+
     return render(request, template, context)
 
 
@@ -821,13 +989,17 @@ def vote_forum_post(request):
 
             return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in vote_forum_post")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -839,14 +1011,22 @@ def set_vote_status(request):
             vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
             return JsonResponse(
-                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+                {
+                    "success": True,
+                    "up_vote": vote.up_vote if vote else False,
+                    "down_vote": vote.down_vote if vote else False,
+                }
             )
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in set_vote_status")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -857,21 +1037,45 @@ def add_forum_post(request):
             title = data.get("title")
             category = data.get("category")
             description = data.get("description")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, category, description]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            post = ForumPost.objects.create(
-                user=request.user, title=title, category_id=category, description=description
-            )
+            # Explicitly validate category exists before creating post
+            category_obj = ForumCategory.objects.get(pk=category)
+
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
+            if repo_id:
+                post_data["repo_id"] = repo_id
+            if project_id:
+                post_data["project_id"] = project_id
+            if organization_id:
+                post_data["organization_id"] = organization_id
+
+            post = ForumPost.objects.create(**post_data)
 
             return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in add_forum_post")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
 @login_required
@@ -883,33 +1087,108 @@ def add_forum_comment(request):
             content = data.get("content")
 
             if not all([post_id, content]):
-                return JsonResponse({"status": "error", "message": "Missing required fields"})
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
             post = ForumPost.objects.get(id=post_id)
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
             return JsonResponse({"status": "success", "comment_id": comment.id})
         except ForumPost.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Post not found"})
+            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
-            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
+        except (ValueError, TypeError):
+            logger.exception("Validation error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
         except Exception:
-            return JsonResponse({"status": "error", "message": "Server error occurred"})
+            logger.exception("Unexpected error in add_forum_comment")
+            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
+@login_required
+@require_POST
+def delete_forum_post(request):
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        post_id = data.get("post_id")
+
+        if not post_id:
+            return JsonResponse({"status": "error", "message": "Post ID is required"})
+
+        # Validate post_id is an integer
+        try:
+            post_id = int(post_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
+
+        post = ForumPost.objects.get(id=post_id)
+        post.delete()
+
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+    except ForumPost.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Post not found"})
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+    except Exception as e:
+        logging.exception("Unexpected error deleting forum post")
+        return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+
+@ensure_csrf_cookie
 def view_forum(request):
-    categories = ForumCategory.objects.all()
+    # Annotate categories with post counts
+    categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    # Add is_selected flag to categories for cleaner template logic
+    for category in categories:
+        category.is_selected = str(category.id) == selected_category
+
+    # Get total posts count before filtering
+    total_posts_count = ForumPost.objects.count()
+
+    posts = (
+        ForumPost.objects.select_related("user", "category")
+        .prefetch_related("comments")
+        .annotate(comment_count=Count("comments"))
+        .order_by("-created")  # Sort by newest first
+        .all()
+    )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
+    # Optimize user vote queries to avoid N+1 problem
+    if request.user.is_authenticated:
+        # Get all votes for current user and these posts in one query
+        post_ids = [post.id for post in posts]
+        user_votes = {vote.post_id: vote for vote in ForumVote.objects.filter(post_id__in=post_ids, user=request.user)}
+
+        # Attach votes to posts
+        for post in posts:
+            post.user_vote = user_votes.get(post.id)
+
+    organizations = Organization.objects.all().order_by("name")
+    projects = Project.objects.all().order_by("name")
+    repos = Repo.objects.all().order_by("name")
+
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request,
+        "forum.html",
+        {
+            "categories": categories,
+            "posts": posts,
+            "selected_category": selected_category,
+            "organizations": organizations,
+            "projects": projects,
+            "repos": repos,
+            "total_posts_count": total_posts_count,
+        },
     )
 
 
@@ -1187,13 +1466,13 @@ def sponsor_view(request):
             balance_bch = balance_satoshis / 100000000  # Convert from satoshis to BCH
             return balance_bch
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {e}")
             return None
 
     bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
     balance = get_bch_balance(bch_address)
     if balance is not None:
-        print(f"Balance of {bch_address}: {balance} BCH")
+        logger.info(f"Balance of {bch_address}: {balance} BCH")
 
     return render(request, "sponsor.html", context={"balance": balance})
 
@@ -1260,8 +1539,13 @@ def submit_roadmap_pr(request):
             roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
 
             if "error" in pr_data or "error" in roadmap_data:
+                logger.error(
+                    f"Failed to fetch PR or roadmap data in submit_roadmap_pr: "
+                    f"PR error: {pr_data.get('error')}, Roadmap error: {roadmap_data.get('error')}",
+                    exc_info=True,
+                )
                 return JsonResponse(
-                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    {"error": "Failed to fetch PR or roadmap data. Please check your links and try again."},
                     status=500,
                 )
 
@@ -1270,9 +1554,11 @@ def submit_roadmap_pr(request):
             return JsonResponse({"message": "PR submitted successfully"})
 
         except (IndexError, ValueError) as e:
-            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+            logger.error(f"Invalid URL format in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "Invalid URL format. Please check your PR and issue links."}, status=400)
         except Exception as e:
-            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+            logger.error(f"Unexpected error in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "An unexpected error occurred. Please try again later."}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 
@@ -1286,13 +1572,13 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Issue, Post, Repo, User, UserProfile
+    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
         last_commit = get_last_commit_date()
     except Exception as e:
-        print(f"Error getting last commit date: {e}")
+        logger.error(f"Error getting last commit date: {e}")
         last_commit = ""
 
     # Get latest repositories and total count
@@ -1301,6 +1587,9 @@ def home(request):
 
     # Get recent forum posts
     recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+
+    # Get recent activities for the feed
+    recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
 
     # Get top bug reporters for current month
     current_time = timezone.now()
@@ -1320,13 +1609,35 @@ def home(request):
             merged_at__month=current_time.month,  # Current month only
             merged_at__year=current_time.year,  # Current year
         )
+        .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
         .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
     )
 
-    # Get top earners
-    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
+    # Get top earners - calculate from GitHub issues payments if they have linked GitHub issues,
+    # otherwise use the existing winnings field
+    # Annotate each UserProfile with total GitHub issue payments
+    top_earners = (
+        UserProfile.objects.annotate(
+            github_earnings=Coalesce(
+                Sum("github_issues__p2p_amount_usd", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
+                Value(0),
+                output_field=DecimalField(),
+            ),
+            has_github_issues=Count("github_issues", filter=Q(github_issues__p2p_amount_usd__isnull=False)),
+            total_earnings=Case(
+                # If user has GitHub issues with payments, use those
+                When(has_github_issues__gt=0, then=F("github_earnings")),
+                # Otherwise fall back to the existing winnings field
+                default=Coalesce(F("winnings"), Value(0), output_field=DecimalField()),
+                output_field=DecimalField(),
+            ),
+        )
+        .filter(total_earnings__gt=0)
+        .select_related("user")
+        .order_by("-total_earnings")[:5]
+    )
 
     # Get top referrals
     top_referrals = (
@@ -1346,11 +1657,58 @@ def home(request):
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
-    latest_bugs = (
-        Issue.objects.filter(hunt=None)
-        .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-        .order_by("-created")[:2]
+    if request.user.is_authenticated:
+        latest_bugs = Issue.objects.filter(hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    else:
+        latest_bugs = Issue.objects.filter(hunt=None).exclude(is_hidden=True)
+
+    # Get 2 most recent active hackathons ordered by start time (descending)
+    recent_hackathons_raw = (
+        Hackathon.objects.filter(is_active=True).select_related("organization").order_by("-start_time")[:2]
     )
+
+    # Add statistics to each hackathon
+    recent_hackathons = []
+    for hackathon in recent_hackathons_raw:
+        repo_ids = hackathon.repositories.values_list("id", flat=True)
+
+        # Count merged pull requests during the hackathon
+        merged_prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=hackathon.start_time,
+            merged_at__lte=hackathon.end_time,
+        )
+        merged_pr_count = merged_prs.count()
+
+        # Count total pull requests during the hackathon
+        total_prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            type="pull_request",
+            created_at__gte=hackathon.start_time,
+            created_at__lte=hackathon.end_time,
+        ).count()
+
+        # Count unique participants (user profiles and contributors, excluding bots)
+        user_profile_count = merged_prs.exclude(user_profile=None).values("user_profile").distinct().count()
+        contributor_count = (
+            merged_prs.filter(user_profile=None)
+            .exclude(contributor=None)
+            .exclude(contributor__name__endswith="[bot]")
+            .values("contributor")
+            .distinct()
+            .count()
+        )
+        participant_count = user_profile_count + contributor_count
+
+        # Add stats to hackathon object
+        hackathon.stats = {
+            "participant_count": participant_count,
+            "total_prs": total_prs,
+            "merged_pr_count": merged_pr_count,
+        }
+        recent_hackathons.append(hackathon)
 
     # Get repository star counts for the specific repositories shown on the homepage
     repo_stars = []
@@ -1373,7 +1731,7 @@ def home(request):
             if repo:
                 repo_stars.append({"key": key, "stars": repo.stars})
         except Exception as e:
-            print(f"Error getting star count for {repo_name}: {e}")
+            logger.error(f"Error getting star count for {repo_name}: {e}")
 
     # Get system stats for developer mode
     system_stats = None
@@ -1398,6 +1756,7 @@ def home(request):
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_posts": recent_posts,
+            "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
             "latest_blog_posts": latest_blog_posts,
@@ -1408,6 +1767,7 @@ def home(request):
             "debug_mode": settings.DEBUG,
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
+            "recent_hackathons": recent_hackathons,
         },
     )
 
@@ -1752,15 +2112,39 @@ def management_commands(request):
                 "help_text": help_text,
             }
 
+            # Get command file path and metadata
+            try:
+                command_file = command_class.__module__.replace(".", os.sep) + ".py"
+                command_path = os.path.join(settings.BASE_DIR, command_file)
+
+                if os.path.exists(command_path):
+                    command_info["file_path"] = command_path
+                    # Get file modification time
+                    mtime = os.path.getmtime(command_path)
+                    command_info["file_modified"] = datetime.fromtimestamp(mtime, tz=pytz.UTC)
+
+                    # Generate GitHub URL
+                    # Assuming the repo is OWASP-BLT/BLT
+                    relative_path = os.path.relpath(command_path, settings.BASE_DIR)
+                    github_url = f"https://github.com/OWASP-BLT/BLT/blob/main/{relative_path}"
+                    command_info["github_url"] = github_url
+            except Exception as e:
+                logging.error(f"Error getting file info for command {name}: {e}")
+
             # Get command arguments if they exist
             command_args = []
             if hasattr(command_class, "add_arguments"):
                 # Create a parser to capture arguments
+                import inspect
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                # Check if command_class is already an instance or a class
+                if inspect.isclass(command_class):
+                    command_instance = command_class()
+                else:
+                    command_instance = command_class
+                command_instance.add_arguments(parser)
 
                 # Extract argument information
                 for action in parser._actions:
@@ -1785,6 +2169,8 @@ def management_commands(request):
                         "last_run": log.last_run,
                         "last_success": log.success,
                         "run_count": log.run_count,
+                        "execution_time": log.execution_time,
+                        "output": log.output,
                     }
                 )
 
@@ -1870,7 +2256,7 @@ def run_management_command(request):
         try:
             # Only allow running commands from the website app and exclude initsuperuser
             app_name = get_commands().get(command)
-            if app_name != "website" or command == "initsuperuser":
+            if app_name != "website" or command in ["initsuperuser", "generate_sample_data"]:
                 msg = f"Command {command} is not allowed to run from the web interface"
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": False, "error": msg})
@@ -1896,11 +2282,16 @@ def run_management_command(request):
 
             # Create a parser to capture arguments
             if hasattr(command_class, "add_arguments"):
+                import inspect
                 from argparse import ArgumentParser
 
                 parser = ArgumentParser()
-                # Fix: Call add_arguments directly on the command instance
-                command_class.add_arguments(parser)
+                # Check if command_class is already an instance or a class
+                if inspect.isclass(command_class):
+                    command_instance = command_class()
+                else:
+                    command_instance = command_class
+                command_instance.add_arguments(parser)
 
                 # Extract argument information and collect values from POST
                 for action in parser._actions:
@@ -1937,19 +2328,26 @@ def run_management_command(request):
             try:
                 # Capture command output
                 import sys
+                import time
                 from io import StringIO
 
                 # Redirect stdout to capture output
                 old_stdout = sys.stdout
                 sys.stdout = mystdout = StringIO()
 
+                # Track execution time
+                start_time = time.time()
                 call_command(command, *command_args, **command_kwargs)
+                end_time = time.time()
+                execution_time = end_time - start_time
 
                 # Get the output and restore stdout
                 output = mystdout.getvalue()
                 sys.stdout = old_stdout
 
                 log_entry.success = True
+                log_entry.execution_time = execution_time
+                log_entry.output = output[:10000] if output else ""  # Limit output to 10000 chars
                 log_entry.save()
 
                 # Record execution in DailyStats
@@ -1982,6 +2380,14 @@ def run_management_command(request):
 
                 messages.success(request, f"Command '{command}' executed successfully.")
             except Exception as e:
+                # Try to capture execution time even on failure
+                try:
+                    end_time = time.time()
+                    execution_time = end_time - start_time
+                    log_entry.execution_time = execution_time
+                except Exception:
+                    pass
+
                 log_entry.success = False
                 log_entry.save()
 
@@ -2433,466 +2839,368 @@ class MapView(ListView):
         return context
 
 
+def fetch_github_projects():
+    """
+    Fetch GitHub Projects data for OWASP-BLT organization using GraphQL API.
+    Returns a list of projects with their metadata and progress.
+
+    Note: Progress calculation is based on a sample of items (up to 250).
+    For projects with more items, the percentage is an approximation.
+    """
+    github_token = getattr(settings, "GITHUB_TOKEN", None)
+    if not github_token or github_token == "blank":
+        logging.warning("GitHub token not configured, cannot fetch projects")
+        return []
+
+    # Constants for GraphQL query limits
+    MAX_ITEMS_TO_FETCH = 250  # Increased from 100 to get better progress sampling
+    MAX_FIELD_VALUES = 20  # Increased from 10 to handle projects with many custom fields
+    COMPLETED_STATUS_VALUES = ["Done", "Completed", "Closed", "Complete", "✅ Done"]
+
+    # GraphQL query to fetch organization projects
+    query = """
+    query($org: String!, $first: Int!, $maxItems: Int!, $maxFields: Int!) {
+      organization(login: $org) {
+        projectsV2(first: $first, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          nodes {
+            id
+            title
+            shortDescription
+            url
+            public
+            closed
+            updatedAt
+            items(first: $maxItems) {
+              totalCount
+              nodes {
+                fieldValues(first: $maxFields) {
+                  nodes {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                      field {
+                        ... on ProjectV2SingleSelectField {
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={
+                "query": query,
+                "variables": {
+                    "org": "OWASP-BLT",
+                    "first": 50,
+                    "maxItems": MAX_ITEMS_TO_FETCH,
+                    "maxFields": MAX_FIELD_VALUES,
+                },
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logging.error(f"GraphQL error fetching projects: {data['errors']}")
+            return []
+
+        projects_data = data.get("data", {}).get("organization", {}).get("projectsV2", {}).get("nodes", [])
+
+        # Process projects to calculate progress and format data
+        projects = []
+        for project in projects_data:
+            # Only show public, non-closed projects
+            if not project.get("public", False) or project.get("closed", False):
+                continue
+
+            total_items = project.get("items", {}).get("totalCount", 0)
+            if total_items == 0:
+                continue
+
+            # Calculate done items by checking Status field
+            done_count = 0
+            items = project.get("items", {}).get("nodes", [])
+            items_checked = len(items)
+
+            for item in items:
+                field_values = item.get("fieldValues", {}).get("nodes", [])
+                for field_value in field_values:
+                    field_name = field_value.get("field", {}).get("name", "")
+                    status_name = field_value.get("name", "")
+                    # Check if this is a Status field with a completion value
+                    if field_name == "Status" and status_name in COMPLETED_STATUS_VALUES:
+                        done_count += 1
+                        break
+
+            # Calculate progress percentage and estimated item counts
+            # If we have fewer items than total, we're sampling - extrapolate the counts
+            if items_checked > 0:
+                if items_checked < total_items:
+                    # Sampling - calculate percentage from sample and extrapolate counts
+                    sample_percentage = (done_count / items_checked) * 100
+                    progress_percentage = int(sample_percentage)
+                    # Extrapolate done/open counts based on the sample ratio
+                    estimated_done = int((done_count / items_checked) * total_items)
+                    estimated_open = total_items - estimated_done
+                    logging.debug(
+                        f"Project '{project.get('title')}': Sampled {items_checked}/{total_items} items, "
+                        f"{done_count} done in sample, estimated {estimated_done} done total ({progress_percentage}%)"
+                    )
+                else:
+                    # We have all items - use actual counts
+                    progress_percentage = int((done_count / total_items) * 100)
+                    estimated_done = done_count
+                    estimated_open = total_items - done_count
+            else:
+                progress_percentage = 0
+                estimated_done = 0
+                estimated_open = total_items
+
+            # Format updated date
+            updated_at = project.get("updatedAt", "")
+            try:
+                updated_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+                now = datetime.now(pytz.UTC)
+                delta = now - updated_date
+
+                if delta.days == 0:
+                    last_updated = "today"
+                elif delta.days == 1:
+                    last_updated = "yesterday"
+                elif delta.days < 7:
+                    last_updated = f"{delta.days} days ago"
+                elif delta.days < 30:
+                    weeks = delta.days // 7
+                    last_updated = f"{weeks} week{'s' if weeks > 1 else ''} ago"
+                else:
+                    months = delta.days // 30
+                    last_updated = f"{months} month{'s' if months > 1 else ''} ago"
+            except Exception:
+                last_updated = "recently"
+
+            projects.append(
+                {
+                    "title": project.get("title", "Untitled Project"),
+                    "description": project.get("shortDescription", ""),
+                    "url": project.get("url", ""),
+                    "progress": progress_percentage,
+                    "total_items": total_items,
+                    "done_items": estimated_done,
+                    "open_items": estimated_open,
+                    "last_updated": last_updated,
+                }
+            )
+
+        logging.info(f"Fetched {len(projects)} GitHub projects")
+        return projects
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch GitHub projects: {e}")
+        return []
+    except Exception as e:
+        logging.error(f"Unexpected error fetching GitHub projects: {e}")
+        return []
+
+
 class RoadmapView(TemplateView):
     template_name = "roadmap.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        milestones = [
-            {
-                "title": "📺 BLTV - BLT Eduction",
-                "due_date": "No due date",
-                "last_updated": "about 3 hours ago",
-                "description": "Add an educational component to BLT so that users can learn along w…",
-                "progress": "100%",
-                "open": 0,
-                "closed": 1,
-            },
-            {
-                "title": "🚀 Code Reviewer Leaderboard",
-                "due_date": "No due date",
-                "last_updated": "1 day ago",
-                "description": "Here's an Emoji Code Reviewer Leaderboard idea, ranking reviewers b…",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "Bid on Issues",
-                "due_date": "No due date",
-                "last_updated": "1 day ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🏠 Improvements",
-                "due_date": "No due date",
-                "last_updated": "5 days ago",
-                "description": "",
-                "progress": "46%",
-                "open": 7,
-                "closed": 6,
-            },
-            {
-                "title": "🔒 Protection Of Online Privacy",
-                "due_date": "No due date",
-                "last_updated": "8 days ago",
-                "description": "Web Monitoring System Implementation Plan Overview Enhances user tr…",
-                "progress": "88%",
-                "open": 1,
-                "closed": 8,
-            },
-            {
-                "title": "🧠 AI",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "🔧 App Improvements",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 16,
-                "closed": 0,
-            },
-            {
-                "title": "🛡️ OWASP tools",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 2,
-                "closed": 0,
-            },
-            {
-                "title": "🧰 Extension Improvements",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 4,
-                "closed": 0,
-            },
-            {
-                "title": "🏆 Sponsorship in app",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🎤 GitHub Sportscaster",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🥗 Daily Check-ins",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "New Project: Fresh - Daily Check-In Component for BLT Fresh is a pr…",
-                "progress": "18%",
-                "open": 9,
-                "closed": 2,
-            },
-            {
-                "title": "🔥 Time Tracking",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "Simplified Project: Sizzle - Multi-Platform Time Tracking for BLT P…",
-                "progress": "12%",
-                "open": 14,
-                "closed": 2,
-            },
-            {
-                "title": "🛡️ Trademark Defense",
-                "due_date": "No due date",
-                "last_updated": "10 days ago",
-                "description": "Protects brand integrity and legal standing, important for long-ter…",
-                "progress": "30%",
-                "open": 7,
-                "closed": 3,
-            },
-            {
-                "title": "🏢 Organization Portal in App",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "💌 Invites in app",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🌍 Banned Apps Simulation in app",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Simulate app behavior in countries with restrictions to ensure compliance "
-                "and accessibility.",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🤖 Slack Bot 2.0",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 12,
-                "closed": 0,
-            },
-            {
-                "title": "🚀 OWASP BLT Adventures",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🌐 Organizations",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Project: Refactor BLT Website to Combine Companies and Teams into O…",
-                "progress": "0%",
-                "open": 4,
-                "closed": 0,
-            },
-            {
-                "title": "🔧 Maintenance",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "General maintenance issues",
-                "progress": "50%",
-                "open": 16,
-                "closed": 16,
-            },
-            {
-                "title": "Bug / Issue / Project tools",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🏆 Gamification",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Project Summary: Gamification Integration for BLT Platform The gami…",
-                "progress": "15%",
-                "open": 17,
-                "closed": 3,
-            },
-            {
-                "title": "GSOC tools",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "",
-                "progress": "0%",
-                "open": 3,
-                "closed": 0,
-            },
-            {
-                "title": "🚀🎨🔄 Tailwind Migration",
-                "due_date": "No due date",
-                "last_updated": "11 days ago",
-                "description": "Migrate the remaining pages to tailwind "
-                "https://blt.owasp.org/template_list/?sort=has_style_tags",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🐞 New Issue Detail Page",
-                "due_date": "No due date",
-                "last_updated": "13 days ago",
-                "description": "Improves issue tracking efficiency and developer experience on the site.",
-                "progress": "66%",
-                "open": 3,
-                "closed": 6,
-            },
-            {
-                "title": "🥓 BACON",
-                "due_date": "No due date",
-                "last_updated": "21 days ago",
-                "description": "🥓 BACON: Blockchain Assisted Contribution Network BACON is a cuttin…",
-                "progress": "50%",
-                "open": 7,
-                "closed": 7,
-            },
-            {
-                "title": "💰 Multi-Crypto Donations",
-                "due_date": "No due date",
-                "last_updated": "about 1 month ago",
-                "description": "Overview: The Decentralized Multi-Crypto Payment Integration featur…",
-                "progress": "25%",
-                "open": 6,
-                "closed": 2,
-            },
-            {
-                "title": "💡 Suggestions",
-                "due_date": "No due date",
-                "last_updated": "about 1 month ago",
-                "description": "",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "💸 Pledge",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🌘Dark Mode",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "👷 Contributor Ranking",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "🌞💻🥉 Shows contributor github username, commits, issues opened, issu…",
-                "progress": "80%",
-                "open": 1,
-                "closed": 4,
-            },
-            {
-                "title": "✅ Bug Verifiers",
-                "due_date": "No due date",
-                "last_updated": "3 months ago",
-                "description": "Ensures bug fixes are valid and effective, maintaining site integrity.",
-                "progress": "50%",
-                "open": 1,
-                "closed": 1,
-            },
-            {
-                "title": "🤖 Artificial Intelligence",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "",
-                "progress": "100%",
-                "open": 0,
-                "closed": 2,
-            },
-            {
-                "title": "🕹️ Penteston Integration",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "Enhances site security through integrated pentesting tools. We will…",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "🔔 Follower notifications",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "The feature would allow users to follow a company's bug reports and…",
-                "progress": "0%",
-                "open": 1,
-                "closed": 0,
-            },
-            {
-                "title": "📊 Review Queue",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "Streamlines content moderation, improving site quality.",
-                "progress": "0%",
-                "open": 3,
-                "closed": 0,
-            },
-            {
-                "title": "🕵️ Private Bug Bounties",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "Allows companies to conduct private, paid bug bounties in a non-com…",
-                "progress": "25%",
-                "open": 3,
-                "closed": 1,
-            },
-            {
-                "title": "📡 Cyber Dashboard",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "🌞💻🥉 a comprehensive dashboard of stats and information for organiza…",
-                "progress": "0%",
-                "open": 13,
-                "closed": 0,
-            },
-            {
-                "title": "🪝 Webhooks",
-                "due_date": "No due date",
-                "last_updated": "7 months ago",
-                "description": "automate the synchronization of issue statuses between GitHub and t…",
-                "progress": "0%",
-                "open": 2,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Modern Front-End Redesign with React & Tailwind CSS (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "A complete redesign of BLT's interface, improving accessibility, usability, "
-                "and aesthetics. The new front-end will be built with React and Tailwind CSS, "
-                "ensuring high performance while maintaining a lightweight architecture under "
-                "100MB. Dark mode will be the default, with full responsiveness and an enhanced "
-                "user experience.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Organization Dashboard – Enhanced Vulnerability & Bug Management (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Redesign and expand the organization dashboard to provide seamless management of bug "
-                "bounties, security reports, and contributor metrics. Features will include advanced "
-                "filtering, real-time analytics, and improved collaboration tools for security teams.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Secure API Development & Migration to Django Ninja (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Migrate our existing and develop a secure, well-documented API with automated "
-                "security tests to support the new front-end. This may involve migrating from Django "
-                "Rest Framework to Django Ninja for improved performance, maintainability, and API "
-                "efficiency.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Gamification & Blockchain Rewards System (Ordinals & Solana) (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Introduce GitHub-integrated contribution tracking that rewards security "
-                "researchers with Bitcoin Ordinals and Solana-based incentives. This will "
-                "integrate with other parts of the website as well such as daily check-ins "
-                "and code quality. Gamification elements such as badges, leaderboards, and "
-                "contribution tiers will encourage engagement and collaboration in "
-                "open-source security.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Decentralized Bidding System for Issues (Bitcoin Cash Integration) (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Create a decentralized system where developers can bid on GitHub issues "
-                "using Bitcoin Cash, ensuring direct transactions between contributors and "
-                "project owners without BLT handling funds.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 AI-Powered Code Review & Smart Prioritization System for Maintainers (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Develop an AI-driven GitHub assistant that analyzes pull requests, detects "
-                "security vulnerabilities, and provides real-time suggestions for improving "
-                "code quality. A smart prioritization system will help maintainers rank issues "
-                "based on urgency, community impact, and dependencies.",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-            {
-                "title": "🔸 Enhanced Slack Bot & Automation System (~350h)",
-                "due_date": "No due date",
-                "last_updated": "",
-                "description": "Expand the BLT Slack bot to automate vulnerability tracking, send real-time "
-                "alerts for new issues, and integrate GitHub notifications and contributor "
-                "activity updates for teams. prioritize them based on community engagement, "
-                "growth and securing worldwide applications",
-                "progress": "0%",
-                "open": 0,
-                "closed": 0,
-            },
-        ]
+        # Try to get projects from cache first
+        cache_key = "github_projects_data"
+        projects = cache.get(cache_key)
 
-        context["milestones"] = milestones
-        context["milestone_count"] = len(milestones)
+        if projects is None:
+            # Fetch from GitHub API
+            projects = fetch_github_projects()
+            # Cache for 30 minutes
+            cache.set(cache_key, projects, 1800)
+
+        context["projects"] = projects
+        context["github_projects_url"] = "https://github.com/orgs/OWASP-BLT/projects?query=is%3Aopen"
         return context
 
 
 class StyleGuideView(TemplateView):
     template_name = "style_guide.html"
+
+
+def invite_organization(request):
+    """
+    View for inviting organizations to join BLT.
+    Generates professional invitation emails with referral tracking.
+    """
+    context = {}
+
+    if request.method == "POST":
+        # Require authentication for POST requests
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to send organization invitations.")
+            context["exists"] = False
+            context["show_login_prompt"] = True
+            return render(request, "invite.html", context)
+
+        # Handle form submission
+        email = request.POST.get("email", "").strip()
+        organization_name = request.POST.get("organization_name", "").strip()
+
+        # Add to context for later use
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Validate both fields are provided first
+        if not (email and organization_name):
+            messages.error(request, "Please provide both email and organization name.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate email format
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            messages.error(request, "Please enter a valid email address.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Reject sample/placeholder emails
+        if re.match(SAMPLE_INVITE_EMAIL_PATTERN, email):
+            messages.error(
+                request,
+                "This email format is reserved for system use. Please provide a valid organization email address.",
+            )
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Validate organization_name length
+        if len(organization_name) > 255:
+            messages.error(request, "Organization name is too long (max 255 characters).")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Rate limiting check - DB-backed for reliability
+        today = timezone.now().date()
+        invite_count = (
+            InviteOrganization.objects.filter(sender=request.user, created__date=today)
+            .exclude(
+                email__regex=SAMPLE_INVITE_EMAIL_PATTERN  # Exclude sample invites from count
+            )
+            .count()
+        )
+
+        if invite_count >= 10:  # 10 invites per day
+            messages.error(request, "Daily invitation limit reached. Please try again tomorrow.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        # Create invite record for logged-in users (or get existing one)
+        invite_record, created = InviteOrganization.objects.get_or_create(
+            sender=request.user,
+            email=email,
+            defaults={"organization_name": organization_name},
+        )
+        if not created:
+            # Update organization name if it changed
+            invite_record.organization_name = organization_name
+            invite_record.save()
+
+        # Generate referral link
+        base_url = request.build_absolute_uri(reverse("register_organization"))
+        referral_link = f"{base_url}?ref={invite_record.referral_code}"
+        context["referral_link"] = referral_link
+
+    # Add login prompt for non-authenticated users
+    if not request.user.is_authenticated:
+        context["show_login_prompt"] = True
+
+    # Add template context variables - check if we have the data in context
+    email = context.get("email", "")
+    organization_name = context.get("organization_name", "")
+
+    # Only generate email content for authenticated users with valid data
+    if email and organization_name and request.user.is_authenticated:
+        context["exists"] = True
+        context["email"] = email
+        context["organization_name"] = organization_name
+
+        # Generate email content
+        domain = email.split("@")[-1] if email and "@" in email else ""
+        email_subject = "Invitation to Join BLT (Bug Logging Tool) - Enhanced Security Testing Platform"
+
+        org_name = organization_name if organization_name else "your organization"
+        sender_name = request.user.get_full_name() or request.user.username
+        referral_link = context.get("referral_link", "")
+
+        try:
+            email_body = render_to_string(
+                "email/organization_invite.html",
+                {
+                    "org_name": org_name,
+                    "referral_link": referral_link,
+                    "sender_name": sender_name,
+                },
+            )
+        except Exception:
+            logging.exception("Failed to render organization invite email")
+            messages.error(request, "Error generating invitation email. Please try again.")
+            context["exists"] = False
+            return render(request, "invite.html", context)
+
+        context.update(
+            {
+                "domain": domain,
+                "email_subject": email_subject,
+                "email_body": email_body,
+            }
+        )
+    else:
+        context["exists"] = False
+
+    # Add user authentication context
+    context["user_logged_in"] = request.user.is_authenticated
+
+    return render(request, "invite.html", context)
+
+
+@csrf_exempt
+def set_theme(request):
+    """View to save user's theme preference"""
+    if request.method == "POST":
+        try:
+            import json
+
+            data = json.loads(request.body)
+            theme = data.get("theme", "light")
+
+            # Save theme in session
+            request.session["theme"] = theme
+
+            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
+            # if request.user.is_authenticated:
+            #     profile = request.user.userprofile
+            #     profile.theme_preference = theme
+            #     profile.save()
+
+            return JsonResponse({"status": "success", "theme": theme})
+        except Exception as e:
+            logging.exception("Error occurred while setting theme")
+            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)

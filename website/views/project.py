@@ -1,14 +1,16 @@
 import concurrent.futures
 import ipaddress
 import json
+import logging
 import re
 import socket
 import time
 from calendar import monthrange
+from collections import defaultdict
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 import requests
 import sentry_sdk
@@ -22,7 +24,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -30,16 +32,29 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
-from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
+from website.models import (
+    IP,
+    BaconToken,
+    Challenge,
+    Contribution,
+    Contributor,
+    ContributorStats,
+    GitHubIssue,
+    Organization,
+    Project,
+    Repo,
+    UserProfile,
+)
 from website.utils import admin_required
 
+logger = logging.getLogger(__name__)
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
@@ -75,16 +90,22 @@ def blt_tomato(request):
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
-
         funding_link = funding_links[0] if funding_links else "#"
+
+        proposal_url = project.get("proposal_url")
+        # Treat "#", "", or anything invalid as None for sorting
+        if proposal_url in ("", "#"):
+            proposal_url = None
         processed_projects.append(
             {
                 "project_name": project.get("project_name"),
                 "repo_url": project.get("repo_url"),
                 "funding_hyperlinks": funding_link,
                 "funding_details": project.get("funding_details"),
+                "proposal_url": proposal_url,
             }
         )
+    processed_projects.sort(key=lambda x: x["proposal_url"] is None)
 
     return render(request, "blt_tomato.html", {"projects": processed_projects})
 
@@ -114,6 +135,10 @@ def distribute_bacon(request, contribution_id):
 
 
 class ProjectBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Project, with zero-days shown as faint bars.
+    """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -144,7 +169,6 @@ class ProjectBadgeView(APIView):
 
         # Check if we have a record for today
         visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
-
         if visited_data:
             # If we have a record for today, only update project visit count if needed
             if visited_data.count == 1:
@@ -158,22 +182,30 @@ class ProjectBadgeView(APIView):
             project.project_visit_count = F("project_visit_count") + 1
             project.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))  # Count only unique IPs
             .order_by("date")
         )
 
         # Refresh project to get the latest visit count
         project.refresh_from_db()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        # Extract dates and counts for chart, including zero-visit days
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+        for i in range(30):
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
+        dates = all_dates
+        counts = all_counts
         total_views = project.project_visit_count
 
         # Create a new image with a white background
@@ -182,66 +214,69 @@ class ProjectBadgeView(APIView):
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
 
-        # Define colors
+        # Define colors for bars, grid, and text
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
-        # Calculate chart dimensions
+        # Calculate chart dimensions and reserve space for the title
         margin = 40
+        text_height = 50  # reserve space for title at top
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
 
-        if counts:
+        # Calculate max count and bar width for 30 bars
+        if counts and max(counts) > 0:
             max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
         else:
             max_count = 1
-            bar_width = chart_width / 14  # Default for empty data
 
-        # Draw grid lines
+        # Fixed width for exactly 30 bars, plus extra margins
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
+
+        # Draw grid lines, offset for reserved space at top
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars with proportional heights; faint for zero days
         if dates and counts:
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
+                if count > 0:
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # slightly lighter bar color for zero days
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
 
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
-
-        # Draw total views text
+        # Draw total views text centered at the top, uses bar_color
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)
         except OSError:
             font = ImageFont.load_default()
-
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
-        # Return the image with appropriate headers
+        # Return the image with appropriate headers (no caching)
         response = HttpResponse(buffer, content_type="image/png")
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"
         response["Expires"] = "0"
-
         return response
 
 
@@ -286,6 +321,97 @@ class ProjectView(FilterView):
                     projects[repo.project] = []
                 projects[repo.project].append(repo)
         context["projects"] = projects
+
+        return context
+
+
+class ProjectCompactListView(ListView):
+    """Compact spreadsheet-like view for projects with sortable columns"""
+
+    model = Project
+    template_name = "projects/project_compact_list.html"
+    context_object_name = "projects"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = Project.objects.select_related("organization").exclude(slug="")
+
+        # Aggregate repo stats at the database level to avoid N+1 queries
+        queryset = queryset.annotate(
+            repo_count=Count("repos"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_issues=Coalesce(Sum("repos__total_issues"), 0),
+        )
+
+        # Apply sorting
+        sort_by = self.request.GET.get("sort", "name")
+        order = self.request.GET.get("order", "asc")
+
+        # Handle organization sorting with explicit NULL placement
+        if sort_by == "organization":
+            if order == "desc":
+                queryset = queryset.order_by(F("organization__name").desc(nulls_last=True))
+            else:
+                queryset = queryset.order_by(F("organization__name").asc(nulls_last=True))
+        else:
+            # Map sort fields to actual model fields
+            sort_mapping = {
+                "name": "name",
+                "status": "status",
+                "repos_count": "repo_count",
+                "slack_channel": "slack_channel",
+                "slack_user_count": "slack_user_count",
+                "created": "created",
+                "modified": "modified",
+            }
+
+            field = sort_mapping.get(sort_by, "name")
+
+            if order == "desc":
+                field = f"-{field}"
+
+            queryset = queryset.order_by(field)
+
+        # Apply organization filter with validation
+        organization_id = self.request.GET.get("organization")
+        if organization_id:
+            try:
+                organization_id = int(organization_id)
+                queryset = queryset.filter(organization_id=organization_id)
+            except (ValueError, TypeError):
+                # Invalid organization_id, skip the filter
+                pass
+
+        # Apply search filter
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Build projects_with_stats from annotated queryset - no additional queries needed
+        projects_with_stats = []
+        for project in context["projects"]:
+            projects_with_stats.append(
+                {
+                    "project": project,
+                    "repo_count": project.repo_count,
+                    "total_stars": project.total_stars,
+                    "total_forks": project.total_forks,
+                    "total_issues": project.total_issues,
+                }
+            )
+
+        context["projects_with_stats"] = projects_with_stats
+        context["sort_by"] = self.request.GET.get("sort", "name")
+        context["order"] = self.request.GET.get("order", "asc")
 
         return context
 
@@ -374,6 +500,18 @@ def create_project(request):
                     status=400,
                 )
 
+        slack = request.POST.get("slack")
+        if slack:
+            if slack.startswith(("http://", "https://")):
+                if not validate_url(slack):
+                    return JsonResponse(
+                        {
+                            "error": "Slack URL is not accessible",
+                            "code": "INVALID_SLACK_URL",
+                        },
+                        status=400,
+                    )
+
         # Validate repository URLs
         repo_urls = request.POST.getlist("repo_urls[]")
         for url in repo_urls:
@@ -452,6 +590,7 @@ def create_project(request):
             "url": project_url,
             "twitter": request.POST.get("twitter"),
             "facebook": request.POST.get("facebook"),
+            "slack": request.POST.get("slack"),
         }
 
         # Handle logo file
@@ -502,7 +641,8 @@ def create_project(request):
                 return response
 
         def get_issue_count(full_name, query):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = api_get(search_url)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -564,9 +704,9 @@ def create_project(request):
 
                 # Issues count - Fixed
                 full_name = repo_data.get("full_name")
-                open_issues = get_issue_count(full_name, "type:issue+state:open")
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed")
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open")
+                open_issues = get_issue_count(full_name, "type:issue state:open")
+                closed_issues = get_issue_count(full_name, "type:issue state:closed")
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open")
                 total_issues = open_issues + closed_issues
 
                 # Latest release
@@ -691,6 +831,18 @@ class ProjectsDetailView(DetailView):
         return response
 
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_http_methods(["POST"])
+def delete_project(request, slug):
+    """Delete a project. Only accessible by superusers."""
+    project = get_object_or_404(Project, slug=slug)
+    project_name = project.name
+    project.delete()
+    messages.success(request, f'Project "{project_name}" has been deleted successfully.')
+    return redirect("project_list")
+
+
 class RepoDetailView(DetailView):
     model = Repo
     template_name = "projects/repo_detail.html"
@@ -756,7 +908,6 @@ class RepoDetailView(DetailView):
                 return response.json()
             return []
         except Exception as e:
-            print(f"Error fetching GitHub contributors: {e}")
             return []
 
     def fetch_activity_data(self, owner, repo_name):
@@ -801,7 +952,6 @@ class RepoDetailView(DetailView):
                 try:
                     data[key] = future.result()
                 except Exception as e:
-                    print(f"Error fetching {key}: {e}")
                     data[key] = []
 
         # Processing data for charts
@@ -991,7 +1141,7 @@ class RepoDetailView(DetailView):
 
         # Add breadcrumbs
         context["breadcrumbs"] = [
-            {"title": "Repositories", "url": reverse("project_list")},
+            {"title": "Repositories", "url": reverse("repo_list")},
             {"title": repo.name, "url": None},
         ]
 
@@ -1158,6 +1308,68 @@ class RepoDetailView(DetailView):
         # Sort processed stats by impact score
         processed_stats.sort(key=lambda x: x["impact_score"], reverse=True)
 
+        # Get streak highlights and challenge completions for the time period
+        streak_highlights = []
+        challenge_highlights = []
+
+        try:
+            # Get user profiles with recent streak achievements
+            user_profiles = (
+                UserProfile.objects.select_related("user")
+                .filter(user__is_active=True)
+                .prefetch_related("user__user_challenges", "user__points_set")
+            )
+
+            for profile in user_profiles:
+                if profile.current_streak > 0:
+                    # Check if they reached a milestone streak recently
+                    milestone_achieved = None
+                    if profile.current_streak == 7:
+                        milestone_achieved = "7-day streak achieved!"
+                    elif profile.current_streak == 15:
+                        milestone_achieved = "15-day streak achieved!"
+                    elif profile.current_streak == 30:
+                        milestone_achieved = "30-day streak achieved!"
+                    elif profile.current_streak == 100:
+                        milestone_achieved = "100-day streak achieved!"
+                    elif profile.current_streak == 180:
+                        milestone_achieved = "180-day streak achieved!"
+                    elif profile.current_streak == 365:
+                        milestone_achieved = "365-day streak achieved!"
+
+                    if milestone_achieved:
+                        streak_highlights.append(
+                            {
+                                "user": profile.user,
+                                "current_streak": profile.current_streak,
+                                "longest_streak": profile.longest_streak,
+                                "milestone": milestone_achieved,
+                                "user_profile": profile,
+                            }
+                        )
+
+            # Get recent challenge completions from the time period
+            completed_challenges = (
+                Challenge.objects.filter(completed=True, completed_at__gte=start_date, completed_at__lte=end_date)
+                .select_related()
+                .prefetch_related("participants")
+            )
+
+            for challenge in completed_challenges:
+                for participant in challenge.participants.all():
+                    challenge_highlights.append(
+                        {
+                            "user": participant,
+                            "challenge": challenge,
+                            "completed_at": challenge.completed_at,
+                            "points_earned": challenge.points,
+                        }
+                    )
+
+        except Exception as e:
+            logger.error(f"Error fetching streak and challenge highlights: {e}")
+            # Continue without highlights if there's an error
+
         # Set up pagination
         paginator = Paginator(processed_stats, 10)  # Changed from 2 to 10 entries per page
         try:
@@ -1188,6 +1400,10 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
+                "streak_highlights": streak_highlights,
+                "challenge_highlights": challenge_highlights,
+                "total_streak_achievements": len(streak_highlights),
+                "total_challenge_completions": len(challenge_highlights),
                 "issues_labels": activity_data["issues_labels"],
                 "issues_opened": activity_data["issues_opened"],
                 "issues_closed": activity_data["issues_closed"],
@@ -1258,6 +1474,74 @@ class RepoDetailView(DetailView):
             "page_range": range(1, total_pages + 1),
         }
 
+        # Fetch stargazers for this repo (with pagination and filter)
+        try:
+            filter_type = self.request.GET.get("filter", "all")
+            page = int(self.request.GET.get("page", 1))
+            per_page = 10
+            repo_path = repo.repo_url.split("github.com/")[-1]
+            owner, repo_name = repo_path.split("/")
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}/stargazers"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+            # Fetch all stargazers using pagination
+            all_stargazers = []
+            current_page = 1
+            api_per_page = 100
+            while True:
+                paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
+                response = requests.get(paginated_url, headers=headers)
+                if response.status_code == 200:
+                    page_stargazers = response.json()
+                    if not page_stargazers:
+                        break
+                    all_stargazers.extend(page_stargazers)
+                    current_page += 1
+                elif response.status_code == 404:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Repository not found. Please check the URL and try again."
+                    break
+                elif response.status_code == 403:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Rate limit exceeded. Please try again later."
+                    break
+                elif response.status_code == 401:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Authentication failed. Please contact the administrator."
+                    break
+                else:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = f"Error fetching stargazers (Status code: {response.status_code})"
+                    break
+            else:
+                context["stargazers"] = []
+                context["stargazers_error"] = "Unknown error fetching stargazers."
+
+            if "stargazers" not in context:
+                if filter_type == "recent":
+                    all_stargazers.reverse()
+                total_stargazers = len(all_stargazers)
+                total_pages = (total_stargazers + per_page - 1) // per_page
+                page = max(1, min(page, total_pages)) if total_pages > 0 else 1
+                start_idx = (page - 1) * per_page
+                end_idx = start_idx + per_page
+                context["stargazers"] = all_stargazers[start_idx:end_idx]
+                context["stargazers_error"] = None
+                context["total_stargazers"] = total_stargazers
+                context["total_pages"] = total_pages
+                context["current_page"] = page
+                context["filter_type"] = filter_type
+        except Exception as e:
+            context["stargazers"] = []
+            context["stargazers_error"] = "Error fetching stargazers"
+            context["total_stargazers"] = 0
+            context["total_pages"] = 0
+            context["current_page"] = 1
+            context["filter_type"] = "all"
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1269,7 +1553,8 @@ class RepoDetailView(DetailView):
                 return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
@@ -1437,9 +1722,9 @@ class RepoDetailView(DetailView):
                     commit_count = 0
 
                 # Get open issues and PRs
-                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
                 total_issues = open_issues + closed_issues
 
                 if (
@@ -1762,6 +2047,10 @@ class RepoDetailView(DetailView):
 
 
 class RepoBadgeView(APIView):
+    """
+    Generates a 30-day unique visits badge PNG for a Repo, with zero-days shown as faint bars.
+    """
+
     def get_client_ip(self, request):
         # Check X-Forwarded-For header first
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -1806,22 +2095,31 @@ class RepoBadgeView(APIView):
             repo.repo_visit_count = F("repo_visit_count") + 1
             repo.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=29)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))
             .order_by("date")
         )
 
         # Refresh repo to get the latest visit count
         repo.refresh_from_db()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
+        # Extract dates and counts for chart, including zero-visit days
+        all_dates = []
+        all_counts = []
+        visit_dict = {entry["date"]: entry["visit_count"] for entry in visit_counts}
+
+        for i in range(30):
+            check_date = today - timedelta(days=29 - i)  # for last 30 days in order
+            all_dates.append(check_date)
+            all_counts.append(visit_dict.get(check_date, 0))  # default=0 for no visits
+
+        dates = all_dates
+        counts = all_counts
         total_views = repo.repo_visit_count
 
         # Create a new image with a white background
@@ -1832,51 +2130,62 @@ class RepoBadgeView(APIView):
 
         # Define colors
         bar_color = "#e05d44"
-        text_color = "#333333"
         grid_color = "#eeeeee"
 
         # Calculate chart dimensions
         margin = 40
+        text_height = 50  # reserve space for title
         chart_width = width - 2 * margin
-        chart_height = height - 2 * margin
+        chart_height = height - 2 * margin - text_height
+
+        # calculating the max count and bar width for 30 bars
+        if counts and max(counts) > 0:
+            max_count = max(counts)
+        else:
+            max_count = 1
+
+        # Fixed width for exactly 30 bars with proper spacing
+        bar_width = chart_width / 32  # 30 bars + 2 extra for margins
+        bar_spacing = chart_width / 30  # Even spacing for 30 positions
 
         # Draw grid lines
         for i in range(5):
-            y = margin + (chart_height * i) // 4
+            y = margin + text_height + (chart_height * i) // 4
             draw.line([(margin, y), (width - margin, y)], fill=grid_color)
 
-        # Draw bars
+        # Draw bars (with zero-day case handled)
         if dates and counts:
-            max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
             for i, count in enumerate(counts):
-                bar_height = (count / max_count) * chart_height
-                x1 = margin + (i * 2 * bar_width)
-                y1 = height - margin - bar_height
+                x1 = margin + (i * bar_spacing)
                 x2 = x1 + bar_width
-                y2 = height - margin
-
-                # Draw bar with a slight gradient effect
-                for h in range(int(y1), int(y2)):
-                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
-                    r, g, b = 224, 93, 68  # RGB values for #e05d44
-                    current_color = f"#{r:02x}{g:02x}{b:02x}"
-                    draw.line([(x1, h), (x2, h)], fill=current_color)
+                if count > 0:
+                    bar_height = (count / max_count) * chart_height
+                    y1 = height - margin - bar_height
+                    y2 = height - margin
+                    draw.rectangle([(x1, y1), (x2, y2)], fill=bar_color)
+                else:
+                    # Draw a faint line or a short, very light bar for 0 days
+                    faint_color = "#fcbab3"  # faint color used to show 0 days
+                    y1 = y2 = height - margin - 2  # minimal height
+                    draw.rectangle([(x1, y1), (x2, y2 + 1)], fill=faint_color)
 
         # Draw total views text
         try:
-            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+            font = ImageFont.truetype("DejaVuSans.ttf", 28)  # Slightly smaller
         except OSError:
             font = ImageFont.load_default()
 
         text = f"Total Views: {total_views}"
         text_bbox = draw.textbbox((0, 0), text, font=font)
         text_width = text_bbox[2] - text_bbox[0]
-        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+        text_x = (width - text_width) // 2
+        text_y = 15  # Fixed position at top
+
+        draw.text((text_x, text_y), text, font=font, fill=bar_color)  # avoiding overlapping
 
         # Save the image to a buffer
         buffer = BytesIO()
-        img.save(buffer, format="PNG", quality=95)
+        img.save(buffer, format="PNG", optimize=True, compress_level=9)
         buffer.seek(0)
 
         # Return the image with appropriate headers
@@ -1886,3 +2195,159 @@ class RepoBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
+
+
+def gsoc_pr_report(request):
+    try:
+        current_year = timezone.now().year
+        start_year = current_year - 9  # inclusive → exactly 10 years
+
+        # Get selected year from request
+        selected_year = request.GET.get("year")
+        if selected_year:
+            try:
+                selected_year = int(selected_year)
+                # Validate year is within range
+                if selected_year < start_year or selected_year > current_year:
+                    selected_year = None
+            except (ValueError, TypeError):
+                selected_year = None
+
+        # Get all available years for the filter dropdown
+        available_years = list(range(current_year, start_year - 1, -1))  # Latest first
+
+        report_data = []
+
+        # Determine which years to process
+        if selected_year:
+            # Filter only selected year
+            years_to_process = [selected_year]
+        else:
+            # All years
+            years_to_process = range(start_year, current_year + 1)
+
+        # Build data for requested years
+        for year in years_to_process:
+            start_date = timezone.make_aware(datetime(year, 5, 1))
+            end_date = timezone.make_aware(datetime(year, 10, 1))
+
+            repos_qs = (
+                GitHubIssue.objects.filter(
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=start_date,
+                    merged_at__lt=end_date,
+                )
+                .exclude(merged_at__isnull=True)
+                # Exclude bots when contributor data exists
+                .exclude(
+                    Q(contributor__contributor_type__iexact="Bot")
+                    | Q(contributor__name__iendswith="[bot]")
+                    | Q(contributor__name__icontains="bot")
+                )
+                .values("repo__name", "repo__repo_url")
+                .annotate(
+                    pr_count=Count("id"),
+                    unique_contributors=Count("contributor", distinct=True),
+                )
+                .order_by("-pr_count")
+            )
+
+            repos = list(repos_qs)
+
+            report_data.append(
+                {
+                    "year": year,
+                    "repos": repos,  # may be empty
+                    "total_prs": sum(r["pr_count"] for r in repos),
+                }
+            )
+
+        # Calculate summary statistics based on filtered data
+        if selected_year:
+            # For single year view
+            total_years = 1
+            start_year_display = selected_year
+            end_year_display = selected_year
+        else:
+            # For all years view
+            total_years = current_year - start_year + 1
+            start_year_display = start_year
+            end_year_display = current_year
+
+        all_repos = set()
+        total_prs = 0
+        yearly_chart_data = []
+
+        def _repo_key(repo_row):
+            return repo_row.get("repo__name") or repo_row.get("repo__repo_url") or "Unknown repo"
+
+        def _repo_url(repo_row):
+            return repo_row.get("repo__repo_url") or ""
+
+        for year_block in report_data:
+            total_prs += year_block["total_prs"]
+            yearly_chart_data.append({"year": year_block["year"], "prs": year_block["total_prs"]})
+
+            for repo in year_block["repos"]:
+                all_repos.add(_repo_key(repo))
+
+        # Top repos across filtered years
+        repo_totals = defaultdict(int)
+        for year_block in report_data:
+            for repo in year_block["repos"]:
+                repo_totals[_repo_key(repo)] += repo["pr_count"]
+
+        top_repos_chart_data = [
+            {"repo": repo, "prs": count}
+            for repo, count in sorted(repo_totals.items(), key=lambda x: x[1], reverse=True)[:5]
+        ]
+
+        total_repos = len(all_repos)
+        avg_prs_per_year = round(total_prs / len(years_to_process), 2) if years_to_process else 0
+
+        # Update summary to reflect filtered data
+        summary_data = {
+            "start_year": start_year_display,
+            "end_year": end_year_display,
+            "total_years": total_years,
+            "total_repos": total_repos,
+            "total_prs": total_prs,
+            "avg_prs_per_year": avg_prs_per_year,
+        }
+
+        # Convert report_data into dict keyed by year
+        gsoc_data = {}
+        for entry in report_data:
+            repos_dict = {}
+            for repo in entry["repos"]:
+                repos_dict[_repo_key(repo)] = {
+                    "count": repo["pr_count"],
+                    "url": _repo_url(repo),
+                    "contributors": repo["unique_contributors"],
+                }
+            gsoc_data[entry["year"]] = {"repos": repos_dict, "total_prs": entry["total_prs"]}
+
+        context = {
+            "report_data": report_data,
+            "report_data_json": json.dumps(report_data),
+            "gsoc_data": gsoc_data,
+            "start_year": start_year_display,
+            "end_year": end_year_display,
+            "total_years": total_years,
+            "total_repos": total_repos,
+            "total_prs": total_prs,
+            "avg_prs_per_year": avg_prs_per_year,
+            "summary_data": json.dumps(summary_data),
+            "yearly_chart_data_json": json.dumps(yearly_chart_data),
+            "top_repos_chart_data_json": json.dumps(top_repos_chart_data),
+            "available_years": available_years,
+            "selected_year": str(selected_year) if selected_year else None,
+        }
+
+        return render(request, "projects/gsoc_pr_report.html", context)
+
+    except Exception:
+        logger.exception("Error generating GSOC PR report")
+        messages.error(request, "An error occurred while generating the report. Please try again later.")
+        return redirect("project_list")
