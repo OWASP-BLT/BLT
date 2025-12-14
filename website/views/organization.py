@@ -2730,7 +2730,7 @@ def update_organization_repos(request, slug):
                         return
                 except requests.exceptions.RequestException as e:
                     logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
-                    yield f"data: $ Error testing GitHub API. Please try again later.\n\n"
+                    yield "data: $ Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2783,7 +2783,7 @@ def update_organization_repos(request, slug):
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
                             logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
-                            yield f"data: $ Error updating logo. Please try again later.\n\n"
+                            yield "data: $ Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
                     yield "data: $ Error: Failed to connect to GitHub\n\n"
                     yield "data: DONE\n\n"
@@ -2885,7 +2885,7 @@ def update_organization_repos(request, slug):
 
                     except requests.exceptions.RequestException as e:
                         logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
-                        yield f"data: $ Network error occurred. Please try again later.\n\n"
+                        yield "data: $ Network error occurred. Please try again later.\n\n"
                         break
 
                     page += 1
@@ -2900,7 +2900,7 @@ def update_organization_repos(request, slug):
 
             except Exception as e:
                 logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
-                yield f"data: $ An unexpected error occurred. Please try again later.\n\n"
+                yield "data: $ An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
