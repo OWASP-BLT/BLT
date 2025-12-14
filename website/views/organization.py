@@ -2729,7 +2729,8 @@ def update_organization_repos(request, slug):
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    yield f"data: $ Error testing GitHub API: {str(e)[:50]}\n\n"
+                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    yield f"data: $ Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2781,7 +2782,8 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            yield f"data: $ Error updating logo: {str(e)[:50]}\n\n"
+                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            yield f"data: $ Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
                     yield "data: $ Error: Failed to connect to GitHub\n\n"
                     yield "data: DONE\n\n"
@@ -2882,7 +2884,7 @@ def update_organization_repos(request, slug):
                                 yield f"data: $ Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        logger.error(f"Network error in create_message_stream: {str(e)}", exc_info=True)
+                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
                         yield f"data: $ Network error occurred. Please try again later.\n\n"
                         break
 
@@ -2897,12 +2899,14 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
+                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                yield f"data: $ An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
+        logger.error(f"Error in create_message_stream: {str(e)}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
 

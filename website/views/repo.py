@@ -436,9 +436,13 @@ def add_repo(request):
                 status=403,
             )
         elif response.status_code != 200:
-            error_data = response.json()
+            error_data = response.json() if response.content else {}
             error_message = error_data.get("message", "Failed to fetch repository data")
-            logger.error(f"GitHub API Error: {error_message}", exc_info=True)
+            logger.error(
+                f"GitHub API Error - Status: {response.status_code}, URL: {api_url}, "
+                f"Response: {response.text[:200] if response.text else 'No response body'}, "
+                f"Error message: {error_message}"
+            )
             return JsonResponse(
                 {"status": "error", "message": "Failed to fetch repository data from GitHub. Please try again later."},
                 status=response.status_code,
