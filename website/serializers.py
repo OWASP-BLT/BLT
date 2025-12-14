@@ -389,9 +389,10 @@ class BountySerializer(serializers.ModelSerializer):
         Create a new Bounty instance.
 
         - Automatically sets the sponsor to the authenticated user.
-        - Fills github_sponsor_username.
-        - If github_issue_url is present, attach the corresponding Issue
-          object so Bounty.issue is never NULL.
+        - Uses github_username (from Slack / BLT-Action) for attribution when given.
+        - Falls back to request.user's GitHub username / username.
+        - If github_issue_url is present, attach (or create) an Issue so
+        Bounty.issue is never NULL, using Issue.github_url as the key.
         """
         request = self.context["request"]
         sponsor = request.user
@@ -401,11 +402,10 @@ class BountySerializer(serializers.ModelSerializer):
         github_username = validated_data.pop("github_username", "").strip()
 
         if github_username:
-            # If the caller explicitly told us who the GitHub sponsor is,
-            # trust that for attribution.
+            # Explicit GitHub sponsor from caller → trust this for attribution
             validated_data["github_sponsor_username"] = github_username
-
         elif "github_sponsor_username" not in validated_data:
+            # Fallback: use the API user's GitHub username / username
             validated_data["github_sponsor_username"] = getattr(
                 sponsor,
                 "github_username",
@@ -414,14 +414,14 @@ class BountySerializer(serializers.ModelSerializer):
 
         github_issue_url = validated_data.get("github_issue_url")
         if github_issue_url:
-            # Use Issue.github_url as the canonical link to the GitHub issue
+            # Use Issue.github_url as the canonical link to the GitHub issue.
+            # IMPORTANT: do NOT pass any 'captcha' or 'user' kwargs here.
             issue_obj, _ = Issue.objects.get_or_create(
                 github_url=github_issue_url,
                 defaults={
-                    # Minimal valid data for Issue:
-                    # url and description are required fields.
                     "url": github_issue_url,
                     "description": f"GitHub issue: {github_issue_url}",
+                    "is_hidden": True,
                 },
             )
             validated_data["issue"] = issue_obj

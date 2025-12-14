@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
-
+import re
 import django
 import psutil
 import requests
@@ -1982,7 +1982,9 @@ class DebugPanelStatusApiView(APIView):
             }
         )
 
-
+GITHUB_ISSUE_URL_RE = re.compile(
+        r"^https://github\.com/[^/]+/[^/]+/issues/\d+/?$"
+    )
 class BountyViewSet(viewsets.ModelViewSet):
     """
     create: Create a new bounty.
@@ -1994,7 +1996,6 @@ class BountyViewSet(viewsets.ModelViewSet):
 
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-
     def get_queryset(self):
         qs = super().get_queryset()
         issue_url = self.request.query_params.get("github_issue_url")
@@ -2007,17 +2008,35 @@ class BountyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="issue-total")
     def issue_total(self, request):
-        github_issue_url = request.query_params.get("github_issue_url")
-        if not github_issue_url:
+        raw_url = (request.query_params.get("github_issue_url") or "").strip()
+
+        if not raw_url:
             return Response(
                 {"detail": "github_issue_url is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        total = Bounty.total_for_issue_url(github_issue_url)
-        return Response({"github_issue_url": github_issue_url, "total": total})
+
+        # Basic sanity checks to avoid garbage / huge inputs
+        if len(raw_url) > 500 or not GITHUB_ISSUE_URL_RE.match(raw_url):
+            return Response(
+                {"detail": "Invalid github_issue_url format."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total = Bounty.total_for_issue_url(raw_url)
+        return Response({"github_issue_url": raw_url, "total": total})
+
 
     @action(detail=False, methods=["get"], url_path="sponsor-stats")
     def sponsor_stats(self, request):
+        """
+        Return aggregate stats for a given GitHub sponsor username.
+
+        Currently:
+        - total_bounty_placed: sum of all bounties where github_sponsor_username matches.
+        - developers_sponsored_count: placeholder (0) because we do not yet track
+        payout recipients on the Bounty model.
+        """
         sponsor_username = request.query_params.get("github_username")
         if not sponsor_username:
             return Response(
@@ -2025,24 +2044,18 @@ class BountyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # All bounties placed by this GitHub sponsor (any status)
         qs = Bounty.objects.filter(github_sponsor_username=sponsor_username)
         total_placed = qs.aggregate(total=models.Sum("amount"))["total"] or 0
 
-        User = get_user_model()
-        # Distinct issue assignees with paid bounties from this sponsor:
-        unique_devs = (
-            User.objects.filter(
-                issue__bounties__github_sponsor_username=sponsor_username,
-                issue__bounties__status=Bounty.STATUS_PAID,
-            )
-            .distinct()
-            .count()
-        )
+        # TODO: once Bounty has a proper "recipient" or "paid_to" FK, compute
+        # a real developers_sponsored_count here.
+        developers_sponsored_count = 0
 
         return Response(
             {
                 "github_username": sponsor_username,
                 "total_bounty_placed": total_placed,
-                "developers_sponsored_count": unique_devs,
+                "developers_sponsored_count": developers_sponsored_count,
             }
         )

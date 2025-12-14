@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-
+from django.utils import timezone
 from website.models import Bounty, GitHubIssue, Repo, UserProfile
 
 logger = logging.getLogger(__name__)
@@ -116,28 +116,32 @@ def bounty_payout(request):
         )
 
         # Update status in bulk
-        updated_count = pending_bounties.update(status=Bounty.STATUS_PAID)
+        updated_count = pending_bounties.update(
+            status=Bounty.STATUS_PAID,
+            updated_at=timezone.now(),
+        )
         logger.info(f"Marked {updated_count} bounty record(s) as PAID for {issue_url}")
 
         # Convert cents -> dollars (or whatever unit your winnings use)
         payout_amount = Decimal(bounty_amount) / Decimal("100.0")
 
-        User = get_user_model()
-        contributor = User.objects.filter(username=contributor_username).first()
-        # ^^^ adjust field name if GitHub username is stored differently
-
-        if contributor:
+        github_profile_url = f"https://github.com/{contributor_username}"
+        profile = (
+            UserProfile.objects.select_related("user")
+            .filter(github_url__iexact=github_profile_url)  # confirm field name
+            .first()
+        )
+        if profile:
             try:
-                profile = UserProfile.objects.get(user=contributor)
                 # Atomic increment to avoid race conditions
                 UserProfile.objects.filter(pk=profile.pk).update(
                     winnings=Coalesce(F("winnings"), Decimal("0")) + payout_amount
                 )
                 logger.info(f"Updated winnings for {contributor_username} by {payout_amount}")
-            except UserProfile.DoesNotExist:
-                logger.warning(f"No UserProfile found for {contributor_username}; skipping winnings update")
+            except Exception:
+                logger.exception("Failed updating winnings for %s", contributor_username)
         else:
-            logger.warning(f"No local user found for GitHub username {contributor_username}; skipping winnings update")
+            logger.warning("No UserProfile matched GitHub URL %s; skipping winnings update", github_profile_url)
 
         # =====================================================================
 

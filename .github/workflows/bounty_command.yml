@@ -28,16 +28,21 @@ jobs:
             const issue_url = context.payload.issue.html_url;
 
             // match "/bounty $50" or "/bounty 50" or "/bounty $12.50"
-            core.info(`Raw comment body is: >>>${comment}<<<`);
+            core.info(`Checking comment for /bounty command (len=${comment.length})`);
             const m = comment.match(/\/bounty\s*\$?([0-9]+(?:\.[0-9]{1,2})?)/i);
             if (!m) {
               core.info("No /bounty command found.");
-              return {
-                found: "false",
-              };
-            }
+              core.setOutput("found", "false");
+              return;
+             }
 
             const amount = m[1];
+            const amountNum = Number(amount);
+            if (!Number.isFinite(amountNum) || amountNum <= 0) {
+              core.info(`Invalid bounty amount: ${amount}`);
+              core.setOutput("found", "false");
+              return;
+            }
             core.info(`Bounty detected: $${amount} by ${commenter} on issue #${issue_number}`);
 
             // 🔥 expose outputs for later steps
@@ -57,7 +62,7 @@ jobs:
 
       - name: Call BLT-Action composite bounty processor
         if: steps.parse.outputs.found == 'true'
-        uses: OWASP-BLT/BLT-ACTION/Bounty_Processor@Main
+        uses: OWASP-BLT/BLT-Action/Bounty_Processor@v1.1
         with:
           api_base_url: ${{ secrets.API_BASE_URL }}      # e.g. https://<ngrok>.ngrok.io/api/v1
           blt_api_token: ${{ secrets.BLT_API_TOKEN }}    # Django Token

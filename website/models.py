@@ -3563,6 +3563,18 @@ class StakingTransaction(models.Model):
 
 
 class Bounty(models.Model):
+    """
+    Represents a monetary bounty pledged against a GitHub issue.
+
+    - `issue` links to an internal `Issue` record when available, but can be null
+      while the system only knows the `github_issue_url`.
+    - `status` tracks the lifecycle (e.g. PENDING → PAID → CANCELLED).
+    - `github_issue_url` stores the canonical GitHub URL and is used for lookups
+      from external systems (Slack, GitHub Actions, etc.).
+    - `sponsor` and `github_sponsor_username` store who funded the bounty;
+      payout recipients are currently tracked via payout logic rather than a
+      direct foreign key.
+    """
     STATUS_PENDING = "pending"
     STATUS_PAID = "paid"
     STATUS_CANCELLED = "cancelled"
@@ -3583,7 +3595,6 @@ class Bounty(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="bounties",
-        db_index=True,
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     github_issue_url = models.URLField()
@@ -3605,7 +3616,8 @@ class Bounty(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.github_sponsor_username} → {self.issue} (${self.amount})"
+        issue_display = self.issue if self.issue_id else self.github_issue_url
+        return f"{self.github_sponsor_username} → {issue_display} (${self.amount})"
 
     @classmethod
     def total_for_issue(cls, issue):
@@ -3616,7 +3628,7 @@ class Bounty(models.Model):
             cls.objects.filter(issue=issue)
             .exclude(status=cls.STATUS_CANCELLED)
             .aggregate(total=models.Sum("amount"))["total"]
-            or 0
+            or Decimal("0.00")
         )
 
     @classmethod
@@ -3625,7 +3637,7 @@ class Bounty(models.Model):
             cls.objects.filter(github_issue_url=github_issue_url)
             .exclude(status=cls.STATUS_CANCELLED)
             .aggregate(total=models.Sum("amount"))["total"]
-            or 0
+            or Decimal("0.00")
         )
 
     @classmethod

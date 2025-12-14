@@ -3022,26 +3022,31 @@ def handle_committee_pagination(action, body, client):
         logger.error(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
-
 BOUNTY_REGEX = re.compile(
-    r"""^\s*
-        \$?(?P<amount>[0-9]+(?:\.[0-9]{1,2})?)   # amount, optional leading $
-        \s+
-        (?P<issue_url>https?://\S+)              # GitHub issue URL
-        \s+
-        (?P<github_username>[A-Za-z0-9_-]+)      # GitHub username
-        \s*$
+    r"""
+    ^\s*
+    (?:/bounty\s+)?                       # optional leading '/bounty'
+    \$?(?P<amount>-?\d+(?:\.\d{1,2})?)    # optional '$', optional '-', int/decimal
+    \s+
+    (?P<issue_url>https?://\S+)
+    \s+
+    (?P<github_username>[A-Za-z0-9-]+)
+    \s*$
     """,
     re.VERBOSE,
 )
 
+
+GITHUB_ISSUE_URL_RE = re.compile(
+    r"^https://github\.com/[^/]+/[^/]+/issues/\d+$"
+)
 
 @csrf_exempt
 def slack_bounty_command(request):
     """
     Handle `/bounty` Slack command.
 
-    New format (no Slack→GitHub mapping):
+    Format:
       /bounty <amount> <issue-url> <github-username>
 
     Examples:
@@ -3066,8 +3071,17 @@ def slack_bounty_command(request):
         response_url,
     )
 
-    m = BOUNTY_REGEX.match(text)
-    if not m:
+    # ------------------------------------------------------------------
+    # 1) Parse command text: /bounty <amount> <github_issue_url> <github_username>
+    #    We allow either:
+    #      - Slack slash command full text: "/bounty 10 https://... user"
+    #      - Or just "10 https://... user" (what tests send)
+    # ------------------------------------------------------------------
+    if text.lower().startswith("/bounty "):
+        text = text[len("/bounty "):].strip()
+
+    parts = text.split()
+    if len(parts) != 3:
         logger.warning(
             "slack_bounty_command: invalid payload from Slack user %s: %r",
             user_id,
@@ -3083,11 +3097,35 @@ def slack_bounty_command(request):
             }
         )
 
-    amount_str = m.group("amount")
-    issue_url = m.group("issue_url")
-    github_username = m.group("github_username")
+    raw_amount, issue_url, github_username = parts
 
-    # Basic amount validation
+    # strip leading '$' if present
+    if raw_amount.startswith("$"):
+        raw_amount = raw_amount[1:]
+    amount_str = raw_amount
+
+    # ------------------------------------------------------------------
+    # 2) Validate issue URL shape (GitHub issue URL only)
+    # ------------------------------------------------------------------
+    if not GITHUB_ISSUE_URL_RE.match(issue_url):
+        logger.warning(
+            "slack_bounty_command: rejected non-GitHub issue URL %r from Slack user %s",
+            issue_url,
+            user_id,
+        )
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": (
+                    "The issue URL must be a valid GitHub issue link like:\n"
+                    "`https://github.com/owner/repo/issues/123`"
+                ),
+            }
+        )
+
+    # ------------------------------------------------------------------
+    # 3) Validate amount
+    # ------------------------------------------------------------------
     try:
         amount_val = float(amount_str)
     except ValueError:
@@ -3116,17 +3154,22 @@ def slack_bounty_command(request):
             }
         )
 
-    # Call BLT API to create bounty
-    api_base = getattr(
-        settings,
-        "BLT_API_BASE_URL",
-        os.environ.get("BLT_API_BASE_URL", ""),
+    # ------------------------------------------------------------------
+    # 4) Call BLT API to create bounty
+    # ------------------------------------------------------------------
+    api_base = (
+        getattr(settings, "BLT_API_BASE_URL", None)
+        or os.environ.get("BLT_API_BASE_URL", "")
     ).rstrip("/")
-    api_token = getattr(settings, "BLT_API_TOKEN", os.environ.get("BLT_API_TOKEN"))
+    api_token = (
+        getattr(settings, "BLT_API_TOKEN", None)
+        or os.environ.get("BLT_API_TOKEN")
+    )
 
     if not api_base or not api_token:
         logger.error(
-            "slack_bounty_command: BLT API is not configured " "(BLT_API_BASE_URL=%r, BLT_API_TOKEN set=%s)",
+            "slack_bounty_command: BLT API is not configured "
+            "(BLT_API_BASE_URL=%r, BLT_API_TOKEN set=%s)",
             api_base,
             bool(api_token),
         )
@@ -3142,7 +3185,6 @@ def slack_bounty_command(request):
         "Content-Type": "application/json",
     }
 
-    # IMPORTANT: send amount as string, and include github_username
     payload = {
         "amount": amount_str,
         "github_issue_url": issue_url,
@@ -3151,7 +3193,8 @@ def slack_bounty_command(request):
 
     try:
         logger.info(
-            "slack_bounty_command: creating bounty via BLT API " "amount=%s issue=%s sponsor=%s",
+            "slack_bounty_command: creating bounty via BLT API "
+            "amount=%s issue=%s sponsor=%s",
             amount_str,
             issue_url,
             github_username,
@@ -3164,7 +3207,8 @@ def slack_bounty_command(request):
         )
         if r.status_code not in (200, 201):
             logger.error(
-                "slack_bounty_command: BLT API bounty create failed " "status=%s body=%s",
+                "slack_bounty_command: BLT API bounty create failed "
+                "status=%s body=%s",
                 r.status_code,
                 r.text[:500],
             )
@@ -3175,9 +3219,12 @@ def slack_bounty_command(request):
                 }
             )
         try:
-            r.json()  # ensure it’s valid JSON; we ignore the contents for now
+            r.json()  # ensure it’s valid JSON; we ignore contents for now
         except Exception:
-            logger.exception("slack_bounty_command: BLT API returned non-JSON response " "while creating bounty")
+            logger.exception(
+                "slack_bounty_command: BLT API returned non-JSON response "
+                "while creating bounty"
+            )
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
@@ -3193,7 +3240,9 @@ def slack_bounty_command(request):
             }
         )
 
-    # Fetch current totals for channel message
+    # ------------------------------------------------------------------
+    # 5) Fetch current totals for channel message
+    # ------------------------------------------------------------------
     try:
         total_res = requests.get(
             f"{api_base}/bounties/issue-total/",
@@ -3209,7 +3258,6 @@ def slack_bounty_command(request):
         if raw_total is None:
             raw_total = total_json.get("total_amount")
 
-        # If API didn't give us anything usable, fall back to this bounty amount
         if raw_total in (None, ""):
             total_amount = amount_str
         else:
@@ -3227,9 +3275,12 @@ def slack_bounty_command(request):
         )
         total_amount = amount_str
 
-    # Public in-channel response
+    # ------------------------------------------------------------------
+    # 6) Public in-channel response
+    # ------------------------------------------------------------------
     logger.info(
-        "slack_bounty_command: successfully created bounty via Slack " "amount=%s issue=%s sponsor=%s total=%s",
+        "slack_bounty_command: successfully created bounty via Slack "
+        "amount=%s issue=%s sponsor=%s total=%s",
         amount_str,
         issue_url,
         github_username,
