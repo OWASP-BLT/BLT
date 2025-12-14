@@ -13,5 +13,12 @@ if [ ! -f ./ssl/cert.pem ] || [ ! -f ./ssl/key.pem ]; then
     echo "Self-signed certificates generated successfully."
 fi
 
-# Run the application with SSL
-uvicorn blt.asgi:application --host 0.0.0.0 --port 8443 --ssl-keyfile ./ssl/key.pem --ssl-certfile ./ssl/cert.pem --log-level debug --reload --reload-include *.html
+# Run migrations
+echo "Checking and applying migrations..."
+poetry run python manage.py migrate
+
+# Open browser after a short delay (in background)
+(sleep 3 && xdg-open https://localhost:8443) &
+
+# Run the application with SSL in poetry shell
+poetry run uvicorn blt.asgi:application --host 0.0.0.0 --port 8443 --ssl-keyfile ./ssl/key.pem --ssl-certfile ./ssl/cert.pem --log-level debug --reload --reload-include *.html
