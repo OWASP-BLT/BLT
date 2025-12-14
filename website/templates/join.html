@@ -103,13 +103,12 @@
   // Create a Stripe client.
   var paymentType = 'card';
   var showcard = document.getElementById('showcard');
-  showcard.addEventListener('click', function (event) {
-    paymentType = 'card'
-  })
-  var showwallet = document.getElementById('showwallet');
-  showwallet.addEventListener('click', function (event) {
-    paymentType = 'wallet'
-  })
+  if (showcard) {
+    showcard.addEventListener('click', function (event) {
+      paymentType = 'card'
+    })
+  }
+  // Wallet payment option removed
 
   // Custom styling can be passed to options when creating an Element.
   // (Note that this demo uses a wider set of styles than the guide below.)
@@ -148,7 +147,7 @@
     </script>
     <script type="text/javascript">
   $('document').ready(function () {
-    $('#cardButton, #walletButton').click(function () {
+    $('#cardButton').click(function () {
 
       setTimeout(function () {
 
@@ -196,58 +195,10 @@
             });
 
           }, 150);
-
-
-        }
-      });
-
-      setTimeout(function () {
-
-        $(".wallet").velocity("fadeOut", {
-          queue: false,
-          duration: 150
-        });
-
-      }, 150);
-
+      // Wallet animation removed
     });
 
-    $('#showwallet').click(function () {
-      $(".wallet").velocity({
-        scale: "65%",
-        translateZ: 0
-      });
-
-      $(".card").velocity({
-        scale: "65%",
-        translateZ: 0
-      }, {
-        duration: 400,
-        easing: "easeInOutBack",
-        complete: function () {
-
-          $(".wallet").velocity({
-            scale: "100%",
-            translateZ: 0
-          }, {
-            duration: 400,
-            easing: "easeInOutBack"
-          });
-
-          setTimeout(function () {
-
-            $(".wallet").velocity("fadeIn", {
-              queue: false,
-              duration: 150
-            });
-
-          }, 150);
-
-
-        }
-      });
-
-      setTimeout(function () {
+    // Wallet payment button removed - feature no longer supported
 
         $(".card").velocity("fadeOut", {
           queue: false,
