@@ -466,7 +466,9 @@ def search_issues(request, template="search.html"):
         }
     elif stype == "user":
         if request.user.is_anonymous:
-            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(Q(is_hidden=True))[
+                0:20
+            ]
         else:
             issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
