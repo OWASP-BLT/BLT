@@ -19,7 +19,8 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.db import connection
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -749,41 +750,74 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.prefetch_related("contributors").all()
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        )
+
+        stars = request.query_params.get("stars")
+        forks = request.query_params.get("forks")
+
+        if stars is not None:
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if forks is not None:
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         project_data = []
         for project in projects:
             contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
+            contributors_manager = getattr(project, "contributors", None)
+            if contributors_manager:
+                for contributor in contributors_manager.all():
+                    contributor_info = ContributorSerializer(contributor)
+                    contributors_data.append(contributor_info.data)
+
+            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
 
-        return Response(
-            {"count": len(project_data), "projects": project_data},
-            status=200,
-        )
+        return Response({"results": project_data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
-        try:
-            query_int = int(query)
-            projects = Project.objects.filter(
-                Q(name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(tags__name__icontains=query)
-                | Q(stars=query_int)
-                | Q(forks=query_int)
-            ).distinct()
-        except ValueError:
-            # If query is not a number, exclude stars/forks from search
-            projects = Project.objects.filter(
-                Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
-            ).distinct()
+
+        projects_qs = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
+
+        projects = projects_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
+        ).distinct()
 
         project_data = []
         for project in projects:
@@ -791,7 +825,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -808,14 +844,48 @@ class ProjectViewSet(viewsets.ModelViewSet):
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
-        projects = Project.objects.all()
+        # Annotate Project with aggregated stars and forks from related Repos
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
 
+        # Freshness is NOT a DB field (SerializerMethodField)
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            pass  # Safe no-op
+
+        # SAFE stars validation
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # SAFE forks validation
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -825,7 +895,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
