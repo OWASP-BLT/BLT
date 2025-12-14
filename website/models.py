@@ -3631,24 +3631,16 @@ class Bounty(models.Model):
     @classmethod
     def unique_developers_sponsored_by_user(cls, sponsor):
         """
-        Count distinct contributors who received payouts from this sponsor's bounties.
+        Placeholder for a future 'unique developers sponsored by this user'
+        metric. The original implementation assumed an Issue.assignee field,
+        which no longer exists in the current data model.
 
-        NOTE: This assumes you have some model linking issues/PRs/payouts to developers.
-        For now we stub assuming Issue has an `assignee` FK to User.
-        Adjust this to match BLT's actual payout/assignee model.
+        This helper is currently unused; raising explicitly avoids silently
+        executing incorrect queries if it gets called.
         """
-        from django.contrib.auth import get_user_model
-
-        User = get_user_model()
-
-        # Example: distinct assignees on issues sponsored by this user, where bounty is paid.
-        return (
-            User.objects.filter(
-                issue__bounties__sponsor=sponsor,
-                issue__bounties__status=cls.STATUS_PAID,
-            )
-            .distinct()
-            .count()
+        raise NotImplementedError(
+            "unique_developers_sponsored_by_user is not implemented for the "
+            "current Bounty / Issue / GitHubIssue schema."
         )
 class SecurityIncident(models.Model):
     class Severity(models.TextChoices):

@@ -10,7 +10,7 @@ from django.db.models import F
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-
+from django.db.models.functions import Coalesce
 from website.models import Bounty, GitHubIssue, Repo, UserProfile
 
 logger = logging.getLogger(__name__)
@@ -105,10 +105,6 @@ def bounty_payout(request):
         github_issue.sponsors_tx_id = transaction_id
         github_issue.save()
 
-        # =====================================================================
-        # 🆕 Phase 1 - Task 3: Mark related Bounty records as PAID
-        # =====================================================================
-
         # Build canonical GitHub issue URL in same format used when creating Bounty
         issue_url = f"https://github.com/{owner_name}/{repo_name}/issues/{issue_number}"
 
@@ -122,10 +118,6 @@ def bounty_payout(request):
         updated_count = pending_bounties.update(status=Bounty.STATUS_PAID)
         logger.info(f"Marked {updated_count} bounty record(s) as PAID for {issue_url}")
 
-        # =====================================================================
-        # 🆕 Phase 1 - Task 3: Update contributor's winnings
-        # =====================================================================
-
         # Convert cents -> dollars (or whatever unit your winnings use)
         payout_amount = Decimal(bounty_amount) / Decimal("100.0")
 
@@ -137,7 +129,8 @@ def bounty_payout(request):
             try:
                 profile = UserProfile.objects.get(user=contributor)
                 # Atomic increment to avoid race conditions
-                UserProfile.objects.filter(pk=profile.pk).update(winnings=F("winnings") + payout_amount)
+                UserProfile.objects.filter(pk=profile.pk).update(
+                    winnings=Coalesce(F("winnings"), Decimal("0")) + payout_amount)
                 logger.info(f"Updated winnings for {contributor_username} by {payout_amount}")
             except UserProfile.DoesNotExist:
                 logger.warning(f"No UserProfile found for {contributor_username}; skipping winnings update")

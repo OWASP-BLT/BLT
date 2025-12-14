@@ -3051,10 +3051,19 @@ def slack_bounty_command(request):
     if request.method != "POST":
         return HttpResponseBadRequest("Invalid method")
 
+    # Verify the request is from Slack (prevents arbitrary callers creating bounties)
+    if not verify_slack_signature(request):
+        return HttpResponse(status=403)
+    
     text = (request.POST.get("text") or "").strip()
     user_id = request.POST.get("user_id")
     response_url = request.POST.get("response_url")
-
+    logger.info(
+        "Received /bounty command from Slack user %s: %r (response_url=%s)",
+        user_id,
+        text,
+        response_url,
+    )
     m = BOUNTY_REGEX.match(text)
     if not m:
         return JsonResponse(
@@ -3115,15 +3124,30 @@ def slack_bounty_command(request):
     }
 
     try:
-        r = requests.post(f"{api_base}/bounties/", headers=headers, data=json.dumps(payload))
+        r = requests.post(
+            f"{api_base}/bounties/",
+            headers=headers,
+            json=payload,
+            timeout=10,
+        )
         if r.status_code not in (200, 201):
+            logger.warning("BLT API bounty create failed: %s %s", r.status_code, r.text[:500])
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
                     "text": "Failed to create bounty. Please check your input and try again.",
                 }
             )
-        bounty_data = r.json()
+        try:
+            r.json()  # ensure it’s valid JSON; we ignore the contents for now
+        except Exception:
+            logger.exception("Error contacting BLT API (create bounty)")
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "BLT API returned a non-JSON response while creating the bounty.",
+                }
+            )
     except Exception as e:
         return JsonResponse(
             {
@@ -3138,6 +3162,7 @@ def slack_bounty_command(request):
             f"{api_base}/bounties/issue-total/",
             headers=headers,
             params={"github_issue_url": issue_url},
+            timeout=10,
         )
         total_json = total_res.json() if total_res.ok else {}
 
