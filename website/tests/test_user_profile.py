@@ -372,13 +372,13 @@ class MonthlyVisitorsLeaderboardViewTest(TestCase):
 
     def test_monthly_visitors_leaderboard_view_loads(self):
         """Test that the monthly visitors leaderboard page loads successfully"""
-        response = self.client.get(reverse("leaderboard"))
+        response = self.client.get(reverse("leaderboard_monthly_visitors"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "leaderboard_monthly_visitors.html")
 
     def test_monthly_visitors_leaderboard_ordering(self):
         """Test that visitors are ordered by monthly_visit_count descending"""
-        response = self.client.get(reverse("leaderboard"))
+        response = self.client.get(reverse("leaderboard_monthly_visitors"))
         leaderboard = response.context["leaderboard"]
 
         # Convert queryset to list to check ordering
@@ -399,7 +399,7 @@ class MonthlyVisitorsLeaderboardViewTest(TestCase):
         last_month = timezone.now().date() - relativedelta(months=1)
         UserProfile.objects.filter(user=old_user).update(monthly_visit_count=20, last_monthly_visit=last_month)
 
-        response = self.client.get(reverse("leaderboard"))
+        response = self.client.get(reverse("leaderboard_monthly_visitors"))
         leaderboard = list(response.context["leaderboard"])
 
         # Old user should not appear in the leaderboard
@@ -408,7 +408,7 @@ class MonthlyVisitorsLeaderboardViewTest(TestCase):
 
     def test_monthly_visitors_leaderboard_context_data(self):
         """Test that context includes current month and year"""
-        response = self.client.get(reverse("leaderboard"))
+        response = self.client.get(reverse("leaderboard_monthly_visitors"))
         today = timezone.now().date()
 
         self.assertIn("current_month", response.context)
@@ -423,7 +423,7 @@ class MonthlyVisitorsLeaderboardViewTest(TestCase):
         # Reset all monthly visit counts
         UserProfile.objects.all().update(monthly_visit_count=0)
 
-        response = self.client.get(reverse("leaderboard"))
+        response = self.client.get(reverse("leaderboard_monthly_visitors"))
         leaderboard = response.context["leaderboard"]
 
         self.assertEqual(len(leaderboard), 0)
@@ -437,7 +437,7 @@ class MonthlyVisitorsLeaderboardViewTest(TestCase):
         Wallet.objects.create(user=self.user1, current_balance=100)
 
         self.client.login(username="user1", password="testpass123")
-        response = self.client.get(reverse("leaderboard"))
+        response = self.client.get(reverse("leaderboard_monthly_visitors"))
 
         self.assertIn("wallet", response.context)
         self.assertEqual(response.context["wallet"].user, self.user1)
