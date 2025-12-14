@@ -2905,7 +2905,7 @@ def update_organization_repos(request, slug):
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        logger.error(f"Error in create_message_stream: {str(e)}", exc_info=True)
+        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
         messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
