@@ -2725,12 +2725,12 @@ def update_organization_repos(request, slug):
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        yield f"data: Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
                     logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
-                    yield "data: $ Error testing GitHub API. Please try again later.\n\n"
+                    yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2749,17 +2749,17 @@ def update_organization_repos(request, slug):
                     )
 
                     if response.status_code == 404:
-                        yield f"data: $ Error: GitHub organization '{github_org_name}' not found\n\n"
+                        yield f"data: Error: GitHub organization '{github_org_name}' not found\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code == 401:
-                        yield "data: $ Error: GitHub authentication failed\n\n"
+                        yield "data: Error: GitHub authentication failed\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                         yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                            f"data: Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
                         )
                         yield "data: DONE\n\n"
                         return
@@ -2783,9 +2783,9 @@ def update_organization_repos(request, slug):
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
                             logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
-                            yield "data: $ Error updating logo. Please try again later.\n\n"
+                            yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
-                    yield "data: $ Error: Failed to connect to GitHub\n\n"
+                    yield "data: Error: Failed to connect to GitHub\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2813,21 +2813,19 @@ def update_organization_repos(request, slug):
                         if response.status_code == 403:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             if "rate limit" in response.text.lower():
-                                yield (f"data: $ Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
+                                yield (f"data: Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
                             else:
-                                yield (
-                                    f"data: $ Error: GitHub API access forbidden (403). Response: {response_text}\n\n"
-                                )
+                                yield (f"data: Error: GitHub API access forbidden (403). Response: {response_text}\n\n")
                             break
                         elif response.status_code == 401:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                            yield (f"data: $ Error: GitHub authentication failed (401). Response: {response_text}\n\n")
+                            yield (f"data: Error: GitHub authentication failed (401). Response: {response_text}\n\n")
                             yield "data: DONE\n\n"
                             return
                         elif response.status_code != 200:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             yield (
-                                f"data: $ Error: GitHub API returned {response.status_code}. "
+                                f"data: Error: GitHub API returned {response.status_code}. "
                                 f"Response: {response_text}\n\n"
                             )
                             yield "data: DONE\n\n"
@@ -2881,7 +2879,7 @@ def update_organization_repos(request, slug):
 
                             except Exception as e:
                                 logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
-                                yield f"data: $ Error processing {repo_name}. Please try again later.\n\n"
+                                yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
                         logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)

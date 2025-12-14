@@ -426,22 +426,37 @@ def search_issues(request, template="search.html"):
     if query is None:
         return render(request, template)
     query = query.strip()
-    if query[:6] == "issue:":
+    # Safe prefix checking with length validation to prevent IndexError
+    if len(query) >= 6 and query[:6] == "issue:":
         stype = "issue"
-        query = query[6:]
-    elif query[:7] == "domain:":
+        query = query[6:].strip()
+    elif len(query) >= 7 and query[:7] == "domain:":
         stype = "domain"
-        query = query[7:]
-    elif query[:5] == "user:":
+        query = query[7:].strip()
+    elif len(query) >= 5 and query[:5] == "user:":
         stype = "user"
-        query = query[5:]
-    elif query[:6] == "label:":
+        query = query[5:].strip()
+    elif len(query) >= 6 and query[:6] == "label:":
         stype = "label"
-        query = query[6:]
-    elif query[:4].lower() == "cve:":
+        query = query[6:].strip()
+    elif len(query) >= 4 and query[:4].lower() == "cve:":
         stype = "cve"
         query = query[4:].strip()
-    if stype == "issue" or stype is None:
+    if stype == "cve":
+        # CVE search - filter by cve_id (case-insensitive)
+        query_upper = query.upper()
+        issues_base_qs = Issue.objects.filter(cve_id__iexact=query_upper, hunt=None)
+        if request.user.is_anonymous:
+            issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+        else:
+            issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": issues_qs,
+        }
+    elif stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
         else:
