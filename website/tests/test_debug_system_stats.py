@@ -1,6 +1,7 @@
 from importlib import reload
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import NoReverseMatch, clear_url_caches, reverse
@@ -8,6 +9,14 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 User = get_user_model()
+
+
+# Get the current INSTALLED_APPS and add silk
+def get_installed_apps_with_silk():
+    apps = list(settings.INSTALLED_APPS)
+    if "silk" not in apps:
+        apps.append("silk")
+    return apps
 
 
 @override_settings(ALLOWED_HOSTS=["*"])
@@ -112,7 +121,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True, TESTING=False)
+    @override_settings(DEBUG=True, TESTING=False, INSTALLED_APPS=get_installed_apps_with_silk())
     @patch("django.core.cache.cache.clear")
     def test_clear_cache_handles_errors(self, mock_cache_clear):
         """Test that cache clear endpoint handles errors gracefully"""
