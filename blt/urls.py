@@ -305,6 +305,7 @@ from website.views.project import (
     create_project,
     delete_project,
     distribute_bacon,
+    gsoc_pr_report,
     repo_activity_data,
     select_contribution,
 )
@@ -1248,6 +1249,7 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
     path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
