@@ -43,6 +43,31 @@ def validate_bch_address(value):
     # Additional validation for the rest of the address could be added here
 
 
+def validate_iana_timezone(value):
+    """
+    Validator for IANA timezone strings.
+
+    Validates that the provided value is a valid IANA timezone identifier
+    (e.g., 'America/New_York', 'Asia/Kolkata', 'UTC').
+
+    Args:
+        value: The timezone string to validate
+
+    Raises:
+        ValidationError: If the timezone is not a valid IANA timezone
+    """
+    if not value:
+        return  # Allow empty/null values if field allows it
+
+    try:
+        pytz.timezone(value)
+    except pytz.exceptions.UnknownTimeZoneError:
+        raise ValidationError(
+            f"'{value}' is not a valid IANA timezone. "
+            f"Please use a valid timezone like 'America/New_York', 'Asia/Kolkata', or 'UTC'."
+        )
+
+
 def validate_btc_address(value):
     """Validates that a BTC address is in the new SegWit format."""
     if not (value.startswith("bc1") or value.startswith("3") or value.startswith("1")):
@@ -1120,6 +1145,7 @@ class UserProfile(models.Model):
         max_length=50,
         default="UTC",
         help_text="User's timezone (e.g., 'Asia/Kolkata', 'America/New_York'). Defaults to UTC.",
+        validators=[validate_iana_timezone],
     )
 
     def avatar(self, size=36):
@@ -3428,7 +3454,12 @@ class ReminderSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="reminder_settings")
     reminder_time = models.TimeField(help_text="Time to send daily reminders (in user's timezone)")
     reminder_time_utc = models.TimeField(help_text="Time to send daily reminders (in UTC)", null=True, blank=True)
-    timezone = models.CharField(max_length=50, default="UTC")
+    timezone = models.CharField(
+        max_length=50,
+        default="UTC",
+        validators=[validate_iana_timezone],
+        help_text="User's timezone (e.g., 'Asia/Kolkata', 'America/New_York'). Defaults to UTC.",
+    )
     is_active = models.BooleanField(default=True, help_text="Enable/disable daily reminders")
     last_reminder_sent = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
