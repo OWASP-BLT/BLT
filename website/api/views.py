@@ -6,9 +6,10 @@ import smtplib
 import sys
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from functools import wraps
 from urllib.parse import urlparse
-from decimal import Decimal
+
 import django
 import psutil
 import requests

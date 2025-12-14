@@ -16,9 +16,10 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from dotenv import load_dotenv
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
-from dotenv import load_dotenv
+
 from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
 
 logger = logging.getLogger(__name__)
@@ -3022,6 +3023,7 @@ def handle_committee_pagination(action, body, client):
 
 
 GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+$")
+
 
 @csrf_exempt
 def slack_bounty_command(request):

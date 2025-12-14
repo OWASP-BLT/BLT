@@ -6,10 +6,10 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.test.utils import override_settings
-from rest_framework.authtoken.models import Token
 from django.urls import reverse
+from rest_framework.authtoken.models import Token
+
 from website.models import Bounty, GitHubIssue, Organization, Repo
-from website.views.slack_handlers import slack_bounty_command
 
 
 class BountyPayoutTestCase(TestCase):
