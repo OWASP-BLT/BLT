@@ -7,10 +7,11 @@ from decimal import Decimal
 import requests
 from django.contrib.auth import get_user_model
 from django.db.models import F
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.db.models.functions import Coalesce
+
 from website.models import Bounty, GitHubIssue, Repo, UserProfile
 
 logger = logging.getLogger(__name__)
@@ -130,7 +131,8 @@ def bounty_payout(request):
                 profile = UserProfile.objects.get(user=contributor)
                 # Atomic increment to avoid race conditions
                 UserProfile.objects.filter(pk=profile.pk).update(
-                    winnings=Coalesce(F("winnings"), Decimal("0")) + payout_amount)
+                    winnings=Coalesce(F("winnings"), Decimal("0")) + payout_amount
+                )
                 logger.info(f"Updated winnings for {contributor_username} by {payout_amount}")
             except UserProfile.DoesNotExist:
                 logger.warning(f"No UserProfile found for {contributor_username}; skipping winnings update")

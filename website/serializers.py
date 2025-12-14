@@ -341,6 +341,7 @@ class BountySerializer(serializers.ModelSerializer):
         allow_blank=True,
         help_text="GitHub username of the sponsor (used for display/attribution).",
     )
+
     class Meta:
         model = Bounty
         fields = [
@@ -426,6 +427,8 @@ class BountySerializer(serializers.ModelSerializer):
             validated_data["issue"] = issue_obj
 
         return super().create(validated_data)
+
+
 class SecurityIncidentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecurityIncident

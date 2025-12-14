@@ -3642,6 +3642,8 @@ class Bounty(models.Model):
             "unique_developers_sponsored_by_user is not implemented for the "
             "current Bounty / Issue / GitHubIssue schema."
         )
+
+
 class SecurityIncident(models.Model):
     class Severity(models.TextChoices):
         LOW = "low", "Low"

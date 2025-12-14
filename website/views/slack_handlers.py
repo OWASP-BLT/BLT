@@ -3053,8 +3053,9 @@ def slack_bounty_command(request):
 
     # Verify the request is from Slack (prevents arbitrary callers creating bounties)
     if not verify_slack_signature(request):
+        logger.warning("slack_bounty_command: invalid Slack signature")
         return HttpResponse(status=403)
-    
+
     text = (request.POST.get("text") or "").strip()
     user_id = request.POST.get("user_id")
     response_url = request.POST.get("response_url")
@@ -3064,8 +3065,14 @@ def slack_bounty_command(request):
         text,
         response_url,
     )
+
     m = BOUNTY_REGEX.match(text)
     if not m:
+        logger.warning(
+            "slack_bounty_command: invalid payload from Slack user %s: %r",
+            user_id,
+            text,
+        )
         return JsonResponse(
             {
                 "response_type": "ephemeral",
@@ -3084,6 +3091,11 @@ def slack_bounty_command(request):
     try:
         amount_val = float(amount_str)
     except ValueError:
+        logger.warning(
+            "slack_bounty_command: non-numeric amount %r from Slack user %s",
+            amount_str,
+            user_id,
+        )
         return JsonResponse(
             {
                 "response_type": "ephemeral",
@@ -3092,6 +3104,11 @@ def slack_bounty_command(request):
         )
 
     if amount_val <= 0:
+        logger.warning(
+            "slack_bounty_command: non-positive amount %r from Slack user %s",
+            amount_str,
+            user_id,
+        )
         return JsonResponse(
             {
                 "response_type": "ephemeral",
@@ -3100,10 +3117,19 @@ def slack_bounty_command(request):
         )
 
     # Call BLT API to create bounty
-    api_base = getattr(settings, "BLT_API_BASE_URL", os.environ.get("BLT_API_BASE_URL", "")).rstrip("/")
+    api_base = getattr(
+        settings,
+        "BLT_API_BASE_URL",
+        os.environ.get("BLT_API_BASE_URL", ""),
+    ).rstrip("/")
     api_token = getattr(settings, "BLT_API_TOKEN", os.environ.get("BLT_API_TOKEN"))
 
     if not api_base or not api_token:
+        logger.error(
+            "slack_bounty_command: BLT API is not configured " "(BLT_API_BASE_URL=%r, BLT_API_TOKEN set=%s)",
+            api_base,
+            bool(api_token),
+        )
         return JsonResponse(
             {
                 "response_type": "ephemeral",
@@ -3124,6 +3150,12 @@ def slack_bounty_command(request):
     }
 
     try:
+        logger.info(
+            "slack_bounty_command: creating bounty via BLT API " "amount=%s issue=%s sponsor=%s",
+            amount_str,
+            issue_url,
+            github_username,
+        )
         r = requests.post(
             f"{api_base}/bounties/",
             headers=headers,
@@ -3131,7 +3163,11 @@ def slack_bounty_command(request):
             timeout=10,
         )
         if r.status_code not in (200, 201):
-            logger.warning("BLT API bounty create failed: %s %s", r.status_code, r.text[:500])
+            logger.error(
+                "slack_bounty_command: BLT API bounty create failed " "status=%s body=%s",
+                r.status_code,
+                r.text[:500],
+            )
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
@@ -3141,18 +3177,19 @@ def slack_bounty_command(request):
         try:
             r.json()  # ensure it’s valid JSON; we ignore the contents for now
         except Exception:
-            logger.exception("Error contacting BLT API (create bounty)")
+            logger.exception("slack_bounty_command: BLT API returned non-JSON response " "while creating bounty")
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
                     "text": "BLT API returned a non-JSON response while creating the bounty.",
                 }
             )
-    except Exception as e:
+    except Exception:
+        logger.exception("slack_bounty_command: error creating bounty via BLT API")
         return JsonResponse(
             {
                 "response_type": "ephemeral",
-                "text": "Error creating bounty. Please try again later." ,
+                "text": "Error creating bounty. Please try again later.",
             }
         )
 
@@ -3177,10 +3214,27 @@ def slack_bounty_command(request):
             total_amount = amount_str
         else:
             total_amount = str(raw_total)
+
+        logger.info(
+            "slack_bounty_command: fetched total bounty for %s -> %s",
+            issue_url,
+            total_amount,
+        )
     except Exception:
+        logger.exception(
+            "slack_bounty_command: error fetching total bounty for issue %s",
+            issue_url,
+        )
         total_amount = amount_str
 
     # Public in-channel response
+    logger.info(
+        "slack_bounty_command: successfully created bounty via Slack " "amount=%s issue=%s sponsor=%s total=%s",
+        amount_str,
+        issue_url,
+        github_username,
+        total_amount,
+    )
     return JsonResponse(
         {
             "response_type": "in_channel",
