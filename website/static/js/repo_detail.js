@@ -97,7 +97,7 @@ async function refreshSection(button, section) {
         }
 
         if (!csrfToken) {
-            console.error('CSRF token not found. Make sure cookies are enabled or the CSRF meta tag exists.');
+            // CSRF token not found
         }
 
         const response = await fetch(window.location.href, {
@@ -126,7 +126,6 @@ async function refreshSection(button, section) {
                 throw new Error('Response is not valid JSON');
             }
         } catch (parseError) {
-            console.error('Error parsing response:', parseError);
             throw new Error('Failed to parse server response');
         }
 
@@ -345,7 +344,6 @@ async function refreshSection(button, section) {
         }
 
     } catch (error) {
-        console.error('Error:', error);
         messageContainer.className = 'absolute top-full right-0 mt-2 text-sm whitespace-nowrap z-10 text-red-600';
         messageContainer.textContent = error.message;
     } finally {
@@ -412,7 +410,6 @@ function updateContributorStats(timePeriod, page = 1) {
             attachPaginationListeners();
         })
         .catch(error => {
-            console.error('Error:', error);
             tableContainer.classList.remove('opacity-50');
         })
         .finally(() => {
@@ -476,7 +473,7 @@ function fetchStargazers(url) {
             }
         })
         .catch(error => {
-            console.error('Error fetching stargazers:', error);
+            // Error fetching stargazers
         })
         .finally(() => {
             stargazersSection.classList.remove('opacity-50');
