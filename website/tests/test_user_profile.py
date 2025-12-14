@@ -272,6 +272,60 @@ class UserProfileVisitCounterTest(TestCase):
         # Last visit day should be updated to today
         self.assertEqual(self.profile.last_visit_day, timezone.now().date())
 
+    def test_update_visit_counter_monthly_tracking_first_visit(self):
+        """Test that first visit sets monthly counter to 1"""
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        self.assertEqual(self.profile.monthly_visit_count, 1)
+        self.assertIsNotNone(self.profile.last_monthly_visit)
+        self.assertEqual(self.profile.last_monthly_visit, timezone.now().date())
+
+    def test_update_visit_counter_monthly_same_month(self):
+        """Test that multiple visits in same month increment monthly counter"""
+        from website.models import UserProfile
+
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_monthly_count = self.profile.monthly_visit_count
+
+        # Second visit on different day but same month
+        yesterday = timezone.now().date() - timedelta(days=1)
+        UserProfile.objects.filter(pk=self.profile.pk).update(last_visit_day=yesterday, last_monthly_visit=yesterday)
+        self.profile.refresh_from_db()
+
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Monthly count should increment
+        self.assertEqual(self.profile.monthly_visit_count, first_monthly_count + 1)
+
+    def test_update_visit_counter_monthly_new_month(self):
+        """Test that visit in new month resets monthly counter"""
+        from website.models import UserProfile
+        from dateutil.relativedelta import relativedelta
+
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Set last visit to previous month
+        last_month = timezone.now().date() - relativedelta(months=1)
+        UserProfile.objects.filter(pk=self.profile.pk).update(
+            last_visit_day=last_month, last_monthly_visit=last_month, monthly_visit_count=10
+        )
+        self.profile.refresh_from_db()
+
+        # Visit in current month
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Monthly count should reset to 1 for new month
+        self.assertEqual(self.profile.monthly_visit_count, 1)
+        self.assertEqual(self.profile.last_monthly_visit.month, timezone.now().date().month)
+        self.assertEqual(self.profile.last_monthly_visit.year, timezone.now().date().year)
+
     def test_update_visit_counter_atomic_operations(self):
         """Test that update_visit_counter uses QuerySet.update() with F() expressions instead of save()"""
         initial_visit_count = self.profile.visit_count
@@ -296,3 +350,92 @@ class UserProfileVisitCounterTest(TestCase):
             success = False
 
         self.assertTrue(success, "update_visit_counter raised TransactionManagementError")
+
+
+class MonthlyVisitorsLeaderboardViewTest(TestCase):
+    def setUp(self):
+        """Create test users with visit data"""
+        self.client = Client()
+        # Create test users with different monthly visit counts
+        self.user1 = User.objects.create_user(username="user1", email="user1@example.com", password="testpass123")
+        self.user2 = User.objects.create_user(username="user2", email="user2@example.com", password="testpass123")
+        self.user3 = User.objects.create_user(username="user3", email="user3@example.com", password="testpass123")
+
+        # Set up monthly visit counts for current month
+        today = timezone.now().date()
+        from website.models import UserProfile
+
+        UserProfile.objects.filter(user=self.user1).update(monthly_visit_count=15, last_monthly_visit=today)
+        UserProfile.objects.filter(user=self.user2).update(monthly_visit_count=10, last_monthly_visit=today)
+        UserProfile.objects.filter(user=self.user3).update(monthly_visit_count=5, last_monthly_visit=today)
+
+    def test_monthly_visitors_leaderboard_view_loads(self):
+        """Test that the monthly visitors leaderboard page loads successfully"""
+        response = self.client.get(reverse("leaderboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "leaderboard_monthly_visitors.html")
+
+    def test_monthly_visitors_leaderboard_ordering(self):
+        """Test that visitors are ordered by monthly_visit_count descending"""
+        response = self.client.get(reverse("leaderboard"))
+        leaderboard = response.context["leaderboard"]
+
+        # Convert queryset to list to check ordering
+        leaderboard_list = list(leaderboard)
+        self.assertEqual(len(leaderboard_list), 3)
+        self.assertEqual(leaderboard_list[0].user.username, "user1")
+        self.assertEqual(leaderboard_list[1].user.username, "user2")
+        self.assertEqual(leaderboard_list[2].user.username, "user3")
+
+    def test_monthly_visitors_leaderboard_filters_current_month(self):
+        """Test that leaderboard only shows visitors from current month"""
+        from website.models import UserProfile
+        from dateutil.relativedelta import relativedelta
+
+        # Create a user with visits from last month
+        old_user = User.objects.create_user(username="olduser", email="old@example.com", password="testpass123")
+        last_month = timezone.now().date() - relativedelta(months=1)
+        UserProfile.objects.filter(user=old_user).update(monthly_visit_count=20, last_monthly_visit=last_month)
+
+        response = self.client.get(reverse("leaderboard"))
+        leaderboard = list(response.context["leaderboard"])
+
+        # Old user should not appear in the leaderboard
+        usernames = [profile.user.username for profile in leaderboard]
+        self.assertNotIn("olduser", usernames)
+
+    def test_monthly_visitors_leaderboard_context_data(self):
+        """Test that context includes current month and year"""
+        response = self.client.get(reverse("leaderboard"))
+        today = timezone.now().date()
+
+        self.assertIn("current_month", response.context)
+        self.assertIn("current_year", response.context)
+        self.assertEqual(response.context["current_year"], today.year)
+        self.assertEqual(response.context["current_month"], today.strftime("%B"))
+
+    def test_monthly_visitors_leaderboard_empty_state(self):
+        """Test that leaderboard handles empty state gracefully"""
+        from website.models import UserProfile
+
+        # Reset all monthly visit counts
+        UserProfile.objects.all().update(monthly_visit_count=0)
+
+        response = self.client.get(reverse("leaderboard"))
+        leaderboard = response.context["leaderboard"]
+
+        self.assertEqual(len(leaderboard), 0)
+        self.assertContains(response, "No visitor data available")
+
+    def test_monthly_visitors_leaderboard_with_authenticated_user(self):
+        """Test that authenticated users see wallet in context"""
+        from website.models import Wallet
+
+        # Create wallet for user
+        Wallet.objects.create(user=self.user1, current_balance=100)
+
+        self.client.login(username="user1", password="testpass123")
+        response = self.client.get(reverse("leaderboard"))
+
+        self.assertIn("wallet", response.context)
+        self.assertEqual(response.context["wallet"].user, self.user1)
