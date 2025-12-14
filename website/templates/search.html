@@ -35,13 +35,41 @@
         </div>
     {% if query %}
     {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
-    <div class="flex w-full h-[400px] justify-center items-center">
-        <script>
-            document.body.style.overflow = "hidden";
-        </script>
-        <div class="flex flex-col items-center text-center mb-20">
+    <div class="flex w-full min-h-[400px] justify-center items-center py-8">
+        <div class="flex flex-col items-center text-center px-4">
             <h2 class="text-3xl font-bold text-gray-300 dark:text-gray-500 mb-4">Nothing Found!</h2>
-            <p class="text-gray-400 dark:text-gray-600 text-lg">Try searching with different keywords.</p>
+            <p class="text-gray-400 dark:text-gray-600 text-lg mb-6">Try searching with different keywords.</p>
+        {% if popular_searches %}
+            <div class="mt-4 max-w-2xl">
+                <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-4">
+                    Popular searches you might like:
+                </h3>
+                <div class="flex flex-wrap gap-3 justify-center">
+                    {% for suggestion in popular_searches %}
+                    <a href="?query={{ suggestion.query|urlencode }}&type=all" 
+                       class="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900 
+                              hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full 
+                              transition-colors duration-200 group">
+                        <span class="text-blue-600 dark:text-blue-300 font-medium mr-2">
+                            {{ suggestion.query }}
+                        </span>
+                        <span class="text-gray-500 dark:text-gray-400 text-sm">
+                            ({{ suggestion.result_count }} result{{ suggestion.result_count|pluralize }})
+                        </span>
+                        <svg class="w-4 h-4 ml-2 text-blue-400 group-hover:translate-x-1 transition-transform" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-600 mt-4">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Suggestions based on popular community searches
+                </p>
+            </div>
+        {% endif %}
         </div>
     </div>
     {% else %}
