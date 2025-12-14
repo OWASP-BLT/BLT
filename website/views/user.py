@@ -750,17 +750,15 @@ class MonthlyVisitorsLeaderboardView(LeaderboardBase, ListView):
         Returns users ordered by monthly_visit_count, filtering for those
         who have visited in the current month.
         """
-        today = timezone.now().date()
-        current_month = today.month
-        current_year = today.year
+        self.today = timezone.now().date()
 
         # Get profiles that have visited this month
         queryset = (
             UserProfile.objects.select_related("user")
             .filter(
                 monthly_visit_count__gt=0,
-                last_monthly_visit__month=current_month,
-                last_monthly_visit__year=current_year,
+                last_monthly_visit__month=self.today.month,
+                last_monthly_visit__year=self.today.year,
             )
             .order_by("-monthly_visit_count")[:100]  # Limit to top 100
         )
@@ -770,7 +768,8 @@ class MonthlyVisitorsLeaderboardView(LeaderboardBase, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        today = timezone.now().date()
+        # Reuse today from get_queryset if available, otherwise calculate
+        today = getattr(self, "today", timezone.now().date())
         context["current_month"] = today.strftime("%B")
         context["current_year"] = today.year
 

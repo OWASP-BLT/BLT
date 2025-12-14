@@ -1010,11 +1010,9 @@ class UserProfile(models.Model):
             pass
 
         # Check if we need to reset monthly counter (new month)
-        reset_monthly = False
-        if not self.last_monthly_visit or (
-            today.year != self.last_monthly_visit.year or today.month != self.last_monthly_visit.month
-        ):
-            reset_monthly = True
+        reset_monthly = not self.last_monthly_visit or (
+            (today.year, today.month) != (self.last_monthly_visit.year, self.last_monthly_visit.month)
+        )
 
         # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
