@@ -2885,7 +2885,7 @@ def update_organization_repos(request, slug):
 
                     except requests.exceptions.RequestException as e:
                         logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
-                        yield "data: $ Network error occurred. Please try again later.\n\n"
+                        yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
                     page += 1

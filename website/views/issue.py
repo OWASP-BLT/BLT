@@ -1351,10 +1351,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
+            # Safely fetch CVE score - get_cve_score() may raise various exceptions
             try:
                 obj.cve_score = obj.get_cve_score()
-            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
+            except Exception as e:
                 # If CVE score fetch fails, continue without it
+                logger.error(f"Error fetching CVE score for {obj.cve_id}: {str(e)}", exc_info=True)
                 obj.cve_score = None
                 messages.warning(
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
