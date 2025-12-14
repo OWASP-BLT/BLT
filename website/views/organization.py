@@ -1285,8 +1285,48 @@ class CreateHunt(TemplateView):
                 domain_admin.role == 1
                 and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
             ) or domain_admin.role == 0:
-                # Wallet payment has been removed - hunts can no longer be created with wallet payment
-                return HttpResponse("Wallet payment is no longer supported")
+                # Note: Wallet payment has been removed - hunts no longer require wallet balance
+                hunt = Hunt()
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+                data = {}
+                data["content"] = request.POST["content"]
+                data["start_date"] = request.POST["start_date"]
+                data["end_date"] = request.POST["end_date"]
+                form = HuntForm(data)
+                if not form.is_valid():
+                    return HttpResponse("Invalid form data")
+                if not domain_admin.is_active:
+                    return HttpResponse("Inactive domain admin")
+                if domain_admin.role == 1:
+                    if hunt.domain != domain_admin.domain:
+                        return HttpResponse("Domain mismatch")
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+                tzsign = 1
+                offset = request.POST["tzoffset"]
+                if int(offset) < 0:
+                    offset = int(offset) * (-1)
+                    tzsign = -1
+                start_date = form.cleaned_data["start_date"]
+                end_date = form.cleaned_data["end_date"]
+                if tzsign > 0:
+                    start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                else:
+                    start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                hunt.starts_on = start_date
+                hunt.prize_winner = Decimal(request.POST["prize_winner"])
+                hunt.prize_runner = Decimal(request.POST["prize_runner"])
+                hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
+                hunt.end_on = end_date
+                hunt.name = request.POST["name"]
+                hunt.description = form.cleaned_data["content"]
+                try:
+                    hunt.is_published = request.POST.get("publish", False) == "on"
+                except KeyError:
+                    hunt.is_published = False
+                hunt.save()
+                return HttpResponse("success")
             else:
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:

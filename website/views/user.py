@@ -558,7 +558,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         The context includes:
         - `user_related_tags`: tags associated with user profiles.
-        - `wallet`: the requesting user's Wallet if authenticated.
         - `leaderboard`: top users by total score (limited to 10).
         - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
         - `code_review_leaderboard`: top reviewers by review count (top 10).
