@@ -1539,8 +1539,13 @@ def submit_roadmap_pr(request):
             roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
 
             if "error" in pr_data or "error" in roadmap_data:
+                logger.error(
+                    f"Failed to fetch PR or roadmap data in submit_roadmap_pr: "
+                    f"PR error: {pr_data.get('error')}, Roadmap error: {roadmap_data.get('error')}",
+                    exc_info=True,
+                )
                 return JsonResponse(
-                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    {"error": "Failed to fetch PR or roadmap data. Please check your links and try again."},
                     status=500,
                 )
 

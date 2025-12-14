@@ -2898,7 +2898,7 @@ def update_organization_repos(request, slug):
 
             except Exception as e:
                 logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
-                yield "data: $ An unexpected error occurred. Please try again later.\n\n"
+                yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
