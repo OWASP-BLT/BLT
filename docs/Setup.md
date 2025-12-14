@@ -135,7 +135,7 @@ Before building the Docker images, ensure all files, especially scripts like `en
    - Click it and select "LF: Unix" from the dropdown to switch the line endings to LF.
    - Save the file.
 
-3. If the browser **automatically redirects to HTTPS** even in incognito mode, you can try the following:  
+3. If the browser **automatically redirects to HTTPS** even in incognito mode, you can try the following:
    For **local development**, make these adjustments in `/blt/settings.py` to enable access over **HTTP**:
 
    - Set:
@@ -227,8 +227,8 @@ The default port is 5432. If you encounter port conflicts, change the port in yo
 
 ## Commands to Set Up the Project
 
-- **Copy and configure the `.env` file:**  
-   **Linux/macOS/Git Bash:**
+- **Copy and configure the `.env` file:**
+  **Linux/macOS/Git Bash:**
 
   ```bash
   cp .env.example .env
@@ -354,9 +354,7 @@ pyenv install 3.11.2
 
 ```
 
-Note: Project root folder already contains `.python-version`, so pyenv can recognize the local version to use for the current project.
-
-#### Setup virtual environment using poetry
+#### Setup virtual environment using Uv
 
 Ensure that `python -V` returns the correct python version for the project
 
@@ -374,14 +372,29 @@ sudo apt-get install postgresql
 # Or use Chocolatey: choco install postgresql
 
 # --- Setup Virtual Environment ---
-# Install Poetry
-pip install poetry
+
+# Official guide: https://docs.astral.sh/uv/getting-started/installation/
+# Install Uv (Recommended: Use standalone installer)
+
+# For macOS/Linux (using curl):
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# For Windows (using PowerShell):
+# Run in PowerShell: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Alternative: Install via pip (if you prefer)
+# pip install uv
 
 # Activate virtual environment
-poetry shell
+uv sync
 
-# Install required dependencies
-poetry install
+# Activate the virtual environment (choose the command for your platform):
+# - Linux/macOS/Git Bash:
+source .venv/bin/activate
+# - Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# - Windows CMD:
+.venv\Scripts\activate.bat
 
 # --- Project setup ---
 # Create tables in the database
@@ -419,11 +432,11 @@ If you run into issues during the setup, here are some common solutions:
 
 ### 1.Cannot install nltk, distlib, certifi
 
-The error message indicates that the package manager (Poetry) is unable to find installation candidates.
+The error message indicates that the package manager (uv) is unable to find installation candidates.
 Below are the temporary solutions.
 
 ```sh
-poetry cache clear --all pypi
+uv cache clean
 
 #For Docker method only
 docker-compose build --no-cache

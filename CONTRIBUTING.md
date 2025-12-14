@@ -118,25 +118,69 @@ Before you start contributing, you'll need to set up your development environmen
    pyenv install 3.11.2
    ```
 
-2. Set up Poetry and virtual environment:
+2. Install Uv:
+
+   **Recommended (Standalone Installer):**
+
+   **macOS/Linux:**
 
    ```bash
-   pip install poetry
-   poetry shell
-   poetry install
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. Set up the application:
+   **Windows (PowerShell):**
+
+   ```powershell
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+   **Alternative (pipx):**
 
    ```bash
-   python manage.py migrate
-   python3 manage.py loaddata website/fixtures/initial_data.json
-   python manage.py createsuperuser
-   python manage.py collectstatic
-   python manage.py runserver
+   pipx install uv
    ```
 
-4. Access the application at [http://localhost:8000](http://localhost:8000)
+   For more installation options, see the [official uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
+
+3. Set up virtual environment and install dependencies:
+
+   ```bash
+   uv sync
+   ```
+
+4. Activate the virtual environment:
+
+   **Linux/macOS/Git Bash:**
+
+   ```bash
+   source .venv/bin/activate
+   ```
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+   **Windows (CMD):**
+
+   ```cmd
+   .venv\Scripts\activate.bat
+   ```
+
+   > **Note:** You can skip manual activation and use `uv run <command>` instead, which automatically runs commands in the project's virtual environment.
+
+5. Set up the application:
+
+   ```bash
+   uv run python manage.py migrate
+   uv run python manage.py loaddata website/fixtures/initial_data.json
+   uv run python manage.py createsuperuser
+   uv run python manage.py collectstatic
+   uv run python manage.py runserver
+   ```
+
+6. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ## Making Contributions
 
@@ -185,18 +229,18 @@ We use several tools to maintain code quality:
 - isort for import sorting
 - ruff for linting
 
-You can run these tools using Poetry:
+You can run these tools using uv:
 
 ```bash
-poetry run black .
-poetry run isort .
-poetry run ruff .
+uv run black .
+uv run isort .
+uv run ruff .
 ```
 
 We also use pre-commit hooks to ensure code quality. Install them with:
 
 ```bash
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 ### JavaScript Code Standards
