@@ -18,7 +18,19 @@ echo "Checking and applying migrations..."
 poetry run python manage.py migrate
 
 # Open browser after a short delay (in background)
-(sleep 3 && xdg-open https://localhost:8443) &
+(
+  sleep 3
+  URL="https://localhost:8443"
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$URL"
+  elif command -v open >/dev/null 2>&1; then
+    open "$URL"
+  elif command -v start >/dev/null 2>&1; then
+    start "$URL"
+  else
+    echo "Please open $URL in your browser."
+  fi
+) &
 
 # Run the application with SSL in poetry shell
 poetry run uvicorn blt.asgi:application --host 0.0.0.0 --port 8443 --ssl-keyfile ./ssl/key.pem --ssl-certfile ./ssl/cert.pem --log-level debug --reload --reload-include *.html
