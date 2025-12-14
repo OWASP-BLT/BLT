@@ -2725,7 +2725,12 @@ def update_organization_repos(request, slug):
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield f"data: Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error testing token in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
+                        )
+                        yield "data: Error testing GitHub API. Please try again later.\n\n"
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
@@ -2758,9 +2763,12 @@ def update_organization_repos(request, slug):
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield (
-                            f"data: Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error fetching organization in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
                         )
+                        yield "data: Error: GitHub API returned an error\n\n"
                         yield "data: DONE\n\n"
                         return
 
