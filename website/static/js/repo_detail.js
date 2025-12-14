@@ -26,7 +26,8 @@ function copyToClipboard(elementId) {
             }, 2000);
         });
     } catch (err) {
-        // Intentionally silent
+        // Clipboard errors (e.g., due to browser restrictions or permissions) are intentionally ignored,
+        // as failing to copy is non-critical and should not disrupt the user experience.
     }
 }
 
