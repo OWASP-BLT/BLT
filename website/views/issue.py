@@ -439,24 +439,7 @@ def search_issues(request, template="search.html"):
     elif len(query) >= 6 and query[:6] == "label:":
         stype = "label"
         query = query[6:].strip()
-    elif len(query) >= 4 and query[:4].lower() == "cve:":
-        stype = "cve"
-        query = query[4:].strip()
-    if stype == "cve":
-        # CVE search - filter by cve_id (case-insensitive)
-        query_upper = query.upper()
-        issues_base_qs = Issue.objects.filter(cve_id__iexact=query_upper, hunt=None)
-        if request.user.is_anonymous:
-            issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
-        else:
-            issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
-
-        context = {
-            "query": query,
-            "type": stype,
-            "issues": issues_qs,
-        }
-    elif stype == "issue" or stype is None:
+    if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
         else:
