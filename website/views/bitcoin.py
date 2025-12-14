@@ -87,7 +87,9 @@ def batch_send_bacon_tokens_view(request):
 
     except requests.RequestException as e:
         logger.error(f"Request error in pending_transactions_view: {str(e)}", exc_info=True)
-        return JsonResponse({"status": "error", "message": "An error occurred while fetching transaction data. Please try again later."})
+        return JsonResponse(
+            {"status": "error", "message": "An error occurred while fetching transaction data. Please try again later."}
+        )
 
 
 def pending_transactions_view(request):
