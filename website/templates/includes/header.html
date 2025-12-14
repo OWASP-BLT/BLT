@@ -848,18 +848,27 @@
                                     <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an Organization" %}
                                 </a>
                             </li>
-                            <li>
-                                <a href="{% url 'organization_view' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
-                                    <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'organization_dashboard' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
-                                    <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
-                                </a>
-                            </li>
+                            {% if user.user_organizations.exists or user.organization_set.exists %}
+                                <li>
+                                    <a href="{% url 'organization_view' %}"
+                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
+                                        <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'organization_dashboard' %}"
+                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
+                                        <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <a href="{% url 'register_organization' %}"
+                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-[#e74c3c] transition-colors duration-200 font-medium">
+                                        <i class="fa fa-plus fa-fw"></i> {% trans "Register Organization" %}
+                                    </a>
+                                </li>
+                            {% endif %}
                             <li class="border my-2 w-full"></li>
                             <li>
                                 <a class="flex items-center gap-1.5 py-3 px-4 bg-[#e74c3c] hover:bg-[#c0392b] hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
@@ -928,9 +937,9 @@
                 sidebar.classList.toggle('-translate-x-full');
             });
             
-            // Close sidebar when clicking outside
+            // Close sidebar when clicking outside (unless pinned)
             document.addEventListener('click', function(e) {
-                if (!hamburgerButton.contains(e.target) && !sidebar.contains(e.target)) {
+                if (!hamburgerButton.contains(e.target) && !sidebar.contains(e.target) && !sidebar.hasAttribute('data-pinned')) {
                     sidebar.classList.add('-translate-x-full');
                 }
             });

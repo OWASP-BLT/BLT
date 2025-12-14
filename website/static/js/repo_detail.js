@@ -26,7 +26,7 @@ function copyToClipboard(elementId) {
             }, 2000);
         });
     } catch (err) {
-        console.error('Failed to copy text: ', err);
+        // Intentionally silent
     }
 }
 
@@ -159,6 +159,42 @@ async function refreshSection(button, section) {
                 const element = document.querySelector(`[data-stat="${key}"]`);
                 if (element) {
                     element.textContent = value;
+                }
+            }
+
+            // Update header technical fields (moved into basic area)
+            const basicUpdates = {
+                'primary_language': data.data.primary_language,
+                'size': (typeof data.data.size === 'number') ? `${(data.data.size / 1024).toFixed(2)} MB` : data.data.size,
+                'license': data.data.license,
+                'release_name': data.data.release_name,
+                'release_date': data.data.release_date
+            };
+
+            for (const [key, value] of Object.entries(basicUpdates)) {
+                const el = document.querySelector(`[data-basic="${key}"]`);
+                if (el) {
+                    el.textContent = value || '—';
+                }
+            }
+
+            // Update tags
+            const tagsContainer = document.getElementById('repo-tags');
+            if (tagsContainer && data && data.data && Array.isArray(data.data.tags)) {
+                if (data.data.tags.length === 0) {
+                    tagsContainer.innerHTML = '';
+                } else {
+                    tagsContainer.innerHTML = data.data.tags
+                        .map(tag => {
+                            const safe = String(tag)
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#039;');
+                            return `<span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300">${safe}</span>`;
+                        })
+                        .join('');
                 }
             }
 
@@ -400,14 +436,14 @@ function attachPaginationListeners() {
 function attachStargazersListeners() {
     // Pagination links
     document.querySelectorAll('.stargazers-pagination-link').forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function (e) {
             e.preventDefault();
             fetchStargazers(this.getAttribute('href'));
         });
     });
     // Filter links
     document.querySelectorAll('.stargazers-filter-link').forEach(link => {
-        link.addEventListener('click', function(e) {
+        link.addEventListener('click', function (e) {
             e.preventDefault();
             fetchStargazers(this.getAttribute('href'));
         });
@@ -422,29 +458,29 @@ function fetchStargazers(url) {
     fetch(url, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.text();
-    })
-    .then(html => {
-        // Parse the returned HTML and extract the stargazers section
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const newSection = tempDiv.querySelector('#stargazers-section');
-        if (newSection) {
-            stargazersSection.innerHTML = newSection.innerHTML;
-            // Update URL
-            window.history.pushState({}, '', url);
-            // Re-attach listeners
-            attachStargazersListeners();
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching stargazers:', error);
-    })
-    .finally(() => {
-        stargazersSection.classList.remove('opacity-50');
-    });
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(html => {
+            // Parse the returned HTML and extract the stargazers section
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const newSection = tempDiv.querySelector('#stargazers-section');
+            if (newSection) {
+                stargazersSection.innerHTML = newSection.innerHTML;
+                // Update URL
+                window.history.pushState({}, '', url);
+                // Re-attach listeners
+                attachStargazersListeners();
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching stargazers:', error);
+        })
+        .finally(() => {
+            stargazersSection.classList.remove('opacity-50');
+        });
 }
 
 // Initialize everything when the DOM is loaded
@@ -485,4 +521,136 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     attachStargazersListeners();
+
+    // GitHub refresh (issues/PRs/bounties) for the Activity section
+    const githubRefreshButton = document.getElementById('refresh-github-data');
+    if (githubRefreshButton) {
+        githubRefreshButton.addEventListener('click', async function (e) {
+            e.preventDefault();
+
+            const repoId = this.getAttribute('data-repo-id');
+            if (!repoId) return;
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('hidden');
+            }
+
+            githubRefreshButton.disabled = true;
+            githubRefreshButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Get CSRF token (cookie first, then meta)
+            const getCookie = (name) => {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            };
+
+            let csrfToken = getCookie('csrftoken');
+            if (!csrfToken) {
+                const csrfMetaTag = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMetaTag) {
+                    csrfToken = csrfMetaTag.getAttribute('content');
+                }
+            }
+
+            const escapeHtml = (s) => {
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            };
+
+            const renderIssues = (items) => {
+                if (!Array.isArray(items) || items.length === 0) {
+                    return `<div class="p-3 text-center"><p class="text-xs text-gray-500 dark:text-gray-500">No issues</p></div>`;
+                }
+                return `<div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">${items.map(issue => {
+                    const dot = (issue.state === 'open') ? 'bg-green-500' : 'bg-red-500';
+                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${dot}"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(issue.url)}" target="_blank" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(issue.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(issue.issue_id)}</div></div></div></div>`;
+                }).join('')}</div>`;
+            };
+
+            const renderPRs = (items) => {
+                if (!Array.isArray(items) || items.length === 0) {
+                    return `<div class="p-3 text-center"><p class="text-xs text-gray-500 dark:text-gray-500">No pull requests</p></div>`;
+                }
+                return `<div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">${items.map(pr => {
+                    const dot = (pr.state === 'open') ? 'bg-green-500' : (pr.is_merged ? 'bg-purple-500' : 'bg-red-500');
+                    const status = pr.is_merged ? '<span class="text-purple-600">merged</span>' : (pr.state === 'closed' ? '<span class="text-red-600">closed</span>' : '');
+                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${dot}"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(pr.url)}" target="_blank" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(pr.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(pr.issue_id)} ${status}</div></div></div></div>`;
+                }).join('')}</div>`;
+            };
+
+            const renderBounties = (items) => {
+                if (!Array.isArray(items) || items.length === 0) {
+                    return `<div class="p-3 text-center"><p class="text-xs text-gray-500 dark:text-gray-500">No bounties</p></div>`;
+                }
+                return `<div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">${items.map(issue => {
+                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 bg-green-500"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(issue.url)}" target="_blank" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(issue.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(issue.issue_id)} <span class="inline-block ml-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs rounded">$ Bounty</span></div></div></div></div>`;
+                }).join('')}</div>`;
+            };
+
+            try {
+                const response = await fetch(`/repository/${repoId}/refresh/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken || '',
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+
+                const payload = await response.json();
+                if (!payload || payload.status !== 'success' || !payload.data) {
+                    throw new Error('Invalid server response');
+                }
+
+                const issuesCount = document.getElementById('issues-count');
+                const prsCount = document.getElementById('prs-count');
+                const dollarTagCount = document.getElementById('dollar-tag-count');
+
+                if (issuesCount) issuesCount.textContent = payload.data.issues_count;
+                if (prsCount) prsCount.textContent = payload.data.prs_count;
+                if (dollarTagCount) dollarTagCount.textContent = payload.data.dollar_tag_count;
+
+                const issuesList = document.getElementById('github-issues-list');
+                const prsList = document.getElementById('github-prs-list');
+                const bountiesList = document.getElementById('github-bounties-list');
+
+                if (issuesList) {
+                    issuesList.innerHTML = renderIssues(payload.data.issues);
+                }
+                if (prsList) {
+                    prsList.innerHTML = renderPRs(payload.data.prs);
+                }
+                if (bountiesList) {
+                    bountiesList.innerHTML = renderBounties(payload.data.bounties);
+                }
+            } catch (err) {
+                alert('An error occurred while refreshing the repository data. Please try again later.');
+            } finally {
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
+                githubRefreshButton.disabled = false;
+                githubRefreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+    }
 }); 

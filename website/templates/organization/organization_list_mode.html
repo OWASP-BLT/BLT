@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Organizations (List mode){% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="px-2 py-4">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Organizations (List mode)</h1>
+                {% if selected_tag %}
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Filtered by tag:
+                        {% if 'gsoc' in selected_tag.slug|lower or 'gsoc' in selected_tag.name|lower %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-blue-600 via-red-500 to-green-600 shadow-sm ring-2 ring-offset-1 ring-[#e74c3c]/30 dark:ring-[#e74c3c]/40 animate-pulse">
+                                <span class="mr-1 uppercase tracking-wide">{{ selected_tag.name }}</span>
+                                <span class="ml-1 px-1.5 py-0.5 rounded bg-white/20 text-white">GSoC</span>
+                            </span>
+                        {% else %}
+                            <span class="font-medium">{{ selected_tag.name }}</span>
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'organizations' %}{% if selected_tag %}?tag={{ selected_tag.slug }}{% endif %}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Cards
+                    <i class="fas fa-th-large ml-2"></i>
+                </a>
+                <form method="get" class="flex items-center gap-2">
+                    {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag.slug }}">{% endif %}
+                    <label for="sort" class="text-sm text-gray-600 dark:text-gray-400">Sort</label>
+                    <select id="sort"
+                            name="sort"
+                            class="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 px-2 py-2"
+                            onchange="this.form.submit()">
+                        <option value="-created" {% if sort == '-created' %}selected{% endif %}>Newest</option>
+                        <option value="created" {% if sort == 'created' %}selected{% endif %}>Oldest</option>
+                        <option value="name" {% if sort == 'name' %}selected{% endif %}>Name (A→Z)</option>
+                        <option value="-name" {% if sort == '-name' %}selected{% endif %}>Name (Z→A)</option>
+                        <option value="-repos" {% if sort == '-repos' %}selected{% endif %}>Most repos</option>
+                        <option value="-domains" {% if sort == '-domains' %}selected{% endif %}>Most domains</option>
+                        <option value="-issues" {% if sort == '-issues' %}selected{% endif %}>Most issues</option>
+                        <option value="-projects" {% if sort == '-projects' %}selected{% endif %}>Most projects</option>
+                        <option value="-points" {% if sort == '-points' %}selected{% endif %}>Most points</option>
+                        <option value="-trademarks" {% if sort == '-trademarks' %}selected{% endif %}>Most trademarks</option>
+                        <option value="-managers" {% if sort == '-managers' %}selected{% endif %}>Most managers</option>
+                        <option value="-tags" {% if sort == '-tags' %}selected{% endif %}>Most tags</option>
+                    </select>
+                </form>
+                <p class="text-gray-600 dark:text-gray-400">Total: {{ paginator.count }}</p>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm table-fixed">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-16">Logo</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-40">
+                            <a href="?{% if selected_tag %}tag={{ selected_tag.slug }}&{% endif %}sort={% if sort == 'name' %}-name{% else %}name{% endif %}"
+                               class="hover:text-[#e74c3c]">Name
+                                <i class="fas {% if sort == 'name' %}fa-sort-up{% elif sort == '-name' %}fa-sort-down{% else %}fa-sort{% endif %} ml-1"></i>
+                            </a>
+                        </th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-36">Slug</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-56">URL</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-56">Email</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-40">GitHub</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-56">Source</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-28">GSoC</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-24">
+                            <a href="?{% if selected_tag %}tag={{ selected_tag.slug }}&{% endif %}sort={% if sort == 'domains' %}-domains{% else %}domains{% endif %}"
+                               class="hover:text-[#e74c3c]">Domains
+                                <i class="fas {% if sort == 'domains' %}fa-sort-up{% elif sort == '-domains' %}fa-sort-down{% else %}fa-sort{% endif %} ml-1"></i>
+                            </a>
+                        </th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-24">
+                            <a href="?{% if selected_tag %}tag={{ selected_tag.slug }}&{% endif %}sort={% if sort == 'projects' %}-projects{% else %}projects{% endif %}"
+                               class="hover:text-[#e74c3c]">Projects
+                                <i class="fas {% if sort == 'projects' %}fa-sort-up{% elif sort == '-projects' %}fa-sort-down{% else %}fa-sort{% endif %} ml-1"></i>
+                            </a>
+                        </th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-24">
+                            <a href="?{% if selected_tag %}tag={{ selected_tag.slug }}&{% endif %}sort={% if sort == 'repos' %}-repos{% else %}repos{% endif %}"
+                               class="hover:text-[#e74c3c]">Repos
+                                <i class="fas {% if sort == 'repos' %}fa-sort-up{% elif sort == '-repos' %}fa-sort-down{% else %}fa-sort{% endif %} ml-1"></i>
+                            </a>
+                        </th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-24">
+                            <a href="?{% if selected_tag %}tag={{ selected_tag.slug }}&{% endif %}sort={% if sort == 'issues' %}-issues{% else %}issues{% endif %}"
+                               class="hover:text-[#e74c3c]">Issues
+                                <i class="fas {% if sort == 'issues' %}fa-sort-up{% elif sort == '-issues' %}fa-sort-down{% else %}fa-sort{% endif %} ml-1"></i>
+                            </a>
+                        </th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-20">Open</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-20">Closed</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-24">Managers</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">Tags</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-24">Points</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-28">Trademarks</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-20">Active</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-28">Type</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-32">Created</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-32">Updated</th>
+                        <th class="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200 w-32">Repos Sync</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for org in organizations %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-900 whitespace-nowrap">
+                            <td class="px-3 py-2">
+                                {% if org.logo %}
+                                    <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                         alt="{{ org.name }} logo"
+                                         width="32"
+                                         height="32"
+                                         class="w-8 h-8 object-contain" />
+                                {% else %}
+                                    <div class="w-8 h-8 rounded bg-white dark:bg-gray-800 flex items-center justify-center">
+                                        <i class="fas fa-building text-[#e74c3c]"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2">
+                                <a href="{% url 'organization_detail' org.slug %}"
+                                   class="font-semibold text-gray-900 dark:text-gray-100 hover:text-[#e74c3c]">{{ org.name }}</a>
+                            </td>
+                            <td class="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{{ org.slug }}</td>
+                            <td class="px-3 py-2">
+                                <a class="text-[#e74c3c] hover:underline break-all"
+                                   href="{{ org.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">{{ org.url|default:"—" }}</a>
+                            </td>
+                            <td class="px-3 py-2">
+                                <a class="text-gray-700 dark:text-gray-300 hover:underline"
+                                   href="mailto:{{ org.email }}">{{ org.email|default:"—" }}</a>
+                            </td>
+                            <td class="px-3 py-2 text-gray-700 dark:text-gray-300">{{ org.github_org|default:"—" }}</td>
+                            <td class="px-3 py-2">
+                                <a class="text-[#e74c3c] hover:underline break-all"
+                                   href="{{ org.source_code }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">{{ org.source_code|default:"—" }}</a>
+                            </td>
+                            <td class="px-3 py-2">
+                                {% if org.gsoc_years %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold text-white bg-gradient-to-r from-blue-600 via-red-500 to-green-600 shadow-sm">
+                                        {{ org.gsoc_years }}
+                                    </span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2 font-semibold text-[#e74c3c]">{{ org.domain_count }}</td>
+                            <td class="px-3 py-2 font-semibold text-[#e74c3c]">{{ org.project_count }}</td>
+                            <td class="px-3 py-2 font-semibold text-[#e74c3c]">{{ org.repo_count }}</td>
+                            <td class="px-3 py-2 font-semibold text-[#e74c3c]">{{ org.total_issues }}</td>
+                            <td class="px-3 py-2">{{ org.open_issues }}</td>
+                            <td class="px-3 py-2">{{ org.closed_issues }}</td>
+                            <td class="px-3 py-2">{{ org.manager_count }}</td>
+                            <td class="px-3 py-2">
+                                {% if org.tags.all %}
+                                    {% for tag in org.tags.all %}
+                                        <a href="{% url 'organizations_list_mode' %}?tag={{ tag.slug }}"
+                                           class="inline-block mr-1 text-[10px] px-2 py-0.5 rounded-full {% if 'gsoc' in tag.slug|lower or 'gsoc' in tag.name|lower %}text-white bg-gradient-to-r from-blue-600 via-red-500 to-green-600{% else %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200{% endif %}">{{ tag.name }}</a>
+                                    {% endfor %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2">{{ org.team_points }}</td>
+                            <td class="px-3 py-2">{{ org.trademark_count }}</td>
+                            <td class="px-3 py-2">
+                                {% if org.is_active %}
+                                    Yes
+                                {% else %}
+                                    No
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2">{{ org.type|default:"—" }}</td>
+                            <td class="px-3 py-2">{{ org.created|date:"Y-m-d" }}</td>
+                            <td class="px-3 py-2">{{ org.modified|date:"Y-m-d" }}</td>
+                            <td class="px-3 py-2">
+                                {% if org.repos_updated_at %}
+                                    {{ org.repos_updated_at|date:"Y-m-d" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td class="px-4 py-8 text-center text-gray-600 dark:text-gray-400"
+                                colspan="22">No organizations found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if is_paginated %}
+            <div class="mt-8 flex justify-center">
+                <nav class="inline-flex rounded-md shadow">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+                           class="px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Previous
+                        </a>
+                    {% endif %}
+                    <span class="px-3 py-2 border-t border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+                           class="px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Next
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
