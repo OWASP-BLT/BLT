@@ -169,19 +169,24 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["success"])
 
     @patch("website.api.views.call_command")
-    def test_run_migrations_handles_errors(self, mock_call_command):
-        """Test that migration errors are handled gracefully"""
+    def test_run_migrations_success_for_superuser(self, mock_call_command):
+        """Test that a superuser can run migrations with confirmation"""
         self.reload_urls()
-        mock_call_command.side_effect = Exception("Migration failed")
         self.user.is_superuser = True
         self.user.save()
         self.client.force_authenticate(self.user)
 
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
+        response = self.client.post(
+            reverse("api_debug_run_migrations"),
+            {"confirm": True},
+            format="json",
+        )
 
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertFalse(data["success"])
+        self.assertTrue(data["success"])
+
+        mock_call_command.assert_called_once_with("migrate", interactive=False, verbosity=0)
 
     def test_collect_static_requires_superuser(self):
         """Test that collectstatic endpoint requires superuser privileges"""
