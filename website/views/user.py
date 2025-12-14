@@ -734,7 +734,7 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         return context
 
 
-class MonthlyVisitorsLeaderboardView(ListView):
+class MonthlyVisitorsLeaderboardView(LeaderboardBase, ListView):
     """
     Returns: Top visitors for the current month based on monthly_visit_count
     """
