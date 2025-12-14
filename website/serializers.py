@@ -408,6 +408,15 @@ class BountySerializer(serializers.ModelSerializer):
             )
 
         github_issue_url = validated_data.get("github_issue_url")
+
+        # Check for duplicate bounty
+        if (
+            github_issue_url
+            and Bounty.objects.filter(
+                sponsor=sponsor, github_issue_url=github_issue_url.rstrip("/"), status=Bounty.STATUS_PENDING
+            ).exists()
+        ):
+            raise serializers.ValidationError("You already have a pending bounty for this issue.")
         if github_issue_url:
             # Use Issue.github_url as the canonical link to the GitHub issue.
             # IMPORTANT: do NOT pass any 'captcha' or 'user' kwargs here.

@@ -386,6 +386,12 @@ class BountyApiTestCase(TestCase):
         )
         self.assertIn(resp1.status_code, (200, 201))
 
+        # Mark the first bounty as PAID so the duplicate-pending protection
+        # does not block a second bounty from the same API user.
+        first_bounty = Bounty.objects.get(github_issue_url=self.github_issue.url)
+        first_bounty.status = Bounty.STATUS_PAID
+        first_bounty.save(update_fields=["status"])
+
         # Second bounty: 5.50
         payload2 = {
             "github_issue_url": self.github_issue.url,

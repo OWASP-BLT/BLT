@@ -34,6 +34,7 @@ client = WebClient(token=SLACK_TOKEN)
 
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+EXTERNAL_API_TIMEOUT = 10
 
 
 def get_slack_username(workspace_client, user_id):
@@ -3027,7 +3028,7 @@ def handle_committee_pagination(action, body, client):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
 
-GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+/?$")
+GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+/issues/\d+/?$")
 
 
 @csrf_exempt
@@ -3097,6 +3098,9 @@ def slack_bounty_command(request):
     # Normalize GitHub username (allow "@foo")
     github_username = github_username.lstrip("@")
 
+    # Validate length and characters
+    if len(github_username) > 39 or not re.match(r"^[a-zA-Z0-9-]+$", github_username):
+        return JsonResponse({"response_type": "ephemeral", "text": "Invalid GitHub username format."})
     # strip leading '$' if present
     if raw_amount.startswith("$"):
         raw_amount = raw_amount[1:]
@@ -3207,7 +3211,7 @@ def slack_bounty_command(request):
             f"{api_base}/bounties/",
             headers=headers,
             json=payload,
-            timeout=10,
+            timeout=EXTERNAL_API_TIMEOUT,
         )
         if r.status_code not in (200, 201):
             logger.error(
@@ -3248,7 +3252,7 @@ def slack_bounty_command(request):
             f"{api_base}/bounties/issue-total/",
             headers=headers,
             params={"github_issue_url": issue_url},
-            timeout=10,
+            timeout=EXTERNAL_API_TIMEOUT,
         )
         total_json = total_res.json() if total_res.ok else {}
 

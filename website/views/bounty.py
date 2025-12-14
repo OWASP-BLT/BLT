@@ -5,6 +5,7 @@ import secrets
 from decimal import Decimal
 
 import requests
+from django.db import transaction
 from django.db.models import F
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
@@ -102,42 +103,61 @@ def bounty_payout(request):
             f"for PR #{pr_number} (Issue #{issue_number})"
         )
 
-        # Save transaction ID to database
-        github_issue.sponsors_tx_id = transaction_id
-        github_issue.save()
-
         # Build canonical GitHub issue URL in same format used when creating Bounty
         issue_url = f"https://github.com/{owner_name}/{repo_name}/issues/{issue_number}"
-
-        # Mark all pending bounties for this issue as PAID
-        pending_bounties = Bounty.objects.filter(
-            github_issue_url=issue_url,
-            status=Bounty.STATUS_PENDING,
-        )
-
-        # Update status in bulk
-        updated_count = pending_bounties.update(
-            status=Bounty.STATUS_PAID,
-            updated_at=timezone.now(),
-        )
-        logger.info(f"Marked {updated_count} bounty record(s) as PAID for {issue_url}")
 
         # Convert cents -> dollars (or whatever unit your winnings use)
         payout_amount = Decimal(bounty_amount) / Decimal("100.0")
 
         github_profile_url = f"https://github.com/{contributor_username}"
-        profile = UserProfile.objects.select_related("user").filter(github_url__iexact=github_profile_url).first()
-        if profile:
-            try:
-                # Atomic increment to avoid race conditions
+
+        # ------------------------------------------------------------------
+        # Transactional section:
+        #  - store sponsors_tx_id on the GitHubIssue
+        #  - mark matching Bounty records as PAID
+        #  - update contributor winnings (if profile exists)
+        # If any of this fails, the whole block is rolled back.
+        # ------------------------------------------------------------------
+        with transaction.atomic():
+            # Save transaction ID to database
+            github_issue.sponsors_tx_id = transaction_id
+            github_issue.save()
+
+            # Mark all pending bounties for this issue as PAID
+            pending_bounties = Bounty.objects.filter(
+                github_issue_url=issue_url,
+                status=Bounty.STATUS_PENDING,
+            )
+
+            updated_count = pending_bounties.update(
+                status=Bounty.STATUS_PAID,
+                updated_at=timezone.now(),
+            )
+            logger.info(
+                "Marked %s bounty record(s) as PAID for %s (transaction=%s)",
+                updated_count,
+                issue_url,
+                transaction_id,
+            )
+
+            # Update contributor winnings if we can find a matching profile
+            profile = UserProfile.objects.select_related("user").filter(github_url__iexact=github_profile_url).first()
+            if profile:
+                # Atomic increment of winnings
                 UserProfile.objects.filter(pk=profile.pk).update(
                     winnings=Coalesce(F("winnings"), Decimal("0")) + payout_amount
                 )
-                logger.info(f"Updated winnings for {contributor_username} by {payout_amount}")
-            except Exception:
-                logger.exception("Failed updating winnings for %s", contributor_username)
-        else:
-            logger.warning("No UserProfile matched GitHub URL %s; skipping winnings update", github_profile_url)
+                logger.info(
+                    "Updated winnings for %s by %s",
+                    contributor_username,
+                    payout_amount,
+                )
+            else:
+                # Not an error: we just can't credit winnings
+                logger.warning(
+                    "No UserProfile matched GitHub URL %s; skipping winnings update",
+                    github_profile_url,
+                )
 
         # =====================================================================
 
