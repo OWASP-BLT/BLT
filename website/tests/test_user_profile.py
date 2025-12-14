@@ -303,8 +303,9 @@ class UserProfileVisitCounterTest(TestCase):
 
     def test_update_visit_counter_monthly_new_month(self):
         """Test that visit in new month resets monthly counter"""
-        from website.models import UserProfile
         from dateutil.relativedelta import relativedelta
+
+        from website.models import UserProfile
 
         # First visit
         self.profile.update_visit_counter()
@@ -389,8 +390,9 @@ class MonthlyVisitorsLeaderboardViewTest(TestCase):
 
     def test_monthly_visitors_leaderboard_filters_current_month(self):
         """Test that leaderboard only shows visitors from current month"""
-        from website.models import UserProfile
         from dateutil.relativedelta import relativedelta
+
+        from website.models import UserProfile
 
         # Create a user with visits from last month
         old_user = User.objects.create_user(username="olduser", email="old@example.com", password="testpass123")

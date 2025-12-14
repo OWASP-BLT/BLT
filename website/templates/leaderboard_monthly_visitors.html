@@ -56,9 +56,7 @@
                         {% for profile in leaderboard %}
                             <div class="flex justify-between items-center {% if forloop.counter <= 3 %}bg-yellow-50 dark:bg-gray-800 rounded-lg p-2{% endif %}">
                                 <div class="flex gap-3 items-center truncate">
-                                    <div class="text-xl font-bold text-gray-500 dark:text-gray-400 min-w-[2rem]">
-                                        #{{ forloop.counter }}
-                                    </div>
+                                    <div class="text-xl font-bold text-gray-500 dark:text-gray-400 min-w-[2rem]">#{{ forloop.counter }}</div>
                                     {% if profile.avatar %}
                                         <img src="{{ profile.avatar }}"
                                              class="size-12 select-none border border-gray-200 dark:border-gray-700 rounded-full"

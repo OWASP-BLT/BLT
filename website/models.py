@@ -1011,7 +1011,9 @@ class UserProfile(models.Model):
 
         # Check if we need to reset monthly counter (new month)
         reset_monthly = False
-        if not self.last_monthly_visit or (today.year != self.last_monthly_visit.year or today.month != self.last_monthly_visit.month):
+        if not self.last_monthly_visit or (
+            today.year != self.last_monthly_visit.year or today.month != self.last_monthly_visit.month
+        ):
             reset_monthly = True
 
         # Use atomic database operations to avoid transaction errors
@@ -1030,7 +1032,7 @@ class UserProfile(models.Model):
             else:
                 # Increment monthly counter
                 update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
-            
+
             UserProfile.objects.filter(pk=self.pk).update(**update_fields)
         else:
             # Only increment the general visit_count and monthly count
@@ -1042,7 +1044,7 @@ class UserProfile(models.Model):
                 update_fields["monthly_visit_count"] = 1
             else:
                 update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
-            
+
             UserProfile.objects.filter(pk=self.pk).update(**update_fields)
 
         return None
