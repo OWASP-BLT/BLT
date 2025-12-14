@@ -23,7 +23,6 @@ const DebugPanel = {
     this.verifyAuth().then((ok) => {
       if (ok) {
         this.loadInitialStats();
-        this.startGithubStatusPolling();
       } else {
         // Disable interactive controls when not authenticated
         this.disablePanel();
@@ -63,7 +62,7 @@ const DebugPanel = {
       "populate-data-btn",
       "clear-cache-btn",
       "check-performance-btn",
-      "sync-github-btn",
+      "management-commands-btn",
     ];
     ids.forEach((id) => {
       const btn = document.getElementById(id);
@@ -73,8 +72,6 @@ const DebugPanel = {
         btn.classList.add("pointer-events-none");
       }
     });
-    // Ensure polling is stopped
-    this.stopGithubStatusPolling();
   },
 
   /**
@@ -98,8 +95,8 @@ const DebugPanel = {
       .getElementById("check-performance-btn")
       ?.addEventListener("click", () => this.checkPerformance());
     document
-      .getElementById("sync-github-btn")
-      ?.addEventListener("click", () => this.syncGithubData());
+      .getElementById("management-commands-btn")
+      ?.addEventListener("click", () => this.goToManagementCommands());
     document
       .getElementById("toggle-dev-panel")
       ?.addEventListener("click", () => this.togglePanel());
@@ -317,37 +314,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
   },
 
   /**
-   * Sync GitHub data
-   */
-  syncGithubData() {
-    if (!confirm("Sync GitHub data? This may take a few minutes.")) {
-      return;
-    }
-
-    this.showStatus("Syncing GitHub data...", "info");
-    this.makeRequest(
-      "POST",
-      `${this.apiBaseUrl}/sync-github/`,
-      { confirm: true },
-      (data) => {
-        if (data.success) {
-          const baseMsg = data.message ? data.message : "GitHub sync started in background.";
-          const infoMsg = `${baseMsg} Check the sync status badge above for progress.`;
-          this.showStatus(infoMsg, "success");
-        } else {
-          this.showStatus(
-            `Error: ${data.error || "Failed to sync GitHub data"}`,
-            "error"
-          );
-        }
-      },
-      (error) => {
-        this.showStatus(`Error: ${error}`, "error");
-      }
-    );
-  },
-
-  /**
    * Toggle debug panel visibility
    */
   togglePanel() {
@@ -356,11 +322,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
 
     if (content) {
       content.classList.toggle("hidden");
-      if (content.classList.contains("hidden")) {
-        this.stopGithubStatusPolling();
-      } else {
-        this.startGithubStatusPolling();
-      }
       const icon = button?.querySelector("i");
       if (icon) {
         icon.classList.toggle("fa-chevron-up");
@@ -415,96 +376,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
   },
 
   /**
-   * Start polling the debug status endpoint for GitHub sync state
-   */
-  startGithubStatusPolling(intervalMs = 5000) {
-    // allow optional override from DOM (data attribute on #dev-panel)
-    const panel = document.getElementById("dev-panel");
-    const configured = panel?.dataset?.pollIntervalMs;
-    this._defaultPollInterval = typeof configured !== "undefined" ? parseInt(configured, 10) || intervalMs : intervalMs;
-
-    // avoid starting multiple timers
-    if (this.githubStatusTimer) return;
-
-    // track the currently used interval so we can adapt when state changes
-    this._currentPollInterval = this._defaultPollInterval;
-
-    // schedule first poll asynchronously to avoid blocking initialization
-    setTimeout(() => this.pollGithubSyncStatus(), 0);
-    this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
-  },
-
-  /**
-   * Stop polling the debug status endpoint
-   */
-  stopGithubStatusPolling() {
-    if (this.githubStatusTimer) {
-      clearInterval(this.githubStatusTimer);
-      this.githubStatusTimer = null;
-      this._currentPollInterval = null;
-    }
-  },
-
-  /**
-   * Poll the /api/debug/status/ endpoint and update a persistent badge in the dev panel
-   */
-  pollGithubSyncStatus() {
-    this.makeRequest(
-      "GET",
-      `${this.apiBaseUrl}/status/`,
-      null,
-      (data) => {
-        try {
-          if (!data || !data.data) {
-            this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: null });
-            this.adjustPollIntervalAfterUpdate(false);
-            return;
-          }
-          const sync = data.data.github_sync || {};
-          this.updateGithubStatusBadge(sync);
-          this.adjustPollIntervalAfterUpdate(Boolean(sync.running));
-        } catch (e) {
-          // if any parsing error occurs, show unavailable
-          this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: "parse error" });
-          this.adjustPollIntervalAfterUpdate(false);
-        }
-      },
-      (error) => {
-        // network or auth error: show unavailable status
-        this.updateGithubStatusBadge({ running: false, started_at: null, last_finished_at: null, last_error: error });
-        this.adjustPollIntervalAfterUpdate(false);
-      }
-    );
-  },
-
-  /**
-   * Adjust poll interval based on sync state
-   * This is called after the badge is updated, avoiding timer manipulation during callback execution
-   */
-  adjustPollIntervalAfterUpdate(isRunning) {
-    try {
-      const desiredInterval = isRunning ? 1000 : (this._defaultPollInterval || 5000);
-      if (this._currentPollInterval !== desiredInterval) {
-        // Schedule the interval change for the next tick to avoid manipulating timer during callback
-        setTimeout(() => {
-          if (this._currentPollInterval === desiredInterval) {
-            // Interval was already adjusted (unlikely but safe)
-            return;
-          }
-          // Only restart if timer is still active
-          if (this.githubStatusTimer) {
-            clearInterval(this.githubStatusTimer);
-            this._currentPollInterval = desiredInterval;
-            this.githubStatusTimer = setInterval(() => this.pollGithubSyncStatus(), this._currentPollInterval);
-          }
-        }, 0);
-      }
-    } catch (e) {
-      // ignore timer adjustment errors
-    }
-  },
-
-  /**
    * Format ISO timestamp (or null) to a compact human-readable string
    */
   formatTimestamp(iso) {
@@ -515,66 +386,6 @@ DB Connections: ${stats.database?.connections || "N/A"}
       return d.toLocaleString();
     } catch (e) {
       return "Invalid date";
-    }
-  },
-
-  /**
-   * Create or update a persistent GitHub sync status badge inside the dev panel
-   */
-  updateGithubStatusBadge(sync) {
-    const panel = document.getElementById("dev-panel");
-    if (!panel) return;
-
-    let badge = document.getElementById("github-sync-badge");
-    const isRunning = Boolean(sync.running);
-
-    if (!badge) {
-      badge = document.createElement("div");
-      badge.id = "github-sync-badge";
-      // Use Tailwind utility classes instead of long inline styles
-      // these classes assume Tailwind is available in the project
-      badge.className = "inline-block ml-3 px-2 py-1 rounded text-xs font-mono";
-      // Prefer a dedicated header container with a stable ID to avoid brittle DOM queries
-      let header = document.getElementById("dev-panel-header");
-      if (!header) {
-        // Fallback to legacy selector used previously
-        header = panel.querySelector(".flex.items-center") || panel.firstElementChild;
-      }
-      if (header && header.parentNode) {
-        header.parentNode.insertBefore(badge, header.nextSibling);
-      } else {
-        panel.insertBefore(badge, panel.firstChild);
-      }
-    }
-
-    // Reset color classes
-    badge.classList.remove(
-      "bg-amber-400",
-      "bg-red-500",
-      "bg-emerald-500",
-      "text-black",
-      "text-white"
-    );
-
-    if (isRunning) {
-      badge.textContent = `Sync: RUNNING (started: ${this.formatTimestamp(sync.started_at)})`;
-      badge.classList.add("bg-amber-400", "text-black");
-      badge.title = "";
-    } else if (sync.last_error) {
-      // Show a shortened error in the badge text while keeping full details in the tooltip
-      const errorMsg = String(sync.last_error);
-      // Shorten to first sentence or first 50 characters
-      let shortError = errorMsg.split(/[.!?]\s/)[0] || errorMsg;
-      if (shortError.length > 50) {
-        shortError = shortError.slice(0, 47) + "...";
-      }
-      badge.textContent = `Sync: ERROR (${shortError})`;
-      badge.classList.add("bg-red-500", "text-white");
-      badge.title = errorMsg;
-    } else {
-      badge.textContent = `Sync: idle (last: ${this.formatTimestamp(sync.last_finished_at)})`;
-      badge.classList.add("bg-emerald-500", "text-white");
-      badge.title = "";
     }
   },
 
@@ -683,6 +494,13 @@ DB Connections: ${stats.database?.connections || "N/A"}
       }
     }
     return cookieValue;
+  },
+
+  /**
+   * Go To Management Commands Page
+  */
+  goToManagementCommands() {
+    window.location.href = window.location.origin + "/status/commands/";
   },
 };
 

@@ -7,8 +7,6 @@ from django.urls import NoReverseMatch, clear_url_caches, reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-import website.api.views as views
-
 User = get_user_model()
 
 
@@ -23,17 +21,6 @@ class DebugPanelAPITest(TestCase):
         self.superuser = User.objects.create_superuser(
             username="admin", email="admin@example.com", password="adminpass123"
         )
-
-        # Reset GitHub sync module state between tests.
-        for attr, value in [
-            ("_github_sync_running", False),
-            ("_github_sync_thread", None),
-            ("_github_sync_started_at", None),
-            ("_github_sync_last_finished_at", None),
-            ("_github_sync_last_error", []),
-        ]:
-            if hasattr(views, attr):
-                setattr(views, attr, value)
 
     def reload_urls(self):
         clear_url_caches()
@@ -70,9 +57,7 @@ class DebugPanelAPITest(TestCase):
             "api_debug_system_stats",
             "api_debug_cache_info",
             "api_debug_clear_cache",
-            "api_debug_populate_data",
-            "api_debug_panel_status",
-            "api_debug_sync_github",
+            "api_debug_populate_data"
         ]
 
         for endpoint in endpoints:
@@ -162,24 +147,12 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    def test_get_debug_panel_status(self):
-        """Test getting debug panel status"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-        response = self.client.get(reverse("api_debug_panel_status"))
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-        self.assertTrue(data["data"]["debug_mode"])
-
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_requires_authentication(self):
         """Test that debug endpoints require authentication even locally"""
         self.reload_urls()
         endpoints = [
             "api_debug_system_stats",
             "api_debug_cache_info",
-            "api_debug_panel_status",
         ]
 
         for endpoint in endpoints:
@@ -198,7 +171,6 @@ class DebugPanelAPITest(TestCase):
         endpoints = [
             "api_debug_clear_cache",
             "api_debug_populate_data",
-            "api_debug_sync_github",
         ]
 
         for endpoint in endpoints:
@@ -348,105 +320,3 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views._run_github_sync")
-    def test_sync_github_data_success(self, mock_sync):
-        """Test that GitHub sync endpoint works"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-
-        # Make the background thread execute the sync target synchronously
-        # by patching threading.Thread.start to call our mock_sync directly.
-        with patch("website.api.views.threading.Thread") as mock_thread:
-            mock_thread.return_value.start.side_effect = lambda: mock_sync()
-
-            response = self.client.post(reverse("api_debug_sync_github"))
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-        self.assertIn("message", data)
-
-        # Background function should have been invoked (synchronously via the start patch)
-        mock_sync.assert_called_once()
-
-    @override_settings(DEBUG=True)
-    def test_sync_github_data_requires_authentication(self):
-        """Test that GitHub sync requires authentication"""
-        self.reload_urls()
-
-        response = self.client.post(reverse("api_debug_sync_github"))
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.threading.Thread")
-    def test_sync_github_data_handles_errors(self, mock_thread):
-        """Test GitHub sync error handling"""
-        self.reload_urls()
-        mock_thread.return_value.start.side_effect = Exception("Thread start failed")
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_sync_github"))
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # Verify the response payload indicates failure and contains an error message
-        data = response.json()
-        self.assertFalse(data.get("success", True))
-        # Accept either a generic failure message or the specific implementation text
-        error_text = data.get("error", "") or data.get("message", "")
-        self.assertTrue(
-            isinstance(error_text, str) and len(error_text) > 0,
-            "Expected non-empty error text in response",
-        )
-
-        # Ensure the Thread class was instantiated
-        mock_thread.assert_called_once()
-
-        # Verify cleanup of module-level sync state after a start failure
-        # (these globals are defined in website.api.views)
-        self.assertFalse(getattr(views, "_github_sync_running", True))
-        self.assertIsNone(getattr(views, "_github_sync_thread", None))
-        self.assertIsNone(getattr(views, "_github_sync_started_at", None))
-        last_error = getattr(views, "_github_sync_last_error", None)
-        # Accept list-based representation or legacy string, but prefer list and check for token
-        if isinstance(last_error, list):
-            self.assertIn("thread_start_failed", last_error)
-        else:
-            self.assertTrue(isinstance(last_error, str) and "thread_start_failed" in last_error)
-
-    @override_settings(DEBUG=True)
-    def test_sync_github_data_already_running(self):
-        """Test that concurrent sync requests return 409 Conflict"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-
-        # Simulate sync already running
-        views._github_sync_running = True
-
-        response = self.client.post(reverse("api_debug_sync_github"))
-
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        data = response.json()
-        self.assertFalse(data.get("success"))
-        self.assertIn("already running", data.get("message", "").lower())
-
-        # Cleanup
-        views._github_sync_running = False
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views._github_sync_lock")
-    def test_sync_lock_acquisition_timeout(self, mock_lock):
-        """Test handling when lock acquisition times out"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-
-        # Simulate lock timeout
-        mock_lock.acquire.return_value = False
-
-        response = self.client.post(reverse("api_debug_sync_github"))
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data.get("success"))

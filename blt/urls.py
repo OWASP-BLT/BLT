@@ -27,9 +27,7 @@ from website.api.views import (
     CheckDuplicateBugApiView,
     DebugCacheInfoApiView,
     DebugClearCacheApiView,
-    DebugPanelStatusApiView,
     DebugPopulateDataApiView,
-    DebugSyncGithubDataApiView,
     DebugSystemStatsApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
@@ -1254,8 +1252,6 @@ if settings.DEBUG:
         path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
         path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
         path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
-        path("api/debug/sync-github/", DebugSyncGithubDataApiView.as_view(), name="api_debug_sync_github"),
-        path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
     ] + urlpatterns
 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
