@@ -1024,26 +1024,33 @@ class UserProfile(models.Model):
                 "daily_visit_count": F("daily_visit_count") + 1,
                 "last_visit_day": today,
                 "visit_count": F("visit_count") + 1,
-                "last_monthly_visit": today,
             }
+
+            # Only update monthly fields if needed
             if reset_monthly:
                 # Reset monthly counter for new month
                 update_fields["monthly_visit_count"] = 1
+                update_fields["last_monthly_visit"] = today
             else:
                 # Increment monthly counter
                 update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
+                update_fields["last_monthly_visit"] = today
 
             UserProfile.objects.filter(pk=self.pk).update(**update_fields)
         else:
-            # Only increment the general visit_count and monthly count
+            # Only increment the general visit_count and monthly count (if needed)
             update_fields = {
                 "visit_count": F("visit_count") + 1,
-                "last_monthly_visit": today,
             }
+
+            # Only update monthly fields if needed
             if reset_monthly:
                 update_fields["monthly_visit_count"] = 1
-            else:
+                update_fields["last_monthly_visit"] = today
+            elif self.last_monthly_visit != today:
+                # Only update monthly count if this is a different day within the same month
                 update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
+                update_fields["last_monthly_visit"] = today
 
             UserProfile.objects.filter(pk=self.pk).update(**update_fields)
 

@@ -281,6 +281,23 @@ class UserProfileVisitCounterTest(TestCase):
         self.assertIsNotNone(self.profile.last_monthly_visit)
         self.assertEqual(self.profile.last_monthly_visit, timezone.now().date())
 
+    def test_update_visit_counter_monthly_same_day_no_update(self):
+        """Test that multiple visits on same day don't update monthly fields unnecessarily"""
+
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_monthly_count = self.profile.monthly_visit_count
+        first_last_monthly_visit = self.profile.last_monthly_visit
+
+        # Second visit on same day - monthly fields should not change
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Monthly count and last_monthly_visit should stay the same (no unnecessary write)
+        self.assertEqual(self.profile.monthly_visit_count, first_monthly_count)
+        self.assertEqual(self.profile.last_monthly_visit, first_last_monthly_visit)
+
     def test_update_visit_counter_monthly_same_month(self):
         """Test that multiple visits in same month increment monthly counter"""
         from website.models import UserProfile
