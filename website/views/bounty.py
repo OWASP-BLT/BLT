@@ -143,10 +143,12 @@ def bounty_payout(request):
         # ------------------------------------------------------------------
         with transaction.atomic():
             # Save transaction ID to database, but only if we still own the claim
-            GitHubIssue.objects.filter(
+            rows_updated = GitHubIssue.objects.filter(
                 pk=github_issue.pk,
                 sponsors_tx_id=claim_id,
             ).update(sponsors_tx_id=transaction_id)
+            if not rows_updated:
+                raise Exception("Claim was unexpectedly lost during transaction")
 
             # Mark all pending bounties for this issue as PAID
             pending_bounties = Bounty.objects.filter(

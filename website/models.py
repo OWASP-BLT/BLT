@@ -3566,7 +3566,7 @@ class Bounty(models.Model):
     """
     Represents a monetary bounty pledged against a GitHub issue.
 
-    - `issue` links to an internal `Issue` record when available, but can be null
+    - `issue` links to an internal `Issue` record when available,
       while the system only knows the `github_issue_url`.
     - `status` tracks the lifecycle (e.g. PENDING → PAID → CANCELLED).
     - `github_issue_url` stores the canonical GitHub URL and is used for lookups

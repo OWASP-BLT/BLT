@@ -61,7 +61,13 @@ jobs:
             };
 
       - name: Call BLT-Action composite bounty processor
-        if: steps.parse.outputs.found == 'true'
+        if: |
+          steps.parse.outputs.found == 'true' &&
+          (
+            github.event.comment.author_association == 'OWNER' ||
+            github.event.comment.author_association == 'MEMBER' ||
+            github.event.comment.author_association == 'COLLABORATOR'
+          )
         uses: OWASP-BLT/BLT-Action/Bounty_Processor@v1.1
         with:
           api_base_url: ${{ secrets.API_BASE_URL }}      # e.g. https://<ngrok>.ngrok.io/api/v1
