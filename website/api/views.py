@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
-
+from decimal import Decimal
 import django
 import psutil
 import requests
@@ -1999,12 +1999,13 @@ class BountyViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().filter(sponsor=self.request.user)
         issue_url = self.request.query_params.get("github_issue_url")
         sponsor_username = self.request.query_params.get("sponsor")
         if issue_url:
             qs = qs.filter(github_issue_url=issue_url)
-        if sponsor_username:
+        # Optional: only allow this filter for staff if you keep it
+        if sponsor_username and self.request.user.is_staff:
             qs = qs.filter(github_sponsor_username=sponsor_username)
         return qs
 
@@ -2026,7 +2027,7 @@ class BountyViewSet(viewsets.ModelViewSet):
             )
 
         total = Bounty.total_for_issue_url(raw_url)
-        return Response({"github_issue_url": raw_url, "total": total})
+        return Response({"github_issue_url": raw_url, "total": str(total)})
 
     @action(detail=False, methods=["get"], url_path="sponsor-stats")
     def sponsor_stats(self, request):
@@ -2047,7 +2048,7 @@ class BountyViewSet(viewsets.ModelViewSet):
 
         # All bounties placed by this GitHub sponsor (any status)
         qs = Bounty.objects.filter(github_sponsor_username=sponsor_username)
-        total_placed = qs.aggregate(total=models.Sum("amount"))["total"] or 0
+        total_placed = qs.aggregate(total=models.Sum("amount"))["total"] or Decimal("0.00")
 
         # TODO: once Bounty has a proper "recipient" or "paid_to" FK, compute
         # a real developers_sponsored_count here.

@@ -3598,7 +3598,7 @@ class Bounty(models.Model):
         related_name="bounties",
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    github_issue_url = models.URLField()
+    github_issue_url = models.URLField(max_length=500)
     github_sponsor_username = models.CharField(max_length=255)
     status = models.CharField(
         max_length=20,

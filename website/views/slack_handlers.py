@@ -18,14 +18,12 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
-
+from dotenv import load_dotenv
 from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
 
 logger = logging.getLogger(__name__)
 
 if os.getenv("ENV") != "production":
-    from dotenv import load_dotenv
-
     load_dotenv()
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET")
@@ -3023,23 +3021,7 @@ def handle_committee_pagination(action, body, client):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
 
-BOUNTY_REGEX = re.compile(
-    r"""
-    ^\s*
-    (?:/bounty\s+)?                       # optional leading '/bounty'
-    \$?(?P<amount>-?\d+(?:\.\d{1,2})?)    # optional '$', optional '-', int/decimal
-    \s+
-    (?P<issue_url>https?://\S+)
-    \s+
-    (?P<github_username>[A-Za-z0-9-]+)
-    \s*$
-    """,
-    re.VERBOSE,
-)
-
-
 GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+$")
-
 
 @csrf_exempt
 def slack_bounty_command(request):

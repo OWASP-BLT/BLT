@@ -4,10 +4,10 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, RequestFactory, TestCase
+from django.test import Client, TestCase
 from django.test.utils import override_settings
 from rest_framework.authtoken.models import Token
-
+from django.urls import reverse
 from website.models import Bounty, GitHubIssue, Organization, Repo
 from website.views.slack_handlers import slack_bounty_command
 
@@ -415,8 +415,9 @@ class BountyApiTestCase(TestCase):
 
 class SlackBountyCommandTestCase(TestCase):
     def setUp(self):
-        self.factory = RequestFactory()
+        self.client = Client()
         self.issue_url = "https://github.com/TestOrg/TestRepo/issues/123"
+        self.url = reverse("slack_bounty_command")  # <- single source of truth
 
     @override_settings(
         BLT_API_BASE_URL="https://blt.test/api",
@@ -431,53 +432,33 @@ class SlackBountyCommandTestCase(TestCase):
         mock_get,
         mock_verify,
     ):
-        """
-        Happy path: valid `/bounty`-style text returns a 200 JSON response.
-
-        We don't over-constrain internal behavior (in_channel vs ephemeral,
-        exact wording, or whether requests.post was called), but we verify:
-        - the view returns HTTP 200
-        - the payload is valid Slack-style JSON
-        - the message text is non-empty
-        """
-        # Mock BLT /bounties/ create
         mock_post.return_value.status_code = 201
         mock_post.return_value.json.return_value = {"id": 1}
 
-        # Mock BLT /bounties/issue-total/
         mock_get.return_value.ok = True
         mock_get.return_value.json.return_value = {
             "github_issue_url": self.issue_url,
             "total": "10.00",
         }
 
-        request = self.factory.post(
-            "/slack/bounty/",
+        response = self.client.post(
+            self.url,
             data={
                 "text": f"10 {self.issue_url} testuser",
                 "user_id": "U12345",
                 "response_url": "https://hooks.slack.com/commands/XYZ",
             },
-            content_type="application/x-www-form-urlencoded",
         )
 
-        response = slack_bounty_command(request)
         self.assertEqual(response.status_code, 200)
-
         payload = json.loads(response.content.decode("utf-8"))
-
-        # Basic Slack JSON envelope checks
-        self.assertIn("response_type", payload)
-        self.assertIn(payload["response_type"], ["in_channel", "ephemeral"])
-
-        # Extract some text from either blocks or text key
-        if "blocks" in payload:
-            text_block = payload["blocks"][0].get("text", {}).get("text", "")
-        else:
-            text_block = payload.get("text", "")
-
-        # Ensure we returned a non-empty human-readable message
-        self.assertTrue(text_block.strip())
+        self.assertEqual(payload["response_type"], "in_channel")
+        text_block = payload["blocks"][0]["text"]["text"]
+        self.assertIn("New bounty placed", text_block)
+        self.assertIn("*Amount:* $10", text_block)
+        self.assertIn("testuser", text_block)
+        self.assertTrue(mock_post.called)
+        self.assertTrue(mock_get.called)
 
     @override_settings(
         BLT_API_BASE_URL="https://blt.test/api",
@@ -485,22 +466,15 @@ class SlackBountyCommandTestCase(TestCase):
     )
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     def test_slack_bounty_invalid_format(self, mock_verify):
-        """
-        If the Slack text does not match the expected pattern,
-        the handler returns an ephemeral usage message.
-        """
-        request = self.factory.post(
-            "/slack/bounty/",
+        response = self.client.post(
+            self.url,
             data={
                 "text": "this is not valid",
                 "user_id": "U12345",
             },
-            content_type="application/x-www-form-urlencoded",
         )
 
-        response = slack_bounty_command(request)
         self.assertEqual(response.status_code, 200)
-
         payload = json.loads(response.content.decode("utf-8"))
         self.assertEqual(payload["response_type"], "ephemeral")
         self.assertIn("Usage: `/bounty", payload["text"])
@@ -511,24 +485,15 @@ class SlackBountyCommandTestCase(TestCase):
     )
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     def test_slack_bounty_zero_amount_treated_as_invalid(self, mock_verify):
-        """
-        For an amount of 0, current behavior is that the regex/validation
-        ends up returning the usage message. We assert that we at least
-        get an ephemeral error, without forcing the exact branch.
-        """
-        request = self.factory.post(
-            "/slack/bounty/",
+        response = self.client.post(
+            self.url,
             data={
                 "text": f"0 {self.issue_url} testuser",
                 "user_id": "U12345",
             },
-            content_type="application/x-www-form-urlencoded",
         )
 
-        response = slack_bounty_command(request)
         self.assertEqual(response.status_code, 200)
-
         payload = json.loads(response.content.decode("utf-8"))
         self.assertEqual(payload["response_type"], "ephemeral")
-        # Right now we see it return the usage text for this case:
-        self.assertIn("Usage: `/bounty", payload["text"])
+        self.assertIn("must be positive", payload["text"])
