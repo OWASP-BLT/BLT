@@ -2710,7 +2710,7 @@ def refresh_organization_repos_api(request, org_id):
 
     # Simple throttling: avoid repeated refreshes within 24 hours.
     one_day_ago = timezone.timedelta(days=1)
-    if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
+    if organization.repos_updated_at and (timezone.now() - organization.repos_updated_at) < one_day_ago:
         time_since_update = timezone.now() - organization.repos_updated_at
         hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
         return JsonResponse(
