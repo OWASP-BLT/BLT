@@ -112,7 +112,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
+    @override_settings(DEBUG=True, TESTING=False)
     @patch("django.core.cache.cache.clear")
     def test_clear_cache_handles_errors(self, mock_cache_clear):
         """Test that cache clear endpoint handles errors gracefully"""
