@@ -72,7 +72,6 @@ from website.models import (
     User,
     UserBadge,
     UserProfile,
-    Wallet,
 )
 from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
 
@@ -754,11 +753,6 @@ def search(request, template="search.html"):
 
     # Handle authenticated user features
     if request.user.is_authenticated:
-        try:
-            context["wallet"] = Wallet.objects.get(user=request.user)
-        except Wallet.DoesNotExist:
-            context["wallet"] = None
-
         # Log search history for authenticated users - LAZY EVALUATION
         # Only calculate result count when we're actually going to log the search
         if query:
@@ -1279,12 +1273,9 @@ class StatsDetailView(TemplateView):
             "SuggestionVotes": "created",
             "Bid": "created",
             "Monitor": "created",
-            "Payment": "created",
-            "Transaction": "created",
             "InviteFriend": "created",
             "Points": "created",
             "Winner": "created",
-            "Wallet": "created",
             "BaconToken": "date_awarded",
             "IP": "created",
             "ChatBotLog": "created",

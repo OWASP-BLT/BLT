@@ -65,7 +65,6 @@ from website.models import (
     OsshArticle,
     OsshCommunity,
     OsshDiscussionChannel,
-    Payment,
     Points,
     Post,
     PRAnalysisReport,
@@ -89,14 +88,12 @@ from website.models import (
     TimeLog,
     Trademark,
     TrademarkOwner,
-    Transaction,
     UserAdventureProgress,
     UserBadge,
     UserLabProgress,
     UserProfile,
     UserTaskProgress,
     UserTaskSubmission,
-    Wallet,
     Winner,
 )
 
@@ -126,19 +123,9 @@ class OrganizationResource(resources.ModelResource):
         model = Organization
 
 
-class WalletResource(resources.ModelResource):
-    class Meta:
-        model = Wallet
-
-
 class WinnerResource(resources.ModelResource):
     class Meta:
         model = Winner
-
-
-class PaymentResource(resources.ModelResource):
-    class Meta:
-        model = Payment
 
 
 class WinnerAdmin(admin.ModelAdmin):
@@ -165,16 +152,8 @@ class BidAdmin(admin.ModelAdmin):
     )
 
 
-class WalletAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "current_balance", "created")
-
-
 class JoinRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "team", "created_at", "is_accepted")
-
-
-class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("id", "wallet", "value", "active")
 
 
 class ImageInline(admin.TabularInline):
@@ -956,9 +935,7 @@ admin.site.register(OrganizationAdmin, OrganizationUserAdmin)
 admin.site.register(Organization, OrganizationAdmins)
 admin.site.register(Job, JobAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
-admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
-admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
@@ -971,7 +948,6 @@ admin.site.register(TimeLog, TimeLogAdmin)
 admin.site.register(Contribution, ContributionAdmin)
 admin.site.register(InviteFriend)
 admin.site.register(IP, IPAdmin)
-admin.site.register(Transaction)
 admin.site.register(Monitor, MonitorAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Integration)

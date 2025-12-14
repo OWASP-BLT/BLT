@@ -417,34 +417,6 @@ def initiate_transaction(request):
     return render(request, "bacon_transaction.html", {"submissions_by_user": dict(submissions_by_user)})
 
 
-@login_required
-def get_wallet_balance(request):
-    """View to get the wallet balance of the logged-in user."""
-    user = request.user
-
-    # Check if the user is a mentor
-    mentor_badge = Badge.objects.filter(title="mentor").first()
-    is_mentor = UserBadge.objects.filter(user=user, badge=mentor_badge).exists()
-    if not is_mentor:
-        return JsonResponse({"error": "Unauthorized"}, status=403)
-
-    # Fetch the wallet balance from the ORD server
-    ord_server_url = blt_settings.ORD_SERVER_URL
-    if not ord_server_url:
-        return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
-
-    try:
-        response = requests.get(f"{ord_server_url}/mainnet/wallet-balance")
-        response_data = response.json()
-        if response.status_code == 200 and response_data.get("success"):
-            balance_data = json.loads(response_data["balance"])
-            return JsonResponse({"balance": balance_data, "success": True})
-        else:
-            return JsonResponse({"error": "Failed to fetch wallet balance"}, status=response.status_code)
-    except requests.RequestException as e:
-        return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
-
-
 def bacon_view(request):
     """Combined view for bacon form and requests."""
     tx_status = request.GET.get("tx-status", "")

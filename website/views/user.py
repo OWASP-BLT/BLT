@@ -58,7 +58,6 @@ from website.models import (
     User,
     UserBadge,
     UserProfile,
-    Wallet,
 )
 
 logger = logging.getLogger(__name__)
@@ -443,8 +442,6 @@ class UserProfileDetailView(DetailView):
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
@@ -575,9 +572,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
         # Pull Request Leaderboard - Use Contributor model
@@ -657,9 +651,6 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-
         year = self.request.GET.get("year")
 
         if not year:
@@ -707,9 +698,6 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
@@ -1048,12 +1036,6 @@ def contributor_stats_view(request):
     }
 
     return render(request, "weekly_activity.html", context)
-
-
-def create_wallet(request):
-    for user in User.objects.all():
-        Wallet.objects.get_or_create(user=user)
-    return JsonResponse("Created", safe=False)
 
 
 def create_tokens(request):

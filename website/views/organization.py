@@ -64,7 +64,6 @@ from website.models import (
     TimeLog,
     Trademark,
     UserBadge,
-    Wallet,
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
@@ -434,9 +433,8 @@ class Joinorganization(TemplateView):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        wallet, created = Wallet.objects.get_or_create(user=request.user)
         organization_name = request.GET.get("organization", "")
-        context = {"wallet": wallet, "organization_name": organization_name}
+        context = {"organization_name": organization_name}
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -453,11 +451,9 @@ class Joinorganization(TemplateView):
                 return JsonResponse({"error": "Empty Fields"})
             paymentType = request.POST["paymentType"]
             if paymentType == "wallet":
-                wallet, created = Wallet.objects.get_or_create(user=request.user)
-                if wallet.current_balance < sub.charge_per_month:
-                    return JsonResponse({"error": "insufficient balance in Wallet"})
-                wallet.withdraw(sub.charge_per_month)
-                organization = Organization()
+                # Wallet payment has been removed
+                return JsonResponse({"error": "Wallet payment is no longer supported"})
+            organization = Organization()
                 organization.admin = request.user
                 organization.name = name
                 organization.url = rebuild_safe_url(request.POST["url"])
@@ -1044,9 +1040,6 @@ class DomainDetailView(ListView):
                 .order_by("-created")
             )
 
-            if self.request.user.is_authenticated:
-                context["wallet"] = Wallet.objects.get(user=self.request.user)
-
             # Handle pagination for open issues
             open_paginator = Paginator(open_issues, self.paginate_by)
             open_page = self.request.GET.get("open")
@@ -1312,14 +1305,14 @@ class CreateHunt(TemplateView):
                 domain_admin.role == 1
                 and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
             ) or domain_admin.role == 0:
-                wallet, created = Wallet.objects.get_or_create(user=request.user)
+                # Wallet payment has been removed - hunts can no longer be created with wallet
+                return HttpResponse("Wallet payment is no longer supported")
                 total_amount = (
                     Decimal(request.POST["prize_winner"])
                     + Decimal(request.POST["prize_runner"])
                     + Decimal(request.POST["prize_second_runner"])
                 )
-                if total_amount > wallet.current_balance:
-                    return HttpResponse("Insufficient balance")
+                # Wallet balance check removed
                 hunt = Hunt()
                 hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 data = {}
@@ -1355,8 +1348,7 @@ class CreateHunt(TemplateView):
                 hunt.end_on = end_date
                 hunt.name = request.POST["name"]
                 hunt.description = form.cleaned_data["content"]
-                wallet.withdraw(total_amount)
-                wallet.save()
+                # Wallet withdraw removed
                 try:
                     hunt.is_published = request.POST.get("publish", False) == "on"
                 except KeyError:
