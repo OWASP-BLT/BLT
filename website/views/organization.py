@@ -453,47 +453,27 @@ class Joinorganization(TemplateView):
             if paymentType == "wallet":
                 # Wallet payment has been removed
                 return JsonResponse({"error": "Wallet payment is no longer supported"})
+            
+            # Continue with card or other payment types
             organization = Organization()
-                organization.admin = request.user
-                organization.name = name
-                organization.url = rebuild_safe_url(request.POST["url"])
-                organization.email = email
-                organization.subscription = sub
-                organization.save()
-                admin = OrganizationAdmin()
-                admin.user = request.user
-                admin.role = 0
-                admin.organization = organization
-                admin.is_active = True
-                admin.save()
-                return JsonResponse(
-                    {
-                        "status": "Success",
-                        "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
-                    }
-                )
-            elif paymentType == "card":
-                organization = Organization()
-                organization.admin = request.user
-                organization.name = name
-                organization.url = rebuild_safe_url(request.POST["url"])
-                organization.email = email
-                organization.subscription = sub
-                organization.save()
-                admin = OrganizationAdmin()
-                admin.user = request.user
-                admin.role = 0
-                admin.organization = organization
-                admin.is_active = True
-                admin.save()
-                return JsonResponse(
-                    {
-                        "status": "Success",
-                        "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
-                    }
-                )
-            else:
-                return JsonResponse({"status": "There was some error"})
+            organization.admin = request.user
+            organization.name = name
+            organization.url = rebuild_safe_url(request.POST["url"])
+            organization.email = email
+            organization.subscription = sub
+            organization.save()
+            admin = OrganizationAdmin()
+            admin.user = request.user
+            admin.role = 0
+            admin.organization = organization
+            admin.is_active = True
+            admin.save()
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                }
+            )
 
 
 class Listbounties(TemplateView):
