@@ -2127,7 +2127,6 @@ def flag_issue(request, issue_pk):
             userprof.issue_flaged.remove(issue)
         else:
             userprof.issue_flaged.add(issue)
-            issue_pk = issue.pk
 
         userprof.save()
         total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
