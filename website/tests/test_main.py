@@ -276,7 +276,7 @@ class HideImage(TestCase):
         test_issue = Issue.objects.create(description="test", url="test.com")
         test_issue.screenshot = SimpleUploadedFile(
             name="test_image.jpg",
-            content=open("website/static/images/dummy-user.png", "rb").read(),
+            content=open("website/static/images/dummy-user.webp", "rb").read(),
             content_type="image/png",
         )
         test_issue.save()

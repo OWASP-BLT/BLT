@@ -66,7 +66,7 @@ class DebugPanelAPITest(TestCase):
         self.assertIn("backend", data["data"])
         self.assertIn("keys_count", data["data"])
 
-    @override_settings(DEBUG=True)
+    @override_settings(DEBUG=True, TESTING=False)
     def test_clear_cache_success(self):
         """Test clearing cache"""
         self.reload_urls()

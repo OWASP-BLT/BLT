@@ -18,7 +18,7 @@ TARGET_FILES = [
 # Add all PNGs from img/features/
 features_dir = Path("website/static/img/features")
 if features_dir.exists():
-    TARGET_FILES += [str(p) for p in features_dir.glob("*.png")]
+    TARGET_FILES += [str(p) for p in features_dir.glob("*.[pP][nN][gG]")]
 
 
 def convert_to_webp(png_path_str):
@@ -28,6 +28,9 @@ def convert_to_webp(png_path_str):
         return
 
     webp_path = png_path.with_suffix(".webp")
+    if webp_path.exists() and webp_path.stat().st_mtime >= png_path.stat().st_mtime:
+        logger.info(f"Skipped (up-to-date): {webp_path}")
+        return
     try:
         img = Image.open(png_path).convert("RGBA")
         img.save(webp_path, "webp", quality=85, method=6)

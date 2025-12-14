@@ -1272,11 +1272,7 @@ if settings.DEBUG and not settings.TESTING:
         path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
         path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
         path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
+        path("silk/", include("silk.urls", namespace="silk")),
     ] + urlpatterns
 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-if settings.DEBUG and not settings.TESTING:
-    urlpatterns += [
-        path("silk/", include("silk.urls", namespace="silk")),
-    ]
