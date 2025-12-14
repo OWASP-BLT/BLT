@@ -170,44 +170,7 @@
 
     })
 
-    $('#showcard').click(function () {
-      $(".wallet").velocity({
-        scale: "65%",
-        translateZ: 0
-      }, {
-        duration: 400,
-        easing: "easeInOutBack",
-        complete: function () {
-
-          $(".card").velocity({
-            scale: "100%",
-            translateZ: 0
-          }, {
-            duration: 400,
-            easing: "easeInOutBack"
-          });
-
-          setTimeout(function () {
-
-            $(".card").velocity("fadeIn", {
-              queue: false,
-              duration: 150
-            });
-
-          }, 150);
-      // Wallet animation removed
-    });
-
-    // Wallet payment button removed - feature no longer supported
-
-        $(".card").velocity("fadeOut", {
-          queue: false,
-          duration: 150
-        });
-
-      }, 150);
-
-    });
+    // Wallet payment feature removed - showcard and showwallet removed
 
   });
     </script>
