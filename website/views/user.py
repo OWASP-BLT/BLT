@@ -734,6 +734,55 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         return context
 
 
+class MonthlyVisitorsLeaderboardView(ListView):
+    """
+    Returns: Top visitors for the current month based on monthly_visit_count
+    """
+
+    model = UserProfile
+    template_name = "leaderboard_monthly_visitors.html"
+    context_object_name = "leaderboard"
+
+    def get_queryset(self):
+        """
+        Get top visitors for the current month.
+        
+        Returns users ordered by monthly_visit_count, filtering for those
+        who have visited in the current month.
+        """
+        today = timezone.now().date()
+        current_month = today.month
+        current_year = today.year
+        
+        # Get profiles that have visited this month
+        queryset = (
+            UserProfile.objects.select_related("user")
+            .filter(
+                monthly_visit_count__gt=0,
+                last_monthly_visit__month=current_month,
+                last_monthly_visit__year=current_year,
+            )
+            .order_by("-monthly_visit_count")[:100]  # Limit to top 100
+        )
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        today = timezone.now().date()
+        context["current_month"] = today.strftime("%B")
+        context["current_year"] = today.year
+        
+        if self.request.user.is_authenticated:
+            try:
+                context["wallet"] = Wallet.objects.get(user=self.request.user)
+            except Wallet.DoesNotExist:
+                pass
+        
+        return context
+
+
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)

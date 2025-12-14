@@ -338,6 +338,7 @@ from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
     GlobalLeaderboardView,
+    MonthlyVisitorsLeaderboardView,
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
@@ -620,7 +621,8 @@ urlpatterns = [
     re_path(r"^follow/(?P<user>[^/]+)/", follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
-    re_path(r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
+    re_path(r"^leaderboard/$", MonthlyVisitorsLeaderboardView.as_view(), name="leaderboard"),
+    re_path(r"^leaderboard/global/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
     re_path(
         r"^leaderboard/monthly/$",
         SpecificMonthLeaderboardView.as_view(),
