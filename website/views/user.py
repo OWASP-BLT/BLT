@@ -1,10 +1,13 @@
+import hashlib
+import hmac
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
+from dateutil.parser import ParserError
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -30,7 +33,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
-from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -1199,16 +1201,93 @@ def badge_user_list(request, badge_id):
     )
 
 
+def validate_github_signature(payload_body: bytes, signature_header: str | None) -> bool:
+    """
+    Validate GitHub webhook signature using HMAC-SHA256.
+
+    - payload_body: raw request.body (bytes)
+    - signature_header: value of X-Hub-Signature-256 from GitHub
+      e.g. "sha256=abc123..."
+    """
+    if not signature_header:
+        logger.warning("Missing X-Hub-Signature-256 header")
+        return False
+
+    secret = settings.GITHUB_WEBHOOK_SECRET
+    if not secret:
+        logger.warning("GITHUB_WEBHOOK_SECRET is not set")
+        return False
+
+    expected = (
+        "sha256="
+        + hmac.new(
+            secret.encode("utf-8"),
+            payload_body,
+            hashlib.sha256,
+        ).hexdigest()
+    )
+
+    return hmac.compare_digest(expected, signature_header)
+
+
+def safe_parse_github_datetime(value, *, default=None, field_name=""):
+    """
+    Safely parse a GitHub timestamp string into a datetime.
+
+    Returns `default` if the value is empty or malformed, and logs a warning
+    instead of letting ParserError crash the webhook handler.
+    """
+    if not value:
+        return default
+    try:
+        return dateutil_parser.parse(value)
+    except (ParserError, ValueError, TypeError, OverflowError) as exc:
+        logger.warning(
+            "Failed to parse GitHub datetime for %s: %r (%s)",
+            field_name,
+            value,
+            exc,
+        )
+        return default
+
+
 @csrf_exempt
 def github_webhook(request):
-    if request.method == "POST":
-        # Validate GitHub signature
-        # this doesn't seem to work?
-        # signature = request.headers.get("X-Hub-Signature-256")
-        # if not validate_signature(request.body, signature):
-        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+    """
+    Entry point for GitHub webhooks.
 
-        payload = json.loads(request.body)
+    Validates the HMAC signature (X-Hub-Signature-256), parses the JSON payload,
+    routes the event to the appropriate handler based on X-GitHub-Event,
+    and returns a JSON response indicating success or error.
+    """
+    if request.method == "POST":
+        # Fail closed if secret is not configured
+        if not getattr(settings, "GITHUB_WEBHOOK_SECRET", None):
+            logger.error("GITHUB_WEBHOOK_SECRET is not configured; refusing webhook request.")
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Webhook secret not configured",
+                },
+                status=503,
+            )
+
+        signature = request.headers.get("X-Hub-Signature-256")
+
+        if not validate_github_signature(request.body, signature):
+            return JsonResponse(
+                {"status": "error", "message": "Unauthorized request"},
+                status=403,
+            )
+
+        try:
+            payload = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"status": "error", "message": "Invalid JSON payload"},
+                status=400,
+            )
+
         event_type = request.headers.get("X-GitHub-Event", "")
 
         event_handlers = {
@@ -1225,17 +1304,156 @@ def github_webhook(request):
         if handler:
             return handler(payload)
         else:
-            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
+            return JsonResponse(
+                {"status": "error", "message": "Unhandled event type"},
+                status=400,
+            )
     else:
         return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
 
 
 def handle_pull_request_event(payload):
-    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
-        if pr_user_profile:
-            pr_user_instance = pr_user_profile.user
-            assign_github_badge(pr_user_instance, "First PR Merged")
+    """
+    Handle GitHub pull_request events.
+
+    Persists pull request lifecycle data into GitHubIssue for repositories
+    tracked in the BLT database. Supports key actions such as opened, closed,
+    reopened, edited, and synchronize, updating fields like state, merged flag,
+    merged_at/closed_at timestamps, linked repo, user_profile and contributor.
+    Also preserves existing badge assignment behaviour for merged PRs.
+    """
+    action = payload.get("action")
+    pr_data = payload.get("pull_request") or {}
+    repo_data = payload.get("repository") or {}
+
+    logger.debug(f"GitHub pull_request event: {action}")
+
+    # Only care about main lifecycle actions; ignore label/assigned/etc.
+    if action not in {"opened", "closed", "reopened", "edited", "synchronize"}:
+        return JsonResponse({"status": "ignored", "action": action}, status=200)
+
+    # --- PR basic fields ---
+    # Use GitHub's global PR ID for GitHubIssue.issue_id (avoids clash with issues)
+    pr_global_id = pr_data.get("id")  # big integer, globally unique per PR
+    pr_number = pr_data.get("number")  # visible PR number (#123)
+    pr_state = pr_data.get("state") or "open"  # "open" / "closed"
+    pr_html_url = pr_data.get("html_url") or ""
+    pr_title = pr_data.get("title") or ""
+    pr_body = pr_data.get("body") or ""
+    is_merged = bool(pr_data.get("merged", False))
+
+    # --- PR author / user mapping ---
+    pr_user = pr_data.get("user") or {}
+    pr_user_html_url = pr_user.get("html_url")
+    pr_user_profile = None
+    if pr_user_html_url:
+        # Same pattern as other handlers (push, review, status, etc.)
+        pr_user_profile = UserProfile.objects.filter(github_url=pr_user_html_url).first()
+
+    # contributor mapping for PR leaderboard
+    contributor = None
+    gh_login = pr_user.get("login")
+    gh_avatar = pr_user.get("avatar_url")
+    gh_github_url = pr_user_html_url
+    gh_id = pr_user.get("id")  # GitHub user ID (preferred unique key)
+
+    try:
+        if gh_id is not None:
+            # Primary: use github_id as the unique identifier
+            contributor, _ = Contributor.objects.get_or_create(
+                github_id=gh_id,
+                defaults={
+                    "github_url": gh_github_url or "",
+                    "name": gh_login or extract_github_username(gh_github_url) or "",
+                    "avatar_url": gh_avatar or "",
+                    "contributor_type": "User",
+                    "contributions": 0,
+                },
+            )
+        elif gh_github_url:
+            # Fallback: try to find existing contributor by URL, but don't create
+            # without github_id, since it's a required unique field
+            contributor = Contributor.objects.filter(github_url=gh_github_url).first()
+
+    except Exception as e:
+        logger.error(f"Error getting/creating Contributor for PR: {e}")
+        contributor = None
+
+    # --- Timestamps (using same style as handle_issue_event) ---
+    created_at = safe_parse_github_datetime(
+        pr_data.get("created_at"),
+        default=timezone.now(),
+        field_name="pull_request.created_at",
+    )
+    updated_at = safe_parse_github_datetime(
+        pr_data.get("updated_at"),
+        default=timezone.now(),
+        field_name="pull_request.updated_at",
+    )
+    closed_at = safe_parse_github_datetime(
+        pr_data.get("closed_at"),
+        default=None,
+        field_name="pull_request.closed_at",
+    )
+    merged_at = safe_parse_github_datetime(
+        pr_data.get("merged_at"),
+        default=None,
+        field_name="pull_request.merged_at",
+    )
+
+    # --- Repo mapping (same style as handle_issue_event) ---
+    repo_html_url = repo_data.get("html_url")
+    repo_full_name = repo_data.get("full_name")  # "owner/repo" (for logging only)
+
+    if not pr_global_id or not repo_html_url:
+        logger.warning("Pull request event missing required data (id or repo_html_url)")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    repo = None
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT for PR: {repo_html_url}")
+        # Not an error: we only track PRs for repos that exist in our DB
+    except Exception as e:
+        logger.error(f"Error finding repository for PR: {e}")
+
+    if repo:
+        # --- Upsert GitHubIssue row for this PR ---
+        try:
+            github_issue, created = GitHubIssue.objects.update_or_create(
+                issue_id=pr_global_id,  # unique per PR (avoids clash with issues)
+                repo=repo,
+                defaults={
+                    "type": "pull_request",
+                    "title": pr_title,
+                    "body": pr_body,
+                    "state": pr_state,
+                    "url": pr_html_url,
+                    "is_merged": is_merged,
+                    "created_at": created_at,
+                    "updated_at": updated_at,
+                    "closed_at": closed_at,
+                    "merged_at": merged_at if is_merged else None,
+                    "user_profile": pr_user_profile,
+                    "contributor": contributor,
+                    # has_dollar_tag, sponsors_tx_id, p2p_* left untouched
+                },
+            )
+
+            logger.info(
+                f"{'Created' if created else 'Updated'} GitHubIssue PR #{pr_number} "
+                f"(id={pr_global_id}) in repo {repo_full_name} | "
+                f"state={pr_state} merged={is_merged}"
+            )
+        except Exception as e:
+            logger.error(f"Error creating/updating GitHubIssue for PR #{pr_number}: {e}")
+
+    # --- Badge logic (preserve existing behaviour) ---
+    if action == "closed" and is_merged and pr_user_profile:
+        pr_user_instance = pr_user_profile.user
+        assign_github_badge(pr_user_instance, "First PR Merged")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
