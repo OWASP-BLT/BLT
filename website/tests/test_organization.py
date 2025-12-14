@@ -203,8 +203,9 @@ class OrganizationSwitchingTests(TestCase):
         self.org2 = Organization.objects.create(
             name="Organization 2", description="Second org", slug="org-2", url="https://org2.com", admin=self.admin_user
         )
+        # org3 has no admin initially - it's only managed by manager_user
         self.org3 = Organization.objects.create(
-            name="Organization 3", description="Third org", slug="org-3", url="https://org3.com", admin=self.regular_user
+            name="Organization 3", description="Third org", slug="org-3", url="https://org3.com"
         )
 
         # Add manager relationship (manager_user manages org3)
