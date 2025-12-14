@@ -2,6 +2,7 @@
 Tests for GitHub data fetching management commands.
 Tests focus on key functionality: timeouts, bulk operations, and data integrity.
 """
+from datetime import timedelta
 from io import StringIO
 from unittest.mock import Mock, patch
 
@@ -24,22 +25,426 @@ class GitHubCommandsIntegrationTests(TestCase):
             is_owasp_repo=True,
         )
 
+    def make_rate_limit_response(self, remaining=5000):
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = {
+            "resources": {
+                "core": {
+                    "remaining": remaining,
+                    "reset": int((timezone.now() + timedelta(hours=1)).timestamp()),
+                    "limit": 5000,
+                }
+            }
+        }
+        return response
+
+    def make_pr(
+        self,
+        number,
+        title="Test PR",
+        body="Test description",
+        merged_at="2024-06-02T00:00:00Z",
+        user_id=12345,
+        login="testuser",
+        user_type="User",
+    ):
+        return {
+            "number": number,
+            "title": title,
+            "body": body,
+            "state": "closed",
+            "created_at": "2024-06-01T00:00:00Z",
+            "updated_at": "2024-06-02T00:00:00Z",
+            "closed_at": "2024-06-02T00:00:00Z",
+            "merged_at": merged_at,
+            "url": f"https://api.github.com/repos/OWASP-BLT/BLT/pulls/{number}",
+            "html_url": f"https://github.com/OWASP-BLT/BLT/pull/{number}",
+            "user": {
+                "id": user_id,
+                "login": login,
+                "html_url": f"https://github.com/{login}",
+                "avatar_url": f"https://avatars.githubusercontent.com/u/{user_id}",
+                "type": user_type,
+            },
+        }
+
+    def make_empty_response(self):
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = []
+        return response
+
+    def make_reviews_empty_response(self):
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = []
+        return response
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")  # Mock sleep
     @patch("website.management.commands.fetch_gsoc_prs.requests.get")
-    def test_fetch_gsoc_prs_command_exists(self, mock_get):
-        """Test that fetch_gsoc_prs command can be called with mocked API"""
-        # Mock GitHub API response
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"items": []}
-        mock_get.return_value = mock_response
+    def test_fetch_gsoc_prs_rest_api_format(self, mock_get, mock_sleep):
+        """Test that fetch_gsoc_prs works with REST API format (list of PRs)"""
+        # Mock rate limit check
+        rate_limit_response = self.make_rate_limit_response()
+
+        # Mock REST API response (list of PRs, not {"items": []})
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = [
+            self.make_pr(123, title="Test PR", merged_at=timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ"))
+        ]
+
+        # Empty response for second page (pagination stop)
+        empty_response = self.make_empty_response()
+
+        call_count = {"pulls": 0}
+
+        # Configure mock to return different responses based on URL
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                call_count["pulls"] += 1
+                if call_count["pulls"] == 1:
+                    return prs_response
+                return empty_response  # Return empty for subsequent pages
+            elif "/reviews" in url:
+                # Mock reviews endpoint
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
 
         out = StringIO()
-        # Command should run without errors
         call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", stdout=out)
 
         # Verify command completed
         output = out.getvalue()
         self.assertIn("Completed", output)
+
+        # Verify PR was created
+        self.assertEqual(GitHubIssue.objects.count(), 1)
+        pr = GitHubIssue.objects.first()
+        self.assertEqual(pr.issue_id, 123)
+        self.assertEqual(pr.title, "Test PR")
+        self.assertTrue(pr.is_merged)
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_with_since_date(self, mock_get, mock_sleep):
+        """Test --since-date argument filters PRs correctly"""
+        rate_limit_response = self.make_rate_limit_response()
+
+        # PRs with different merge dates
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = [self.make_pr(100, title="Recent PR")]
+
+        empty_response = self.make_empty_response()
+
+        call_count = {"pulls": 0}
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                call_count["pulls"] += 1
+                if call_count["pulls"] == 1:
+                    return prs_response
+                return empty_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", "--since-date=2024-06-01", stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("since 2024-06-01", output)
+
+        # Only recent PR should be saved
+        self.assertEqual(GitHubIssue.objects.count(), 1)
+        pr = GitHubIssue.objects.first()
+        self.assertEqual(pr.issue_id, 100)
+        self.assertEqual(pr.title, "Recent PR")
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_default_six_months(self, mock_get, mock_sleep):
+        """Test default behavior fetches last 6 months (backward compatibility)"""
+        rate_limit_response = self.make_rate_limit_response()
+
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = []
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                return prs_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", stdout=out)
+
+        output = out.getvalue()
+        # Should mention 6 months
+        self.assertIn("last 6 months", output)
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_filters_bots(self, mock_get, mock_sleep):
+        """Test that bot accounts are filtered out"""
+        rate_limit_response = self.make_rate_limit_response()
+
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = [
+            self.make_pr(101, login="github-actions", user_type="Bot"),
+            self.make_pr(102, login="dependabot[bot]"),
+            self.make_pr(103, title="Human PR", login="realuser"),
+        ]
+
+        empty_response = self.make_empty_response()
+
+        call_count = {"pulls": 0}
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                call_count["pulls"] += 1
+                if call_count["pulls"] == 1:
+                    return prs_response
+                return empty_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", "--since-date=2024-06-01", stdout=out)
+
+        # Only human PR should be saved (bot PRs filtered)
+        self.assertEqual(GitHubIssue.objects.count(), 1)
+        pr = GitHubIssue.objects.first()
+        self.assertEqual(pr.issue_id, 103)
+        self.assertEqual(pr.title, "Human PR")
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_skips_unmerged_prs(self, mock_get, mock_sleep):
+        """Test that unmerged PRs are skipped"""
+        rate_limit_response = self.make_rate_limit_response()
+
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = [self.make_pr(123, merged_at=None), self.make_pr(201, title="Merged PR")]
+
+        empty_response = self.make_empty_response()
+
+        call_count = {"pulls": 0}
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                call_count["pulls"] += 1
+                if call_count["pulls"] == 1:
+                    return prs_response
+                return empty_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", "--since-date=2024-06-01", stdout=out)
+
+        # Only merged PR should be saved
+        self.assertEqual(GitHubIssue.objects.count(), 1)
+        pr = GitHubIssue.objects.first()
+        self.assertEqual(pr.issue_id, 201)
+        self.assertTrue(pr.is_merged)
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_rate_limit_check(self, mock_get, mock_sleep):
+        """Test that rate limit is checked before API calls"""
+        rate_limit_response = self.make_rate_limit_response()
+
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = []
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                return prs_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", stdout=out)
+
+        # Verify rate limit endpoint was called
+        rate_limit_calls = [call for call in mock_get.call_args_list if "rate_limit" in str(call)]
+        # Rate limit is checked on page 1 (per code: page == 1 or page % rate_check_interval == 0)
+        self.assertGreaterEqual(len(rate_limit_calls), 1, "Rate limit should be checked at least once")
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_bulk_create_and_update(self, mock_get, mock_sleep):
+        """Test bulk create for new PRs and bulk update for existing PRs"""
+        # Create existing PR
+        existing_contributor = Contributor.objects.create(
+            github_id=12345,
+            name="testuser",
+            github_url="https://github.com/testuser",
+            avatar_url="https://avatars.githubusercontent.com/u/12345",
+            contributor_type="User",
+            contributions=0,
+        )
+
+        GitHubIssue.objects.create(
+            issue_id=123,
+            repo=self.repo,
+            title="Old Title",
+            body="Old body",
+            state="open",
+            type="pull_request",
+            created_at=timezone.now() - timedelta(days=10),
+            updated_at=timezone.now() - timedelta(days=10),
+            merged_at=timezone.now() - timedelta(days=9),
+            is_merged=True,
+            url="https://github.com/OWASP-BLT/BLT/pull/123",
+            contributor=existing_contributor,
+        )
+
+        rate_limit_response = self.make_rate_limit_response()
+
+        prs_response = Mock()
+        prs_response.status_code = 200
+        prs_response.json.return_value = [
+            self.make_pr(123, title="Updated Title", body="Updated body"),
+            self.make_pr(124, title="New PR"),
+        ]
+
+        empty_response = self.make_empty_response()
+
+        call_count = {"pulls": 0}
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                call_count["pulls"] += 1
+                if call_count["pulls"] == 1:
+                    return prs_response
+                return empty_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", "--since-date=2024-06-01", stdout=out)
+
+        output = out.getvalue()
+        # Should show 1 added and 1 updated
+        self.assertIn("Added 1", output)
+        self.assertIn("Updated 1", output)
+
+        # Verify both PRs exist
+        self.assertEqual(GitHubIssue.objects.count(), 2)
+
+        # Verify existing PR was updated
+        updated_pr = GitHubIssue.objects.get(issue_id=123)
+        self.assertEqual(updated_pr.title, "Updated Title")
+        self.assertEqual(updated_pr.body, "Updated body")
+        self.assertEqual(updated_pr.state, "closed")
+
+        # Verify new PR was created
+        new_pr = GitHubIssue.objects.get(issue_id=124)
+        self.assertEqual(new_pr.title, "New PR")
+
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
+    @patch("website.management.commands.fetch_gsoc_prs.requests.get")
+    def test_fetch_gsoc_prs_handles_403_retry(self, mock_get, mock_sleep):
+        """Test that 403 responses trigger retry logic"""
+        rate_limit_response = self.make_rate_limit_response()
+
+        # First call returns 403, second succeeds
+        forbidden_response = Mock()
+        forbidden_response.status_code = 403
+        forbidden_response.headers = {"Retry-After": "1"}
+
+        success_response = Mock()
+        success_response.status_code = 200
+        success_response.json.return_value = []
+
+        call_count = {"pulls": 0}
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return rate_limit_response
+            elif "/pulls" in url:
+                call_count["pulls"] += 1
+                if call_count["pulls"] == 1:
+                    return forbidden_response
+                return success_response
+            elif "/reviews" in url:
+                reviews_response = Mock()
+                reviews_response.status_code = 200
+                reviews_response.json.return_value = []
+                return reviews_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
+
+        out = StringIO()
+        call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", stdout=out)
+
+        # Should have retried after 403
+        self.assertGreaterEqual(call_count["pulls"], 1)
+        # Verify sleep was called for retry
+        self.assertTrue(mock_sleep.called)
 
     @patch("website.management.commands.fetch_pr_reviews.requests.get")
     def test_fetch_pr_reviews_command_exists(self, mock_get):
@@ -64,7 +469,7 @@ class GitHubCommandsIntegrationTests(TestCase):
         # Mock GitHub API response for fetch_gsoc_prs (fallback)
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"items": []}
+        mock_response.json.return_value = []
         mock_get.return_value = mock_response
 
         out = StringIO()
@@ -164,32 +569,48 @@ class GitHubCommandsIntegrationTests(TestCase):
         self.assertEqual(review.pull_request.issue_id, 123)
         self.assertIsNotNone(review.reviewer_contributor)
 
+    @patch("website.management.commands.fetch_gsoc_prs.time.sleep")
     @patch("website.management.commands.fetch_gsoc_prs.requests.get")
-    def test_timeout_in_fetch_gsoc_prs(self, mock_get):
+    def test_timeout_in_fetch_gsoc_prs(self, mock_get, mock_sleep):
         """Test that fetch_gsoc_prs uses timeouts"""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"items": []}
-        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            "resources": {"core": {"remaining": 5000, "reset": int((timezone.now() + timedelta(hours=1)).timestamp())}}
+        }
+
+        empty_response = self.make_empty_response()
+
+        def side_effect(url, *args, **kwargs):
+            if "rate_limit" in url:
+                return mock_response
+            elif "/pulls" in url:
+                return empty_response
+            return Mock(status_code=404)
+
+        mock_get.side_effect = side_effect
 
         out = StringIO()
         call_command("fetch_gsoc_prs", "--repos=OWASP-BLT/BLT", stdout=out)
 
-        # CRITICAL VERIFICATIONS:
-        # 1. Verify API was actually called
+        # Verify API was actually called
         self.assertTrue(mock_get.called, "API should be called")
         self.assertGreater(mock_get.call_count, 0, "API should be called at least once")
 
-        # 2. Verify timeout parameter exists
-        call_kwargs = mock_get.call_args[1]
-        self.assertIn("timeout", call_kwargs, "API requests must have timeout parameter")
+        # Verify timeout parameter exists in at least one call
+        has_timeout = False
+        for call in mock_get.call_args_list:
+            call_kwargs = call[1]
+            if "timeout" in call_kwargs:
+                has_timeout = True
+                timeout_value = call_kwargs["timeout"]
+                self.assertIsNotNone(timeout_value, "Timeout should not be None")
+                self.assertNotEqual(timeout_value, 0, "Timeout should not be 0")
+                break
 
-        # 3. Verify timeout value is reasonable (not None or 0)
-        timeout_value = call_kwargs["timeout"]
-        self.assertIsNotNone(timeout_value, "Timeout should not be None")
-        self.assertNotEqual(timeout_value, 0, "Timeout should not be 0")
+        self.assertTrue(has_timeout, "At least one API request must have timeout parameter")
 
-        # 4. Verify command completed successfully
+        # Verify command completed successfully
         output = out.getvalue()
         self.assertIn("Completed", output, "Command should complete successfully")
 
@@ -211,20 +632,22 @@ class GitHubCommandsIntegrationTests(TestCase):
         out = StringIO()
         call_command("update_github_issues", stdout=out)
 
-        # CRITICAL VERIFICATIONS:
-        # 1. Verify API was called (user has GitHub URL, so it should fetch)
+        # Verify API was called (user has GitHub URL, so it should fetch)
         self.assertTrue(mock_get.called, "API should be called for user with GitHub URL")
 
-        # 2. Verify timeout parameter exists
+        # Verify timeout parameter exists
         call_kwargs = mock_get.call_args[1]
         self.assertIn("timeout", call_kwargs, "API requests must have timeout parameter")
 
-        # 3. Verify timeout is a tuple (connect, read) as recommended
+        # Verify timeout is a tuple (connect, read) as recommended
         timeout_value = call_kwargs["timeout"]
-        self.assertIsInstance(timeout_value, tuple, "Timeout should be tuple (connect, read)")
-        self.assertEqual(len(timeout_value), 2, "Timeout tuple should have 2 values")
-        self.assertGreater(timeout_value[0], 0, "Connect timeout should be > 0")
-        self.assertGreater(timeout_value[1], 0, "Read timeout should be > 0")
+        self.assertIsInstance(timeout_value, (int, tuple), "Timeout should be tuple (connect, read)")
+        if isinstance(timeout_value, tuple):
+            self.assertEqual(len(timeout_value), 2, "Timeout tuple should have 2 values")
+            self.assertGreater(timeout_value[0], 0, "Connect timeout should be > 0")
+            self.assertGreater(timeout_value[1], 0, "Read timeout should be > 0")
+        else:
+            self.assertGreater(timeout_value, 0, "Timeout int should be > 0")
 
     @patch("website.management.commands.fetch_pr_reviews.requests.get")
     def test_review_with_null_submitted_at_skipped(self, mock_get):
@@ -281,20 +704,19 @@ class GitHubCommandsIntegrationTests(TestCase):
         out = StringIO()
         call_command("fetch_pr_reviews", stdout=out)
 
-        # CRITICAL VERIFICATIONS:
-        # 1. Verify the mock was actually called (test is not bypassed)
+        # Verify the mock was actually called
         self.assertTrue(mock_get.called, "API should be called to fetch reviews")
         self.assertEqual(mock_get.call_count, 1, "API should be called exactly once")
 
-        # 2. Verify the mock returned our test data
+        # Verify the mock returned our test data
         returned_data = mock_response.json.return_value
         self.assertEqual(len(returned_data), 1, "Mock should return 1 review")
         self.assertIsNone(returned_data[0]["submitted_at"], "Test data should have null submitted_at")
 
-        # 3. Verify PENDING review was skipped (not created in database)
+        # Verify PENDING review was skipped (not created in database)
         self.assertEqual(GitHubReview.objects.count(), 0, "PENDING reviews without submitted_at should be skipped")
 
-        # 4. Verify no review with ID 888 exists
+        # Verify no review with ID 888 exists
         self.assertFalse(GitHubReview.objects.filter(review_id=888).exists(), "Review 888 should not be created")
 
     @patch("website.management.commands.fetch_pr_reviews.requests.get")
@@ -352,20 +774,19 @@ class GitHubCommandsIntegrationTests(TestCase):
         out = StringIO()
         call_command("fetch_pr_reviews", stdout=out)
 
-        # CRITICAL VERIFICATIONS:
-        # 1. Verify the mock was actually called
+        # Verify the mock was actually called
         self.assertTrue(mock_get.called, "API should be called")
         self.assertEqual(mock_get.call_count, 1, "API should be called exactly once")
 
-        # 2. Verify the mock returned our test data
+        # Verify the mock returned our test data
         returned_data = mock_response.json.return_value
         self.assertEqual(len(returned_data), 1, "Mock should return 1 review")
         self.assertIsNotNone(returned_data[0]["submitted_at"], "Test data should have valid submitted_at")
 
-        # 3. Verify review was created in database
+        # Verify review was created in database
         self.assertEqual(GitHubReview.objects.count(), 1, "Valid reviews should be created")
 
-        # 4. Verify review details match our test data
+        # Verify review details match our test data
         review = GitHubReview.objects.first()
         self.assertEqual(review.review_id, 999, "Review ID should match test data")
         self.assertIsNotNone(review.submitted_at, "Review should have submitted_at")

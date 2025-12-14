@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import logging
+import os
 import re
 import time
 from collections import defaultdict
@@ -54,8 +55,10 @@ from website.models import (
     Message,
     Organization,
     OrganizationAdmin,
+    Project,
     Repo,
     Room,
+    SlackChannel,
     Subscription,
     Tag,
     TimeLog,
@@ -172,6 +175,63 @@ def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_o
         return render(request, template, {"organization": organization})
     else:
         return redirect("/")
+
+
+@login_required(login_url="/accounts/login")
+def slack_channels_list(request, template="slack_channels.html"):
+    """View to display all Slack channels with ability to link them to projects."""
+    user = request.user
+
+    # Get all slack channels ordered by member count
+    channels = SlackChannel.objects.all().order_by("-num_members")
+
+    # Get unlinked projects for the autocomplete dropdown (superusers only)
+    unlinked_projects = []
+    if user.is_superuser:
+        # Get projects that don't have any slack channel linked to them
+        linked_project_ids = SlackChannel.objects.filter(project__isnull=False).values_list("project_id", flat=True)
+        unlinked_projects = Project.objects.exclude(id__in=linked_project_ids).order_by("name")
+
+    context = {
+        "channels": channels,
+        "unlinked_projects": unlinked_projects,
+        "is_superuser": user.is_superuser,
+    }
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def link_slack_channel_to_project(request):
+    """API endpoint to link a Slack channel to a project (superusers only)."""
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    channel_id = request.POST.get("channel_id")
+    project_id = request.POST.get("project_id")
+
+    if not channel_id or not project_id:
+        return JsonResponse({"error": "Missing channel_id or project_id"}, status=400)
+
+    try:
+        channel = SlackChannel.objects.get(channel_id=channel_id)
+        project = Project.objects.get(id=project_id)
+
+        # Link the channel to the project
+        channel.project = project
+        channel.save(update_fields=["project"])
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Channel #{channel.name} linked to {project.name}",
+                "project_name": project.name,
+            }
+        )
+    except SlackChannel.DoesNotExist:
+        return JsonResponse({"error": "Channel not found"}, status=404)
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found"}, status=404)
 
 
 def weekly_report(request):
@@ -1053,7 +1113,7 @@ class DomainDetailView(ListView):
             }
 
             # Add Twitter URL
-            context["twitter_url"] = f"https://twitter.com/{domain.get_or_set_x_url(domain.get_name)}"
+            context["twitter_url"] = f"https://x.com/{domain.get_or_set_x_url(domain.get_name)}"
 
             return context
         except Http404:
@@ -1125,7 +1185,9 @@ class HuntCreate(CreateView):
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
         data = request.body
-        for event in json.loads(data):
+        events = json.loads(data)
+
+        for event in events:
             try:
                 # Try to find a matching domain first
                 domain = Domain.objects.filter(email__iexact=event.get("email")).first()
@@ -1163,7 +1225,61 @@ class InboundParseWebhookView(View):
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
                 logger.error(f"Error processing SendGrid webhook event: {str(e)}")
 
+        # Send events to Slack webhook
+        self._send_to_slack(events)
+
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
+
+    def _send_to_slack(self, events):
+        """
+        Send SendGrid webhook events to Slack webhook.
+
+        Args:
+            events: List of SendGrid webhook event dictionaries
+        """
+        try:
+            slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+
+            if not slack_webhook_url:
+                logger.debug("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
+                return
+
+            # Format events for Slack
+            for event in events:
+                event_type = event.get("event", "unknown")
+                email = event.get("email", "unknown")
+                timestamp = event.get("timestamp", "")
+
+                # Create a formatted message for this event
+                event_text = f"*📧 SendGrid Event: {event_type.upper()}*\n"
+                event_text += f"*Email:* {email}\n"
+                event_text += f"*Timestamp:* {timestamp}\n"
+
+                # Add additional details based on event type
+                if event_type == "bounce":
+                    reason = event.get("reason", "Unknown")
+                    event_text += f"*Reason:* {reason}\n"
+                elif event_type == "click":
+                    url = event.get("url", "N/A")
+                    event_text += f"*URL:* {url}\n"
+
+                # Add any other relevant fields
+                if "sg_message_id" in event:
+                    event_text += f"*Message ID:* {event.get('sg_message_id')}\n"
+
+                # Prepare Slack payload
+                payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": event_text}}]}
+
+                # Send to Slack
+                response = requests.post(slack_webhook_url, json=payload, timeout=5)
+                response.raise_for_status()
+
+            logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error sending to Slack: {str(e)}")
 
 
 class CreateHunt(TemplateView):

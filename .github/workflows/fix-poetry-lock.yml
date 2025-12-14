@@ -1,0 +1,184 @@
+name: Fix Poetry Lock
+
+# SECURITY NOTE:
+# This workflow uses pull_request_target to allow writing back to forked PRs.
+# It only runs when explicitly triggered via the 'fix-poetry-lock' label
+# or manual workflow dispatch. The label can only be added by repository
+# collaborators with write access, providing an approval gate.
+#
+# IMPORTANT: This workflow checks out the PR branch and runs poetry lock
+# to resolve conflicts in poetry.lock file.
+#
+# SECURITY CONSIDERATION (CodeQL Alert):
+# This workflow runs 'poetry lock --no-update' on code from the PR.
+# While this does read pyproject.toml from the PR branch, it is considered
+# safe because:
+# 1. Poetry lock only generates a lock file and doesn't execute code
+# 2. It doesn't install dependencies (unlike 'poetry install')
+# 3. The workflow is protected by the label approval gate
+# 4. This is necessary to fix poetry.lock conflicts in forked PRs
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - labeled
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+jobs:
+  fix-poetry-lock:
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request_target' &&
+       github.event.label.name == 'fix-poetry-lock')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.2'
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+
+      - name: Run poetry lock
+        id: poetry_lock
+        run: |
+          echo "Running poetry lock to fix conflicts..."
+          poetry lock --no-update
+          echo "Poetry lock completed successfully"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected after poetry lock."
+            echo "changes_detected=true" >> $GITHUB_ENV
+            git status
+          else
+            echo "No changes made after poetry lock."
+            echo "changes_detected=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push changes
+        if: env.changes_detected == 'true'
+        env:
+          TRIGGER_TYPE: >
+            ${{ github.event_name == 'pull_request_target' &&
+            'label' || 'manual dispatch' }}
+          PR_NUMBER: ${{ github.event.pull_request.number || 'N/A' }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add poetry.lock
+          git commit -m "🔒 Fix poetry.lock conflicts
+
+          Triggered by: $TRIGGER_TYPE
+          PR: #$PR_NUMBER
+
+          This commit runs 'poetry lock --no-update' to resolve
+          conflicts in the poetry.lock file without updating
+          dependencies to newer versions."
+
+          # Push to the PR's head branch
+          if [ -n "$PR_HEAD_REF" ]; then
+            BRANCH_NAME="$PR_HEAD_REF"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          
+          # For forked PRs, we need to push with authentication
+          if [ -n "$PR_HEAD_REPO" ]; then
+            TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            PUSH_URL="https://x-access-token:$TOKEN@github.com"
+            git push "$PUSH_URL/$PR_HEAD_REPO.git" HEAD:"$BRANCH_NAME"
+          else
+            git push origin HEAD:"$BRANCH_NAME"
+          fi
+
+      - name: Comment on PR (success with changes)
+        if: >
+          env.changes_detected == 'true' &&
+          github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = [
+              '## ✅ Poetry Lock Fixed',
+              '',
+              'The `poetry.lock` file has been successfully updated:',
+              '- Ran `poetry lock --no-update` to resolve conflicts',
+              '- Committed and pushed the updated lock file to this PR',
+              '',
+              'The lock file is now synchronized without updating',
+              'package versions. Please review the changes and ensure',
+              'everything works as expected.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Comment on PR (no changes)
+        if: >
+          env.changes_detected == 'false' &&
+          github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const message = [
+              '## ℹ️ No Poetry Lock Changes',
+              '',
+              'The poetry lock process completed successfully,',
+              'but no changes were detected.',
+              'This means the `poetry.lock` file is already',
+              'synchronized with `pyproject.toml`.'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: message
+            });
+
+      - name: Remove label
+        if: github.event_name == 'pull_request_target'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'fix-poetry-lock'
+              });
+              console.log('Successfully removed fix-poetry-lock label');
+            } catch (error) {
+              // Label might not exist or already removed
+              console.log('Could not remove label:', error.message);
+            }

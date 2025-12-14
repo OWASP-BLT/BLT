@@ -1,10 +1,15 @@
 import json
 import logging
+import os
 import smtplib
+import sys
 import uuid
 from datetime import datetime
+from functools import wraps
 from urllib.parse import urlparse
 
+import django
+import psutil
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
@@ -12,12 +17,15 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.core.management import call_command
+from django.db import connection
+from django.db.models import Count, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
@@ -25,6 +33,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
     Contributor,
@@ -39,6 +48,7 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SearchHistory,
     Tag,
     TimeLog,
     Token,
@@ -57,6 +67,7 @@ from website.serializers import (
     OrganizationSerializer,
     ProjectSerializer,
     RepoSerializer,
+    SearchHistorySerializer,
     TagSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
@@ -739,33 +750,73 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.prefetch_related("contributors").all()
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        )
+
+        stars = request.query_params.get("stars")
+        forks = request.query_params.get("forks")
+
+        if stars is not None:
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if forks is not None:
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         project_data = []
         for project in projects:
             contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
+            contributors_manager = getattr(project, "contributors", None)
+            if contributors_manager:
+                for contributor in contributors_manager.all():
+                    contributor_info = ContributorSerializer(contributor)
+                    contributors_data.append(contributor_info.data)
+
+            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
 
-        return Response(
-            {"count": len(project_data), "projects": project_data},
-            status=200,
-        )
+        return Response({"results": project_data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
-        projects = Project.objects.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+
+        projects_qs = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
+
+        projects = projects_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
         ).distinct()
 
         project_data = []
@@ -774,7 +825,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -791,14 +844,48 @@ class ProjectViewSet(viewsets.ModelViewSet):
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
-        projects = Project.objects.all()
+        # Annotate Project with aggregated stars and forks from related Repos
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
 
+        # Freshness is NOT a DB field (SerializerMethodField)
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            pass  # Safe no-op
+
+        # SAFE stars validation
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # SAFE forks validation
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -808,7 +895,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -918,6 +1007,46 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             )
 
 
+class SearchHistoryApiView(APIView):
+    """API view for retrieving and clearing user search history"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """Retrieve user's search history, limited to last 50 searches."""
+        search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:50]
+        serializer = SearchHistorySerializer(search_history, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        """Clear user's entire search history or a single item if id is provided."""
+        search_id = request.data.get("id") or request.query_params.get("id")
+        if search_id:
+            # Validate search_id is an integer
+            try:
+                search_id = int(search_id)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid search history item ID"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Delete single item - filter by user to prevent unauthorized access
+            search_item = SearchHistory.objects.filter(user=request.user, id=search_id).first()
+            if search_item:
+                search_item.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(
+                    {"error": "Search history item not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            # Delete all items
+            SearchHistory.objects.filter(user=request.user).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class ActivityLogViewSet(viewsets.ModelViewSet):
     queryset = ActivityLog.objects.all()
     serializer_class = ActivityLogSerializer
@@ -1012,7 +1141,7 @@ class OwaspComplianceChecker(APIView):
         if not url:
             return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Run all compliance checks
+        # Rerun all compliance checks
         github_check = self.check_github_compliance(url)
         website_check = self.check_website_compliance(url)
         vendor_check = self.check_vendor_neutrality(url)
@@ -1313,4 +1442,511 @@ def trademark_search_api(request):
         return Response(
             {"error": "Failed to fetch trademark data due to an external service error."},
             status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+
+class CheckDuplicateBugApiView(APIView):
+    """
+    API endpoint to check for duplicate bug reports before submission.
+    Helps users avoid submitting duplicate bugs by finding similar existing reports.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check for duplicate bugs based on URL and description.
+
+        Request body:
+        {
+            "url": "https://example.com/page",
+            "description": "Bug description text",
+            "domain_id": 123  # Optional
+        }
+
+        Response:
+        {
+            "is_duplicate": true/false,
+            "confidence": "high/medium/low/none",
+            "similar_bugs": [
+                {
+                    "id": 123,
+                    "url": "...",
+                    "description": "...",
+                    "similarity": 0.85,
+                    "status": "open",
+                    "created": "...",
+                    "user": "..."
+                }
+            ]
+        }
+        """
+        # Input validation and sanitization
+        url = request.data.get("url", "").strip()
+        description = request.data.get("description", "").strip()
+        domain_id = request.data.get("domain_id")
+
+        # Validate input
+        if not url:
+            return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not description:
+            return Response({"error": "Description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate URL length (prevent DoS)
+        if len(url) > 2048:
+            return Response({"error": "URL is too long (max 2048 characters)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate description length (prevent DoS)
+        if len(description) > 10000:
+            return Response(
+                {"error": "Description is too long (max 10000 characters)"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get domain if provided
+        domain = None
+        if domain_id:
+            try:
+                domain_id = int(domain_id)
+                domain = Domain.objects.get(id=domain_id)
+            except (ValueError, TypeError, Domain.DoesNotExist):
+                logger.warning("Invalid domain_id provided: %s", domain_id)
+                pass
+
+        # Check for duplicates
+        try:
+            result = check_for_duplicates(url, description, domain)
+
+            # Format the response using shared helper
+            similar_bugs_data = []
+            for bug_info in result["similar_bugs"]:
+                try:
+                    similar_bugs_data.append(format_similar_bug(bug_info, truncate_description=200))
+                except (KeyError, AttributeError, ValueError, TypeError) as e:
+                    logger.warning("Error formatting similar bug: %s", e)
+                    continue
+
+            response_data = {
+                "is_duplicate": result["is_duplicate"],
+                "confidence": result["confidence"],
+                "similar_bugs": similar_bugs_data,
+                "message": self._get_message(result),
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error("Error checking for duplicates: %s", e, exc_info=True)
+            return Response(
+                {"error": "An error occurred while checking for duplicates"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def _get_message(self, result):
+        """Generate a user-friendly message based on the duplicate check result."""
+        if not result["is_duplicate"]:
+            if result["similar_bugs"]:
+                return "No exact duplicates found, but there are some similar reports you might want to review."
+            return "No similar bugs found. This appears to be a new issue."
+
+        confidence = result["confidence"]
+        if confidence == "high":
+            return "This bug appears to be very similar to existing reports. Please review them before submitting."
+        elif confidence == "medium":
+            return "This bug might be similar to existing reports. Please check if your issue is already reported."
+        else:
+            return "There are some potentially related bugs. You may want to review them."
+
+
+class FindSimilarBugsApiView(APIView):
+    """
+    API endpoint to find similar bugs for a given domain.
+    Useful for browsing related issues.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Find similar bugs based on query parameters.
+
+        Query parameters:
+        - url: URL to search for
+        - description: Description text to match
+        - domain_id: Optional domain ID to narrow search
+        - threshold: Similarity threshold (0.0-1.0, default 0.5)
+        - limit: Maximum results to return (default 10)
+        """
+        url = request.query_params.get("url", "").strip()
+        description = request.query_params.get("description", "").strip()
+        domain_id = request.query_params.get("domain_id")
+
+        try:
+            threshold = float(request.query_params.get("threshold", 0.5))
+            threshold = max(0.0, min(1.0, threshold))  # Clamp between 0 and 1
+        except (ValueError, TypeError):
+            threshold = 0.5
+
+        try:
+            limit = int(request.query_params.get("limit", 10))
+            limit = max(1, min(50, limit))  # Clamp between 1 and 50
+        except (ValueError, TypeError):
+            limit = 10
+
+        # Validate input
+        if not url and not description:
+            return Response({"error": "Either URL or description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get domain if provided
+        domain = None
+        if domain_id:
+            try:
+                domain = Domain.objects.get(id=domain_id)
+            except Domain.DoesNotExist:
+                pass
+
+        # Find similar bugs
+        try:
+            # Determine search URL: use provided URL, or domain URL if available, or None for no domain filter
+            search_url = None
+            if url:
+                search_url = url
+            elif domain:
+                search_url = domain.url
+            # If neither URL nor domain, search_url stays None (no domain filtering)
+
+            search_description = description or "search query"
+
+            similar_bugs = find_similar_bugs(
+                search_url, search_description, domain, similarity_threshold=threshold, limit=limit
+            )
+
+            # Format response
+            results = []
+            for bug_info in similar_bugs:
+                issue = bug_info["issue"]
+                results.append(
+                    {
+                        "id": issue.id,
+                        "url": issue.url,
+                        "description": issue.description[:200],
+                        "similarity": bug_info["similarity"],
+                        "status": issue.status,
+                        "created": issue.created,
+                        "user": issue.user.username if issue.user else "Anonymous",
+                        "domain": issue.domain.name if issue.domain else None,
+                        "verified": issue.verified,
+                    }
+                )
+
+            return Response({"count": len(results), "results": results}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error("Error finding similar bugs: %s", e, exc_info=True)
+            return Response(
+                {"error": "An error occurred while searching for similar bugs"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+def _is_local_host(host: str, db_name: str | None = None) -> bool:
+    """
+    Determine if a request host represents a local environment.
+    Optionally treats SQLite in-memory DB as local for redaction logic.
+    """
+    host_lower = (host or "").lower()
+    host_without_port = host_lower.split(":")[0]
+    return (
+        "localhost" in host_lower
+        or host_without_port == "127.0.0.1"
+        or host_without_port.startswith("127.")
+        or host_lower == "testserver"
+        or (db_name == ":memory:" if db_name is not None else False)
+    )
+
+
+def debug_required(func):
+    """
+    Decorator to ensure endpoint only works in DEBUG mode and local environment.
+    Adds additional protection beyond just DEBUG flag.
+    """
+
+    @wraps(func)
+    def wrapper(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            return Response(
+                {"success": False, "error": "This endpoint is only available in DEBUG mode."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        host = request.get_host()
+        if not _is_local_host(host):
+            logger.warning("Debug endpoint accessed from non-local environment: %s", host)
+            return Response(
+                {"success": False, "error": "This endpoint is only available in local development."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return func(self, request, *args, **kwargs)
+
+    return wrapper
+
+
+class DebugSystemStatsApiView(APIView):
+    """Get current system statistics for debug panel"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get database name
+            db_name = settings.DATABASES["default"]["NAME"]
+
+            # Redact database name in non-local environments (defense-in-depth)
+            if not _is_local_host(request.get_host(), db_name=db_name):
+                db_name = "[REDACTED]"
+
+            # Get database version with error handling
+            db_version = "Unknown"
+            try:
+                with connection.cursor() as cursor:
+                    if connection.vendor == "postgresql":
+                        cursor.execute("SELECT version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "sqlite":
+                        cursor.execute("SELECT sqlite_version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "mysql":
+                        cursor.execute("SELECT VERSION();")
+                        db_version = cursor.fetchone()[0]
+            except Exception as e:
+                logger.error("Failed to get database version: %s", e, exc_info=True)
+
+            # Get system stats with error handling
+            memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+
+            try:
+                memory = psutil.virtual_memory()
+                memory_stats = {
+                    "total": f"{memory.total / (1024**3):.2f} GB",
+                    "used": f"{memory.used / (1024**3):.2f} GB",
+                    "percent": f"{memory.percent}%",
+                }
+            except Exception as mem_error:
+                logger.warning("Could not fetch memory stats: %s", mem_error)
+
+            try:
+                disk = psutil.disk_usage("/")
+                disk_stats = {
+                    "total": f"{disk.total / (1024**3):.2f} GB",
+                    "used": f"{disk.used / (1024**3):.2f} GB",
+                    "percent": f"{disk.percent}%",
+                }
+            except Exception as disk_error:
+                logger.warning("Could not fetch disk stats: %s", disk_error)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+                        "django_version": django.get_version(),
+                        "database": {
+                            "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
+                            "name": db_name,
+                            "version": db_version,
+                        },
+                        "memory": memory_stats,
+                        "disk": disk_stats,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error("Error fetching system stats: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch system statistics"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCacheInfoApiView(APIView):
+    """Get cache backend information and statistics"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache_backend = settings.CACHES["default"]["BACKEND"].split(".")[-1]
+
+            # Security: Don't expose actual cache keys as they may contain sensitive data
+            keys_count = 0
+
+            # Only attempt key listing for Redis backend; for other backends just log a note.
+            if "redis" in cache_backend.lower():
+                try:
+                    if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
+                        all_keys = list(cache._cache.keys("*"))
+                        keys_count = len(all_keys)
+                except Exception:
+                    logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
+            else:
+                logger.info("Cache key listing not supported for backend: %s", cache_backend)
+
+            hit_ratio = "N/A"
+            try:
+                if hasattr(cache, "get_stats"):
+                    stats = cache.get_stats()
+                    hits = stats.get("hits", 0)
+                    misses = stats.get("misses", 0)
+                    total = hits + misses
+                    if total > 0:
+                        hit_ratio = f"{(hits/total)*100:.2f}%"
+            except Exception:
+                logger.warning("Failed to retrieve cache hit ratio stats", exc_info=True)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "backend": cache_backend,
+                        "keys_count": keys_count,
+                        "hit_ratio": hit_ratio,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error("Error fetching cache info: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch cache information"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPopulateDataApiView(APIView):
+    """Populate database with test data"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            # Load initial data fixture from a resolved path and fail gracefully if missing
+            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
+            if not os.path.exists(fixture_path):
+                return Response(
+                    {"success": False, "error": "Fixture file not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            call_command("loaddata", fixture_path, verbosity=0)
+
+            return Response({"success": True, "message": "Test data populated successfully"})
+        except Exception as e:
+            logger.error("Error populating test data: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugClearCacheApiView(APIView):
+    """Clear all cache data"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache.clear()
+
+            return Response({"success": True, "message": "Cache cleared successfully"})
+        except Exception as e:
+            logger.error("Error clearing cache: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DebugRunMigrationsApiView(APIView):
+    """Run pending database migrations"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        # Extra safety: restrict to superusers and require an explicit confirmation flag
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only superusers can run migrations"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        confirm = request.data.get("confirm")
+        if confirm is not True:
+            return Response(
+                {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            call_command("migrate", interactive=False, verbosity=0)
+
+            return Response({"success": True, "message": "Migrations completed successfully"})
+        except Exception as e:
+            logger.error("Error running migrations: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to run migrations. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCollectStaticApiView(APIView):
+    """Collect static files"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        # Restrict collectstatic to superusers to avoid accidental abuse
+        if not request.user.is_superuser:
+            return Response(
+                {"success": False, "error": "Only superusers can collect static files"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            call_command("collectstatic", interactive=False, verbosity=0)
+
+            return Response({"success": True, "message": "Static files collected successfully"})
+        except Exception as e:
+            logger.error("Error collecting static files: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to collect static files. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPanelStatusApiView(APIView):
+    """Get overall debug panel status"""
+
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "debug_mode": settings.DEBUG,
+                    "testing_mode": getattr(settings, "TESTING", False),
+                    "environment": "local" if _is_local_host(request.get_host()) else "unknown",
+                },
+            }
         )

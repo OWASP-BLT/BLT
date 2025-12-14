@@ -14,6 +14,7 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SearchHistory,
     Tag,
     TimeLog,
     Trademark,
@@ -126,10 +127,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     freshness = serializers.SerializerMethodField()
-    stars = serializers.IntegerField()
-    forks = serializers.IntegerField()
-    external_links = serializers.JSONField()
-    project_visit_count = serializers.IntegerField()
+
+    total_stars = serializers.IntegerField(read_only=True)
+    total_forks = serializers.IntegerField(read_only=True)
+
+    external_links = serializers.JSONField(required=False)
+    project_visit_count = serializers.IntegerField(required=False)
 
     class Meta:
         model = Project
@@ -293,3 +296,12 @@ class TrademarkSerializer(serializers.ModelSerializer):
             "description",
             "owners",
         ]
+
+
+class SearchHistorySerializer(serializers.ModelSerializer):
+    """Serializer for SearchHistory model"""
+
+    class Meta:
+        model = SearchHistory
+        fields = ["id", "query", "search_type", "timestamp", "result_count"]
+        read_only_fields = ["id", "timestamp"]
