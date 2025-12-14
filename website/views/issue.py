@@ -2039,8 +2039,9 @@ def unsave_issue(request, issue_pk):
         userprof = UserProfile.objects.get(user=request.user)
         userprof.issue_saved.remove(issue)
         return HttpResponse("OK")
-    except Exception as e:
-        return HttpResponse("ERROR")
+    except (ValueError, Issue.DoesNotExist, UserProfile.DoesNotExist) as e:
+        logger.error(f"Error unsaving issue {issue_pk}: {str(e)}", exc_info=True)
+        return HttpResponse("ERROR", status=400)
 
 
 @require_POST
@@ -2060,8 +2061,9 @@ def save_issue(request, issue_pk):
         else:
             userprof.issue_saved.add(issue)
             return HttpResponse("OK")
-    except Exception as e:
-        return HttpResponse("ERROR")
+    except (ValueError, Issue.DoesNotExist, UserProfile.DoesNotExist) as e:
+        logger.error(f"Error saving issue {issue_pk}: {str(e)}", exc_info=True)
+        return HttpResponse("ERROR", status=400)
 
 
 @receiver(user_logged_in)
@@ -2132,7 +2134,8 @@ def flag_issue(request, issue_pk):
         context["object"] = issue
         context["flags"] = total_flag_votes
         return render(request, "includes/_flags.html", context)
-    except Exception as e:
+    except (ValueError, Issue.DoesNotExist, UserProfile.DoesNotExist) as e:
+        logger.error(f"Error flagging issue {issue_pk}: {str(e)}", exc_info=True)
         return HttpResponse("Error processing flag", status=400)
 
 
