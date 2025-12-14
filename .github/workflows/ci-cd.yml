@@ -93,11 +93,14 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11.2
 
+      - name: Sync project dependencies
+        run: uv sync
+
       - name: Run pre-commit
         id: pre-commit
         run: |
           set +e
-          uvx pre-commit run --all-files > pre-commit-output.txt 2>&1
+          uv run pre-commit run --all-files > pre-commit-output.txt 2>&1
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           set -e
         continue-on-error: true
@@ -122,13 +125,13 @@ jobs:
 
             \`\`\`bash
             # Install pre-commit if you haven't already
-            uvx pre-commit install
+            uv run pre-commit install
 
             # Run pre-commit on all files
-            uvx pre-commit run --all-files
+            uv run pre-commit run --all-files
 
             # Or run pre-commit on staged files only
-            uvx pre-commit run
+            uv run pre-commit run
             \`\`\`
 
             After running these commands, the pre-commit hooks will automatically fix most issues.

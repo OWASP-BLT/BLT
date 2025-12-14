@@ -27,7 +27,7 @@ COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies using UV
 # UV_LINK_MODE=copy prevents cross-filesystem hardlink warnings
-RUN UV_LINK_MODE=copy uv sync --frozen --no-install-project --no-group dev
+RUN UV_LINK_MODE=copy uv sync --locked --no-install-project --no-group dev
 
 # Runtime stage: Minimal production image
 FROM python:3.11.2-slim
@@ -37,7 +37,7 @@ WORKDIR /blt
 ENV PATH="/blt/.venv/bin:$PATH"
 
 # Copy UV and installed dependencies from builder
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.4.0 /uv /usr/local/bin/uv
 COPY --from=builder /blt/.venv /blt/.venv
 
 # Install runtime system dependencies only

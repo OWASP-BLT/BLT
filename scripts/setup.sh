@@ -87,7 +87,7 @@ main() {
 
     if check_uv; then
         read -p "Do you want to proceed with uv setup? (y/n): " choice
-        if [[ "$choice" == "y" ]]; then
+        if [[ "${choice,,}" == "y" ]]; then
             setup_uv
             exit 0
         fi
@@ -96,7 +96,7 @@ main() {
 
     if check_docker; then
         read -p "Do you want to proceed with Docker setup? (y/n): " choice
-        if [[ "$choice" == "y" ]]; then
+        if [[ "${choice,,}" == "y" ]]; then
             setup_docker
             exit 0
         fi

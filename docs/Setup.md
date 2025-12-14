@@ -385,7 +385,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Alternative: Install via pip (if you prefer)
 # pip install uv
 
-# Activate virtual environment
+# Create virtual environment and install dependencies
 uv sync
 
 # Activate the virtual environment (choose the command for your platform):

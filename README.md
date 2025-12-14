@@ -108,7 +108,14 @@ Access the application at **http://localhost:8000**
 # Install dependencies
 pip install uv
 uv sync
+
+# Activate the virtual environment
+# On Linux/macOS/Git Bash:
 source .venv/bin/activate
+# On Windows (Command Prompt):
+.venv\Scripts\activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
 
 # Set up database
 python manage.py migrate
