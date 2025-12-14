@@ -3022,6 +3022,7 @@ def handle_committee_pagination(action, body, client):
         logger.error(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
+
 BOUNTY_REGEX = re.compile(
     r"""
     ^\s*
@@ -3037,9 +3038,8 @@ BOUNTY_REGEX = re.compile(
 )
 
 
-GITHUB_ISSUE_URL_RE = re.compile(
-    r"^https://github\.com/[^/]+/[^/]+/issues/\d+$"
-)
+GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+$")
+
 
 @csrf_exempt
 def slack_bounty_command(request):
@@ -3078,7 +3078,7 @@ def slack_bounty_command(request):
     #      - Or just "10 https://... user" (what tests send)
     # ------------------------------------------------------------------
     if text.lower().startswith("/bounty "):
-        text = text[len("/bounty "):].strip()
+        text = text[len("/bounty ") :].strip()
 
     parts = text.split()
     if len(parts) != 3:
@@ -3157,19 +3157,12 @@ def slack_bounty_command(request):
     # ------------------------------------------------------------------
     # 4) Call BLT API to create bounty
     # ------------------------------------------------------------------
-    api_base = (
-        getattr(settings, "BLT_API_BASE_URL", None)
-        or os.environ.get("BLT_API_BASE_URL", "")
-    ).rstrip("/")
-    api_token = (
-        getattr(settings, "BLT_API_TOKEN", None)
-        or os.environ.get("BLT_API_TOKEN")
-    )
+    api_base = (getattr(settings, "BLT_API_BASE_URL", None) or os.environ.get("BLT_API_BASE_URL", "")).rstrip("/")
+    api_token = getattr(settings, "BLT_API_TOKEN", None) or os.environ.get("BLT_API_TOKEN")
 
     if not api_base or not api_token:
         logger.error(
-            "slack_bounty_command: BLT API is not configured "
-            "(BLT_API_BASE_URL=%r, BLT_API_TOKEN set=%s)",
+            "slack_bounty_command: BLT API is not configured " "(BLT_API_BASE_URL=%r, BLT_API_TOKEN set=%s)",
             api_base,
             bool(api_token),
         )
@@ -3193,8 +3186,7 @@ def slack_bounty_command(request):
 
     try:
         logger.info(
-            "slack_bounty_command: creating bounty via BLT API "
-            "amount=%s issue=%s sponsor=%s",
+            "slack_bounty_command: creating bounty via BLT API " "amount=%s issue=%s sponsor=%s",
             amount_str,
             issue_url,
             github_username,
@@ -3207,8 +3199,7 @@ def slack_bounty_command(request):
         )
         if r.status_code not in (200, 201):
             logger.error(
-                "slack_bounty_command: BLT API bounty create failed "
-                "status=%s body=%s",
+                "slack_bounty_command: BLT API bounty create failed " "status=%s body=%s",
                 r.status_code,
                 r.text[:500],
             )
@@ -3221,10 +3212,7 @@ def slack_bounty_command(request):
         try:
             r.json()  # ensure it’s valid JSON; we ignore contents for now
         except Exception:
-            logger.exception(
-                "slack_bounty_command: BLT API returned non-JSON response "
-                "while creating bounty"
-            )
+            logger.exception("slack_bounty_command: BLT API returned non-JSON response " "while creating bounty")
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
@@ -3279,8 +3267,7 @@ def slack_bounty_command(request):
     # 6) Public in-channel response
     # ------------------------------------------------------------------
     logger.info(
-        "slack_bounty_command: successfully created bounty via Slack "
-        "amount=%s issue=%s sponsor=%s total=%s",
+        "slack_bounty_command: successfully created bounty via Slack " "amount=%s issue=%s sponsor=%s total=%s",
         amount_str,
         issue_url,
         github_username,

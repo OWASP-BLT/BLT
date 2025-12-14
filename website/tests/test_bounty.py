@@ -4,12 +4,12 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase, RequestFactory
+from django.test import Client, RequestFactory, TestCase
 from django.test.utils import override_settings
 from rest_framework.authtoken.models import Token
-from website.views.slack_handlers import slack_bounty_command
 
 from website.models import Bounty, GitHubIssue, Organization, Repo
+from website.views.slack_handlers import slack_bounty_command
 
 
 class BountyPayoutTestCase(TestCase):
@@ -365,7 +365,6 @@ class BountyApiTestCase(TestCase):
         self.assertEqual(bounty.github_issue_url, self.github_issue.url)
         self.assertEqual(bounty.amount, Decimal("25.00"))
 
-
     @override_settings(BLT_API_TOKEN="test_token_12345")
     def test_issue_total_endpoint_sums_bounties(self):
         """
@@ -412,6 +411,7 @@ class BountyApiTestCase(TestCase):
         data = response.json()
         # 10.00 + 5.50 = 15.50
         self.assertEqual(Decimal(str(data["total"])), Decimal("15.50"))
+
 
 class SlackBountyCommandTestCase(TestCase):
     def setUp(self):
@@ -472,11 +472,7 @@ class SlackBountyCommandTestCase(TestCase):
 
         # Extract some text from either blocks or text key
         if "blocks" in payload:
-            text_block = (
-                payload["blocks"][0]
-                .get("text", {})
-                .get("text", "")
-            )
+            text_block = payload["blocks"][0].get("text", {}).get("text", "")
         else:
             text_block = payload.get("text", "")
 

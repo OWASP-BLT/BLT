@@ -3575,6 +3575,7 @@ class Bounty(models.Model):
       payout recipients are currently tracked via payout logic rather than a
       direct foreign key.
     """
+
     STATUS_PENDING = "pending"
     STATUS_PAID = "paid"
     STATUS_CANCELLED = "cancelled"
@@ -3624,21 +3625,15 @@ class Bounty(models.Model):
         """
         Sum of all *non-cancelled* bounties for this issue.
         """
-        return (
-            cls.objects.filter(issue=issue)
-            .exclude(status=cls.STATUS_CANCELLED)
-            .aggregate(total=models.Sum("amount"))["total"]
-            or Decimal("0.00")
-        )
+        return cls.objects.filter(issue=issue).exclude(status=cls.STATUS_CANCELLED).aggregate(
+            total=models.Sum("amount")
+        )["total"] or Decimal("0.00")
 
     @classmethod
     def total_for_issue_url(cls, github_issue_url: str):
-        return (
-            cls.objects.filter(github_issue_url=github_issue_url)
-            .exclude(status=cls.STATUS_CANCELLED)
-            .aggregate(total=models.Sum("amount"))["total"]
-            or Decimal("0.00")
-        )
+        return cls.objects.filter(github_issue_url=github_issue_url).exclude(status=cls.STATUS_CANCELLED).aggregate(
+            total=models.Sum("amount")
+        )["total"] or Decimal("0.00")
 
     @classmethod
     def unique_developers_sponsored_by_user(cls, sponsor):

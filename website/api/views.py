@@ -1,19 +1,19 @@
 import json
 import logging
 import os
+import re
 import smtplib
 import sys
 import uuid
 from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
-import re
+
 import django
 import psutil
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
@@ -1982,9 +1982,10 @@ class DebugPanelStatusApiView(APIView):
             }
         )
 
-GITHUB_ISSUE_URL_RE = re.compile(
-        r"^https://github\.com/[^/]+/[^/]+/issues/\d+/?$"
-    )
+
+GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+/?$")
+
+
 class BountyViewSet(viewsets.ModelViewSet):
     """
     create: Create a new bounty.
@@ -1996,6 +1997,7 @@ class BountyViewSet(viewsets.ModelViewSet):
 
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         qs = super().get_queryset()
         issue_url = self.request.query_params.get("github_issue_url")
@@ -2025,7 +2027,6 @@ class BountyViewSet(viewsets.ModelViewSet):
 
         total = Bounty.total_for_issue_url(raw_url)
         return Response({"github_issue_url": raw_url, "total": total})
-
 
     @action(detail=False, methods=["get"], url_path="sponsor-stats")
     def sponsor_stats(self, request):
