@@ -365,11 +365,6 @@ class BountySerializer(serializers.ModelSerializer):
             "sponsor_id",
             "sponsor_username",
         ]
-        extra_kwargs = {
-            "status": {"read_only": True},
-            "created_at": {"read_only": True},
-            "updated_at": {"read_only": True},
-        }
 
     def validate_amount(self, value):
         """

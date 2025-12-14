@@ -3057,7 +3057,6 @@ def slack_bounty_command(request):
         "Received /bounty command from Slack user %s: %r",
         user_id,
         text,
-        response_url,
     )
 
     # ------------------------------------------------------------------
@@ -3152,6 +3151,18 @@ def slack_bounty_command(request):
             {
                 "response_type": "ephemeral",
                 "text": "Bounty amount must be positive.",
+            }
+        )
+    if amount_val > 100000:
+        logger.warning(
+            "slack_bounty_command: excessive amount %r from Slack user %s",
+            amount_str,
+            user_id,
+        )
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "Bounty amount must not exceed 100,000.",
             }
         )
 

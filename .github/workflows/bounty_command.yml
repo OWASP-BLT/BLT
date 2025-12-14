@@ -34,7 +34,7 @@ jobs:
               core.info("No /bounty command found.");
               core.setOutput("found", "false");
               return;
-             }
+            }
 
             const amount = m[1];
             const amountNum = Number(amount);
