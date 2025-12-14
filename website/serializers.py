@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from rest_framework import serializers
 
@@ -423,6 +424,13 @@ class BountySerializer(serializers.ModelSerializer):
             normalized_url = github_issue_url.rstrip("/")
             validated_data["github_issue_url"] = normalized_url
             github_issue_url = normalized_url
+            # Friendly pre-check (good error messages, fewer DB errors)
+            if Bounty.objects.filter(
+                sponsor=sponsor,
+                github_issue_url=normalized_url,
+                status=Bounty.STATUS_PENDING,
+            ).exists():
+                raise serializers.ValidationError("You already have a pending bounty for this issue.")
             issue_obj, _ = Issue.objects.get_or_create(
                 github_url=github_issue_url,
                 defaults={
@@ -433,7 +441,16 @@ class BountySerializer(serializers.ModelSerializer):
             )
             validated_data["issue"] = issue_obj
 
-        return super().create(validated_data)
+        # DB-enforced uniqueness to handle concurrent requests safely
+        try:
+            with transaction.atomic():
+                return super().create(validated_data)
+        except IntegrityError as exc:
+            # If another request slipped in and created the pending bounty first,
+            # the unique constraint will fire; convert that into a clean API error.
+            if "uniq_pending_bounty_per_sponsor_issue" in str(exc):
+                raise serializers.ValidationError("You already have a pending bounty for this issue.")
+            raise
 
 
 class SecurityIncidentSerializer(serializers.ModelSerializer):

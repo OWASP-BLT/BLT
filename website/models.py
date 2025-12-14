@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -3620,7 +3620,12 @@ class Bounty(models.Model):
             models.Index(fields=["github_issue_url"]),
         ]
         constraints = [
-            models.CheckConstraint(check=models.Q(amount__gt=0), name="bounty_amount_gt_zero"),
+            # Ensure at most one *pending* bounty per sponsor + issue URL
+            models.UniqueConstraint(
+                fields=["sponsor", "github_issue_url"],
+                condition=Q(status="pending"),
+                name="uniq_pending_bounty_per_sponsor_issue",
+            ),
         ]
 
     def __str__(self):

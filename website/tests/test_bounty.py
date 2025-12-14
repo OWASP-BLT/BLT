@@ -58,7 +58,8 @@ class BountyPayoutTestCase(TestCase):
         clear=False,
     )
     @patch("website.views.bounty.process_github_sponsors_payment")
-    def test_bounty_payout_success(self, mock_payment):
+    @patch("website.views.bounty.add_github_comment_and_labels", return_value=True)
+    def test_bounty_payout_success(self, mock_add_github, mock_payment):
         """
         Happy path: valid token, valid payload, Sponsors payment succeeds.
 
@@ -94,6 +95,7 @@ class BountyPayoutTestCase(TestCase):
         self.assertEqual(data["amount"], 5000)
         self.assertEqual(data["recipient"], "testuser")
         self.assertEqual(data["transaction_id"], "SPONSORSHIP_ID_12345")
+        self.assertTrue(data["github_updated"])
 
         # DB updated
         self.issue.refresh_from_db()
@@ -409,7 +411,8 @@ class BountyApiTestCase(TestCase):
         encoded_url = self.github_issue.url  # view handles quoting itself
 
         response = self.client.get(
-            f"/api/v1/bounties/issue-total/?github_issue_url={encoded_url}",
+            "/api/v1/bounties/issue-total/",
+            {"github_issue_url": encoded_url},
             **self._auth_headers(),
         )
 

@@ -87,6 +87,25 @@ def bounty_payout(request):
                 status=200,
             )
 
+        # Claim this issue to prevent concurrent double-payments
+        claim_id = f"processing:{secrets.token_hex(8)}"
+        claimed = GitHubIssue.objects.filter(
+            pk=github_issue.pk,
+            sponsors_tx_id__isnull=True,
+        ).update(sponsors_tx_id=claim_id)
+
+        # If we failed to claim, someone else already processed (or is processing) it
+        if not claimed:
+            github_issue.refresh_from_db(fields=["sponsors_tx_id"])
+            return JsonResponse(
+                {
+                    "status": "warning",
+                    "message": "Bounty payment already processed for this issue.",
+                    "transaction_id": github_issue.sponsors_tx_id,
+                },
+                status=200,
+            )
+
         # Process payment via GitHub Sponsors API
         transaction_id = process_github_sponsors_payment(
             username=contributor_username,
@@ -95,6 +114,10 @@ def bounty_payout(request):
         )
 
         if not transaction_id:
+            GitHubIssue.objects.filter(
+                pk=github_issue.pk,
+                sponsors_tx_id=claim_id,
+            ).update(sponsors_tx_id=None)
             logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
             return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
 
@@ -119,9 +142,11 @@ def bounty_payout(request):
         # If any of this fails, the whole block is rolled back.
         # ------------------------------------------------------------------
         with transaction.atomic():
-            # Save transaction ID to database
-            github_issue.sponsors_tx_id = transaction_id
-            github_issue.save()
+            # Save transaction ID to database, but only if we still own the claim
+            GitHubIssue.objects.filter(
+                pk=github_issue.pk,
+                sponsors_tx_id=claim_id,
+            ).update(sponsors_tx_id=transaction_id)
 
             # Mark all pending bounties for this issue as PAID
             pending_bounties = Bounty.objects.filter(
