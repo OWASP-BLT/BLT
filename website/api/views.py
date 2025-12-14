@@ -2026,6 +2026,7 @@ class BountyViewSet(viewsets.ModelViewSet):
                 {"detail": "Invalid github_issue_url format."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        raw_url = raw_url.rstrip("/")
 
         total = Bounty.objects.filter(github_issue_url=raw_url).aggregate(total=models.Sum("amount"))[
             "total"
@@ -2050,7 +2051,7 @@ class BountyViewSet(viewsets.ModelViewSet):
             )
 
         # All bounties placed by this GitHub sponsor (any status)
-        qs = Bounty.objects.filter(github_sponsor_username=sponsor_username)
+        qs = Bounty.objects.filter(github_sponsor_username__iexact=sponsor_username)
         total_placed = qs.aggregate(total=models.Sum("amount"))["total"] or Decimal("0.00")
 
         # TODO: once Bounty has a proper "recipient" or "paid_to" FK, compute

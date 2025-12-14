@@ -3054,7 +3054,7 @@ def slack_bounty_command(request):
     user_id = request.POST.get("user_id")
     response_url = request.POST.get("response_url")
     logger.info(
-        "Received /bounty command from Slack user %s: %r (response_url=%s)",
+        "Received /bounty command from Slack user %s: %r",
         user_id,
         text,
         response_url,
@@ -3091,6 +3091,9 @@ def slack_bounty_command(request):
     # Slack may format links as <url> or <url|label>
     if issue_url.startswith("<") and issue_url.endswith(">"):
         issue_url = issue_url[1:-1].split("|", 1)[0]
+
+    # Canonicalize to match how the API stores/looks up URLs
+    issue_url = issue_url.rstrip("/")
 
     # Normalize GitHub username (allow "@foo")
     github_username = github_username.lstrip("@")
