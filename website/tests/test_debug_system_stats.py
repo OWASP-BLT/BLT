@@ -57,7 +57,7 @@ class DebugPanelAPITest(TestCase):
             "api_debug_system_stats",
             "api_debug_cache_info",
             "api_debug_clear_cache",
-            "api_debug_populate_data"
+            "api_debug_populate_data",
         ]
 
         for endpoint in endpoints:
