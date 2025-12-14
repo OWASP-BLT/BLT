@@ -13,6 +13,31 @@ function safeLog(message, ...args) {
     }
 }
 
+function updateChartsForYearFilter() {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedYear = urlParams.get('year');
+    
+    if (selectedYear) {
+        // Update chart titles to show filtered year
+        const yearlyChartTitle = document.querySelector('#yearlyPrChart').closest('.bg-white').querySelector('h2');
+        if (yearlyChartTitle) {
+            yearlyChartTitle.textContent = `PR Contributions for GSOC ${selectedYear}`;
+        }
+        
+        const topReposTitle = document.querySelector('#topReposChart').closest('.bg-white').querySelector('h2');
+        if (topReposTitle) {
+            topReposTitle.textContent = `Top Repositories for GSOC ${selectedYear}`;
+        }
+        
+        // Update the "All GSOC Periods" text
+        const topReposSubtitle = document.querySelector('#topReposChart').closest('.bg-white').querySelector('.text-red-600');
+        if (topReposSubtitle) {
+            topReposSubtitle.textContent = `GSOC ${selectedYear}`;
+        }
+    }
+}
+
 // Function to extract chart data (callable from both chart rendering and PDF generation)
 function getChartData() {
     let yearlyCategories = [];
@@ -449,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<div class="text-center py-8 text-gray-500">No repository data available</div>';
         }
     }
+    updateChartsForYearFilter();
 });
 
 // Export Charts Data
