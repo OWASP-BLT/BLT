@@ -439,6 +439,8 @@ def search_issues(request, template="search.html"):
     elif len(query) >= 6 and query[:6] == "label:":
         stype = "label"
         query = query[6:].strip()
+    # Handle search by type - using elif chain to ensure only one search type executes
+    # Unprefixed searches (stype is None) default to issue search
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
@@ -503,6 +505,14 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": issues_qs,
+        }
+
+    # Fallback: if context is None (shouldn't happen with current logic, but defensive)
+    if context is None:
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.none(),
         }
 
     if request.user.is_authenticated:
