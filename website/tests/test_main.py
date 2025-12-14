@@ -274,11 +274,12 @@ class MySeleniumTests(LiveServerTestCase):
 class HideImage(TestCase):
     def setUp(self):
         test_issue = Issue.objects.create(description="test", url="test.com")
-        test_issue.screenshot = SimpleUploadedFile(
-            name="test_image.jpg",
-            content=open("website/static/images/dummy-user.webp", "rb").read(),
-            content_type="image/png",
-        )
+        with open("website/static/images/dummy-user.webp", "rb") as f:
+            test_issue.screenshot = SimpleUploadedFile(
+                name="test_image.webp",
+                content=f.read(),
+                content_type="image/webp",
+            )
         test_issue.save()
 
     def test_on_hide(self):

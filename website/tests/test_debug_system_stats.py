@@ -19,7 +19,12 @@ def get_installed_apps_with_silk():
     return apps
 
 
-@override_settings(ALLOWED_HOSTS=["*"], DEBUG=True, TESTING=False)
+@override_settings(
+    ALLOWED_HOSTS=["*"],
+    DEBUG=True,
+    TESTING=False,
+    INSTALLED_APPS=get_installed_apps_with_silk(),
+)
 class DebugPanelAPITest(TestCase):
     """Test debug panel API endpoints"""
 
@@ -28,11 +33,10 @@ class DebugPanelAPITest(TestCase):
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
     def reload_urls(self):
-        with override_settings(TESTING=False):
-            clear_url_caches()
-            import blt.urls
+        clear_url_caches()
+        import blt.urls
 
-            reload(blt.urls)
+        reload(blt.urls)
 
     def test_get_system_stats_success(self):
         """Test getting system stats in debug mode"""
@@ -65,7 +69,6 @@ class DebugPanelAPITest(TestCase):
         self.assertIn("backend", data["data"])
         self.assertIn("keys_count", data["data"])
 
-    @override_settings(DEBUG=True, TESTING=False)
     def test_clear_cache_success(self):
         """Test clearing cache"""
         self.reload_urls()
@@ -117,7 +120,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(INSTALLED_APPS=get_installed_apps_with_silk())
     @patch("django.core.cache.cache.clear")
     def test_clear_cache_handles_errors(self, mock_cache_clear):
         """Test that cache clear endpoint handles errors gracefully"""
