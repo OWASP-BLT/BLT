@@ -346,7 +346,7 @@ DB Connections: ${stats.database?.connections || "N/A"}
     const colorClass = this.getStatusColor(type);
     const messageDiv = document.createElement("div");
     // Use explicit Tailwind classes to avoid purge issues
-    messageDiv.className = `${colorClass} mb-2`;
+    messageDiv.className = `${colorClass} mb-2 whitespace-pre-wrap font-mono`;
     messageDiv.textContent = `[${timestamp}] ${message}`;
     statusContent.appendChild(messageDiv);
     statusContent.scrollTop = statusContent.scrollHeight;
@@ -498,7 +498,7 @@ DB Connections: ${stats.database?.connections || "N/A"}
 
   /**
    * Go To Management Commands Page
-  */
+   */
   goToManagementCommands() {
     window.location.href = window.location.origin + "/status/commands/";
   },

@@ -18,9 +18,6 @@ class DebugPanelAPITest(TestCase):
         """Set up test fixtures"""
         self.client = APIClient()
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
-        self.superuser = User.objects.create_superuser(
-            username="admin", email="admin@example.com", password="adminpass123"
-        )
 
     def reload_urls(self):
         clear_url_caches()
@@ -214,6 +211,8 @@ class DebugPanelAPITest(TestCase):
         self.assertIn("disk", stats)
         self.assertIn("python_version", stats)
         self.assertIn("django_version", stats)
+        self.assertIn("database", stats)
+        self.assertIn("cpu", stats)
 
     @override_settings(DEBUG=True)
     def test_cache_info_endpoint_returns_cache_stats(self):
