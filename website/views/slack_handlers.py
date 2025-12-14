@@ -24,6 +24,8 @@ from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, Slack
 
 logger = logging.getLogger(__name__)
 
+# Only load environment variables from .env in non-production environments.
+# In production, environment variables should be set by the deployment environment.
 if os.getenv("ENV") != "production":
     load_dotenv()
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -168,6 +170,8 @@ def verify_slack_signature(request):
     if not timestamp or not signature:
         return False
 
+    if not SIGNING_SECRET:
+        return False
     try:
         # Verify timestamp to prevent replay attacks
         current_time = time.time()
@@ -178,7 +182,8 @@ def verify_slack_signature(request):
             return False
 
         # Create the signature base string
-        sig_basestring = f"v0:{timestamp}:{request.body.decode()}"
+        body_text = request.body.decode("utf-8")
+        sig_basestring = f"v0:{timestamp}:{body_text}"
 
         # Calculate our signature
         my_signature = "v0=" + hmac.new(SIGNING_SECRET.encode(), sig_basestring.encode(), hashlib.sha256).hexdigest()
@@ -187,7 +192,7 @@ def verify_slack_signature(request):
         is_valid = hmac.compare_digest(my_signature, signature)
         return is_valid
 
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError, UnicodeDecodeError, AttributeError):
         return False
 
 
@@ -3022,7 +3027,7 @@ def handle_committee_pagination(action, body, client):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
 
-GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+$")
+GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+/?$")
 
 
 @csrf_exempt
@@ -3083,6 +3088,13 @@ def slack_bounty_command(request):
 
     raw_amount, issue_url, github_username = parts
 
+    # Slack may format links as <url> or <url|label>
+    if issue_url.startswith("<") and issue_url.endswith(">"):
+        issue_url = issue_url[1:-1].split("|", 1)[0]
+
+    # Normalize GitHub username (allow "@foo")
+    github_username = github_username.lstrip("@")
+
     # strip leading '$' if present
     if raw_amount.startswith("$"):
         raw_amount = raw_amount[1:]
@@ -3112,6 +3124,8 @@ def slack_bounty_command(request):
     # ------------------------------------------------------------------
     try:
         amount_val = float(amount_str)
+        if not math.isfinite(amount_val):
+            raise ValueError("non-finite amount")
     except ValueError:
         logger.warning(
             "slack_bounty_command: non-numeric amount %r from Slack user %s",

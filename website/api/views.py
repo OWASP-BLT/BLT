@@ -2027,7 +2027,9 @@ class BountyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        total = Bounty.total_for_issue_url(raw_url)
+        total = Bounty.objects.filter(github_issue_url=raw_url).aggregate(total=models.Sum("amount"))[
+            "total"
+        ] or Decimal("0.00")
         return Response({"github_issue_url": raw_url, "total": str(total)})
 
     @action(detail=False, methods=["get"], url_path="sponsor-stats")

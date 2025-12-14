@@ -416,6 +416,9 @@ class BountySerializer(serializers.ModelSerializer):
         if github_issue_url:
             # Use Issue.github_url as the canonical link to the GitHub issue.
             # IMPORTANT: do NOT pass any 'captcha' or 'user' kwargs here.
+            normalized_url = github_issue_url.rstrip("/")
+            validated_data["github_issue_url"] = normalized_url
+            github_issue_url = normalized_url
             issue_obj, _ = Issue.objects.get_or_create(
                 github_url=github_issue_url,
                 defaults={

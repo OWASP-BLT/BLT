@@ -126,11 +126,7 @@ def bounty_payout(request):
         payout_amount = Decimal(bounty_amount) / Decimal("100.0")
 
         github_profile_url = f"https://github.com/{contributor_username}"
-        profile = (
-            UserProfile.objects.select_related("user")
-            .filter(github_url__iexact=github_profile_url)  # confirm field name
-            .first()
-        )
+        profile = UserProfile.objects.select_related("user").filter(github_url__iexact=github_profile_url).first()
         if profile:
             try:
                 # Atomic increment to avoid race conditions

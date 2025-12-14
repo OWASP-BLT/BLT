@@ -3597,7 +3597,11 @@ class Bounty(models.Model):
         on_delete=models.CASCADE,
         related_name="bounties",
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
     github_issue_url = models.URLField(max_length=500)
     github_sponsor_username = models.CharField(max_length=255)
     status = models.CharField(
@@ -3614,6 +3618,9 @@ class Bounty(models.Model):
             models.Index(fields=["issue"]),
             models.Index(fields=["sponsor"]),
             models.Index(fields=["github_issue_url"]),
+        ]
+        constraints = [
+            models.CheckConstraint(check=models.Q(amount__gt=0), name="bounty_amount_gt_zero"),
         ]
 
     def __str__(self):
