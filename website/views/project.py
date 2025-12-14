@@ -50,7 +50,6 @@ from website.models import (
     Organization,
     Project,
     Repo,
-    Tag,
     UserProfile,
 )
 from website.utils import admin_required
@@ -1146,6 +1145,11 @@ class RepoDetailView(DetailView):
             {"title": repo.name, "url": None},
         ]
 
+        # Get other repos from same project
+        context["related_repos"] = (
+            Repo.objects.filter(project=repo.project).exclude(id=repo.id).select_related("project")[:5]
+        )
+
         # Get top contributors from GitHub
         github_contributors = self.get_github_top_contributors(repo.repo_url)
 
@@ -1471,14 +1475,72 @@ class RepoDetailView(DetailView):
         }
 
         # Fetch stargazers for this repo (with pagination and filter)
-        # DISABLED: Auto-fetching stargazers on page load was causing excessive GitHub API calls
-        # Stargazers will now be fetched only when user interacts with the stargazers section
-        context["stargazers"] = []
-        context["stargazers_error"] = None
-        context["total_stargazers"] = 0
-        context["total_pages"] = 0
-        context["current_page"] = 1
-        context["filter_type"] = "all"
+        try:
+            filter_type = self.request.GET.get("filter", "all")
+            page = int(self.request.GET.get("page", 1))
+            per_page = 10
+            repo_path = repo.repo_url.split("github.com/")[-1]
+            owner, repo_name = repo_path.split("/")
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}/stargazers"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+            # Fetch all stargazers using pagination
+            all_stargazers = []
+            current_page = 1
+            api_per_page = 100
+            while True:
+                paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
+                response = requests.get(paginated_url, headers=headers)
+                if response.status_code == 200:
+                    page_stargazers = response.json()
+                    if not page_stargazers:
+                        break
+                    all_stargazers.extend(page_stargazers)
+                    current_page += 1
+                elif response.status_code == 404:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Repository not found. Please check the URL and try again."
+                    break
+                elif response.status_code == 403:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Rate limit exceeded. Please try again later."
+                    break
+                elif response.status_code == 401:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = "Authentication failed. Please contact the administrator."
+                    break
+                else:
+                    context["stargazers"] = []
+                    context["stargazers_error"] = f"Error fetching stargazers (Status code: {response.status_code})"
+                    break
+            else:
+                context["stargazers"] = []
+                context["stargazers_error"] = "Unknown error fetching stargazers."
+
+            if "stargazers" not in context:
+                if filter_type == "recent":
+                    all_stargazers.reverse()
+                total_stargazers = len(all_stargazers)
+                total_pages = (total_stargazers + per_page - 1) // per_page
+                page = max(1, min(page, total_pages)) if total_pages > 0 else 1
+                start_idx = (page - 1) * per_page
+                end_idx = start_idx + per_page
+                context["stargazers"] = all_stargazers[start_idx:end_idx]
+                context["stargazers_error"] = None
+                context["total_stargazers"] = total_stargazers
+                context["total_pages"] = total_pages
+                context["current_page"] = page
+                context["filter_type"] = filter_type
+        except Exception as e:
+            context["stargazers"] = []
+            context["stargazers_error"] = "Error fetching stargazers"
+            context["total_stargazers"] = 0
+            context["total_pages"] = 0
+            context["current_page"] = 1
+            context["filter_type"] = "all"
 
         return context
 
@@ -1532,38 +1594,6 @@ class RepoDetailView(DetailView):
                 if response.status_code == 200:
                     data = response.json()
 
-                    # Fetch GitHub topics (used as repo tags)
-                    topics = None
-                    try:
-                        topics_url = f"https://api.github.com/repos/{owner}/{repo_name}/topics"
-                        topics_headers = {
-                            "Authorization": f"token {github_token}",
-                            "Accept": "application/vnd.github+json",
-                        }
-                        topics_resp = requests.get(topics_url, headers=topics_headers, timeout=10)
-                        if topics_resp.status_code == 200:
-                            topics = topics_resp.json().get("names", [])
-                    except Exception:
-                        topics = None
-
-                    # Fetch latest release info
-                    release_name = None
-                    release_date_str = None
-                    try:
-                        release_url = f"https://api.github.com/repos/{owner}/{repo_name}/releases/latest"
-                        release_resp = requests.get(release_url, headers=headers, timeout=10)
-                        if release_resp.status_code == 200:
-                            release_data = release_resp.json()
-                            release_name = release_data.get("name") or release_data.get("tag_name")
-                            release_date_str = release_data.get("published_at")
-                        else:
-                            # No release or not accessible; keep blank
-                            release_name = None
-                            release_date_str = None
-                    except Exception:
-                        release_name = None
-                        release_date_str = None
-
                     # Update repo with fresh data
                     repo.stars = data.get("stargazers_count", 0)
                     repo.forks = data.get("forks_count", 0)
@@ -1572,47 +1602,7 @@ class RepoDetailView(DetailView):
                     repo.network_count = data.get("network_count", 0)
                     repo.subscribers_count = data.get("subscribers_count", 0)
                     repo.last_updated = parse_datetime(data.get("updated_at"))
-
-                    # Move technical fields into basic refresh (so one refresh keeps header current)
-                    repo.primary_language = data.get("language") or repo.primary_language
-                    repo.size = int(data.get("size") or 0)
-
-                    license_data = data.get("license") or {}
-                    repo.license = (
-                        license_data.get("spdx_id")
-                        or license_data.get("key")
-                        or license_data.get("name")
-                        or repo.license
-                    )
-
-                    repo.release_name = release_name
-                    repo.release_datetime = parse_datetime(release_date_str) if release_date_str else None
                     repo.save()
-
-                    # Persist fetched topics into Repo.tags (if available)
-                    if isinstance(topics, list):
-                        tag_objs = []
-                        for topic in topics:
-                            if not topic:
-                                continue
-                            topic_str = str(topic).strip()
-                            if not topic_str:
-                                continue
-                            topic_slug = slugify(topic_str)
-                            if not topic_slug:
-                                continue
-
-                            tag_obj, _ = Tag.objects.get_or_create(
-                                slug=topic_slug,
-                                defaults={"name": topic_str},
-                            )
-                            # Keep display name fresh (without breaking slug uniqueness)
-                            if tag_obj.name != topic_str:
-                                tag_obj.name = topic_str
-                                tag_obj.save(update_fields=["name"])
-                            tag_objs.append(tag_obj)
-
-                        repo.tags.set(tag_objs)
 
                     return JsonResponse(
                         {
@@ -1627,14 +1617,6 @@ class RepoDetailView(DetailView):
                                 "last_updated": naturaltime(repo.last_updated).replace(
                                     "\xa0", " "
                                 ),  # Fix unicode space
-                                "tags": [t.name for t in repo.tags.all().order_by("name")],
-                                "primary_language": repo.primary_language,
-                                "size": repo.size,
-                                "license": repo.license,
-                                "release_name": repo.release_name,
-                                "release_date": (
-                                    repo.release_datetime.strftime("%b %d, %Y") if repo.release_datetime else ""
-                                ),
                             },
                         }
                     )

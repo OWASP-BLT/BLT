@@ -45,6 +45,7 @@ from website.api.views import (
     ProjectViewSet,
     PublicJobListViewSet,
     SearchHistoryApiView,
+    SecurityIncidentViewSet,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -233,7 +234,6 @@ from website.views.organization import (
     Listbounties,
     OngoingHunts,
     OrganizationDetailView,
-    OrganizationListModeView,
     OrganizationListView,
     OrganizationSettings,
     PreviousHunts,
@@ -270,7 +270,6 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
-    refresh_organization_repos_api,
     room_messages_api,
     send_message_api,
     sizzle,
@@ -312,6 +311,12 @@ from website.views.project import (
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
+from website.views.security import SecurityDashboardView
+from website.views.security_incidents import (
+    SecurityIncidentCreateView,
+    SecurityIncidentDetailView,
+    SecurityIncidentUpdateView,
+)
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.slackbot import slack_landing_page
@@ -401,6 +406,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
+router.register(r"security-incidents", SecurityIncidentViewSet, basename="securityincident")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -1023,7 +1029,6 @@ urlpatterns = [
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),
-    path("organizations/list/", OrganizationListModeView.as_view(), name="organizations_list_mode"),
     path("map/", MapView.as_view(), name="map"),
     path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
@@ -1168,9 +1173,6 @@ urlpatterns = [
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
-    path(
-        "api/organization/<int:org_id>/refresh/", refresh_organization_repos_api, name="refresh_organization_repos_api"
-    ),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
@@ -1248,6 +1250,10 @@ urlpatterns = [
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
     path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
+    path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
+    path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
+    path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
+    path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
 ]
 
 if settings.DEBUG:

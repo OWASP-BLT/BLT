@@ -60,7 +60,6 @@ repos:
         entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
         language: system
         types: [python]
-        stages: [pre-push]
         pass_filenames: false
         always_run: true
         verbose: true
