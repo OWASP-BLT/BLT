@@ -19,7 +19,7 @@ def get_installed_apps_with_silk():
     return apps
 
 
-@override_settings(ALLOWED_HOSTS=["*"])
+@override_settings(ALLOWED_HOSTS=["*"], DEBUG=True, TESTING=False)
 class DebugPanelAPITest(TestCase):
     """Test debug panel API endpoints"""
 
@@ -28,12 +28,12 @@ class DebugPanelAPITest(TestCase):
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
     def reload_urls(self):
-        clear_url_caches()
-        import blt.urls
+        with override_settings(TESTING=False):
+            clear_url_caches()
+            import blt.urls
 
-        reload(blt.urls)
+            reload(blt.urls)
 
-    @override_settings(DEBUG=True)
     def test_get_system_stats_success(self):
         """Test getting system stats in debug mode"""
         self.reload_urls()
@@ -54,7 +54,6 @@ class DebugPanelAPITest(TestCase):
         with self.assertRaises(NoReverseMatch):
             reverse("api_debug_system_stats")
 
-    @override_settings(DEBUG=True)
     def test_get_cache_info_success(self):
         """Test getting cache information"""
         self.reload_urls()
@@ -84,7 +83,6 @@ class DebugPanelAPITest(TestCase):
         with self.assertRaises(NoReverseMatch):
             reverse("api_debug_clear_cache")
 
-    @override_settings(DEBUG=True)
     def test_populate_data_success(self):
         """Test populating test data"""
         self.reload_urls()
@@ -94,7 +92,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_populate_data_missing_fixture_returns_404(self):
         """Test that missing fixture file returns 404 and error payload"""
         self.reload_urls()
@@ -107,7 +104,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")
     def test_populate_data_handles_errors(self, mock_call_command):
         """Test that errors while loading fixtures return 500 and error payload"""
@@ -121,7 +117,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True, TESTING=False, INSTALLED_APPS=get_installed_apps_with_silk())
+    @override_settings(INSTALLED_APPS=get_installed_apps_with_silk())
     @patch("django.core.cache.cache.clear")
     def test_clear_cache_handles_errors(self, mock_cache_clear):
         """Test that cache clear endpoint handles errors gracefully"""
@@ -135,7 +131,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_run_migrations_requires_superuser(self):
         """Test that running migrations requires superuser privileges"""
         self.reload_urls()
@@ -145,7 +140,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_run_migrations_requires_confirm_flag(self):
         """Test that migrations require an explicit confirm flag"""
         self.reload_urls()
@@ -159,7 +153,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_run_migrations_success_for_superuser(self):
         """Test that a superuser can run migrations with confirmation"""
         self.reload_urls()
@@ -173,7 +166,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")
     def test_run_migrations_handles_errors(self, mock_call_command):
         """Test that migration errors are handled gracefully"""
@@ -189,7 +181,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_collect_static_requires_superuser(self):
         """Test that collectstatic endpoint requires superuser privileges"""
         self.reload_urls()
@@ -201,7 +192,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_collect_static_success_for_superuser(self):
         """Test that a superuser can call collectstatic successfully"""
         self.reload_urls()
@@ -215,7 +205,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")
     def test_collect_static_handles_errors(self, mock_call_command):
         """Test that collectstatic errors are handled gracefully"""
@@ -232,7 +221,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_get_debug_panel_status(self):
         """Test getting debug panel status"""
         self.reload_urls()
@@ -243,7 +231,6 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["success"])
         self.assertTrue(data["data"]["debug_mode"])
 
-    @override_settings(DEBUG=True)
     def test_post_endpoints_require_authentication(self):
         """Test that POST debug endpoints require authentication when in debug mode"""
         self.reload_urls()
@@ -278,7 +265,6 @@ class DebugPanelAPITest(TestCase):
                 with self.assertRaises(NoReverseMatch):
                     reverse(endpoint)
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_non_local_host(self):
         """Test that debug endpoints block access from non-local hosts even when DEBUG=True"""
         self.reload_urls()
@@ -290,7 +276,6 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
         self.assertIn("local development", data["error"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_localhost(self):
         """Test that debug endpoints allow localhost access"""
         self.reload_urls()
@@ -301,7 +286,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_127_0_0_1(self):
         """Test that debug endpoints allow 127.0.0.1 access"""
         self.reload_urls()
@@ -312,7 +296,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_127_prefix(self):
         """Test that debug endpoints allow 127.x.x.x IPs"""
         self.reload_urls()
@@ -323,7 +306,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_testserver(self):
         """Test that debug endpoints allow access from the Django test server"""
         self.reload_urls()
@@ -334,7 +316,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_external_ip(self):
         """Test that debug endpoints block access from external IPs"""
         self.reload_urls()
@@ -346,7 +327,6 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
         self.assertIn("local development", data["error"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_remote_host(self):
         """Test that debug endpoints block access from remote hosts"""
         self.reload_urls()
@@ -357,7 +337,6 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
-    @override_settings(DEBUG=True)
     def test_debug_endpoint_requires_authentication(self):
         """Test that debug endpoints require authentication even locally"""
         self.reload_urls()
