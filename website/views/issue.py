@@ -21,6 +21,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -2039,7 +2040,7 @@ def unsave_issue(request, issue_pk):
         userprof = UserProfile.objects.get(user=request.user)
         userprof.issue_saved.remove(issue)
         return HttpResponse("OK")
-    except (ValueError, Issue.DoesNotExist, UserProfile.DoesNotExist) as e:
+    except (ValueError, ObjectDoesNotExist) as e:
         logger.error(f"Error unsaving issue {issue_pk}: {str(e)}", exc_info=True)
         return HttpResponse("ERROR", status=400)
 
@@ -2061,7 +2062,7 @@ def save_issue(request, issue_pk):
         else:
             userprof.issue_saved.add(issue)
             return HttpResponse("OK")
-    except (ValueError, Issue.DoesNotExist, UserProfile.DoesNotExist) as e:
+    except (ValueError, ObjectDoesNotExist) as e:
         logger.error(f"Error saving issue {issue_pk}: {str(e)}", exc_info=True)
         return HttpResponse("ERROR", status=400)
 
@@ -2123,7 +2124,7 @@ def flag_issue(request, issue_pk):
         issue_pk = int(issue_pk)
         issue = Issue.objects.get(pk=issue_pk)
         userprof = UserProfile.objects.get(user=request.user)
-        if userprof in UserProfile.objects.filter(issue_flaged=issue):
+        if userprof.issue_flaged.filter(pk=issue.pk).exists():
             userprof.issue_flaged.remove(issue)
         else:
             userprof.issue_flaged.add(issue)
@@ -2133,7 +2134,7 @@ def flag_issue(request, issue_pk):
         context["object"] = issue
         context["flags"] = total_flag_votes
         return render(request, "includes/_flags.html", context)
-    except (ValueError, Issue.DoesNotExist, UserProfile.DoesNotExist) as e:
+    except (ValueError, ObjectDoesNotExist) as e:
         logger.error(f"Error flagging issue {issue_pk}: {str(e)}", exc_info=True)
         return HttpResponse("Error processing flag", status=400)
 
