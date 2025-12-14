@@ -453,8 +453,7 @@ class Joinorganization(TemplateView):
             if paymentType == "wallet":
                 # Wallet payment has been removed
                 return JsonResponse({"error": "Wallet payment is no longer supported"})
-            
-            # Continue with card or other payment types
+            # All non-wallet payment types (card, etc.) proceed with organization creation
             organization = Organization()
             organization.admin = request.user
             organization.name = name
@@ -1285,7 +1284,7 @@ class CreateHunt(TemplateView):
                 domain_admin.role == 1
                 and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
             ) or domain_admin.role == 0:
-                # Note: Wallet payment has been removed - hunts no longer require wallet balance
+                # Wallet balance validation removed - hunt creation no longer requires checking user's wallet balance
                 hunt = Hunt()
                 hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 data = {}
