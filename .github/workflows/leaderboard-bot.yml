@@ -34,14 +34,27 @@ jobs:
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             
+            // Calculate a reasonable lookback period for fetching PRs to check for reviews
+            // We look back 3 months to catch reviews on older PRs while avoiding unbounded queries
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+            
             core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
             
             // Configuration constants
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
             
-            // GraphQL query to fetch PRs for the current month
-            const query = `
+            // Bot detection helper function
+            const isBot = (user) => {
+              if (!user || !user.login) return false;
+              const knownBots = ['copilot', 'dependabot', 'github-actions'];
+              return user.type === 'Bot' || 
+                     user.login.endsWith('[bot]') || 
+                     knownBots.includes(user.login.toLowerCase());
+            };
+            
+            // GraphQL query to fetch PRs for the current month (for counting PR creations)
+            const prQuery = `
               query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
                 repository(owner: $owner, name: $repo) {
                   pullRequests(first: ${PER_PAGE}, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
@@ -49,6 +62,12 @@ jobs:
                       number
                       author {
                         login
+                        ... on User {
+                          type: __typename
+                        }
+                        ... on Bot {
+                          type: __typename
+                        }
                       }
                       createdAt
                     }
@@ -61,39 +80,86 @@ jobs:
               }
             `;
             
+            // GraphQL query to fetch ALL recent PRs (for counting reviews on any PR)
+            // Filters to PRs updated in the last 3 months to avoid unbounded queries
+            const allPRsQuery = `
+              query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: ${PER_PAGE}, orderBy: {field: UPDATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
+                    nodes {
+                      number
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            `;
+            
             // Fetch all PRs created in current month
             let allPRs = [];
-            let hasNextPage = true;
-            let cursor = null;
-            let pageCount = 0;
+            let prHasNextPage = true;
+            let prCursor = null;
+            let prPageCount = 0;
             
-            while (hasNextPage && pageCount < MAX_PAGES) {
+            while (prHasNextPage && prPageCount < MAX_PAGES) {
               const variables = {
                 owner,
                 repo,
                 since: startOfMonth.toISOString(),
-                after: cursor
+                after: prCursor
               };
               
               try {
-                const result = await github.graphql(query, variables);
+                const result = await github.graphql(prQuery, variables);
                 
                 const prs = result.repository.pullRequests;
                 allPRs = allPRs.concat(prs.nodes);
-                hasNextPage = prs.pageInfo.hasNextPage;
-                cursor = prs.pageInfo.endCursor;
-                pageCount++;
+                prHasNextPage = prs.pageInfo.hasNextPage;
+                prCursor = prs.pageInfo.endCursor;
+                prPageCount++;
               } catch (error) {
                 core.warning(`Error fetching PRs: ${error.message}`);
                 break;
               }
             }
             
+            // Fetch ALL recent PRs (for review counting) - these are PRs that might have reviews this month
+            // Only fetch PRs updated in the last 3 months to avoid unbounded queries
+            let allRecentPRs = [];
+            let recentPRsHasNextPage = true;
+            let recentPRsCursor = null;
+            let recentPRsPageCount = 0;
+            
+            while (recentPRsHasNextPage && recentPRsPageCount < MAX_PAGES) {
+              const variables = {
+                owner,
+                repo,
+                since: threeMonthsAgo.toISOString(),
+                after: recentPRsCursor
+              };
+              
+              try {
+                const result = await github.graphql(allPRsQuery, variables);
+                
+                const prs = result.repository.pullRequests;
+                allRecentPRs = allRecentPRs.concat(prs.nodes);
+                recentPRsHasNextPage = prs.pageInfo.hasNextPage;
+                recentPRsCursor = prs.pageInfo.endCursor;
+                recentPRsPageCount++;
+              } catch (error) {
+                core.warning(`Error fetching recent PRs: ${error.message}`);
+                break;
+              }
+            }
+            
             // Fetch all reviews for the month using REST API
-            // More efficient: only fetch reviews for PRs created this month (already fetched)
+            // Fetch reviews from ALL recent PRs, not just PRs created this month
             let allReviews = [];
             
-            for (const pr of allPRs) {
+            for (const pr of allRecentPRs) {
               try {
                 if (!pr.number) continue;
                 
@@ -147,7 +213,7 @@ jobs:
               }
             }
             
-            core.info(`Found ${allPRs.length} PRs, ${allReviews.length} reviews, ${allComments.length} comments`);
+            core.info(`Found ${allPRs.length} PRs created this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
             
             // Calculate scores for each user
             const userStats = {};
@@ -155,6 +221,9 @@ jobs:
             // Count PRs
             for (const pr of allPRs) {
               if (pr.author && pr.author.login) {
+                // Skip bot accounts
+                if (isBot(pr.author)) continue;
+                
                 const login = pr.author.login;
                 if (!userStats[login]) {
                   userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
@@ -166,6 +235,9 @@ jobs:
             // Count reviews
             for (const review of allReviews) {
               if (review.user && review.user.login) {
+                // Skip bot accounts
+                if (isBot(review.user)) continue;
+                
                 const login = review.user.login;
                 if (!userStats[login]) {
                   userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
@@ -177,6 +249,9 @@ jobs:
             // Count comments
             for (const comment of allComments) {
               if (comment.user && comment.user.login) {
+                // Skip bot accounts
+                if (isBot(comment.user)) continue;
+                
                 const login = comment.user.login;
                 if (!userStats[login]) {
                   userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
