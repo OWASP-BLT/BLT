@@ -50,6 +50,8 @@ class SecurityDashboardViewTest(TestCase):
 
         Issue.objects.create(
             description="Test issue",
+            url="https://example.com/issue",
+            captcha="valid_captcha_value",
             label=4,
         )
 
