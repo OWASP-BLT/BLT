@@ -1,0 +1,311 @@
+name: Leaderboard Bot
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  post_leaderboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post Leaderboard Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            const pull_number = pr.number;
+            const prAuthor = pr.user.login;
+            
+            core.info(`Processing PR #${pull_number} by @${prAuthor}`);
+            
+            // Get current month date range
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            
+            core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
+            
+            // GraphQL query to fetch PRs, reviews, and comments for the current month
+            const query = `
+              query($owner: String!, $repo: String!, $since: DateTime!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}) {
+                    nodes {
+                      author {
+                        login
+                      }
+                      createdAt
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                  reviews: pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
+                    nodes {
+                      reviews(first: 100) {
+                        nodes {
+                          author {
+                            login
+                          }
+                          createdAt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            // Fetch all PRs created in current month
+            let allPRs = [];
+            let hasNextPage = true;
+            let cursor = null;
+            
+            while (hasNextPage) {
+              const variables = {
+                owner,
+                repo,
+                since: startOfMonth.toISOString(),
+                ...(cursor && { after: cursor })
+              };
+              
+              try {
+                const result = await github.graphql(
+                  cursor 
+                    ? query.replace('first: 100', 'first: 100, after: $after')
+                    : query,
+                  variables
+                );
+                
+                const prs = result.repository.pullRequests;
+                allPRs = allPRs.concat(prs.nodes);
+                hasNextPage = prs.pageInfo.hasNextPage;
+                cursor = prs.pageInfo.endCursor;
+              } catch (error) {
+                core.warning(`Error fetching PRs: ${error.message}`);
+                break;
+              }
+            }
+            
+            // Fetch all reviews for the month using REST API (more reliable for reviews)
+            let allReviews = [];
+            let reviewPage = 1;
+            
+            while (reviewPage <= 10) { // Limit to 10 pages for performance
+              try {
+                const { data: prsForReviews } = await github.rest.pulls.list({
+                  owner,
+                  repo,
+                  state: 'all',
+                  sort: 'created',
+                  direction: 'desc',
+                  per_page: 100,
+                  page: reviewPage
+                });
+                
+                if (prsForReviews.length === 0) break;
+                
+                for (const pr of prsForReviews) {
+                  try {
+                    const { data: reviews } = await github.rest.pulls.listReviews({
+                      owner,
+                      repo,
+                      pull_number: pr.number,
+                      per_page: 100
+                    });
+                    
+                    // Filter reviews from current month
+                    const monthReviews = reviews.filter(review => {
+                      const reviewDate = new Date(review.submitted_at);
+                      return reviewDate >= startOfMonth && reviewDate <= endOfMonth;
+                    });
+                    
+                    allReviews = allReviews.concat(monthReviews);
+                  } catch (error) {
+                    core.warning(`Error fetching reviews for PR #${pr.number}: ${error.message}`);
+                  }
+                }
+                
+                reviewPage++;
+              } catch (error) {
+                core.warning(`Error fetching PRs for reviews: ${error.message}`);
+                break;
+              }
+            }
+            
+            // Fetch all issue comments for the month
+            let allComments = [];
+            let commentPage = 1;
+            
+            while (commentPage <= 10) { // Limit to 10 pages for performance
+              try {
+                const { data: comments } = await github.rest.issues.listCommentsForRepo({
+                  owner,
+                  repo,
+                  since: startOfMonth.toISOString(),
+                  per_page: 100,
+                  page: commentPage
+                });
+                
+                if (comments.length === 0) break;
+                
+                // Filter comments from current month
+                const monthComments = comments.filter(comment => {
+                  const commentDate = new Date(comment.created_at);
+                  return commentDate >= startOfMonth && commentDate <= endOfMonth;
+                });
+                
+                allComments = allComments.concat(monthComments);
+                commentPage++;
+              } catch (error) {
+                core.warning(`Error fetching comments: ${error.message}`);
+                break;
+              }
+            }
+            
+            core.info(`Found ${allPRs.length} PRs, ${allReviews.length} reviews, ${allComments.length} comments`);
+            
+            // Calculate scores for each user
+            const userStats = {};
+            
+            // Count PRs
+            for (const pr of allPRs) {
+              if (pr.author && pr.author.login) {
+                const login = pr.author.login;
+                if (!userStats[login]) {
+                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].prs++;
+              }
+            }
+            
+            // Count reviews
+            for (const review of allReviews) {
+              if (review.user && review.user.login) {
+                const login = review.user.login;
+                if (!userStats[login]) {
+                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].reviews++;
+              }
+            }
+            
+            // Count comments
+            for (const comment of allComments) {
+              if (comment.user && comment.user.login) {
+                const login = comment.user.login;
+                if (!userStats[login]) {
+                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].comments++;
+              }
+            }
+            
+            // Calculate total scores
+            for (const login in userStats) {
+              userStats[login].total = userStats[login].prs + userStats[login].reviews + userStats[login].comments;
+            }
+            
+            // Sort users by total score
+            const sortedUsers = Object.entries(userStats)
+              .map(([login, stats]) => ({ login, ...stats }))
+              .sort((a, b) => {
+                if (b.total !== a.total) return b.total - a.total;
+                // Tie-breaker: more PRs is better
+                if (b.prs !== a.prs) return b.prs - a.prs;
+                // Secondary tie-breaker: more reviews is better
+                if (b.reviews !== a.reviews) return b.reviews - a.reviews;
+                // Final tie-breaker: alphabetical
+                return a.login.localeCompare(b.login);
+              });
+            
+            // Find the PR author's position
+            const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
+            
+            // Generate leaderboard comment
+            const commentMarker = '<!-- leaderboard-bot -->';
+            let commentBody = commentMarker + '\n';
+            commentBody += '## 📊 Monthly Leaderboard\n\n';
+            commentBody += `Hi @${prAuthor}! Here's how you rank for ${startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}:\n\n`;
+            
+            if (authorIndex === -1) {
+              commentBody += '🎉 **Welcome!** This is your first contribution this month.\n\n';
+              commentBody += '### Top 3 Contributors\n\n';
+              commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----|---------|----------|-------|\n';
+              
+              for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
+                const user = sortedUsers[i];
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+                commentBody += `| ${medal} #${i + 1} | @${user.login} | ${user.prs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
+              }
+            } else {
+              commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----|---------|----------|-------|\n';
+              
+              // Show user above (if exists)
+              if (authorIndex > 0) {
+                const userAbove = sortedUsers[authorIndex - 1];
+                const medal = authorIndex - 1 === 0 ? '🥇' : authorIndex - 1 === 1 ? '🥈' : authorIndex - 1 === 2 ? '🥉' : '';
+                commentBody += `| ${medal} #${authorIndex} | @${userAbove.login} | ${userAbove.prs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
+              }
+              
+              // Show current user
+              const currentUser = sortedUsers[authorIndex];
+              const currentMedal = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
+              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **@${currentUser.login}** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
+              
+              // Show user below (if exists)
+              if (authorIndex < sortedUsers.length - 1) {
+                const userBelow = sortedUsers[authorIndex + 1];
+                commentBody += `| #${authorIndex + 2} | @${userBelow.login} | ${userBelow.prs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
+              }
+            }
+            
+            commentBody += '\n';
+            commentBody += '---\n';
+            commentBody += `*Leaderboard based on contributions in ${startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Keep up the great work! 🚀*\n`;
+            
+            // Check if we already commented
+            const { data: existingComments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100
+            });
+            
+            const existingLeaderboardComment = existingComments.find(comment =>
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingLeaderboardComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingLeaderboardComment.id,
+                body: commentBody
+              });
+              core.info(`Updated leaderboard comment on PR #${pull_number}`);
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: commentBody
+              });
+              core.info(`Posted leaderboard comment on PR #${pull_number}`);
+            }
