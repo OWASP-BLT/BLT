@@ -3503,6 +3503,18 @@ xlsx = ["openpyxl (>=2.6.0)"]
 yaml = ["pyyaml"]
 
 [[package]]
+name = "tblib"
+version = "3.2.2"
+description = "Traceback serialization library."
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "tblib-3.2.2-py3-none-any.whl", hash = "sha256:26bdccf339bcce6a88b2b5432c988b266ebbe63a4e593f6b578b1d2e723d2b76"},
+    {file = "tblib-3.2.2.tar.gz", hash = "sha256:e9a652692d91bf4f743d4a15bc174c0b76afc750fe8c7b6d195cc1c1d6d2ccec"},
+]
+
+[[package]]
 name = "tinycss2"
 version = "1.1.1"
 description = "A tiny CSS parser"
@@ -4120,4 +4132,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "199432e2f68b7be59367e46c2fd34dfa5b58e1290356942b9dc5b29aa5930ad9"
+content-hash = "0f23cfd4ca7f03c291dfee2eefbf92ec8621111a0599702cc0f6e615c709eca4"
