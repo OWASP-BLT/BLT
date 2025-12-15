@@ -351,7 +351,6 @@ if TESTING:
     # SQLite-specific optimizations for test database
     DATABASES["default"]["OPTIONS"] = {
         "timeout": 20,
-        "init_command": "PRAGMA journal_mode=MEMORY; PRAGMA synchronous=OFF;",
     }
 
 if not db_from_env:
