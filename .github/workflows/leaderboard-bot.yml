@@ -40,8 +40,8 @@ jobs:
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
             
-            // GraphQL query to fetch PRs for the current month
-            const query = `
+            // GraphQL query to fetch PRs for the current month (for counting PR creations)
+            const prQuery = `
               query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
                 repository(owner: $owner, name: $repo) {
                   pullRequests(first: ${PER_PAGE}, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
@@ -51,6 +51,23 @@ jobs:
                         login
                       }
                       createdAt
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            `;
+            
+            // GraphQL query to fetch ALL recent PRs (for counting reviews on any PR)
+            const allPRsQuery = `
+              query($owner: String!, $repo: String!, $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: ${PER_PAGE}, orderBy: {field: UPDATED_AT, direction: DESC}, after: $after) {
+                    nodes {
+                      number
                     }
                     pageInfo {
                       hasNextPage
@@ -76,7 +93,7 @@ jobs:
               };
               
               try {
-                const result = await github.graphql(query, variables);
+                const result = await github.graphql(prQuery, variables);
                 
                 const prs = result.repository.pullRequests;
                 allPRs = allPRs.concat(prs.nodes);
@@ -89,11 +106,38 @@ jobs:
               }
             }
             
+            // Fetch ALL recent PRs (for review counting) - these are PRs that might have reviews this month
+            let allRecentPRs = [];
+            hasNextPage = true;
+            cursor = null;
+            pageCount = 0;
+            
+            while (hasNextPage && pageCount < MAX_PAGES) {
+              const variables = {
+                owner,
+                repo,
+                after: cursor
+              };
+              
+              try {
+                const result = await github.graphql(allPRsQuery, variables);
+                
+                const prs = result.repository.pullRequests;
+                allRecentPRs = allRecentPRs.concat(prs.nodes);
+                hasNextPage = prs.pageInfo.hasNextPage;
+                cursor = prs.pageInfo.endCursor;
+                pageCount++;
+              } catch (error) {
+                core.warning(`Error fetching recent PRs: ${error.message}`);
+                break;
+              }
+            }
+            
             // Fetch all reviews for the month using REST API
-            // More efficient: only fetch reviews for PRs created this month (already fetched)
+            // Fetch reviews from ALL recent PRs, not just PRs created this month
             let allReviews = [];
             
-            for (const pr of allPRs) {
+            for (const pr of allRecentPRs) {
               try {
                 if (!pr.number) continue;
                 
