@@ -282,6 +282,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        id: apt-cache
+        with:
+          path: |
+            /var/cache/apt/archives
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-xvfb-chromium-
+            ${{ runner.os }}-apt-
       - name: Install system dependencies
         run: |
           sudo apt-get update
