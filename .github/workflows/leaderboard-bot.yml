@@ -200,7 +200,7 @@ jobs:
                 // Secondary tie-breaker: more reviews is better
                 if (b.reviews !== a.reviews) return b.reviews - a.reviews;
                 // Final tie-breaker: alphabetical (case-insensitive, consistent)
-                return a.login.localeCompare(b.login, 'en', { sensitivity: 'base' });
+                return a.login.localeCompare(b.login, 'en-US', { sensitivity: 'base' });
               });
             
             // Find the PR author's position
