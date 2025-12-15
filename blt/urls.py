@@ -1266,9 +1266,6 @@ if settings.DEBUG and not settings.TESTING:
         path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
         path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
         path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
-        path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
-        path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
-        path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
         path("silk/", include("silk.urls", namespace="silk")),
     ] + urlpatterns
 
