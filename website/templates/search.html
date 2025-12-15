@@ -808,114 +808,69 @@
         </div>
     {% endif %}
     <script>
-    function scrollToSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            section.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
+        document.addEventListener("DOMContentLoaded", function () {
+          const chatButtons = document.querySelectorAll(".start-chat, .request-chat");
+      
+          chatButtons.forEach((btn) => {
+            btn.addEventListener("click", async function () {
+              const userId = this.dataset.userId;
+              const originalHTML = this.innerHTML;
+      
+              this.disabled = true;
+              this.classList.add("cursor-wait");
+      
+              try {
+                const response = await fetch(`/messaging/start-thread/${userId}/`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                  },
+                });
+      
+                const data = await response.json();
+      
+                if (data.locked) {
+                  // Request sent
+                  this.innerHTML = `<i class="fas fa-envelope mr-2"></i> Request Sent`;
+                  this.classList.remove("bg-[#e74c3c]", "hover:bg-[#c0392b]");
+                  this.classList.add("bg-red-500", "cursor-not-allowed");
+                } else if (data.success && data.thread_id) {
+                  // Redirect straight to chat
+                  const targetUrl = new URL("/messaging/", window.location.origin);
+                  targetUrl.searchParams.append("thread", data.thread_id);
+                  window.location.href = targetUrl.toString();
+                } else {
+                  // Reset if something unexpected happens
+                  resetButtonState(this, originalHTML);
+                }
+              } catch (error) {
+                console.error("Network Error:", error);
+                resetButtonState(this, originalHTML);
+              }
             });
-        }
-    }
- 
- function showAlert(message, type = 'warning') {
-  const alertBox = document.createElement("div");
-  let baseClasses = [
-    "fixed", "top-4", "right-4", "border-l-4", "p-3", "rounded",
-    "shadow-lg", "transition-opacity", "duration-500", "z-50"
-  ];
-
-  if (type === 'warning') {
-    baseClasses.push("bg-yellow-100", "border-yellow-500", "text-yellow-800");
-  } else if (type === 'error') {
-    baseClasses.push("bg-red-100", "border-red-500", "text-red-800");
-  } else {
-    baseClasses.push("bg-green-100", "border-green-500", "text-green-800");
-  }
-
-  alertBox.className = baseClasses.join(" ");
-  alertBox.textContent = message;
-
-  document.body.appendChild(alertBox);
-  setTimeout(() => {
-    alertBox.classList.add("opacity-0");
-    setTimeout(() => alertBox.remove(), 500);
-  }, 4000);
-}
-
-function resetButtonState(button, originalHTML) {
-  button.innerHTML = originalHTML;
-  button.disabled = false;
-  button.classList.remove("cursor-wait");
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  const chatButtons = document.querySelectorAll(".start-chat, .request-chat");
-
-  chatButtons.forEach((btn) => {
-    btn.addEventListener("click", async function () {
-      const userId = this.dataset.userId;
-      const originalHTML = this.innerHTML;
-
-      this.disabled = true;
-      this.innerHTML = `
-        <div class="flex items-center gap-2 justify-center">
-          <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
-          <span>Sending...</span>
-        </div>
-      `;
-      this.classList.add("bg-red-600", "hover:bg-red-700", "cursor-wait");
-
-      try {
-        const response = await fetch(`/messaging/start-thread/${userId}/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
+          });
+      
+          function resetButtonState(button, originalHTML) {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            button.classList.remove("cursor-wait");
+          }
+      
+          function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+              const cookies = document.cookie.split(";");
+              for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + "=")) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+                }
+              }
+            }
+            return cookieValue;
+          }
         });
-        const data = await response.json();
-
-        if (data.locked) {
-          this.innerHTML = `<i class="fas fa-envelope mr-2"></i> Request Sent`;
-          this.classList.remove("bg-[#e74c3c]", "hover:bg-[#c0392b]");
-          this.classList.add("bg-red-500", "cursor-not-allowed");
-          this.disabled = true;
-          showAlert(data.message || "Request sent successfully.", "warning");
-        } else if (data.success && data.thread_id) {
-          const targetUrl = new URL('/messaging/', window.location.origin);
-          targetUrl.searchParams.append('thread', data.thread_id);
-          window.location.href = targetUrl.toString();
-        } else {
-          resetButtonState(this, originalHTML);
-          showAlert("Error sending request.", "error");
-        }
-      } catch (error) {
-        console.error("Network Error:", error);
-        resetButtonState(this, originalHTML);
-        showAlert("Network error. Please try again.", "error");
-      }
-    });
-  });
-
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let cookie of cookies) {
-        cookie = cookie.trim();
-        if (cookie.startsWith(name + "=")) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-});
-
     </script>
 {% endblock content %}
