@@ -191,7 +191,7 @@ jobs:
               }
             }
             
-            core.info(`Found ${allPRs.length} PRs, ${allReviews.length} reviews, ${allComments.length} comments`);
+            core.info(`Found ${allPRs.length} PRs created this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
             
             // Calculate scores for each user
             const userStats = {};
