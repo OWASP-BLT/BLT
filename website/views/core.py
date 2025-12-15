@@ -1444,7 +1444,14 @@ def view_suggestions(request):
 
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
-    return render(request, "sitemap.html", {"random_domain": random_domain})
+    random_user = User.objects.filter(is_active=True).exclude(is_superuser=True).order_by("?").first()
+
+    # Provide fallback values if no domain or user exists
+    context = {
+        "random_domain": random_domain.name if random_domain else "example.com",
+        "random_username": random_user.username if random_user else "user",
+    }
+    return render(request, "sitemap.html", context)
 
 
 def badge_list(request):
