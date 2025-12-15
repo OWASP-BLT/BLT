@@ -34,6 +34,10 @@ jobs:
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             
+            // Calculate a reasonable lookback period for fetching PRs to check for reviews
+            // We look back 3 months to catch reviews on older PRs while avoiding unbounded queries
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+            
             core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
             
             // Configuration constants
@@ -62,10 +66,11 @@ jobs:
             `;
             
             // GraphQL query to fetch ALL recent PRs (for counting reviews on any PR)
+            // Filters to PRs updated in the last 3 months to avoid unbounded queries
             const allPRsQuery = `
-              query($owner: String!, $repo: String!, $after: String) {
+              query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
                 repository(owner: $owner, name: $repo) {
-                  pullRequests(first: ${PER_PAGE}, orderBy: {field: UPDATED_AT, direction: DESC}, after: $after) {
+                  pullRequests(first: ${PER_PAGE}, orderBy: {field: UPDATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
                     nodes {
                       number
                     }
@@ -80,16 +85,16 @@ jobs:
             
             // Fetch all PRs created in current month
             let allPRs = [];
-            let hasNextPage = true;
-            let cursor = null;
-            let pageCount = 0;
+            let prHasNextPage = true;
+            let prCursor = null;
+            let prPageCount = 0;
             
-            while (hasNextPage && pageCount < MAX_PAGES) {
+            while (prHasNextPage && prPageCount < MAX_PAGES) {
               const variables = {
                 owner,
                 repo,
                 since: startOfMonth.toISOString(),
-                after: cursor
+                after: prCursor
               };
               
               try {
@@ -97,9 +102,9 @@ jobs:
                 
                 const prs = result.repository.pullRequests;
                 allPRs = allPRs.concat(prs.nodes);
-                hasNextPage = prs.pageInfo.hasNextPage;
-                cursor = prs.pageInfo.endCursor;
-                pageCount++;
+                prHasNextPage = prs.pageInfo.hasNextPage;
+                prCursor = prs.pageInfo.endCursor;
+                prPageCount++;
               } catch (error) {
                 core.warning(`Error fetching PRs: ${error.message}`);
                 break;
@@ -107,16 +112,18 @@ jobs:
             }
             
             // Fetch ALL recent PRs (for review counting) - these are PRs that might have reviews this month
+            // Only fetch PRs updated in the last 3 months to avoid unbounded queries
             let allRecentPRs = [];
-            hasNextPage = true;
-            cursor = null;
-            pageCount = 0;
+            let recentPRsHasNextPage = true;
+            let recentPRsCursor = null;
+            let recentPRsPageCount = 0;
             
-            while (hasNextPage && pageCount < MAX_PAGES) {
+            while (recentPRsHasNextPage && recentPRsPageCount < MAX_PAGES) {
               const variables = {
                 owner,
                 repo,
-                after: cursor
+                since: threeMonthsAgo.toISOString(),
+                after: recentPRsCursor
               };
               
               try {
@@ -124,9 +131,9 @@ jobs:
                 
                 const prs = result.repository.pullRequests;
                 allRecentPRs = allRecentPRs.concat(prs.nodes);
-                hasNextPage = prs.pageInfo.hasNextPage;
-                cursor = prs.pageInfo.endCursor;
-                pageCount++;
+                recentPRsHasNextPage = prs.pageInfo.hasNextPage;
+                recentPRsCursor = prs.pageInfo.endCursor;
+                recentPRsPageCount++;
               } catch (error) {
                 core.warning(`Error fetching recent PRs: ${error.message}`);
                 break;
