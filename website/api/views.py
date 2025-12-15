@@ -1455,6 +1455,16 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = SecurityIncident.objects.all()
 
+    def update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return super().update(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(reporter=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
     def get_queryset(self):
         queryset = self.queryset  # Use class-level queryset
 
