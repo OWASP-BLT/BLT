@@ -28,4 +28,12 @@ class Migration(migrations.Migration):
                 help_text="Last day of monthly visit tracking",
             ),
         ),
+        migrations.AddIndex(
+            model_name="userprofile",
+            index=models.Index(fields=["monthly_visit_count"], name="userprofile_monthly_visit_count_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="userprofile",
+            index=models.Index(fields=["last_monthly_visit"], name="userprofile_last_monthly_visit_idx"),
+        ),
     ]

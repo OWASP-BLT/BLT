@@ -774,10 +774,7 @@ class MonthlyVisitorsLeaderboardView(LeaderboardBase, ListView):
         context["current_year"] = today.year
 
         if self.request.user.is_authenticated:
-            try:
-                context["wallet"] = Wallet.objects.get(user=self.request.user)
-            except Wallet.DoesNotExist:
-                pass
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         return context
 

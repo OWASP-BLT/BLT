@@ -1046,7 +1046,8 @@ class UserProfile(models.Model):
                 update_fields["monthly_visit_count"] = 1
                 update_fields["last_monthly_visit"] = today
             elif self.last_monthly_visit != today:
-                # Only update monthly count if this is a different day within the same month
+                # Handle edge case where monthly tracking is out of sync with daily tracking
+                # (e.g., from data migration or if monthly tracking was added after daily tracking started)
                 update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
                 update_fields["last_monthly_visit"] = today
 
