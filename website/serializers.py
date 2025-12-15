@@ -1,5 +1,6 @@
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
+from django.db.utils import IntegrityError as DBIntegrityError
 from rest_framework import serializers
 
 from website.models import (
@@ -439,9 +440,8 @@ class BountySerializer(serializers.ModelSerializer):
             with transaction.atomic():
                 return super().create(validated_data)
         except IntegrityError as exc:
-            # If another request slipped in and created the pending bounty first,
-            # the unique constraint will fire; convert that into a clean API error.
-            if "uniq_pending_bounty_per_sponsor_issue" in str(exc):
+            # SQLite and PostgreSQL both raise UNIQUE constraint failures as this type.
+            if isinstance(exc.__cause__, DBIntegrityError) or isinstance(exc, DBIntegrityError):
                 raise serializers.ValidationError("You already have a pending bounty for this issue.")
             raise
 
