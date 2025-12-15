@@ -426,18 +426,21 @@ def search_issues(request, template="search.html"):
     if query is None:
         return render(request, template)
     query = query.strip()
-    if query[:6] == "issue:":
+    # Safe prefix checking with length validation to prevent IndexError
+    if len(query) >= 6 and query[:6] == "issue:":
         stype = "issue"
-        query = query[6:]
-    elif query[:7] == "domain:":
+        query = query[6:].strip()
+    elif len(query) >= 7 and query[:7] == "domain:":
         stype = "domain"
-        query = query[7:]
-    elif query[:5] == "user:":
+        query = query[7:].strip()
+    elif len(query) >= 5 and query[:5] == "user:":
         stype = "user"
-        query = query[5:]
-    elif query[:6] == "label:":
+        query = query[5:].strip()
+    elif len(query) >= 6 and query[:6] == "label:":
         stype = "label"
-        query = query[6:]
+        query = query[6:].strip()
+    # Handle search by type - using elif chain to ensure only one search type executes
+    # Unprefixed searches (stype is None) default to issue search
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
@@ -451,24 +454,33 @@ def search_issues(request, template="search.html"):
             "type": stype,
             "issues": issues,
         }
-    if stype == "domain" or stype is None:
+    elif stype == "domain":
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
+        else:
+            issues = Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues,
         }
-    if stype == "user" or stype is None:
+    elif stype == "user":
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(Q(is_hidden=True))[
+                0:20
+            ]
+        else:
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues,
         }
-
-    if stype == "label" or stype is None:
+    elif stype == "label":
         label_values = []
         q_lower = query.lower()
 
@@ -493,6 +505,14 @@ def search_issues(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": issues_qs,
+        }
+
+    # Fallback: if context is None (shouldn't happen with current logic, but defensive)
+    if context is None:
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.none(),
         }
 
     if request.user.is_authenticated:
@@ -1348,10 +1368,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
+            # Safely fetch CVE score - get_cve_score() may raise various exceptions
             try:
                 obj.cve_score = obj.get_cve_score()
-            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
+            except Exception as e:
                 # If CVE score fetch fails, continue without it
+                logger.error(f"Error fetching CVE score for {obj.cve_id}: {str(e)}", exc_info=True)
                 obj.cve_score = None
                 messages.warning(
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
