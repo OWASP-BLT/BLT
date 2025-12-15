@@ -80,8 +80,9 @@ jobs:
               }
             `;
             
-            // GraphQL query to fetch ALL recent PRs (for counting reviews on any PR)
+            // GraphQL query to fetch ALL recent PRs with their reviews (for counting reviews on any PR)
             // Fetches PRs ordered by update date to catch reviews on recently active PRs
+            // Includes reviews in the query to avoid N+1 problem
             const allPRsQuery = `
               query($owner: String!, $repo: String!, $after: String) {
                 repository(owner: $owner, name: $repo) {
@@ -89,6 +90,20 @@ jobs:
                     nodes {
                       number
                       updatedAt
+                      reviews(first: 100) {
+                        nodes {
+                          submittedAt
+                          author {
+                            login
+                            ... on User {
+                              type: __typename
+                            }
+                            ... on Bot {
+                              type: __typename
+                            }
+                          }
+                        }
+                      }
                     }
                     pageInfo {
                       hasNextPage
@@ -144,9 +159,10 @@ jobs:
               }
             }
             
-            // Fetch ALL recent PRs (for review counting) - these are PRs that might have reviews this month
+            // Fetch ALL recent PRs with their reviews in a single query (for review counting)
             // Only fetch PRs updated in the last 3 months to avoid unbounded queries
             let allRecentPRs = [];
+            let allReviews = [];
             let recentPRsHasNextPage = true;
             let recentPRsCursor = null;
             let recentPRsPageCount = 0;
@@ -169,6 +185,25 @@ jobs:
                   return updatedAt >= threeMonthsAgo;
                 });
                 
+                // Extract reviews from each PR and filter by current month
+                for (const pr of recentPRs) {
+                  if (pr.reviews && pr.reviews.nodes) {
+                    const monthReviews = pr.reviews.nodes.filter(review => {
+                      if (!review.submittedAt) return false;
+                      const reviewDate = new Date(review.submittedAt);
+                      return reviewDate >= startOfMonth && reviewDate <= endOfMonth;
+                    });
+                    
+                    // Convert GraphQL format to match previous REST API format
+                    const formattedReviews = monthReviews.map(review => ({
+                      submitted_at: review.submittedAt,
+                      user: review.author
+                    }));
+                    
+                    allReviews = allReviews.concat(formattedReviews);
+                  }
+                }
+                
                 allRecentPRs = allRecentPRs.concat(recentPRs);
                 
                 // Stop if we've gone past the 3-month lookback window (PRs are ordered DESC by updated date)
@@ -187,34 +222,6 @@ jobs:
               } catch (error) {
                 core.warning(`Error fetching recent PRs: ${error.message}`);
                 break;
-              }
-            }
-            
-            // Fetch all reviews for the month using REST API
-            // Fetch reviews from ALL recent PRs, not just PRs created this month
-            let allReviews = [];
-            
-            for (const pr of allRecentPRs) {
-              try {
-                if (!pr.number) continue;
-                
-                const { data: reviews } = await github.rest.pulls.listReviews({
-                  owner,
-                  repo,
-                  pull_number: pr.number,
-                  per_page: PER_PAGE
-                });
-                
-                // Filter reviews from current month and with valid submitted_at
-                const monthReviews = reviews.filter(review => {
-                  if (!review.submitted_at) return false;
-                  const reviewDate = new Date(review.submitted_at);
-                  return reviewDate >= startOfMonth && reviewDate <= endOfMonth;
-                });
-                
-                allReviews = allReviews.concat(monthReviews);
-              } catch (error) {
-                core.warning(`Error fetching reviews for PR #${pr.number}: ${error.message}`);
               }
             }
             
