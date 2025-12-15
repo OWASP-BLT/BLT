@@ -1762,7 +1762,7 @@ def start_thread(request, user_id):
             }
         )
 
-    #  User is Unlocked (Standard New Message)
+    # When User is Unlocked (Standard New Message)
     thread = Thread.objects.filter(participants=current_user).filter(participants=other_user).first()
 
     if not thread:
@@ -1777,7 +1777,7 @@ def start_thread(request, user_id):
                 "type": "new_message",
                 "sender_username": current_user.username,
                 "recipient_username": other_user.username,
-                "action_url": chat_url,
+                "chat_url": chat_url,
                 "action_text": "Reply Now",
             }
 
