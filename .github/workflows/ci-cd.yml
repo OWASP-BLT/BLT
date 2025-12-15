@@ -286,17 +286,27 @@ jobs:
         uses: actions/cache@v4
         id: apt-cache
         with:
-          path: |
-            /var/cache/apt/archives
-            /var/lib/apt/lists
+          path: ~/apt-cache
           key: ${{ runner.os }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
           restore-keys: |
             ${{ runner.os }}-apt-xvfb-chromium-
             ${{ runner.os }}-apt-
+      - name: Restore apt cache from user directory
+        if: steps.apt-cache.outputs.cache-hit == 'true'
+        run: |
+          sudo cp -r ~/apt-cache/archives/* /var/cache/apt/archives/ 2>/dev/null || true
+          sudo cp -r ~/apt-cache/lists/* /var/lib/apt/lists/ 2>/dev/null || true
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+      - name: Copy apt cache to user directory
+        if: always()
+        run: |
+          mkdir -p ~/apt-cache/archives ~/apt-cache/lists
+          sudo cp -r /var/cache/apt/archives/* ~/apt-cache/archives/ 2>/dev/null || true
+          sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
+          sudo chown -R $USER:$USER ~/apt-cache
       - run: pip install poetry
       - run: poetry lock
       - run: poetry install --with dev
