@@ -11,7 +11,7 @@ class IssueActionsTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="12345")
-        self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
+        self.user_profile = UserProfile.objects.get_or_create(user=self.user)[0]
         self.issue = Issue.objects.create(url="http://example.com", description="Test Issue", user=self.user)
         self.client.login(username="testuser", password="12345")
 
@@ -155,3 +155,17 @@ class IssueActionsTests(TestCase):
         self.user_profile.refresh_from_db()
         self.assertFalse(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
         self.assertTrue(self.user_profile.issue_downvoted.filter(pk=self.issue.pk).exists())
+
+    def test_like_issue_nonexistent_issue(self):
+        """Test that like_issue handles non-existent issues gracefully."""
+        url = reverse("like_issue", args=[99999])
+        response = self.client.post(url)
+        # get_object_or_404 returns 404 for non-existent issues
+        self.assertEqual(response.status_code, 404)
+
+    def test_dislike_issue_nonexistent_issue(self):
+        """Test that dislike_issue handles non-existent issues gracefully."""
+        url = reverse("dislike_issue", args=[99999])
+        response = self.client.post(url)
+        # get_object_or_404 returns 404 for non-existent issues
+        self.assertEqual(response.status_code, 404)

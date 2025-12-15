@@ -96,7 +96,6 @@ logger = logging.getLogger(__name__)
 @require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
-    context = {}
     issue_pk = int(issue_pk)
     issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
@@ -142,7 +141,6 @@ def like_issue(request, issue_pk):
 @require_POST
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
-    context = {}
     issue_pk = int(issue_pk)
     issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
