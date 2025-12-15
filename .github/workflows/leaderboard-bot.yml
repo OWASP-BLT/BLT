@@ -44,7 +44,7 @@ jobs:
             const query = `
               query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
                 repository(owner: $owner, name: $repo) {
-                  pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
+                  pullRequests(first: ${PER_PAGE}, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
                     nodes {
                       number
                       author {
@@ -207,7 +207,6 @@ jobs:
             const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
             
             // Format the month/year for display
-            const monthYear = startOfMonth.toISOString().substring(0, 7); // YYYY-MM format
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                                 'July', 'August', 'September', 'October', 'November', 'December'];
             const displayMonth = `${monthNames[startOfMonth.getMonth()]} ${startOfMonth.getFullYear()}`;
