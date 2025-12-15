@@ -127,21 +127,33 @@
                             </td>
                             <td class="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{{ org.slug }}</td>
                             <td class="px-3 py-2">
-                                <a class="text-[#e74c3c] hover:underline break-all"
-                                   href="{{ org.url }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer">{{ org.url|default:"—" }}</a>
+                                {% if org.url %}
+                                    <a class="text-[#e74c3c] hover:underline break-all"
+                                       href="{{ org.url }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer">{{ org.url }}</a>
+                                {% else %}
+                                    <span class="text-gray-500 dark:text-gray-500">—</span>
+                                {% endif %}
                             </td>
                             <td class="px-3 py-2">
-                                <a class="text-gray-700 dark:text-gray-300 hover:underline"
-                                   href="mailto:{{ org.email }}">{{ org.email|default:"—" }}</a>
+                                {% if org.email %}
+                                    <a class="text-gray-700 dark:text-gray-300 hover:underline"
+                                       href="mailto:{{ org.email }}">{{ org.email }}</a>
+                                {% else %}
+                                    <span class="text-gray-500 dark:text-gray-500">—</span>
+                                {% endif %}
                             </td>
                             <td class="px-3 py-2 text-gray-700 dark:text-gray-300">{{ org.github_org|default:"—" }}</td>
                             <td class="px-3 py-2">
-                                <a class="text-[#e74c3c] hover:underline break-all"
-                                   href="{{ org.source_code }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer">{{ org.source_code|default:"—" }}</a>
+                                {% if org.source_code %}
+                                    <a class="text-[#e74c3c] hover:underline break-all"
+                                       href="{{ org.source_code }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer">{{ org.source_code }}</a>
+                                {% else %}
+                                    <span class="text-gray-500 dark:text-gray-500">—</span>
+                                {% endif %}
                             </td>
                             <td class="px-3 py-2">
                                 {% if org.gsoc_years %}

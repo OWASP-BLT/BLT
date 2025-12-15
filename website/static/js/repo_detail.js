@@ -576,7 +576,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 return `<div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">${items.map(issue => {
                     const dot = (issue.state === 'open') ? 'bg-green-500' : 'bg-red-500';
-                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${dot}"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(issue.url)}" target="_blank" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(issue.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(issue.issue_id)}</div></div></div></div>`;
+                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${dot}"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(issue.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(issue.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(issue.issue_id)}</div></div></div></div>`;
                 }).join('')}</div>`;
             };
 
@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `<div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">${items.map(pr => {
                     const dot = (pr.state === 'open') ? 'bg-green-500' : (pr.is_merged ? 'bg-purple-500' : 'bg-red-500');
                     const status = pr.is_merged ? '<span class="text-purple-600">merged</span>' : (pr.state === 'closed' ? '<span class="text-red-600">closed</span>' : '');
-                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${dot}"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(pr.url)}" target="_blank" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(pr.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(pr.issue_id)} ${status}</div></div></div></div>`;
+                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${dot}"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(pr.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(pr.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(pr.issue_id)} ${status}</div></div></div></div>`;
                 }).join('')}</div>`;
             };
 
@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return `<div class="p-3 text-center"><p class="text-xs text-gray-500 dark:text-gray-500">No bounties</p></div>`;
                 }
                 return `<div class="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">${items.map(issue => {
-                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 bg-green-500"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(issue.url)}" target="_blank" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(issue.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(issue.issue_id)} <span class="inline-block ml-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs rounded">$ Bounty</span></div></div></div></div>`;
+                    return `<div class="p-3"><div class="flex items-start gap-2"><span class="flex-shrink-0 w-2 h-2 rounded-full mt-1.5 bg-green-500"></span><div class="flex-1 min-w-0"><a href="${escapeHtml(issue.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-[#e74c3c] font-medium line-clamp-2">${escapeHtml(issue.title)}</a><div class="mt-1 text-xs text-gray-600 dark:text-gray-400">#${escapeHtml(issue.issue_id)} <span class="inline-block ml-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs rounded">$ Bounty</span></div></div></div></div>`;
                 }).join('')}</div>`;
             };
 

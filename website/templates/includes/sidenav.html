@@ -710,8 +710,8 @@
                         <span class="truncate">{% trans "Website Stats" %}</span>
                     </a>
                     <a href="{% url 'management_commands' %}"
-                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if 'management_commands' in request.resolver_match.url_name or '/status/commands' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if 'management_commands' in request.resolver_match.url_name or '/status/commands' in request.path %}bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c]{% else %}bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                       class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if 'management_commands' in request.resolver_match.url_name|default:'' or '/status/commands' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if 'management_commands' in request.resolver_match.url_name|default:'' or '/status/commands' in request.path %}bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c]{% else %}bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                             <i class="fas fa-terminal"></i>
                         </div>
                         <span class="truncate">{% trans "Management Commands" %}</span>
@@ -814,7 +814,14 @@
 <script>
     // Check pin state before page load to prevent animation
     (function() {
-        const isPinned = localStorage.getItem('sidebarPinned') === 'true';
+        let isPinned = false;
+        try {
+            isPinned = localStorage.getItem('sidebarPinned') === 'true';
+        } catch (e) {
+            // localStorage not available (Safari private mode, restricted contexts)
+            isPinned = false;
+        }
+        
         if (isPinned) {
             // Add a style to prevent transition on initial load
             const style = document.createElement('style');
@@ -835,7 +842,14 @@
         const sidebar = document.querySelector('.sidebar');
         
         // Load saved pin state from localStorage and apply immediately
-        const isPinned = localStorage.getItem('sidebarPinned') === 'true';
+        let isPinned = false;
+        try {
+            isPinned = localStorage.getItem('sidebarPinned') === 'true';
+        } catch (e) {
+            // localStorage not available (Safari private mode, restricted contexts)
+            isPinned = false;
+        }
+        
         if (pinToggle) {
             pinToggle.checked = isPinned;
         }
@@ -849,7 +863,11 @@
         if (pinToggle && sidebar) {
             pinToggle.addEventListener('change', function() {
                 const checked = this.checked;
-                localStorage.setItem('sidebarPinned', checked);
+                try {
+                    localStorage.setItem('sidebarPinned', checked);
+                } catch (e) {
+                    // localStorage not available, continue without saving
+                }
                 
                 if (checked) {
                     sidebar.setAttribute('data-pinned', 'true');

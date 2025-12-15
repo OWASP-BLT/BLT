@@ -18,7 +18,7 @@
                         Organizations
                     </a>
                     <span class="text-gray-400 dark:text-gray-600">/</span>
-                    {% if current_organization_name %}
+                    {% if current_organization_name and current_organization_slug %}
                         <a href="{% url 'organization_detail' current_organization_slug %}"
                            class="hover:text-[#e74c3c]">{{ current_organization_name }}</a>
                         <span class="text-gray-400 dark:text-gray-600">/</span>
