@@ -199,17 +199,15 @@ jobs:
                 if (b.prs !== a.prs) return b.prs - a.prs;
                 // Secondary tie-breaker: more reviews is better
                 if (b.reviews !== a.reviews) return b.reviews - a.reviews;
-                // Final tie-breaker: alphabetical
-                return a.login.localeCompare(b.login);
+                // Final tie-breaker: alphabetical (case-insensitive, consistent)
+                return a.login.localeCompare(b.login, 'en', { sensitivity: 'base' });
               });
             
             // Find the PR author's position
             const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
             
             // Format the month/year for display
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                                'July', 'August', 'September', 'October', 'November', 'December'];
-            const displayMonth = `${monthNames[startOfMonth.getMonth()]} ${startOfMonth.getFullYear()}`;
+            const displayMonth = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             
             // Generate leaderboard comment
             const commentMarker = '<!-- leaderboard-bot -->';
