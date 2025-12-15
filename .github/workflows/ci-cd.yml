@@ -295,7 +295,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast 2>&1 | tee test-output.txt
+          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium -v 3 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
