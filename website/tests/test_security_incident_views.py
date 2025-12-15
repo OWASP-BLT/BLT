@@ -60,7 +60,7 @@ class SecurityDashboardViewTest(TestCase):
     def test_dashboard_filter_by_severity(self):
         """Test filtering incidents by severity"""
         self.client.login(username="staffuser", password="testpass123")
-        response = self.client.get(reverse("security_dashboard"), {"severity": "CRITICAL"})
+        response = self.client.get(reverse("security_dashboard"), {"severity": "critical"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Critical Security Issue")
         self.assertNotContains(response, "Minor Issue")
@@ -68,7 +68,7 @@ class SecurityDashboardViewTest(TestCase):
     def test_dashboard_filter_by_status(self):
         """Test filtering incidents by status"""
         self.client.login(username="staffuser", password="testpass123")
-        response = self.client.get(reverse("security_dashboard"), {"status": "RESOLVED"})
+        response = self.client.get(reverse("security_dashboard"), {"status": "resolved"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Minor Issue")
         self.assertNotContains(response, "Critical Security Issue")
