@@ -954,7 +954,12 @@ class UserProfile(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = self.user.username
+            self.slug = slugify(self.user.username)
+            original_slug = self.slug
+            counter = 1
+            while UserProfile.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
         super().save(*args, **kwargs)
 
     def check_team_membership(self):
