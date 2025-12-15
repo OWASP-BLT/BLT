@@ -302,9 +302,10 @@ jobs:
               }
             }
             
-            // Calculate total scores
+            // Calculate total scores with weighted points
+            // PRs: 10 points, Reviews: 4 points, Comments: 2 points
             for (const login in userStats) {
-              userStats[login].total = userStats[login].prs + userStats[login].reviews + userStats[login].comments;
+              userStats[login].total = (userStats[login].prs * 10) + (userStats[login].reviews * 4) + (userStats[login].comments * 2);
             }
             
             // Sort users by total score
