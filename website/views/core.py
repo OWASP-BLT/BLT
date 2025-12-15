@@ -50,6 +50,7 @@ from website.models import (
     IP,
     Activity,
     Badge,
+    ChatRequest,
     DailyStats,
     Domain,
     ForumCategory,
@@ -620,7 +621,7 @@ def search(request, template="search.html"):
             else:
                 issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
             domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
+            users = User.objects.filter(username__icontains=query).select_related("userprofile").distinct()[0:20]
             projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
             repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
 
@@ -666,14 +667,26 @@ def search(request, template="search.html"):
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
                 .order_by("-total_score")[0:20]
+                .select_related("user")
             )
+
+            sent_requests = set()
+            if request.user.is_authenticated:
+                sent_requests = set(
+                    ChatRequest.objects.filter(sender=request.user).values_list("receiver_id", flat=True)
+                )
+
+            users_list = []
             for userprofile in users:
-                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+                userprofile.user.has_pending_request = userprofile.user.id in sent_requests
+                userprofile.user.badges = UserBadge.objects.filter(user=userprofile.user)
+                users_list.append(userprofile.user)
+
             context = {
                 "request": request,
                 "query": query,
                 "type": stype,
-                "users": users,
+                "users": users_list,
             }
 
         elif stype == "labels":

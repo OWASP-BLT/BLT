@@ -358,13 +358,17 @@
                                                             <i class="fas fa-comment-alt"></i>
                                                             <span>Message</span>
                                                         </button>
+                                                    {% elif user.has_pending_request %}
+                                                        <button class="text-white bg-yellow-500 cursor-not-allowed px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2"
+                                                                disabled>
+                                                            <i class="fas fa-envelope"></i>
+                                                            <span>Request Sent</span>
+                                                        </button>
                                                     {% else %}
-                                                        <button class="text-white bg-gray-400 dark:bg-gray-500 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2"
-                                                                data-user-id="{{ user.id }}"
-                                                                disabled
-                                                                title="User has not joined BLT-DMs">
-                                                            <i class="fas fa-comment-alt"></i>
-                                                            <span>Message</span>
+                                                        <button class="text-white bg-gray-400 hover:bg-gray-500 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2 request-chat"
+                                                                data-user-id="{{ user.id }}">
+                                                            <i class="fas fa-lock"></i>
+                                                            <span>Request Chat</span>
                                                         </button>
                                                     {% endif %}
                                                 </div>
@@ -813,47 +817,86 @@
             });
         }
     }
+  
 document.addEventListener("DOMContentLoaded", function () {
-    const messageButtons = document.querySelectorAll(".start-chat");
-    messageButtons.forEach(button => {
-        button.addEventListener("click", function () {
-            const userId = this.getAttribute("data-user-id");
+  const chatButtons = document.querySelectorAll(".start-chat, .request-chat");
 
-            fetch(`/messaging/start-thread/${userId}/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = `/messaging/?thread=${data.thread_id}`;
-                } else {
-                    alert("Error starting chat.");
-                }
-            })
-            .catch(error => console.error("Error:", error));
+  chatButtons.forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const userId = this.dataset.userId;
+      const isRequest = this.classList.contains("request-chat");
+      const originalHTML = this.innerHTML;
+
+      // --- Show red loading spinner ---
+      this.disabled = true;
+      this.innerHTML = `
+        <div class="flex items-center gap-2 justify-center">
+          <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>Sending...</span>
+        </div>
+      `;
+      this.classList.add("bg-[#e74c3c]", "hover:bg-[#c0392b]", "cursor-wait");
+
+      try {
+        const response = await fetch(`/messaging/start-thread/${userId}/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
         });
-    });
+        const data = await response.json();
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+        if (data.locked) {
+          // Show smooth yellow "Request Sent" state
+          this.innerHTML = `<i class="fas fa-envelope mr-2"></i> Request Sent`;
+          this.classList.remove("bg-[#e74c3c]", "hover:bg-[#c0392b]");
+          this.classList.add("bg-red-500", "cursor-not-allowed");
+          this.disabled = true;
+
+          // Optional fade-in alert (instead of browser alert)
+          const alertBox = document.createElement("div");
+          alertBox.className =
+            "fixed top-4 right-4 bg-red-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded shadow-lg transition-opacity duration-500";
+          alertBox.textContent = data.message;
+          document.body.appendChild(alertBox);
+          setTimeout(() => alertBox.remove(), 4000);
+        } else if (data.success && data.thread_id) {
+          // Redirect to messaging
+          window.location.href = `/messaging/?thread=${data.thread_id}`;
+        } else {
+          this.innerHTML = originalHTML;
+          this.disabled = false;
+          this.classList.remove("cursor-wait");
+          alert("Error sending request.");
         }
-        return cookieValue;
-    }
+      } catch (error) {
+        alert("Network error.");
+        this.innerHTML = originalHTML;
+        this.disabled = false;
+        this.classList.remove("cursor-wait");
+      }
+    });
+  });
 
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
 });
+
     </script>
 {% endblock content %}

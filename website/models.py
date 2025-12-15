@@ -903,6 +903,7 @@ class UserProfile(models.Model):
     )
     follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
     user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
+    slug = models.SlugField(unique=True, blank=True, null=True)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     role = models.CharField(max_length=255, blank=True, null=True)
@@ -931,6 +932,7 @@ class UserProfile(models.Model):
     email_spam_report = models.BooleanField(default=False, help_text="Whether the email was marked as spam")
     email_unsubscribed = models.BooleanField(default=False, help_text="Whether the user has unsubscribed")
     email_click_count = models.PositiveIntegerField(default=0, help_text="Number of email link clicks")
+    timezone = models.CharField(max_length=50, default="UTC")
     email_open_count = models.PositiveIntegerField(default=0, help_text="Number of email opens")
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
@@ -957,6 +959,11 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self.user.username
+        super().save(*args, **kwargs)
 
     def check_team_membership(self):
         return self.team is not None
@@ -3077,6 +3084,23 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class ChatRequest(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_chat_requests")
+    receiver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_chat_requests"
+    )
+    email_sent = models.BooleanField(default=False)
+    is_unlocked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("sender", "receiver")
+
+    def __str__(self):
+        status = "Unlocked" if self.is_unlocked else "Locked"
+        return f"{self.sender.username} → {self.receiver.username} ({status})"
 
 
 class BannedApp(models.Model):

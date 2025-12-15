@@ -40,6 +40,7 @@ from website.models import (
     BaconSubmission,
     Badge,
     Challenge,
+    ChatRequest,
     Contributor,
     ContributorStats,
     Domain,
@@ -1755,49 +1756,82 @@ def messaging_home(request):
     return render(request, "messaging.html", {"threads": threads})
 
 
+@login_required
 def start_thread(request, user_id):
-    if request.method == "POST":
-        other_user = get_object_or_404(User, id=user_id)
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
-        # Check if a thread already exists between the two users
-        thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
+    current_user = request.user
+    other_user = get_object_or_404(User, id=user_id)
 
-        # Flag if this is a new thread (for sending email)
-        is_new_thread = not thread
+    # When User is Locked (Needs to Generate Keys)
+    if not getattr(other_user.userprofile, "public_key", None):
+        chat_request, created = ChatRequest.objects.get_or_create(sender=current_user, receiver=other_user)
 
-        if not thread:
-            # Create a new thread
-            thread = Thread.objects.create()
-            thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+        if not chat_request.email_sent and other_user.email:
+            # Link to unlock their messages.
+            unlock_url = request.build_absolute_uri(reverse("profile_edit"))
+            subject = f"Action Required: {current_user.username} wants to message you on OWASP BLT"
 
-            # Send email notification to the recipient for new thread
-            if other_user.email:
-                subject = f"New encrypted chat from {request.user.username} on OWASP BLT"
-                chat_url = request.build_absolute_uri(reverse("messaging"))
+            context = {
+                "type": "unlock_request",
+                "sender_username": current_user.username,
+                "recipient_username": other_user.username,
+                "action_url": unlock_url,
+                "action_text": "Setup Encryption Keys",
+            }
 
-                # Create context for the email template
-                context = {
-                    "sender_username": request.user.username,
-                    "recipient_username": other_user.username,
-                    "chat_url": chat_url,
-                }
+            msg_html = render_to_string("email/new_chat.html", context)
+            msg_plain = render_to_string("email/new_chat.html", context)
+            send_mail(
+                subject,
+                msg_plain,
+                settings.EMAIL_TO_STRING,
+                [other_user.email],
+                html_message=msg_html,
+            )
 
-                # Render the email content
-                msg_plain = render_to_string("email/new_chat.html", context)
-                msg_html = render_to_string("email/new_chat.html", context)
+            chat_request.email_sent = True
+            chat_request.save()
 
-                # Send the email
-                send_mail(
-                    subject,
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [other_user.email],
-                    html_message=msg_html,
-                )
+        return JsonResponse(
+            {
+                "success": False,
+                "locked": True,
+                "message": f"{other_user.username} is locked. We sent them an invite to setup encryption.",
+            }
+        )
 
-        return JsonResponse({"success": True, "thread_id": thread.id})
+    #  User is Unlocked (Standard New Message)
+    thread = Thread.objects.filter(participants=current_user).filter(participants=other_user).first()
 
-    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+    if not thread:
+        thread = Thread.objects.create()
+        thread.participants.set([current_user, other_user])
+
+        if other_user.email:
+            chat_url = request.build_absolute_uri(reverse("messaging"))
+            subject = f"New encrypted message from {current_user.username}"
+
+            context = {
+                "type": "new_message",
+                "sender_username": current_user.username,
+                "recipient_username": other_user.username,
+                "action_url": chat_url,
+                "action_text": "Reply Now",
+            }
+
+            msg_html = render_to_string("email/new_chat.html", context)
+            msg_plain = render_to_string("email/new_chat.html", context)
+            send_mail(
+                subject,
+                msg_plain,
+                settings.EMAIL_TO_STRING,
+                [other_user.email],
+                html_message=msg_html,
+            )
+
+    return JsonResponse({"success": True, "thread_id": thread.id})
 
 
 @login_required
