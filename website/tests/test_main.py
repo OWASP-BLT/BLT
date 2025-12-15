@@ -34,8 +34,6 @@ from ..models import (
     UserProfile,
 )
 
-os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
-
 
 @tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
