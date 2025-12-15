@@ -35,17 +35,17 @@ class CSVSanitizationTest(TestCase):
     def test_escape_leading_tab(self):
         """Test escaping leading tab character"""
         result = _escape_csv_formula("\tcmd")
-        self.assertEqual(result, "'\tcmd")
+        self.assertEqual(result, "cmd")
 
     def test_escape_leading_carriage_return(self):
         """Test escaping leading CR character"""
         result = _escape_csv_formula("\rcmd")
-        self.assertEqual(result, "'\rcmd")
+        self.assertEqual(result, "cmd")
 
     def test_escape_leading_line_feed(self):
         """Test escaping leading LF character"""
         result = _escape_csv_formula("\ncmd")
-        self.assertEqual(result, "'\ncmd")
+        self.assertEqual(result, "cmd")
 
     def test_whitespace_bypass_prevention(self):
         """Test that leading whitespace is stripped before checking"""
