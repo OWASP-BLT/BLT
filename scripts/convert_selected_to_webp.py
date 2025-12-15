@@ -32,8 +32,8 @@ def convert_to_webp(png_path_str):
         logger.info(f"Skipped (up-to-date): {webp_path}")
         return
     try:
-        img = Image.open(png_path).convert("RGBA")
-        img.save(webp_path, "webp", quality=85, method=6)
+        with Image.open(png_path) as img:
+            img.convert("RGBA").save(webp_path, "webp", quality=85, method=6)
         logger.info(f"Converted: {png_path} → {webp_path}")
     except Exception as e:
         logger.error(f"Failed: {png_path} — {e}")

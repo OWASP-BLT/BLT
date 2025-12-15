@@ -136,7 +136,6 @@ if DEBUG and not TESTING:
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
-TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
     DEBUG_TOOLBAR_PANELS = [
@@ -161,6 +160,16 @@ if DEBUG and not TESTING:
 
 ROOT_URLCONF = "blt.urls"
 
+COMMON_CONTEXT_PROCESSORS = [
+    "django.template.context_processors.debug",
+    "django.template.context_processors.request",
+    "django.template.context_processors.media",
+    "django.contrib.auth.context_processors.auth",
+    "django.contrib.messages.context_processors.messages",
+    "django.template.context_processors.i18n",
+    "django.template.context_processors.csrf",
+]
+
 if DEBUG:
     TEMPLATES = [
         {
@@ -169,15 +178,7 @@ if DEBUG:
             "APP_DIRS": True,
             "OPTIONS": {
                 "debug": True,
-                "context_processors": [
-                    "django.template.context_processors.debug",
-                    "django.template.context_processors.request",
-                    "django.template.context_processors.media",
-                    "django.contrib.auth.context_processors.auth",
-                    "django.contrib.messages.context_processors.messages",
-                    "django.template.context_processors.i18n",
-                    "django.template.context_processors.csrf",
-                ],
+                "context_processors": COMMON_CONTEXT_PROCESSORS,
             },
         }
     ]
@@ -198,15 +199,7 @@ else:
                         ],
                     )
                 ],
-                "context_processors": [
-                    "django.template.context_processors.debug",
-                    "django.template.context_processors.request",
-                    "django.template.context_processors.media",
-                    "django.contrib.auth.context_processors.auth",
-                    "django.contrib.messages.context_processors.messages",
-                    "django.template.context_processors.i18n",
-                    "django.template.context_processors.csrf",
-                ],
+                "context_processors": COMMON_CONTEXT_PROCESSORS,
             },
         }
     ]

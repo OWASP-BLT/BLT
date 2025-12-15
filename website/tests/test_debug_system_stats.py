@@ -97,13 +97,6 @@ class DebugPanelAPITest(TestCase):
                 with self.assertRaises(NoReverseMatch):
                     reverse(endpoint)
 
-    @override_settings(DEBUG=False)
-    def test_clear_cache_forbidden_in_production(self):
-        """Test that cache clear route is not registered in production"""
-        self.reload_urls()
-        with self.assertRaises(NoReverseMatch):
-            reverse("api_debug_clear_cache")
-
     def test_populate_data_success(self):
         """Test populating test data"""
         self.reload_urls()
