@@ -2451,7 +2451,7 @@ def management_commands(request):
         elif sort_key == "activity":
             return cmd.get("total_activity", 0)
         elif sort_key == "file_modified":
-            return cmd.get("file_modified", timezone.datetime.min.replace(tzinfo=pytz.UTC))
+            return cmd.get("file_modified", datetime.min.replace(tzinfo=pytz.UTC))
         elif sort_key == "run_frequency":
             return run_frequency_sort_value(cmd.get("run_frequency"))
         else:

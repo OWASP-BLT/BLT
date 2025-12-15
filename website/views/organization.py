@@ -2542,24 +2542,14 @@ class OrganizationListView(ListView):
     paginate_by = 30
 
     def get_queryset(self):
-        top_repos_qs = (
-            Repo.objects.annotate(
-                _rank=Window(
-                    expression=RowNumber(),
-                    partition_by=[F("organization_id")],
-                    order_by=[F("stars").desc(), F("id").desc()],
-                )
-            )
-            .filter(_rank__lte=3)
-            .order_by("-stars", "-id")
-        )
-
+        # Instead of using Window functions (which SQLite doesn't support),
+        # we'll fetch the top repos in the get_context_data method using Python logic
         queryset = (
             Organization.objects.prefetch_related(
                 "domain_set",
                 "projects",
                 "projects__repos",
-                Prefetch("repos", queryset=top_repos_qs, to_attr="top_repos"),
+                "repos",  # Prefetch all repos for Python-side filtering
                 "managers",
                 "tags",
                 Prefetch(
@@ -2650,12 +2640,22 @@ class OrganizationListView(ListView):
         context["recently_viewed"] = recently_viewed
 
         # Get most popular organizations by counting their view paths for today only
+        # Simplified approach to avoid N+1 while remaining database-agnostic
         today = timezone.now().date()
+        
+        # Since we need counts for specific pages and the queryset is paginated,
+        # we'll only count for organizations in the current page to minimize queries
+        current_page_orgs = context["organizations"]
         orgs_with_views = []
-        for org in self.get_queryset():
-            view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
+        
+        for org in current_page_orgs:
+            # This is acceptable since we're only doing it for the current page (typically 30 items)
+            view_count = IP.objects.filter(
+                path=f"/organization/{org.slug}/", 
+                created__date=today
+            ).count()
             orgs_with_views.append((org, view_count))
-
+        
         # Sort by view count and get top 5
         most_popular = [org for org, _ in sorted(orgs_with_views, key=lambda x: x[1], reverse=True)[:5]]
         context["most_popular"] = most_popular
@@ -2677,8 +2677,26 @@ class OrganizationListView(ListView):
 
         context["sort"] = self.request.GET.get("sort", "-created")
 
-        # Add top testers for each domain
+        # Add top testers for each domain and compute top_repos in Python
+        # (avoiding Window functions for SQLite compatibility)
         for org in context["organizations"]:
+            # Compute top 3 repos per org in Python
+            all_repos = list(org.repos.all())
+            # Sort by stars (desc), then by id (desc)
+            sorted_repos = sorted(all_repos, key=lambda r: (-r.stars, -r.id))
+            org.top_repos = sorted_repos[:3]
+            
+            # Validate GitHub URL for safe display
+            org.is_valid_github_url = False
+            if org.source_code:
+                try:
+                    parsed = urlparse(org.source_code)
+                    if parsed.scheme in ('http', 'https') and parsed.hostname:
+                        hostname = parsed.hostname.lower()
+                        org.is_valid_github_url = (hostname == 'github.com' or hostname.endswith('.github.com'))
+                except Exception:
+                    org.is_valid_github_url = False
+            
             for domain in org.domain_set.all():
                 domain.top_testers = (
                     User.objects.filter(issue__domain=domain)
@@ -2707,6 +2725,22 @@ def refresh_organization_repos_api(request, org_id):
         )
 
     organization = get_object_or_404(Organization, id=org_id)
+
+    # Authorization: only staff/superuser or org admin/manager can refresh repos
+    user = request.user
+    if not (
+        user.is_staff
+        or user.is_superuser
+        or organization.admin == user
+        or organization.managers.filter(id=user.id).exists()
+    ):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "You don't have permission to refresh this organization's repositories.",
+            },
+            status=403,
+        )
 
     # Simple throttling: avoid repeated refreshes within 24 hours.
     one_day_ago = timezone.timedelta(days=1)

@@ -167,7 +167,7 @@
                                             <span class="text-xs text-gray-600 dark:text-gray-400">Projects</span>
                                         </div>
                                         <div class="text-center">
-                                            <span class="block text-lg font-bold text-[#e74c3c]">{{ org.repos.count }}</span>
+                                            <span class="block text-lg font-bold text-[#e74c3c]">{{ org.repo_count }}</span>
                                             <span class="text-xs text-gray-600 dark:text-gray-400">Repos</span>
                                         </div>
                                     </div>
@@ -276,7 +276,7 @@
                                             <i class="fab fa-x-twitter mr-2"></i>@{{ org.twitter }}
                                         </a>
                                     {% endif %}
-                                    {% if org.source_code and 'github.com' in org.source_code %}
+                                    {% if org.is_valid_github_url %}
                                         <a href="{{ org.source_code }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
@@ -310,7 +310,7 @@
                         <div class="mt-8 flex justify-center">
                             <nav class="inline-flex rounded-md shadow">
                                 {% if page_obj.has_previous %}
-                                    <a href="?page={{ page_obj.previous_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                                        class="px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Previous
                                     </a>
@@ -319,7 +319,7 @@
                                     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                                 </span>
                                 {% if page_obj.has_next %}
-                                    <a href="?page={{ page_obj.next_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
+                                    <a href="?page={{ page_obj.next_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                                        class="px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Next
                                     </a>

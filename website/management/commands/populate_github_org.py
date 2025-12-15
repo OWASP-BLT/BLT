@@ -106,8 +106,15 @@ class Command(LoggedBaseCommand):
 
             parsed = urlparse(url)
 
-            # Check if it's a GitHub URL
-            if "github.com" not in parsed.netloc:
+            # Check if it's a GitHub URL (strict host match)
+            # Using hostname instead of netloc to avoid issues with ports
+            hostname = parsed.hostname
+            if not hostname:
+                return None
+            
+            hostname = hostname.lower()
+            # Only allow github.com or *.github.com subdomains
+            if hostname != "github.com" and not hostname.endswith(".github.com"):
                 return None
 
             # Extract path parts
