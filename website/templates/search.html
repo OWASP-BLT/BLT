@@ -817,17 +817,46 @@
             });
         }
     }
-  
+ 
+ function showAlert(message, type = 'warning') {
+  const alertBox = document.createElement("div");
+  let baseClasses = [
+    "fixed", "top-4", "right-4", "border-l-4", "p-3", "rounded",
+    "shadow-lg", "transition-opacity", "duration-500", "z-50"
+  ];
+
+  if (type === 'warning') {
+    baseClasses.push("bg-yellow-100", "border-yellow-500", "text-yellow-800");
+  } else if (type === 'error') {
+    baseClasses.push("bg-red-100", "border-red-500", "text-red-800");
+  } else {
+    baseClasses.push("bg-green-100", "border-green-500", "text-green-800");
+  }
+
+  alertBox.className = baseClasses.join(" ");
+  alertBox.textContent = message;
+
+  document.body.appendChild(alertBox);
+  setTimeout(() => {
+    alertBox.classList.add("opacity-0");
+    setTimeout(() => alertBox.remove(), 500);
+  }, 4000);
+}
+
+function resetButtonState(button, originalHTML) {
+  button.innerHTML = originalHTML;
+  button.disabled = false;
+  button.classList.remove("cursor-wait");
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const chatButtons = document.querySelectorAll(".start-chat, .request-chat");
 
   chatButtons.forEach((btn) => {
     btn.addEventListener("click", async function () {
       const userId = this.dataset.userId;
-      const isRequest = this.classList.contains("request-chat");
       const originalHTML = this.innerHTML;
 
-      // --- Show red loading spinner ---
       this.disabled = true;
       this.innerHTML = `
         <div class="flex items-center gap-2 justify-center">
@@ -838,7 +867,7 @@ document.addEventListener("DOMContentLoaded", function () {
           <span>Sending...</span>
         </div>
       `;
-      this.classList.add("bg-[#e74c3c]", "hover:bg-[#c0392b]", "cursor-wait");
+      this.classList.add("bg-red-600", "hover:bg-red-700", "cursor-wait");
 
       try {
         const response = await fetch(`/messaging/start-thread/${userId}/`, {
@@ -851,33 +880,23 @@ document.addEventListener("DOMContentLoaded", function () {
         const data = await response.json();
 
         if (data.locked) {
-          // Show smooth yellow "Request Sent" state
           this.innerHTML = `<i class="fas fa-envelope mr-2"></i> Request Sent`;
           this.classList.remove("bg-[#e74c3c]", "hover:bg-[#c0392b]");
           this.classList.add("bg-red-500", "cursor-not-allowed");
           this.disabled = true;
-
-          // Optional fade-in alert (instead of browser alert)
-          const alertBox = document.createElement("div");
-          alertBox.className =
-            "fixed top-4 right-4 bg-red-100 border-l-4 border-yellow-500 text-yellow-800 p-3 rounded shadow-lg transition-opacity duration-500";
-          alertBox.textContent = data.message;
-          document.body.appendChild(alertBox);
-          setTimeout(() => alertBox.remove(), 4000);
+          showAlert(data.message || "Request sent successfully.", "warning");
         } else if (data.success && data.thread_id) {
-          // Redirect to messaging
-          window.location.href = `/messaging/?thread=${data.thread_id}`;
+          const targetUrl = new URL('/messaging/', window.location.origin);
+          targetUrl.searchParams.append('thread', data.thread_id);
+          window.location.href = targetUrl.toString();
         } else {
-          this.innerHTML = originalHTML;
-          this.disabled = false;
-          this.classList.remove("cursor-wait");
-          alert("Error sending request.");
+          resetButtonState(this, originalHTML);
+          showAlert("Error sending request.", "error");
         }
       } catch (error) {
-        alert("Network error.");
-        this.innerHTML = originalHTML;
-        this.disabled = false;
-        this.classList.remove("cursor-wait");
+        console.error("Network Error:", error);
+        resetButtonState(this, originalHTML);
+        showAlert("Network error. Please try again.", "error");
       }
     });
   });
