@@ -15,7 +15,7 @@ def backwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0260_add_username_to_slackbotactivity"),
+        ("website", "0263_githubissue_githubissue_pr_merged_idx_and_more"),
     ]
 
     operations = [
