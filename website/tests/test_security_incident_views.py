@@ -2,9 +2,20 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from website.models import SecurityIncident, SecurityIncidentHistory
+from website.models import Issue, SecurityIncident, SecurityIncidentHistory
 
 User = get_user_model()
+from django.template import Context, Template
+
+
+class CustomFilterTest(TestCase):
+    """Test custom template filters"""
+
+    def test_replace_filter_for_field_names(self):
+        template = Template('{% load custom_filters %}{{ "resolved_at"|replace:"_| " }}')
+        rendered = template.render(Context({}))
+
+        self.assertEqual(rendered, "resolved at")
 
 
 class SecurityDashboardViewTest(TestCase):
@@ -32,6 +43,21 @@ class SecurityDashboardViewTest(TestCase):
             status=SecurityIncident.Status.RESOLVED,
             reporter=self.staff_user,
         )
+
+    def test_dashboard_includes_related_security_issues(self):
+        """Test that dashboard includes related security issues with label=4"""
+        self.client.login(username="staffuser", password="testpass123")
+
+        Issue.objects.create(
+            description="Test issue",
+            label=4,
+        )
+
+        response = self.client.get(reverse("security_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("security_issues", response.context)
+        self.assertEqual(len(response.context["security_issues"]), 1)
 
     def test_dashboard_requires_authentication(self):
         """Test that dashboard requires login"""
