@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies: ClassVar[list[tuple[str, str]]] = [
-        ("website", "0261_add_connected_action_type"),
+        ("website", "0263_githubissue_githubissue_pr_merged_idx_and_more"),
     ]
 
     operations: ClassVar[list[migrations.operations.base.Operation]] = [
