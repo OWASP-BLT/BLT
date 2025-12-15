@@ -46,6 +46,7 @@ jobs:
                 repository(owner: $owner, name: $repo) {
                   pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
                     nodes {
+                      number
                       author {
                         login
                       }
@@ -88,49 +89,31 @@ jobs:
               }
             }
             
-            // Fetch all reviews for the month using REST API (more reliable for reviews)
+            // Fetch all reviews for the month using REST API
+            // More efficient: only fetch reviews for PRs created this month (already fetched)
             let allReviews = [];
-            let reviewPage = 1;
             
-            while (reviewPage <= MAX_PAGES) { // Limit to MAX_PAGES for performance
+            for (const pr of allPRs) {
               try {
-                const { data: prsForReviews } = await github.rest.pulls.list({
+                if (!pr.number) continue;
+                
+                const { data: reviews } = await github.rest.pulls.listReviews({
                   owner,
                   repo,
-                  state: 'all',
-                  sort: 'created',
-                  direction: 'desc',
-                  per_page: PER_PAGE,
-                  page: reviewPage
+                  pull_number: pr.number,
+                  per_page: PER_PAGE
                 });
                 
-                if (prsForReviews.length === 0) break;
+                // Filter reviews from current month and with valid submitted_at
+                const monthReviews = reviews.filter(review => {
+                  if (!review.submitted_at) return false;
+                  const reviewDate = new Date(review.submitted_at);
+                  return reviewDate >= startOfMonth && reviewDate <= endOfMonth;
+                });
                 
-                for (const pr of prsForReviews) {
-                  try {
-                    const { data: reviews } = await github.rest.pulls.listReviews({
-                      owner,
-                      repo,
-                      pull_number: pr.number,
-                      per_page: PER_PAGE
-                    });
-                    
-                    // Filter reviews from current month
-                    const monthReviews = reviews.filter(review => {
-                      const reviewDate = new Date(review.submitted_at);
-                      return reviewDate >= startOfMonth && reviewDate <= endOfMonth;
-                    });
-                    
-                    allReviews = allReviews.concat(monthReviews);
-                  } catch (error) {
-                    core.warning(`Error fetching reviews for PR #${pr.number}: ${error.message}`);
-                  }
-                }
-                
-                reviewPage++;
+                allReviews = allReviews.concat(monthReviews);
               } catch (error) {
-                core.warning(`Error fetching PRs for reviews: ${error.message}`);
-                break;
+                core.warning(`Error fetching reviews for PR #${pr.number}: ${error.message}`);
               }
             }
             
@@ -223,11 +206,17 @@ jobs:
             // Find the PR author's position
             const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
             
+            // Format the month/year for display
+            const monthYear = startOfMonth.toISOString().substring(0, 7); // YYYY-MM format
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                'July', 'August', 'September', 'October', 'November', 'December'];
+            const displayMonth = `${monthNames[startOfMonth.getMonth()]} ${startOfMonth.getFullYear()}`;
+            
             // Generate leaderboard comment
             const commentMarker = '<!-- leaderboard-bot -->';
             let commentBody = commentMarker + '\n';
             commentBody += '## 📊 Monthly Leaderboard\n\n';
-            commentBody += `Hi @${prAuthor}! Here's how you rank for ${startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}:\n\n`;
+            commentBody += `Hi @${prAuthor}! Here's how you rank for ${displayMonth}:\n\n`;
             
             if (authorIndex === -1) {
               commentBody += '🎉 **Welcome!** This is your first contribution this month.\n\n';
@@ -265,7 +254,7 @@ jobs:
             
             commentBody += '\n';
             commentBody += '---\n';
-            commentBody += `*Leaderboard based on contributions in ${startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Keep up the great work! 🚀*\n`;
+            commentBody += `*Leaderboard based on contributions in ${displayMonth}. Keep up the great work! 🚀*\n`;
             
             // Check if we already commented
             const { data: existingComments } = await github.rest.issues.listComments({
