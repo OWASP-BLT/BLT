@@ -960,12 +960,12 @@ def search(request, template="search.html"):
 
 def can_send_chat_request(sender_id, recipient_id):
     """
-    Redis-based rate limiter: max 3 chat requests per minute
+    Redis-based rate limiter: max 3 chat requests per 60-second window
     per sender & per recipient.
     """
     redis_conn = get_redis_connection("default")
 
-    minute = timezone.now().minute
+    minute = int(timezone.now().timestamp()) // 60
     sender_key = f"chatreq:sender:{sender_id}:{minute}"
     recipient_key = f"chatreq:recipient:{recipient_id}:{minute}"
 
@@ -983,8 +983,12 @@ def can_send_chat_request(sender_id, recipient_id):
 
 
 @login_required
+@require_POST
 def send_chat_request(request, receiver_id):
     receiver = get_object_or_404(User, id=receiver_id)
+
+    if request.user.id == receiver.id:
+        return JsonResponse({"error": "Cannot send chat request to yourself."}, status=400)
 
     if not can_send_chat_request(request.user.id, receiver.id):
         logger.warning(f"Rate limit hit: sender={request.user.username}, receiver={receiver.username}")
