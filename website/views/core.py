@@ -1008,6 +1008,26 @@ def send_chat_request(request, receiver_id):
     ChatRequest.objects.create(sender=request.user, receiver=receiver)
     logger.info(f"Chat request created: {request.user.username} → {receiver.username}")
 
+    try:
+        from website.utils import send_email
+
+        subject = "New Chat Request on BLT"
+        message = (
+            f"Hi {receiver.username},\n\n"
+            f"You’ve received a new chat request from {request.user.username}.\n"
+            "Log in to your BLT account to accept or decline it."
+        )
+        send_email(
+            subject=subject,
+            message=message,
+            recipient_list=[receiver.email],
+        )
+
+        logger.info(f"Notification email sent to {receiver.username}")
+
+    except Exception as e:
+        logger.error(f"Failed to send chat request email to {receiver.username}: {e}")
+
     return JsonResponse({"success": True})
 
 
