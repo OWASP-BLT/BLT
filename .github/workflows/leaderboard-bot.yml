@@ -36,11 +36,15 @@ jobs:
             
             core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
             
-            // GraphQL query to fetch PRs, reviews, and comments for the current month
+            // Configuration constants
+            const MAX_PAGES = 10;
+            const PER_PAGE = 100;
+            
+            // GraphQL query to fetch PRs for the current month
             const query = `
-              query($owner: String!, $repo: String!, $since: DateTime!) {
+              query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
                 repository(owner: $owner, name: $repo) {
-                  pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}) {
+                  pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}, filterBy: {since: $since}, after: $after) {
                     nodes {
                       author {
                         login
@@ -52,18 +56,6 @@ jobs:
                       endCursor
                     }
                   }
-                  reviews: pullRequests(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
-                    nodes {
-                      reviews(first: 100) {
-                        nodes {
-                          author {
-                            login
-                          }
-                          createdAt
-                        }
-                      }
-                    }
-                  }
                 }
               }
             `;
@@ -72,27 +64,24 @@ jobs:
             let allPRs = [];
             let hasNextPage = true;
             let cursor = null;
+            let pageCount = 0;
             
-            while (hasNextPage) {
+            while (hasNextPage && pageCount < MAX_PAGES) {
               const variables = {
                 owner,
                 repo,
                 since: startOfMonth.toISOString(),
-                ...(cursor && { after: cursor })
+                after: cursor
               };
               
               try {
-                const result = await github.graphql(
-                  cursor 
-                    ? query.replace('first: 100', 'first: 100, after: $after')
-                    : query,
-                  variables
-                );
+                const result = await github.graphql(query, variables);
                 
                 const prs = result.repository.pullRequests;
                 allPRs = allPRs.concat(prs.nodes);
                 hasNextPage = prs.pageInfo.hasNextPage;
                 cursor = prs.pageInfo.endCursor;
+                pageCount++;
               } catch (error) {
                 core.warning(`Error fetching PRs: ${error.message}`);
                 break;
@@ -103,7 +92,7 @@ jobs:
             let allReviews = [];
             let reviewPage = 1;
             
-            while (reviewPage <= 10) { // Limit to 10 pages for performance
+            while (reviewPage <= MAX_PAGES) { // Limit to MAX_PAGES for performance
               try {
                 const { data: prsForReviews } = await github.rest.pulls.list({
                   owner,
@@ -111,7 +100,7 @@ jobs:
                   state: 'all',
                   sort: 'created',
                   direction: 'desc',
-                  per_page: 100,
+                  per_page: PER_PAGE,
                   page: reviewPage
                 });
                 
@@ -123,7 +112,7 @@ jobs:
                       owner,
                       repo,
                       pull_number: pr.number,
-                      per_page: 100
+                      per_page: PER_PAGE
                     });
                     
                     // Filter reviews from current month
@@ -149,13 +138,13 @@ jobs:
             let allComments = [];
             let commentPage = 1;
             
-            while (commentPage <= 10) { // Limit to 10 pages for performance
+            while (commentPage <= MAX_PAGES) { // Limit to MAX_PAGES for performance
               try {
                 const { data: comments } = await github.rest.issues.listCommentsForRepo({
                   owner,
                   repo,
                   since: startOfMonth.toISOString(),
-                  per_page: 100,
+                  per_page: PER_PAGE,
                   page: commentPage
                 });
                 
@@ -283,7 +272,7 @@ jobs:
               owner,
               repo,
               issue_number: pull_number,
-              per_page: 100
+              per_page: PER_PAGE
             });
             
             const existingLeaderboardComment = existingComments.find(comment =>
