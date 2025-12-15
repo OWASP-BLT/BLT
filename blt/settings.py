@@ -224,6 +224,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Use faster password hasher for tests to significantly speed up user creation
+if TESTING:
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+    ]
+
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -337,10 +343,26 @@ DATABASES = {
     }
 }
 
+# Test database optimizations for faster test execution
+if TESTING:
+    DATABASES["default"]["TEST"] = {
+        "NAME": ":memory:",  # Use in-memory database for tests
+    }
+    # SQLite-specific optimizations for test database
+    DATABASES["default"]["OPTIONS"] = {
+        "timeout": 20,
+        "init_command": "PRAGMA journal_mode=MEMORY; PRAGMA synchronous=OFF;",
+    }
+
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    # Apply test optimizations to configured database as well
+    if TESTING:
+        DATABASES["default"]["TEST"] = {
+            "NAME": ":memory:",
+        }
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
