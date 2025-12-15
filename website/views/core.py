@@ -1444,7 +1444,14 @@ def view_suggestions(request):
 
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
-    return render(request, "sitemap.html", {"random_domain": random_domain})
+    random_user = User.objects.filter(is_active=True).exclude(is_superuser=True).order_by("?").first()
+
+    # Provide fallback values if no domain or user exists
+    context = {
+        "random_domain": random_domain.name if random_domain else "example.com",
+        "random_username": random_user.username if random_user else "user",
+    }
+    return render(request, "sitemap.html", context)
 
 
 def badge_list(request):
@@ -1539,8 +1546,13 @@ def submit_roadmap_pr(request):
             roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
 
             if "error" in pr_data or "error" in roadmap_data:
+                logger.error(
+                    f"Failed to fetch PR or roadmap data in submit_roadmap_pr: "
+                    f"PR error: {pr_data.get('error')}, Roadmap error: {roadmap_data.get('error')}",
+                    exc_info=True,
+                )
                 return JsonResponse(
-                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    {"error": "Failed to fetch PR or roadmap data. Please check your links and try again."},
                     status=500,
                 )
 
@@ -1549,9 +1561,11 @@ def submit_roadmap_pr(request):
             return JsonResponse({"message": "PR submitted successfully"})
 
         except (IndexError, ValueError) as e:
-            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+            logger.error(f"Invalid URL format in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "Invalid URL format. Please check your PR and issue links."}, status=400)
         except Exception as e:
-            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+            logger.error(f"Unexpected error in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "An unexpected error occurred. Please try again later."}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 

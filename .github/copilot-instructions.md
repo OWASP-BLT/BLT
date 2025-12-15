@@ -35,10 +35,35 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 
 ### Testing Requirements
 
-- Run Django tests with: `poetry run python manage.py test --failfast`
+#### Running Tests
+
+Django tests have been optimized for speed with the following improvements:
+- In-memory database for faster I/O
+- Fast password hasher for user creation
+- Parallel test execution support
+- Slow tests (like Selenium) can be excluded
+
+**Quick tests (excludes slow Selenium tests):**
+```bash
+poetry run python manage.py test --exclude-tag=slow --parallel --failfast
+```
+
+**Full test suite (includes all tests):**
+```bash
+poetry run python manage.py test --parallel --failfast
+```
+
+**Single test or test file:**
+```bash
+poetry run python manage.py test website.tests.test_api.APITests.test_specific_method
+```
+
+#### Test Guidelines
 - Add tests for new features or bug fixes when appropriate
 - Ensure existing tests pass before committing
 - Test files are located in `website/tests/`
+- Use `setUpTestData()` instead of `setUp()` when test data doesn't need to be modified
+- Tag slow tests with `@tag("slow")` decorator
 
 ### Dependency Management
 

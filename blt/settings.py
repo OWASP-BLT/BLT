@@ -224,6 +224,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Use faster password hasher for tests to significantly speed up user creation
+# Keep PBKDF2 hasher in the list to support fixtures with existing password hashes
+if TESTING:
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+        "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    ]
+
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -341,10 +349,21 @@ DATABASES = {
     }
 }
 
+# Test database optimizations for faster test execution
+if TESTING:
+    DATABASES["default"]["TEST"] = {
+        "NAME": ":memory:",  # Use in-memory database for tests
+    }
+
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    # Apply test optimizations to configured database as well
+    if TESTING:
+        DATABASES["default"]["TEST"] = {
+            "NAME": ":memory:",
+        }
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
