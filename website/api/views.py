@@ -2072,7 +2072,7 @@ class DebugPanelStatusApiView(APIView):
         )
 
 
-GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[^/]+/[^/]+/issues/\d+/?$")
+GITHUB_ISSUE_URL_RE = re.compile(r"^https://github\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+/issues/\d+/?$")
 
 
 class BountyViewSet(viewsets.ModelViewSet):

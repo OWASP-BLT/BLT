@@ -423,7 +423,6 @@ class BountySerializer(serializers.ModelSerializer):
                 status=Bounty.STATUS_PENDING,
             ).exists():
                 raise serializers.ValidationError("You already have a pending bounty for this issue.")
-            # Check for duplicate bounty
 
             issue_obj, _ = Issue.objects.get_or_create(
                 github_url=github_issue_url,

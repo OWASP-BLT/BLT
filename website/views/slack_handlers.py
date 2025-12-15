@@ -3101,6 +3101,7 @@ def slack_bounty_command(request):
     # Validate length and characters
     if len(github_username) > 39 or not re.match(r"^[a-zA-Z0-9-]+$", github_username):
         return JsonResponse({"response_type": "ephemeral", "text": "Invalid GitHub username format."})
+    
     # strip leading '$' if present
     if raw_amount.startswith("$"):
         raw_amount = raw_amount[1:]
