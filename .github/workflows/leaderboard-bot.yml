@@ -44,6 +44,15 @@ jobs:
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
             
+            // Bot detection helper function
+            const isBot = (user) => {
+              if (!user || !user.login) return false;
+              const knownBots = ['copilot', 'dependabot', 'github-actions'];
+              return user.type === 'Bot' || 
+                     user.login.endsWith('[bot]') || 
+                     knownBots.includes(user.login.toLowerCase());
+            };
+            
             // GraphQL query to fetch PRs for the current month (for counting PR creations)
             const prQuery = `
               query($owner: String!, $repo: String!, $since: DateTime!, $after: String) {
@@ -53,6 +62,12 @@ jobs:
                       number
                       author {
                         login
+                        ... on User {
+                          type: __typename
+                        }
+                        ... on Bot {
+                          type: __typename
+                        }
                       }
                       createdAt
                     }
@@ -206,6 +221,9 @@ jobs:
             // Count PRs
             for (const pr of allPRs) {
               if (pr.author && pr.author.login) {
+                // Skip bot accounts
+                if (isBot(pr.author)) continue;
+                
                 const login = pr.author.login;
                 if (!userStats[login]) {
                   userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
@@ -217,6 +235,9 @@ jobs:
             // Count reviews
             for (const review of allReviews) {
               if (review.user && review.user.login) {
+                // Skip bot accounts
+                if (isBot(review.user)) continue;
+                
                 const login = review.user.login;
                 if (!userStats[login]) {
                   userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
@@ -228,6 +249,9 @@ jobs:
             // Count comments
             for (const comment of allComments) {
               if (comment.user && comment.user.login) {
+                // Skip bot accounts
+                if (isBot(comment.user)) continue;
+                
                 const login = comment.user.login;
                 if (!userStats[login]) {
                   userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
