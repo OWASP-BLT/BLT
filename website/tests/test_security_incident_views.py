@@ -1,11 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.template import Context, Template
 from django.test import TestCase
 from django.urls import reverse
 
 from website.models import Issue, SecurityIncident, SecurityIncidentHistory
 
 User = get_user_model()
-from django.template import Context, Template
 
 
 class CustomFilterTest(TestCase):
@@ -236,8 +236,8 @@ class SecurityIncidentDetailViewTest(TestCase):
         SecurityIncidentHistory.objects.create(
             incident=self.incident,
             field_name="severity",
-            old_value="MEDIUM",
-            new_value="HIGH",
+            old_value="medium",
+            new_value="high",
             changed_by=self.staff_user,
         )
 
@@ -248,7 +248,7 @@ class SecurityIncidentDetailViewTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Incident")
-        self.assertContains(response, "HIGH")
+        self.assertContains(response, "high")
 
     def test_detail_view_shows_history(self):
         """Test that detail view includes history context"""
