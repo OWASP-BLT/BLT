@@ -126,7 +126,9 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
-            const message = `## ❌ Pre-commit checks failed
+            const commentMarker = '<!-- pre-commit-check -->';
+            const message = commentMarker + '\n' +
+              `## ❌ Pre-commit checks failed
             
             The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
             
@@ -160,6 +162,27 @@ jobs:
             
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
+            // Delete old pre-commit failure comments before posting new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+              });
+              core.info(`Deleted old pre-commit failure comment #${existingComment.id}`);
+            }
+            
             try {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -173,6 +196,37 @@ jobs:
               } else {
                 throw error;
               }
+            }
+      - name: Remove pre-commit failure comment if pre-commit passes
+        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code == '0'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commentMarker = '<!-- pre-commit-check -->';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Delete old pre-commit failure comment when pre-commit passes
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            
+            const existingComment = comments.find(comment => 
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.deleteComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+              });
+              core.info(`Deleted pre-commit failure comment #${existingComment.id} since checks now pass`);
             }
       - name: Add pre-commit status label
         if: github.event_name == 'pull_request_target'
