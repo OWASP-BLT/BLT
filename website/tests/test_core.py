@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
+from website.models import Domain, ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
 
 
 class ForumTests(TestCase):
@@ -469,3 +469,62 @@ class StatusPageTests(TestCase):
         # Check for essential status data keys
         self.assertIn("management_commands", status)
         self.assertIn("available_commands", status)
+
+
+class SitemapTests(TestCase):
+    """Test suite for sitemap functionality"""
+
+    def setUp(self):
+        self.client = Client()
+        # Create test user and domain for sitemap
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.domain = Domain.objects.create(name="test.example.com", url="https://test.example.com")
+
+    def test_sitemap_loads(self):
+        """Test that the sitemap page loads without errors"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_sitemap_context_has_username(self):
+        """Test that sitemap provides random_username in context"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("random_username", response.context)
+        # Should be a string, not a User object
+        self.assertIsInstance(response.context["random_username"], str)
+
+    def test_sitemap_context_has_domain(self):
+        """Test that sitemap provides random_domain in context"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("random_domain", response.context)
+        # Should be a string, not a Domain object
+        self.assertIsInstance(response.context["random_domain"], str)
+
+    def test_sitemap_with_no_users(self):
+        """Test that sitemap handles case when no users exist"""
+        User.objects.all().delete()
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        # Should have fallback value
+        self.assertEqual(response.context["random_username"], "user")
+
+    def test_sitemap_with_no_domains(self):
+        """Test that sitemap handles case when no domains exist"""
+        Domain.objects.all().delete()
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        # Should have fallback value
+        self.assertEqual(response.context["random_domain"], "example.com")
+
+    def test_sitemap_template_renders_urls(self):
+        """Test that sitemap template contains profile and domain URLs"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # Check that profile URL is present
+        self.assertIn("profile", content)
+        # Check that domain URL is present
+        self.assertIn("domain", content)
+        # Check that follow_user URL is present
+        self.assertIn("follow", content)
