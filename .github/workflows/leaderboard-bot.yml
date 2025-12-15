@@ -1,0 +1,403 @@
+name: Leaderboard Bot
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  post_leaderboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post Leaderboard Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            const pull_number = pr.number;
+            const prAuthor = pr.user.login;
+            
+            core.info(`Processing PR #${pull_number} by @${prAuthor}`);
+            
+            // Get current month date range
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            
+            // Calculate a reasonable lookback period for fetching PRs to check for reviews
+            // We look back 3 months to catch reviews on older PRs while avoiding unbounded queries
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+            
+            core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
+            
+            // Configuration constants
+            const MAX_PAGES = 10;
+            const PER_PAGE = 100;
+            
+            // Bot detection helper function
+            const isBot = (user) => {
+              if (!user || !user.login) return false;
+              const knownBots = ['copilot', 'dependabot', 'github-actions'];
+              return user.type === 'Bot' || 
+                     user.login.endsWith('[bot]') || 
+                     knownBots.includes(user.login.toLowerCase());
+            };
+            
+            // GraphQL query to fetch PRs for the current month (for counting PR creations)
+            const prQuery = `
+              query($owner: String!, $repo: String!, $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: ${PER_PAGE}, orderBy: {field: CREATED_AT, direction: DESC}, after: $after) {
+                    nodes {
+                      number
+                      author {
+                        login
+                        ... on User {
+                          type: __typename
+                        }
+                        ... on Bot {
+                          type: __typename
+                        }
+                      }
+                      createdAt
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            `;
+            
+            // GraphQL query to fetch ALL recent PRs with their reviews (for counting reviews on any PR)
+            // Fetches PRs ordered by update date to catch reviews on recently active PRs
+            // Includes reviews in the query to avoid N+1 problem
+            const allPRsQuery = `
+              query($owner: String!, $repo: String!, $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: ${PER_PAGE}, orderBy: {field: UPDATED_AT, direction: DESC}, after: $after) {
+                    nodes {
+                      number
+                      updatedAt
+                      reviews(first: 100) {
+                        nodes {
+                          submittedAt
+                          author {
+                            login
+                            ... on User {
+                              type: __typename
+                            }
+                            ... on Bot {
+                              type: __typename
+                            }
+                          }
+                        }
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            `;
+            
+            // Fetch all PRs created in current month
+            let allPRs = [];
+            let prHasNextPage = true;
+            let prCursor = null;
+            let prPageCount = 0;
+            
+            while (prHasNextPage && prPageCount < MAX_PAGES) {
+              const variables = {
+                owner,
+                repo,
+                after: prCursor
+              };
+              
+              try {
+                const result = await github.graphql(prQuery, variables);
+                
+                const prs = result.repository.pullRequests;
+                
+                // Filter PRs to only include those created in the current month
+                const monthPRs = prs.nodes.filter(pr => {
+                  const createdAt = new Date(pr.createdAt);
+                  return createdAt >= startOfMonth && createdAt <= endOfMonth;
+                });
+                
+                allPRs = allPRs.concat(monthPRs);
+                
+                // Stop if we've gone past the start of the month (PRs are ordered DESC by created date)
+                if (prs.nodes.length > 0) {
+                  const oldestPR = prs.nodes[prs.nodes.length - 1];
+                  const oldestDate = new Date(oldestPR.createdAt);
+                  if (oldestDate < startOfMonth) {
+                    core.info(`Stopping PR pagination - reached PRs before ${startOfMonth.toISOString()}`);
+                    break;
+                  }
+                }
+                
+                prHasNextPage = prs.pageInfo.hasNextPage;
+                prCursor = prs.pageInfo.endCursor;
+                prPageCount++;
+              } catch (error) {
+                core.warning(`Error fetching PRs: ${error.message}`);
+                break;
+              }
+            }
+            
+            // Fetch ALL recent PRs with their reviews in a single query (for review counting)
+            // Only fetch PRs updated in the last 3 months to avoid unbounded queries
+            let allRecentPRs = [];
+            let allReviews = [];
+            let recentPRsHasNextPage = true;
+            let recentPRsCursor = null;
+            let recentPRsPageCount = 0;
+            
+            while (recentPRsHasNextPage && recentPRsPageCount < MAX_PAGES) {
+              const variables = {
+                owner,
+                repo,
+                after: recentPRsCursor
+              };
+              
+              try {
+                const result = await github.graphql(allPRsQuery, variables);
+                
+                const prs = result.repository.pullRequests;
+                
+                // Filter PRs to only include those updated after 3 months ago
+                const recentPRs = prs.nodes.filter(pr => {
+                  const updatedAt = new Date(pr.updatedAt);
+                  return updatedAt >= threeMonthsAgo;
+                });
+                
+                // Extract reviews from each PR and filter by current month
+                for (const pr of recentPRs) {
+                  if (pr.reviews && pr.reviews.nodes) {
+                    const monthReviews = pr.reviews.nodes.filter(review => {
+                      if (!review.submittedAt) return false;
+                      const reviewDate = new Date(review.submittedAt);
+                      return reviewDate >= startOfMonth && reviewDate <= endOfMonth;
+                    });
+                    
+                    // Convert GraphQL format to match previous REST API format
+                    const formattedReviews = monthReviews.map(review => ({
+                      submitted_at: review.submittedAt,
+                      user: review.author
+                    }));
+                    
+                    allReviews = allReviews.concat(formattedReviews);
+                  }
+                }
+                
+                allRecentPRs = allRecentPRs.concat(recentPRs);
+                
+                // Stop if we've gone past the 3-month lookback window (PRs are ordered DESC by updated date)
+                if (prs.nodes.length > 0) {
+                  const oldestPR = prs.nodes[prs.nodes.length - 1];
+                  const oldestDate = new Date(oldestPR.updatedAt);
+                  if (oldestDate < threeMonthsAgo) {
+                    core.info(`Stopping recent PRs pagination - reached PRs before ${threeMonthsAgo.toISOString()}`);
+                    break;
+                  }
+                }
+                
+                recentPRsHasNextPage = prs.pageInfo.hasNextPage;
+                recentPRsCursor = prs.pageInfo.endCursor;
+                recentPRsPageCount++;
+              } catch (error) {
+                core.warning(`Error fetching recent PRs: ${error.message}`);
+                break;
+              }
+            }
+            
+            // Fetch all issue comments for the month
+            let allComments = [];
+            let commentPage = 1;
+            
+            while (commentPage <= MAX_PAGES) { // Limit to MAX_PAGES for performance
+              try {
+                const { data: comments } = await github.rest.issues.listCommentsForRepo({
+                  owner,
+                  repo,
+                  since: startOfMonth.toISOString(),
+                  per_page: PER_PAGE,
+                  page: commentPage
+                });
+                
+                if (comments.length === 0) break;
+                
+                // Filter comments from current month
+                const monthComments = comments.filter(comment => {
+                  const commentDate = new Date(comment.created_at);
+                  return commentDate >= startOfMonth && commentDate <= endOfMonth;
+                });
+                
+                allComments = allComments.concat(monthComments);
+                commentPage++;
+              } catch (error) {
+                core.warning(`Error fetching comments: ${error.message}`);
+                break;
+              }
+            }
+            
+            core.info(`Found ${allPRs.length} PRs created this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
+            
+            // Calculate scores for each user
+            const userStats = {};
+            
+            // Count PRs
+            for (const pr of allPRs) {
+              if (pr.author && pr.author.login) {
+                // Skip bot accounts
+                if (isBot(pr.author)) continue;
+                
+                const login = pr.author.login;
+                if (!userStats[login]) {
+                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].prs++;
+              }
+            }
+            
+            // Count reviews
+            for (const review of allReviews) {
+              if (review.user && review.user.login) {
+                // Skip bot accounts
+                if (isBot(review.user)) continue;
+                
+                const login = review.user.login;
+                if (!userStats[login]) {
+                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].reviews++;
+              }
+            }
+            
+            // Count comments
+            for (const comment of allComments) {
+              if (comment.user && comment.user.login) {
+                // Skip bot accounts
+                if (isBot(comment.user)) continue;
+                
+                const login = comment.user.login;
+                if (!userStats[login]) {
+                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].comments++;
+              }
+            }
+            
+            // Calculate total scores
+            for (const login in userStats) {
+              userStats[login].total = userStats[login].prs + userStats[login].reviews + userStats[login].comments;
+            }
+            
+            // Sort users by total score
+            const sortedUsers = Object.entries(userStats)
+              .map(([login, stats]) => ({ login, ...stats }))
+              .sort((a, b) => {
+                if (b.total !== a.total) return b.total - a.total;
+                // Tie-breaker: more PRs is better
+                if (b.prs !== a.prs) return b.prs - a.prs;
+                // Secondary tie-breaker: more reviews is better
+                if (b.reviews !== a.reviews) return b.reviews - a.reviews;
+                // Final tie-breaker: alphabetical (case-insensitive, consistent)
+                return a.login.localeCompare(b.login, 'en-US', { sensitivity: 'base' });
+              });
+            
+            // Find the PR author's position
+            const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
+            
+            // Format the month/year for display
+            const displayMonth = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            // Generate leaderboard comment
+            const commentMarker = '<!-- leaderboard-bot -->';
+            let commentBody = commentMarker + '\n';
+            commentBody += '## 📊 Monthly Leaderboard\n\n';
+            commentBody += `Hi @${prAuthor}! Here's how you rank for ${displayMonth}:\n\n`;
+            
+            if (authorIndex === -1) {
+              commentBody += '🎉 **Welcome!** This is your first contribution this month.\n\n';
+              commentBody += '### Top 3 Contributors\n\n';
+              commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----|---------|----------|-------|\n';
+              
+              for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
+                const user = sortedUsers[i];
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+                commentBody += `| ${medal} #${i + 1} | @${user.login} | ${user.prs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
+              }
+            } else {
+              commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----|---------|----------|-------|\n';
+              
+              // Show user above (if exists)
+              if (authorIndex > 0) {
+                const userAbove = sortedUsers[authorIndex - 1];
+                const medal = authorIndex - 1 === 0 ? '🥇' : authorIndex - 1 === 1 ? '🥈' : authorIndex - 1 === 2 ? '🥉' : '';
+                commentBody += `| ${medal} #${authorIndex} | @${userAbove.login} | ${userAbove.prs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
+              }
+              
+              // Show current user
+              const currentUser = sortedUsers[authorIndex];
+              const currentMedal = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
+              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **@${currentUser.login}** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
+              
+              // Show user below (if exists)
+              if (authorIndex < sortedUsers.length - 1) {
+                const userBelow = sortedUsers[authorIndex + 1];
+                commentBody += `| #${authorIndex + 2} | @${userBelow.login} | ${userBelow.prs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
+              }
+            }
+            
+            commentBody += '\n';
+            commentBody += '---\n';
+            commentBody += `*Leaderboard based on contributions in ${displayMonth}. Keep up the great work! 🚀*\n`;
+            
+            // Check if we already commented
+            const { data: existingComments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: PER_PAGE
+            });
+            
+            const existingLeaderboardComment = existingComments.find(comment =>
+              comment.body && comment.body.includes(commentMarker)
+            );
+            
+            if (existingLeaderboardComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingLeaderboardComment.id,
+                body: commentBody
+              });
+              core.info(`Updated leaderboard comment on PR #${pull_number}`);
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: commentBody
+              });
+              core.info(`Posted leaderboard comment on PR #${pull_number}`);
+            }
