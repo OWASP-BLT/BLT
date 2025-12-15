@@ -225,9 +225,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Use faster password hasher for tests to significantly speed up user creation
+# Keep PBKDF2 hasher in the list to support fixtures with existing password hashes
 if TESTING:
     PASSWORD_HASHERS = [
         "django.contrib.auth.hashers.MD5PasswordHasher",
+        "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     ]
 
 
@@ -347,10 +349,6 @@ DATABASES = {
 if TESTING:
     DATABASES["default"]["TEST"] = {
         "NAME": ":memory:",  # Use in-memory database for tests
-    }
-    # SQLite-specific optimizations for test database
-    DATABASES["default"]["OPTIONS"] = {
-        "timeout": 20,
     }
 
 if not db_from_env:
