@@ -34,6 +34,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
+from django.db.models import Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
 from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -664,21 +665,24 @@ def search(request, template="search.html"):
 
         elif stype == "users":
             users = (
-                UserProfile.objects.filter(Q(user__username__icontains=query))
-                .annotate(total_score=Sum("user__points__score"))
-                .order_by("-total_score")[0:20]
+                UserProfile.objects.filter(user__username__icontains=query)
                 .select_related("user")
+                .prefetch_related(
+                    Prefetch(
+                        "user__userbadge_set",
+                        queryset=UserBadge.objects.select_related("badge"),
+                        to_attr="badges",
+                    )
+                )
             )
 
             sent_requests = set()
             if request.user.is_authenticated:
                 sent_requests = set(
-                    ChatRequest.objects.filter(sender=request.user).values_list("receiver_id", flat=True)
+                    ChatRequest.objects.filter(sender=request.user, is_unlocked=False).values_list(
+                        "receiver_id", flat=True
+                    )
                 )
-
-            users = UserProfile.objects.select_related("user").prefetch_related(
-                Prefetch("user__userbadge_set", queryset=UserBadge.objects.select_related("badge"), to_attr="badges")
-            )
 
             users_list = []
             for userprofile in users:
