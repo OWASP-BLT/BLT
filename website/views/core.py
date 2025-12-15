@@ -676,11 +676,16 @@ def search(request, template="search.html"):
                     ChatRequest.objects.filter(sender=request.user).values_list("receiver_id", flat=True)
                 )
 
+            users = UserProfile.objects.select_related("user").prefetch_related(
+                Prefetch("user__userbadge_set", queryset=UserBadge.objects.select_related("badge"), to_attr="badges")
+            )
+
             users_list = []
             for userprofile in users:
-                userprofile.user.has_pending_request = userprofile.user.id in sent_requests
-                userprofile.user.badges = UserBadge.objects.filter(user=userprofile.user)
-                users_list.append(userprofile.user)
+                user = userprofile.user
+                user.has_pending_request = user.id in sent_requests
+                user.badges = getattr(user, "badges", [])
+                users_list.append(user)
 
             context = {
                 "request": request,
