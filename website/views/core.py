@@ -994,9 +994,16 @@ def send_chat_request(request, receiver_id):
         logger.warning(f"Rate limit hit: sender={request.user.username}, receiver={receiver.username}")
         return JsonResponse({"error": "Rate limit exceeded."}, status=429)
 
-    if ChatRequest.objects.filter(sender=request.user, receiver=receiver, is_unlocked=False).exists():
-        logger.info(f"Duplicate chat request blocked: {request.user.username} → {receiver.username}")
-        return JsonResponse({"error": "Chat request already sent."}, status=400)
+    existing_request = ChatRequest.objects.filter(sender=request.user, receiver=receiver).first()
+
+    if existing_request:
+        if not existing_request.is_unlocked:
+            logger.info(f"Duplicate chat request blocked: {request.user.username} → {receiver.username}")
+            return JsonResponse({"error": "Chat request already sent."}, status=400)
+        else:
+            # Chat already unlocked, no need to send another request
+            logger.info(f"Chat already unlocked: {request.user.username} ↔ {receiver.username}")
+            return JsonResponse({"error": "Chat already unlocked with this user."}, status=400)
 
     ChatRequest.objects.create(sender=request.user, receiver=receiver)
     logger.info(f"Chat request created: {request.user.username} → {receiver.username}")
