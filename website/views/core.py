@@ -684,6 +684,9 @@ def search(request, template="search.html"):
                     )
                 )
 
+            if not can_send_chat_request(request.user.id, receiver.id):
+                return JsonResponse({"error": "Rate limit exceeded. Try again later."}, status=429)
+
             users_list = []
             for userprofile in users:
                 user = userprofile.user
@@ -955,6 +958,48 @@ def search(request, template="search.html"):
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
 
     return render(request, template, context)
+
+
+def can_send_chat_request(sender_id, recipient_id):
+    """
+    Redis-based rate limiter: max 3 chat requests per minute
+    per sender & per recipient.
+    """
+    redis_conn = get_redis_connection("default")
+
+    minute = timezone.now().minute
+    sender_key = f"chatreq:sender:{sender_id}:{minute}"
+    recipient_key = f"chatreq:recipient:{recipient_id}:{minute}"
+
+    sender_count = redis_conn.incr(sender_key)
+    recipient_count = redis_conn.incr(recipient_key)
+
+    # Expire keys every minute
+    if sender_count == 1:
+        redis_conn.expire(sender_key, 60)
+    if recipient_count == 1:
+        redis_conn.expire(recipient_key, 60)
+
+    # Allow max 3 requests per minute from or to a single user
+    return sender_count <= 3 and recipient_count <= 3
+
+
+@login_required
+def send_chat_request(request, receiver_id):
+    receiver = get_object_or_404(User, id=receiver_id)
+
+    if not can_send_chat_request(request.user.id, receiver.id):
+        logger.warning(f"Rate limit hit: sender={request.user.username}, receiver={receiver.username}")
+        return JsonResponse({"error": "Rate limit exceeded."}, status=429)
+
+    if ChatRequest.objects.filter(sender=request.user, receiver=receiver, is_unlocked=False).exists():
+        logger.info(f"Duplicate chat request blocked: {request.user.username} → {receiver.username}")
+        return JsonResponse({"error": "Chat request already sent."}, status=400)
+
+    ChatRequest.objects.create(sender=request.user, receiver=receiver)
+    logger.info(f"Chat request created: {request.user.username} → {receiver.username}")
+
+    return JsonResponse({"success": True})
 
 
 # @api_view(["POST"])
