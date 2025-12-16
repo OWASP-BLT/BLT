@@ -1,12 +1,14 @@
 from typing import ClassVar
 from urllib.parse import urlparse
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.sites import NotRegistered
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import User
+from django.db.models import Count, Q
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
 from django.utils.html import format_html
@@ -1280,11 +1282,12 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
 
 @admin.action(description="Deactivate selected users")
 def deactivate_users(modeladmin, request, queryset):
+    """Admin action to deactivate selected users (superuser only)"""
     if not request.user.is_superuser:
         modeladmin.message_user(
             request,
             "Only superusers can deactivate users.",
-            level="ERROR",
+            level=messages.ERROR,
         )
         return
 
@@ -1292,10 +1295,17 @@ def deactivate_users(modeladmin, request, queryset):
     modeladmin.message_user(
         request,
         f"Deactivated {updated} user(s).",
+        level=messages.SUCCESS,
     )
 
 
 class ActivityStatusFilter(admin.SimpleListFilter):
+    """
+    Filter users by contribution activity status.
+    Active = has bugs, forum posts, or forum comments
+    Inactive = no contributions whatsoever
+    """
+
     title = "Activity Status"
     parameter_name = "activity"
 
@@ -1306,10 +1316,19 @@ class ActivityStatusFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
+        """
+        Filter based on CONTRIBUTION activity only:
+        - Active: Has bugs reported OR forum posts OR forum comments
+        - Inactive: No contributions
+        """
         if self.value() == "active":
-            return queryset.exclude(last_login__isnull=True)
+            return queryset.filter(
+                Q(issue__isnull=False) | Q(forumpost__isnull=False) | Q(forumcomment__isnull=False)
+            ).distinct()
+
         if self.value() == "inactive":
-            return queryset.filter(last_login__isnull=True)
+            return queryset.filter(issue__isnull=True, forumpost__isnull=True, forumcomment__isnull=True).distinct()
+
         return queryset
 
 
@@ -1318,13 +1337,8 @@ try:
 except NotRegistered:
     pass
 
-from typing import ClassVar
 
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from django.db.models import Count
-from django.utils.html import format_html
-
-
+@admin.register(User)
 class CustomUserAdmin(DjangoUserAdmin):
     actions: ClassVar[list] = [deactivate_users]
 
@@ -1332,9 +1346,10 @@ class CustomUserAdmin(DjangoUserAdmin):
         "username",
         "email",
         "is_active",
-        "bug_count",
-        "forum_comment_count",
         "activity_status",
+        "bug_count",
+        "forum_post_count",
+        "forum_comment_count",
         "last_login",
         "date_joined",
     )
@@ -1342,51 +1357,63 @@ class CustomUserAdmin(DjangoUserAdmin):
     list_filter = (
         "is_active",
         ActivityStatusFilter,
+        "is_staff",
+        "is_superuser",
+        "date_joined",
     )
 
-    search_fields = ("username", "email")
+    search_fields = ("username", "email", "first_name", "last_name")
     ordering = ("-last_login",)
-
-    def has_module_permission(self, request):
-        return request.user.is_superuser
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-    def has_change_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        if not request.user.is_superuser:
-            actions.pop("deactivate_users", None)
-        return actions
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
-            bug_count=Count("issue", distinct=True),
-            forum_comment_count=Count("forumcomment", distinct=True),
+            bugs_reported=Count("issue", distinct=True),
+            posts_created=Count("forumpost", distinct=True),
+            comments_created=Count("forumcomment", distinct=True),
         )
 
     def bug_count(self, obj):
-        return obj.bug_count
+        return obj.bugs_reported
 
     bug_count.short_description = "Bugs Reported"
-    bug_count.admin_order_field = "bug_count"
+    bug_count.admin_order_field = "bugs_reported"
+
+    def forum_post_count(self, obj):
+        return obj.posts_created
+
+    forum_post_count.short_description = "Forum Posts"
+    forum_post_count.admin_order_field = "posts_created"
 
     def forum_comment_count(self, obj):
-        return obj.forum_comment_count
+        return obj.comments_created
 
     forum_comment_count.short_description = "Forum Comments"
-    forum_comment_count.admin_order_field = "forum_comment_count"
+    forum_comment_count.admin_order_field = "comments_created"
 
     def activity_status(self, obj):
-        if obj.last_login:
+        has_contributions = obj.bugs_reported > 0 or obj.posts_created > 0 or obj.comments_created > 0
+
+        if has_contributions:
             return format_html('<span style="color: green; font-weight: 600;">Active</span>')
         return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
 
     activity_status.short_description = "Activity"
 
+    def has_module_permission(self, request):
+        return request.user.is_superuser
 
-admin.site.register(User, CustomUserAdmin)
+    def has_view_permission(self, request, obj=None):
+        """Only superusers can view users"""
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        """Only superusers can change users"""
+        return request.user.is_superuser
+
+    def get_actions(self, request):
+        """Only show actions to superusers"""
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            return {}
+        return actions
