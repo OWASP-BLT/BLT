@@ -362,6 +362,35 @@ jobs:
               return;
             }
             
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Delete any previous test failure comments
+            const testFailureMarker = '<!-- test-failure-comment -->';
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+                per_page: 100,
+              });
+              
+              const existingComments = comments.filter(comment => 
+                comment.body && comment.body.includes(testFailureMarker)
+              );
+              
+              for (const comment of existingComments) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: comment.id,
+                });
+                core.info(`Deleted previous test failure comment #${comment.id} from PR #${pull_number}`);
+              }
+            } catch (error) {
+              core.warning(`Could not delete previous comments: ${error.message}`);
+            }
+            
             let testOutput = 'Test output not available.';
             try {
               testOutput = fs.readFileSync('test-output.txt', 'utf8');
@@ -374,7 +403,8 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
-            const message = `## ❌ Tests failed
+            const message = `${testFailureMarker}
+            ## ❌ Tests failed
             
             The Django tests found issues that need to be fixed. Please review the test output below and fix the failing tests.
             
@@ -407,8 +437,8 @@ jobs:
             
             try {
               await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner,
+                repo,
                 issue_number: pull_number,
                 body: message
               });
@@ -419,6 +449,46 @@ jobs:
               } else {
                 throw error;
               }
+            }
+      - name: Remove test failure comment if tests passed
+        if: needs.test.outputs.test_result == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pull_number = context.issue.number;
+            
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping comment removal.');
+              return;
+            }
+            
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Delete any previous test failure comments
+            const testFailureMarker = '<!-- test-failure-comment -->';
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+                per_page: 100,
+              });
+              
+              const existingComments = comments.filter(comment => 
+                comment.body && comment.body.includes(testFailureMarker)
+              );
+              
+              for (const comment of existingComments) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: comment.id,
+                });
+                core.info(`Deleted test failure comment #${comment.id} from PR #${pull_number} (tests now passing)`);
+              }
+            } catch (error) {
+              core.warning(`Could not delete previous comments: ${error.message}`);
             }
       - name: Add test status label
         uses: actions/github-script@v7
