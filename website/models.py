@@ -2340,6 +2340,18 @@ class GitHubIssue(models.Model):
     class Meta:
         # Make the combination of issue_id and repo unique
         unique_together = ("issue_id", "repo")
+        indexes = [
+            # Composite index for GSOC PR report queries
+            models.Index(
+                fields=["type", "is_merged", "merged_at"],
+                name="githubissue_pr_merged_idx",
+            ),
+            # Additional index for date range queries
+            models.Index(
+                fields=["merged_at"],
+                name="githubissue_merged_date_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"

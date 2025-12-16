@@ -27,10 +27,7 @@ from website.api.views import (
     CheckDuplicateBugApiView,
     DebugCacheInfoApiView,
     DebugClearCacheApiView,
-    DebugCollectStaticApiView,
-    DebugPanelStatusApiView,
     DebugPopulateDataApiView,
-    DebugRunMigrationsApiView,
     DebugSystemStatsApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
@@ -305,6 +302,7 @@ from website.views.project import (
     create_project,
     delete_project,
     distribute_bacon,
+    gsoc_pr_report,
     repo_activity_data,
     select_contribution,
 )
@@ -1248,6 +1246,7 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
     path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
@@ -1267,9 +1266,6 @@ if settings.DEBUG:
         path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
         path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
         path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
-        path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
-        path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
-        path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
     ] + urlpatterns
 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

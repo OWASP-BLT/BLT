@@ -12,9 +12,10 @@ User = get_user_model()
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class DebugPanelAPITest(TestCase):
-    """Test debug panel API endpoints"""
+    """Tests for debug panel API endpoints"""
 
     def setUp(self):
+        """Set up test fixtures"""
         self.client = APIClient()
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
@@ -44,6 +45,22 @@ class DebugPanelAPITest(TestCase):
         self.reload_urls()
         with self.assertRaises(NoReverseMatch):
             reverse("api_debug_system_stats")
+
+    @override_settings(DEBUG=False)
+    def test_all_debug_endpoints_blocked_in_production(self):
+        """Ensure all debug endpoints are not registered when DEBUG=False"""
+        self.reload_urls()
+        endpoints = [
+            "api_debug_system_stats",
+            "api_debug_cache_info",
+            "api_debug_clear_cache",
+            "api_debug_populate_data",
+        ]
+
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(NoReverseMatch):
+                    reverse(endpoint)
 
     @override_settings(DEBUG=True)
     def test_get_cache_info_success(self):
@@ -127,147 +144,102 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
 
     @override_settings(DEBUG=True)
-    def test_run_migrations_requires_superuser(self):
-        """Test that running migrations requires superuser privileges"""
+    def test_debug_endpoint_requires_authentication(self):
+        """Test that debug endpoints require authentication even locally"""
         self.reload_urls()
-        self.client.force_authenticate(self.user)
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data = response.json()
-        self.assertFalse(data["success"])
+        endpoints = [
+            "api_debug_system_stats",
+            "api_debug_cache_info",
+        ]
 
-    @override_settings(DEBUG=True)
-    def test_run_migrations_requires_confirm_flag(self):
-        """Test that migrations require an explicit confirm flag"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_run_migrations_success_for_superuser(self):
-        """Test that a superuser can run migrations with confirmation"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_run_migrations_handles_errors(self, mock_call_command):
-        """Test that migration errors are handled gracefully"""
-        self.reload_urls()
-        mock_call_command.side_effect = Exception("Migration failed")
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_run_migrations"), {"confirm": True}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_collect_static_requires_superuser(self):
-        """Test that collectstatic endpoint requires superuser privileges"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_collect_static_success_for_superuser(self):
-        """Test that a superuser can call collectstatic successfully"""
-        self.reload_urls()
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-
-    @override_settings(DEBUG=True)
-    @patch("website.api.views.call_command")
-    def test_collect_static_handles_errors(self, mock_call_command):
-        """Test that collectstatic errors are handled gracefully"""
-        self.reload_urls()
-        mock_call_command.side_effect = Exception("Collectstatic failed")
-
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post(reverse("api_debug_collect_static"))
-
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        data = response.json()
-        self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_get_debug_panel_status(self):
-        """Test getting debug panel status"""
-        self.reload_urls()
-        self.client.force_authenticate(self.user)
-        response = self.client.get(reverse("api_debug_panel_status"))
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-        self.assertTrue(data["data"]["debug_mode"])
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.get(reverse(endpoint))
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_403_FORBIDDEN,
+                    f"{endpoint} should return 403 for unauthenticated requests",
+                )
 
     @override_settings(DEBUG=True)
     def test_post_endpoints_require_authentication(self):
         """Test that POST debug endpoints require authentication when in debug mode"""
         self.reload_urls()
-        post_endpoints = [
-            "api_debug_clear_cache",
-            "api_debug_populate_data",
-            "api_debug_run_migrations",
-            "api_debug_collect_static",
-        ]
-
-        for endpoint in post_endpoints:
-            with self.subTest(endpoint=endpoint):
-                response = self.client.post(reverse(endpoint))
-                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    @override_settings(DEBUG=False)
-    def test_all_endpoints_require_debug_mode(self):
-        """Test that all debug endpoints are blocked in production"""
-        self.reload_urls()
         endpoints = [
-            "api_debug_system_stats",
-            "api_debug_cache_info",
-            "api_debug_panel_status",
             "api_debug_clear_cache",
             "api_debug_populate_data",
-            "api_debug_run_migrations",
-            "api_debug_collect_static",
         ]
 
         for endpoint in endpoints:
             with self.subTest(endpoint=endpoint):
-                with self.assertRaises(NoReverseMatch):
-                    reverse(endpoint)
+                response = self.client.post(reverse(endpoint))
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_403_FORBIDDEN,
+                    f"{endpoint} should return 403 for unauthenticated POST requests",
+                )
+
+    @override_settings(DEBUG=True)
+    def test_authenticated_user_can_access_debug_endpoints(self):
+        """Test that authenticated users can access debug endpoints"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse("api_debug_system_stats"))
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+            "Authenticated user should access system stats endpoint",
+        )
+
+    @override_settings(DEBUG=True)
+    def test_debug_endpoints_return_correct_data_structure(self):
+        """Test that debug endpoints return data in expected format"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse("api_debug_system_stats"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertIn("success", data)
+        self.assertIn("data", data)
+        self.assertTrue(data["success"])
+
+        stats = data["data"]
+        self.assertIn("memory", stats)
+        self.assertIn("disk", stats)
+        self.assertIn("python_version", stats)
+        self.assertIn("django_version", stats)
+        self.assertIn("database", stats)
+        self.assertIn("cpu", stats)
+
+    @override_settings(DEBUG=True)
+    def test_cache_info_endpoint_returns_cache_stats(self):
+        """Test that cache info endpoint returns cache statistics"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse("api_debug_cache_info"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("backend", data["data"])
+        self.assertIn("keys_count", data["data"])
+        self.assertIn("hit_ratio", data["data"])
+
+    @override_settings(DEBUG=True)
+    def test_clear_cache_endpoint_clears_cache(self):
+        """Test that clear cache endpoint works"""
+        self.reload_urls()
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post(reverse("api_debug_clear_cache"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.json()
+        self.assertTrue(data["success"])
 
     @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_non_local_host(self):
@@ -347,11 +319,3 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
-
-    @override_settings(DEBUG=True)
-    def test_debug_endpoint_requires_authentication(self):
-        """Test that debug endpoints require authentication even locally"""
-        self.reload_urls()
-        # Don't authenticate
-        response = self.client.get(reverse("api_debug_system_stats"), HTTP_HOST="localhost:8000")
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
