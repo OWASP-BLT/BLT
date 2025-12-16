@@ -3645,3 +3645,59 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+# Added section of Educational Video
+from django.db import models
+
+class EducationalVideo(models.Model):
+    title = models.CharField(max_length=255)
+    youtube_url = models.URLField()
+    youtube_id = models.CharField(max_length=32)
+    description = models.TextField(blank=True)
+    ai_summary = models.TextField(blank=True, help_text="AI-generated video summary")
+    is_verified = models.BooleanField(default=False, help_text="AI verified as educational content")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        import re
+        youtube_regex = r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)'
+        match = re.search(youtube_regex, self.youtube_url)
+        if match:
+            self.youtube_id = match.group(1)
+        super().save(*args, **kwargs)
+
+
+class VideoQuizQuestion(models.Model):
+    video = models.ForeignKey(EducationalVideo, on_delete=models.CASCADE, related_name='quiz_questions')
+    question = models.TextField()
+    option_a = models.CharField(max_length=500)
+    option_b = models.CharField(max_length=500)
+    option_c = models.CharField(max_length=500)
+    option_d = models.CharField(max_length=500)
+    correct_answer = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
+    explanation = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Q: {self.question[:50]}"
+
+
+class QuizAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts')
+    video = models.ForeignKey(EducationalVideo, on_delete=models.CASCADE)
+    score = models.IntegerField()
+    total_questions = models.IntegerField()
+    percentage = models.FloatField()
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.video.title} ({self.percentage}%)"

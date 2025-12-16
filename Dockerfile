@@ -68,3 +68,6 @@ RUN chmod +x /blt/scripts/entrypoint.sh
 
 ENTRYPOINT ["/blt/scripts/entrypoint.sh"]
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+RUN pip install -r requirements.txt
+RUN pip install youtube-transcript-api openai

@@ -17,6 +17,8 @@ from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
+from django.views.generic import DetailView
+from website.models import EducationalVideo, VideoQuizQuestion, QuizAttempt
 
 import comments.views
 from website.api.views import (
@@ -155,6 +157,8 @@ from website.views.education import (
     edit_section,
     edit_standalone_lecture,
     education_home,
+    submit_quiz,
+    VideoDetailView,
     enroll,
     get_course_content,
     get_lecture_data,
@@ -723,6 +727,20 @@ urlpatterns = [
     ),
     re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^education/$", education_home, name="education"),
+
+    # Video detail page (watch + AI summary + quiz)
+    re_path(
+        r"^education/video/(?P<pk>\d+)/$",
+        VideoDetailView.as_view(),
+        name="video_detail",
+    ),
+
+    # Quiz submission endpoint (AJAX POST)
+    re_path(
+        r"^education/video/(?P<video_id>\d+)/quiz/submit/$",
+        submit_quiz,
+        name="submit_quiz",
+    ),
     path("education/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("education/create-standalone-lecture/", create_standalone_lecture, name="create_standalone_lecture"),
     path("education/edit-standalone-lecture/<int:lecture_id>", edit_standalone_lecture, name="edit_standalone_lecture"),
