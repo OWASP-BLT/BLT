@@ -257,6 +257,7 @@ MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
 # Configure database connection pooling with 600 second max age (10 minutes)
 # This enables connection reuse and prevents connection exhaustion
+# db_from_env will be checked later to determine if DATABASE_URL is configured
 db_from_env = dj_database_url.config(conn_max_age=600)
 
 
