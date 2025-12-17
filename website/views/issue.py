@@ -122,14 +122,14 @@ def like_issue(request, issue_pk):
 
             msg_plain = render_to_string("email/issue_liked.html", msg_context)
             msg_html = render_to_string("email/issue_liked.html", msg_context)
-
-            send_mail(
-                "Your issue got an upvote!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [issue.user.email],
-                html_message=msg_html,
-            )
+            if issue.user and issue.user.email:
+                send_mail(
+                    "Your issue got an upvote!!",
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [issue.user.email],
+                    html_message=msg_html,
+                )
 
     return HttpResponse("Success")
 

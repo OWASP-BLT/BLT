@@ -7,6 +7,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
+from smtplib import SMTPException
 from urllib.parse import quote_plus, urlparse
 
 import requests
@@ -241,16 +242,17 @@ def weekly_report(request):
     ).prefetch_related(
         Prefetch(
             "issue_set",
-            queryset=Issue.objects.only("description", "views", "label", "status"),
+            queryset=Issue.objects.filter(Q(status="open") | Q(status="closed")).only(
+                "description", "views", "label", "status"
+            ),
         )
     )
 
     results = {"success": [], "failed": []}
 
-    try:
-        for domain in domains:
-            # Only include open + closed issues in the report
-            issues = [issue for issue in domain.issue_set.all() if issue.status in ("open", "closed")]
+    for domain in domains:
+        try:
+            issues = domain.issue_set.all()
 
             open_issues_count = domain.open_count
             closed_issues_count = domain.closed_count
@@ -285,9 +287,9 @@ def weekly_report(request):
 
             results["success"].append(domain.name)
 
-    except SMTPException as e:
-        logger.error(f"Failed to send report to {domain.name}: {e}")
-        results["failed"].append(domain.name)
+        except SMTPException as e:
+            logger.error(f"Failed to send report to {domain.name}: {e}")
+            results["failed"].append(domain.name)
 
     return HttpResponse(f"Sent {len(results['success'])} reports. Failed: {len(results['failed'])}")
 

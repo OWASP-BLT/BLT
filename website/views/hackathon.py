@@ -224,21 +224,23 @@ class HackathonDetailView(DetailView):
         # Get the reviewer leaderboard
         context["reviewer_leaderboard"] = hackathon.get_reviewer_leaderboard()
 
-        repositories = hackathon.repositories.annotate(
-            merged_pr_count=Count(
-                "github_issues",
-                filter=Q(
-                    github_issues__type="pull_request",
-                    github_issues__is_merged=True,
-                    github_issues__merged_at__gte=hackathon.start_time,
-                    github_issues__merged_at__lte=hackathon.end_time,
+        repositories = list(
+            hackathon.repositories.annotate(
+                merged_pr_count=Count(
+                    "github_issues",
+                    filter=Q(
+                        github_issues__type="pull_request",
+                        github_issues__is_merged=True,
+                        github_issues__merged_at__gte=hackathon.start_time,
+                        github_issues__merged_at__lte=hackathon.end_time,
+                    )
+                    & ~Q(github_issues__contributor__contributor_type="Bot")
+                    & ~Q(github_issues__contributor__name__endswith="[bot]")
+                    & ~Q(github_issues__contributor__name__icontains="bot"),
                 )
-                & ~Q(github_issues__contributor__contributor_type="Bot")
-                & ~Q(github_issues__contributor__name__endswith="[bot]")
-                & ~Q(github_issues__contributor__name__icontains="bot"),
             )
         )
-        repo_ids = repositories.values_list("id", flat=True)
+        repo_ids = [repo.id for repo in repositories]
 
         repos_with_pr_counts = []
 
