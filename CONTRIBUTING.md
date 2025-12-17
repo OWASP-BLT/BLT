@@ -134,6 +134,21 @@ This option is useful for contributors who prefer faster dependency resolution a
 pip install uv
 ```
 
+#### Set up the BLT project using `uv`
+
+From the project root, run:
+
+```bash
+uv sync
+
+To start the development server:
+
+uv run python manage.py migrate
+uv run python manage.py runserver
+
+Open your browser at:
+http://localhost:8000
+
 
 1. Install Python 3.11.2 (using pyenv or another tool):
 
