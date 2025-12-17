@@ -238,8 +238,11 @@ def weekly_report(request):
     domains = Domain.objects.prefetch_related(
         Prefetch(
             "issue_set",
-            queryset=Issue.objects.only("description", "views", "label", "status", "domain_id"),
+            queryset=Issue.objects.only("description", "views", "label", "status"),
         )
+    ).annotate(
+        open_count=Count("issue", filter=Q(issue__status="open")),
+        closed_count=Count("issue", filter=Q(issue__status="closed")),
     )
 
     try:

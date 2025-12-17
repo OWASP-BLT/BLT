@@ -293,6 +293,8 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
         # Sum weights for languages that appear as tags on this channel
         language_weight = sum(language_weights.get(tag, 0) for tag in channel_tag_names)
 
+        relevance_score = tag_matches + language_weight
+
         if relevance_score > 0:
             matching_tags = [tag for tag in channel_tag_names if tag in tag_weight_map]
             matching_languages = [lang for lang in channel_tag_names if lang in language_weights]

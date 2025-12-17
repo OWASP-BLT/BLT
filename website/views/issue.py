@@ -109,10 +109,8 @@ def like_issue(request, issue_pk):
     # Toggle upvote
     if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
-        is_liked = False
     else:
         userprof.issue_upvoted.add(issue)
-        is_liked = True
 
         # Send email only on NEW upvote
         if issue.user:
@@ -133,8 +131,6 @@ def like_issue(request, issue_pk):
                 html_message=msg_html,
             )
 
-    # Count likes (single query)
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     return HttpResponse("Success")
 
 
@@ -155,13 +151,8 @@ def dislike_issue(request, issue_pk):
     # Toggle downvote
     if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
-        is_disliked = False
     else:
         userprof.issue_downvoted.add(issue)
-        is_disliked = True
-
-    # Count dislikes (single query, correct M2M usage)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
 
     return HttpResponse("Success")
 
@@ -2650,20 +2641,18 @@ def refresh_gsoc_project(request):
                     is_merged=True,
                     merged_at__gte=since_date,
                     user_profile=None,
+                    contributor__isnull=False,
                 ).select_related("contributor")
 
                 # Collect contributor GitHub URLs
-                github_urls = set()
-
-                for pr in prs_without_profiles:
-                    try:
-                        pr_url_parts = pr.url.split("/")
-                        if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                            github_url = f"https://github.com/{pr_url_parts[3]}"
-                            if not github_url.endswith("[bot]") and "bot" not in github_url.lower():
-                                github_urls.add(github_url)
-                    except (IndexError, AttributeError):
-                        continue
+                github_urls = {
+                    pr.contributor.github_url
+                    for pr in prs_without_profiles
+                    if pr.contributor
+                    and pr.contributor.github_url
+                    and not pr.contributor.github_url.endswith("[bot]")
+                    and "bot" not in pr.contributor.github_url.lower()
+                }
 
                 # Fetch all matching user profiles in one query
                 profiles_map = {p.github_url: p for p in UserProfile.objects.filter(github_url__in=github_urls)}
@@ -2671,16 +2660,12 @@ def refresh_gsoc_project(request):
                 prs_to_update = []
 
                 for pr in prs_without_profiles:
-                    try:
-                        pr_url_parts = pr.url.split("/")
-                        if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                            github_url = f"https://github.com/{pr_url_parts[3]}"
-                            user_profile = profiles_map.get(github_url)
-                            if user_profile:
-                                pr.user_profile = user_profile
-                                prs_to_update.append(pr)
-                    except (IndexError, AttributeError):
-                        continue
+                    github_url = pr.contributor.github_url if pr.contributor else None
+                    user_profile = profiles_map.get(github_url)
+
+                    if user_profile:
+                        pr.user_profile = user_profile
+                        prs_to_update.append(pr)
 
                 if prs_to_update:
                     GitHubIssue.objects.bulk_update(prs_to_update, ["user_profile"])
