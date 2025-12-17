@@ -24,7 +24,7 @@ class LoginTestCase(TestCase):
         # Be tolerant of "email" vs "e-mail" wording across versions
         self.assertRegex(
             response.content.decode(),
-            r"address and/or password you specified are not correct",
+            r"The (username|e-mail address) and/or password you specified are not correct",
         )
 
     def test_login_with_invalid_username_shows_error(self):
