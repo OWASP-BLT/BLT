@@ -27,6 +27,7 @@ class ProjectFreshnessCalculationTestCase(TestCase):
             name="archived-repo",
             repo_url="https://github.com/test/archived",
             is_archived=True,
+            last_commit_date=self.now - timedelta(days=1),
         )
         freshness = self.project.calculate_freshness()
         self.assertEqual(freshness, 0.0)
