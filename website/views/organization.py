@@ -235,29 +235,32 @@ def link_slack_channel_to_project(request):
 
 
 def weekly_report(request):
-    domains = Domain.objects.prefetch_related(
+    domains = Domain.objects.annotate(
+        open_count=Count("issue", filter=Q(issue__status="open")),
+        closed_count=Count("issue", filter=Q(issue__status="closed")),
+    ).prefetch_related(
         Prefetch(
             "issue_set",
             queryset=Issue.objects.only("description", "views", "label", "status"),
         )
     )
 
+    results = {"success": [], "failed": []}
+
     try:
         for domain in domains:
-            issues = domain.issue_set.all()
+            # Only include open + closed issues in the report
+            issues = [issue for issue in domain.issue_set.all() if issue.status in ("open", "closed")]
 
-            # Weekly report counts only explicit "open" and "closed" statuses
-            # Other statuses (if any) are intentionally excluded
-            open_issues = [i for i in issues if i.status == "open"]
-            closed_issues = [i for i in issues if i.status == "closed"]
-
-            total_issues = len(open_issues) + len(closed_issues)
+            open_issues_count = domain.open_count
+            closed_issues_count = domain.closed_count
+            total_issues = open_issues_count + closed_issues_count
 
             report_data = [
                 "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
                 f"Organization Name: {domain.name}\n",
-                f"Open issues: {len(open_issues)}\n",
-                f"Closed issues: {len(closed_issues)}\n",
+                f"Open issues: {open_issues_count}\n",
+                f"Closed issues: {closed_issues_count}\n",
                 f"Total issues: {total_issues}\n\n",
             ]
 
@@ -268,23 +271,25 @@ def weekly_report(request):
                     f"Label: {issue.get_label_display()}\n\n"
                 )
 
-            report_string = "".join(report_data)
             if not domain.email:
                 logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
                 continue
 
             send_mail(
                 "Weekly Report!!!",
-                report_string,
+                "".join(report_data),
                 settings.EMAIL_HOST_USER,
                 [domain.email],
                 fail_silently=False,
             )
 
-    except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+            results["success"].append(domain.name)
 
-    return HttpResponse("Weekly report sent successfully.")
+    except SMTPException as e:
+        logger.error(f"Failed to send report to {domain.name}: {e}")
+        results["failed"].append(domain.name)
+
+    return HttpResponse(f"Sent {len(results['success'])} reports. Failed: {len(results['failed'])}")
 
 
 @login_required(login_url="/accounts/login")
