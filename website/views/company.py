@@ -460,7 +460,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_social_stats(self, organization):
         """Get social media stats for the organization.
-        
+
         Args:
             organization: Organization object or ID (for backwards compatibility)
         """
@@ -888,11 +888,14 @@ class OrganizationSocialRedirectView(View):
 
         hostname = (parsed.hostname or "").lower()
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
+
+        # Block double-dot attacks
+        if ".." in hostname:
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured")
+            return redirect("organization_analytics", id=org_id)
+
         # Validate hostname is either exact match or proper subdomain (not just string suffix)
-        if not any(
-            hostname == domain or hostname.endswith(f".{domain}")
-            for domain in allowed_domains
-        ):
+        if not any(hostname == domain or hostname.endswith(f".{domain}") for domain in allowed_domains):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured")
             return redirect("organization_analytics", id=org_id)
 

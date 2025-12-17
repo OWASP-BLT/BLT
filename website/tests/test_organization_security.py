@@ -3,7 +3,7 @@ Security-focused tests for organization views, especially open redirect vulnerab
 and URL validation in forms.
 """
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from website.forms import OrganizationProfileForm
@@ -262,7 +262,7 @@ class OrganizationProfileFormSecurityTests(TestCase):
         self.assertIn("linkedin", form.errors)
 
 
-class OrganizationSocialRedirectSecurityTests(TestCase):
+class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
     """Test OrganizationSocialRedirectView security against open redirect attacks"""
 
     def setUp(self):
