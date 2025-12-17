@@ -132,6 +132,7 @@ This option is useful for contributors who prefer faster dependency resolution a
 
 ```bash
 pip install uv
+```
 
 
 1. Install Python 3.11.2 (using pyenv or another tool):
