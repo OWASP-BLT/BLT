@@ -96,24 +96,21 @@ logger = logging.getLogger(__name__)
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
 
-    # Fetch user profile ONCE
-    userprof = UserProfile.objects.prefetch_related(
-        "issue_upvoted",
-        "issue_downvoted",
-    ).get(user=request.user)
+    # Fetch user profile once (NO prefetch)
+    userprof = UserProfile.objects.get(user=request.user)
 
     # Remove downvote if exists
-    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
+    if issue in userprof.issue_downvoted.all():
         userprof.issue_downvoted.remove(issue)
 
     # Toggle upvote
-    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
+    if issue in userprof.issue_upvoted.all():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
 
         # Send email only on NEW upvote
-        if issue.user:
+        if issue.user and issue.user.email:
             msg_context = {
                 "liker_user": request.user.username,
                 "liked_user": issue.user.username,
@@ -122,14 +119,14 @@ def like_issue(request, issue_pk):
 
             msg_plain = render_to_string("email/issue_liked.html", msg_context)
             msg_html = render_to_string("email/issue_liked.html", msg_context)
-            if issue.user and issue.user.email:
-                send_mail(
-                    "Your issue got an upvote!!",
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [issue.user.email],
-                    html_message=msg_html,
-                )
+
+            send_mail(
+                "Your issue got an upvote!!",
+                msg_plain,
+                settings.EMAIL_TO_STRING,
+                [issue.user.email],
+                html_message=msg_html,
+            )
 
     return HttpResponse("Success")
 
@@ -138,18 +135,15 @@ def like_issue(request, issue_pk):
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
 
-    # Fetch user profile ONCE
-    userprof = UserProfile.objects.prefetch_related(
-        "issue_upvoted",
-        "issue_downvoted",
-    ).get(user=request.user)
+    # Fetch user profile once
+    userprof = UserProfile.objects.get(user=request.user)
 
     # Remove upvote if exists
-    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
+    if issue in userprof.issue_upvoted.all():
         userprof.issue_upvoted.remove(issue)
 
     # Toggle downvote
-    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
+    if issue in userprof.issue_downvoted.all():
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)

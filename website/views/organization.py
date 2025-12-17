@@ -252,6 +252,10 @@ def weekly_report(request):
 
     for domain in domains:
         try:
+            if not domain.email:
+                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
+                continue
+
             issues = domain.issue_set.all()
 
             open_issues_count = domain.open_count
@@ -272,10 +276,6 @@ def weekly_report(request):
                     f"Views: {issue.views}\n"
                     f"Label: {issue.get_label_display()}\n\n"
                 )
-
-            if not domain.email:
-                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
-                continue
 
             send_mail(
                 "Weekly Report!!!",
