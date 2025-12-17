@@ -1,0 +1,51 @@
+"""
+Tests for Project freshness calculation functionality.
+"""
+from datetime import timedelta
+
+from django.test import TestCase
+from django.utils import timezone
+
+from website.models import Organization, Project, Repo
+
+
+class ProjectFreshnessCalculationTestCase(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Test Organization", url="https://test.org")
+        self.project = Project.objects.create(
+            name="Test Project", organization=self.org, url="https://github.com/test/project"
+        )
+        self.now = timezone.now()
+
+    def test_freshness_no_repos(self):
+        freshness = self.project.calculate_freshness()
+        self.assertEqual(freshness, 0.0)
+
+    def test_freshness_all_archived_repos(self):
+        Repo.objects.create(
+            project=self.project,
+            name="archived-repo",
+            repo_url="https://github.com/test/archived",
+            is_archived=True,
+        )
+        freshness = self.project.calculate_freshness()
+        self.assertEqual(freshness, 0.0)
+
+    def test_freshness_ignores_archived_and_counts_active(self):
+        Repo.objects.create(
+            project=self.project,
+            name="active",
+            repo_url="https://github.com/test/active",
+            is_archived=False,
+            last_commit_date=self.now - timedelta(days=2),
+        )
+        Repo.objects.create(
+            project=self.project,
+            name="archived",
+            repo_url="https://github.com/test/archived",
+            is_archived=True,
+            last_commit_date=self.now - timedelta(days=1),
+        )
+
+        freshness = self.project.calculate_freshness()
+        self.assertGreater(freshness, 0.0)

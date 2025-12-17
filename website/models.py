@@ -1409,22 +1409,24 @@ class Project(models.Model):
         last_30_days = now - timedelta(days=30)
         last_90_days = now - timedelta(days=90)
 
-        if not repos:
-            return 0.0
-
-        qs = repos.filter(is_archived=False)
+        # Start from non-archived repos for this project
+        qs = self.repos.filter(is_archived=False)
 
         if not qs.exists():
             return 0.0
 
-        active_7 = qs.filter(updated_at__gte=last_7_days).count()
+        qs = qs.exclude(last_commit_date__isnull=True)
+
+        active_7 = qs.filter(last_commit_date__gte=last_7_days).count()
+
         active_30 = qs.filter(
-            updated_at__lt=last_7_days,
-            updated_at__gte=last_30_days,
+            last_commit_date__lt=last_7_days,
+            last_commit_date__gte=last_30_days,
         ).count()
+
         active_90 = qs.filter(
-            updated_at__lt=last_30_days,
-            updated_at__gte=last_90_days,
+            last_commit_date__lt=last_30_days,
+            last_commit_date__gte=last_90_days,
         ).count()
 
         # Bumper-style decay weights

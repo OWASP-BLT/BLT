@@ -757,6 +757,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
+        freshness = request.query_params.get("freshness")
+
+        if freshness is not None:
+            try:
+                freshness_val = float(freshness)
+                if not 0 <= freshness_val <= 100:
+                    return Response(
+                        {"error": "Invalid 'freshness' parameter: must be between 0 and 100"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(freshness__gte=freshness_val)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'freshness' parameter: must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         stars = request.query_params.get("stars")
         forks = request.query_params.get("forks")
@@ -821,87 +837,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = projects_qs.filter(
             Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
         ).distinct()
-
-        project_data = []
-        for project in projects:
-            contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
-        return Response(
-            {"count": len(project_data), "projects": project_data},
-            status=200,
-        )
-
-    @action(detail=False, methods=["get"])
-    def filter(self, request, *args, **kwargs):
-        freshness = request.query_params.get("freshness", None)
-        stars = request.query_params.get("stars", None)
-        forks = request.query_params.get("forks", None)
-        tags = request.query_params.get("tags", None)
-
-        # Annotate Project with aggregated stars and forks from related Repos
-        projects = Project.objects.annotate(
-            total_stars=Coalesce(Sum("repos__stars"), 0),
-            total_forks=Coalesce(Sum("repos__forks"), 0),
-        )
-
-        if freshness:
-            try:
-                freshness_val = float(freshness)
-                if not 0 <= freshness_val <= 100:
-                    return Response(
-                        {"error": "Invalid 'freshness' parameter: must be between 0 and 100"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                projects = projects.filter(freshness__gte=freshness_val)
-            except (ValueError, TypeError):
-                return Response(
-                    {"error": "Invalid 'freshness' parameter: must be a number"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # SAFE stars validation
-        if stars:
-            try:
-                stars_int = int(stars)
-                if stars_int < 0:
-                    return Response(
-                        {"error": "Invalid 'stars' parameter: must be non-negative"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                projects = projects.filter(total_stars__gte=stars_int)
-            except (ValueError, TypeError):
-                return Response(
-                    {"error": "Invalid 'stars' parameter: must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # SAFE forks validation
-        if forks:
-            try:
-                forks_int = int(forks)
-                if forks_int < 0:
-                    return Response(
-                        {"error": "Invalid 'forks' parameter: must be non-negative"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                projects = projects.filter(total_forks__gte=forks_int)
-            except (ValueError, TypeError):
-                return Response(
-                    {"error": "Invalid 'forks' parameter: must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        if tags:
-            projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
         project_data = []
         for project in projects:
