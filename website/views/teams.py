@@ -347,7 +347,10 @@ class TeamMemberLeaderboardView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        user_team = self.request.user.userprofile.team
+        try:
+            user_team = self.request.user.userprofile.team
+        except UserProfile.DoesNotExist:
+            return UserProfile.objects.none()
 
         if not user_team:
             return UserProfile.objects.none()

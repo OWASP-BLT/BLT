@@ -27,8 +27,6 @@ def create_indexes(apps, schema_editor):
             'ON "website_userprofile" ("quality_score" DESC);'
         )
 
-    #  SQLITE / OTHERS (TESTS)
-
     else:
         schema_editor.execute(
             'CREATE INDEX IF NOT EXISTS "website_dai_user_id_1d9003_idx" '
@@ -70,7 +68,7 @@ def drop_indexes(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    atomic = False  # ✅ Still required for PostgreSQL CONCURRENTLY
+    atomic = False
 
     dependencies = [
         ("website", "0264_userprofile_check_in_count_and_more"),
