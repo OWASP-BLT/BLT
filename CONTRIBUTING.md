@@ -113,6 +113,27 @@ Before you start contributing, you'll need to set up your development environmen
 
 ### Python Virtual Environment Setup
 
+
+### Optional: Python Virtual Environment Setup using `uv`
+
+BLT can also be set up using [`uv`](https://github.com/astral-sh/uv), a fast Python package manager
+and virtual environment tool. This is an **optional** alternative to the Poetry-based setup
+described above.
+
+This option is useful for contributors who prefer faster dependency resolution and installation.
+
+#### Install `uv`
+
+> ⚠️ Note (Windows):  
+> On some Windows setups, `uv` may fail to auto-detect Python installations
+> due to registry or PATH resolution issues. In such cases, explicitly
+> specifying the Python interpreter or using Docker/Poetry is recommended.
+
+
+```bash
+pip install uv
+
+
 1. Install Python 3.11.2 (using pyenv or another tool):
 
    ```bash
