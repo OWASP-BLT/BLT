@@ -17,6 +17,11 @@ class Command(BaseCommand):
                 call_command("cron_send_reminders")
             except Exception as e:
                 logger.error("Error sending user reminders", exc_info=True)
+            # Process Slack reminders & huddles every run
+            try:
+                call_command("process_slack_reminders_and_huddles")
+            except Exception:
+                logger.error("Failed running process_slack_reminders_and_huddles", exc_info=True)
         except Exception as e:
             logger.error("Error in 10 minute tasks", exc_info=True)
             raise

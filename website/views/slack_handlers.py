@@ -12,6 +12,7 @@ from urllib.parse import quote_plus
 
 import requests
 import yaml
+from django.conf import settings
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -51,6 +52,56 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 # Poll configuration constants
 MAX_POLL_OPTIONS = 10
 BAR_SCALE_FACTOR = 5  # Each progress bar character represents 5%
+
+
+def _slack_date(dt):
+    """Return a Slack mrkdwn local-time date token for a datetime.
+
+    Example: <!date^1702857600^{date_short_pretty} at {time}|2023-12-17 10:00 UTC>
+    """
+    if dt is None:
+        return ""
+    # Ensure aware datetime; Django timezone.now() is aware (UTC) by default
+    try:
+        ts = int(dt.timestamp())
+    except Exception:
+        # Fallback to current time if something odd happens
+        ts = int(time.time())
+    fallback = dt.strftime("%Y-%m-%d %H:%M %Z")
+    return f"<!date^{ts}^{{date_short_pretty}} at {{time}}|{fallback}>"
+
+
+def _get_allowed_channels(env_key: str):
+    """Return a set of allowed channel IDs from settings or env.
+
+    Accepts comma-separated channel IDs. If not configured, returns empty set (no restriction).
+    """
+    # Prefer Django settings if present, else environment variable
+    value = getattr(settings, env_key, None)
+    if value is None:
+        value = os.environ.get(env_key)
+    if not value:
+        return set()
+    if isinstance(value, (list, tuple, set)):
+        return set(str(v).strip() for v in value if v)
+    # comma or space separated
+    parts = re.split(r"[,\s]+", str(value).strip())
+    return set(p for p in parts if p)
+
+
+def _validate_users_exist(workspace_client: WebClient, user_ids):
+    """Check each slack user id via users_info. Returns (valid_ids, invalid_ids)."""
+    valid, invalid = [], []
+    for uid in user_ids:
+        try:
+            info = workspace_client.users_info(user=uid)
+            if info.get("ok") and info.get("user"):
+                valid.append(uid)
+            else:
+                invalid.append(uid)
+        except Exception:
+            invalid.append(uid)
+    return valid, invalid
 
 
 def get_slack_username(workspace_client, user_id):
@@ -525,7 +576,10 @@ def slack_commands(request):
                     {
                         "type": "context",
                         "elements": [
-                            {"type": "mrkdwn", "text": "🕒 Stats generated at " + time.strftime("%Y-%m-%d %H:%M UTC")}
+                            {
+                                "type": "mrkdwn",
+                                "text": "🕒 Stats generated at " + _slack_date(timezone.now()),
+                            }
                         ],
                     },
                 ]
@@ -1299,12 +1353,29 @@ def send_dm(client, user_id, text, blocks=None):
             )
 
     except SlackApiError as e:
-        if e.response["error"] == "ratelimited":
+        err = (e.response or {}).get("error", "unknown_error")
+        if err == "ratelimited":
             return JsonResponse(
-                {"response_type": "ephemeral", "text": "❌ Rate limit exceeded. Please try again later."}, status=429
+                {"response_type": "ephemeral", "text": "❌ Rate limit exceeded. Please try again shortly."},
+                status=429,
+            )
+        if err in {"channel_not_found", "not_in_channel"}:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ I can't post in this channel. Please invite the bot."},
+                status=400,
+            )
+        if err in {"invalid_auth", "account_inactive"}:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ Slack auth failed. Please re-install or update tokens."},
+                status=401,
+            )
+        if err in {"user_not_found", "cant_dm_bot"}:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ I couldn't DM that user. Please mention a valid member."},
+                status=400,
             )
         return JsonResponse(
-            {"response_type": "ephemeral", "text": f"❌ Slack API error: {e.response.get('error', 'Unknown error')}"},
+            {"response_type": "ephemeral", "text": f"❌ Slack API error: {err}"},
             status=503,
         )
     except (KeyError, AttributeError) as e:
@@ -2909,9 +2980,7 @@ def post_project_sweep_update(workspace_client, user_id, activity, team_id):
             },
             {
                 "type": "context",
-                "elements": [
-                    {"type": "mrkdwn", "text": f"Generated at {timezone.now().strftime('%Y-%m-%d %H:%M UTC')}"}
-                ],
+                "elements": [{"type": "mrkdwn", "text": f"Generated at {_slack_date(timezone.now())}"}],
             },
             {"type": "divider"},
             {
@@ -3042,6 +3111,17 @@ def post_project_sweep_update(workspace_client, user_id, activity, team_id):
 def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, activity):
     """Handle the /poll command to create polls"""
     try:
+        # Optional channel restrictions
+        allowed = _get_allowed_channels("SLACK_POLL_ALLOWED_CHANNELS")
+        if allowed and channel_id not in allowed:
+            allowed_pretty = ", ".join(sorted(allowed))
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"❌ This command is restricted. Allowed channels: {allowed_pretty}",
+                }
+            )
+
         if not text:
             # Show help message
             help_blocks = [
@@ -3133,15 +3213,17 @@ def build_poll_blocks(poll):
     ]
 
     # Get vote counts for each option
-    options = poll.options.all()
+    options = poll.options.annotate(votes_count=Count("votes"))
     total_votes = poll.votes.count()
 
     for option in options:
-        vote_count = option.votes.count()
+        vote_count = getattr(option, "votes_count", option.vote_count)
         percentage = (vote_count / total_votes * 100) if total_votes > 0 else 0
 
         # Create a simple bar chart using blocks
-        bar = "█" * int(percentage / BAR_SCALE_FACTOR)
+        # Improve rounding for small non-zero percentages to avoid disappearing bars
+        bar_len = 0 if vote_count == 0 else max(1, math.ceil(percentage / BAR_SCALE_FACTOR))
+        bar = "█" * bar_len
         blocks.append(
             {
                 "type": "section",
@@ -3213,7 +3295,7 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                         '`/blt_remind me "Follow up" in 2 hours`\n'
                         '`/blt_remind @john "Review PR" in 1 day`\n\n'
                         "*List reminders:*\n"
-                        "`/blt_remind list`",
+                        "`/blt_remind list [page]`",
                     },
                 }
             ]
@@ -3222,9 +3304,13 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                 {"response_type": "ephemeral", "text": "I've sent you help on using /blt_remind in a DM! ⏰"}
             )
 
-        # Handle "list" subcommand
-        if text.lower() == "list":
-            return list_user_reminders(workspace_client, user_id, team_id)
+        # Handle "list" subcommand, optional page number: "list <page>"
+        if text.lower().startswith("list"):
+            page = 1
+            parts = text.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                page = int(parts[1])
+            return list_user_reminders(workspace_client, user_id, team_id, page=page)
 
         # Parse reminder command
         # Format: /remind ["message"] in <number> <unit>
@@ -3278,6 +3364,17 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         else:
             return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
 
+        # Validate target user exists if different from creator
+        if target_id != user_id:
+            _, invalid = _validate_users_exist(workspace_client, [target_id])
+            if invalid:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": f"❌ Unknown user: <@{invalid[0]}>. Please mention a valid user.",
+                    }
+                )
+
         # Create reminder
         reminder = SlackReminder.objects.create(
             creator_id=user_id,
@@ -3293,16 +3390,20 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         activity.details["reminder_id"] = reminder.id
         activity.save()
 
-        # Format time for display
-        time_str = remind_at.strftime("%Y-%m-%d %H:%M UTC")
+        # Format time for display (Slack-local for each viewer)
+        time_str = _slack_date(remind_at)
         target_display = f"<@{target_id}>" if target_id != user_id else "you"
 
-        return JsonResponse(
-            {
-                "response_type": "ephemeral",
-                "text": f"✅ Reminder set! I'll remind {target_display} at {time_str}\nMessage: {message}",
-            }
-        )
+        # Post a persistent confirmation in the channel
+        try:
+            workspace_client.chat_postMessage(
+                channel=channel_id,
+                text=f"⏰ Reminder set for {target_display} at {time_str}",
+            )
+        except Exception:
+            logger.warning("Failed to post channel confirmation for reminder", exc_info=True)
+
+        return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder set! I've sent details."})
 
     except Exception as e:
         logger.error(f"Error in reminder command: {str(e)}")
@@ -3312,24 +3413,42 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred. Please try again."})
 
 
-def list_user_reminders(workspace_client, user_id, team_id):
-    """List all pending reminders for a user"""
+def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10):
+    """List pending reminders for a user with pagination"""
     try:
-        reminders = SlackReminder.objects.filter(workspace_id=team_id, creator_id=user_id, status="pending").order_by(
+        qs = SlackReminder.objects.filter(workspace_id=team_id, creator_id=user_id, status="pending").order_by(
             "remind_at"
         )
 
-        if not reminders.exists():
+        total = qs.count()
+        if total == 0:
             return JsonResponse({"response_type": "ephemeral", "text": "📭 You don't have any pending reminders."})
 
+        total_pages = (total + page_size - 1) // page_size
+        if page < 1:
+            page = 1
+        if page > total_pages:
+            page = total_pages
+
+        start = (page - 1) * page_size
+        end = start + page_size
+        reminders = qs[start:end]
+
         blocks = [
-            {"type": "header", "text": {"type": "plain_text", "text": "⏰ Your Pending Reminders", "emoji": True}},
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"⏰ Your Pending Reminders (Page {page} of {total_pages})",
+                    "emoji": True,
+                },
+            },
             {"type": "divider"},
         ]
 
         for reminder in reminders:
             target_display = f"<@{reminder.target_id}>" if reminder.target_id != user_id else "yourself"
-            time_str = reminder.remind_at.strftime("%Y-%m-%d %H:%M UTC")
+            time_str = _slack_date(reminder.remind_at)
 
             blocks.append(
                 {
@@ -3361,6 +3480,17 @@ def list_user_reminders(workspace_client, user_id, team_id):
 def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, activity):
     """Handle the /huddle command to schedule huddles/meetings"""
     try:
+        # Optional channel restrictions
+        allowed = _get_allowed_channels("SLACK_HUDDLE_ALLOWED_CHANNELS")
+        if allowed and channel_id not in allowed:
+            allowed_pretty = ", ".join(sorted(allowed))
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"❌ This command is restricted. Allowed channels: {allowed_pretty}",
+                }
+            )
+
         if not text:
             # Show help message
             help_blocks = [
@@ -3375,8 +3505,8 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                         '`/blt_huddle "Sprint Planning" "Q1 planning" at 2:00 PM with @alice @bob`\n'
                         '`/blt_huddle "Quick Sync" "Daily standup" in 30 minutes`\n\n'
                         "*List huddles:*\n"
-                        "`/blt_huddle list`\n\n"
-                        "*Note:* Times are in UTC. Participants will be notified.",
+                        "`/blt_huddle list [page]`\n\n"
+                        "*Note:* Times display in your local timezone. Participants will be notified.",
                     },
                 }
             ]
@@ -3385,9 +3515,13 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 {"response_type": "ephemeral", "text": "I've sent you help on using /blt_huddle in a DM! 🎯"}
             )
 
-        # Handle "list" subcommand
-        if text.lower() == "list":
-            return list_channel_huddles(workspace_client, user_id, team_id, channel_id)
+        # Handle "list" subcommand, optional page number: "list <page>"
+        if text.lower().startswith("list"):
+            page = 1
+            parts = text.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                page = int(parts[1])
+            return list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=page)
 
         # Parse huddle command
         parts = re.findall(r'"([^"]+)"', text)
@@ -3434,9 +3568,14 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 now = timezone.now()
                 scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
-                # If time has passed today, schedule for tomorrow
+                # If time has passed today, don't silently move to tomorrow
                 if scheduled_at < now:
-                    scheduled_at += timedelta(days=1)
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ That time has already passed today. Please specify a future time (e.g., 'in 30 minutes' or 'at 3:30 PM').",
+                        }
+                    )
 
         if not scheduled_at:
             return JsonResponse(
@@ -3446,8 +3585,19 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 }
             )
 
-        # Extract participants
+        # Extract and validate participants
         participants = re.findall(r"<@(\w+)>", text)
+        if participants:
+            valid, invalid = _validate_users_exist(workspace_client, participants)
+            if invalid:
+                invalid_mentions = ", ".join([f"<@{u}>" for u in invalid])
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": f"❌ These users were not found: {invalid_mentions}",
+                    }
+                )
+            participants = valid
 
         # Create huddle
         huddle = SlackHuddle.objects.create(
@@ -3509,7 +3659,7 @@ def build_huddle_blocks(huddle):
         {
             "type": "section",
             "fields": [
-                {"type": "mrkdwn", "text": f"*When:*\n{huddle.scheduled_at.strftime('%Y-%m-%d %H:%M UTC')}"},
+                {"type": "mrkdwn", "text": f"*When:*\n{_slack_date(huddle.scheduled_at)}"},
                 {"type": "mrkdwn", "text": f"*Duration:*\n{huddle.duration_minutes} minutes"},
                 {"type": "mrkdwn", "text": f"*Status:*\n{huddle.status.title()}"},
                 {"type": "mrkdwn", "text": f"*Organizer:*\n<@{huddle.creator_id}>"},
@@ -3565,27 +3715,46 @@ def build_huddle_blocks(huddle):
     return blocks
 
 
-def list_channel_huddles(workspace_client, user_id, team_id, channel_id):
-    """List all scheduled huddles for a channel"""
+def list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=1, page_size=10):
+    """List scheduled huddles for a channel with pagination"""
     try:
-        huddles = SlackHuddle.objects.filter(workspace_id=team_id, channel_id=channel_id, status="scheduled").order_by(
-            "scheduled_at"
+        qs = (
+            SlackHuddle.objects.filter(workspace_id=team_id, channel_id=channel_id, status="scheduled")
+            .annotate(participants_count=Count("participants"))
+            .order_by("scheduled_at")
         )
 
-        if not huddles.exists():
+        total = qs.count()
+        if total == 0:
             return JsonResponse({"response_type": "ephemeral", "text": "📭 No scheduled huddles in this channel."})
+
+        total_pages = (total + page_size - 1) // page_size
+        if page < 1:
+            page = 1
+        if page > total_pages:
+            page = total_pages
+
+        start = (page - 1) * page_size
+        end = start + page_size
+        huddles = qs[start:end]
 
         blocks = [
             {
                 "type": "header",
-                "text": {"type": "plain_text", "text": "🎯 Scheduled Huddles", "emoji": True},
+                "text": {
+                    "type": "plain_text",
+                    "text": f"🎯 Scheduled Huddles (Page {page} of {total_pages})",
+                    "emoji": True,
+                },
             },
             {"type": "divider"},
         ]
 
         for huddle in huddles:
-            time_str = huddle.scheduled_at.strftime("%Y-%m-%d %H:%M UTC")
-            participants_count = huddle.participants.count()
+            time_str = _slack_date(huddle.scheduled_at)
+            participants_count = getattr(huddle, "participants_count", None)
+            if participants_count is None:
+                participants_count = huddle.participants.count()
 
             blocks.append(
                 {
@@ -3654,15 +3823,10 @@ def handle_poll_vote(payload, workspace_client):
         existing_vote = SlackPollVote.objects.filter(poll=poll, voter_id=user_id).first()
 
         if existing_vote:
-            # Update vote
-            if existing_vote.option.id == option_id:
-                return JsonResponse({"response_type": "ephemeral", "text": "✅ You've already voted for this option."})
-
-            # Change vote
-            existing_vote.option = option
-            existing_vote.voted_at = timezone.now()
-            existing_vote.save()
-            message = "✅ Your vote has been changed!"
+            # Enforce one vote per person; disallow changing votes to prevent churn/abuse
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "✅ Your vote has already been recorded for this poll."}
+            )
         else:
             # New vote
             SlackPollVote.objects.create(poll=poll, option=option, voter_id=user_id)

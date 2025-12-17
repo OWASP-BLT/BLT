@@ -323,6 +323,15 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
 
         # Create test request for /blt_poll with no text
         request = MagicMock()
@@ -359,6 +368,15 @@ class SlackHandlerTests(TestCase):
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
 
         # Create test request for /blt_poll
         request = MagicMock()
@@ -398,6 +416,15 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
 
         # Create test request for /blt_remind with no text
         request = MagicMock()
@@ -433,6 +460,15 @@ class SlackHandlerTests(TestCase):
 
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
 
         # Create test request for /blt_remind
         request = MagicMock()
@@ -474,6 +510,15 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
 
         # Create test request for /blt_huddle with no text
         request = MagicMock()
@@ -510,6 +555,15 @@ class SlackHandlerTests(TestCase):
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
 
         # Create test request for /blt_huddle
         request = MagicMock()
@@ -543,4 +597,7 @@ class SlackHandlerTests(TestCase):
         self.assertEqual(huddle.description, "Q1 planning")
         self.assertEqual(huddle.status, "scheduled")
         self.assertEqual(huddle.participants.count(), 1)
-        self.assertEqual(activity.details["command"], "/blt_huddle")
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details.get("command"), "/blt_huddle")
