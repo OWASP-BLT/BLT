@@ -534,10 +534,11 @@
                 </div>
             </div>
         </div>
-    {% endblock body %}
-    {% block scripts %}
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <script>
+    </div>
+{% endblock body %}
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
         // Support dark mode for chart text colors
         const isDarkMode = document.documentElement.classList.contains('dark');
         
@@ -1149,5 +1150,5 @@
         } else {
             setTimeout(initializeAllCharts, 200);
         }
-        </script>
-    {% endblock scripts %}
+    </script>
+{% endblock scripts %}

@@ -904,13 +904,19 @@ class OrganizationSocialRedirectView(View):
         hostname = (parsed.hostname or "").lower()
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
 
-        # Block double-dot attacks
-        if ".." in hostname:
-            messages.error(request, f"Invalid {platform.capitalize()} URL configured")
-            return redirect("organization_analytics", id=org_id)
+        # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
+        def is_valid_domain_or_subdomain(hostname, domain):
+            if hostname == domain:
+                return True
+            parts = hostname.split(".")
+            domain_parts = domain.split(".")
+            # Reject if any part is empty (indicates double dots or invalid format)
+            if any(part == "" for part in parts):
+                return False
+            # Check that hostname ends with domain parts and has at least one subdomain part
+            return len(parts) > len(domain_parts) and parts[-len(domain_parts) :] == domain_parts
 
-        # Validate hostname is either exact match or proper subdomain (not just string suffix)
-        if not any(hostname == domain or hostname.endswith(f".{domain}") for domain in allowed_domains):
+        if not any(is_valid_domain_or_subdomain(hostname, domain) for domain in allowed_domains):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured")
             return redirect("organization_analytics", id=org_id)
 
