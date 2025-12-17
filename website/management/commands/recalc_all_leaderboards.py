@@ -42,7 +42,7 @@ class Command(BaseCommand):
                     locked_profile.quality_score = breakdown.get("goals", 0)
                     locked_profile.check_in_count = DailyStatusReport.objects.filter(
                         user=locked_profile.user,
-                        created__gte=cutoff,
+                        date__gte=cutoff,
                     ).count()
                     locked_profile.last_score_update = timezone.now()
                     locked_profile.save(
