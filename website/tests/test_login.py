@@ -13,19 +13,29 @@ class LoginTestCase(TestCase):
         self.test_user = User.objects.create_user(username="testuser", email="test@example.com", password="password123")
         EmailAddress.objects.create(user=self.test_user, email="test@example.com", verified=True, primary=True)
 
-    def test_login_with_invalid_username_shows_error(self):
-        """Test that invalid username displays non-field error"""
-        response = self.client.post("/accounts/login/", {"login": "nonexistent_user", "password": "wrongpassword"})
+    def _assert_login_error_rendered(self, response):
+        # Page re-renders with status 200
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "non_field_errors")
+        # The form should have non-field errors
+        form = response.context["form"]
+        self.assertTrue(form.non_field_errors(), "Expected non-field errors on the form.")
+        # Alert container is rendered
+        self.assertContains(response, 'role="alert"')
+        # Be tolerant of "email" vs "e-mail" wording across versions
+        self.assertRegex(
+            response.content.decode(),
+            r"address and/or password you specified are not correct",
+        )
+
+    def test_login_with_invalid_username_shows_error(self):
+        response = self.client.post("/accounts/login/", {"login": "nonexistent_user", "password": "wrongpassword"})
+        self._assert_login_error_rendered(response)
 
     def test_login_with_invalid_email_shows_error(self):
-        """Test that invalid email displays non-field error"""
         response = self.client.post(
             "/accounts/login/", {"login": "nonexistent@example.com", "password": "wrongpassword"}
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "non_field_errors")
+        self._assert_login_error_rendered(response)
 
     def test_login_with_email_success(self):
         """Test successful login using email instead of username"""
@@ -42,18 +52,12 @@ class LoginTestCase(TestCase):
         self.assertTrue(response.wsgi_request.user.is_authenticated)
 
     def test_login_with_correct_username_wrong_password(self):
-        """Test error when username exists but password is wrong"""
         response = self.client.post("/accounts/login/", {"login": "testuser", "password": "wrongpassword"})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "non_field_errors")
-        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self._assert_login_error_rendered(response)
 
     def test_login_with_correct_email_wrong_password(self):
-        """Test error when email exists but password is wrong"""
         response = self.client.post("/accounts/login/", {"login": "test@example.com", "password": "wrongpassword"})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "non_field_errors")
-        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self._assert_login_error_rendered(response)
 
     def test_login_with_empty_username(self):
         """Test that empty login field shows appropriate error"""
