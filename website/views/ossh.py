@@ -91,19 +91,20 @@ def get_github_data(request):
 
 def preprocess_user_data(user_data):
     user_tags = defaultdict(int)
+    ALLOWED_NORMALIZED_TAGS = set(TAG_NORMALIZATION.values())
 
     for repo in user_data["repositories"]:
         if repo.get("description"):
             words = tokenize(repo["description"])
             for word in words:
                 normalized_word = normalize_tag(word)
-                if normalized_word in TAG_NORMALIZATION.values():
+                if normalized_word in ALLOWED_NORMALIZED_TAGS:
                     user_tags[normalized_word] += 1
 
     if user_data.get("top_topics"):
         for topic in user_data["top_topics"]:
             normalized_topic = normalize_tag(topic)
-            if normalized_topic in TAG_NORMALIZATION.values():
+            if normalized_topic in ALLOWED_NORMALIZED_TAGS:
                 user_tags[normalized_topic] = user_tags.get(normalized_topic, 0) + 1
             else:
                 user_tags[normalized_topic] = 1
@@ -275,26 +276,25 @@ def get_recommended_communities(request):
 
 
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
-    matching_channels = OsshDiscussionChannel.objects.filter(Q(tags__name__in=[tag[0] for tag in user_tags])).distinct()
+    matching_channels = (
+        OsshDiscussionChannel.objects.filter(Q(tags__name__in=[tag[0] for tag in user_tags]))
+        .distinct()
+        .prefetch_related("tags")
+    )
 
     recommended_channels = []
     for channel in matching_channels:
-        tag_matches = sum(1 for tag in user_tags if tag[0] in channel.tags.values_list("name", flat=True))
+        channel_tag_names = {tag.name for tag in channel.tags.all()}
+        tag_matches = sum(1 for tag, _ in user_tags if tag in channel_tag_names)
 
-        language_weight = sum(
-            language_weights.get(tag[1], 0)
-            for tag in user_tags
-            if tag[0] in channel.tags.values_list("name", flat=True)
-        )
+        language_weight = sum(language_weights.get(lang, 0) for tag, lang in user_tags if tag in channel_tag_names)
 
         relevance_score = tag_matches + language_weight + (channel.member_count // 1000)
 
         if relevance_score > 0:
             matching_tags = [tag.name for tag in channel.tags.all() if tag.name in dict(user_tags)]
             matching_languages = [
-                tag[1]
-                for tag in user_tags
-                if tag[0] in channel.tags.values_list("name", flat=True) and tag[1] in language_weights
+                lang for tag, lang in user_tags if tag in channel_tag_names and lang in language_weights
             ]
 
             reasoning = []

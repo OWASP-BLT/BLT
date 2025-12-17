@@ -226,34 +226,32 @@ class HackathonDetailView(DetailView):
 
         # Get repositories with merged PR counts
         repositories = hackathon.repositories.all()
+
+        repositories = hackathon.repositories.annotate(
+            merged_pr_count=Count(
+                "githubissue",
+                filter=Q(
+                    githubissue__type="pull_request",
+                    githubissue__is_merged=True,
+                    githubissue__merged_at__gte=hackathon.start_time,
+                    githubissue__merged_at__lte=hackathon.end_time,
+                )
+                & ~Q(githubissue__contributor__contributor_type="Bot")
+                & ~Q(githubissue__contributor__name__endswith="[bot]")
+                & ~Q(githubissue__contributor__name__icontains="bot"),
+            )
+        )
         repo_ids = repositories.values_list("id", flat=True)
+
         repos_with_pr_counts = []
 
         for repo in repositories:
-            # Count merged PRs for this repository (excluding bots)
-            merged_pr_count = (
-                GitHubIssue.objects.filter(
-                    repo=repo,
-                    type="pull_request",
-                    is_merged=True,
-                    merged_at__gte=hackathon.start_time,
-                    merged_at__lte=hackathon.end_time,
-                )
-                .exclude(
-                    Q(contributor__contributor_type="Bot")
-                    | Q(contributor__name__endswith="[bot]")
-                    | Q(contributor__name__icontains="bot")
-                )
-                .count()
-            )
-
-            # Generate the GitHub search URL for merged PRs
             merged_prs_url = self._get_github_merged_prs_url(repo, hackathon)
 
             repos_with_pr_counts.append(
                 {
                     "repo": repo,
-                    "merged_pr_count": merged_pr_count,
+                    "merged_pr_count": repo.merged_pr_count,
                     "merged_prs_url": merged_prs_url,
                 }
             )

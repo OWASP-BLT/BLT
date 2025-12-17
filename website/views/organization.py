@@ -235,36 +235,47 @@ def link_slack_channel_to_project(request):
 
 
 def weekly_report(request):
-    domains = Domain.objects.all()
-    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
+    domains = Domain.objects.prefetch_related(
+        Prefetch(
+            "issue_set",
+            queryset=Issue.objects.only("description", "views", "label", "status", "domain_id"),
+        )
+    )
+
     try:
         for domain in domains:
-            open_issues = domain.open_issues
-            closed_issues = domain.closed_issues
-            total_issues = open_issues.count() + closed_issues.count()
-            issues = Issue.objects.filter(domain=domain)
-            email = domain.email
-            report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
-                f"\n\norganization Name: {domain.name}"
-                f"Open issues: {open_issues.count()}"
-                f"Closed issues: {closed_issues.count()}"
-                f"Total issues: {total_issues}"
-            )
-            for issue in issues:
-                description = issue.description
-                views = issue.views
-                label = issue.get_label_display()
-                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
+            issues = domain.issue_set.all()
 
-        report_string = "".join(report_data)
-        send_mail(
-            "Weekly Report!!!",
-            report_string,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
+            open_issues = [i for i in issues if i.status == "open"]
+            closed_issues = [i for i in issues if i.status == "closed"]
+
+            total_issues = len(open_issues) + len(closed_issues)
+
+            report_data = [
+                "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
+                f"Organization Name: {domain.name}\n",
+                f"Open issues: {len(open_issues)}\n",
+                f"Closed issues: {len(closed_issues)}\n",
+                f"Total issues: {total_issues}\n\n",
+            ]
+
+            for issue in issues:
+                report_data.append(
+                    f"Description: {issue.description}\n"
+                    f"Views: {issue.views}\n"
+                    f"Label: {issue.get_label_display()}\n\n"
+                )
+
+            report_string = "".join(report_data)
+
+            send_mail(
+                "Weekly Report!!!",
+                report_string,
+                settings.EMAIL_HOST_USER,
+                [domain.email],
+                fail_silently=False,
+            )
+
     except Exception as e:
         return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
 
