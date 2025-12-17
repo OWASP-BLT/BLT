@@ -21,7 +21,8 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.db import connection
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -30,7 +31,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -51,6 +52,7 @@ from website.models import (
     Project,
     Repo,
     SearchHistory,
+    SecurityIncident,
     Tag,
     TimeLog,
     Token,
@@ -70,6 +72,7 @@ from website.serializers import (
     ProjectSerializer,
     RepoSerializer,
     SearchHistorySerializer,
+    SecurityIncidentSerializer,
     TagSerializer,
     TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
@@ -764,41 +767,74 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.prefetch_related("contributors").all()
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        )
+
+        stars = request.query_params.get("stars")
+        forks = request.query_params.get("forks")
+
+        if stars is not None:
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if forks is not None:
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         project_data = []
         for project in projects:
             contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
+            contributors_manager = getattr(project, "contributors", None)
+            if contributors_manager:
+                for contributor in contributors_manager.all():
+                    contributor_info = ContributorSerializer(contributor)
+                    contributors_data.append(contributor_info.data)
+
+            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
 
-        return Response(
-            {"count": len(project_data), "projects": project_data},
-            status=200,
-        )
+        return Response({"results": project_data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("q", "")
-        try:
-            query_int = int(query)
-            projects = Project.objects.filter(
-                Q(name__icontains=query)
-                | Q(description__icontains=query)
-                | Q(tags__name__icontains=query)
-                | Q(stars=query_int)
-                | Q(forks=query_int)
-            ).distinct()
-        except ValueError:
-            # If query is not a number, exclude stars/forks from search
-            projects = Project.objects.filter(
-                Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
-            ).distinct()
+
+        projects_qs = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
+
+        projects = projects_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
+        ).distinct()
 
         project_data = []
         for project in projects:
@@ -806,7 +842,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -823,14 +861,48 @@ class ProjectViewSet(viewsets.ModelViewSet):
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
-        projects = Project.objects.all()
+        # Annotate Project with aggregated stars and forks from related Repos
+        projects = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+        )
 
+        # Freshness is NOT a DB field (SerializerMethodField)
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            pass  # Safe no-op
+
+        # SAFE stars validation
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # SAFE forks validation
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -840,7 +912,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
+
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -1388,6 +1462,32 @@ def trademark_search_api(request):
         )
 
 
+# Security Incident API
+class SecurityIncidentViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = SecurityIncidentSerializer
+    permission_classes = [IsAdminUser]
+    queryset = SecurityIncident.objects.all()
+
+    def get_queryset(self):
+        queryset = self.queryset  # Use class-level queryset
+
+        request = self.request
+        severity = request.query_params.get("severity")
+        status = request.query_params.get("status")
+
+        allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
+        allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]
+
+        if severity in allowed_severities:
+            queryset = queryset.filter(severity=severity)
+
+        if status in allowed_statuses:
+            queryset = queryset.filter(status=status)
+
+        return queryset
+
+
 class CheckDuplicateBugApiView(APIView):
     """
     API endpoint to check for duplicate bug reports before submission.
@@ -1731,6 +1831,7 @@ def debug_required(func):
 class DebugSystemStatsApiView(APIView):
     """Get current system statistics for debug panel"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1762,6 +1863,7 @@ class DebugSystemStatsApiView(APIView):
             # Get system stats with error handling
             memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
             disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            cpu_stats = {"percent": "N/A"}
 
             try:
                 memory = psutil.virtual_memory()
@@ -1783,6 +1885,78 @@ class DebugSystemStatsApiView(APIView):
             except Exception as disk_error:
                 logger.warning("Could not fetch disk stats: %s", disk_error)
 
+            try:
+                cpu = psutil.cpu_percent(interval=0)
+                cpu_stats = {"percent": f"{cpu}%"}
+            except Exception as cpu_error:
+                logger.warning("Could not fetch CPU stats: %s", cpu_error)
+
+            # Get active DB connections (PostgreSQL only)
+            active_connections = "N/A"
+            if connection.vendor == "postgresql":
+                try:
+                    with connection.cursor() as cursor:
+                        # Count active connections for the current database
+                        cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database();")
+                        active_connections = cursor.fetchone()[0]
+                except Exception as conn_error:
+                    logger.warning("Could not fetch active DB connections: %s", conn_error)
+                    active_connections = "Unavailable (error)"
+
+            # Attempt to use a short-lived cache to avoid repeated COUNT() queries during active development
+            try:
+                cached_counts = cache.get("debug_system_counts")
+            except Exception:
+                cached_counts = None
+
+            if cached_counts:
+                db_counts = cached_counts
+            else:
+                # Optimize: fetch all counts in a single DB round-trip using raw SQL subselects
+                try:
+                    user_table = User._meta.db_table
+                    issue_table = Issue._meta.db_table
+                    org_table = Organization._meta.db_table
+                    domain_table = Domain._meta.db_table
+                    repo_table = Repo._meta.db_table
+                    qn = connection.ops.quote_name
+
+                    with connection.cursor() as cursor:
+                        sql = (
+                            "SELECT "
+                            f"(SELECT COUNT(*) FROM {qn(user_table)}) AS user_count, "
+                            f"(SELECT COUNT(*) FROM {qn(issue_table)}) AS issue_count, "
+                            f"(SELECT COUNT(*) FROM {qn(org_table)}) AS org_count, "
+                            f"(SELECT COUNT(*) FROM {qn(domain_table)}) AS domain_count, "
+                            f"(SELECT COUNT(*) FROM {qn(repo_table)}) AS repo_count"
+                        )
+                        cursor.execute(sql)
+                        row = cursor.fetchone()
+                        db_counts = {
+                            "user_count": row[0],
+                            "issue_count": row[1],
+                            "org_count": row[2],
+                            "domain_count": row[3],
+                            "repo_count": row[4],
+                        }
+                except Exception as e:
+                    logger.warning("Could not fetch counts with optimized query: %s", e)
+                    # Fallback to original method
+                    db_counts = {
+                        "user_count": User.objects.count(),
+                        "issue_count": Issue.objects.count(),
+                        "org_count": Organization.objects.count(),
+                        "domain_count": Domain.objects.count(),
+                        "repo_count": Repo.objects.count(),
+                    }
+
+                # Cache for a short time (30 seconds) to reduce noise during rapid page reloads
+                try:
+                    cache.set("debug_system_counts", db_counts, timeout=30)
+                except Exception:
+                    # If cache not available, just continue with live counts
+                    pass
+
             return Response(
                 {
                     "success": True,
@@ -1793,9 +1967,19 @@ class DebugSystemStatsApiView(APIView):
                             "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
                             "name": db_name,
                             "version": db_version,
+                            # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
+                            # These counts are efficiently fetched in a single database round-trip using subselects.
+                            "user_count": db_counts["user_count"],
+                            "issue_count": db_counts["issue_count"],
+                            "org_count": db_counts["org_count"],
+                            "domain_count": db_counts["domain_count"],
+                            "repo_count": db_counts["repo_count"],
+                            # Total active connections to the PostgreSQL database (from all sources, not just this application)
+                            "connections": active_connections,
                         },
                         "memory": memory_stats,
                         "disk": disk_stats,
+                        "cpu": cpu_stats,
                     },
                 }
             )
@@ -1810,6 +1994,7 @@ class DebugSystemStatsApiView(APIView):
 class DebugCacheInfoApiView(APIView):
     """Get cache backend information and statistics"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1866,6 +2051,7 @@ class DebugCacheInfoApiView(APIView):
 class DebugPopulateDataApiView(APIView):
     """Populate database with test data"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1893,6 +2079,7 @@ class DebugPopulateDataApiView(APIView):
 class DebugClearCacheApiView(APIView):
     """Clear all cache data"""
 
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     @debug_required
@@ -1908,81 +2095,3 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class DebugRunMigrationsApiView(APIView):
-    """Run pending database migrations"""
-
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def post(self, request, *args, **kwargs):
-        # Extra safety: restrict to superusers and require an explicit confirmation flag
-        if not request.user.is_superuser:
-            return Response(
-                {"success": False, "error": "Only superusers can run migrations"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        confirm = request.data.get("confirm")
-        if confirm is not True:
-            return Response(
-                {"success": False, "error": "Please confirm migration by passing 'confirm': true"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            call_command("migrate", interactive=False, verbosity=0)
-
-            return Response({"success": True, "message": "Migrations completed successfully"})
-        except Exception as e:
-            logger.error("Error running migrations: %s", e, exc_info=True)
-            return Response(
-                {"success": False, "error": "Failed to run migrations. Please check server logs."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class DebugCollectStaticApiView(APIView):
-    """Collect static files"""
-
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def post(self, request, *args, **kwargs):
-        # Restrict collectstatic to superusers to avoid accidental abuse
-        if not request.user.is_superuser:
-            return Response(
-                {"success": False, "error": "Only superusers can collect static files"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            call_command("collectstatic", interactive=False, verbosity=0)
-
-            return Response({"success": True, "message": "Static files collected successfully"})
-        except Exception as e:
-            logger.error("Error collecting static files: %s", e, exc_info=True)
-            return Response(
-                {"success": False, "error": "Failed to collect static files. Please check server logs."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class DebugPanelStatusApiView(APIView):
-    """Get overall debug panel status"""
-
-    permission_classes = [IsAuthenticated]
-
-    @debug_required
-    def get(self, request, *args, **kwargs):
-        return Response(
-            {
-                "success": True,
-                "data": {
-                    "debug_mode": settings.DEBUG,
-                    "testing_mode": getattr(settings, "TESTING", False),
-                    "environment": "local" if _is_local_host(request.get_host()) else "unknown",
-                },
-            }
-        )

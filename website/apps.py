@@ -9,3 +9,4 @@ class WebsiteConfig(AppConfig):
         import website.challenge_signals  # noqa
         import website.feed_signals  # noqa
         import website.signals  # noqa
+        import website.social_signals  # noqa
