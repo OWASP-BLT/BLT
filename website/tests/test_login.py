@@ -59,20 +59,20 @@ class LoginTestCase(TestCase):
         """Test that empty login field shows appropriate error"""
         response = self.client.post("/accounts/login/", {"login": "", "password": "password123"})
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", "login", "This field is required.")
+        self.assertFormError(response.context["form"], "login", "This field is required.")
 
     def test_login_with_empty_password(self):
         """Test that empty password field shows appropriate error"""
         response = self.client.post("/accounts/login/", {"login": "testuser", "password": ""})
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", "password", "This field is required.")
+        self.assertFormError(response.context["form"], "password", "This field is required.")
 
     def test_login_with_both_fields_empty(self):
         """Test that empty form shows errors for both fields"""
         response = self.client.post("/accounts/login/", {"login": "", "password": ""})
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(response, "form", "login", "This field is required.")
-        self.assertFormError(response, "form", "password", "This field is required.")
+        self.assertFormError(response.context["form"], "login", "This field is required.")
+        self.assertFormError(response.context["form"], "password", "This field is required.")
 
     def test_login_with_unverified_email(self):
         """Test that unverified users cannot login (ACCOUNT_EMAIL_VERIFICATION='mandatory')"""
