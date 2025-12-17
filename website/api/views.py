@@ -1735,7 +1735,7 @@ class TeamMemberLeaderboardAPIView(APIView):
             return Response({"detail": "Invalid pagination parameters"}, status=400)
 
         # Cache Key
-        cache_key = f"team_lb:{team.id}:{sort_param}:{page}:{page_size}"
+        cache_key = f"team_lb:{team.id}:{order}:{page}:{page_size}"
         cached_value = cache.get(cache_key)
 
         if cached_value:
