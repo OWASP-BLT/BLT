@@ -49,6 +49,51 @@ logger.setLevel(logging.WARNING)
 SLACK_USER_ID_PATTERN = r"^U[A-Z0-9]+$"
 
 
+def calculate_social_stats(organization):
+    """Calculate social media statistics for an organization.
+
+    Args:
+        organization: Organization object or ID (for backwards compatibility)
+
+    Returns:
+        dict: Social media statistics including platform availability and click counts
+    """
+    # Support both Organization object and ID for backwards compatibility
+    if isinstance(organization, int):
+        try:
+            org = Organization.objects.get(id=organization)
+        except Organization.DoesNotExist:
+            return {
+                "has_twitter": False,
+                "has_facebook": False,
+                "has_github": False,
+                "has_linkedin": False,
+                "twitter_clicks": 0,
+                "facebook_clicks": 0,
+                "github_clicks": 0,
+                "linkedin_clicks": 0,
+                "total_clicks": 0,
+            }
+    else:
+        org = organization
+
+    social_clicks = org.social_clicks or {}
+
+    stats = {
+        "has_twitter": bool(org.twitter),
+        "has_facebook": bool(org.facebook),
+        "has_github": bool(org.github_org),
+        "has_linkedin": bool(org.linkedin),
+        "twitter_clicks": social_clicks.get("twitter", 0),
+        "facebook_clicks": social_clicks.get("facebook", 0),
+        "github_clicks": social_clicks.get("github", 0),
+        "linkedin_clicks": social_clicks.get("linkedin", 0),
+        "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+    }
+
+    return stats
+
+
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
         # Check if user is authenticated
@@ -463,41 +508,11 @@ class OrganizationDashboardAnalyticsView(View):
 
         Args:
             organization: Organization object or ID (for backwards compatibility)
+
+        Returns:
+            dict: Social media statistics from calculate_social_stats utility
         """
-        # Support both Organization object and ID for backwards compatibility
-        if isinstance(organization, int):
-            try:
-                org = Organization.objects.get(id=organization)
-            except Organization.DoesNotExist:
-                return {
-                    "has_twitter": False,
-                    "has_facebook": False,
-                    "has_github": False,
-                    "has_linkedin": False,
-                    "twitter_clicks": 0,
-                    "facebook_clicks": 0,
-                    "github_clicks": 0,
-                    "linkedin_clicks": 0,
-                    "total_clicks": 0,
-                }
-        else:
-            org = organization
-
-        social_clicks = org.social_clicks or {}
-
-        stats = {
-            "has_twitter": bool(org.twitter),
-            "has_facebook": bool(org.facebook),
-            "has_github": bool(org.github_org),
-            "has_linkedin": bool(org.linkedin),
-            "twitter_clicks": social_clicks.get("twitter", 0),
-            "facebook_clicks": social_clicks.get("facebook", 0),
-            "github_clicks": social_clicks.get("github", 0),
-            "linkedin_clicks": social_clicks.get("linkedin", 0),
-            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
-        }
-
-        return stats
+        return calculate_social_stats(organization)
 
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
@@ -930,15 +945,12 @@ class OrganizationProfileEditView(View):
         return []
 
     def _get_social_stats(self, organization):
-        """Helper method to get social media click statistics for an organization."""
-        social_clicks = organization.social_clicks or {}
-        return {
-            "twitter_clicks": social_clicks.get("twitter", 0),
-            "facebook_clicks": social_clicks.get("facebook", 0),
-            "github_clicks": social_clicks.get("github", 0),
-            "linkedin_clicks": social_clicks.get("linkedin", 0),
-            "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
-        }
+        """Helper method to get social media click statistics for an organization.
+
+        Returns:
+            dict: Social media statistics from calculate_social_stats utility
+        """
+        return calculate_social_stats(organization)
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
