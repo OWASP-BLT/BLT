@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
     atomic = False  # ✅ Still required for PostgreSQL CONCURRENTLY
 
     dependencies = [
-        ("website", "0261_userprofile_check_in_count_and_more"),
+        ("website", "0264_userprofile_check_in_count_and_more"),
     ]
 
     operations = [
