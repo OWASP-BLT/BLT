@@ -60,6 +60,51 @@
         <div class="w-full h-[80px] bg-gray-50 dark:bg-gray-900"></div>
         <!-- Organization Dashboard Top Navigation -->
         {% if request.resolver_match.kwargs.id %}
+            <!-- Organization Switcher -->
+            {% if organizations|length > 1 %}
+                <div class="w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                    <div class="w-full px-4 sm:px-6 lg:px-8 py-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-building text-[#e74c3c]"></i>
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Switch Organization:</span>
+                            </div>
+                            <div class="relative" id="org-switcher-container">
+                                <button id="org-switcher-button"
+                                        class="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
+                                    <span class="font-medium" id="current-org-name">
+                                        {% for org in organizations %}
+                                            {% if org.id == request.resolver_match.kwargs.id %}
+                                                {{ org.name }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    <i class="fas fa-chevron-down text-xs transition-transform duration-200" id="org-switcher-chevron"></i>
+                                </button>
+                                <div id="org-switcher-dropdown"
+                                     class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-y-auto hidden">
+                                    <div class="py-2">
+                                        {% for org in organizations %}
+                                            <a href="#"
+                                               data-org-id="{{ org.id }}"
+                                               data-org-name="{{ org.name }}"
+                                               class="org-switcher-item block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-[#e74c3c] hover:text-white transition-colors duration-150 {% if org.id == request.resolver_match.kwargs.id %}bg-[#e74c3c] text-white font-medium{% endif %}">
+                                                <div class="flex items-center space-x-2">
+                                                    <i class="fas fa-building text-xs"></i>
+                                                    <span>{{ org.name }}</span>
+                                                    {% if org.id == request.resolver_match.kwargs.id %}
+                                                        <i class="fas fa-check ml-auto text-xs"></i>
+                                                    {% endif %}
+                                                </div>
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
             <div class="w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
                 <div class="w-full px-4 sm:px-6 lg:px-8">
                     <nav class="flex overflow-x-auto scrollbar-none -mb-px"
@@ -130,6 +175,15 @@
         </div>
         <!-- Include messages JavaScript -->
         <script src="{% static 'js/messages.js' %}"></script>
+        <!-- Organization Switcher JavaScript -->
+        {% if organizations|length > 1 and request.resolver_match.kwargs.id %}
+            <script>
+                // Pass current URL name and organization ID to JavaScript
+                window.currentOrgId = parseInt('{{ request.resolver_match.kwargs.id }}', 10);
+                window.currentUrlName = '{{ request.resolver_match.url_name }}';
+            </script>
+            <script src="{% static 'js/organization_switcher.js' %}"></script>
+        {% endif %}
         {% block scripts %}
         {% endblock scripts %}
     </body>
