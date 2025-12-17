@@ -134,7 +134,7 @@ def like_issue(request, issue_pk):
             )
 
     # Count likes (single query)
-    total_votes = issue.userprofile_set.filter(issue_upvoted=issue).count()
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     return HttpResponse("Success")
 
 

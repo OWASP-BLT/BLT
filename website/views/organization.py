@@ -267,6 +267,9 @@ def weekly_report(request):
                 )
 
             report_string = "".join(report_data)
+            if not domain.email:
+                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
+                continue
 
             send_mail(
                 "Weekly Report!!!",
