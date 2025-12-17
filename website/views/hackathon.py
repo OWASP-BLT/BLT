@@ -226,16 +226,16 @@ class HackathonDetailView(DetailView):
 
         repositories = hackathon.repositories.annotate(
             merged_pr_count=Count(
-                "githubissue",
+                "github_issue",
                 filter=Q(
-                    githubissue__type="pull_request",
-                    githubissue__is_merged=True,
-                    githubissue__merged_at__gte=hackathon.start_time,
-                    githubissue__merged_at__lte=hackathon.end_time,
+                    github_issue__type="pull_request",
+                    github_issue__is_merged=True,
+                    github_issue__merged_at__gte=hackathon.start_time,
+                    github_issue__merged_at__lte=hackathon.end_time,
                 )
-                & ~Q(githubissue__contributor__contributor_type="Bot")
-                & ~Q(githubissue__contributor__name__endswith="[bot]")
-                & ~Q(githubissue__contributor__name__icontains="bot"),
+                & ~Q(github_issue__contributor__contributor_type="Bot")
+                & ~Q(github_issue__contributor__name__endswith="[bot]")
+                & ~Q(github_issue__contributor__name__icontains="bot"),
             )
         )
         repo_ids = repositories.values_list("id", flat=True)

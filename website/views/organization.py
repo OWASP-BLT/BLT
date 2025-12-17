@@ -240,15 +240,14 @@ def weekly_report(request):
             "issue_set",
             queryset=Issue.objects.only("description", "views", "label", "status"),
         )
-    ).annotate(
-        open_count=Count("issue", filter=Q(issue__status="open")),
-        closed_count=Count("issue", filter=Q(issue__status="closed")),
     )
 
     try:
         for domain in domains:
             issues = domain.issue_set.all()
 
+            # Weekly report counts only explicit "open" and "closed" statuses
+            # Other statuses (if any) are intentionally excluded
             open_issues = [i for i in issues if i.status == "open"]
             closed_issues = [i for i in issues if i.status == "closed"]
 

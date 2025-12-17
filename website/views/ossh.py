@@ -91,7 +91,7 @@ def get_github_data(request):
 
 def preprocess_user_data(user_data):
     user_tags = defaultdict(int)
-    ALLOWED_NORMALIZED_TAGS = set(TAG_NORMALIZATION.values())
+    ALLOWED_NORMALIZED_TAGS = ALLOWED_TAGS
 
     for repo in user_data["repositories"]:
         if repo.get("description"):
