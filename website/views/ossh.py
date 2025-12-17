@@ -276,26 +276,26 @@ def get_recommended_communities(request):
 
 
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
+    tag_names = [tag for tag, _ in user_tags]
     matching_channels = (
-        OsshDiscussionChannel.objects.filter(Q(tags__name__in=[tag[0] for tag in user_tags]))
-        .distinct()
-        .prefetch_related("tags")
+        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
     )
 
     recommended_channels = []
+    tag_weight_map = dict(user_tags)
+
     for channel in matching_channels:
         channel_tag_names = {tag.name for tag in channel.tags.all()}
-        tag_matches = sum(1 for tag, _ in user_tags if tag in channel_tag_names)
 
-        language_weight = sum(language_weights.get(lang, 0) for tag, lang in user_tags if tag in channel_tag_names)
+        # Number of user tags present on this channel
+        tag_matches = sum(1 for tag in channel_tag_names if tag in tag_weight_map)
 
-        relevance_score = tag_matches + language_weight + (channel.member_count // 1000)
+        # Sum weights for languages that appear as tags on this channel
+        language_weight = sum(language_weights.get(tag, 0) for tag in channel_tag_names)
 
         if relevance_score > 0:
-            matching_tags = [tag.name for tag in channel.tags.all() if tag.name in dict(user_tags)]
-            matching_languages = [
-                lang for tag, lang in user_tags if tag in channel_tag_names and lang in language_weights
-            ]
+            matching_tags = [tag for tag in channel_tag_names if tag in tag_weight_map]
+            matching_languages = [lang for lang in channel_tag_names if lang in language_weights]
 
             reasoning = []
             if matching_tags:

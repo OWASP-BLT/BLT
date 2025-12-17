@@ -140,21 +140,29 @@ def like_issue(request, issue_pk):
 
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
 
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+    # Fetch user profile ONCE
+    userprof = UserProfile.objects.prefetch_related(
+        "issue_upvoted",
+        "issue_downvoted",
+    ).get(user=request.user)
+
+    # Remove upvote if exists
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+
+    # Toggle downvote
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
+        is_disliked = False
     else:
         userprof.issue_downvoted.add(issue)
+        is_disliked = True
+
+    # Count dislikes (single query, correct M2M usage)
     total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["dislikes"] = total_votes
-    context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
+
     return HttpResponse("Success")
 
 
