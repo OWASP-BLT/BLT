@@ -147,7 +147,7 @@ def reverse_create_challenges(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0261_add_connected_action_type"),
+        ("website", "0263_githubissue_githubissue_pr_merged_idx_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
