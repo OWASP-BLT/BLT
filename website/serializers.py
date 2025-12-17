@@ -320,6 +320,8 @@ class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
             "current_streak",
             "check_in_count",
         ]
+
+
 class SecurityIncidentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecurityIncident

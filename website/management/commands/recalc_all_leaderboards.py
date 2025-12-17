@@ -1,4 +1,5 @@
 import math
+from datetime import timedelta
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -30,6 +31,7 @@ class Command(BaseCommand):
 
             try:
                 with transaction.atomic():
+                    cutoff = timezone.now() - timedelta(days=30)
                     # Lock the row before updating
                     locked_profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
 
@@ -38,7 +40,10 @@ class Command(BaseCommand):
 
                     locked_profile.leaderboard_score = score
                     locked_profile.quality_score = breakdown.get("goals", 0)
-                    locked_profile.check_in_count = DailyStatusReport.objects.filter(user=locked_profile.user).count()
+                    locked_profile.check_in_count = DailyStatusReport.objects.filter(
+                        user=locked_profile.user,
+                        created_at__gte=cutoff,
+                    ).count()
                     locked_profile.last_score_update = timezone.now()
                     locked_profile.save(
                         update_fields=[

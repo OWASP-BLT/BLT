@@ -1755,6 +1755,12 @@ class TeamMemberLeaderboardAPIView(APIView):
                 if cached_value:
                     return Response(cached_value)
             lock_acquired = cache.add(lock_key, "1", timeout=10)
+            if not lock_acquired:
+                # Do NOT rebuild cache if we don't own the lock
+                return Response(
+                    {"detail": "Cache is being rebuilt, please retry shortly."},
+                    status=503,
+                )
 
         try:
             # Queryset
