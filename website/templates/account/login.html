@@ -2,7 +2,8 @@
 {% load static %}
 {% load custom_tags %}
 {% load i18n %}
-{% load account socialaccount %}
+{% load account %}
+{% load socialaccount %}
 {% block title %}
     Account Login | {% env 'PROJECT_NAME' %}
 {% endblock title %}
@@ -52,6 +53,13 @@
                       method="post"
                       action="{% url 'account_login' %}?next={{ request.path }}">
                     {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded"
+                             role="alert">
+                            <strong class="font-bold">Error:</strong>
+                            <span class="block sm:inline mt-1">The username/email or password you entered is incorrect. Please try again</span>
+                        </div>
+                    {% endif %}
                     {% if redirect_field_value %}
                         <input type="hidden"
                                name="{{ redirect_field_name }}"
@@ -60,7 +68,7 @@
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="id_login"
-                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username</label>
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username or Email</label>
                         <input autofocus
                                id="id_login"
                                name="login"
