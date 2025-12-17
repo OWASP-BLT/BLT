@@ -14,6 +14,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
@@ -235,6 +236,7 @@ def link_slack_channel_to_project(request):
         return JsonResponse({"error": "Project not found"}, status=404)
 
 
+@staff_member_required
 def weekly_report(request):
     domains = Domain.objects.annotate(
         open_count=Count("issue", filter=Q(issue__status="open")),
@@ -312,7 +314,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         for issue in issues:
             issue.verified = False
             issue.score = 0
-            issue.save()
+            Issue.objects.bulk_update(issues, ["verified", "score"])
 
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
@@ -344,8 +346,13 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                 .annotate(total_score=Sum("score"))
             )
 
+            user_ids = [obj["user"] for obj in issue_with_score[:3]]
+            users = User.objects.in_bulk(user_ids)
+
             for index, obj in enumerate(issue_with_score, 1):
-                user = User.objects.get(pk=obj["user"])
+                user = users.get(obj["user"])
+                if not user:
+                    continue
                 if index == 1:
                     winner.winner = user
                 elif index == 2:

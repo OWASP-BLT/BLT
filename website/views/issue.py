@@ -100,11 +100,11 @@ def like_issue(request, issue_pk):
     userprof = UserProfile.objects.get(user=request.user)
 
     # Remove downvote if exists
-    if issue in userprof.issue_downvoted.all():
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
 
     # Toggle upvote
-    if issue in userprof.issue_upvoted.all():
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
@@ -139,11 +139,11 @@ def dislike_issue(request, issue_pk):
     userprof = UserProfile.objects.get(user=request.user)
 
     # Remove upvote if exists
-    if issue in userprof.issue_upvoted.all():
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
 
     # Toggle downvote
-    if issue in userprof.issue_downvoted.all():
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
