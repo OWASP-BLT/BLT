@@ -124,7 +124,6 @@ class SendGridWebhookTestCase(TestCase):
         # Verify debug log was called
         mock_logger.debug.assert_called_with("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
 
-    @unittest.skip("Slack webhook feature removed in PR #5245")
     @patch("website.views.organization.requests.post")
     @patch("website.views.organization.logger")
     def test_webhook_handles_slack_error_gracefully(self, mock_logger, mock_post):
