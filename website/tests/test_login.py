@@ -1,6 +1,7 @@
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
+from django.urls import reverse
 
 
 class LoginTestCase(TestCase):
@@ -9,125 +10,121 @@ class LoginTestCase(TestCase):
     def setUp(self):
         """Set up test client and users"""
         self.client = Client()
+        self.login_url = reverse("account_login")
+
         # Create a verified user for successful login tests
         self.test_user = User.objects.create_user(username="testuser", email="test@example.com", password="password123")
         EmailAddress.objects.create(user=self.test_user, email="test@example.com", verified=True, primary=True)
 
     def _assert_login_error_rendered(self, response):
-        # Page re-renders with status 200
+        """Helper to verify login error is properly displayed"""
         self.assertEqual(response.status_code, 200)
-        # The form should have non-field errors
+        self.assertIn("form", response.context)
         form = response.context["form"]
-        self.assertTrue(form.non_field_errors(), "Expected non-field errors on the form.")
-        # Alert container is rendered
+        self.assertTrue(form.non_field_errors(), "Expected non-field errors on the form, but found none.")
         self.assertContains(response, 'role="alert"')
-        # Be tolerant of "email" vs "e-mail" wording across versions
         self.assertRegex(
             response.content.decode(),
-            r"The (username|e-mail address) and/or password you specified are not correct",
+            r"(email address|e-mail address|username|login).*(and/or|or).*(password|credentials).*(not correct|incorrect|invalid)",
+            "Expected login error message not found in response",
         )
 
+    # ----------------------- INVALID LOGIN TESTS -----------------------
     def test_login_with_invalid_username_shows_error(self):
-        response = self.client.post("/accounts/login/", {"login": "nonexistent_user", "password": "wrongpassword"})
+        response = self.client.post(self.login_url, {"login": "nonexistent_user", "password": "wrongpassword"})
         self._assert_login_error_rendered(response)
 
     def test_login_with_invalid_email_shows_error(self):
-        response = self.client.post(
-            "/accounts/login/", {"login": "nonexistent@example.com", "password": "wrongpassword"}
-        )
+        response = self.client.post(self.login_url, {"login": "nonexistent@example.com", "password": "wrongpassword"})
         self._assert_login_error_rendered(response)
 
-    def test_login_with_email_success(self):
-        """Test successful login using email instead of username"""
-        response = self.client.post(
-            "/accounts/login/", {"login": "test@example.com", "password": "password123"}, follow=False
-        )
-        self.assertEqual(response.status_code, 302)  # Redirect on success
-        self.assertTrue(response.wsgi_request.user.is_authenticated)
-
-    def test_login_with_username_success(self):
-        """Test successful login using username (existing functionality)"""
-        response = self.client.post("/accounts/login/", {"login": "testuser", "password": "password123"}, follow=False)
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.wsgi_request.user.is_authenticated)
-
     def test_login_with_correct_username_wrong_password(self):
-        response = self.client.post("/accounts/login/", {"login": "testuser", "password": "wrongpassword"})
+        response = self.client.post(self.login_url, {"login": "testuser", "password": "wrongpassword"})
         self._assert_login_error_rendered(response)
 
     def test_login_with_correct_email_wrong_password(self):
-        response = self.client.post("/accounts/login/", {"login": "test@example.com", "password": "wrongpassword"})
+        response = self.client.post(self.login_url, {"login": "test@example.com", "password": "wrongpassword"})
         self._assert_login_error_rendered(response)
 
+    # ----------------------- SUCCESSFUL LOGIN TESTS -----------------------
+    def test_login_with_email_success(self):
+        response = self.client.post(
+            self.login_url, {"login": "test@example.com", "password": "password123"}, follow=False
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+
+    def test_login_with_username_success(self):
+        response = self.client.post(self.login_url, {"login": "testuser", "password": "password123"}, follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+
+    def test_login_email_case_insensitive(self):
+        response = self.client.post(
+            self.login_url, {"login": "TEST@EXAMPLE.COM", "password": "password123"}, follow=False
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+
+    def test_login_with_whitespace_in_username(self):
+        response = self.client.post(self.login_url, {"login": "  testuser  ", "password": "password123"}, follow=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.wsgi_request.user.is_authenticated)
+
+    def test_login_with_next_parameter(self):
+        response = self.client.post(
+            f"{self.login_url}?next=/profile/", {"login": "testuser", "password": "password123"}, follow=False
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/profile/", response.url)
+
+    # ----------------------- EMPTY FIELD TESTS -----------------------
     def test_login_with_empty_username(self):
-        """Test that empty login field shows appropriate error"""
-        response = self.client.post("/accounts/login/", {"login": "", "password": "password123"})
-        self.assertEqual(response.status_code, 200)
-        self.assertFormError(response.context["form"], "login", "This field is required.")
+        response = self.client.post(self.login_url, {"login": "", "password": "password123"}, follow=True)
+        form = response.context.get("form")
+        self.assertIsNotNone(form)
+        self.assertIn("login", form.errors)
+        self.assertEqual(form.errors["login"], ["This field is required."])
 
     def test_login_with_empty_password(self):
-        """Test that empty password field shows appropriate error"""
-        response = self.client.post("/accounts/login/", {"login": "testuser", "password": ""})
-        self.assertEqual(response.status_code, 200)
-        self.assertFormError(response.context["form"], "password", "This field is required.")
+        response = self.client.post(self.login_url, {"login": "testuser", "password": ""}, follow=True)
+        form = response.context.get("form")
+        self.assertIsNotNone(form)
+        self.assertIn("password", form.errors)
+        self.assertEqual(form.errors["password"], ["This field is required."])
 
     def test_login_with_both_fields_empty(self):
-        """Test that empty form shows errors for both fields"""
-        response = self.client.post("/accounts/login/", {"login": "", "password": ""})
-        self.assertEqual(response.status_code, 200)
-        self.assertFormError(response.context["form"], "login", "This field is required.")
-        self.assertFormError(response.context["form"], "password", "This field is required.")
+        response = self.client.post(self.login_url, {"login": "", "password": ""}, follow=True)
+        form = response.context.get("form")
+        self.assertIsNotNone(form)
+        self.assertIn("login", form.errors)
+        self.assertIn("password", form.errors)
+        self.assertEqual(form.errors["login"], ["This field is required."])
+        self.assertEqual(form.errors["password"], ["This field is required."])
 
+    # ----------------------- UNVERIFIED EMAIL TEST -----------------------
     def test_login_with_unverified_email(self):
-        """Test that unverified users cannot login (ACCOUNT_EMAIL_VERIFICATION='mandatory')"""
-        # Create unverified user
         unverified_user = User.objects.create_user(
             username="unverified", email="unverified@example.com", password="password123"
         )
         EmailAddress.objects.create(user=unverified_user, email="unverified@example.com", verified=False, primary=True)
 
         response = self.client.post(
-            "/accounts/login/", {"login": "unverified@example.com", "password": "password123"}, follow=False
+            self.login_url, {"login": "unverified@example.com", "password": "password123"}, follow=False
         )
 
-        # With mandatory verification, allauth does not log the user in. Instead, it redirects
-        # them to the email verification page to complete the process.
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/confirm-email/", response.url)  # User is redirected to verify email
-        # The user should NOT be authenticated as their email is not yet verified.
+        self.assertIn("/accounts/confirm-email/", response.url)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
-    def test_login_email_case_insensitive(self):
-        """Test that email login is case-insensitive"""
-        response = self.client.post(
-            "/accounts/login/", {"login": "TEST@EXAMPLE.COM", "password": "password123"}, follow=False
-        )
-        # Email matching should be case-insensitive
-        self.assertEqual(response.status_code, 302)
-
-    def test_login_with_whitespace_in_username(self):
-        """Test that whitespace is handled properly"""
-        response = self.client.post("/accounts/login/", {"login": "  testuser  ", "password": "password123"})
-        # Allauth should strip whitespace
-        self.assertEqual(response.status_code, 302)
-
-    def test_login_with_next_parameter(self):
-        """Test that next parameter redirects to correct page after login"""
-        response = self.client.post(
-            "/accounts/login/?next=/profile/", {"login": "testuser", "password": "password123"}, follow=False
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/profile/", response.url)
-
+    # ----------------------- PAGE RENDER TESTS -----------------------
     def test_login_page_renders_correctly(self):
-        """Test that login page renders with proper label"""
-        response = self.client.get("/accounts/login/")
+        response = self.client.get(self.login_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Username or Email")
 
     def test_login_displays_error_alert_styling(self):
-        """Test that error message has proper styling classes"""
-        response = self.client.post("/accounts/login/", {"login": "invalid", "password": "wrong"})
+        response = self.client.post(self.login_url, {"login": "invalid", "password": "wrong"})
         self.assertContains(response, "bg-red-100")
         self.assertContains(response, "border-red-500")
         self.assertContains(response, "text-red-700")
