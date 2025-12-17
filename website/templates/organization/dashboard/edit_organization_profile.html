@@ -5,15 +5,28 @@
     Edit Organization Profile | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block body %}
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl mx-auto">
-            <!-- Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Edit Organization Profile</h1>
-                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    Update your organization's information and social media links
-                </p>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <!-- Header Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Organization Profile</h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Update your organization's information and social media links
+                        </p>
+                    </div>
+                    <a href="{% url 'organization_analytics' id=organization %}"
+                       class="inline-flex items-center px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 select-none">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span>Back to Dashboard</span>
+                    </a>
+                </div>
             </div>
+        </div>
+        <!-- Main Content -->
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="max-w-4xl mx-auto">
             <!-- Form -->
             <form method="post" enctype="multipart/form-data" class="space-y-8">
                 {% csrf_token %}
@@ -292,6 +305,7 @@
                     </button>
                 </div>
             </form>
+            </div>
         </div>
     </div>
 {% endblock body %}

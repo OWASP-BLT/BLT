@@ -40,6 +40,7 @@ from website.models import (
     Winner,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
+from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -457,22 +458,30 @@ class OrganizationDashboardAnalyticsView(View):
         """Convert label ID to human-readable name."""
         return self.labels.get(label_id, "Other")
 
-    def get_social_stats(self, organization_id):
-        """Get social media stats for the organization."""
-        try:
-            org = Organization.objects.get(id=organization_id)
-        except Organization.DoesNotExist:
-            return {
-                "has_twitter": False,
-                "has_facebook": False,
-                "has_github": False,
-                "has_linkedin": False,
-                "twitter_clicks": 0,
-                "facebook_clicks": 0,
-                "github_clicks": 0,
-                "linkedin_clicks": 0,
-                "total_clicks": 0,
-            }
+    def get_social_stats(self, organization):
+        """Get social media stats for the organization.
+        
+        Args:
+            organization: Organization object or ID (for backwards compatibility)
+        """
+        # Support both Organization object and ID for backwards compatibility
+        if isinstance(organization, int):
+            try:
+                org = Organization.objects.get(id=organization)
+            except Organization.DoesNotExist:
+                return {
+                    "has_twitter": False,
+                    "has_facebook": False,
+                    "has_github": False,
+                    "has_linkedin": False,
+                    "twitter_clicks": 0,
+                    "facebook_clicks": 0,
+                    "github_clicks": 0,
+                    "linkedin_clicks": 0,
+                    "total_clicks": 0,
+                }
+        else:
+            org = organization
 
         social_clicks = org.social_clicks or {}
 
@@ -821,7 +830,7 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "security_incidents_summary": self.get_security_incidents_summary(id),
-            "social_stats": self.get_social_stats(id),
+            "social_stats": self.get_social_stats(organization_obj),
             "network_traffic_data": self.get_network_traffic_data(id),
             "compliance_monitoring": self.get_compliance_monitoring(id),
             "threat_intelligence": self.get_threat_intelligence(id),
@@ -881,18 +890,16 @@ class OrganizationSocialRedirectView(View):
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
         # Validate hostname is either exact match or proper subdomain (not just string suffix)
         if not any(
-            hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
+            hostname == domain or hostname.endswith(f".{domain}")
             for domain in allowed_domains
         ):
-            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured")
             return redirect("organization_analytics", id=org_id)
 
-        # Increment the click counter
-        # Note: This accepts potential race conditions for performance. Click counts don't need strict accuracy.
-        # For critical counters requiring strict atomicity, use select_for_update() or database-level atomic operations.
+        # Increment the click counter atomically to prevent race conditions
         with transaction.atomic():
-            # Get organization without locking
-            organization = Organization.objects.get(id=org_id)
+            # Lock the row to ensure atomic update
+            organization = Organization.objects.select_for_update().get(id=org_id)
 
             # Get current clicks dict (handle None case)
             clicks = organization.social_clicks or {}
@@ -900,8 +907,9 @@ class OrganizationSocialRedirectView(View):
             # Increment the counter for this platform
             clicks[platform] = clicks.get(platform, 0) + 1
 
-            # Update using update() which is faster than save() and locks for shorter time
-            Organization.objects.filter(id=org_id).update(social_clicks=clicks)
+            # Save the updated clicks
+            organization.social_clicks = clicks
+            organization.save(update_fields=["social_clicks"])
 
         # Redirect to the actual social media URL
         return redirect(target_url)
@@ -2383,16 +2391,16 @@ class OrganizationDashboardManageRolesView(View):
                 messages.error(request, "Role not found")
             except ValueError as e:
                 logger.error(f"Invalid value provided when updating role: {str(e)}")
-                messages.error(request, "Invalid role value provided. Please check your input.")
+                messages.error(request, "Invalid role value provided. Please check your input")
             except ValidationError as e:
                 logger.error(f"Validation error when updating role: {str(e)}")
-                messages.error(request, "Unable to update role. Please check your input and try again.")
+                messages.error(request, "Unable to update role. Please check your input and try again")
             except IntegrityError as e:
                 logger.error(f"Database integrity error when updating role: {str(e)}")
-                messages.error(request, "Unable to update role due to conflicting data.")
+                messages.error(request, "Unable to update role due to conflicting data")
             except Exception as e:
                 logger.exception("Error updating role")
-                messages.error(request, "An error occurred while updating the role. Please try again.")
+                messages.error(request, "An error occurred while updating the role. Please try again")
 
         elif action == "remove_role":
             role_id = request.POST.get("role_id")
@@ -2901,7 +2909,7 @@ def check_domain_security_txt(request):
 
     except Exception as e:
         logger.exception(f"Error checking security.txt for domain {domain.name}")
-        messages.error(request, "Unable to check security.txt. Please try again later.")
+        messages.error(request, "Unable to check security.txt. Please try again later")
 
     # Redirect back to the manage domains page
     if domain.organization:

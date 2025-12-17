@@ -433,7 +433,9 @@ class OrganizationSocialRedirectSecurityTests(TestCase):
         self.assertEqual(response.url, "https://www.linkedin.com/company/testorg")
 
     def test_concurrent_clicks_tracked_correctly(self):
-        """Test that concurrent clicks are tracked atomically"""
+        """Test that concurrent clicks are tracked atomically using threads"""
+        import threading
+
         org = Organization.objects.create(
             name="Concurrent Clicks",
             slug="concurrent",
@@ -444,10 +446,26 @@ class OrganizationSocialRedirectSecurityTests(TestCase):
 
         url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "twitter"})
 
-        # Simulate 5 rapid clicks
-        for _ in range(5):
-            self.client.get(url)
+        # Simulate 10 concurrent clicks using threads
+        threads = []
+        num_clicks = 10
+
+        def click_link():
+            # Each thread needs its own client instance
+            from django.test import Client
+
+            client = Client()
+            client.get(url)
+
+        for _ in range(num_clicks):
+            thread = threading.Thread(target=click_link)
+            threads.append(thread)
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
 
         org.refresh_from_db()
-        # Should have incremented to 5
-        self.assertEqual(org.social_clicks.get("twitter", 0), 5)
+        # Should have incremented to 10 if atomic operations work correctly
+        self.assertEqual(org.social_clicks.get("twitter", 0), num_clicks)

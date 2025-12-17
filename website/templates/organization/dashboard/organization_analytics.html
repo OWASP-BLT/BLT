@@ -18,37 +18,22 @@
     Get a comprehensive view of your organization's security metrics, bug trends, and performance data with clear analytics and reporting.
 {% endblock og_description %}
 {% block body %}
-    {% block edit_link %}
-        <div class="bg-gray-50 dark:bg-gray-900 flex float-end gap-4 mr-10">
-            <a class="text-black dark:text-white"
-               href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/dashboard/organization_analytics.html">
-                <i class="fab fa-github fa-2x"></i>
-            </a>
-            <a class="text-black dark:text-white"
-               href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-                <i class="fab fa-figma fa-2x"></i>
-            </a>
-        </div>
-    {% endblock edit_link %}
-    <div class="bg-[#F3F5F7] dark:bg-gray-900 pb-10">
-        <div class="w-full mt-5 px-8 flex justify-between items-center">
-            <p class="text-red-700 font-satoshi font-bold text-[35px]">Dashboard</p>
-            <a href="{% url 'organization_profile_edit' id=organization %}"
-               class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors flex items-center gap-2">
-                <i class="fas fa-edit"></i>
-                <span>Edit Profile</span>
-            </a>
-        </div>
-        <div class="flex flex-col lg:flex-row gap-x-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
-            <div class="flex justify-center items-center bg-white shadow-md dark:bg-gray-800 w-[340px] h-[172px] rounded-xl hover:scale-105 transition-all">
-                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
-                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-                        <i class="fa-solid fa-bug fa-2x text-black dark:text-white"></i>
-                    </div>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <!-- Header Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Analytics Dashboard</h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Track your organization's security metrics and performance</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Track your organization's security metrics and performance
+                        </p>
                     </div>
+                    <a href="{% url 'organization_profile_edit' id=organization %}"
+                       class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
+                        <i class="fas fa-edit mr-2"></i>
+                        <span>Edit Profile</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -551,6 +536,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 {% endblock body %}
 {% block scripts %}
