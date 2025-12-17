@@ -1396,6 +1396,48 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    freshness = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, db_index=True)
+
+    def calculate_freshness(self):
+        """
+        Calculate freshness using a Bumper-style activity decay model,
+        based on repository update recency (proxy for activity graph).
+        """
+        now = timezone.now()
+
+        last_7_days = now - timedelta(days=7)
+        last_30_days = now - timedelta(days=30)
+        last_90_days = now - timedelta(days=90)
+
+        if not repos:
+            return 0.0
+
+        qs = repos.filter(is_archived=False)
+
+        if not qs.exists():
+            return 0.0
+
+        active_7 = qs.filter(updated_at__gte=last_7_days).count()
+        active_30 = qs.filter(
+            updated_at__lt=last_7_days,
+            updated_at__gte=last_30_days,
+        ).count()
+        active_90 = qs.filter(
+            updated_at__lt=last_30_days,
+            updated_at__gte=last_90_days,
+        ).count()
+
+        # Bumper-style decay weights
+        raw_score = active_7 * 1.0 + active_30 * 0.6 + active_90 * 0.3
+
+        if raw_score == 0:
+            return 0.0
+
+        # Normalize to 0–100
+        MAX_SCORE = 20  # ~20 repos active recently = very fresh
+        freshness = min((raw_score / MAX_SCORE) * 100, 100)
+
+        return round(freshness, 2)
 
     def save(self, *args, **kwargs):
         # Always ensure a valid slug exists before saving

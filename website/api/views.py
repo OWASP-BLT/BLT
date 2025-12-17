@@ -853,9 +853,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_forks=Coalesce(Sum("repos__forks"), 0),
         )
 
-        # Freshness is NOT a DB field (SerializerMethodField)
         if freshness:
-            pass  # Safe no-op
+            try:
+                freshness_val = float(freshness)
+                if not 0 <= freshness_val <= 100:
+                    return Response(
+                        {"error": "Invalid 'freshness' parameter: must be between 0 and 100"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(freshness__gte=freshness_val)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'freshness' parameter: must be a number"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         # SAFE stars validation
         if stars:
