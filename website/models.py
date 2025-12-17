@@ -1401,7 +1401,6 @@ class Project(models.Model):
     def calculate_freshness(self):
         """
         Calculate freshness using a Bumper-style activity decay model,
-        based on repository update recency (proxy for activity graph).
         """
         now = timezone.now()
 
@@ -1409,34 +1408,31 @@ class Project(models.Model):
         last_30_days = now - timedelta(days=30)
         last_90_days = now - timedelta(days=90)
 
-        # Start from non-archived repos for this project
-        qs = self.repos.filter(is_archived=False)
-
-        if not qs.exists():
+        repos = getattr(self, "repos", None)
+        if not repos:
             return 0.0
 
-        qs = qs.exclude(last_commit_date__isnull=True)
+        counts = repos.filter(is_archived=False).aggregate(
+            active_7=Count(
+                "id",
+                filter=Q(updated_at__gte=last_7_days),
+            ),
+            active_30=Count(
+                "id",
+                filter=Q(updated_at__lt=last_7_days, updated_at__gte=last_30_days),
+            ),
+            active_90=Count(
+                "id",
+                filter=Q(updated_at__lt=last_30_days, updated_at__gte=last_90_days),
+            ),
+        )
 
-        active_7 = qs.filter(last_commit_date__gte=last_7_days).count()
-
-        active_30 = qs.filter(
-            last_commit_date__lt=last_7_days,
-            last_commit_date__gte=last_30_days,
-        ).count()
-
-        active_90 = qs.filter(
-            last_commit_date__lt=last_30_days,
-            last_commit_date__gte=last_90_days,
-        ).count()
-
-        # Bumper-style decay weights
-        raw_score = active_7 * 1.0 + active_30 * 0.6 + active_90 * 0.3
+        raw_score = counts["active_7"] * 1.0 + counts["active_30"] * 0.6 + counts["active_90"] * 0.3
 
         if raw_score == 0:
             return 0.0
 
-        # Normalize to 0–100
-        MAX_SCORE = 20  # ~20 repos active recently = very fresh
+        MAX_SCORE = 20
         freshness = min((raw_score / MAX_SCORE) * 100, 100)
 
         return round(freshness, 2)
