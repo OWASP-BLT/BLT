@@ -90,12 +90,12 @@ class LoginTestCase(TestCase):
             "/accounts/login/", {"login": "unverified@example.com", "password": "password123"}, follow=False
         )
 
-        # With mandatory verification, allauth logs the user in but redirects them to the email verification page.
+        # With mandatory verification, allauth does not log the user in. Instead, it redirects
+        # them to the email verification page to complete the process.
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/confirm-email/", response.url)  # User is redirected to verify email
-        # The user is technically authenticated before the redirect, even if their email is not verified.
-        # The redirect to the confirmation page is what prevents them from accessing the site.
-        self.assertTrue(response.wsgi_request.user.is_authenticated)
+        # The user should NOT be authenticated as their email is not yet verified.
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
 
     def test_login_email_case_insensitive(self):
         """Test that email login is case-insensitive"""
