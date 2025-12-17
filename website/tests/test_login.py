@@ -82,10 +82,14 @@ class LoginTestCase(TestCase):
         )
         EmailAddress.objects.create(user=unverified_user, email="unverified@example.com", verified=False, primary=True)
 
-        response = self.client.post("/accounts/login/", {"login": "unverified@example.com", "password": "password123"})
-        self.assertEqual(response.status_code, 200)
-        # With mandatory verification, login should fail
-        self.assertContains(response, "non_field_errors")
+        response = self.client.post(
+            "/accounts/login/", {"login": "unverified@example.com", "password": "password123"}, follow=False
+        )
+
+        # With mandatory verification, allauth logs the user in but redirects them to the email verification page.
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/confirm-email/", response.url)  # User is redirected to verify email
+        self.assertFalse(response.wsgi_request.user.is_authenticated)  # User is NOT logged in
 
     def test_login_email_case_insensitive(self):
         """Test that email login is case-insensitive"""
