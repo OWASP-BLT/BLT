@@ -49,3 +49,26 @@ class ProjectFreshnessCalculationTestCase(TestCase):
 
         freshness = self.project.calculate_freshness()
         self.assertGreater(freshness, 0.0)
+
+    def test_freshness_exact_boundary_7_days(self):
+        Repo.objects.create(
+            project=self.project,
+            name="boundary-7",
+            repo_url="https://github.com/test/boundary-7",
+            is_archived=False,
+            last_commit_date=timezone.now() - timedelta(days=6, hours=23),
+        )
+        freshness = self.project.calculate_freshness()
+        self.assertEqual(freshness, 5.0)
+
+    def test_freshness_max_score_capping(self):
+        for i in range(25):
+            Repo.objects.create(
+                project=self.project,
+                name=f"repo-{i}",
+                repo_url=f"https://github.com/test/repo-{i}",
+                is_archived=False,
+                last_commit_date=self.now - timedelta(days=1),
+            )
+        freshness = self.project.calculate_freshness()
+        self.assertEqual(freshness, 100.0)

@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -1401,6 +1401,7 @@ class Project(models.Model):
     def calculate_freshness(self):
         """
         Calculate freshness using a Bumper-style activity decay model,
+        based on GitHub commit recency.
         """
         now = timezone.now()
 
@@ -1412,18 +1413,27 @@ class Project(models.Model):
         if not repos:
             return 0.0
 
-        counts = repos.filter(is_archived=False).aggregate(
+        counts = repos.filter(
+            is_archived=False,
+            last_commit_date__isnull=False,
+        ).aggregate(
             active_7=Count(
                 "id",
-                filter=Q(updated_at__gte=last_7_days),
+                filter=Q(last_commit_date__gte=last_7_days),
             ),
             active_30=Count(
                 "id",
-                filter=Q(updated_at__lt=last_7_days, updated_at__gte=last_30_days),
+                filter=Q(
+                    last_commit_date__lt=last_7_days,
+                    last_commit_date__gte=last_30_days,
+                ),
             ),
             active_90=Count(
                 "id",
-                filter=Q(updated_at__lt=last_30_days, updated_at__gte=last_90_days),
+                filter=Q(
+                    last_commit_date__lt=last_30_days,
+                    last_commit_date__gte=last_90_days,
+                ),
             ),
         )
 
@@ -1432,7 +1442,7 @@ class Project(models.Model):
         if raw_score == 0:
             return 0.0
 
-        MAX_SCORE = 20
+        MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
         freshness = min((raw_score / MAX_SCORE) * 100, 100)
 
         return round(freshness, 2)
