@@ -57,7 +57,7 @@ class ProjectFreshnessCalculationTestCase(TestCase):
             name="boundary-7",
             repo_url="https://github.com/test/boundary-7",
             is_archived=False,
-            last_commit_date=timezone.now() - timedelta(days=6, hours=23),
+            last_commit_date=self.now() - timedelta(days=6, hours=23),
         )
         freshness = self.project.calculate_freshness()
         self.assertEqual(freshness, 5.0)

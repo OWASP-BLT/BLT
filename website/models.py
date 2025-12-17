@@ -1409,11 +1409,7 @@ class Project(models.Model):
         last_30_days = now - timedelta(days=30)
         last_90_days = now - timedelta(days=90)
 
-        repos = getattr(self, "repos", None)
-        if not repos:
-            return 0.0
-
-        counts = repos.filter(
+        counts = self.repos.filter(
             is_archived=False,
             last_commit_date__isnull=False,
         ).aggregate(
