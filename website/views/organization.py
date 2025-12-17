@@ -1397,7 +1397,8 @@ def sizzle_daily_log(request):
             blockers_other = request.POST.get("blockers_other", "")
             # Combine blockers: if "other" selected, require blockers_other to be non-empty
             if blockers_type == "other":
-                if not blockers_other or not blockers_other.strip():
+                blockers_other_trimmed = blockers_other.strip()
+                if not blockers_other_trimmed:
                     return JsonResponse(
                         {
                             "success": False,
@@ -1405,7 +1406,16 @@ def sizzle_daily_log(request):
                         },
                         status=400,
                     )
-                blockers = blockers_other.strip()
+                # Validate max length to prevent DoS attacks
+                if len(blockers_other_trimmed) > MAX_FIELD_LENGTH:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": f"Blockers description is too long; maximum {MAX_FIELD_LENGTH} characters.",
+                        },
+                        status=400,
+                    )
+                blockers = blockers_other_trimmed
             elif blockers_type == "no_blockers":
                 blockers = "no blockers"
             elif blockers_type:
