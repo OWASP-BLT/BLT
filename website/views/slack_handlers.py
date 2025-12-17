@@ -83,10 +83,10 @@ def _get_allowed_channels(env_key: str):
     if not value:
         return set()
     if isinstance(value, (list, tuple, set)):
-        return set(str(v).strip() for v in value if v)
+        return {str(v).strip() for v in value if v}
     # comma or space separated
     parts = re.split(r"[,\s]+", str(value).strip())
-    return set(p for p in parts if p)
+    return {p for p in parts if p}
 
 
 def _validate_users_exist(workspace_client: WebClient, user_ids):
@@ -3173,7 +3173,9 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
 
         # Create poll options
         for idx, option_text in enumerate(options):
-            SlackPollOption.objects.create(poll=poll, option_text=option_text, option_number=idx)
+            # Sanitize user input to prevent markdown injection
+            sanitized_option_text = re.sub(r"([*_~`>])", r"\\\1", option_text)
+            SlackPollOption.objects.create(poll=poll, option_text=sanitized_option_text, option_number=idx)
 
         # Build Slack message blocks
         blocks = build_poll_blocks(poll)
@@ -3214,10 +3216,10 @@ def build_poll_blocks(poll):
 
     # Get vote counts for each option
     options = poll.options.annotate(votes_count=Count("votes"))
-    total_votes = poll.votes.count()
+    total_votes = sum(o.votes_count for o in options)
 
     for option in options:
-        vote_count = getattr(option, "votes_count", option.vote_count)
+        vote_count = option.votes_count
         percentage = (vote_count / total_votes * 100) if total_votes > 0 else 0
 
         # Create a simple bar chart using blocks
@@ -3471,7 +3473,7 @@ def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10
         return JsonResponse({"response_type": "ephemeral", "text": "I've sent you your reminders list in a DM! 📋"})
 
     except Exception as e:
-        logger.error(f"Error listing reminders: {str(e)}")
+        logger.error("Error listing reminders: %s", e)
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while fetching your reminders."}
         )
@@ -3535,6 +3537,8 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
 
         title = parts[0]
         description = parts[1] if len(parts) > 1 else ""
+        # Sanitize description for safe display
+        sanitized_description = description.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
         # Extract time - support both "at" and "in" formats
         scheduled_at = None
@@ -3605,7 +3609,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
             workspace_id=team_id,
             channel_id=channel_id,
             title=title,
-            description=description,
+            description=sanitized_description,
             scheduled_at=scheduled_at,
             status="scheduled",
         )
@@ -3668,11 +3672,16 @@ def build_huddle_blocks(huddle):
     ]
 
     # Show participants if any
-    participants = huddle.participants.all()
-    if participants.exists():
-        accepted = [p for p in participants if p.response == "accepted"]
-        declined = [p for p in participants if p.response == "declined"]
-        pending = [p for p in participants if p.response == "invited"]
+    participants = list(huddle.participants.all())
+    if participants:
+        accepted, declined, pending = [], [], []
+        for p in participants:
+            if p.response == "accepted":
+                accepted.append(p)
+            elif p.response == "declined":
+                declined.append(p)
+            else:  # 'invited'
+                pending.append(p)
 
         participant_text = "*Participants:*\n"
         if accepted:
@@ -3752,9 +3761,7 @@ def list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=1,
 
         for huddle in huddles:
             time_str = _slack_date(huddle.scheduled_at)
-            participants_count = getattr(huddle, "participants_count", None)
-            if participants_count is None:
-                participants_count = huddle.participants.count()
+            participants_count = huddle.participants_count
 
             blocks.append(
                 {
@@ -3810,7 +3817,10 @@ def handle_poll_vote(payload, workspace_client):
     try:
         user_id = payload["user"]["id"]
         action = payload["actions"][0]
-        option_id = int(action["action_id"].replace("poll_vote_", ""))
+        try:
+            option_id = int(action["action_id"].replace("poll_vote_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
         # Get the option and poll (use select_related to avoid N+1 queries)
         option = SlackPollOption.objects.select_related("poll").get(id=option_id)
@@ -3819,18 +3829,13 @@ def handle_poll_vote(payload, workspace_client):
         if poll.status != "active":
             return JsonResponse({"response_type": "ephemeral", "text": "❌ This poll is closed."})
 
-        # Check if user already voted
-        existing_vote = SlackPollVote.objects.filter(poll=poll, voter_id=user_id).first()
-
-        if existing_vote:
-            # Enforce one vote per person; disallow changing votes to prevent churn/abuse
+        # Use get_or_create to atomically check and create
+        vote, created = SlackPollVote.objects.get_or_create(poll=poll, voter_id=user_id, defaults={"option": option})
+        if not created:
             return JsonResponse(
                 {"response_type": "ephemeral", "text": "✅ Your vote has already been recorded for this poll."}
             )
-        else:
-            # New vote
-            SlackPollVote.objects.create(poll=poll, option=option, voter_id=user_id)
-            message = "✅ Vote recorded!"
+        message = "✅ Vote recorded!"
 
         # Update the poll message
         blocks = build_poll_blocks(poll)
@@ -3851,7 +3856,10 @@ def handle_poll_close(payload, workspace_client, user_id):
     """Handle closing a poll"""
     try:
         action = payload["actions"][0]
-        poll_id = int(action["action_id"].replace("poll_close_", ""))
+        try:
+            poll_id = int(action["action_id"].replace("poll_close_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
         poll = SlackPoll.objects.get(id=poll_id)
 
@@ -3884,7 +3892,10 @@ def handle_reminder_cancel(payload, user_id):
     """Handle cancelling a reminder"""
     try:
         action = payload["actions"][0]
-        reminder_id = int(action["action_id"].replace("reminder_cancel_", ""))
+        try:
+            reminder_id = int(action["action_id"].replace("reminder_cancel_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
         reminder = SlackReminder.objects.get(id=reminder_id)
 
@@ -3913,7 +3924,11 @@ def handle_huddle_response(payload, workspace_client, user_id, response):
     """Handle accepting or declining a huddle invitation"""
     try:
         action = payload["actions"][0]
-        huddle_id = int(action["action_id"].replace(f"huddle_{response}_", ""))
+        try:
+            action_verb = "accept" if response == "accepted" else "decline"
+            huddle_id = int(action["action_id"].replace(f"huddle_{action_verb}_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
         huddle = SlackHuddle.objects.get(id=huddle_id)
 
@@ -3947,7 +3962,10 @@ def handle_huddle_cancel(payload, workspace_client, user_id):
     """Handle cancelling a huddle"""
     try:
         action = payload["actions"][0]
-        huddle_id = int(action["action_id"].replace("huddle_cancel_", ""))
+        try:
+            huddle_id = int(action["action_id"].replace("huddle_cancel_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
         huddle = SlackHuddle.objects.get(id=huddle_id)
 

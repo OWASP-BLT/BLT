@@ -1,4 +1,3 @@
-import json
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
@@ -54,8 +53,6 @@ class SlackSchedulerTests(TestCase):
 
     @patch("website.management.commands.process_slack_reminders_and_huddles.requests.post")
     def test_due_channel_reminder_sent_in_dry_run(self, mock_post):
-        mock_post.return_value = MagicMock(status_code=200, json=lambda: {"ok": True})
-
         r = SlackReminder.objects.create(
             workspace_id="T070JPE5BQQ",
             creator_id="U999",
@@ -70,12 +67,10 @@ class SlackSchedulerTests(TestCase):
 
         r.refresh_from_db()
         self.assertEqual(r.status, "sent")
+        mock_post.assert_not_called()
 
     @patch("website.management.commands.process_slack_reminders_and_huddles.requests.post")
     def test_huddle_pre_notify_and_mark_started(self, mock_post):
-        # chat.postMessage mocked ok
-        mock_post.return_value = MagicMock(status_code=200, json=lambda: {"ok": True})
-
         upcoming = SlackHuddle.objects.create(
             workspace_id="T070JPE5BQQ",
             creator_id="U123",
@@ -105,3 +100,4 @@ class SlackSchedulerTests(TestCase):
         past.refresh_from_db()
         self.assertTrue(upcoming.reminder_sent)
         self.assertEqual(past.status, "started")
+        mock_post.assert_not_called()

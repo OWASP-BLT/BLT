@@ -1,10 +1,10 @@
-import json
-from unittest.mock import MagicMock
+from datetime import timedelta
 
 from django.test import TestCase
+from django.utils import timezone
 
-from website.models import SlackPoll, SlackPollOption, SlackPollVote, SlackHuddle, SlackHuddleParticipant
-from website.views.slack_handlers import build_poll_blocks, build_huddle_blocks
+from website.models import SlackHuddle, SlackHuddleParticipant, SlackPoll, SlackPollOption, SlackPollVote
+from website.views.slack_handlers import build_huddle_blocks, build_poll_blocks
 
 
 class SlackBlocksTests(TestCase):
@@ -17,17 +17,14 @@ class SlackBlocksTests(TestCase):
         SlackPollVote.objects.create(poll=poll, option=opt_a, voter_id="U1")
 
         blocks = build_poll_blocks(poll)
-        blob = json.dumps(blocks)
-        self.assertIn("Best time?", blob)
-        self.assertIn("Morning", blob)
-        self.assertIn("Evening", blob)
-        # ensure non-zero bar shows at least one block character (Unicode escape in JSON)
-        self.assertIn("\\u2588", blob)
+        block_text = str(blocks)
+        self.assertIn("Best time?", block_text)
+        self.assertIn("Morning", block_text)
+        self.assertIn("Evening", block_text)
+        # ensure non-zero bar shows at least one block character
+        self.assertIn("█", block_text)
 
     def test_build_huddle_blocks_contains_title_and_actions(self):
-        from django.utils import timezone
-        from datetime import timedelta
-
         h = SlackHuddle.objects.create(
             workspace_id="T070JPE5BQQ",
             channel_id="C123",
@@ -40,7 +37,7 @@ class SlackBlocksTests(TestCase):
         SlackHuddleParticipant.objects.create(huddle=h, user_id="U1", response="accepted")
 
         blocks = build_huddle_blocks(h)
-        blob = json.dumps(blocks)
-        self.assertIn("Standup", blob)
+        block_text = str(blocks)
+        self.assertIn("Standup", block_text)
         # ensure action buttons are present
         self.assertTrue(any(b.get("type") == "actions" for b in blocks))

@@ -17,8 +17,9 @@ BASE_BACKOFF_SECONDS = 60  # 1 minute base
 
 
 def _slack_headers(token: str):
+    sanitized_token = token.replace("\r", "").replace("\n", "")
     return {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {sanitized_token}",
         "Content-Type": "application/json; charset=utf-8",
     }
 
@@ -42,12 +43,12 @@ def _resolve_channel_id(token: str, target_id: str) -> tuple[str | None, int | N
             json={"users": target_id},
             timeout=8,
         )
-        data = resp.json()
-        if data.get("ok") and data.get("channel", {}).get("id"):
-            return data["channel"]["id"], None
         if resp.status_code == 429:
             retry_after = int(resp.headers.get("Retry-After", "0") or 0)
             return None, retry_after
+        data = resp.json()
+        if data.get("ok") and data.get("channel", {}).get("id"):
+            return data["channel"]["id"], None
         logger.warning("Slack conversations.open failed: %s", data.get("error"))
     except Exception as e:
         logger.error("Slack conversations.open error", exc_info=True)
@@ -68,13 +69,13 @@ def _send_slack_message(token: str, target_id: str, text: str, thread_ts: str | 
             json=payload,
             timeout=8,
         )
-        data = resp.json()
-        if data.get("ok"):
-            return True, None
         if resp.status_code == 429:
             retry_after = int(resp.headers.get("Retry-After", "0") or 0)
             logger.warning("Slack chat.postMessage rate limited. Retry-After=%s", retry_after)
             return False, retry_after
+        data = resp.json()
+        if data.get("ok"):
+            return True, None
         logger.warning("Slack chat.postMessage failed: %s", data.get("error"))
         return False, None
     except Exception:
@@ -138,10 +139,14 @@ class Command(BaseCommand):
                 logger.info("No due SlackReminder records")
                 return
 
+            workspace_ids = {r.workspace_id for r in reminders}
+            integrations = SlackIntegration.objects.filter(workspace_name__in=workspace_ids)
+            token_map = {i.workspace_name: i.bot_access_token for i in integrations if i.bot_access_token}
+
             for reminder in reminders:
                 try:
                     # pick correct token per workspace
-                    ws_token = self._token_for_workspace(reminder.workspace_id, token)
+                    ws_token = token_map.get(reminder.workspace_id, token)
                     if not ws_token and not options["dry_run"]:
                         # cannot send without any token
                         reminder.status = "failed"
@@ -150,6 +155,7 @@ class Command(BaseCommand):
                         continue
 
                     msg = reminder.message or ""
+                    msg = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                     target = reminder.target_id
                     if options["dry_run"]:
                         sent, retry_after = True, None
@@ -184,6 +190,7 @@ class Command(BaseCommand):
         # Notify participants for upcoming huddles not yet reminded
         upcoming = (
             SlackHuddle.objects.select_for_update(skip_locked=True)
+            .prefetch_related("participants")
             .filter(status="scheduled", reminder_sent=False, scheduled_at__lte=now + window)
             .order_by("scheduled_at")[: options["batch_size"]]
         )
@@ -196,12 +203,13 @@ class Command(BaseCommand):
                     if hasattr(huddle, "participant_ids") and huddle.participant_ids:
                         participants = list(huddle.participant_ids)
                     elif hasattr(huddle, "participants"):
-                        # ManyToMany relation expected to have 'slack_id'
-                        participants = [getattr(p, "slack_id", None) for p in huddle.participants.all()]
+                        # ManyToMany relation expected to have 'user_id'
+                        participants = [getattr(p, "user_id", None) for p in huddle.participants.all()]
 
                     participants = [p for p in participants if p]
 
                     title = getattr(huddle, "title", "Huddle")
+                    title = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                     start_at = timezone.localtime(huddle.scheduled_at).strftime("%Y-%m-%d %H:%M")
                     channel_id = getattr(huddle, "channel_id", None)
 
@@ -227,8 +235,7 @@ class Command(BaseCommand):
                             _send_slack_message(ws_token, channel_id, f"📣 Huddle '{title}' will start at {start_at}")
 
                         huddle.reminder_sent = True
-                        huddle.last_notify_count = ok_count
-                        huddle.save(update_fields=["reminder_sent", "last_notify_count"])
+                        huddle.save(update_fields=["reminder_sent"])
 
                 except Exception:
                     logger.error("Failed pre-notify for SlackHuddle id=%s", huddle.id, exc_info=True)

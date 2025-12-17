@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
@@ -408,6 +409,11 @@ class SlackHandlerTests(TestCase):
         self.assertEqual(poll.options.count(), 3)
         self.assertEqual(poll.status, "active")
 
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details.get("command"), "/blt_poll")
+
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_remind_command_help(self, mock_webclient, mock_verify):
@@ -456,7 +462,7 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.WebClient")
     def test_remind_command_create(self, mock_webclient, mock_verify):
         """Test creating a reminder with /blt_remind command"""
-        from website.models import SlackReminder
+        from website.models import SlackBotActivity, SlackReminder
 
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
@@ -473,9 +479,14 @@ class SlackHandlerTests(TestCase):
         # Create test request for /blt_remind
         request = MagicMock()
         remind_text = '"Team meeting" in 30 minutes'
-        request.body = (
-            f"command=/blt_remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={remind_text}".encode()
-        )
+        post_data = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "channel_id": "C123",
+            "text": remind_text,
+        }
+        request.body = urllib.parse.urlencode(post_data).encode()
         request.method = "POST"
         request.content_type = "application/x-www-form-urlencoded"
         request.POST = {
@@ -501,6 +512,11 @@ class SlackHandlerTests(TestCase):
         self.assertEqual(reminder.message, "Team meeting")
         self.assertEqual(reminder.status, "pending")
         self.assertEqual(reminder.target_id, "U123")
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details.get("command"), "/blt_remind")
 
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")

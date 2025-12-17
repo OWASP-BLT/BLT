@@ -26,6 +26,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 from django.utils.text import slugify
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -3685,12 +3686,30 @@ class SlackPoll(models.Model):
         self.save()
 
 
+class SlackPollOptionQuerySet(models.QuerySet):
+    def with_vote_count(self):
+        return self.annotate(vote_count=Count("votes"))
+
+
 class SlackPollOption(models.Model):
     """Model to track poll options"""
 
     poll = models.ForeignKey(SlackPoll, on_delete=models.CASCADE, related_name="options")
     option_text = models.CharField(max_length=255)
     option_number = models.IntegerField()  # For ordering (0, 1, 2, etc.)
+
+    objects = SlackPollOptionQuerySet.as_manager()
+
+    @property
+    def vote_count(self):
+        """
+        Returns the number of votes for this option.
+        Note: This will perform a database query if the instance is not annotated
+        with 'vote_count'. To avoid N+1 queries, use the 'with_vote_count'
+        queryset method.
+        """
+        # This property will be overridden by an annotated 'vote_count' attribute
+        return self.votes.count()
 
     class Meta:
         ordering = ["option_number"]
@@ -3701,16 +3720,11 @@ class SlackPollOption(models.Model):
     def __str__(self):
         return f"{self.poll.question[:30]} - Option {self.option_number}: {self.option_text}"
 
-    @property
-    def vote_count(self):
-        """Get total votes for this option"""
-        return self.votes.count()
-
 
 class SlackPollVote(models.Model):
     """Model to track individual votes on poll options"""
 
-    poll = models.ForeignKey(SlackPoll, on_delete=models.CASCADE, related_name="votes")
+    poll = models.ForeignKey(SlackPoll, on_delete=models.CASCADE, related_name="poll_votes")
     option = models.ForeignKey(SlackPollOption, on_delete=models.CASCADE, related_name="votes")
     voter_id = models.CharField(max_length=255)  # Slack user ID
     voted_at = models.DateTimeField(auto_now_add=True)
@@ -3770,14 +3784,14 @@ class SlackReminder(models.Model):
     def mark_as_failed(self, error_msg):
         """Mark reminder as failed with error message"""
         self.status = "failed"
-        self.error_message = error_msg
+        self.error_message = escape(str(error_msg))
         self.save()
 
     def cancel(self):
         """Cancel the reminder"""
-        if self.status == "pending":
+        updated_rows = self.__class__.objects.filter(pk=self.pk, status="pending").update(status="cancelled")
+        if updated_rows > 0:
             self.status = "cancelled"
-            self.save()
             return True
         return False
 
@@ -3820,25 +3834,27 @@ class SlackHuddle(models.Model):
 
     def cancel(self):
         """Cancel the huddle"""
-        if self.status == "scheduled":
+        updated_rows = self.__class__.objects.filter(pk=self.pk, status="scheduled").update(status="cancelled")
+        if updated_rows > 0:
             self.status = "cancelled"
-            self.save()
             return True
         return False
 
     def start(self):
         """Mark huddle as started"""
-        if self.status == "scheduled":
+        updated_rows = self.__class__.objects.filter(pk=self.pk, status="scheduled").update(status="started")
+        if updated_rows > 0:
             self.status = "started"
-            self.save()
             return True
         return False
 
     def complete(self):
         """Mark huddle as completed"""
-        if self.status in ["scheduled", "started"]:
+        updated_rows = self.__class__.objects.filter(pk=self.pk, status__in=["scheduled", "started"]).update(
+            status="completed"
+        )
+        if updated_rows > 0:
             self.status = "completed"
-            self.save()
             return True
         return False
 
@@ -3873,8 +3889,10 @@ class SlackHuddleParticipant(models.Model):
     def update_response(self, response):
         """Update participant response"""
         if response in self.VALID_RESPONSES:
-            self.response = response
-            self.responded_at = timezone.now()
-            self.save()
-            return True
+            now = timezone.now()
+            updated_rows = self.__class__.objects.filter(pk=self.pk).update(response=response, responded_at=now)
+            if updated_rows > 0:
+                self.response = response
+                self.responded_at = now
+                return True
         return False

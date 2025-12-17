@@ -21,7 +21,7 @@ class Command(BaseCommand):
             try:
                 call_command("process_slack_reminders_and_huddles")
             except Exception:
-                logger.error("Failed running process_slack_reminders_and_huddles", exc_info=True)
+                logger.critical("Failed running process_slack_reminders_and_huddles", exc_info=True)
         except Exception as e:
             logger.error("Error in 10 minute tasks", exc_info=True)
             raise
