@@ -109,7 +109,7 @@ def _user_exists(token: str, user_id: str) -> tuple[bool, int | None]:
     try:
         # Users typically start with 'U' or 'W'
         if not user_id or not user_id.startswith(("U", "W")):
-            return True, None
+            return False, None
         resp = requests.post(
             f"{SLACK_API_BASE}/users.info",
             headers=_slack_headers(token),
@@ -231,9 +231,11 @@ class Command(BaseCommand):
 
     def _process_huddles(self, token: str | None, now, window, options):
         # First, cancel huddles whose creator has left the workspace to avoid orphans
+        # Only check huddles scheduled within the next 7 days to avoid processing old records
+        future_cutoff = now + timedelta(days=7)
         to_cancel = (
             SlackHuddle.objects.select_for_update(skip_locked=True)
-            .filter(status="scheduled")
+            .filter(status="scheduled", scheduled_at__lte=future_cutoff)
             .order_by("scheduled_at")[: options["batch_size"]]
         )
         with transaction.atomic():

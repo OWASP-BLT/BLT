@@ -3453,7 +3453,7 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
 
             try:
                 reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
-                reminder.message = new_message
+                reminder.message = escape_slack_markdown(new_message)
                 reminder.remind_at = remind_at
                 reminder.save(update_fields=["message", "remind_at"])
                 return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder updated."})
@@ -3484,12 +3484,44 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                         "text": "❌ Invalid time format. Use: in <number> <minutes|hours|days>",
                     }
                 )
+            # Validate snooze amount
+            if amount <= 0:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Snooze time must be a positive number.",
+                    }
+                )
             now = timezone.now()
             if "minute" in unit:
+                # Cap at 1 year in minutes
+                if amount > 525600:
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Snooze time is too long. Please use 525600 minutes or less (up to 1 year).",
+                        }
+                    )
                 remind_at = now + timedelta(minutes=amount)
             elif "hour" in unit:
+                # Cap at 1 year in hours
+                if amount > 8760:
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Snooze time is too long. Please use 8760 hours or less (up to 1 year).",
+                        }
+                    )
                 remind_at = now + timedelta(hours=amount)
             elif "day" in unit:
+                # Cap at 1 year in days
+                if amount > 365:
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Snooze time is too long. Please use 365 days or less.",
+                        }
+                    )
                 remind_at = now + timedelta(days=amount)
             else:
                 return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
@@ -4309,7 +4341,7 @@ def handle_reminder_snooze(payload, user_id):
 
         # Snooze for 1 hour
         reminder.remind_at = timezone.now() + timedelta(hours=1)
-        reminder.save()
+        reminder.save(update_fields=["remind_at"])
 
         return JsonResponse(
             {"response_type": "ephemeral", "text": "⏰ Reminder snoozed for 1 hour! I'll remind you later."}

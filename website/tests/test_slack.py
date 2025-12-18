@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
 from django.test import TestCase
+from django.utils import timezone
 
 from website.models import Integration, Organization, Project, SlackBotActivity, SlackIntegration
 from website.views.slack_handlers import get_project_with_least_members, slack_commands, slack_events
@@ -519,6 +520,110 @@ class SlackHandlerTests(TestCase):
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
         self.assertEqual(activity.details.get("command"), "/blt_remind")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_remind_command_snooze_zero_amount_error(self, mock_webclient, mock_verify):
+        """Snooze subcommand should reject zero amount."""
+        from website.models import SlackReminder
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Prepare an existing reminder
+        r = SlackReminder.objects.create(
+            creator_id="U123",
+            workspace_id="T070JPE5BQQ",
+            target_type="user",
+            target_id="U123",
+            message="Ping",
+            remind_at=timezone.now() + timezone.timedelta(minutes=10),
+            status="pending",
+        )
+
+        # Build request for snooze with 0 minutes
+        request = MagicMock()
+        post_data = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "channel_id": "C123",
+            "text": f"snooze {r.id} in 0 minutes",
+        }
+        request.body = urllib.parse.urlencode(post_data).encode()
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = post_data
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("positive", json.loads(response.content)["text"].lower())
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_remind_command_snooze_excessive_minutes_error(self, mock_webclient, mock_verify):
+        """Snooze subcommand should cap minutes to 1 year equivalent."""
+        from website.models import SlackReminder
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        r = SlackReminder.objects.create(
+            creator_id="U123",
+            workspace_id="T070JPE5BQQ",
+            target_type="user",
+            target_id="U123",
+            message="Ping",
+            remind_at=timezone.now() + timezone.timedelta(minutes=10),
+            status="pending",
+        )
+
+        request = MagicMock()
+        post_data = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "channel_id": "C123",
+            "text": f"snooze {r.id} in 525601 minutes",
+        }
+        request.body = urllib.parse.urlencode(post_data).encode()
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = post_data
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("too long", json.loads(response.content)["text"].lower())
 
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
