@@ -311,6 +311,8 @@ jobs:
       - run: poetry lock
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
+      - name: Run migrations
+        run: poetry run python manage.py migrate --noinput
       - name: Run tests
         id: run-tests
         shell: bash
