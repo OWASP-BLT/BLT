@@ -48,13 +48,13 @@ class ActivityMiddlewareTest(TestCase):
     def test_superuser_dashboard_not_tracked(self):
         """Test that superuser dashboard visits are not tracked"""
         initial_count = UserActivity.objects.count()
-
+        
         superuser = User.objects.create_superuser("admin", "admin@example.com", "password")
         request = self.factory.get(f"/organization/{self.org.id}/dashboard/")
         request.user = superuser
         request.session = {}
-
+        
         self.middleware(request)
-
+        
         # No activity should be created for superusers
         self.assertEqual(UserActivity.objects.count(), initial_count)
