@@ -25,16 +25,16 @@ class Command(BaseCommand):
         for offset in range(0, total, BATCH_SIZE):
             batch = qs[offset : offset + BATCH_SIZE]
 
-            with transaction.atomic():
-                for project in batch:
-                    try:
+            for project in batch:
+                try:
+                    with transaction.atomic():
                         freshness = project.calculate_freshness()
                         project.freshness = freshness
                         project.save(update_fields=["freshness"])
-                        processed += 1
-                    except Exception as e:
-                        errors += 1
-                        self.stderr.write(f"[ERROR] Project ID {project.id}: {str(e)}")
+                    processed += 1
+                except Exception as e:
+                    errors += 1
+                    self.stderr.write(f"[ERROR] Project ID {project.id}: {str(e)}")
 
             self.stdout.write(f"Processed {min(offset + BATCH_SIZE, total)}/{total} projects...")
 
