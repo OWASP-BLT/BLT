@@ -25,7 +25,6 @@ class UserBehaviorAnalyticsTest(TestCase):
 
     def test_analytics_context_data(self):
         """Test that analytics data is correctly calculated"""
-        from website.views.company import OrganizationDashboardAnalyticsView
 
         view = OrganizationDashboardAnalyticsView()
         analytics = view.get_user_behavior_analytics(self.org)
@@ -37,6 +36,7 @@ class UserBehaviorAnalyticsTest(TestCase):
         self.assertIn("top_users", analytics)
         self.assertIn("activity_breakdown", analytics)
         self.assertIn("weekly_trend", analytics)
+        self.assertIn("peak_hours", analytics)
 
         # Verify data
         self.assertGreater(analytics["active_users_count"], 0)
@@ -66,3 +66,4 @@ class UserBehaviorAnalyticsTest(TestCase):
         self.assertEqual(len(analytics["top_users"]), 0)
         self.assertEqual(len(analytics["activity_breakdown"]), 0)
         self.assertEqual(len(analytics["weekly_trend"]), 0)
+        self.assertEqual(len(analytics["peak_hours"]), 0)
