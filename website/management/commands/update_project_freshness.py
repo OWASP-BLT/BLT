@@ -23,16 +23,20 @@ class Command(BaseCommand):
         self.stdout.write(f"Starting freshness update for {total} projects")
 
         for offset in range(0, total, BATCH_SIZE):
-            try:
-                with transaction.atomic():
-                    batch = list(qs.select_for_update()[offset : offset + BATCH_SIZE])
-                    for project in batch:
+            batch_ids = list(qs.values_list("id", flat=True)[offset : offset + BATCH_SIZE])
+
+            for project_id in batch_ids:
+                try:
+                    with transaction.atomic():
+                        project = Project.objects.select_for_update().get(pk=project_id)
+
                         project.freshness = project.calculate_freshness()
                         project.save(update_fields=["freshness"])
                         processed += 1
-            except Exception as e:
-                errors += 1
-                self.stderr.write(f"[ERROR] Project ID {project.id}: {str(e)}")
+
+                except Exception as e:
+                    errors += 1
+                    self.stderr.write(f"[ERROR] Project ID {project_id}: {str(e)}")
 
             self.stdout.write(f"Processed {min(offset + BATCH_SIZE, total)}/{total} projects...")
 
