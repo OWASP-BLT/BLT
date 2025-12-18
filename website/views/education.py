@@ -368,7 +368,8 @@ def submit_quiz(request, video_id):
     except EducationalVideo.DoesNotExist:
         return JsonResponse({"error": "Video not found"}, status=404)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        logger.exception("Error processing educational video request")
+        return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     featured_lectures = Lecture.objects.filter(section__isnull=True)
     courses = Course.objects.all()
