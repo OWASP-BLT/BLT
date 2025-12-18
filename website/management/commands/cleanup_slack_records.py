@@ -40,9 +40,16 @@ class Command(BaseCommand):
             )
             return
 
-        polls_deleted, _ = polls_qs.delete()
-        reminders_deleted, _ = reminders_qs.delete()
-        huddles_deleted, _ = huddles_qs.delete()
+        # Perform deletions. Note: QuerySet.delete() returns total rows deleted across
+        # related tables, which can be misleading. We report primary object counts
+        # using the precomputed stats to reflect number of polls/reminders/huddles.
+        polls_qs.delete()
+        reminders_qs.delete()
+        huddles_qs.delete()
+
+        polls_deleted = stats["polls"]
+        reminders_deleted = stats["reminders"]
+        huddles_deleted = stats["huddles"]
 
         self.stdout.write(
             self.style.SUCCESS(

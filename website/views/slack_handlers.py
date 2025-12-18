@@ -3199,7 +3199,9 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
         # Normalize whitespace and truncate overly long inputs
         question_norm = re.sub(r"\s+", " ", question_raw)
         # Truncate question to a safe length for Slack headers
-        question = (question_norm[:200] + "…") if len(question_norm) > 200 else question_norm
+        question_truncated = (question_norm[:200] + "…") if len(question_norm) > 200 else question_norm
+        # Sanitize question to prevent markdown injection
+        question = re.sub(r"([*_~`>])", r"\\\1", question_truncated)
 
         # Deduplicate options (case-insensitive, whitespace-normalized) and drop empties
         seen = set()
@@ -3436,6 +3438,8 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                     }
                 )
             amount = int(time_match.group(1))
+            if amount <= 0:
+                return JsonResponse({"response_type": "ephemeral", "text": "❌ Time amount must be greater than 0."})
             unit = time_match.group(2)
             now = timezone.now()
             if "minute" in unit:
@@ -3687,6 +3691,11 @@ def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10
         )
 
 
+def escape_slack_markdown(text: str) -> str:
+    """Escapes Slack's markdown-like characters."""
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, activity):
     """Handle the /huddle command to schedule huddles/meetings"""
     try:
@@ -3806,7 +3815,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 return JsonResponse({"response_type": "ephemeral", "text": "❌ Huddle not found or not owned by you."})
             huddle.scheduled_at = scheduled_at
             if new_title:
-                huddle.title = new_title
+                huddle.title = escape_slack_markdown(new_title)
             huddle.status = "scheduled"
             huddle.save(update_fields=["scheduled_at", "title", "status", "updated_at"])
             blocks = build_huddle_blocks(huddle)
@@ -3832,10 +3841,10 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 }
             )
 
-        title = parts[0]
+        title = escape_slack_markdown(parts[0])
         description = parts[1] if len(parts) > 1 else ""
         # Sanitize description for safe display
-        sanitized_description = description.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        sanitized_description = escape_slack_markdown(description)
 
         # Extract time - support both "at" and "in" formats
         scheduled_at = None

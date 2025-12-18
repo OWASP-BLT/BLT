@@ -123,7 +123,7 @@ def _user_exists(token: str, user_id: str) -> tuple[bool, int | None]:
         if data.get("ok"):
             # Consider deleted or deactivated users as non-existent for messaging
             user = data.get("user", {})
-            if user.get("deleted") or user.get("is_restricted", False) and user.get("is_ultra_restricted", False):
+            if user.get("deleted") or user.get("is_restricted", False) or user.get("is_ultra_restricted", False):
                 return False, None
             return True, None
         # Common errors: user_not_found, account_inactive

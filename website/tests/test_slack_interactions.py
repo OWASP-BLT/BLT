@@ -33,7 +33,6 @@ class SlackInteractionHandlerTests(TestCase):
             status="active",
         )
         opt_a = SlackPollOption.objects.create(poll=poll, option_text="Morning", option_number=0)
-        opt_b = SlackPollOption.objects.create(poll=poll, option_text="Evening", option_number=1)
 
         workspace_client = mock_webclient.return_value
         workspace_client.chat_update.return_value = {"ok": True}
@@ -186,8 +185,9 @@ class SlackInteractionHandlerTests(TestCase):
 
         text = '"Standup" "Daily" in 10 minutes with <@U2> <@U999>'
         activity = MagicMock()
-        # Avoid rate-limiter interference across tests
+        # Clear entire cache to avoid rate-limit interference
         cache.clear()
+
         resp = handle_huddle_command(
             workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity
         )
@@ -197,23 +197,6 @@ class SlackInteractionHandlerTests(TestCase):
     @patch("website.views.slack_handlers.timezone")
     @patch("website.views.slack_handlers.WebClient")
     def test_huddle_at_time_in_past_error(self, mock_webclient, mock_tz):
-        # Force now at 14:00 and set input to 13:00 PM => past
-        class DummyNow:
-            def __init__(self, dt):
-                self._dt = dt
-
-            def replace(self, **kwargs):
-                return self._dt.replace(**kwargs)
-
-            def __getattr__(self, name):
-                return getattr(self._dt, name)
-
-            def timestamp(self):
-                return self._dt.timestamp()
-
-            def __str__(self):
-                return str(self._dt)
-
         now = timezone.now()
         fixed = now.replace(hour=14, minute=0, second=0, microsecond=0)
         mock_tz.now.return_value = fixed
@@ -226,3 +209,93 @@ class SlackInteractionHandlerTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertIn("already passed", resp.content.decode().lower())
+
+    def test_handle_reminder_cancel_already_cancelled(self):
+        """Test attempting to cancel an already-cancelled reminder."""
+        r = SlackReminder.objects.create(
+            workspace_id=self.workspace_id,
+            creator_id=self.creator_id,
+            target_type="user",
+            target_id=self.other_id,
+            message="Ping",
+            status="cancelled",
+            remind_at=timezone.now() + timezone.timedelta(minutes=1),
+        )
+        payload = {"actions": [{"action_id": f"reminder_cancel_{r.id}"}]}
+        resp = handle_reminder_cancel(payload, self.creator_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("no longer pending", resp.content.decode().lower())
+
+    def test_handle_reminder_cancel_already_sent(self):
+        """Test attempting to cancel an already-sent reminder."""
+        r = SlackReminder.objects.create(
+            workspace_id=self.workspace_id,
+            creator_id=self.creator_id,
+            target_type="user",
+            target_id=self.other_id,
+            message="Ping",
+            status="sent",
+            remind_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+        payload = {"actions": [{"action_id": f"reminder_cancel_{r.id}"}]}
+        resp = handle_reminder_cancel(payload, self.creator_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("no longer pending", resp.content.decode().lower())
+
+    def test_handle_reminder_cancel_invalid_id(self):
+        """Test attempting to cancel with an invalid reminder ID (404 case)."""
+        payload = {"actions": [{"action_id": "reminder_cancel_99999"}]}
+        resp = handle_reminder_cancel(payload, self.creator_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("not found", resp.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_poll_close_already_closed(self, mock_webclient):
+        """Test attempting to close an already-closed poll."""
+        poll = SlackPoll.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            question="Best time?",
+            status="closed",
+        )
+        workspace_client = mock_webclient.return_value
+        payload = {"actions": [{"action_id": f"poll_close_{poll.id}"}]}
+        resp = handle_poll_close(payload, workspace_client, self.creator_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("already closed", resp.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_poll_close_invalid_id(self, mock_webclient):
+        """Test attempting to close with an invalid poll ID (404 case)."""
+        workspace_client = mock_webclient.return_value
+        payload = {"actions": [{"action_id": "poll_close_99999"}]}
+        resp = handle_poll_close(payload, workspace_client, self.creator_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("not found", resp.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_poll_vote_slack_api_failure(self, mock_webclient):
+        """Test handling Slack API failures during chat_update."""
+        poll = SlackPoll.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            question="Best time?",
+            status="active",
+        )
+        opt = SlackPollOption.objects.create(poll=poll, option_text="Morning", option_number=0)
+
+        workspace_client = mock_webclient.return_value
+        # Simulate Slack API error
+        from slack_sdk.errors import SlackApiError
+
+        workspace_client.chat_update.side_effect = SlackApiError(
+            message="channel_not_found", response={"error": "channel_not_found"}
+        )
+
+        payload = {"user": {"id": self.other_id}, "actions": [{"action_id": f"poll_vote_{opt.id}"}]}
+        response = handle_poll_vote(payload, workspace_client)
+        self.assertEqual(response.status_code, 200)
+        # Vote should still be recorded despite API failure
+        self.assertEqual(SlackPollVote.objects.filter(poll=poll).count(), 1)
