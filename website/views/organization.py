@@ -21,6 +21,7 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -309,7 +310,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         context["hunt"] = hunt
         context["issues"] = issues
         if hunt.result_published:
-            context["winner"] = Winner.objects.get(hunt=hunt)
+            context["winner"] = Winner.objects.filter(hunt=hunt).first()
         return render(request, template, context)
     else:
         for issue in issues:
@@ -338,36 +339,33 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if request.POST["submit"] == "save":
             pass
         elif request.POST["submit"] == "publish":
-            winner = Winner()
-            issue_with_score = (
-                Issue.objects.filter(hunt=hunt, verified=True)
-                .values("user")
-                .order_by("user")
-                .annotate(total_score=Sum("score"))
-            )
+            with transaction.atomic():
+                issue_with_score = (
+                    Issue.objects.filter(hunt=hunt, verified=True)
+                    .values("user")
+                    .annotate(total_score=Sum("score"))
+                    .order_by("-total_score")
+                )
 
-            user_ids = [obj["user"] for obj in issue_with_score[:3]]
-            users = User.objects.in_bulk(user_ids)
+                top_users = list(issue_with_score[:3])
+                user_map = User.objects.in_bulk([u["user"] for u in top_users])
 
-            for index, obj in enumerate(issue_with_score, 1):
-                user = users.get(obj["user"])
-                if not user:
-                    continue
-                if index == 1:
-                    winner.winner = user
-                elif index == 2:
-                    winner.runner = user
-                elif index == 3:
-                    winner.second_runner = user
-                elif index == 4:
-                    break
+                winner, _ = Winner.objects.get_or_create(hunt=hunt)
 
-            winner.prize_distributed = True
-            winner.hunt = hunt
-            winner.save()
-            hunt.result_published = True
-            hunt.save()
-            context["winner"] = winner
+                if len(top_users) > 0:
+                    winner.winner = user_map.get(top_users[0]["user"])
+                if len(top_users) > 1:
+                    winner.runner = user_map.get(top_users[1]["user"])
+                if len(top_users) > 2:
+                    winner.second_runner = user_map.get(top_users[2]["user"])
+
+                winner.prize_distributed = True
+                winner.save()
+
+                hunt.result_published = True
+                hunt.save()
+
+                context["winner"] = winner
 
         context["hunt"] = hunt
         context["issues"] = issues
