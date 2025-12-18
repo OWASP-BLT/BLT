@@ -316,7 +316,8 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         for issue in issues:
             issue.verified = False
             issue.score = 0
-        Issue.objects.bulk_update(issues, ["verified", "score"])
+        if issues:
+            Issue.objects.bulk_update(issues, ["verified", "score"])
 
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
