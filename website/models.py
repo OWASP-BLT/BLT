@@ -3668,7 +3668,7 @@ class UserActivity(models.Model):
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
     timestamp = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True, default="", max_length=512)
+    user_agent = models.CharField(max_length=512, blank=True, default="")
     metadata = models.JSONField(default=dict)
 
     class Meta:
