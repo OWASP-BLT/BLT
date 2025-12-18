@@ -14,7 +14,7 @@ import requests
 import yaml
 from django.conf import settings
 from django.core.cache import cache
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -4327,21 +4327,35 @@ def handle_reminder_snooze(payload, user_id):
         except ValueError:
             return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
-        # Allow both creator and target to snooze the reminder
-        reminder = SlackReminder.objects.get(id=reminder_id, status="pending")
-
-        # Check if user is either the creator or the target
-        if reminder.creator_id != user_id and reminder.target_id != user_id:
-            return JsonResponse(
-                {
-                    "response_type": "ephemeral",
-                    "text": "❌ You can only snooze reminders you created or that are assigned to you.",
-                }
+        # Lock the reminder row to avoid concurrent processing races
+        with transaction.atomic():
+            reminder = (
+                SlackReminder.objects.select_for_update(skip_locked=True)
+                .only("id", "creator_id", "target_id", "status", "remind_at")
+                .get(id=reminder_id)
             )
 
-        # Snooze for 1 hour
-        reminder.remind_at = timezone.now() + timedelta(hours=1)
-        reminder.save(update_fields=["remind_at"])
+            # Ensure reminder is still pending; background job may have sent/cancelled it
+            if reminder.status != "pending":
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder is no longer pending; it may have been sent or cancelled.",
+                    }
+                )
+
+            # Check if user is either the creator or the target
+            if reminder.creator_id != user_id and reminder.target_id != user_id:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ You can only snooze reminders you created or that are assigned to you.",
+                    }
+                )
+
+            # Snooze for 1 hour
+            reminder.remind_at = timezone.now() + timedelta(hours=1)
+            reminder.save(update_fields=["remind_at"])
 
         return JsonResponse(
             {"response_type": "ephemeral", "text": "⏰ Reminder snoozed for 1 hour! I'll remind you later."}
