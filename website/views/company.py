@@ -1373,6 +1373,15 @@ class AddSlackIntegrationView(View):
     def get(self, request, id, *args, **kwargs):
         slack_integration = self._get_slack_integration(id)
 
+        # Get organizations for navigation (used by dashboard base template)
+        organizations = []
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+
         if slack_integration:
             try:
                 app = App(token=slack_integration.bot_access_token)
@@ -1388,6 +1397,7 @@ class AddSlackIntegrationView(View):
                     "organization/dashboard/add_slack_integration.html",
                     context={
                         "organization": id,
+                        "organizations": organizations,
                         "slack_integration": slack_integration,
                         "channels": channels_list,
                         "hours": range(24),
