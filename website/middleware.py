@@ -1,9 +1,15 @@
 """
 Custom middleware for BLT application.
 """
+import logging
+import re
 
 from django.contrib import messages
 from django.utils.deprecation import MiddlewareMixin
+
+from website.models import Organization, UserActivity
+
+logger = logging.getLogger(__name__)
 
 
 class BaconRewardMessageMiddleware(MiddlewareMixin):
@@ -46,5 +52,79 @@ class BaconRewardMessageMiddleware(MiddlewareMixin):
 
             # Clear the cache flag after displaying message
             cache.delete(message_cache_key)
+
+        return None
+
+
+class ActivityTrackingMiddleware(MiddlewareMixin):
+    """Middleware to track user dashboard visits for behavior analytics."""
+
+    def __call__(self, request):
+        # Track dashboard visits for authenticated users
+        if request.user.is_authenticated and not request.user.is_superuser:
+            try:
+                # Check if this is an organization dashboard visit
+                if self._is_dashboard_visit(request.path):
+                    # Extract IP address
+                    ip_address = self._get_client_ip(request)
+
+                    # Extract user agent
+                    user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+                    # Try to extract organization from path or session
+                    organization = self._get_organization_from_request(request)
+
+                    # Create activity record
+                    UserActivity.objects.create(
+                        user=request.user,
+                        organization=organization,
+                        activity_type="dashboard_visit",
+                        ip_address=ip_address,
+                        user_agent=user_agent,
+                        metadata={"path": request.path},
+                    )
+            except Exception as e:
+                # Silent failure - don't break the request
+                logger.debug("Failed to track dashboard visit: %s", type(e).__name__)
+                pass
+
+        response = self.get_response(request)
+        return response
+
+    def _is_dashboard_visit(self, path):
+        """Check if the path is an organization dashboard URL."""
+        # Match organization dashboard patterns
+        dashboard_patterns = [
+            r"^/organization/\d+/dashboard",
+            r"^/company/\d+/dashboard",
+        ]
+        return any(re.match(pattern, path) for pattern in dashboard_patterns)
+
+    def _get_client_ip(self, request):
+        """Extract client IP address from request."""
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0].strip()
+            if not ip:
+                ip = request.META.get("REMOTE_ADDR")
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+        return ip
+
+    def _get_organization_from_request(self, request):
+        """Try to extract organization from request path or session."""
+        try:
+            # Try to extract organization ID from URL path
+            match = re.search(r"/(?:organization|company)/(\d+)/", request.path)
+            if match:
+                org_id = int(match.group(1))
+                return Organization.objects.filter(id=org_id).first()
+
+            # Try to get from session
+            org_ref = request.session.get("org_ref")
+            if org_ref:
+                return Organization.objects.filter(id=org_ref).first()
+        except Exception:
+            pass
 
         return None

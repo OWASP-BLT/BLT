@@ -37,6 +37,7 @@ from website.models import (
     OrganizationAdmin,
     Points,
     SlackIntegration,
+    UserActivity,
     Winner,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
@@ -787,7 +788,78 @@ class OrganizationDashboardAnalyticsView(View):
             "security_incidents_summary": self.get_security_incidents_summary(id),
             "threat_intelligence": self.get_threat_intelligence(id),
         }
+        # Add user behavior analytics to context
+        context["user_behavior"] = self.get_user_behavior_analytics(organization_obj)
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+    def get_user_behavior_analytics(self, organization):
+        """Calculate user behavior analytics for the organization dashboard."""
+
+        # Calculate date range for last 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        # Get base queryset for organization activities in last 30 days
+        activities = UserActivity.objects.filter(organization=organization, timestamp__gte=thirty_days_ago)
+
+        # Calculate active users count (distinct users)
+        active_users_count = activities.values("user").distinct().count()
+
+        # Calculate top 5 most active users
+        top_users = (
+            activities.values("user__username").annotate(activity_count=Count("id")).order_by("-activity_count")[:5]
+        )
+        top_users_list = [{"username": user["user__username"], "count": user["activity_count"]} for user in top_users]
+
+        # Calculate activity breakdown by type
+        activity_breakdown = activities.values("activity_type").annotate(count=Count("id")).order_by("-count")[:5]
+        activity_breakdown_list = [
+            {
+                "type": activity["activity_type"],
+                "type_display": dict(UserActivity.ACTIVITY_TYPES).get(
+                    activity["activity_type"], activity["activity_type"]
+                ),
+                "count": activity["count"],
+            }
+            for activity in activity_breakdown
+        ]
+
+        # Calculate peak hours (hours with most activity)
+        peak_hours = (
+            activities.annotate(hour=ExtractHour("timestamp"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+        peak_hours_list = [{"hour": hour["hour"], "count": hour["count"]} for hour in peak_hours]
+
+        # Calculate weekly trend (last 7 days)
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        weekly_activities = UserActivity.objects.filter(organization=organization, timestamp__gte=seven_days_ago)
+
+        weekly_trend = (
+            weekly_activities.annotate(day=TruncDay("timestamp"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        weekly_trend_list = [{"date": day["day"].strftime("%Y-%m-%d"), "count": day["count"]} for day in weekly_trend]
+
+        # Calculate total activities
+        total_activities = activities.count()
+
+        # Calculate engagement rate (activities per active user)
+        engagement_rate = round(total_activities / active_users_count, 2) if active_users_count > 0 else 0
+
+        return {
+            "active_users_count": active_users_count,
+            "total_activities": total_activities,
+            "engagement_rate": engagement_rate,
+            "top_users": top_users_list,
+            "activity_breakdown": activity_breakdown_list,
+            "peak_hours": peak_hours_list,
+            "weekly_trend": weekly_trend_list,
+        }
 
 
 class OrganizationDashboardIntegrations(View):
