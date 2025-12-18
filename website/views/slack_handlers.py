@@ -4295,7 +4295,18 @@ def handle_reminder_snooze(payload, user_id):
         except ValueError:
             return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
 
-        reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
+        # Allow both creator and target to snooze the reminder
+        reminder = SlackReminder.objects.get(id=reminder_id, status="pending")
+
+        # Check if user is either the creator or the target
+        if reminder.creator_id != user_id and reminder.target_id != user_id:
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "❌ You can only snooze reminders you created or that are assigned to you.",
+                }
+            )
+
         # Snooze for 1 hour
         reminder.remind_at = timezone.now() + timedelta(hours=1)
         reminder.save()

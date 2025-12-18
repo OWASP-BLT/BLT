@@ -12,6 +12,7 @@ from website.views.slack_handlers import (
     handle_poll_close,
     handle_poll_vote,
     handle_reminder_cancel,
+    handle_reminder_snooze,
 )
 
 
@@ -299,3 +300,60 @@ class SlackInteractionHandlerTests(TestCase):
         self.assertEqual(response.status_code, 200)
         # Vote should still be recorded despite API failure
         self.assertEqual(SlackPollVote.objects.filter(poll=poll).count(), 1)
+
+    def test_handle_reminder_snooze_creator_can_snooze(self):
+        """Test that the creator can snooze their reminder."""
+        r = SlackReminder.objects.create(
+            workspace_id=self.workspace_id,
+            creator_id=self.creator_id,
+            target_type="user",
+            target_id=self.other_id,
+            message="Ping",
+            status="pending",
+            remind_at=timezone.now() + timezone.timedelta(minutes=5),
+        )
+        original_time = r.remind_at
+        payload = {"actions": [{"action_id": f"reminder_snooze_{r.id}"}]}
+        resp = handle_reminder_snooze(payload, self.creator_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("snoozed", resp.content.decode().lower())
+        r.refresh_from_db()
+        # Should be snoozed by ~1 hour
+        self.assertGreater(r.remind_at, original_time)
+
+    def test_handle_reminder_snooze_target_can_snooze(self):
+        """Test that the target can snooze a reminder assigned to them."""
+        r = SlackReminder.objects.create(
+            workspace_id=self.workspace_id,
+            creator_id=self.creator_id,
+            target_type="user",
+            target_id=self.other_id,
+            message="Ping",
+            status="pending",
+            remind_at=timezone.now() + timezone.timedelta(minutes=5),
+        )
+        original_time = r.remind_at
+        payload = {"actions": [{"action_id": f"reminder_snooze_{r.id}"}]}
+        # Target (not creator) snoozes
+        resp = handle_reminder_snooze(payload, self.other_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("snoozed", resp.content.decode().lower())
+        r.refresh_from_db()
+        self.assertGreater(r.remind_at, original_time)
+
+    def test_handle_reminder_snooze_unrelated_user_cannot_snooze(self):
+        """Test that an unrelated user cannot snooze someone else's reminder."""
+        r = SlackReminder.objects.create(
+            workspace_id=self.workspace_id,
+            creator_id=self.creator_id,
+            target_type="user",
+            target_id=self.other_id,
+            message="Ping",
+            status="pending",
+            remind_at=timezone.now() + timezone.timedelta(minutes=5),
+        )
+        payload = {"actions": [{"action_id": f"reminder_snooze_{r.id}"}]}
+        # Unrelated user tries to snooze
+        resp = handle_reminder_snooze(payload, "UUNRELATED")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("can only snooze", resp.content.decode().lower())

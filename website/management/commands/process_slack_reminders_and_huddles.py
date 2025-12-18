@@ -40,7 +40,7 @@ def _resolve_channel_id(token: str, target_id: str) -> tuple[str | None, int | N
         resp = requests.post(
             f"{SLACK_API_BASE}/conversations.open",
             headers=_slack_headers(token),
-            json={"users": target_id},
+            json={"users": [target_id]},
             timeout=8,
         )
         if resp.status_code == 429:
