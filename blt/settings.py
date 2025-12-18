@@ -361,7 +361,8 @@ else:
             "NAME": ":memory:",
         }
 
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
