@@ -34,7 +34,7 @@ def log_bug_report(sender, instance, created, **kwargs):
             },
         )
     except Exception as e:
-        logger.error("Failed to log bug report activity: %s", str(e), exc_info=True)
+        logger.error("Failed to log bug comment activity: %s", str(e), exc_info=True)
 
 
 @receiver(post_save, sender=Comment)  # ✓ Changed from IssueComment to Comment
@@ -77,4 +77,4 @@ def log_bug_comment(sender, instance, created, **kwargs):
             },
         )
     except Exception as e:
-        logger.error("Failed to log bug report activity: %s", str(e), exc_info=True)
+        logger.error("Failed to log bug comment activity: %s", str(e), exc_info=True)

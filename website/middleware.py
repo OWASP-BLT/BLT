@@ -98,7 +98,7 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                         )
             except Exception as e:
                 # Silent failure - don't break the request
-                logger.debug("Failed to track dashboard visit: %s", type(e).__name__, exc_info=True)
+                logger.debug("Failed to extract organization from request: %s", type(e).__name__, exc_info=True)
 
         response = self.get_response(request)
         return response
@@ -133,6 +133,6 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                 return Organization.objects.filter(id=org_ref).first()
         except Exception as e:
             # Silent failure - don't break the request
-            logger.debug("Failed to track dashboard visit: %s", type(e).__name__, exc_info=True)
+            logger.debug("Failed to extract organization from request: %s", type(e).__name__, exc_info=True)
 
         return None
