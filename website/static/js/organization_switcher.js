@@ -45,6 +45,14 @@
         if (orgIndex !== -1 && pathParts[orgIndex + 1]) {
             // Replace the organization ID
             pathParts[orgIndex + 1] = orgId;
+    
+            // Check if this is an edit_job page and preserve the job_id
+            const editJobIndex = pathParts.indexOf('edit_job');
+            if (editJobIndex !== -1 && pathParts[editJobIndex + 1]) {
+                // The job_id is already in the path, just return the reconstructed path
+                return pathParts.join('/');
+            }
+    
             return pathParts.join('/');
         }
 
