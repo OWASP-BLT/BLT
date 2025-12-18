@@ -19,7 +19,7 @@ class ManagementCommandTest(TestCase):
         old_activity.timestamp = timezone.now() - timedelta(days=100)
         old_activity.save()
 
-        # Create recent activity (10 days ago)
+        # Create recent activity (now)
         recent_activity = UserActivity.objects.create(user=self.user, activity_type="login")
 
         initial_count = UserActivity.objects.count()

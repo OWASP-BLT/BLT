@@ -28,6 +28,9 @@ class ActivityMiddlewareTest(TestCase):
         activity = UserActivity.objects.latest("timestamp")
         self.assertEqual(activity.activity_type, "dashboard_visit")
         self.assertEqual(activity.user, self.user)
+        self.assertEqual(activity.organization, self.org)
+        self.assertIn("path", activity.metadata)
+        self.assertEqual(activity.metadata["path"], f"/organization/{self.org.id}/dashboard/")
 
     def test_non_dashboard_not_tracked(self):
         """Test that non-dashboard pages are not tracked"""
@@ -40,4 +43,18 @@ class ActivityMiddlewareTest(TestCase):
         self.middleware(request)
 
         # No activity should be created
+        self.assertEqual(UserActivity.objects.count(), initial_count)
+
+    def test_superuser_dashboard_not_tracked(self):
+        """Test that superuser dashboard visits are not tracked"""
+        initial_count = UserActivity.objects.count()
+        
+        superuser = User.objects.create_superuser("admin", "admin@example.com", "password")
+        request = self.factory.get(f"/organization/{self.org.id}/dashboard/")
+        request.user = superuser
+        request.session = {}
+        
+        self.middleware(request)
+        
+        # No activity should be created for superusers
         self.assertEqual(UserActivity.objects.count(), initial_count)

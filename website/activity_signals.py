@@ -22,6 +22,10 @@ def log_bug_report(sender, instance, created, **kwargs):
         if instance.domain and hasattr(instance.domain, "organization"):
             organization = instance.domain.organization
 
+        # Skip logging if we don't have a user (analytics are user-scoped)
+        if not instance.user:
+            return
+
         # Create activity record
         UserActivity.objects.create(
             user=instance.user,
@@ -29,7 +33,8 @@ def log_bug_report(sender, instance, created, **kwargs):
             activity_type="bug_report",
             metadata={
                 "issue_id": instance.id,
-                "label": instance.get_label_display() if instance.label else None,
+                # Always record the human-readable label, including "General" (0)
+                "label": instance.get_label_display(),
             },
         )
     except Exception as e:

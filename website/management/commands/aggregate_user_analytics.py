@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import UserActivity
-
+from django.db import DatabaseError
 
 class Command(LoggedBaseCommand):
     help = "Delete UserActivity records older than 90 days for data retention"
@@ -36,7 +36,7 @@ class Command(LoggedBaseCommand):
                 )
             )
 
-        except Exception as e:
+        except DatabaseError as e:
             error_message = f"Failed to clean up UserActivity records: {str(e)}"
             self.stderr.write(self.style.ERROR(error_message))
             raise CommandError(error_message)
