@@ -1,24 +1,17 @@
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
 from django.core.cache import cache
+from django.test import TestCase
 from django.utils import timezone
 
-from website.models import (
-    SlackPoll,
-    SlackPollOption,
-    SlackPollVote,
-    SlackReminder,
-    SlackHuddle,
-    SlackHuddleParticipant,
-)
+from website.models import SlackHuddle, SlackHuddleParticipant, SlackPoll, SlackPollOption, SlackPollVote, SlackReminder
 from website.views.slack_handlers import (
-    handle_poll_vote,
-    handle_poll_close,
-    handle_reminder_cancel,
-    handle_huddle_response,
     handle_huddle_cancel,
     handle_huddle_command,
+    handle_huddle_response,
+    handle_poll_close,
+    handle_poll_vote,
+    handle_reminder_cancel,
 )
 
 
@@ -182,6 +175,7 @@ class SlackInteractionHandlerTests(TestCase):
     @patch("website.views.slack_handlers.WebClient")
     def test_huddle_invalid_user_mentions(self, mock_webclient):
         workspace_client = mock_webclient.return_value
+
         # First call returns valid for U2, second invalid for U999
         def users_info_side_effect(user):
             if user == "U999":
@@ -194,7 +188,9 @@ class SlackInteractionHandlerTests(TestCase):
         activity = MagicMock()
         # Avoid rate-limiter interference across tests
         cache.clear()
-        resp = handle_huddle_command(workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity)
+        resp = handle_huddle_command(
+            workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertIn("not found", resp.content.decode().lower())
 
@@ -205,14 +201,19 @@ class SlackInteractionHandlerTests(TestCase):
         class DummyNow:
             def __init__(self, dt):
                 self._dt = dt
+
             def replace(self, **kwargs):
                 return self._dt.replace(**kwargs)
+
             def __getattr__(self, name):
                 return getattr(self._dt, name)
+
             def timestamp(self):
                 return self._dt.timestamp()
+
             def __str__(self):
                 return str(self._dt)
+
         now = timezone.now()
         fixed = now.replace(hour=14, minute=0, second=0, microsecond=0)
         mock_tz.now.return_value = fixed
@@ -220,6 +221,8 @@ class SlackInteractionHandlerTests(TestCase):
         workspace_client = mock_webclient.return_value
         activity = MagicMock()
         text = '"Standup" "Daily" at 1:00 PM'
-        resp = handle_huddle_command(workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity)
+        resp = handle_huddle_command(
+            workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertIn("already passed", resp.content.decode().lower())
