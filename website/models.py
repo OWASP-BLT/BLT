@@ -3645,3 +3645,40 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+
+class UserActivity(models.Model):
+    """Track user activities for behavior analytics."""
+
+    ACTIVITY_TYPES = [
+        ("login", "Login"),
+        ("logout", "Logout"),
+        ("bug_report", "Bug Report"),
+        ("bug_comment", "Bug Comment"),
+        ("bug_view", "Bug View"),
+        ("dashboard_visit", "Dashboard Visit"),
+        ("profile_update", "Profile Update"),
+        ("company_subscribe", "Company Subscribe"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_activities")
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="user_activities"
+    )
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default="")
+    metadata = models.JSONField(default=dict)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "timestamp"], name="user_activity_user_time_idx"),
+            models.Index(fields=["organization", "activity_type"], name="user_activity_org_type_idx"),
+            models.Index(fields=["activity_type", "timestamp"], name="user_activity_type_time_idx"),
+        ]
+        verbose_name = "User Activity"
+        verbose_name_plural = "User Activities"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_activity_type_display()} at {self.timestamp}"
