@@ -8,7 +8,7 @@ from website.models import UserActivity
 from django.db import DatabaseError
 
 class Command(LoggedBaseCommand):
-    help = "Delete UserActivity records older than 90 days for data retention"
+    help = "Clean up (delete) UserActivity records older than 90 days to enforce data retention"
 
     def handle(self, *args, **options):
         """Clean up old UserActivity records."""

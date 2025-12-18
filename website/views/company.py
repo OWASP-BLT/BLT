@@ -793,63 +793,68 @@ class OrganizationDashboardAnalyticsView(View):
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
     def get_user_behavior_analytics(self, organization):
-        """Calculate user behavior analytics for the organization dashboard."""
+        now = timezone.now()
+        thirty_days_ago = now - timedelta(days=30)
+        seven_days_ago = now - timedelta(days=7)
 
-        # Calculate date range for last 30 days
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-
-        # Get base queryset for organization activities in last 30 days
-        activities = UserActivity.objects.filter(organization=organization, timestamp__gte=thirty_days_ago)
-
-        # Calculate active users count (distinct users)
-        active_users_count = activities.values("user").distinct().count()
-
-        # Calculate top 5 most active users
-        top_users = (
-            activities.values("user__username").annotate(activity_count=Count("id")).order_by("-activity_count")[:5]
+        # Base queryset reused everywhere (30d window)
+        activities = UserActivity.objects.filter(
+            organization=organization,
+            timestamp__gte=thirty_days_ago,
         )
-        top_users_list = [{"username": user["user__username"], "count": user["activity_count"]} for user in top_users]
 
-        # Calculate activity breakdown by type
-        activity_breakdown = activities.values("activity_type").annotate(count=Count("id")).order_by("-count")[:5]
+        # ✅ 1 query instead of two separate .count() calls
+        summary = activities.aggregate(
+            total_activities=Count("id"),
+            active_users_count=Count("user", distinct=True),
+        )
+        total_activities = summary["total_activities"]
+        active_users_count = summary["active_users_count"]
+
+        # Top users (1 query)
+        top_users = (
+            activities.values("user__username")
+            .annotate(activity_count=Count("id"))
+            .order_by("-activity_count")[:5]
+        )
+        top_users_list = [{"username": u["user__username"], "count": u["activity_count"]} for u in top_users]
+
+        # Breakdown (1 query)
+        type_map = dict(UserActivity.ACTIVITY_TYPES)
+        activity_breakdown = (
+            activities.values("activity_type")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
         activity_breakdown_list = [
             {
-                "type": activity["activity_type"],
-                "type_display": dict(UserActivity.ACTIVITY_TYPES).get(
-                    activity["activity_type"], activity["activity_type"]
-                ),
-                "count": activity["count"],
+                "type": a["activity_type"],
+                "type_display": type_map.get(a["activity_type"], a["activity_type"]),
+                "count": a["count"],
             }
-            for activity in activity_breakdown
+            for a in activity_breakdown
         ]
 
-        # Calculate peak hours (hours with most activity)
+        # Peak hours (1 query)
         peak_hours = (
             activities.annotate(hour=ExtractHour("timestamp"))
             .values("hour")
             .annotate(count=Count("id"))
             .order_by("-count")[:5]
         )
-        peak_hours_list = [{"hour": hour["hour"], "count": hour["count"]} for hour in peak_hours]
+        peak_hours_list = [{"hour": h["hour"], "count": h["count"]} for h in peak_hours]
 
-        # Calculate weekly trend (last 7 days)
-        seven_days_ago = timezone.now() - timedelta(days=7)
-        weekly_activities = UserActivity.objects.filter(organization=organization, timestamp__gte=seven_days_ago)
-
+        # ✅ Reuse base queryset for last 7 days (1 query)
         weekly_trend = (
-            weekly_activities.annotate(day=TruncDay("timestamp"))
+            activities.filter(timestamp__gte=seven_days_ago)
+            .annotate(day=TruncDay("timestamp"))
             .values("day")
             .annotate(count=Count("id"))
             .order_by("day")
         )
+        weekly_trend_list = [{"date": d["day"].strftime("%Y-%m-%d"), "count": d["count"]} for d in weekly_trend]
 
-        weekly_trend_list = [{"date": day["day"].strftime("%Y-%m-%d"), "count": day["count"]} for day in weekly_trend]
-
-        # Calculate total activities
-        total_activities = activities.count()
-
-        # Calculate engagement rate (activities per active user)
-        engagement_rate = round(total_activities / active_users_count, 2) if active_users_count > 0 else 0
+        engagement_rate = round(total_activities / active_users_count, 2) if active_users_count else 0
 
         return {
             "active_users_count": active_users_count,
