@@ -69,7 +69,7 @@
         const switcherChevron = document.getElementById('org-switcher-chevron');
         const switcherItems = document.querySelectorAll('.org-switcher-item');
 
-        if (!switcherButton || !switcherDropdown) {
+        if (!switcherButton || !switcherDropdown || !switcherChevron) {
             return;
         }
 
