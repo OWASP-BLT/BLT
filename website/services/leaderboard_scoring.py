@@ -3,13 +3,11 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from website.models import DailyStatusReport
-
 
 class LeaderboardScoringService:
     @staticmethod
     def calculate_for_user(user):
-        from website.models import UserProfile
+        from website.models import DailyStatusReport, UserProfile
 
         """
         Returns:
@@ -23,7 +21,8 @@ class LeaderboardScoringService:
             # Consistent zero-case return
             return 0.0, {"frequency": 0, "streak": 0, "goals": 0, "completeness": 0}
 
-        reports = DailyStatusReport.objects.filter(user=user, created__gte=timezone.now() - timedelta(days=30))
+        cutoff_date = (timezone.now() - timedelta(days=30)).date()
+        reports = DailyStatusReport.objects.filter(user=user, date__gte=cutoff_date)
 
         #  Do ALL counts in one aggregation
         stats = reports.aggregate(

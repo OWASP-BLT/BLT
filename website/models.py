@@ -994,11 +994,11 @@ class UserProfile(models.Model):
             score, breakdown = LeaderboardScoringService.calculate_for_user(locked_self.user)
 
             locked_self.leaderboard_score = Decimal(str(score))
-            locked_self.quality_score = Decimal(str(breakdown["completeness"]))
-            cutoff = timezone.now().date() - timedelta(days=30)
+            locked_self.quality_score = Decimal(str(breakdown.get("completeness", 0)))
+            cutoff_date = (timezone.now() - timedelta(days=30)).date()
             locked_self.check_in_count = DailyStatusReport.objects.filter(
                 user=locked_self.user,
-                created__gte=cutoff,
+                date__gte=cutoff_date,
             ).count()
             locked_self.last_score_update = timezone.now()
 
