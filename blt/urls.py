@@ -12,13 +12,11 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.generic import TemplateView
+from django.views.generic import DetailView, TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
-from django.views.generic import DetailView
-from website.models import EducationalVideo, VideoQuizQuestion, QuizAttempt
 
 import comments.views
 from website.api.views import (
@@ -54,6 +52,7 @@ from website.api.views import (
     trademark_search_api,
 )
 from website.feeds import ActivityFeed
+from website.models import EducationalVideo, QuizAttempt, VideoQuizQuestion
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
@@ -145,6 +144,7 @@ from website.views.core import (
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
+    VideoDetailView,
     add_lecture,
     add_section,
     course_content_management,
@@ -157,8 +157,6 @@ from website.views.education import (
     edit_section,
     edit_standalone_lecture,
     education_home,
-    submit_quiz,
-    VideoDetailView,
     enroll,
     get_course_content,
     get_lecture_data,
@@ -166,6 +164,7 @@ from website.views.education import (
     instructor_dashboard,
     mark_lecture_complete,
     study_course,
+    submit_quiz,
     update_lectures_order,
     update_sections_order,
     view_course,

@@ -3648,6 +3648,7 @@ class SecurityIncidentHistory(models.Model):
 # Added section of Educational Video
 from django.db import models
 
+
 class EducationalVideo(models.Model):
     title = models.CharField(max_length=255)
     youtube_url = models.URLField()

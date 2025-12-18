@@ -10,21 +10,25 @@ from django.db.models import Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST , require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.views.generic import DetailView
+from openai import OpenAI
+from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTubeTranscriptApi
 
 from website.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
-from website.utils import validate_file_type
-from openai import OpenAI
-from youtube_transcript_api import YouTubeTranscriptApi
-from website.models import EducationalVideo, VideoQuizQuestion, QuizAttempt, Course, Lecture
-from django.views.generic import DetailView
-from youtube_transcript_api import (
-    YouTubeTranscriptApi,
-    TranscriptsDisabled,
-    NoTranscriptFound,
+from website.models import (
+    Course,
+    EducationalVideo,
+    Enrollment,
+    Lecture,
+    LectureStatus,
+    QuizAttempt,
+    Section,
+    Tag,
+    UserProfile,
+    VideoQuizQuestion,
 )
-
+from website.utils import validate_file_type
 
 logger = logging.getLogger(__name__)
 
@@ -41,20 +45,19 @@ def is_valid_url(url, url_type):
     parsed_url = urlparse(url)
     return parsed_url.netloc in allowed_domains
 
+import json
 import os
 import re
-import json
-from django.shortcuts import render, redirect, get_object_or_404
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
 from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 
-from website.models import (
-    Course, Lecture, EducationalVideo, VideoQuizQuestion, QuizAttempt
-)
+from website.models import Course, EducationalVideo, Lecture, QuizAttempt, VideoQuizQuestion
 
 # Initialize OpenAI client
 openai_api_key = os.getenv('OPENAI_API_KEY')
