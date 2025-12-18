@@ -247,6 +247,7 @@ def weekly_report(request):
             queryset=Issue.objects.filter(Q(status="open") | Q(status="closed")).only(
                 "description", "views", "label", "status"
             ),
+            to_attr="filtered_issues",  # Store filtered results here
         )
     )
 
@@ -258,7 +259,7 @@ def weekly_report(request):
                 logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
                 continue
 
-            issues = domain.issue_set
+            issues = domain.filtered_issues
 
             open_issues_count = domain.open_count
             closed_issues_count = domain.closed_count
