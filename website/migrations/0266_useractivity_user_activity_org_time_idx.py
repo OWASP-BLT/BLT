@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0265_alter_useractivity_user_agent"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
