@@ -19,7 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
@@ -291,7 +291,7 @@ def weekly_report(request):
 
             results["success"].append(domain.name)
 
-        except SMTPException as e:
+        except (BadHeaderError, SMTPException) as e:
             logger.error(f"Failed to send report to {domain.name}: {e}")
             results["failed"].append(domain.name)
 
