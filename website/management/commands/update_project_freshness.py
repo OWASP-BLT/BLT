@@ -1,8 +1,11 @@
 import time
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from website.models import Project
+
+BATCH_SIZE = 500
 
 
 class Command(BaseCommand):
@@ -11,26 +14,29 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         start_time = time.time()
 
-        projects = Project.objects.all()
-        total = projects.count()
+        qs = Project.objects.only("id")
+        total = qs.count()
 
         processed = 0
         errors = 0
 
         self.stdout.write(f"Starting freshness update for {total} projects")
 
-        for idx, project in enumerate(projects, start=1):
-            try:
-                freshness = project.calculate_freshness()
-                project.freshness = freshness
-                project.save(update_fields=["freshness"])
-                processed += 1
-            except Exception as e:
-                errors += 1
-                self.stderr.write(f"[ERROR] Project ID {project.id}: {str(e)}")
+        for offset in range(0, total, BATCH_SIZE):
+            batch = qs[offset : offset + BATCH_SIZE]
 
-            if idx % 100 == 0:
-                self.stdout.write(f"Processed {idx}/{total} projects...")
+            with transaction.atomic():
+                for project in batch:
+                    try:
+                        freshness = project.calculate_freshness()
+                        project.freshness = freshness
+                        project.save(update_fields=["freshness"])
+                        processed += 1
+                    except Exception as e:
+                        errors += 1
+                        self.stderr.write(f"[ERROR] Project ID {project.id}: {str(e)}")
+
+            self.stdout.write(f"Processed {min(offset + BATCH_SIZE, total)}/{total} projects...")
 
         duration = round(time.time() - start_time, 2)
 
