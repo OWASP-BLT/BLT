@@ -840,7 +840,7 @@ class OrganizationDashboardAnalyticsView(View):
             activities.annotate(hour=ExtractHour("timestamp"))
             .values("hour")
             .annotate(count=Count("id"))
-            .order_by("-count")[:5]
+            .order_by("-count")[:10] # Top 10 hours
         )
         peak_hours_list = [{"hour": h["hour"], "count": h["count"]} for h in peak_hours]
 

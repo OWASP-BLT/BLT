@@ -16,6 +16,8 @@ class ManagementCommandTest(TestCase):
         """Test that old activities are deleted"""
         # Create old activity (100 days ago)
         old_activity = UserActivity.objects.create(user=self.user, activity_type="login")
+        # Manually override the auto_now_add timestamp so we can simulate an
+        # activity older than the cleanup threshold and exercise the deletion logic.
         old_activity.timestamp = timezone.now() - timedelta(days=100)
         old_activity.save()
 

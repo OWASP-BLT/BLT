@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @receiver(post_save, sender=Issue)
 def log_bug_report(sender, instance, created, **kwargs):
     """Log bug report activity when a new issue is created."""
-    if not created:
+    if not created or not instance.user:  # user check
         return
 
     try:
@@ -38,7 +38,7 @@ def log_bug_report(sender, instance, created, **kwargs):
             },
         )
     except Exception as e:
-        logger.debug("Failed to log bug report activity: %s", type(e).__name__)
+        logger.error("Failed to log bug report activity: %s", str(e), exc_info=True)
 
 
 @receiver(post_save, sender=Comment)  # ✓ Changed from IssueComment to Comment
@@ -81,4 +81,4 @@ def log_bug_comment(sender, instance, created, **kwargs):
             },
         )
     except Exception as e:
-        logger.debug("Failed to log bug comment activity: %s", type(e).__name__)
+        logger.error("Failed to log bug report activity: %s", str(e), exc_info=True)
