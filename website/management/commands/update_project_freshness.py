@@ -38,7 +38,10 @@ class Command(BaseCommand):
                     errors += 1
                     self.stderr.write(f"[ERROR] Project ID {project_id}: {str(e)}")
 
-            self.stdout.write(f"Processed {min(offset + BATCH_SIZE, total)}/{total} projects...")
+            self.stdout.write(
+                f"Progress: {min(offset + BATCH_SIZE, total)}/{total} attempted "
+                f"({processed} successful, {errors} errors)"
+            )
 
         duration = round(time.time() - start_time, 2)
 
