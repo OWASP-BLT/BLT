@@ -1,7 +1,9 @@
 import logging
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 from comments.models import Comment
 from website.models import Issue, UserActivity
 
@@ -13,13 +15,13 @@ def log_bug_report(sender, instance, created, **kwargs):
     """Log bug report activity when a new issue is created."""
     if not created:
         return
-    
+
     try:
         # Extract organization from domain if available
         organization = None
-        if instance.domain and hasattr(instance.domain, 'organization'):
+        if instance.domain and hasattr(instance.domain, "organization"):
             organization = instance.domain.organization
-        
+
         # Create activity record
         UserActivity.objects.create(
             user=instance.user,
@@ -28,7 +30,7 @@ def log_bug_report(sender, instance, created, **kwargs):
             metadata={
                 "issue_id": instance.id,
                 "label": instance.get_label_display() if instance.label else None,
-            }
+            },
         )
     except Exception as e:
         logger.debug("Failed to log bug report activity: %s", type(e).__name__)
@@ -39,30 +41,30 @@ def log_bug_comment(sender, instance, created, **kwargs):
     """Log bug comment activity when a new comment is created on an Issue."""
     if not created:
         return
-    
+
     try:
         # ✓ Only track comments on Issues (not other content types)
         issue_content_type = ContentType.objects.get_for_model(Issue)
         if instance.content_type != issue_content_type:
             return
-        
+
         # ✓ Get the user from author_fk -> userprofile -> user
-        if not instance.author_fk or not hasattr(instance.author_fk, 'user'):
+        if not instance.author_fk or not hasattr(instance.author_fk, "user"):
             return
-        
+
         user = instance.author_fk.user
-        
+
         # ✓ Get the Issue object using content_type and object_id
         try:
             issue = Issue.objects.get(pk=instance.object_id)
         except Issue.DoesNotExist:
             return
-        
+
         # Extract organization from issue domain if available
         organization = None
-        if issue.domain and hasattr(issue.domain, 'organization'):
+        if issue.domain and hasattr(issue.domain, "organization"):
             organization = issue.domain.organization
-        
+
         # Create activity record
         UserActivity.objects.create(
             user=user,
@@ -71,7 +73,7 @@ def log_bug_comment(sender, instance, created, **kwargs):
             metadata={
                 "comment_id": instance.id,
                 "issue_id": issue.id,
-            }
+            },
         )
     except Exception as e:
         logger.debug("Failed to log bug comment activity: %s", type(e).__name__)
