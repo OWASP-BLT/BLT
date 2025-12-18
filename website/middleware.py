@@ -3,13 +3,14 @@ Custom middleware for BLT application.
 """
 import logging
 import re
+from datetime import timedelta
 
 from django.contrib import messages
+from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
 from website.models import Organization, UserActivity
-from django.utils import timezone
-from datetime import timedelta
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,7 +68,7 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                 # Check if this is an organization dashboard visit
                 if self._is_dashboard_visit(request.path):
                     organization = self._get_organization_from_request(request)
-                    
+
                     # Deduplication: Check if user visited this dashboard in the last minute
                     one_minute_ago = timezone.now() - timedelta(minutes=1)
                     recent_visit = UserActivity.objects.filter(
@@ -77,7 +78,7 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                         timestamp__gte=one_minute_ago,
                         metadata__path=request.path,
                     ).exists()
-                    
+
                     # Only create activity if no recent visit exists
                     if not recent_visit:
                         # Extract IP address

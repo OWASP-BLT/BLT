@@ -1,11 +1,12 @@
 from datetime import timedelta
 
 from django.core.management.base import CommandError
+from django.db import DatabaseError
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import UserActivity
-from django.db import DatabaseError
+
 
 class Command(LoggedBaseCommand):
     help = "Clean up (delete) UserActivity records older than 90 days to enforce data retention"

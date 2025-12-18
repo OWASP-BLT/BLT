@@ -7,6 +7,7 @@ from django.utils import timezone
 from website.models import Organization, UserActivity
 from website.views.company import OrganizationDashboardAnalyticsView
 
+
 class UserBehaviorAnalyticsTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -40,13 +41,13 @@ class UserBehaviorAnalyticsTest(TestCase):
         # Verify data
         self.assertGreater(analytics["active_users_count"], 0)
         self.assertGreater(analytics["total_activities"], 0)
-    
+
     def test_analytics_with_zero_activities(self):
         """Test analytics gracefully handles organizations with no activities"""
 
         # Create a new organization with no activities
         empty_org = Organization.objects.create(name="Empty Org", url="https://empty.com")
-        
+
         view = OrganizationDashboardAnalyticsView()
         analytics = view.get_user_behavior_analytics(empty_org)
 

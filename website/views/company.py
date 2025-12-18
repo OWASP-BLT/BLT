@@ -813,19 +813,13 @@ class OrganizationDashboardAnalyticsView(View):
 
         # Top users (1 query)
         top_users = (
-            activities.values("user__username")
-            .annotate(activity_count=Count("id"))
-            .order_by("-activity_count")[:5]
+            activities.values("user__username").annotate(activity_count=Count("id")).order_by("-activity_count")[:5]
         )
         top_users_list = [{"username": u["user__username"], "count": u["activity_count"]} for u in top_users]
 
         # Breakdown (1 query)
         type_map = dict(UserActivity.ACTIVITY_TYPES)
-        activity_breakdown = (
-            activities.values("activity_type")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
-        )
+        activity_breakdown = activities.values("activity_type").annotate(count=Count("id")).order_by("-count")[:5]
         activity_breakdown_list = [
             {
                 "type": a["activity_type"],
@@ -840,7 +834,7 @@ class OrganizationDashboardAnalyticsView(View):
             activities.annotate(hour=ExtractHour("timestamp"))
             .values("hour")
             .annotate(count=Count("id"))
-            .order_by("-count")[:10] # Top 10 hours
+            .order_by("-count")[:10]  # Top 10 hours
         )
         peak_hours_list = [{"hour": h["hour"], "count": h["count"]} for h in peak_hours]
 
