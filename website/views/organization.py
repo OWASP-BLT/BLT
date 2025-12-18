@@ -338,7 +338,6 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if request.POST["submit"] == "save":
             pass
         elif request.POST["submit"] == "publish":
-            issue.save()
             winner = Winner()
             issue_with_score = (
                 Issue.objects.filter(hunt=hunt, verified=True)

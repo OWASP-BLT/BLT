@@ -91,7 +91,7 @@ def get_github_data(request):
 
 def preprocess_user_data(user_data):
     user_tags = defaultdict(int)
-    ALLOWED_NORMALIZED_TAGS = ALLOWED_TAGS
+    ALLOWED_NORMALIZED_TAGS = {normalize_tag(tag) for tag in ALLOWED_TAGS}
 
     for repo in user_data["repositories"]:
         if repo.get("description"):
@@ -105,9 +105,7 @@ def preprocess_user_data(user_data):
         for topic in user_data["top_topics"]:
             normalized_topic = normalize_tag(topic)
             if normalized_topic in ALLOWED_NORMALIZED_TAGS:
-                user_tags[normalized_topic] = user_tags.get(normalized_topic, 0) + 1
-            else:
-                user_tags[normalized_topic] = 1
+                user_tags[normalized_topic] += 1
 
     user_tags = sorted(user_tags.items(), key=lambda x: x[1], reverse=True)
 
