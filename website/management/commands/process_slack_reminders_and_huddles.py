@@ -101,6 +101,38 @@ def _format_error(error: str, retries: int) -> str:
     return f"retries={retries}; last_error={error}"
 
 
+def _user_exists(token: str, user_id: str) -> tuple[bool, int | None]:
+    """Check if a Slack user exists and is active in the workspace.
+
+    Returns (exists, retry_after). If rate limited, returns (False, retry_after).
+    """
+    try:
+        # Users typically start with 'U' or 'W'
+        if not user_id or not user_id.startswith(("U", "W")):
+            return True, None
+        resp = requests.post(
+            f"{SLACK_API_BASE}/users.info",
+            headers=_slack_headers(token),
+            json={"user": user_id},
+            timeout=8,
+        )
+        if resp.status_code == 429:
+            retry_after = int(resp.headers.get("Retry-After", "0") or 0)
+            return False, retry_after
+        data = resp.json()
+        if data.get("ok"):
+            # Consider deleted or deactivated users as non-existent for messaging
+            user = data.get("user", {})
+            if user.get("deleted") or user.get("is_restricted", False) and user.get("is_ultra_restricted", False):
+                return False, None
+            return True, None
+        # Common errors: user_not_found, account_inactive
+        return False, None
+    except Exception:
+        logger.error("Slack users.info error", exc_info=True)
+        return False, None
+
+
 class Command(BaseCommand):
     help = "Process Slack reminders and huddles (send pending reminders, notify upcoming huddles, update statuses)"
 
@@ -154,6 +186,17 @@ class Command(BaseCommand):
                         reminder.save(update_fields=["status", "error_message"])
                         continue
 
+                    # If target is a user, ensure they still exist; avoid silent failures
+                    if not options["dry_run"] and reminder.target_id and reminder.target_id.startswith(("U", "W")):
+                        exists, retry_after_exists = _user_exists(ws_token, reminder.target_id)
+                        if not exists and not retry_after_exists:
+                            reminder.status = "failed"
+                            reminder.error_message = _format_error(
+                                "user_not_found", _parse_retry_count(reminder.error_message)
+                            )
+                            reminder.save(update_fields=["status", "error_message"])
+                            continue
+
                     msg = reminder.message or ""
                     msg = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                     target = reminder.target_id
@@ -187,6 +230,25 @@ class Command(BaseCommand):
                     logger.error("Failed processing SlackReminder id=%s", reminder.id, exc_info=True)
 
     def _process_huddles(self, token: str | None, now, window, options):
+        # First, cancel huddles whose creator has left the workspace to avoid orphans
+        to_cancel = (
+            SlackHuddle.objects.select_for_update(skip_locked=True)
+            .filter(status="scheduled")
+            .order_by("scheduled_at")[: options["batch_size"]]
+        )
+        with transaction.atomic():
+            for h in to_cancel:
+                try:
+                    ws_token = self._token_for_workspace(h.workspace_id, token)
+                    if not ws_token:
+                        continue
+                    exists, retry_after_exists = _user_exists(ws_token, h.creator_id)
+                    if not exists and not retry_after_exists:
+                        h.status = "cancelled"
+                        h.save(update_fields=["status"])
+                except Exception:
+                    logger.error("Failed creator check for SlackHuddle id=%s", h.id, exc_info=True)
+
         # Notify participants for upcoming huddles not yet reminded
         upcoming = (
             SlackHuddle.objects.select_for_update(skip_locked=True)
@@ -228,6 +290,9 @@ class Command(BaseCommand):
                             huddle.save(update_fields=["reminder_sent"])
                             continue
                         for pid in participants:
+                            exists, retry_after_exists = _user_exists(ws_token, pid)
+                            if not exists and not retry_after_exists:
+                                continue
                             if _send_slack_message(ws_token, pid, text)[0]:
                                 ok_count += 1
                         # Also drop a message in the channel if available
@@ -253,3 +318,19 @@ class Command(BaseCommand):
                     h.save(update_fields=["status"])
                 except Exception:
                     logger.error("Failed to mark SlackHuddle started id=%s", h.id, exc_info=True)
+
+        # Transition completed huddles (started and duration elapsed)
+        to_complete = (
+            SlackHuddle.objects.select_for_update(skip_locked=True)
+            .filter(status="started")
+            .order_by("scheduled_at")[: options["batch_size"]]
+        )
+        with transaction.atomic():
+            for h in to_complete:
+                try:
+                    end_at = h.scheduled_at + timedelta(minutes=h.duration_minutes)
+                    if end_at <= now:
+                        h.status = "completed"
+                        h.save(update_fields=["status"])
+                except Exception:
+                    logger.error("Failed to mark SlackHuddle completed id=%s", h.id, exc_info=True)

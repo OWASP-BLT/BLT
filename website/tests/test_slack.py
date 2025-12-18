@@ -2,6 +2,7 @@ import json
 import urllib.parse
 from unittest.mock import MagicMock, patch
 
+from django.core.cache import cache
 from django.test import TestCase
 
 from website.models import Integration, Organization, Project, SlackBotActivity, SlackIntegration
@@ -128,6 +129,7 @@ class GetProjectWithLeastMembersTests(TestCase):
 class SlackHandlerTests(TestCase):
     def setUp(self):
         # Create test organization and integration
+        cache.clear()
         self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
         self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
         self.slack_integration = SlackIntegration.objects.create(

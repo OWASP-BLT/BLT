@@ -13,6 +13,8 @@ from urllib.parse import quote_plus
 import requests
 import yaml
 from django.conf import settings
+from django.core.cache import cache
+from django.db import IntegrityError
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -52,6 +54,25 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 # Poll configuration constants
 MAX_POLL_OPTIONS = 10
 BAR_SCALE_FACTOR = 5  # Each progress bar character represents 5%
+
+
+def _ensure_bot_in_channel(workspace_client: WebClient, channel_id: str):
+    """Best-effort join before posting/updating to avoid orphaned messages."""
+    try:
+        if channel_id:
+            workspace_client.conversations_join(channel=channel_id)
+    except SlackApiError:
+        # Already a member or lacking permission; ignore
+        pass
+
+
+def _rate_limited(user_id: str, command: str, seconds: int = 5) -> bool:
+    """Simple per-user rate limiter using Django cache."""
+    key = f"slack_rl:{command}:{user_id}"
+    if cache.get(key):
+        return True
+    cache.set(key, 1, timeout=seconds)
+    return False
 
 
 def _slack_date(dt):
@@ -328,8 +349,12 @@ def slack_events(request):
                         return handle_poll_vote(payload, workspace_client)
                     elif action_id.startswith("poll_close_"):
                         return handle_poll_close(payload, workspace_client, user_id)
+                    elif action_id.startswith("poll_reopen_"):
+                        return handle_poll_reopen(payload, workspace_client, user_id)
                     elif action_id.startswith("reminder_cancel_"):
                         return handle_reminder_cancel(payload, user_id)
+                    elif action_id.startswith("reminder_snooze_"):
+                        return handle_reminder_snooze(payload, user_id)
                     elif action_id.startswith("huddle_accept_"):
                         return handle_huddle_response(payload, workspace_client, user_id, "accepted")
                     elif action_id.startswith("huddle_decline_"):
@@ -3122,6 +3147,15 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                 }
             )
 
+        # Basic per-user rate limiting to avoid spam
+        if _rate_limited(user_id, "poll", seconds=5):
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "⏳ You're doing that too fast. Please wait a few seconds.",
+                }
+            )
+
         if not text:
             # Show help message
             help_blocks = [
@@ -3158,13 +3192,39 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
                 }
             )
 
-        if len(parts) > (MAX_POLL_OPTIONS + 1):  # 1 question + max options
-            return JsonResponse(
-                {"response_type": "ephemeral", "text": f"❌ Too many options. Maximum is {MAX_POLL_OPTIONS} options."}
-            )
+        # Initial raw values
+        question_raw = parts[0].strip()
+        options_raw = [p.strip() for p in parts[1:]]
 
-        question = parts[0]
-        options = parts[1:]
+        # Normalize whitespace and truncate overly long inputs
+        question_norm = re.sub(r"\s+", " ", question_raw)
+        # Truncate question to a safe length for Slack headers
+        question = (question_norm[:200] + "…") if len(question_norm) > 200 else question_norm
+
+        # Deduplicate options (case-insensitive, whitespace-normalized) and drop empties
+        seen = set()
+        cleaned_options = []
+        for opt in options_raw:
+            opt_norm_space = re.sub(r"\s+", " ", opt).strip()
+            if not opt_norm_space:
+                continue
+            key = opt_norm_space.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            # Truncate each option to a safe display length
+            cleaned_options.append(opt_norm_space[:100])
+
+        # Enforce minimum and maximum option counts after cleaning
+        if len(cleaned_options) < 2:
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "❌ Please provide at least two unique non-empty options.",
+                }
+            )
+        if len(cleaned_options) > MAX_POLL_OPTIONS:
+            cleaned_options = cleaned_options[:MAX_POLL_OPTIONS]
 
         # Create poll in database
         poll = SlackPoll.objects.create(
@@ -3172,7 +3232,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
         )
 
         # Create poll options
-        for idx, option_text in enumerate(options):
+        for idx, option_text in enumerate(cleaned_options):
             # Sanitize user input to prevent markdown injection
             sanitized_option_text = re.sub(r"([*_~`>])", r"\\\1", option_text)
             SlackPollOption.objects.create(poll=poll, option_text=sanitized_option_text, option_number=idx)
@@ -3180,7 +3240,8 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
         # Build Slack message blocks
         blocks = build_poll_blocks(poll)
 
-        # Post poll to channel
+        # Post poll to channel (best-effort join first)
+        _ensure_bot_in_channel(workspace_client, channel_id)
         response = workspace_client.chat_postMessage(channel=channel_id, text=f"📊 Poll: {question}", blocks=blocks)
 
         # Store message timestamp for updates
@@ -3242,22 +3303,24 @@ def build_poll_blocks(poll):
             }
         )
 
+    # Footer context, including zero-vote hint for clarity
+    context_elements = [
+        {
+            "type": "mrkdwn",
+            "text": f"Total votes: {total_votes} | Status: {poll.status.title()} | <@{poll.creator_id}>",
+        }
+    ]
+    if total_votes == 0:
+        context_elements.append({"type": "mrkdwn", "text": "No votes yet — be the first!"})
+
     blocks.extend(
         [
             {"type": "divider"},
-            {
-                "type": "context",
-                "elements": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"Total votes: {total_votes} | Status: {poll.status.title()} | <@{poll.creator_id}>",
-                    }
-                ],
-            },
+            {"type": "context", "elements": context_elements},
         ]
     )
 
-    # Add close poll button for creator
+    # Add close / reopen buttons for creator
     if poll.status == "active":
         blocks.append(
             {
@@ -3273,6 +3336,21 @@ def build_poll_blocks(poll):
                 ],
             }
         )
+    elif poll.status == "closed":
+        blocks.append(
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "Reopen Poll", "emoji": True},
+                        "value": f"poll_{poll.id}_reopen",
+                        "action_id": f"poll_reopen_{poll.id}",
+                        "style": "primary",
+                    }
+                ],
+            }
+        )
 
     return blocks
 
@@ -3280,6 +3358,14 @@ def build_poll_blocks(poll):
 def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text, activity):
     """Handle the /remind command to set reminders"""
     try:
+        # Basic per-user rate limiting
+        if _rate_limited(user_id, "remind", seconds=5):
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "⏳ You're doing that too fast. Please wait a few seconds.",
+                }
+            )
         if not text:
             # Show help message
             help_blocks = [
@@ -3297,7 +3383,8 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                         '`/blt_remind me "Follow up" in 2 hours`\n'
                         '`/blt_remind @john "Review PR" in 1 day`\n\n'
                         "*List reminders:*\n"
-                        "`/blt_remind list [page]`",
+                        "`/blt_remind list [page]` (yours)\n"
+                        "`/blt_remind list all [page]` (yours and ones assigned to you)",
                     },
                 }
             ]
@@ -3306,13 +3393,109 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                 {"response_type": "ephemeral", "text": "I've sent you help on using /blt_remind in a DM! ⏰"}
             )
 
-        # Handle "list" subcommand, optional page number: "list <page>"
+        # Handle "list" subcommand, optional page number: "list <page>" or "list all <page>"
         if text.lower().startswith("list"):
             page = 1
+            scope_all = False
             parts = text.split()
-            if len(parts) >= 2 and parts[1].isdigit():
+            if len(parts) >= 2 and parts[1].lower() == "all":
+                scope_all = True
+                if len(parts) >= 3 and parts[2].isdigit():
+                    page = int(parts[2])
+            elif len(parts) >= 2 and parts[1].isdigit():
                 page = int(parts[1])
-            return list_user_reminders(workspace_client, user_id, team_id, page=page)
+            return list_user_reminders(workspace_client, user_id, team_id, page=page, scope_all=scope_all)
+
+        # Handle "edit" subcommand: edit <id> "Message" in <number> <unit>
+        if text.lower().startswith("edit"):
+            parts = text.split(maxsplit=2)
+            if len(parts) < 3 or not parts[1].isdigit():
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": '❌ Invalid format. Use: `/blt_remind edit <id> "Message" in <number> <minutes|hours|days>`',
+                    }
+                )
+            reminder_id = int(parts[1])
+            remainder = parts[2]
+            message_match = re.search(r'"([^"]+)"', remainder)
+            if not message_match:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": '❌ Invalid format. Provide a message in quotes. Example: `/blt_remind edit 12 "New msg" in 1 hour`',
+                    }
+                )
+            new_message = message_match.group(1)
+            time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours|day|days)", remainder.lower())
+            if not time_match:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid time format. Use: in <number> <minutes|hours|days>",
+                    }
+                )
+            amount = int(time_match.group(1))
+            unit = time_match.group(2)
+            now = timezone.now()
+            if "minute" in unit:
+                remind_at = now + timedelta(minutes=amount)
+            elif "hour" in unit:
+                remind_at = now + timedelta(hours=amount)
+            elif "day" in unit:
+                remind_at = now + timedelta(days=amount)
+            else:
+                return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
+
+            try:
+                reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
+                reminder.message = new_message
+                reminder.remind_at = remind_at
+                reminder.save(update_fields=["message", "remind_at"])
+                return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder updated."})
+            except SlackReminder.DoesNotExist:
+                return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found or not editable."})
+
+        # Handle "snooze" subcommand: snooze <id> in <number> <unit>
+        if text.lower().startswith("snooze"):
+            parts = text.split(maxsplit=2)
+            if len(parts) < 3 or not parts[1].isdigit():
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid format. Use: `/blt_remind snooze <id> in <number> <minutes|hours|days>`",
+                    }
+                )
+            reminder_id = int(parts[1])
+            amount = None
+            unit = None
+            time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours|day|days)", text.lower())
+            if time_match:
+                amount = int(time_match.group(1))
+                unit = time_match.group(2)
+            if amount is None or unit is None:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid time format. Use: in <number> <minutes|hours|days>",
+                    }
+                )
+            now = timezone.now()
+            if "minute" in unit:
+                remind_at = now + timedelta(minutes=amount)
+            elif "hour" in unit:
+                remind_at = now + timedelta(hours=amount)
+            elif "day" in unit:
+                remind_at = now + timedelta(days=amount)
+            else:
+                return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
+            try:
+                reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
+                reminder.remind_at = remind_at
+                reminder.save(update_fields=["remind_at"])
+                return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder snoozed."})
+            except SlackReminder.DoesNotExist:
+                return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found or not editable."})
 
         # Parse reminder command
         # Format: /remind ["message"] in <number> <unit>
@@ -3398,6 +3581,7 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
 
         # Post a persistent confirmation in the channel
         try:
+            _ensure_bot_in_channel(workspace_client, channel_id)
             workspace_client.chat_postMessage(
                 channel=channel_id,
                 text=f"⏰ Reminder set for {target_display} at {time_str}",
@@ -3415,12 +3599,22 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred. Please try again."})
 
 
-def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10):
-    """List pending reminders for a user with pagination"""
+def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10, scope_all=False):
+    """List pending reminders for a user with pagination.
+
+    scope_all includes reminders you created plus reminders others assigned to you.
+    """
     try:
-        qs = SlackReminder.objects.filter(workspace_id=team_id, creator_id=user_id, status="pending").order_by(
-            "remind_at"
-        )
+        if scope_all:
+            qs = (
+                SlackReminder.objects.filter(workspace_id=team_id, status="pending")
+                .filter(Q(creator_id=user_id) | Q(target_id=user_id))
+                .order_by("remind_at")
+            )
+        else:
+            qs = SlackReminder.objects.filter(workspace_id=team_id, creator_id=user_id, status="pending").order_by(
+                "remind_at"
+            )
 
         total = qs.count()
         if total == 0:
@@ -3436,12 +3630,13 @@ def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10
         end = start + page_size
         reminders = qs[start:end]
 
+        title = "⏰ Pending Reminders (yours + assigned to you)" if scope_all else "⏰ Your Pending Reminders"
         blocks = [
             {
                 "type": "header",
                 "text": {
                     "type": "plain_text",
-                    "text": f"⏰ Your Pending Reminders (Page {page} of {total_pages})",
+                    "text": f"{title} (Page {page} of {total_pages})",
                     "emoji": True,
                 },
             },
@@ -3459,13 +3654,26 @@ def list_user_reminders(workspace_client, user_id, team_id, page=1, page_size=10
                         "type": "mrkdwn",
                         "text": f"*For:* {target_display}\n*When:* {time_str}\n*Message:* {reminder.message}",
                     },
-                    "accessory": {
-                        "type": "button",
-                        "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
-                        "value": f"reminder_{reminder.id}_cancel",
-                        "action_id": f"reminder_cancel_{reminder.id}",
-                        "style": "danger",
-                    },
+                }
+            )
+            blocks.append(
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
+                            "value": f"reminder_{reminder.id}_cancel",
+                            "action_id": f"reminder_cancel_{reminder.id}",
+                            "style": "danger",
+                        },
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": "Snooze 1h", "emoji": True},
+                            "value": f"reminder_{reminder.id}_snooze",
+                            "action_id": f"reminder_snooze_{reminder.id}",
+                        },
+                    ],
                 }
             )
 
@@ -3493,6 +3701,15 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 }
             )
 
+        # Basic per-user rate limiting
+        if _rate_limited(user_id, "huddle", seconds=5):
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "⏳ You're doing that too fast. Please wait a few seconds.",
+                }
+            )
+
         if not text:
             # Show help message
             help_blocks = [
@@ -3517,13 +3734,93 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 {"response_type": "ephemeral", "text": "I've sent you help on using /blt_huddle in a DM! 🎯"}
             )
 
-        # Handle "list" subcommand, optional page number: "list <page>"
+        # Handle "list" subcommand, optional page number: "list <page>" or "list all <page>"
         if text.lower().startswith("list"):
             page = 1
+            scope_all = False
             parts = text.split()
-            if len(parts) >= 2 and parts[1].isdigit():
+            if len(parts) >= 2 and parts[1].lower() == "all":
+                scope_all = True
+                if len(parts) >= 3 and parts[2].isdigit():
+                    page = int(parts[2])
+            elif len(parts) >= 2 and parts[1].isdigit():
                 page = int(parts[1])
-            return list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=page)
+            return list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=page, scope_all=scope_all)
+
+        # Handle "edit" / "reschedule" subcommand: edit <id> in X or at HH:MM
+        if text.lower().startswith(("edit", "reschedule", "update")):
+            parts = text.split(maxsplit=2)
+            if len(parts) < 3 or not parts[1].isdigit():
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Invalid format. Use: `/blt_huddle edit <id> in <number> <minutes|hours|days>` or `/blt_huddle edit <id> at HH:MM AM/PM`",
+                    }
+                )
+            huddle_id = int(parts[1])
+            remainder = parts[2]
+            new_title_match = re.search(r'"([^"]+)"', remainder)
+            new_title = new_title_match.group(1) if new_title_match else None
+            scheduled_at = None
+            time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours|day|days)", remainder.lower())
+            if time_match:
+                amt = int(time_match.group(1))
+                unit = time_match.group(2)
+                now = timezone.now()
+                if "minute" in unit:
+                    scheduled_at = now + timedelta(minutes=amt)
+                elif "hour" in unit:
+                    scheduled_at = now + timedelta(hours=amt)
+                elif "day" in unit:
+                    scheduled_at = now + timedelta(days=amt)
+            if not scheduled_at:
+                at_match = re.search(r"at\s+(\d{1,2}):(\d{2})\s*(AM|PM)?", remainder, re.IGNORECASE)
+                if at_match:
+                    hour = int(at_match.group(1))
+                    minute = int(at_match.group(2))
+                    am_pm = at_match.group(3)
+                    if am_pm:
+                        if am_pm.upper() == "PM" and hour < 12:
+                            hour += 12
+                        elif am_pm.upper() == "AM" and hour == 12:
+                            hour = 0
+                    now = timezone.now()
+                    scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    if scheduled_at < now:
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ That time has already passed today. Please pick a future time.",
+                            }
+                        )
+            if not scheduled_at:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": '❌ Invalid time format. Use: "at HH:MM AM/PM" or "in <number> <minutes|hours|days>"',
+                    }
+                )
+            try:
+                huddle = SlackHuddle.objects.get(id=huddle_id, creator_id=user_id)
+            except SlackHuddle.DoesNotExist:
+                return JsonResponse({"response_type": "ephemeral", "text": "❌ Huddle not found or not owned by you."})
+            huddle.scheduled_at = scheduled_at
+            if new_title:
+                huddle.title = new_title
+            huddle.status = "scheduled"
+            huddle.save(update_fields=["scheduled_at", "title", "status", "updated_at"])
+            blocks = build_huddle_blocks(huddle)
+            try:
+                _ensure_bot_in_channel(workspace_client, huddle.channel_id)
+                workspace_client.chat_update(
+                    channel=huddle.channel_id,
+                    ts=huddle.message_ts,
+                    blocks=blocks,
+                    text=f"🎯 Huddle: {huddle.title}",
+                )
+            except Exception:
+                logger.warning("Failed to update huddle message on edit", exc_info=True)
+            return JsonResponse({"response_type": "ephemeral", "text": "✅ Huddle updated."})
 
         # Parse huddle command
         parts = re.findall(r'"([^"]+)"', text)
@@ -3544,7 +3841,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
         scheduled_at = None
 
         # Try "in" format first
-        time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours)", text.lower())
+        time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours|day|days)", text.lower())
         if time_match:
             amount = int(time_match.group(1))
             unit = time_match.group(2)
@@ -3553,6 +3850,8 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 scheduled_at = now + timedelta(minutes=amount)
             elif "hour" in unit:
                 scheduled_at = now + timedelta(hours=amount)
+            elif "day" in unit:
+                scheduled_at = now + timedelta(days=amount)
 
         # If "in" didn't match, try simple "at" with time
         if not scheduled_at:
@@ -3622,6 +3921,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
         blocks = build_huddle_blocks(huddle)
 
         # Post huddle to channel
+        _ensure_bot_in_channel(workspace_client, channel_id)
         response = workspace_client.chat_postMessage(channel=channel_id, text=f"🎯 Huddle: {title}", blocks=blocks)
 
         # Store message timestamp
@@ -3724,18 +4024,29 @@ def build_huddle_blocks(huddle):
     return blocks
 
 
-def list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=1, page_size=10):
-    """List scheduled huddles for a channel with pagination"""
+def list_channel_huddles(workspace_client, user_id, team_id, channel_id, page=1, page_size=10, scope_all=False):
+    """List scheduled huddles with pagination"""
     try:
-        qs = (
-            SlackHuddle.objects.filter(workspace_id=team_id, channel_id=channel_id, status="scheduled")
-            .annotate(participants_count=Count("participants"))
-            .order_by("scheduled_at")
-        )
+        if scope_all:
+            qs = (
+                SlackHuddle.objects.filter(workspace_id=team_id, status__in=["scheduled", "started"])
+                .filter(Q(creator_id=user_id) | Q(participants__user_id=user_id))
+                .annotate(participants_count=Count("participants", distinct=True))
+                .distinct()
+                .order_by("scheduled_at")
+            )
+        else:
+            qs = (
+                SlackHuddle.objects.filter(
+                    workspace_id=team_id, channel_id=channel_id, status__in=["scheduled", "started"]
+                )
+                .annotate(participants_count=Count("participants"))
+                .order_by("scheduled_at")
+            )
 
         total = qs.count()
         if total == 0:
-            return JsonResponse({"response_type": "ephemeral", "text": "📭 No scheduled huddles in this channel."})
+            return JsonResponse({"response_type": "ephemeral", "text": "📭 No scheduled huddles found."})
 
         total_pages = (total + page_size - 1) // page_size
         if page < 1:
@@ -3829,8 +4140,13 @@ def handle_poll_vote(payload, workspace_client):
         if poll.status != "active":
             return JsonResponse({"response_type": "ephemeral", "text": "❌ This poll is closed."})
 
-        # Use get_or_create to atomically check and create
-        vote, created = SlackPollVote.objects.get_or_create(poll=poll, voter_id=user_id, defaults={"option": option})
+        # Use get_or_create to atomically check and create; handle race via IntegrityError
+        try:
+            vote, created = SlackPollVote.objects.get_or_create(
+                poll=poll, voter_id=user_id, defaults={"option": option}
+            )
+        except IntegrityError:
+            created = False
         if not created:
             return JsonResponse(
                 {"response_type": "ephemeral", "text": "✅ Your vote has already been recorded for this poll."}
@@ -3839,6 +4155,7 @@ def handle_poll_vote(payload, workspace_client):
 
         # Update the poll message
         blocks = build_poll_blocks(poll)
+        _ensure_bot_in_channel(workspace_client, poll.channel_id)
         workspace_client.chat_update(
             channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
         )
@@ -3875,6 +4192,7 @@ def handle_poll_close(payload, workspace_client, user_id):
 
         # Update the poll message
         blocks = build_poll_blocks(poll)
+        _ensure_bot_in_channel(workspace_client, poll.channel_id)
         workspace_client.chat_update(
             channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question} [CLOSED]"
         )
@@ -3942,6 +4260,7 @@ def handle_huddle_response(payload, workspace_client, user_id, response):
 
         # Update the huddle message
         blocks = build_huddle_blocks(huddle)
+        _ensure_bot_in_channel(workspace_client, huddle.channel_id)
         workspace_client.chat_update(
             channel=huddle.channel_id, ts=huddle.message_ts, blocks=blocks, text=f"🎯 Huddle: {huddle.title}"
         )
@@ -3956,6 +4275,61 @@ def handle_huddle_response(payload, workspace_client, user_id, response):
         return JsonResponse(
             {"response_type": "ephemeral", "text": "❌ An error occurred while responding to the huddle."}
         )
+
+
+def handle_reminder_snooze(payload, user_id):
+    """Snooze a reminder (reschedule for later)"""
+    try:
+        action = payload["actions"][0]
+        try:
+            reminder_id = int(action["action_id"].replace("reminder_snooze_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
+
+        reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
+        # Snooze for 1 hour
+        reminder.remind_at = timezone.now() + timedelta(hours=1)
+        reminder.save()
+
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "⏰ Reminder snoozed for 1 hour! I'll remind you later."}
+        )
+
+    except SlackReminder.DoesNotExist:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found or already completed."})
+    except Exception as e:
+        logger.error(f"Error snoozing reminder: {str(e)}")
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while snoozing the reminder."})
+
+
+def handle_poll_reopen(payload, workspace_client, user_id):
+    """Reopen a closed poll"""
+    try:
+        action = payload["actions"][0]
+        try:
+            poll_id = int(action["action_id"].replace("poll_reopen_", ""))
+        except ValueError:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid action format."})
+
+        poll = SlackPoll.objects.get(id=poll_id, creator_id=user_id, status="closed")
+        poll.status = "active"
+        poll.closed_at = None
+        poll.save()
+
+        # Update the poll message
+        blocks = build_poll_blocks(poll)
+        _ensure_bot_in_channel(workspace_client, poll.channel_id)
+        workspace_client.chat_update(
+            channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
+        )
+
+        return JsonResponse({"response_type": "ephemeral", "text": "✅ Poll reopened! Voting is now enabled."})
+
+    except SlackPoll.DoesNotExist:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Poll not found or not closed."})
+    except Exception as e:
+        logger.error(f"Error reopening poll: {str(e)}")
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while reopening the poll."})
 
 
 def handle_huddle_cancel(payload, workspace_client, user_id):
@@ -3981,6 +4355,7 @@ def handle_huddle_cancel(payload, workspace_client, user_id):
 
         # Update the huddle message
         blocks = build_huddle_blocks(huddle)
+        _ensure_bot_in_channel(workspace_client, huddle.channel_id)
         workspace_client.chat_update(
             channel=huddle.channel_id,
             ts=huddle.message_ts,

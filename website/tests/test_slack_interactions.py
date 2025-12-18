@@ -1,0 +1,225 @@
+from unittest.mock import MagicMock, patch
+
+from django.test import TestCase
+from django.core.cache import cache
+from django.utils import timezone
+
+from website.models import (
+    SlackPoll,
+    SlackPollOption,
+    SlackPollVote,
+    SlackReminder,
+    SlackHuddle,
+    SlackHuddleParticipant,
+)
+from website.views.slack_handlers import (
+    handle_poll_vote,
+    handle_poll_close,
+    handle_reminder_cancel,
+    handle_huddle_response,
+    handle_huddle_cancel,
+    handle_huddle_command,
+)
+
+
+class SlackInteractionHandlerTests(TestCase):
+    def setUp(self):
+        self.workspace_id = "TTEST"
+        self.channel_id = "C123"
+        self.creator_id = "UCREATOR"
+        self.other_id = "UOTHER"
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_poll_vote_success_and_duplicate(self, mock_webclient):
+        # Create poll and options
+        poll = SlackPoll.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            question="Best time?",
+            status="active",
+        )
+        opt_a = SlackPollOption.objects.create(poll=poll, option_text="Morning", option_number=0)
+        opt_b = SlackPollOption.objects.create(poll=poll, option_text="Evening", option_number=1)
+
+        workspace_client = mock_webclient.return_value
+        workspace_client.chat_update.return_value = {"ok": True}
+
+        payload = {
+            "user": {"id": self.other_id},
+            "actions": [{"action_id": f"poll_vote_{opt_a.id}"}],
+        }
+        # First vote succeeds
+        response = handle_poll_vote(payload, workspace_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(SlackPollVote.objects.filter(poll=poll).count(), 1)
+        workspace_client.chat_update.assert_called()
+
+        # Duplicate vote yields informative message
+        response2 = handle_poll_vote(payload, workspace_client)
+        self.assertEqual(response2.status_code, 200)
+        self.assertIn("already", response2.content.decode().lower())
+        self.assertEqual(SlackPollVote.objects.filter(poll=poll).count(), 1)
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_poll_vote_closed_poll(self, mock_webclient):
+        poll = SlackPoll.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            question="Best time?",
+            status="closed",
+        )
+        opt = SlackPollOption.objects.create(poll=poll, option_text="Morning", option_number=0)
+        workspace_client = mock_webclient.return_value
+        payload = {"user": {"id": self.other_id}, "actions": [{"action_id": f"poll_vote_{opt.id}"}]}
+        response = handle_poll_vote(payload, workspace_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("closed", response.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_poll_close_permissions_and_success(self, mock_webclient):
+        poll = SlackPoll.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            question="Best time?",
+            status="active",
+        )
+        workspace_client = mock_webclient.return_value
+        workspace_client.chat_update.return_value = {"ok": True}
+
+        # Non-creator cannot close
+        payload = {"actions": [{"action_id": f"poll_close_{poll.id}"}]}
+        resp = handle_poll_close(payload, workspace_client, self.other_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("only", resp.content.decode().lower())
+
+        # Creator closes successfully
+        resp2 = handle_poll_close(payload, workspace_client, self.creator_id)
+        self.assertEqual(resp2.status_code, 200)
+        poll.refresh_from_db()
+        self.assertEqual(poll.status, "closed")
+        workspace_client.chat_update.assert_called()
+
+    def test_handle_reminder_cancel_permissions_and_success(self):
+        r = SlackReminder.objects.create(
+            workspace_id=self.workspace_id,
+            creator_id=self.creator_id,
+            target_type="user",
+            target_id=self.other_id,
+            message="Ping",
+            status="pending",
+            remind_at=timezone.now() + timezone.timedelta(minutes=1),
+        )
+        # Non-creator cannot cancel
+        payload = {"actions": [{"action_id": f"reminder_cancel_{r.id}"}]}
+        resp = handle_reminder_cancel(payload, self.other_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("only", resp.content.decode().lower())
+
+        # Creator cancels
+        resp2 = handle_reminder_cancel(payload, self.creator_id)
+        self.assertEqual(resp2.status_code, 200)
+        r.refresh_from_db()
+        self.assertEqual(r.status, "cancelled")
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_huddle_response_accept_decline(self, mock_webclient):
+        h = SlackHuddle.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            title="Standup",
+            description="Daily",
+            status="scheduled",
+            scheduled_at=timezone.now() + timezone.timedelta(hours=1),
+        )
+        workspace_client = mock_webclient.return_value
+        workspace_client.chat_update.return_value = {"ok": True}
+
+        # Accept
+        payload_accept = {"actions": [{"action_id": f"huddle_accept_{h.id}"}]}
+        resp_a = handle_huddle_response(payload_accept, workspace_client, self.other_id, "accepted")
+        self.assertEqual(resp_a.status_code, 200)
+        p = SlackHuddleParticipant.objects.get(huddle=h, user_id=self.other_id)
+        self.assertEqual(p.response, "accepted")
+
+        # Decline
+        payload_decline = {"actions": [{"action_id": f"huddle_decline_{h.id}"}]}
+        resp_d = handle_huddle_response(payload_decline, workspace_client, self.other_id, "declined")
+        self.assertEqual(resp_d.status_code, 200)
+        p.refresh_from_db()
+        self.assertEqual(p.response, "declined")
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_handle_huddle_cancel_permissions_and_already_started(self, mock_webclient):
+        h = SlackHuddle.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            title="Standup",
+            description="Daily",
+            status="scheduled",
+            scheduled_at=timezone.now() + timezone.timedelta(hours=1),
+        )
+        workspace_client = mock_webclient.return_value
+        workspace_client.chat_update.return_value = {"ok": True}
+
+        payload = {"actions": [{"action_id": f"huddle_cancel_{h.id}"}]}
+        # Non-creator cannot cancel
+        resp = handle_huddle_cancel(payload, workspace_client, self.other_id)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("only", resp.content.decode().lower())
+
+        # Set started and try cancel by creator
+        h.status = "started"
+        h.save()
+        resp2 = handle_huddle_cancel(payload, workspace_client, self.creator_id)
+        self.assertEqual(resp2.status_code, 200)
+        self.assertIn("no longer", resp2.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_huddle_invalid_user_mentions(self, mock_webclient):
+        workspace_client = mock_webclient.return_value
+        # First call returns valid for U2, second invalid for U999
+        def users_info_side_effect(user):
+            if user == "U999":
+                return {"ok": False}
+            return {"ok": True, "user": {"id": user}}
+
+        workspace_client.users_info.side_effect = users_info_side_effect
+
+        text = '"Standup" "Daily" in 10 minutes with <@U2> <@U999>'
+        activity = MagicMock()
+        # Avoid rate-limiter interference across tests
+        cache.clear()
+        resp = handle_huddle_command(workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("not found", resp.content.decode().lower())
+
+    @patch("website.views.slack_handlers.timezone")
+    @patch("website.views.slack_handlers.WebClient")
+    def test_huddle_at_time_in_past_error(self, mock_webclient, mock_tz):
+        # Force now at 14:00 and set input to 13:00 PM => past
+        class DummyNow:
+            def __init__(self, dt):
+                self._dt = dt
+            def replace(self, **kwargs):
+                return self._dt.replace(**kwargs)
+            def __getattr__(self, name):
+                return getattr(self._dt, name)
+            def timestamp(self):
+                return self._dt.timestamp()
+            def __str__(self):
+                return str(self._dt)
+        now = timezone.now()
+        fixed = now.replace(hour=14, minute=0, second=0, microsecond=0)
+        mock_tz.now.return_value = fixed
+
+        workspace_client = mock_webclient.return_value
+        activity = MagicMock()
+        text = '"Standup" "Daily" at 1:00 PM'
+        resp = handle_huddle_command(workspace_client, self.creator_id, self.workspace_id, self.channel_id, text, activity)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("already passed", resp.content.decode().lower())

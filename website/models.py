@@ -3662,8 +3662,6 @@ class SlackPoll(models.Model):
     message_ts = models.CharField(max_length=255, null=True, blank=True)  # Message timestamp for updates
     question = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
-    allow_multiple_votes = models.BooleanField(default=False)
-    anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)
 
@@ -3730,7 +3728,7 @@ class SlackPollVote(models.Model):
     voted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ["poll", "voter_id", "option"]  # Prevent duplicate votes if not allowing multiple
+        unique_together = ["poll", "voter_id"]  # Enforce one vote per poll per voter
         verbose_name = "Slack Poll Vote"
         verbose_name_plural = "Slack Poll Votes"
         indexes = [
