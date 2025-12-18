@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.generic import DetailView
 from openai import OpenAI
-from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi
 
 from website.decorators import instructor_required
 from website.models import (
@@ -45,22 +45,9 @@ def is_valid_url(url, url_type):
     parsed_url = urlparse(url)
     return parsed_url.netloc in allowed_domains
 
-import json
-import os
-import re
-
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_http_methods
-from openai import OpenAI
-from youtube_transcript_api import YouTubeTranscriptApi
-
-from website.models import Course, EducationalVideo, Lecture, QuizAttempt, VideoQuizQuestion
 
 # Initialize OpenAI client
-openai_api_key = os.getenv('OPENAI_API_KEY')
+openai_api_key = os.getenv("OPENAI_API_KEY")
 if openai_api_key:
     client = OpenAI(api_key=openai_api_key)
 else:
@@ -73,11 +60,9 @@ def get_youtube_transcript(youtube_id):
     Compatible with the current YouTubeTranscriptApi version.
     """
     try:
-        print(f"DEBUG: get_youtube_transcript called for {youtube_id}")
-
         api = YouTubeTranscriptApi()
-        transcript_list = api.list(youtube_id)      # Returns TranscriptList
-        transcript_list = list(transcript_list)     # Convert to [Transcript, ...]
+        transcript_list = api.list(youtube_id)  # Returns TranscriptList
+        transcript_list = list(transcript_list)  # Convert to [Transcript, ...]
 
         # Each Transcript object has .fetch() which returns FetchedTranscriptSnippet iterable
         snippets = []
@@ -88,11 +73,9 @@ def get_youtube_transcript(youtube_id):
         # FetchedTranscriptSnippet has .text attribute (not ['text'] dict access)
         transcript_text = " ".join(snippet.text for snippet in snippets)
 
-        print(f"DEBUG: transcript length for {youtube_id} = {len(transcript_text)}")
         return transcript_text[:3000]  # Limit to 3000 chars for efficiency
 
     except Exception as e:
-        print(f"DEBUG: transcript error for {youtube_id}: {e}")
         return None
 
 
@@ -102,15 +85,12 @@ def generate_ai_summary_and_verify(youtube_id, title, transcript):
     Returns (summary_text, is_educational_bool).
     """
     if not client:
-        print("DEBUG: OpenAI client not initialized (OPENAI_API_KEY missing)")
         return None, False
 
     if not openai_api_key:
-        print("DEBUG: OPENAI_API_KEY is missing")
         return None, False
 
     if not transcript:
-        print(f"DEBUG: no transcript provided for video {youtube_id}")
         return None, False
 
     try:
@@ -140,7 +120,6 @@ def generate_ai_summary_and_verify(youtube_id, title, transcript):
         )
 
         content = response.choices[0].message.content
-        print(f"DEBUG: raw OpenAI content for {youtube_id}: {content[:100]}...")  # First 100 chars
 
         # Strip code fences if model wraps JSON in ``` (triple backticks)
         content_stripped = content.strip()
@@ -158,18 +137,11 @@ def generate_ai_summary_and_verify(youtube_id, title, transcript):
         summary = data.get("summary", "")
         is_educational = data.get("is_educational", False)
 
-        print(
-            f"DEBUG: parsed summary_present={bool(summary)}, "
-            f"is_educational={is_educational}"
-        )
         return summary, is_educational
 
     except json.JSONDecodeError as e:
-        print(f"DEBUG: JSON decode error for {youtube_id}: {e}")
-        print(f"DEBUG: content that failed to parse: {content_stripped[:200]}")
         return None, False
     except Exception as e:
-        print(f"DEBUG: OpenAI error for {youtube_id}: {e}")
         return None, False
 
 
@@ -179,15 +151,12 @@ def generate_quiz_from_transcript(youtube_id, transcript, title):
     Returns list of question dicts or empty list on error.
     """
     if not client:
-        print(f"DEBUG: OpenAI client not initialized, skipping quiz for {youtube_id}")
         return []
 
     if not openai_api_key:
-        print(f"DEBUG: OPENAI_API_KEY missing, skipping quiz for {youtube_id}")
         return []
 
     if not transcript:
-        print(f"DEBUG: no transcript for quiz generation for {youtube_id}")
         return []
 
     try:
@@ -225,7 +194,6 @@ def generate_quiz_from_transcript(youtube_id, transcript, title):
         )
 
         content = response.choices[0].message.content
-        print(f"DEBUG: raw quiz content for {youtube_id}: {content[:100]}...")
 
         # Strip code fences if present (triple backticks)
         content_stripped = content.strip()
@@ -238,14 +206,12 @@ def generate_quiz_from_transcript(youtube_id, transcript, title):
             content_stripped = "\n".join(lines).strip()
 
         questions = json.loads(content_stripped)
-        print(f"DEBUG: parsed {len(questions)} quiz questions for {youtube_id}")
+
         return questions[:10]  # Limit to 10 questions
 
     except json.JSONDecodeError as e:
-        print(f"DEBUG: quiz JSON decode error for {youtube_id}: {e}")
         return []
     except Exception as e:
-        print(f"DEBUG: quiz generation error for {youtube_id}: {e}")
         return []
 
 
@@ -268,38 +234,27 @@ def education_home(request):
 
     # Handle YouTube video submission with AI processing
     if request.method == "POST":
-        print("DEBUG: education_home POST reached")
         youtube_url = request.POST.get("youtube_url", "").strip()
         title = request.POST.get("video_title", "").strip()
         description = request.POST.get("video_description", "").strip()
 
-        print(f"DEBUG: raw POST values title={repr(title)}, url={repr(youtube_url)}")
-
         if youtube_url and title:
-            print(f"DEBUG: got title and url {title} {youtube_url}")
             try:
                 # Extract video ID from URL
-                match = re.search(
-                    r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)',
-                    youtube_url
-                )
+                match = re.search(r"(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)", youtube_url)
                 if not match:
                     messages.error(request, "Invalid YouTube URL format.")
                     return redirect("education")
 
                 youtube_id = match.group(1)
-                print(f"DEBUG: extracted youtube_id={youtube_id}")
 
                 # Step 1: Get transcript
-                print("DEBUG: calling get_youtube_transcript")
+
                 transcript = get_youtube_transcript(youtube_id)
-                print(f"DEBUG: transcript present? {bool(transcript)}")
 
                 # Step 2: Generate summary and educational verification
-                print("DEBUG: calling generate_ai_summary_and_verify")
-                summary, is_verified = generate_ai_summary_and_verify(
-                    youtube_id, title, transcript
-                )
+
+                summary, is_verified = generate_ai_summary_and_verify(youtube_id, title, transcript)
 
                 # Step 3: Create video record
                 video = EducationalVideo.objects.create(
@@ -310,15 +265,10 @@ def education_home(request):
                     ai_summary=summary or "",
                     is_verified=is_verified,
                 )
-                print(f"DEBUG: created video record with id={video.id}")
 
                 # Step 4: Generate quiz questions (only if transcript exists)
                 if transcript:
-                    print("DEBUG: calling generate_quiz_from_transcript")
-                    quiz_questions = generate_quiz_from_transcript(
-                        youtube_id, transcript, title
-                    )
-                    print(f"DEBUG: quiz_questions returned: {len(quiz_questions)} questions")
+                    quiz_questions = generate_quiz_from_transcript(youtube_id, transcript, title)
 
                     for q_data in quiz_questions:
                         try:
@@ -332,21 +282,17 @@ def education_home(request):
                                 correct_answer=q_data.get("correct_answer", "A"),
                                 explanation=q_data.get("explanation", ""),
                             )
-                            print(f"DEBUG: created quiz question for video {video.id}")
-                        except Exception as q_err:
-                            print(f"DEBUG: error creating quiz question: {q_err}")
-                else:
-                    print(f"DEBUG: skipping quiz generation, no transcript for {youtube_id}")
 
-                messages.success(
-                    request,
-                    "Video added successfully with AI-generated content!"
-                )
+                        except Exception as q_err:
+                            logger.warning("DEBUG: error creating quiz question: %s", q_err)
+                else:
+                    logger.info("DEBUG: skipping quiz generation, no transcript for %s", youtube_id)
+                messages.success(request, "Video added successfully with AI-generated content!")
                 return redirect("education")
 
             except Exception as e:
-                print(f"DEBUG: exception in POST handler: {e}")
                 import traceback
+
                 traceback.print_exc()
                 messages.error(request, f"Error processing video: {str(e)}")
                 return redirect("education")
@@ -390,16 +336,11 @@ def submit_quiz(request, video_id):
         total_questions = questions.count()
 
         if total_questions == 0:
-            return JsonResponse(
-                {"error": "No questions for this video"},
-                status=400
-            )
+            return JsonResponse({"error": "No questions for this video"}, status=400)
 
         # Check each answer
         for question in questions:
-            user_answer = request.POST.get(
-                f"question_{question.id}", ""
-            ).upper().strip()
+            user_answer = request.POST.get(f"question_{question.id}", "").upper().strip()
             if user_answer == question.correct_answer.upper():
                 score += 1
 
@@ -425,16 +366,9 @@ def submit_quiz(request, video_id):
         )
 
     except EducationalVideo.DoesNotExist:
-        return JsonResponse(
-            {"error": "Video not found"},
-            status=404
-        )
+        return JsonResponse({"error": "Video not found"}, status=404)
     except Exception as e:
-        print(f"DEBUG: quiz submission error: {e}")
-        return JsonResponse(
-            {"error": str(e)},
-            status=500
-        )
+        return JsonResponse({"error": str(e)}, status=500)
 
     featured_lectures = Lecture.objects.filter(section__isnull=True)
     courses = Course.objects.all()
@@ -976,6 +910,7 @@ def create_or_update_course(request):
         logger.error(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
 
+
 class VideoDetailView(DetailView):
     model = EducationalVideo
     template_name = "education/video_detail.html"
@@ -986,7 +921,5 @@ class VideoDetailView(DetailView):
         video = self.object
         context["quiz_questions"] = VideoQuizQuestion.objects.filter(video=video)
         if self.request.user.is_authenticated:
-            context["quiz_history"] = QuizAttempt.objects.filter(
-                user=self.request.user, video=video
-            )
+            context["quiz_history"] = QuizAttempt.objects.filter(user=self.request.user, video=video)
         return context

@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
@@ -52,7 +52,6 @@ from website.api.views import (
     trademark_search_api,
 )
 from website.feeds import ActivityFeed
-from website.models import EducationalVideo, QuizAttempt, VideoQuizQuestion
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
@@ -726,14 +725,12 @@ urlpatterns = [
     ),
     re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^education/$", education_home, name="education"),
-
     # Video detail page (watch + AI summary + quiz)
     re_path(
         r"^education/video/(?P<pk>\d+)/$",
         VideoDetailView.as_view(),
         name="video_detail",
     ),
-
     # Quiz submission endpoint (AJAX POST)
     re_path(
         r"^education/video/(?P<video_id>\d+)/quiz/submit/$",
