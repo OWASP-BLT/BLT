@@ -26,13 +26,14 @@ class Command(BaseCommand):
 
         team_ids_to_invalidate = set()
 
+        cutoff_date = (timezone.now() - timedelta(days=30)).date()
+
         for idx, profile in enumerate(profiles, start=1):
             user = profile.user
             team = profile.team
 
             try:
                 with transaction.atomic():
-                    cutoff_date = (timezone.now() - timedelta(days=30)).date()
                     # Lock the row before updating
                     locked_profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
 
