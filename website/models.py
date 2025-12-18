@@ -3668,7 +3668,7 @@ class UserActivity(models.Model):
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
     timestamp = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True, default="")
+    user_agent = models.TextField(blank=True, default="", max_length=512) 
     metadata = models.JSONField(default=dict)
 
     class Meta:
@@ -3676,6 +3676,7 @@ class UserActivity(models.Model):
             models.Index(fields=["user", "timestamp"], name="user_activity_user_time_idx"),
             models.Index(fields=["organization", "activity_type"], name="user_activity_org_type_idx"),
             models.Index(fields=["activity_type", "timestamp"], name="user_activity_type_time_idx"),
+            models.Index(fields=["organization", "timestamp"], name="user_activity_org_time_idx"),
         ]
         verbose_name = "User Activity"
         verbose_name_plural = "User Activities"

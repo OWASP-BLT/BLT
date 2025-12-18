@@ -8,7 +8,8 @@ from django.contrib import messages
 from django.utils.deprecation import MiddlewareMixin
 
 from website.models import Organization, UserActivity
-
+from django.utils import timezone
+from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 
@@ -65,28 +66,38 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
             try:
                 # Check if this is an organization dashboard visit
                 if self._is_dashboard_visit(request.path):
-                    # Extract IP address
-                    ip_address = self._get_client_ip(request)
-
-                    # Extract user agent
-                    user_agent = request.META.get("HTTP_USER_AGENT", "")
-
-                    # Try to extract organization from path or session
                     organization = self._get_organization_from_request(request)
-
-                    # Create activity record
-                    UserActivity.objects.create(
+                    
+                    # Deduplication: Check if user visited this dashboard in the last minute
+                    one_minute_ago = timezone.now() - timedelta(minutes=1)
+                    recent_visit = UserActivity.objects.filter(
                         user=request.user,
                         organization=organization,
                         activity_type="dashboard_visit",
-                        ip_address=ip_address,
-                        user_agent=user_agent,
-                        metadata={"path": request.path},
-                    )
+                        timestamp__gte=one_minute_ago,
+                        metadata__path=request.path,
+                    ).exists()
+                    
+                    # Only create activity if no recent visit exists
+                    if not recent_visit:
+                        # Extract IP address
+                        ip_address = self._get_client_ip(request)
+
+                        # Extract user agent
+                        user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+                        # Create activity record
+                        UserActivity.objects.create(
+                            user=request.user,
+                            organization=organization,
+                            activity_type="dashboard_visit",
+                            ip_address=ip_address,
+                            user_agent=user_agent,
+                            metadata={"path": request.path},
+                        )
             except Exception as e:
                 # Silent failure - don't break the request
                 logger.debug("Failed to track dashboard visit: %s", type(e).__name__)
-                pass
 
         response = self.get_response(request)
         return response
@@ -101,15 +112,10 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
         return any(re.match(pattern, path) for pattern in dashboard_patterns)
 
     def _get_client_ip(self, request):
-        """Extract client IP address from request."""
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(",")[0].strip()
-            if not ip:
-                ip = request.META.get("REMOTE_ADDR")
-        else:
-            ip = request.META.get("REMOTE_ADDR")
-        return ip
+        """Extract client IP address from request (trusted proxy only)."""
+        # Only use X-Forwarded-For if behind trusted proxy
+        # Otherwise use REMOTE_ADDR directly
+        return request.META.get("REMOTE_ADDR")
 
     def _get_organization_from_request(self, request):
         """Try to extract organization from request path or session."""
@@ -124,7 +130,11 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
             org_ref = request.session.get("org_ref")
             if org_ref:
                 return Organization.objects.filter(id=org_ref).first()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug(
+                "Failed to determine organization from request: %s",
+                type(exc).__name__,
+                exc_info=True,
+            )
 
         return None

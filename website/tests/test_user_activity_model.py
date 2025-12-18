@@ -37,3 +37,4 @@ class UserActivityModelTest(TestCase):
         activity = UserActivity.objects.create(user=self.user, activity_type="login")
         self.assertIn(self.user.username, str(activity))
         self.assertIn("Login", str(activity))
+        self.assertIsNone(activity.organization)
