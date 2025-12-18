@@ -1,5 +1,6 @@
 import math
 from datetime import timedelta
+from decimal import Decimal
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -31,15 +32,16 @@ class Command(BaseCommand):
 
             try:
                 with transaction.atomic():
-                    cutoff = (timezone.now() - timedelta(days=30)).date()
+                    cutoff_date = (timezone.now() - timedelta(days=30)).date()
                     # Lock the row before updating
                     locked_profile = UserProfile.objects.select_for_update().get(pk=profile.pk)
 
                     # Calculate score
                     score, breakdown = LeaderboardScoringService.calculate_for_user(locked_profile.user)
 
-                    locked_profile.leaderboard_score = score
-                    locked_profile.quality_score = breakdown.get("goals", 0)
+                    # Keep types and semantics aligned with UserProfile.calculate_leaderboard_score
+                    locked_profile.leaderboard_score = Decimal(str(score))
+                    locked_profile.quality_score = Decimal(str(breakdown.get("completeness", 0)))
                     locked_profile.check_in_count = DailyStatusReport.objects.filter(
                         user=locked_profile.user,
                         date__gte=cutoff_date,
