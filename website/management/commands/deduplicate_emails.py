@@ -53,10 +53,19 @@ class Command(BaseCommand):
             for email in duplicate_emails:
                 masked_email = mask_email(email)
                 self.stdout.write(f"Processing duplicates for email: {masked_email}")
-                # Get all EmailAddress objects for this email
-                # Order by: verified (True first), primary (True first), then oldest (pk)
-                email_addresses = EmailAddress.objects.filter(email__iexact=email).order_by(
-                    "-verified", "-primary", "pk"
+                # Get all EmailAddress objects for this email.
+                # Order by: user present (non-null user first), verified (True first),
+                # primary (True first), then oldest (pk).
+                email_addresses = (
+                    EmailAddress.objects.filter(email__iexact=email)
+                    .annotate(
+                        user_present=models.Case(
+                            models.When(user__isnull=False, then=models.Value(1)),
+                            default=models.Value(0),
+                            output_field=models.IntegerField(),
+                        )
+                    )
+                    .order_by("-user_present", "-verified", "-primary", "pk")
                 )
 
                 if not email_addresses.exists():  # pragma: no cover
@@ -130,7 +139,6 @@ class Command(BaseCommand):
                         keep_email_address.primary = True
                         keep_email_address.save(update_fields=["primary"])
                 else:
-                    # If the kept email is already primary, ensure no other emails for this user are primary.
                     EmailAddress.objects.filter(user=keep_email_address.user, primary=True).exclude(
                         pk=keep_email_address.pk
                     ).update(primary=False)
