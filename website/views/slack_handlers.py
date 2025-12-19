@@ -1378,7 +1378,11 @@ def send_dm(client, user_id, text, blocks=None):
             )
 
     except SlackApiError as e:
-        err = (e.response or {}).get("error", "unknown_error")
+        resp = getattr(e, "response", None)
+        if resp is not None and hasattr(resp, "get"):
+            err = resp.get("error", "unknown_error")
+        else:
+            err = "unknown_error"
         if err == "ratelimited":
             return JsonResponse(
                 {"response_type": "ephemeral", "text": "❌ Rate limit exceeded. Please try again shortly."},
@@ -3357,6 +3361,32 @@ def build_poll_blocks(poll):
     return blocks
 
 
+def _compute_remind_at(amount, unit):
+    """Compute remind_at datetime with validation and upper bounds.
+
+    Returns: (remind_at datetime, error_message string or None)
+    """
+    if amount <= 0:
+        return None, "❌ Amount must be greater than 0."
+
+    now = timezone.now()
+
+    if "minute" in unit:
+        if amount > 525600:  # 1 year in minutes
+            return None, "❌ Reminder time is too long. Please use 525600 minutes or less (up to 1 year)."
+        return now + timedelta(minutes=amount), None
+    elif "hour" in unit:
+        if amount > 8760:  # 1 year in hours
+            return None, "❌ Reminder time is too long. Please use 8760 hours or less (up to 1 year)."
+        return now + timedelta(hours=amount), None
+    elif "day" in unit:
+        if amount > 365:  # 1 year in days
+            return None, "❌ Reminder time is too long. Please use 365 days or less."
+        return now + timedelta(days=amount), None
+    else:
+        return None, "❌ Invalid time unit."
+
+
 def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text, activity):
     """Handle the /remind command to set reminders"""
     try:
@@ -3438,18 +3468,12 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                     }
                 )
             amount = int(time_match.group(1))
-            if amount <= 0:
-                return JsonResponse({"response_type": "ephemeral", "text": "❌ Time amount must be greater than 0."})
             unit = time_match.group(2)
-            now = timezone.now()
-            if "minute" in unit:
-                remind_at = now + timedelta(minutes=amount)
-            elif "hour" in unit:
-                remind_at = now + timedelta(hours=amount)
-            elif "day" in unit:
-                remind_at = now + timedelta(days=amount)
-            else:
-                return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
+
+            # Use helper with bounds checking
+            remind_at, error = _compute_remind_at(amount, unit)
+            if error:
+                return JsonResponse({"response_type": "ephemeral", "text": error})
 
             try:
                 reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
@@ -3574,81 +3598,10 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         amount = int(time_match.group(1))
         unit = time_match.group(2)
 
-        # Validate amount > 0
-        if amount <= 0:
-            return JsonResponse(
-                {
-                    "response_type": "ephemeral",
-                    "text": "❌ Amount must be greater than 0.",
-                }
-            )
-
-        # Calculate remind_at time with upper bounds (consistent with edit/snooze)
-        now = timezone.now()
-        if "minute" in unit:
-            # Cap at 1 year in minutes
-            if amount > 525600:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Reminder time is too long. Please use 525600 minutes or less (up to 1 year).",
-                    }
-                )
-            remind_at = now + timedelta(minutes=amount)
-        elif "hour" in unit:
-            # Cap at 1 year in hours
-            if amount > 8760:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Reminder time is too long. Please use 8760 hours or less (up to 1 year).",
-                    }
-                )
-            remind_at = now + timedelta(hours=amount)
-        elif "day" in unit:
-            # Cap at 1 year in days
-            if amount > 365:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Reminder time is too long. Please use 365 days or less.",
-                    }
-                )
-
-        # Calculate remind_at time with upper bounds (consistent with edit/snooze)
-        now = timezone.now()
-        if "minute" in unit:
-            # Cap at 1 year in minutes
-            if amount > 525600:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Reminder time is too long. Please use 525600 minutes or less (up to 1 year).",
-                    }
-                )
-            remind_at = now + timedelta(minutes=amount)
-        elif "hour" in unit:
-            # Cap at 1 year in hours
-            if amount > 8760:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Reminder time is too long. Please use 8760 hours or less (up to 1 year).",
-                    }
-                )
-            remind_at = now + timedelta(hours=amount)
-        elif "day" in unit:
-            # Cap at 1 year in days
-            if amount > 365:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Reminder time is too long. Please use 365 days or less.",
-                    }
-                )
-            remind_at = now + timedelta(days=amount)
-        else:
-            return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
+        # Calculate remind_at time with validation and upper bounds
+        remind_at, error = _compute_remind_at(amount, unit)
+        if error:
+            return JsonResponse({"response_type": "ephemeral", "text": error})
 
         # Validate target user exists if different from creator
         if target_id != user_id:
@@ -4283,7 +4236,11 @@ def handle_poll_vote(payload, workspace_client):
                 channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
             )
         except SlackApiError as e:
-            err = (e.response or {}).get("error", "unknown_error")
+            resp = getattr(e, "response", None)
+            if resp is not None and hasattr(resp, "get"):
+                err = resp.get("error", "unknown_error")
+            else:
+                err = "unknown_error"
             if err in {"channel_not_found", "not_in_channel"}:
                 logger.warning(f"Poll vote recorded but couldn't update message: {err}")
                 return JsonResponse(
@@ -4332,7 +4289,11 @@ def handle_poll_close(payload, workspace_client, user_id):
                 channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question} [CLOSED]"
             )
         except SlackApiError as e:
-            err = (e.response or {}).get("error", "unknown_error")
+            resp = getattr(e, "response", None)
+            if resp is not None and hasattr(resp, "get"):
+                err = resp.get("error", "unknown_error")
+            else:
+                err = "unknown_error"
             if err in {"channel_not_found", "not_in_channel"}:
                 return JsonResponse(
                     {
@@ -4509,7 +4470,11 @@ def handle_poll_reopen(payload, workspace_client, user_id):
                 channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
             )
         except SlackApiError as e:
-            err = (e.response or {}).get("error", "unknown_error")
+            resp = getattr(e, "response", None)
+            if resp is not None and hasattr(resp, "get"):
+                err = resp.get("error", "unknown_error")
+            else:
+                err = "unknown_error"
             if err in {"channel_not_found", "not_in_channel"}:
                 return JsonResponse(
                     {
