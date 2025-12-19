@@ -13,11 +13,9 @@ logger = logging.getLogger(__name__)
 @receiver(post_save, sender=Issue)
 def log_bug_report(sender, instance, created, **kwargs):
     """Log bug report activity when a new issue is created."""
-    if not created or not instance.user:  # user check
+    if not created or not instance.user or instance.user.is_superuser:  # user check
         return
-    user = getattr(instance, "user", None)
-    if not user or user.is_superuser:
-        return
+
     try:
         # Extract organization from domain if available
         organization = None
@@ -44,9 +42,7 @@ def log_bug_comment(sender, instance, created, **kwargs):
     """Log bug comment activity when a new comment is created on an Issue."""
     if not created:
         return
-    user = getattr(instance, "user", None)
-    if not user or user.is_superuser:
-        return
+
     try:
         # ✓ Only track comments on Issues (not other content types)
         issue_content_type = ContentType.objects.get_for_model(Issue)
@@ -58,7 +54,8 @@ def log_bug_comment(sender, instance, created, **kwargs):
             return
 
         user = instance.author_fk.user
-
+        if user.is_superuser:
+            return
         # ✓ Get the Issue object using content_type and object_id
         try:
             issue = Issue.objects.get(pk=instance.object_id)
