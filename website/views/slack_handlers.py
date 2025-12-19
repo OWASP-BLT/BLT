@@ -3559,7 +3559,7 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                 }
             )
 
-        message = message_match.group(1)
+        message = escape_slack_markdown(message_match.group(1))
 
         # Extract time
         time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours|day|days)", text.lower())
@@ -3574,13 +3574,78 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         amount = int(time_match.group(1))
         unit = time_match.group(2)
 
-        # Calculate remind_at time
+        # Validate amount > 0
+        if amount <= 0:
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "❌ Amount must be greater than 0.",
+                }
+            )
+
+        # Calculate remind_at time with upper bounds (consistent with edit/snooze)
         now = timezone.now()
         if "minute" in unit:
+            # Cap at 1 year in minutes
+            if amount > 525600:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder time is too long. Please use 525600 minutes or less (up to 1 year).",
+                    }
+                )
             remind_at = now + timedelta(minutes=amount)
         elif "hour" in unit:
+            # Cap at 1 year in hours
+            if amount > 8760:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder time is too long. Please use 8760 hours or less (up to 1 year).",
+                    }
+                )
             remind_at = now + timedelta(hours=amount)
         elif "day" in unit:
+            # Cap at 1 year in days
+            if amount > 365:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder time is too long. Please use 365 days or less.",
+                    }
+                )
+
+        # Calculate remind_at time with upper bounds (consistent with edit/snooze)
+        now = timezone.now()
+        if "minute" in unit:
+            # Cap at 1 year in minutes
+            if amount > 525600:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder time is too long. Please use 525600 minutes or less (up to 1 year).",
+                    }
+                )
+            remind_at = now + timedelta(minutes=amount)
+        elif "hour" in unit:
+            # Cap at 1 year in hours
+            if amount > 8760:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder time is too long. Please use 8760 hours or less (up to 1 year).",
+                    }
+                )
+            remind_at = now + timedelta(hours=amount)
+        elif "day" in unit:
+            # Cap at 1 year in days
+            if amount > 365:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ Reminder time is too long. Please use 365 days or less.",
+                    }
+                )
             remind_at = now + timedelta(days=amount)
         else:
             return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
@@ -3856,12 +3921,24 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
             blocks = build_huddle_blocks(huddle)
             try:
                 _ensure_bot_in_channel(workspace_client, huddle.channel_id)
-                workspace_client.chat_update(
-                    channel=huddle.channel_id,
-                    ts=huddle.message_ts,
-                    blocks=blocks,
-                    text=f"🎯 Huddle: {huddle.title}",
-                )
+                if not huddle.message_ts:
+                    resp = workspace_client.chat_postMessage(
+                        channel=huddle.channel_id, text=f"🎯 Huddle: {huddle.title}", blocks=blocks
+                    )
+                    try:
+                        ts = resp["ts"] if isinstance(resp, dict) else None
+                    except Exception:
+                        ts = None
+                    if ts:
+                        huddle.message_ts = ts
+                        huddle.save(update_fields=["message_ts"])
+                else:
+                    workspace_client.chat_update(
+                        channel=huddle.channel_id,
+                        ts=huddle.message_ts,
+                        blocks=blocks,
+                        text=f"🎯 Huddle: {huddle.title}",
+                    )
             except Exception:
                 logger.warning("Failed to update huddle message on edit", exc_info=True)
             return JsonResponse({"response_type": "ephemeral", "text": "✅ Huddle updated."})
@@ -3946,31 +4023,32 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 )
             participants = valid
 
-        # Create huddle
-        huddle = SlackHuddle.objects.create(
-            creator_id=user_id,
-            workspace_id=team_id,
-            channel_id=channel_id,
-            title=title,
-            description=sanitized_description,
-            scheduled_at=scheduled_at,
-            status="scheduled",
-        )
+        # Create huddle and post message atomically to avoid orphaned records
+        with transaction.atomic():
+            huddle = SlackHuddle.objects.create(
+                creator_id=user_id,
+                workspace_id=team_id,
+                channel_id=channel_id,
+                title=title,
+                description=sanitized_description,
+                scheduled_at=scheduled_at,
+                status="scheduled",
+            )
 
-        # Add participants
-        for participant_id in participants:
-            SlackHuddleParticipant.objects.create(huddle=huddle, user_id=participant_id, response="invited")
+            # Add participants
+            for participant_id in participants:
+                SlackHuddleParticipant.objects.create(huddle=huddle, user_id=participant_id, response="invited")
 
-        # Build Slack message blocks
-        blocks = build_huddle_blocks(huddle)
+            # Build Slack message blocks
+            blocks = build_huddle_blocks(huddle)
 
-        # Post huddle to channel
-        _ensure_bot_in_channel(workspace_client, channel_id)
-        response = workspace_client.chat_postMessage(channel=channel_id, text=f"🎯 Huddle: {title}", blocks=blocks)
+            # Post huddle to channel
+            _ensure_bot_in_channel(workspace_client, channel_id)
+            response = workspace_client.chat_postMessage(channel=channel_id, text=f"🎯 Huddle: {title}", blocks=blocks)
 
-        # Store message timestamp
-        huddle.message_ts = response["ts"]
-        huddle.save()
+            # Store message timestamp only after successful post
+            huddle.message_ts = response["ts"]
+            huddle.save(update_fields=["message_ts"])
 
         activity.success = True
         activity.details["huddle_id"] = huddle.id
@@ -4207,14 +4285,15 @@ def handle_poll_vote(payload, workspace_client):
         except SlackApiError as e:
             err = (e.response or {}).get("error", "unknown_error")
             if err in {"channel_not_found", "not_in_channel"}:
+                logger.warning(f"Poll vote recorded but couldn't update message: {err}")
                 return JsonResponse(
                     {
                         "response_type": "ephemeral",
-                        "text": "❌ I’m not in that channel. Please add the bot to the channel and try again.",
+                        "text": "✅ Vote recorded, but I couldn't refresh the results message.",
                     }
                 )
-            raise
-
+            # Log other Slack errors but still confirm vote
+            logger.warning(f"Poll vote recorded but chat_update failed: {err}", exc_info=True)
         return JsonResponse({"response_type": "ephemeral", "text": message})
 
     except SlackPollOption.DoesNotExist:
@@ -4324,12 +4403,27 @@ def handle_huddle_response(payload, workspace_client, user_id, response):
 
         participant.update_response(response)
 
-        # Update the huddle message
+        # Update the huddle message (guard if message_ts is missing)
         blocks = build_huddle_blocks(huddle)
-        _ensure_bot_in_channel(workspace_client, huddle.channel_id)
-        workspace_client.chat_update(
-            channel=huddle.channel_id, ts=huddle.message_ts, blocks=blocks, text=f"🎯 Huddle: {huddle.title}"
-        )
+        try:
+            _ensure_bot_in_channel(workspace_client, huddle.channel_id)
+            if not huddle.message_ts:
+                resp = workspace_client.chat_postMessage(
+                    channel=huddle.channel_id, text=f"🎯 Huddle: {huddle.title}", blocks=blocks
+                )
+                try:
+                    ts = resp["ts"] if isinstance(resp, dict) else None
+                except Exception:
+                    ts = None
+                if ts:
+                    huddle.message_ts = ts
+                    huddle.save(update_fields=["message_ts"])
+            else:
+                workspace_client.chat_update(
+                    channel=huddle.channel_id, ts=huddle.message_ts, blocks=blocks, text=f"🎯 Huddle: {huddle.title}"
+                )
+        except Exception:
+            logger.warning("Failed to post/update huddle message after response", exc_info=True)
 
         response_emoji = "✅" if response == "accepted" else "❌"
         return JsonResponse({"response_type": "ephemeral", "text": f"{response_emoji} Response recorded!"})
@@ -4455,15 +4549,32 @@ def handle_huddle_cancel(payload, workspace_client, user_id):
         # Cancel the huddle
         huddle.cancel()
 
-        # Update the huddle message
+        # Update the huddle message (guard if message_ts is missing)
         blocks = build_huddle_blocks(huddle)
-        _ensure_bot_in_channel(workspace_client, huddle.channel_id)
-        workspace_client.chat_update(
-            channel=huddle.channel_id,
-            ts=huddle.message_ts,
-            blocks=blocks,
-            text=f"🎯 Huddle: {huddle.title} [CANCELLED]",
-        )
+        try:
+            _ensure_bot_in_channel(workspace_client, huddle.channel_id)
+            if not huddle.message_ts:
+                resp = workspace_client.chat_postMessage(
+                    channel=huddle.channel_id,
+                    text=f"🎯 Huddle: {huddle.title} [CANCELLED]",
+                    blocks=blocks,
+                )
+                try:
+                    ts = resp["ts"] if isinstance(resp, dict) else None
+                except Exception:
+                    ts = None
+                if ts:
+                    huddle.message_ts = ts
+                    huddle.save(update_fields=["message_ts"])
+            else:
+                workspace_client.chat_update(
+                    channel=huddle.channel_id,
+                    ts=huddle.message_ts,
+                    blocks=blocks,
+                    text=f"🎯 Huddle: {huddle.title} [CANCELLED]",
+                )
+        except Exception:
+            logger.warning("Failed to post/update huddle message on cancel", exc_info=True)
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Huddle cancelled!"})
 
