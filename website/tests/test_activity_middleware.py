@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import RequestFactory, TestCase
 
 from website.middleware import ActivityTrackingMiddleware
@@ -7,6 +8,7 @@ from website.models import Organization, UserActivity
 
 class ActivityMiddlewareTest(TestCase):
     def setUp(self):
+        cache.clear()
         self.factory = RequestFactory()
         self.user = User.objects.create_user("testuser", "test@example.com", "password")
         self.org = Organization.objects.create(name="Test Org", url="https://test.com")
@@ -60,7 +62,11 @@ class ActivityMiddlewareTest(TestCase):
         self.assertEqual(UserActivity.objects.count(), initial_count)
 
     def test_duplicate_dashboard_visit_within_minute_not_tracked(self):
-        """Test that duplicate dashboard visits within 1 minute are deduplicated"""
+        """Test that duplicate dashboard visits within 1 minute are deduplicated using cache"""
+        from django.core.cache import cache
+
+        # Clear cache before test
+        cache.clear()
 
         initial_count = UserActivity.objects.count()
 
@@ -74,7 +80,11 @@ class ActivityMiddlewareTest(TestCase):
         # Verify first visit was tracked
         self.assertEqual(UserActivity.objects.count(), initial_count + 1)
 
-        # Second visit within 1 minute (should be deduplicated)
+        # Check that cache key was set
+        cache_key = f"dashboard_visit:{self.user.id}:{self.org.id}:/organization/{self.org.id}/dashboard/"
+        self.assertTrue(cache.get(cache_key))
+
+        # Second visit within 1 minute (should be deduplicated via cache)
         request2 = self.factory.get(f"/organization/{self.org.id}/dashboard/")
         request2.user = self.user
         request2.session = {}
@@ -85,44 +95,72 @@ class ActivityMiddlewareTest(TestCase):
         self.assertEqual(UserActivity.objects.count(), initial_count + 1)
 
     def test_dashboard_visit_after_minute_is_tracked(self):
-        """Test that dashboard visits after 1 minute are tracked separately"""
+        """Test that dashboard visits after cache expiry are tracked separately"""
         from datetime import timedelta
-        from unittest.mock import patch
 
+        from django.core.cache import cache
         from django.utils import timezone
 
+        cache.clear()
         initial_count = UserActivity.objects.count()
 
         # First visit
         request1 = self.factory.get(f"/organization/{self.org.id}/dashboard/")
         request1.user = self.user
         request1.session = {}
+        self.middleware(request1)
 
-        # Mock timezone to set first visit timestamp
-        base_time = timezone.now()
-        with patch("website.middleware.timezone.now", return_value=base_time):
-            self.middleware(request1)
-
-        # Verify first visit was tracked
         self.assertEqual(UserActivity.objects.count(), initial_count + 1)
 
-        # Manually update the first activity's timestamp to be 2 minutes ago
-        first_activity = UserActivity.objects.latest("timestamp")
-        first_activity.timestamp = base_time - timedelta(minutes=2)
-        first_activity.save()
+        # ✅ Simulate that the first visit happened > 1 minute ago (DB dedupe should NOT match now)
+        first = UserActivity.objects.latest("timestamp")
+        first.timestamp = timezone.now() - timedelta(minutes=2)
+        first.save(update_fields=["timestamp"])
 
-        # Second visit (now more than 1 minute later)
+        # Clear cache key (simulating cache expiry)
+        cache_key = f"dashboard_visit:{self.user.id}:{self.org.id}:/organization/{self.org.id}/dashboard/"
+        cache.delete(cache_key)
+
+        # Second visit (should now be tracked)
         request2 = self.factory.get(f"/organization/{self.org.id}/dashboard/")
+        request2.user = self.user
+        request2.session = {}
+        self.middleware(request2)
+
+        self.assertEqual(UserActivity.objects.count(), initial_count + 2)
+
+    def test_cache_key_includes_organization_and_path(self):
+        """Test that cache key differentiates between different organizations and paths"""
+        from django.core.cache import cache
+
+        # Clear cache before test
+        cache.clear()
+
+        # Create second organization
+        org2 = Organization.objects.create(name="Test Org 2", url="https://testorg2.com")
+
+        initial_count = UserActivity.objects.count()
+
+        # Visit org1 dashboard
+        request1 = self.factory.get(f"/organization/{self.org.id}/dashboard/")
+        request1.user = self.user
+        request1.session = {}
+
+        self.middleware(request1)
+
+        # Visit org2 dashboard (different org, should create new activity)
+        request2 = self.factory.get(f"/organization/{org2.id}/dashboard/")
         request2.user = self.user
         request2.session = {}
 
         self.middleware(request2)
 
-        # Verify new activity was created (now 2 activities)
+        # Both visits should be tracked (different cache keys due to different orgs)
         self.assertEqual(UserActivity.objects.count(), initial_count + 2)
 
     def test_ip_address_is_anonymized(self):
         """Test that IP addresses are anonymized before storage"""
+        cache.clear()
         request = self.factory.get(f"/organization/{self.org.id}/dashboard/")
         request.user = self.user
         request.session = {}
