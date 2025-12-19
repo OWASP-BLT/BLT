@@ -323,126 +323,132 @@
             </div>
             {% if user_behavior %}
                 <!-- User Behavior Analytics Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                <div class="mb-8">
                     <!-- Section Header -->
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-[#e74c3c]/10">
-                                <i class="fas fa-users text-[#e74c3c] text-lg"></i>
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">User Behavior Analytics</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Insights from the last 30 days</p>
+                    </div>
+                    <!-- Summary Stats Grid with RED icons and shadow -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <!-- Active Users -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">Active Users (30d)</h2>
+                                    <p class="text-4xl font-bold text-dark dark:text-white mt-2">{{ user_behavior.active_users_count }}</p>
+                                </div>
+                                <svg class="w-8 h-8 text-red-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
                             </div>
-                            <div>
-                                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">User Behavior Analytics</h2>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Last 30 days activity insights</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">Unique users in period</p>
+                        </div>
+                        <!-- Total Activities -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">Total Activities</h2>
+                                    <p class="text-4xl font-bold text-dark dark:text-white mt-2">{{ user_behavior.total_activities }}</p>
+                                </div>
+                                <svg class="w-8 h-8 text-red-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
                             </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">All recorded actions</p>
+                        </div>
+                        <!-- Activities per User -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">Activities per User</h2>
+                                    <p class="text-4xl font-bold text-dark dark:text-white mt-2">{{ user_behavior.engagement_rate }}</p>
+                                </div>
+                                <svg class="w-8 h-8 text-red-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                                </svg>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">Average engagement rate</p>
                         </div>
                     </div>
-                    <!-- Summary Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <!-- Active Users Card -->
-                        <div class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-red-700 dark:text-red-300 mb-1">Active Users (30d)</p>
-                                    <p class="text-2xl font-bold text-red-900 dark:text-red-100">{{ user_behavior.active_users_count }}</p>
-                                </div>
-                                <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-red-500/10 dark:bg-red-500/20">
-                                    <i class="fas fa-user-check text-2xl text-[#e74c3c] dark:text-red-400"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Total Activities Card -->
-                        <div class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-red-700 dark:text-red-300 mb-1">Total Activities</p>
-                                    <p class="text-2xl font-bold text-red-900 dark:text-red-100">{{ user_behavior.total_activities }}</p>
-                                </div>
-                                <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-red-500/10 dark:bg-red-500/20">
-                                    <i class="fas fa-chart-line text-2xl text-[#e74c3c] dark:text-red-400"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Engagement Rate Card -->
-                        <div class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-red-700 dark:text-red-300 mb-1">Engagement Rate</p>
-                                    <p class="text-2xl font-bold text-red-900 dark:text-red-100">{{ user_behavior.engagement_rate }}</p>
-                                </div>
-                                <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-red-500/10 dark:bg-red-500/20">
-                                    <i class="fas fa-percentage text-2xl text-[#e74c3c] dark:text-red-400"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Activity Breakdown and Top Users -->
-                    <!-- Activity Breakdown Panel -->
-                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                            <i class="fas fa-chart-pie text-[#e74c3c] mr-2"></i>
-                            Activity Breakdown
-                        </h3>
-                        <div class="space-y-3">
-                            {% for activity in user_behavior.activity_breakdown %}
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="px-3 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
-                                            {{ activity.type_display }}
-                                        </span>
+                    <!-- Activity Breakdown and Most Active Users -->
+                    <div class="grid grid-cols-1 gap-6 mb-8">
+                        <!-- Activity Breakdown Panel -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <i class="fas fa-chart-pie text-red-500 dark:text-red-400 mr-2"></i>
+                                Activity Breakdown
+                            </h3>
+                            <div class="space-y-3">
+                                {% for activity in user_behavior.activity_breakdown %}
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ activity.type_display }}</span>
+                                        <span class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ activity.count }}</span>
                                     </div>
-                                    <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ activity.count }}</span>
-                                </div>
-                            {% empty %}
-                                <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No activity data available</p>
-                            {% endfor %}
+                                {% empty %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No activity data available</p>
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-                    <!-- Most Active Users Panel -->
-                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                            <i class="fas fa-trophy text-amber-500 mr-2"></i>
-                            Most Active Users
-                        </h3>
-                        <div class="space-y-3">
-                            {% for user in user_behavior.top_users %}
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-[#e74c3c] text-white font-semibold text-sm">
-                                            {{ forloop.counter }}
+                        <!-- Most Active Users Panel -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <i class="fas fa-trophy text-red-500 dark:text-red-400 mr-2"></i>
+                                Most Active Users
+                            </h3>
+                            <div class="space-y-3">
+                                {% for user in user_behavior.top_users %}
+                                    <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs">
+                                                {{ forloop.counter }}
+                                            </span>
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ user.username }}</span>
                                         </div>
-                                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ user.username }}</span>
+                                        <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ user.count }} activities</span>
                                     </div>
-                                    <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ user.count }} activities</span>
-                                </div>
-                            {% empty %}
-                                <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No user data available</p>
-                            {% endfor %}
+                                {% empty %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No user data available</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Weekly Activity Trend Chart -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <i class="fas fa-calendar-week text-red-500 dark:text-red-400 mr-2"></i>
+                                Weekly Activity Trend
+                            </h3>
+                            <div class="h-64">
+                                <canvas id="weeklyActivityChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Peak Activity Hours Chart -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                <i class="fas fa-clock text-red-500 dark:text-red-400 mr-2"></i>
+                                Peak Activity Hours
+                            </h3>
+                            <div class="h-64">
+                                <canvas id="peakHoursChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- Weekly Activity Trend Chart -->
-                <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <i class="fas fa-calendar-week text-[#e74c3c] mr-2"></i>
-                        Weekly Activity Trend
-                    </h3>
-                    <div class="h-64">
-                        <canvas id="weeklyActivityChart"></canvas>
-                    </div>
-                </div>
-                <!-- Peak Activity Hours Chart -->
-                <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 mt-6">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                        <i class="fas fa-clock text-[#e74c3c] mr-2"></i>
-                        Peak Activity Hours
-                    </h3>
-                    <div class="h-64">
-                        <canvas id="peakHoursChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <!-- Closes User Behavior Analytics Section -->
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
 {% endblock body %}
 {% block scripts %}
@@ -790,64 +796,67 @@
             });
         }
         function initWeeklyActivityChart() {
-            const canvas = document.getElementById('weeklyActivityChart');
+            const canvas = document.getElementById("weeklyActivityChart");
             if (!canvas) return;
 
-            const isDarkMode = document.documentElement.classList.contains('dark');
-
             try {
-                const el = document.getElementById('weekly-trend-data');
-                const weeklyData = el ? JSON.parse(el.textContent) : [];
+                const el = document.getElementById("weekly-trend-data");
+                const weeklyTrendData = el ? JSON.parse(el.textContent) : [];
 
-                if (!Array.isArray(weeklyData) || weeklyData.length === 0) {
-                showChartMessage(canvas.parentElement, 'No weekly activity data available', 'fas fa-calendar-times');
-                return;
+                if (!Array.isArray(weeklyTrendData) || weeklyTrendData.length === 0) {
+                    showChartMessage(canvas.parentElement, "No weekly activity data available", "fas fa-calendar-week");
+                    return;
                 }
 
-                const labels = weeklyData.map(item => item.date);
-                const data = weeklyData.map(item => item.count);
+                const labels = weeklyTrendData.map(item => item.date);
+                const data = weeklyTrendData.map(item => item.count);
+                
+                const isDarkMode = document.documentElement.classList.contains('dark');
 
                 new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [{
-                    label: 'Activities',
-                    data,
-                    backgroundColor: isDarkMode ? 'rgba(96, 165, 250, 0.6)' : 'rgba(59, 130, 246, 0.8)',
-                    borderColor: isDarkMode ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
-                        titleColor: isDarkMode ? '#F9FAFB' : '#111827',
-                        bodyColor: isDarkMode ? '#D1D5DB' : '#4B5563',
-                        borderColor: isDarkMode ? '#374151' : '#E5E7EB',
-                        borderWidth: 1,
-                        padding: 12,
-                        displayColors: false,
-                        callbacks: {
-                        label: (ctx) => `Activities: ${ctx.parsed.y}`
+                    type: "bar",
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: "Activities",
+                            data,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)', // Red bars
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
+                                titleColor: isDarkMode ? '#F9FAFB' : '#111827',
+                                bodyColor: isDarkMode ? '#D1D5DB' : '#4B5563',
+                                borderColor: isDarkMode ? '#374151' : '#E5E7EB',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: isDarkMode ? '#374151' : '#E5E7EB' },
+                                ticks: { precision: 0, color: isDarkMode ? '#9CA3AF' : '#6B7280' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: isDarkMode ? '#9CA3AF' : '#6B7280' }
+                            }
                         }
                     }
-                    },
-                    scales: {
-                    x: { grid: { display: false }, ticks: { color: isDarkMode ? '#9CA3AF' : '#6B7280' } },
-                    y: { beginAtZero: true, grid: { color: isDarkMode ? '#374151' : '#E5E7EB' }, ticks: { precision: 0, color: isDarkMode ? '#9CA3AF' : '#6B7280' } }
-                    }
-                }
                 });
-
-            } catch (error) {
-                console.error('Error initializing weekly activity chart:', error);
-                showChartMessage(canvas.parentElement, 'Error loading chart data', 'fas fa-exclamation-triangle');
+            } catch (e) {
+                console.error("Weekly activity chart init failed:", e);
+                showChartMessage(canvas.parentElement, "Error loading weekly activity data", "fas fa-exclamation-triangle");
             }
         }
 
@@ -860,38 +869,65 @@
                 const peakHoursData = el ? JSON.parse(el.textContent) : [];
 
                 if (!Array.isArray(peakHoursData) || peakHoursData.length === 0) {
-                showChartMessage(canvas.parentElement, "No peak hours data available", "fas fa-clock");
-                return;
+                    showChartMessage(canvas.parentElement, "No peak hours data available", "fas fa-clock");
+                    return;
                 }
 
                 const labels = peakHoursData.map(item => `${item.hour}:00`);
                 const data = peakHoursData.map(item => item.count);
+                
+                const isDarkMode = document.documentElement.classList.contains('dark');
 
                 new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels,
-                    datasets: [{
-                    label: "Activities",
-                    data,
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    }]
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true } }
-                }
+                    type: "bar",
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: "Activities",
+                            data,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)', // Red bars
+                            borderColor: 'rgba(220, 38, 38, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        indexAxis: "y",
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
+                                titleColor: isDarkMode ? '#F9FAFB' : '#111827',
+                                bodyColor: isDarkMode ? '#D1D5DB' : '#4B5563',
+                                borderColor: isDarkMode ? '#374151' : '#E5E7EB',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: (ctx) => `Activities: ${ctx.parsed.x}`
+                                }
+                            }
+                        },
+                        scales: { 
+                            x: { 
+                                beginAtZero: true,
+                                grid: { color: isDarkMode ? '#374151' : '#E5E7EB' },
+                                ticks: { precision: 0, color: isDarkMode ? '#9CA3AF' : '#6B7280' }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: isDarkMode ? '#9CA3AF' : '#6B7280' }
+                            }
+                        }
+                    }
                 });
             } catch (e) {
                 console.error("Peak hours chart init failed:", e);
                 showChartMessage(canvas.parentElement, "Error loading peak hours data", "fas fa-exclamation-triangle");
             }
-            }
-
+        }
 
         // Initialize all charts
         function initializeAllCharts() {

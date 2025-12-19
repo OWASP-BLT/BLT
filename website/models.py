@@ -3678,6 +3678,7 @@ class UserActivity(models.Model):
             models.Index(fields=["activity_type", "timestamp"], name="user_activity_type_time_idx"),
             models.Index(fields=["organization", "timestamp"], name="user_activity_org_time_idx"),
         ]
+        ordering = ["-timestamp"]
         verbose_name = "User Activity"
         verbose_name_plural = "User Activities"
 

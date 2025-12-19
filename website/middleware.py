@@ -6,6 +6,7 @@ import re
 from datetime import timedelta
 
 from django.contrib import messages
+from django.core.cache import cache
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
@@ -37,7 +38,7 @@ def anonymize_ip(ip_address):
             # Mask last 80 bits (keep first 48 bits)
             from ipaddress import IPv6Address
 
-            masked = int(ip_obj) & (0xFFFFFFFFFFFFFFFF << 80)
+            masked = int(ip_obj) & ((2**48 - 1) << 80)
             return str(IPv6Address(masked))
     except Exception:
         return None
@@ -98,42 +99,50 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                 if self._is_dashboard_visit(request.path):
                     organization = self._get_organization_from_request(request)
 
-                    # Deduplication: Check if user visited this dashboard in the last minute
-                    one_minute_ago = timezone.now() - timedelta(minutes=1)
+                    # Build unique cache key
+                    org_id = organization.id if organization else "none"
+                    cache_key = f"dashboard_visit:{request.user.id}:{org_id}:{request.path}"
 
-                    # Build deduplication filter
-                    dedup_filter = {
-                        "user": request.user,
-                        "activity_type": "dashboard_visit",
-                        "timestamp__gte": one_minute_ago,
-                        "metadata__path": request.path,
-                    }
+                    # Fast path: Check cache first (works with single worker)
+                    if cache.get(cache_key):
+                        # Already tracked recently, skip
+                        pass
+                    else:
+                        # Slow path: Check DB for reliability across workers
+                        one_minute_ago = timezone.now() - timedelta(minutes=1)
 
-                    # Only include organization in filter if it's not None
-                    # This prevents false deduplication when org extraction fails
-                    if organization is not None:
-                        dedup_filter["organization"] = organization
+                        dedup_filter = {
+                            "user": request.user,
+                            "activity_type": "dashboard_visit",
+                            "timestamp__gte": one_minute_ago,
+                            "metadata__path": request.path,
+                        }
 
-                    recent_visit = UserActivity.objects.filter(**dedup_filter).exists()
+                        if organization is not None:
+                            dedup_filter["organization"] = organization
 
-                    # Only create activity if no recent visit exists
-                    if not recent_visit:
-                        # Extract and anonymize IP address for GDPR compliance
-                        raw_ip = self._get_client_ip(request)
-                        ip_address = anonymize_ip(raw_ip)
+                        recent_visit = UserActivity.objects.filter(**dedup_filter).exists()
 
-                        # Extract user agent
-                        user_agent = request.META.get("HTTP_USER_AGENT", "")
+                        if not recent_visit:
+                            # Extract and anonymize IP address for GDPR compliance
+                            raw_ip = self._get_client_ip(request)
+                            ip_address = anonymize_ip(raw_ip)
 
-                        # Create activity record
-                        UserActivity.objects.create(
-                            user=request.user,
-                            organization=organization,
-                            activity_type="dashboard_visit",
-                            ip_address=ip_address,  # Now anonymized
-                            user_agent=user_agent,
-                            metadata={"path": request.path},
-                        )
+                            # Extract user agent
+                            user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+                            # Create activity record
+                            UserActivity.objects.create(
+                                user=request.user,
+                                organization=organization,
+                                activity_type="dashboard_visit",
+                                ip_address=ip_address,
+                                user_agent=user_agent,
+                                metadata={"path": request.path},
+                            )
+
+                            # Set cache for 60 seconds (performance optimization)
+                            cache.set(cache_key, True, 60)
             except Exception as e:
                 # Silent failure - don't break the request
                 logger.debug("Failed to track dashboard visit: %s", type(e).__name__, exc_info=True)
