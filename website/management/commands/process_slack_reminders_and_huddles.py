@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 SLACK_API_BASE = "https://slack.com/api"
 MAX_RETRIES = 5
 BASE_BACKOFF_SECONDS = 60  # 1 minute base
+MAX_RETRY_AGE_DAYS = 7  # Stop retrying reminders older than this
 
 
 def _slack_headers(token: str):
@@ -104,7 +105,8 @@ def _format_error(error: str, retries: int) -> str:
 def _user_exists(token: str, user_id: str) -> tuple[bool, int | None]:
     """Check if a Slack user exists and is active in the workspace.
 
-    Returns (exists, retry_after). If rate limited, returns (False, retry_after).
+    Returns (exists, retry_after). If rate limited or network error, returns (False, retry_after).
+    If user not found (404), returns (False, None).
     """
     try:
         # Users typically start with 'U' or 'W'
@@ -128,6 +130,10 @@ def _user_exists(token: str, user_id: str) -> tuple[bool, int | None]:
             return True, None
         # Common errors: user_not_found, account_inactive
         return False, None
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        # Network errors should be retried, not treated as user not found
+        logger.error("Slack users.info error", exc_info=True)
+        return False, 1  # Return 1 to indicate retry needed
     except Exception:
         logger.error("Slack users.info error", exc_info=True)
         return False, None
@@ -158,60 +164,91 @@ class Command(BaseCommand):
         return integ.bot_access_token if integ and integ.bot_access_token else default_token
 
     def _process_reminders(self, token: str | None, now, options):
+        # Step 1: Fetch reminder IDs inside transaction (release lock quickly)
         with transaction.atomic():
-            qs = (
+            reminder_ids = list(
                 SlackReminder.objects.select_for_update(skip_locked=True)
                 .filter(status="pending", remind_at__lte=now)
-                .order_by("remind_at")[: options["batch_size"]]
+                .order_by("remind_at")
+                .values_list("id", flat=True)[: options["batch_size"]]
             )
 
-            # Force evaluation inside the transaction to satisfy select_for_update
-            reminders = list(qs)
-            if not reminders:
-                logger.info("No due SlackReminder records")
-                return
+        if not reminder_ids:
+            logger.info("No due SlackReminder records")
+            return
 
-            workspace_ids = {r.workspace_id for r in reminders}
-            integrations = SlackIntegration.objects.filter(workspace_name__in=workspace_ids)
-            token_map = {i.workspace_name: i.bot_access_token for i in integrations if i.bot_access_token}
+        # Step 2: Load full reminder objects (no locks held)
+        reminders = SlackReminder.objects.filter(id__in=reminder_ids).select_related()
+        workspace_ids = {r.workspace_id for r in reminders}
+        integrations = SlackIntegration.objects.filter(workspace_name__in=workspace_ids)
+        token_map = {i.workspace_name: i.bot_access_token for i in integrations if i.bot_access_token}
 
-            for reminder in reminders:
-                try:
-                    # pick correct token per workspace
-                    ws_token = token_map.get(reminder.workspace_id, token)
-                    if not ws_token and not options["dry_run"]:
-                        # cannot send without any token
-                        reminder.status = "failed"
-                        reminder.error_message = _format_error("no_token", _parse_retry_count(reminder.error_message))
-                        reminder.save(update_fields=["status", "error_message"])
+        # Step 3: Process each reminder (make network calls without holding locks)
+        for reminder in reminders:
+            try:
+                # pick correct token per workspace
+                ws_token = token_map.get(reminder.workspace_id, token)
+                if not ws_token and not options["dry_run"]:
+                    # cannot send without any token
+                    with transaction.atomic():
+                        r = SlackReminder.objects.select_for_update().filter(id=reminder.id, status="pending").first()
+                        if r:
+                            r.status = "failed"
+                            r.error_message = _format_error("no_token", _parse_retry_count(r.error_message))
+                            if not options["dry_run"]:
+                                r.save(update_fields=["status", "error_message"])
+                    continue
+
+                # If target is a user, ensure they still exist; avoid silent failures (network call)
+                target_type = getattr(reminder, "target_type", None)
+                if not options["dry_run"] and target_type == "user" and reminder.target_id:
+                    exists, retry_after_exists = _user_exists(ws_token, reminder.target_id)
+                    if not exists and retry_after_exists is None:
+                        with transaction.atomic():
+                            r = (
+                                SlackReminder.objects.select_for_update()
+                                .filter(id=reminder.id, status="pending")
+                                .first()
+                            )
+                            if r:
+                                r.status = "failed"
+                                r.error_message = _format_error("user_not_found", _parse_retry_count(r.error_message))
+                                if not options["dry_run"]:
+                                    r.save(update_fields=["status", "error_message"])
                         continue
 
-                    # If target is a user, ensure they still exist; avoid silent failures
-                    if not options["dry_run"] and reminder.target_id and reminder.target_id.startswith(("U", "W")):
-                        exists, retry_after_exists = _user_exists(ws_token, reminder.target_id)
-                        if not exists and not retry_after_exists:
-                            reminder.status = "failed"
-                            reminder.error_message = _format_error(
-                                "user_not_found", _parse_retry_count(reminder.error_message)
-                            )
-                            reminder.save(update_fields=["status", "error_message"])
-                            continue
+                msg = reminder.message or ""
+                msg = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                target = reminder.target_id
 
-                    msg = reminder.message or ""
-                    msg = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                    target = reminder.target_id
-                    if options["dry_run"]:
-                        sent, retry_after = True, None
-                    else:
-                        sent, retry_after = _send_slack_message(ws_token, target, msg)
+                # Make network call outside transaction
+                if options["dry_run"]:
+                    sent, retry_after = True, None
+                else:
+                    sent, retry_after = _send_slack_message(ws_token, target, msg)
+
+                # Step 4: Re-acquire lock to update status
+                with transaction.atomic():
+                    r = SlackReminder.objects.select_for_update().filter(id=reminder.id, status="pending").first()
+                    if not r:
+                        logger.warning("SlackReminder id=%s no longer pending, skipping update", reminder.id)
+                        continue
+
+                    # Check if reminder is too old to retry (prevent unbounded retry loops)
+                    if r.created_at and (timezone.now() - r.created_at).days > MAX_RETRY_AGE_DAYS:
+                        r.status = "failed"
+                        r.error_message = _format_error("max_age_exceeded", _parse_retry_count(r.error_message))
+                        if not options["dry_run"]:
+                            r.save(update_fields=["status", "error_message"])
+                        continue
 
                     if sent:
-                        reminder.status = "sent"
-                        reminder.sent_at = timezone.now()
-                        reminder.error_message = ""
+                        r.status = "sent"
+                        r.sent_at = timezone.now()
+                        r.error_message = ""
                     else:
                         # retry with exponential backoff capped by MAX_RETRIES
-                        current_retries = _parse_retry_count(reminder.error_message)
+                        current_retries = _parse_retry_count(r.error_message)
                         next_retries = current_retries + 1
                         if next_retries <= MAX_RETRIES:
                             # Prefer Slack-provided Retry-After for rate limits
@@ -219,120 +256,164 @@ class Command(BaseCommand):
                                 delay_seconds = retry_after
                             else:
                                 delay_seconds = min(BASE_BACKOFF_SECONDS * (2 ** (next_retries - 1)), 60 * 60)
-                            reminder.remind_at = timezone.now() + timedelta(seconds=delay_seconds)
-                            reminder.status = "pending"
-                            reminder.error_message = _format_error("send_failed", next_retries)
+                            r.remind_at = timezone.now() + timedelta(seconds=delay_seconds)
+                            r.status = "pending"
+                            r.error_message = _format_error("send_failed", next_retries)
                         else:
-                            reminder.status = "failed"
-                            reminder.error_message = _format_error("max_retries_exceeded", next_retries - 1)
-                    reminder.save(update_fields=["status", "sent_at", "error_message", "remind_at"])
-                except Exception:
-                    logger.error("Failed processing SlackReminder id=%s", reminder.id, exc_info=True)
+                            r.status = "failed"
+                            r.error_message = _format_error("max_retries_exceeded", next_retries - 1)
+                    if not options["dry_run"]:
+                        r.save(update_fields=["status", "sent_at", "error_message", "remind_at"])
+            except Exception:
+                logger.error("Failed processing SlackReminder id=%s", reminder.id, exc_info=True)
 
     def _process_huddles(self, token: str | None, now, window, options):
         # First, cancel huddles whose creator has left the workspace to avoid orphans
         # Only check huddles scheduled within the next 7 days to avoid processing old records
         future_cutoff = now + timedelta(days=7)
-        to_cancel = (
-            SlackHuddle.objects.select_for_update(skip_locked=True)
-            .filter(status="scheduled", scheduled_at__lte=future_cutoff)
-            .order_by("scheduled_at")[: options["batch_size"]]
-        )
+
+        # Fetch huddle IDs to check (release locks quickly)
         with transaction.atomic():
-            for h in to_cancel:
-                try:
-                    ws_token = self._token_for_workspace(h.workspace_id, token)
-                    if not ws_token:
-                        continue
-                    exists, retry_after_exists = _user_exists(ws_token, h.creator_id)
-                    if not exists and not retry_after_exists:
-                        h.status = "cancelled"
-                        h.save(update_fields=["status"])
-                except Exception:
-                    logger.error("Failed creator check for SlackHuddle id=%s", h.id, exc_info=True)
+            cancel_ids = list(
+                SlackHuddle.objects.select_for_update(skip_locked=True)
+                .filter(status="scheduled", scheduled_at__lte=future_cutoff)
+                .order_by("scheduled_at")
+                .values_list("id", flat=True)[: options["batch_size"]]
+            )
+
+        # Process cancellations (make network calls without holding locks)
+        for huddle_id in cancel_ids:
+            try:
+                huddle = SlackHuddle.objects.filter(id=huddle_id).first()
+                if not huddle or huddle.status != "scheduled":
+                    continue
+
+                ws_token = self._token_for_workspace(huddle.workspace_id, token)
+                if not ws_token:
+                    continue
+
+                # Network call outside transaction
+                exists, retry_after_exists = _user_exists(ws_token, huddle.creator_id)
+                # Only cancel if user truly doesn't exist (404), not on rate limits or network errors
+                if not exists and retry_after_exists is None:
+                    # Re-acquire lock to update status
+                    with transaction.atomic():
+                        h = SlackHuddle.objects.select_for_update().filter(id=huddle_id, status="scheduled").first()
+                        if h and not options["dry_run"]:
+                            # Use model method to maintain business logic consistency
+                            h.cancel()
+                elif retry_after_exists:
+                    # Rate limited - log and skip for now, will retry on next run
+                    logger.info("Rate limited checking creator for huddle id=%s, will retry later", huddle_id)
+            except Exception:
+                logger.error("Failed creator check for SlackHuddle id=%s", huddle_id, exc_info=True)
 
         # Notify participants for upcoming huddles not yet reminded
-        upcoming = (
-            SlackHuddle.objects.select_for_update(skip_locked=True)
-            .prefetch_related("participants")
-            .filter(status="scheduled", reminder_sent=False, scheduled_at__lte=now + window)
-            .order_by("scheduled_at")[: options["batch_size"]]
-        )
-
+        # Fetch huddle IDs (release locks quickly)
         with transaction.atomic():
-            for huddle in upcoming:
-                try:
-                    participants = []
-                    # Try different shapes to stay compatible with existing model
-                    if hasattr(huddle, "participant_ids") and huddle.participant_ids:
-                        participants = list(huddle.participant_ids)
-                    elif hasattr(huddle, "participants"):
-                        # ManyToMany relation expected to have 'user_id'
-                        participants = [getattr(p, "user_id", None) for p in huddle.participants.all()]
+            upcoming_ids = list(
+                SlackHuddle.objects.select_for_update(skip_locked=True)
+                .filter(status="scheduled", reminder_sent=False, scheduled_at__lte=now + window)
+                .order_by("scheduled_at")
+                .values_list("id", flat=True)[: options["batch_size"]]
+            )
 
-                    participants = [p for p in participants if p]
+        # Load huddles without locks and process notifications
+        upcoming_huddles = SlackHuddle.objects.filter(id__in=upcoming_ids).prefetch_related("participants")
 
-                    title = getattr(huddle, "title", "Huddle")
-                    title = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                    start_at = timezone.localtime(huddle.scheduled_at).strftime("%Y-%m-%d %H:%M")
-                    channel_id = getattr(huddle, "channel_id", None)
+        for huddle in upcoming_huddles:
+            try:
+                # Skip if already reminded (race condition check)
+                if huddle.reminder_sent or huddle.status != "scheduled":
+                    continue
 
-                    # Compose a concise pre-notification
-                    text = f"⏰ Reminder: '{title}' starts at {start_at}. Join the huddle in the channel."
+                participants = []
+                # Try different shapes to stay compatible with existing model
+                if hasattr(huddle, "participant_ids") and huddle.participant_ids:
+                    participants = list(huddle.participant_ids)
+                elif hasattr(huddle, "participants"):
+                    # ManyToMany relation expected to have 'user_id'
+                    participants = [getattr(p, "user_id", None) for p in huddle.participants.all()]
 
-                    if options["dry_run"]:
-                        logger.info("DRY-RUN huddle=%s notify %d participants", huddle.id, len(participants))
-                        huddle.reminder_sent = True
-                        huddle.save(update_fields=["reminder_sent"])
-                    else:
-                        ok_count = 0
-                        ws_token = self._token_for_workspace(huddle.workspace_id, token)
-                        if not ws_token and not options["dry_run"]:
-                            huddle.reminder_sent = True  # avoid infinite loop; no token to send
-                            huddle.save(update_fields=["reminder_sent"])
+                participants = [p for p in participants if p]
+
+                title = getattr(huddle, "title", "Huddle")
+                title = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                start_at = timezone.localtime(huddle.scheduled_at).strftime("%Y-%m-%d %H:%M")
+                channel_id = getattr(huddle, "channel_id", None)
+
+                # Compose a concise pre-notification
+                text = f"⏰ Reminder: '{title}' starts at {start_at}. Join the huddle in the channel."
+
+                if options["dry_run"]:
+                    logger.info("DRY-RUN huddle=%s notify %d participants", huddle.id, len(participants))
+                else:
+                    ws_token = self._token_for_workspace(huddle.workspace_id, token)
+                    if not ws_token:
+                        # Mark as reminded to avoid infinite loop
+                        with transaction.atomic():
+                            h = (
+                                SlackHuddle.objects.select_for_update()
+                                .filter(id=huddle.id, reminder_sent=False)
+                                .first()
+                            )
+                            if h:
+                                h.reminder_sent = True
+                                if not options["dry_run"]:
+                                    h.save(update_fields=["reminder_sent"])
+                        continue
+
+                    # Make network calls outside transaction
+                    ok_count = 0
+                    for pid in participants:
+                        exists, retry_after_exists = _user_exists(ws_token, pid)
+                        if not exists and not retry_after_exists:
                             continue
-                        for pid in participants:
-                            exists, retry_after_exists = _user_exists(ws_token, pid)
-                            if not exists and not retry_after_exists:
-                                continue
-                            if _send_slack_message(ws_token, pid, text)[0]:
-                                ok_count += 1
-                        # Also drop a message in the channel if available
-                        if channel_id:
-                            _send_slack_message(ws_token, channel_id, f"📣 Huddle '{title}' will start at {start_at}")
+                        if _send_slack_message(ws_token, pid, text)[0]:
+                            ok_count += 1
+                    # Also drop a message in the channel if available
+                    if channel_id:
+                        _send_slack_message(ws_token, channel_id, f"📣 Huddle '{title}' will start at {start_at}")
 
-                        huddle.reminder_sent = True
-                        huddle.save(update_fields=["reminder_sent"])
+                # Re-acquire lock to mark as reminded
+                with transaction.atomic():
+                    h = SlackHuddle.objects.select_for_update().filter(id=huddle.id, reminder_sent=False).first()
+                    if h:
+                        h.reminder_sent = True
+                        if not options["dry_run"]:
+                            h.save(update_fields=["reminder_sent"])
 
-                except Exception:
-                    logger.error("Failed pre-notify for SlackHuddle id=%s", huddle.id, exc_info=True)
+            except Exception:
+                logger.error("Failed pre-notify for SlackHuddle id=%s", huddle.id, exc_info=True)
 
-        # Transition started huddles
-        to_start = (
-            SlackHuddle.objects.select_for_update(skip_locked=True)
-            .filter(status="scheduled", scheduled_at__lte=now)
-            .order_by("scheduled_at")[: options["batch_size"]]
-        )
+        # Transition started huddles (no network calls, but keep transactions short)
         with transaction.atomic():
+            to_start = (
+                SlackHuddle.objects.select_for_update(skip_locked=True)
+                .filter(status="scheduled", scheduled_at__lte=now)
+                .order_by("scheduled_at")[: options["batch_size"]]
+            )
             for h in to_start:
                 try:
-                    h.status = "started"
-                    h.save(update_fields=["status"])
+                    # Skip state changes during dry-run to avoid persisting mutations
+                    if not options["dry_run"]:
+                        # Use model method to maintain business logic consistency
+                        h.start()
                 except Exception:
                     logger.error("Failed to mark SlackHuddle started id=%s", h.id, exc_info=True)
 
         # Transition completed huddles (started and duration elapsed)
-        to_complete = (
-            SlackHuddle.objects.select_for_update(skip_locked=True)
-            .filter(status="started")
-            .order_by("scheduled_at")[: options["batch_size"]]
-        )
         with transaction.atomic():
+            to_complete = (
+                SlackHuddle.objects.select_for_update(skip_locked=True)
+                .filter(status="started")
+                .order_by("scheduled_at")[: options["batch_size"]]
+            )
             for h in to_complete:
                 try:
                     end_at = h.scheduled_at + timedelta(minutes=h.duration_minutes)
-                    if end_at <= now:
-                        h.status = "completed"
-                        h.save(update_fields=["status"])
+                    if end_at <= now and not options["dry_run"]:
+                        # Use model method to maintain business logic consistency
+                        h.complete()
                 except Exception:
                     logger.error("Failed to mark SlackHuddle completed id=%s", h.id, exc_info=True)

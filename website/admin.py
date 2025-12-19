@@ -998,12 +998,105 @@ admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
-admin.site.register(SlackPoll)
-admin.site.register(SlackPollOption)
-admin.site.register(SlackPollVote)
-admin.site.register(SlackReminder)
-admin.site.register(SlackHuddle)
-admin.site.register(SlackHuddleParticipant)
+
+
+class SlackPollAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "question",
+        "workspace_id",
+        "channel_id",
+        "creator_id",
+        "status",
+        "created_at",
+        "closed_at",
+    )
+    list_filter = ("status", "created_at", "workspace_id")
+    search_fields = ("question", "workspace_id", "channel_id", "creator_id", "message_ts")
+    readonly_fields = ("created_at",)
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+
+
+class SlackPollOptionAdmin(admin.ModelAdmin):
+    list_display = ("id", "poll", "option_text", "option_number", "vote_count")
+    list_filter = ("poll__workspace_id",)
+    search_fields = ("option_text", "poll__question")
+    readonly_fields = ("vote_count",)
+    ordering = ("poll", "option_number")
+    raw_id_fields = ("poll",)
+
+
+class SlackPollVoteAdmin(admin.ModelAdmin):
+    list_display = ("id", "poll", "option", "voter_id", "voted_at")
+    list_filter = ("voted_at", "poll__workspace_id")
+    search_fields = ("voter_id", "poll__question", "option__option_text")
+    readonly_fields = ("voted_at",)
+    date_hierarchy = "voted_at"
+    ordering = ("-voted_at",)
+    raw_id_fields = ("poll", "option")
+
+
+class SlackReminderAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "workspace_id",
+        "target_id",
+        "target_type",
+        "message_preview",
+        "status",
+        "remind_at",
+        "sent_at",
+        "created_at",
+    )
+    list_filter = ("status", "target_type", "workspace_id", "remind_at", "created_at")
+    search_fields = ("workspace_id", "target_id", "message", "error_message")
+    readonly_fields = ("created_at", "sent_at")
+    date_hierarchy = "remind_at"
+    ordering = ("-remind_at",)
+
+    def message_preview(self, obj):
+        return truncatechars(obj.message, 50) if obj.message else ""
+
+    message_preview.short_description = "Message"
+
+
+class SlackHuddleAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "workspace_id",
+        "channel_id",
+        "creator_id",
+        "status",
+        "scheduled_at",
+        "duration_minutes",
+        "reminder_sent",
+        "created_at",
+    )
+    list_filter = ("status", "reminder_sent", "workspace_id", "scheduled_at", "created_at")
+    search_fields = ("title", "description", "workspace_id", "channel_id", "creator_id", "message_ts")
+    readonly_fields = ("created_at", "updated_at", "message_ts")
+    date_hierarchy = "scheduled_at"
+    ordering = ("-scheduled_at",)
+
+
+class SlackHuddleParticipantAdmin(admin.ModelAdmin):
+    list_display = ("id", "huddle", "user_id", "response", "responded_at", "created_at")
+    list_filter = ("response", "created_at", "huddle__workspace_id", "huddle__status")
+    search_fields = ("user_id", "huddle__title", "huddle__workspace_id")
+    readonly_fields = ("created_at", "responded_at")
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    raw_id_fields = ("huddle",)
+
+
+admin.site.register(SlackPoll, SlackPollAdmin)
+admin.site.register(SlackPollOption, SlackPollOptionAdmin)
+admin.site.register(SlackPollVote, SlackPollVoteAdmin)
+admin.site.register(SlackReminder, SlackReminderAdmin)
+admin.site.register(SlackHuddle, SlackHuddleAdmin)
+admin.site.register(SlackHuddleParticipant, SlackHuddleParticipantAdmin)
 admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)

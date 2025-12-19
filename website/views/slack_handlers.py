@@ -3367,7 +3367,7 @@ def _compute_remind_at(amount, unit):
     Returns: (remind_at datetime, error_message string or None)
     """
     if amount <= 0:
-        return None, "❌ Amount must be greater than 0."
+        return None, "❌ Amount must be a positive number."
 
     now = timezone.now()
 
