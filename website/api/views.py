@@ -1471,6 +1471,11 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
         request = self.request
         severity = request.query_params.get("severity")
         status = request.query_params.get("status")
+        if severity:
+            severity = severity.lower()
+
+        if status:
+            status = status.lower()
 
         allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
         allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]
