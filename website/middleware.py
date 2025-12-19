@@ -128,8 +128,8 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                             raw_ip = self._get_client_ip(request)
                             ip_address = anonymize_ip(raw_ip)
 
-                            # Extract user agent
-                            user_agent = request.META.get("HTTP_USER_AGENT", "")
+                            # Extract user agent (truncate to avoid exceeding DB field max_length)
+                            user_agent = request.META.get("HTTP_USER_AGENT", "")[:512]
 
                             # Create activity record
                             UserActivity.objects.create(
