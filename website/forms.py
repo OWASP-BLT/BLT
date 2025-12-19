@@ -70,17 +70,26 @@ class UserProfileForm(forms.ModelForm):
     #     return profile
 
 class IssuePledgeForm(forms.ModelForm):
+    """
+    Form for validating and submitting BCH pledges for an issue.
+
+    Ensures the BCH address is valid and the pledged amount is positive.
+    """
     class Meta:
         model = IssuePledge
         fields = ['amount', 'bch_address']
 
     def clean_bch_address(self):
+        """
+        Validates that the BCH address uses the required `bitcoincash:` prefix.
+        """
         addr = self.cleaned_data['bch_address']
         if not addr.startswith('bitcoincash:'):
             raise forms.ValidationError("Invalid BCH address")
         return addr
 
     def clean_amount(self):
+        """Ensures pledge amount is greater than zero."""
         amt = self.cleaned_data['amount']
         if amt <= 0:
             raise forms.ValidationError("Amount must be positive")

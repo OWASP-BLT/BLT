@@ -739,6 +739,12 @@ class Issue(models.Model):
         ]
 
 class IssuePledge(models.Model):
+    """
+    Stores a Bitcoin Cash (BCH) pledge made toward resolving an issue.
+
+    Pledges can be anonymous and are linked to an issue.
+    Funds are intended to be donated or tipped once the issue is closed.
+    """
     PENDING = 'pending'
     CONFIRMED = 'confirmed'
     PAID = 'paid'

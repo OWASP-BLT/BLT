@@ -95,6 +95,13 @@ logger = logging.getLogger(__name__)
 
 @require_POST
 def submit_pledge(request):
+    """
+    Handles AJAX submission of an issue pledge.
+
+    Creates a new IssuePledge linked to the issue and user.
+    Supports anonymous pledges.
+    Returns JSON success or error responses.
+    """
     issue_id = request.POST.get("issue_id")
     if not issue_id:
         return JsonResponse({"error": "Issue ID missing"}, status=400)

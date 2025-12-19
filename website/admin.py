@@ -202,6 +202,11 @@ class IssueAdmin(admin.ModelAdmin):
 
 @admin.register(IssuePledge)
 class IssuePledgeAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for managing issue pledges.
+
+    Allows filtering, searching, and viewing pledge status.
+    """
     list_display = (
         "id",
         "issue",
