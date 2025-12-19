@@ -17,9 +17,9 @@ This document provides a comprehensive overview of all GitHub Actions workflows 
 
 ## Overview
 
-The OWASP BLT repository uses **27 GitHub Actions workflows** to automate nearly every aspect of the development lifecycle. These workflows help maintain high code quality, manage contributions from a global community, and ensure security best practices are followed.
+The OWASP BLT repository uses **29 GitHub Actions workflows** to automate nearly every aspect of the development lifecycle. These workflows help maintain high code quality, manage contributions from a global community, and ensure security best practices are followed.
 
-**Total Workflows**: 27
+**Total Workflows**: 29
 
 ## Why GitHub Actions Matter in the Age of AI
 
@@ -313,7 +313,23 @@ Workflows that build, test, and validate the application.
 
 **AI Relevance**: Migrations are complex. This workflow ensures they're correctly generated even if AI-assisted changes conflict with existing migrations.
 
-#### 3.3 CodeQL Security Analysis (`codeql.yml`)
+#### 3.3 Fix Poetry Lock (`fix-poetry-lock.yml`)
+**Purpose**: Automatically fix poetry.lock conflicts in PRs
+
+**Triggers**:
+- When `fix-poetry-lock` label is added
+- Manual workflow dispatch
+
+**Key Features**:
+- Runs `poetry lock --no-update` to resolve lock file conflicts
+- Does not update dependencies to newer versions
+- Commits updated poetry.lock back to PR branch
+- Comments on PR with status update
+- Automatically removes trigger label after execution
+
+**AI Relevance**: When multiple contributors (or AI tools) modify dependencies, poetry.lock conflicts are common. This workflow resolves them automatically without manual intervention.
+
+#### 3.4 CodeQL Security Analysis (`codeql.yml`)
 **Purpose**: Advanced security scanning for vulnerabilities
 
 **Triggers**:
@@ -378,6 +394,46 @@ Workflows that handle issue lifecycle and assignment.
 **Note**: This is temporary during high-backlog periods. It prevents issue overload while the team focuses on existing work.
 
 **AI Relevance**: Manages contribution flow—important when AI tools make it easy to create many issues quickly.
+
+#### 5.3 Add Last Active Label (`add-last-active-label.yml`)
+**Purpose**: Automatically label issues and PRs based on days since last activity
+
+**Triggers**:
+- Daily schedule (midnight UTC)
+- Manual dispatch for testing
+
+**Key Features**:
+- Adds `last-active: Xd` labels to all open issues and PRs
+- Based on `updated_at` timestamp (last activity), not when created
+- Automatically removes outdated last-active labels before adding new ones
+- Creates labels with color-coded severity:
+  - 0-2 days: Green (fresh)
+  - 3-7 days: Yellow (getting old)
+  - 8-14 days: Orange (needs attention)
+  - 15+ days: Red (stale)
+- Processes both issues and pull requests
+- Runs daily to keep labels current
+
+**AI Relevance**: Helps prioritize review and maintenance efforts by surfacing items that need attention, critical for managing high-volume AI-assisted contributions.
+
+#### 5.4 Remove Last Active Label on Update (`remove-last-active-label-on-update.yml`)
+**Purpose**: Remove last-active labels when an issue or PR receives activity
+
+**Triggers**:
+- Pull request events (opened, synchronized, reopened, ready_for_review, edited)
+- Issue events (opened, reopened, edited)
+- Comment events (created, edited, deleted)
+- Review events (submitted, edited, dismissed)
+- Review comment events (created, edited, deleted)
+
+**Key Features**:
+- Automatically removes `last-active: Xd` labels when activity occurs
+- Works for both issues and pull requests
+- The scheduled `add-last-active-label.yml` workflow will re-add the correct label on its next run
+- Ensures labels accurately reflect current activity status
+- Uses GitHub API only (no code checkout for security)
+
+**AI Relevance**: Maintains accurate activity tracking as AI tools and developers interact with issues and PRs, ensuring the most active items are properly identified.
 
 ---
 
@@ -556,5 +612,5 @@ In the age of AI-powered coding, these workflows are essential for maintaining h
 ---
 
 **Last Updated**: December 2024  
-**Total Workflows**: 27  
+**Total Workflows**: 29  
 **Maintained By**: OWASP BLT Team
