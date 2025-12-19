@@ -4230,6 +4230,16 @@ def handle_poll_vote(payload, workspace_client):
 
         # Update the poll message
         blocks = build_poll_blocks(poll)
+        # Check if message_ts is available
+        if poll.message_ts is None:
+            logger.warning(f"Poll {poll.id} has no message_ts, cannot update message")
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "✅ Vote recorded, but I couldn't refresh the results (poll message not found).",
+                }
+            )
+
         _ensure_bot_in_channel(workspace_client, poll.channel_id)
         try:
             workspace_client.chat_update(
@@ -4282,6 +4292,16 @@ def handle_poll_close(payload, workspace_client, user_id):
         poll.close_poll()
 
         # Update the poll message
+        # Check if message_ts is available
+        if poll.message_ts is None:
+            logger.warning(f"Poll {poll.id} has no message_ts, cannot update message")
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "✅ Poll closed, but I couldn't update the message (poll message not found).",
+                }
+            )
+
         blocks = build_poll_blocks(poll)
         _ensure_bot_in_channel(workspace_client, poll.channel_id)
         try:
@@ -4295,13 +4315,20 @@ def handle_poll_close(payload, workspace_client, user_id):
             else:
                 err = "unknown_error"
             if err in {"channel_not_found", "not_in_channel"}:
+                logger.warning(f"Poll closed but couldn't refresh message: {err}")
                 return JsonResponse(
                     {
                         "response_type": "ephemeral",
-                        "text": "❌ I’m not in that channel. Please add the bot to the channel and try again.",
+                        "text": "✅ Poll closed, but I couldn't refresh the message on Slack (bot may not be in the channel).",
                     }
                 )
-            raise
+            logger.warning(f"Poll closed but chat_update failed: {err}", exc_info=True)
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "✅ Poll closed, but I couldn't refresh the message on Slack.",
+                }
+            )
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Poll closed!"})
 
@@ -4476,13 +4503,20 @@ def handle_poll_reopen(payload, workspace_client, user_id):
             else:
                 err = "unknown_error"
             if err in {"channel_not_found", "not_in_channel"}:
+                logger.warning(f"Poll reopened but couldn't refresh message: {err}")
                 return JsonResponse(
                     {
                         "response_type": "ephemeral",
-                        "text": "❌ I’m not in that channel. Please add the bot to the channel and try again.",
+                        "text": "✅ Poll reopened, but I couldn't refresh the message on Slack (bot may not be in the channel).",
                     }
                 )
-            raise
+            logger.warning(f"Poll reopened but chat_update failed: {err}", exc_info=True)
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "✅ Poll reopened, but I couldn't refresh the message on Slack.",
+                }
+            )
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Poll reopened! Voting is now enabled."})
 

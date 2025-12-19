@@ -32,6 +32,7 @@ class SlackInteractionHandlerTests(TestCase):
             creator_id=self.creator_id,
             question="Best time?",
             status="active",
+            message_ts="1234567890.123456",
         )
         opt_a = SlackPollOption.objects.create(poll=poll, option_text="Morning", option_number=0)
 
@@ -78,6 +79,7 @@ class SlackInteractionHandlerTests(TestCase):
             creator_id=self.creator_id,
             question="Best time?",
             status="active",
+            message_ts="1234567890.123456",
         )
         workspace_client = mock_webclient.return_value
         workspace_client.chat_update.return_value = {"ok": True}
@@ -259,6 +261,7 @@ class SlackInteractionHandlerTests(TestCase):
             creator_id=self.creator_id,
             question="Best time?",
             status="closed",
+            message_ts="1234567890.123456",
         )
         workspace_client = mock_webclient.return_value
         payload = {"actions": [{"action_id": f"poll_close_{poll.id}"}]}
@@ -284,6 +287,7 @@ class SlackInteractionHandlerTests(TestCase):
             creator_id=self.creator_id,
             question="Best time?",
             status="active",
+            message_ts="1234567890.123456",
         )
         opt = SlackPollOption.objects.create(poll=poll, option_text="Morning", option_number=0)
 
