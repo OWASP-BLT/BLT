@@ -3775,15 +3775,25 @@ class SlackReminder(models.Model):
 
     def mark_as_sent(self):
         """Mark reminder as sent"""
-        self.status = "sent"
-        self.sent_at = timezone.now()
-        self.save()
+        now = timezone.now()
+        updated_rows = self.__class__.objects.filter(pk=self.pk, status="pending").update(
+            status="sent",
+            sent_at=now,
+        )
+        if updated_rows > 0:
+            self.status = "sent"
+            self.sent_at = now
 
     def mark_as_failed(self, error_msg):
         """Mark reminder as failed with error message"""
-        self.status = "failed"
-        self.error_message = escape(str(error_msg))
-        self.save()
+        safe_error = escape(str(error_msg))
+        updated_rows = self.__class__.objects.filter(pk=self.pk, status="pending").update(
+            status="failed",
+            error_message=safe_error,
+        )
+        if updated_rows > 0:
+            self.status = "failed"
+            self.error_message = safe_error
 
     def cancel(self):
         """Cancel the reminder"""

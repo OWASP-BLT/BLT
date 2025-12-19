@@ -3205,7 +3205,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
         # Truncate question to a safe length for Slack headers
         question_truncated = (question_norm[:200] + "…") if len(question_norm) > 200 else question_norm
         # Sanitize question to prevent markdown injection
-        question = re.sub(r"([*_~`>])", r"\\\1", question_truncated)
+        question = escape_slack_markdown(question_truncated)
 
         # Deduplicate options (case-insensitive, whitespace-normalized) and drop empties
         seen = set()
@@ -3240,7 +3240,7 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
         # Create poll options
         for idx, option_text in enumerate(cleaned_options):
             # Sanitize user input to prevent markdown injection
-            sanitized_option_text = re.sub(r"([*_~`>])", r"\\\1", option_text)
+            sanitized_option_text = escape_slack_markdown(option_text)
             SlackPollOption.objects.create(poll=poll, option_text=sanitized_option_text, option_number=idx)
 
         # Build Slack message blocks
@@ -4357,10 +4357,11 @@ def handle_reminder_cancel(payload, user_id):
         if reminder.status != "pending":
             return JsonResponse({"response_type": "ephemeral", "text": "❌ This reminder is no longer pending."})
 
-        # Cancel the reminder
-        reminder.cancel()
+        # Cancel the reminder; cancel() returns True if the status update succeeded
+        if reminder.cancel():
+            return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder cancelled!"})
 
-        return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder cancelled!"})
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ This reminder is no longer pending."})
 
     except SlackReminder.DoesNotExist:
         return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found."})
@@ -4490,6 +4491,15 @@ def handle_poll_reopen(payload, workspace_client, user_id):
         poll.save()
 
         # Update the poll message
+        if poll.message_ts is None:
+            logger.warning(f"Poll {poll.id} has no message_ts, cannot update message")
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "✅ Poll reopened, but I couldn't refresh the message (poll message not found).",
+                }
+            )
+
         blocks = build_poll_blocks(poll)
         _ensure_bot_in_channel(workspace_client, poll.channel_id)
         try:
@@ -4545,8 +4555,9 @@ def handle_huddle_cancel(payload, workspace_client, user_id):
         if huddle.status != "scheduled":
             return JsonResponse({"response_type": "ephemeral", "text": "❌ This huddle is no longer scheduled."})
 
-        # Cancel the huddle
-        huddle.cancel()
+        # Cancel the huddle; cancel() returns True if the status update succeeded
+        if not huddle.cancel():
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ This huddle is no longer scheduled."})
 
         # Update the huddle message (guard if message_ts is missing)
         blocks = build_huddle_blocks(huddle)

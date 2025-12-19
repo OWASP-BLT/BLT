@@ -366,7 +366,7 @@ class SlackInteractionHandlerTests(TestCase):
     def test_huddle_list_all_across_channels(self, mock_webclient):
         """Ensure `/blt_huddle list all` returns cross-channel listing."""
         # Create two huddles: one created by user, one where user is a participant
-        h1 = SlackHuddle.objects.create(
+        SlackHuddle.objects.create(
             workspace_id=self.workspace_id,
             channel_id="CCHAN1",
             creator_id=self.creator_id,
