@@ -218,7 +218,6 @@ class Command(BaseCommand):
                         continue
 
                 msg = reminder.message or ""
-                msg = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 target = reminder.target_id
 
                 # Make network call outside transaction

@@ -1022,7 +1022,6 @@ class SlackPollOptionAdmin(admin.ModelAdmin):
     list_display = ("id", "poll", "option_text", "option_number", "vote_count")
     list_filter = ("poll__workspace_id",)
     search_fields = ("option_text", "poll__question")
-    readonly_fields = ("vote_count",)
     ordering = ("poll", "option_number")
     raw_id_fields = ("poll",)
 

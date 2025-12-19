@@ -3622,9 +3622,9 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder set! I've sent details."})
 
     except Exception as e:
-        logger.error(f"Error in reminder command: {str(e)}")
+        logger.error("Error in reminder command", exc_info=True)
         activity.success = False
-        activity.error_message = str(e)
+        activity.error_message = "Unexpected error while processing reminder command."
         activity.save()
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred. Please try again."})
 
