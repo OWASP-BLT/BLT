@@ -3495,64 +3495,40 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                     }
                 )
             reminder_id = int(parts[1])
-            amount = None
-            unit = None
             time_match = re.search(r"in\s+(\d+)\s+(minute|minutes|hour|hours|day|days)", text.lower())
-            if time_match:
-                amount = int(time_match.group(1))
-                unit = time_match.group(2)
-            if amount is None or unit is None:
+            if not time_match:
                 return JsonResponse(
                     {
                         "response_type": "ephemeral",
                         "text": "❌ Invalid time format. Use: in <number> <minutes|hours|days>",
                     }
                 )
-            # Validate snooze amount
-            if amount <= 0:
-                return JsonResponse(
-                    {
-                        "response_type": "ephemeral",
-                        "text": "❌ Snooze time must be a positive number.",
-                    }
-                )
-            now = timezone.now()
-            if "minute" in unit:
-                # Cap at 1 year in minutes
-                if amount > 525600:
-                    return JsonResponse(
-                        {
-                            "response_type": "ephemeral",
-                            "text": "❌ Snooze time is too long. Please use 525600 minutes or less (up to 1 year).",
-                        }
-                    )
-                remind_at = now + timedelta(minutes=amount)
-            elif "hour" in unit:
-                # Cap at 1 year in hours
-                if amount > 8760:
-                    return JsonResponse(
-                        {
-                            "response_type": "ephemeral",
-                            "text": "❌ Snooze time is too long. Please use 8760 hours or less (up to 1 year).",
-                        }
-                    )
-                remind_at = now + timedelta(hours=amount)
-            elif "day" in unit:
-                # Cap at 1 year in days
-                if amount > 365:
-                    return JsonResponse(
-                        {
-                            "response_type": "ephemeral",
-                            "text": "❌ Snooze time is too long. Please use 365 days or less.",
-                        }
-                    )
-                remind_at = now + timedelta(days=amount)
-            else:
-                return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid time unit."})
+            amount = int(time_match.group(1))
+            unit = time_match.group(2)
+
+            remind_at, error = _compute_remind_at(amount, unit)
+            if error:
+                return JsonResponse({"response_type": "ephemeral", "text": error})
+
             try:
-                reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
-                reminder.remind_at = remind_at
-                reminder.save(update_fields=["remind_at"])
+                with transaction.atomic():
+                    reminder = (
+                        SlackReminder.objects.select_for_update(skip_locked=True)
+                        .only("id", "creator_id", "status")
+                        .get(id=reminder_id, creator_id=user_id)
+                    )
+
+                    if reminder.status != "pending":
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ This reminder is no longer pending.",
+                            }
+                        )
+
+                    reminder.remind_at = remind_at
+                    reminder.save(update_fields=["remind_at"])
+
                 return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder snoozed."})
             except SlackReminder.DoesNotExist:
                 return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found or not editable."})
