@@ -15,7 +15,9 @@ def log_bug_report(sender, instance, created, **kwargs):
     """Log bug report activity when a new issue is created."""
     if not created or not instance.user:  # user check
         return
-
+    user = getattr(instance, "user", None)
+    if not user or user.is_superuser:
+        return
     try:
         # Extract organization from domain if available
         organization = None
@@ -42,7 +44,9 @@ def log_bug_comment(sender, instance, created, **kwargs):
     """Log bug comment activity when a new comment is created on an Issue."""
     if not created:
         return
-
+    user = getattr(instance, "user", None)
+    if not user or user.is_superuser:
+        return
     try:
         # ✓ Only track comments on Issues (not other content types)
         issue_content_type = ContentType.objects.get_for_model(Issue)
