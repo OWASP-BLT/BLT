@@ -120,3 +120,16 @@ class ActivityMiddlewareTest(TestCase):
 
         # Verify new activity was created (now 2 activities)
         self.assertEqual(UserActivity.objects.count(), initial_count + 2)
+
+    def test_ip_address_is_anonymized(self):
+        """Test that IP addresses are anonymized before storage"""
+        request = self.factory.get(f"/organization/{self.org.id}/dashboard/")
+        request.user = self.user
+        request.session = {}
+        request.META["REMOTE_ADDR"] = "192.168.1.100"
+
+        self.middleware(request)
+
+        activity = UserActivity.objects.latest("timestamp")
+        # Last octet should be masked to 0
+        self.assertEqual(activity.ip_address, "192.168.1.0")

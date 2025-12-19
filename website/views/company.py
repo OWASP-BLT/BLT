@@ -846,7 +846,7 @@ class OrganizationDashboardAnalyticsView(View):
             .annotate(count=Count("id"))
             .order_by("day")
         )
-        weekly_trend_list = [{"date": d["day"].strftime("%Y-%m-%d"), "count": d["count"]} for d in weekly_trend]
+        weekly_trend_list = [{"date": d["day"].date().isoformat(), "count": d["count"]} for d in weekly_trend]
 
         engagement_rate = round(total_activities / active_users_count, 2) if active_users_count else 0
 

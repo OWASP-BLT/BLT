@@ -14,6 +14,35 @@ from website.models import Organization, UserActivity
 logger = logging.getLogger(__name__)
 
 
+def anonymize_ip(ip_address):
+    """
+    Anonymize IP address for GDPR compliance.
+    IPv4: Masks last octet (192.168.1.100 -> 192.168.1.0)
+    IPv6: Masks last 80 bits (2001:db8::1 -> 2001:db8::)
+    """
+    if not ip_address:
+        return None
+
+    try:
+        from ipaddress import ip_address as parse_ip
+
+        ip_obj = parse_ip(ip_address)
+
+        if ip_obj.version == 4:
+            # Mask last octet
+            parts = str(ip_obj).split(".")
+            parts[-1] = "0"
+            return ".".join(parts)
+        else:
+            # Mask last 80 bits (keep first 48 bits)
+            from ipaddress import IPv6Address
+
+            masked = int(ip_obj) & (0xFFFFFFFFFFFFFFFF << 80)
+            return str(IPv6Address(masked))
+    except Exception:
+        return None
+
+
 class BaconRewardMessageMiddleware(MiddlewareMixin):
     """
     Middleware to show BACON reward messages after social auth redirect.
@@ -71,18 +100,27 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
 
                     # Deduplication: Check if user visited this dashboard in the last minute
                     one_minute_ago = timezone.now() - timedelta(minutes=1)
-                    recent_visit = UserActivity.objects.filter(
-                        user=request.user,
-                        organization=organization,
-                        activity_type="dashboard_visit",
-                        timestamp__gte=one_minute_ago,
-                        metadata__path=request.path,
-                    ).exists()
+
+                    # Build deduplication filter
+                    dedup_filter = {
+                        "user": request.user,
+                        "activity_type": "dashboard_visit",
+                        "timestamp__gte": one_minute_ago,
+                        "metadata__path": request.path,
+                    }
+
+                    # Only include organization in filter if it's not None
+                    # This prevents false deduplication when org extraction fails
+                    if organization is not None:
+                        dedup_filter["organization"] = organization
+
+                    recent_visit = UserActivity.objects.filter(**dedup_filter).exists()
 
                     # Only create activity if no recent visit exists
                     if not recent_visit:
-                        # Extract IP address
-                        ip_address = self._get_client_ip(request)
+                        # Extract and anonymize IP address for GDPR compliance
+                        raw_ip = self._get_client_ip(request)
+                        ip_address = anonymize_ip(raw_ip)
 
                         # Extract user agent
                         user_agent = request.META.get("HTTP_USER_AGENT", "")
@@ -92,13 +130,13 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                             user=request.user,
                             organization=organization,
                             activity_type="dashboard_visit",
-                            ip_address=ip_address,
+                            ip_address=ip_address,  # Now anonymized
                             user_agent=user_agent,
                             metadata={"path": request.path},
                         )
             except Exception as e:
                 # Silent failure - don't break the request
-                logger.debug("Failed to extract organization from request: %s", type(e).__name__, exc_info=True)
+                logger.debug("Failed to track dashboard visit: %s", type(e).__name__, exc_info=True)
 
         response = self.get_response(request)
         return response
@@ -113,9 +151,15 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
         return any(re.match(pattern, path) for pattern in dashboard_patterns)
 
     def _get_client_ip(self, request):
-        """Extract client IP address from request (trusted proxy only)."""
-        # Only use X-Forwarded-For if behind trusted proxy
-        # Otherwise use REMOTE_ADDR directly
+        """Extract client IP address from request."""
+        # Check if behind a trusted proxy (Django SECURE_PROXY_SSL_HEADER is configured)
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            # Get the first IP in the chain (actual client IP)
+            # X-Forwarded-For format: "client_ip, proxy1_ip, proxy2_ip"
+            ip = x_forwarded_for.split(",")[0].strip()
+            return ip
+        # Fallback to REMOTE_ADDR if not behind proxy
         return request.META.get("REMOTE_ADDR")
 
     def _get_organization_from_request(self, request):
@@ -133,6 +177,6 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
                 return Organization.objects.filter(id=org_ref).first()
         except Exception as e:
             # Silent failure - don't break the request
-            logger.debug("Failed to extract organization from request: %s", type(e).__name__, exc_info=True)
+            logger.debug("Failed to track dashboard visit: %s", type(e).__name__, exc_info=True)
 
         return None

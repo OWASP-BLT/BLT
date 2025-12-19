@@ -448,8 +448,10 @@
     </div>
 {% endblock body %}
 {% block scripts %}
-    {{ user_behavior.weekly_trend|json_script:"weekly-trend-data" }}
-    {{ user_behavior.peak_hours|json_script:"peak-hours-data" }}
+    {% if user_behavior %}
+        {{ user_behavior.weekly_trend|json_script:"weekly-trend-data" }}
+        {{ user_behavior.peak_hours|json_script:"peak-hours-data" }}
+    {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         // Support dark mode for chart text colors
