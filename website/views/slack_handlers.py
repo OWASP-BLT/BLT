@@ -3763,9 +3763,12 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                         '`/blt_huddle "Title" "Description" at <time> with @user1 @user2`\n\n'
                         "*Examples:*\n"
                         '`/blt_huddle "Sprint Planning" "Q1 planning" at 2:00 PM with @alice @bob`\n'
-                        '`/blt_huddle "Quick Sync" "Daily standup" in 30 minutes`\n\n'
+                        '`/blt_huddle "Quick Sync" "Daily standup" in 30 minutes`\n'
+                        '`/blt_huddle "Roadmap Review" "Quarterly planning" in 2 days`\n\n'
+                        "*Edit a huddle:*\n"
+                        "`/blt_huddle edit <id> in <number> <minutes|hours|days>` or `edit <id> at HH:MM AM/PM`\n\n"
                         "*List huddles:*\n"
-                        "`/blt_huddle list [page]`\n\n"
+                        "`/blt_huddle list [page]` or `list all [page]`\n\n"
                         "*Note:* Times display in your local timezone. Participants will be notified.",
                     },
                 }
@@ -3925,7 +3928,7 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
             return JsonResponse(
                 {
                     "response_type": "ephemeral",
-                    "text": '❌ Invalid time format. Use: "at HH:MM AM/PM" or "in <number> <minutes|hours>"',
+                    "text": '❌ Invalid time format. Use: "at HH:MM AM/PM" or "in <number> <minutes|hours|days>"',
                 }
             )
 
@@ -4197,9 +4200,20 @@ def handle_poll_vote(payload, workspace_client):
         # Update the poll message
         blocks = build_poll_blocks(poll)
         _ensure_bot_in_channel(workspace_client, poll.channel_id)
-        workspace_client.chat_update(
-            channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
-        )
+        try:
+            workspace_client.chat_update(
+                channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
+            )
+        except SlackApiError as e:
+            err = (e.response or {}).get("error", "unknown_error")
+            if err in {"channel_not_found", "not_in_channel"}:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ I’m not in that channel. Please add the bot to the channel and try again.",
+                    }
+                )
+            raise
 
         return JsonResponse({"response_type": "ephemeral", "text": message})
 
@@ -4234,9 +4248,20 @@ def handle_poll_close(payload, workspace_client, user_id):
         # Update the poll message
         blocks = build_poll_blocks(poll)
         _ensure_bot_in_channel(workspace_client, poll.channel_id)
-        workspace_client.chat_update(
-            channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question} [CLOSED]"
-        )
+        try:
+            workspace_client.chat_update(
+                channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question} [CLOSED]"
+            )
+        except SlackApiError as e:
+            err = (e.response or {}).get("error", "unknown_error")
+            if err in {"channel_not_found", "not_in_channel"}:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ I’m not in that channel. Please add the bot to the channel and try again.",
+                    }
+                )
+            raise
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Poll closed!"})
 
@@ -4385,9 +4410,20 @@ def handle_poll_reopen(payload, workspace_client, user_id):
         # Update the poll message
         blocks = build_poll_blocks(poll)
         _ensure_bot_in_channel(workspace_client, poll.channel_id)
-        workspace_client.chat_update(
-            channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
-        )
+        try:
+            workspace_client.chat_update(
+                channel=poll.channel_id, ts=poll.message_ts, blocks=blocks, text=f"📊 Poll: {poll.question}"
+            )
+        except SlackApiError as e:
+            err = (e.response or {}).get("error", "unknown_error")
+            if err in {"channel_not_found", "not_in_channel"}:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ I’m not in that channel. Please add the bot to the channel and try again.",
+                    }
+                )
+            raise
 
         return JsonResponse({"response_type": "ephemeral", "text": "✅ Poll reopened! Voting is now enabled."})
 

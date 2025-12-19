@@ -357,3 +357,80 @@ class SlackInteractionHandlerTests(TestCase):
         resp = handle_reminder_snooze(payload, "UUNRELATED")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("can only snooze", resp.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_huddle_list_all_across_channels(self, mock_webclient):
+        """Ensure `/blt_huddle list all` returns cross-channel listing."""
+        # Create two huddles: one created by user, one where user is a participant
+        h1 = SlackHuddle.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id="CCHAN1",
+            creator_id=self.creator_id,
+            title="Team Sync",
+            description="General",
+            status="scheduled",
+            scheduled_at=timezone.now() + timezone.timedelta(hours=2),
+        )
+        h2 = SlackHuddle.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id="CCHAN2",
+            creator_id=self.other_id,
+            title="Partner Meeting",
+            description="Cross-team",
+            status="scheduled",
+            scheduled_at=timezone.now() + timezone.timedelta(hours=3),
+        )
+        SlackHuddleParticipant.objects.create(huddle=h2, user_id=self.creator_id, response="invited")
+
+        # Mock DM sending
+        workspace_client = mock_webclient.return_value
+        workspace_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        workspace_client.chat_postMessage.return_value = {"ok": True}
+
+        # Clear cache to avoid rate-limit interference
+        cache.clear()
+
+        activity = MagicMock()
+        resp = handle_huddle_command(
+            workspace_client,
+            self.creator_id,
+            self.workspace_id,
+            self.channel_id,
+            "list all",
+            activity,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("sent you the huddles list", resp.content.decode().lower())
+
+    @patch("website.views.slack_handlers.WebClient")
+    def test_huddle_edit_reschedule_in_days(self, mock_webclient):
+        """Ensure `edit <id> in 2 days` reschedules the huddle."""
+        h = SlackHuddle.objects.create(
+            workspace_id=self.workspace_id,
+            channel_id=self.channel_id,
+            creator_id=self.creator_id,
+            title="Standup",
+            description="Daily",
+            status="scheduled",
+            scheduled_at=timezone.now() + timezone.timedelta(hours=1),
+        )
+
+        workspace_client = mock_webclient.return_value
+        workspace_client.chat_update.return_value = {"ok": True}
+
+        original_time = h.scheduled_at
+        # Clear rate-limit cache
+        cache.clear()
+        activity = MagicMock()
+        resp = handle_huddle_command(
+            workspace_client,
+            self.creator_id,
+            self.workspace_id,
+            self.channel_id,
+            f"edit {h.id} in 2 days",
+            activity,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("updated", resp.content.decode().lower())
+        h.refresh_from_db()
+        self.assertGreater(h.scheduled_at, original_time)
