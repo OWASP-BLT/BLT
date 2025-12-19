@@ -1,134 +1,133 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
-    All Issues
+All Issues
 {% endblock title %}
 {% block description %}
-    Browse through all reported issues. Filter by label and user to find specific issues and track progress.
+Browse through all reported issues. Filter by label and user to find specific issues and track progress.
 {% endblock description %}
 {% block keywords %}
-    All Issues, Reported Issues, Issue Tracking, Filter Issues, User Issues, Label Issues
+All Issues, Reported Issues, Issue Tracking, Filter Issues, User Issues, Label Issues
 {% endblock keywords %}
 {% block og_title %}
-    All Issues - Track and Browse Reported Issues
+All Issues - Track and Browse Reported Issues
 {% endblock og_title %}
 {% block og_description %}
-    Explore all reported issues. Filter by label and user to efficiently find and track the progress of specific issues.
+Explore all reported issues. Filter by label and user to efficiently find and track the progress of specific issues.
 {% endblock og_description %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
-            <!-- Main Content -->
-            <div class="flex-1">
-                <!-- Header -->
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                        All
-                        {% if label %}<span class="text-[#e74c3c]">{{ label }}</span>{% endif %}
-                        Issues
-                        {% if user %}
-                            by
-                            <span class="text-[#e74c3c]">{{ user }}</span>
-                        {% endif %}
-                    </h1>
-                    <!-- Filter Pills -->
-                    <div class="flex flex-wrap gap-2">
-                        <a href="{% url 'all_activity' %}"
-                           class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %} transition-colors">
-                            All Issues
-                        </a>
-                        {% if label %}
-                            <a href="{% url 'all_activity' %}?label={{ label }}"
-                               class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
-                                {{ label }}
-                                <span class="ml-1.5">×</span>
-                            </a>
-                        {% endif %}
-                        {% if user %}
-                            <a href="{% url 'all_activity' %}?user={{ user }}"
-                               class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
-                                {{ user }}
-                                <span class="ml-1.5">×</span>
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- Issues Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {% for activity in activities %}
-                        {% include "includes/_activity.html" %}
-                    {% endfor %}
-                </div>
-                <!-- Pagination -->
-                {% if is_paginated %}
-                    <div class="mt-8 flex flex-col items-center space-y-3">
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                             aria-label="Pagination">
-                            {% if page_obj.has_previous %}
-                                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                                   class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 transition-colors">
-                                    First
-                                </a>
-                            {% endif %}
-                            {% for num in page_obj.paginator.page_range %}
-                                {% if num == page_obj.number %}
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
-                                        {{ num }}
-                                    </span>
-                                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
-                                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
-                                        {{ num }}
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                            {% if page_obj.has_next %}
-                                <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                                   class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 transition-colors">
-                                    Last
-                                </a>
-                            {% endif %}
-                        </nav>
-                        <p class="text-sm text-gray-700 dark:text-gray-300">
-                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                        </p>
-                    </div>
-                {% endif %}
-            </div>
-            <!-- Sidebar -->
-            <div class="w-full lg:w-80 mt-8 lg:mt-0">
-                <!-- Leaderboard -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-8">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Contributors</h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">This Month's Leaders</p>
-                    </div>
-                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
-                        {% for user in top_users|slice:":5" %}
-                            <div class="p-4 hover:bg-gray-50 transition-colors">
-                                <div class="flex items-center space-x-3">
-                                    <img src="{{ user.avatar_url }}"
-                                         alt="{{ user.username }}'s avatar"
-                                         class="w-10 h-10 rounded-full"
-                                         width="40"
-                                         height="40">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ user.username }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-500">{{ user.points }} points</p>
-                                    </div>
-                                    <div class="flex-shrink-0 text-[#e74c3c] font-medium">#{{ forloop.counter }}</div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    {% if not top_users %}
-                        <div class="p-4 text-center text-gray-500 dark:text-gray-500">
-                            <p class="text-sm">No contributors yet this month</p>
-                        </div>
+{% include "includes/sidenav.html" %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:space-x-8">
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    All
+                    {% if label %}<span class="text-[#e74c3c]">{{ label }}</span>{% endif %}
+                    Issues
+                    {% if user %}
+                    by
+                    <span class="text-[#e74c3c]">{{ user }}</span>
+                    {% endif %}
+                </h1>
+                <!-- Filter Pills -->
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'all_activity' %}"
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %} transition-colors">
+                        All Issues
+                    </a>
+                    {% if label %}
+                    <a href="{% url 'all_activity' %}?label={{ label }}"
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
+                        {{ label }}
+                        <span class="ml-1.5">×</span>
+                    </a>
+                    {% endif %}
+                    {% if user %}
+                    <a href="{% url 'all_activity' %}?user={{ user }}"
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
+                        {{ user }}
+                        <span class="ml-1.5">×</span>
+                    </a>
                     {% endif %}
                 </div>
             </div>
+            <!-- Issues Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {% for activity in activities %}
+                {% include "includes/_activity.html" %}
+                {% endfor %}
+            </div>
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="mt-8 flex flex-col items-center space-y-3">
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                    <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                        class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 transition-colors">
+                        First
+                    </a>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                    <span
+                        class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
+                        {{ num }}
+                    </span>
+                    {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %} <a
+                        href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 transition-colors">
+                        {{ num }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                            class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 transition-colors">
+                            Last
+                        </a>
+                        {% endif %}
+                </nav>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        <!-- Sidebar -->
+        <div class="w-full lg:w-80 mt-8 lg:mt-0">
+            <!-- Leaderboard -->
+            <div
+                class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-8">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Contributors</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">This Month's Leaders</p>
+                </div>
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for user in top_users|slice:":5" %}
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <img src="{{ user.avatar_url }}" alt="{{ user.username }}'s avatar"
+                                class="w-10 h-10 rounded-full" width="40" height="40">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{
+                                    user.username }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-500">{{ user.points }} points</p>
+                            </div>
+                            <div class="flex-shrink-0 text-[#e74c3c] font-medium">#{{ forloop.counter }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if not top_users %}
+                <div class="p-4 text-center text-gray-500 dark:text-gray-500">
+                    <p class="text-sm">No contributors yet this month</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
+</div>
 {% endblock content %}

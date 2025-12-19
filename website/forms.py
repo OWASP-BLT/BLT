@@ -18,6 +18,7 @@ from website.models import (
     Repo,
     Room,
     UserProfile,
+    IssuePledge
 )
 
 
@@ -68,7 +69,23 @@ class UserProfileForm(forms.ModelForm):
     #         profile.save()
     #     return profile
 
+class IssuePledgeForm(forms.ModelForm):
+    class Meta:
+        model = IssuePledge
+        fields = ['amount', 'bch_address']
 
+    def clean_bch_address(self):
+        addr = self.cleaned_data['bch_address']
+        if not addr.startswith('bitcoincash:'):
+            raise forms.ValidationError("Invalid BCH address")
+        return addr
+
+    def clean_amount(self):
+        amt = self.cleaned_data['amount']
+        if amt <= 0:
+            raise forms.ValidationError("Amount must be positive")
+        return amt
+    
 class UserDeleteForm(forms.Form):
     delete = forms.BooleanField(
         required=True,
