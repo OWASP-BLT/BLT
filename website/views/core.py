@@ -562,11 +562,24 @@ def status_page(request):
 def find_key(request, token):
     acme_token = os.environ.get("ACME_TOKEN")
     if acme_token and constant_time_compare(token, acme_token):
-        return HttpResponse(os.environ.get("ACME_KEY"))
+        acme_key = os.environ.get("ACME_KEY")
+        if not acme_key:
+            logger.error("ACME_KEY not configured in environment variables")
+            raise Http404("ACME_KEY not configured")
+        return HttpResponse(acme_key)
     for k, v in list(os.environ.items()):
         if k.startswith("ACME_TOKEN_") and constant_time_compare(v, token):
             n = k.replace("ACME_TOKEN_", "")
-            return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
+            acme_key = os.environ.get("ACME_KEY_%s" % n)
+            if not acme_key:
+                logger.error("ACME_KEY_%s not configured in environment variables" % n)
+                raise Http404("ACME_KEY_%s not configured" % n)
+            return HttpResponse(acme_key)
+    logger.warning(
+        "Failed ACME token verification attempt from IP: %s",
+        request.META.get("REMOTE_ADDR"),
+        extra={"ip": request.META.get("REMOTE_ADDR"), "token_prefix": token[:10] if token else None},
+    )
     raise Http404("Token or key does not exist")
 
 
