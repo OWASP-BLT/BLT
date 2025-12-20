@@ -350,8 +350,21 @@ class Command(BaseCommand):
                 else:
                     ws_token = self._token_for_workspace(huddle.workspace_id, token)
                     if not ws_token:
-                        logger.error(
-                            "Missing Slack token for workspace=%s; cannot send huddle reminders for id=%s",
+                        # Mark as reminded to prevent infinite retry loop
+                        # Admins must configure token and manually reset if needed
+                        with transaction.atomic():
+                            h = (
+                                SlackHuddle.objects.select_for_update()
+                                .filter(id=huddle.id, reminder_sent=False)
+                                .first()
+                            )
+                            if h:
+                                h.reminder_sent = True
+                                if not options["dry_run"]:
+                                    h.save(update_fields=["reminder_sent"])
+                        logger.warning(
+                            "No Slack token for workspace=%s; marking huddle id=%s as reminded "
+                            "(notifications not sent; configure token and reset manually if needed)",
                             huddle.workspace_id,
                             huddle.id,
                         )
