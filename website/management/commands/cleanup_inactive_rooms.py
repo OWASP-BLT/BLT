@@ -66,8 +66,10 @@ class Command(BaseCommand):
                 self.stdout.write("  ... and more")
 
         else:
-            deleted_empty, _ = empty_rooms.delete()
-            deleted_inactive, _ = inactive_rooms.delete()
+            empty_count = empty_rooms.count()
+            inactive_count = inactive_rooms.count()
+            empty_rooms.delete()
+            inactive_rooms.delete()
 
             self.stdout.write(
                 self.style.SUCCESS(

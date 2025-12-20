@@ -2409,6 +2409,7 @@ def delete_room(request, room_id):
     # Ensure session exists for anonymous users
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
+        request.session.save()
 
     # Check if the user is the admin or the anonymous creator
     is_admin = request.user.is_authenticated and room.admin == request.user
