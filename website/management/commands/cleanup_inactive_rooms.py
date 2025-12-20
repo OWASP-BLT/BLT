@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 for room in inactive_rooms[:10]:
                     self.stdout.write(f"  - {room.name} (last message: {room.last_message})")
 
-            if total_to_delete > 20:
+            if empty_count > 10 or inactive_count > 10:
                 self.stdout.write("  ... and more")
 
         else:
@@ -73,7 +73,7 @@ class Command(BaseCommand):
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Deleted {deleted_empty + deleted_inactive} inactive discussion rooms "
-                    f"({deleted_empty} empty, {deleted_inactive} inactive)"
+                    f"Deleted {empty_count + inactive_count} inactive discussion rooms "
+                    f"({empty_count} empty, {inactive_count} inactive)"
                 )
             )
