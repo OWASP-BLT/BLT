@@ -2403,10 +2403,12 @@ def join_room(request, room_id):
     return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
-@login_required(login_url="/accounts/login")
 @require_POST
 def delete_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
+    # Ensure session exists for anonymous users
+    if request.user.is_anonymous and not request.session.session_key:
+        request.session.create()
 
     # Check if the user is the admin or the anonymous creator
     is_admin = request.user.is_authenticated and room.admin == request.user
