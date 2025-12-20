@@ -678,15 +678,32 @@ class SlackHandlerTests(TestCase):
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
         mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
-        mock_client.users_info.return_value = {
-            "ok": True,
-            "user": {
-                "id": "U123",
-                "name": "testuser",
-                "real_name": "Test User",
-                "profile": {"display_name": "Test User"},
-            },
-        }
+
+        # Mock users_info to handle both users
+        def mock_users_info(user=None):
+            if user == "U123":
+                return {
+                    "ok": True,
+                    "user": {
+                        "id": "U123",
+                        "name": "testuser",
+                        "real_name": "Test User",
+                        "profile": {"display_name": "Test User"},
+                    },
+                }
+            elif user == "U456":
+                return {
+                    "ok": True,
+                    "user": {
+                        "id": "U456",
+                        "name": "participant",
+                        "real_name": "Participant User",
+                        "profile": {"display_name": "Participant User"},
+                    },
+                }
+            return {"ok": False}
+
+        mock_client.users_info.side_effect = mock_users_info
 
         # Create test request for /blt_huddle
         request = MagicMock()
