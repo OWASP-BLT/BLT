@@ -3864,11 +3864,38 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                     hour = int(at_match.group(1))
                     minute = int(at_match.group(2))
                     am_pm = at_match.group(3)
+
+                    # Validate minute range
+                    if not (0 <= minute <= 59):
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ Invalid time: minutes must be between 0 and 59.",
+                            }
+                        )
+
+                    # Validate hour range based on AM/PM
                     if am_pm:
+                        if not (1 <= hour <= 12):
+                            return JsonResponse(
+                                {
+                                    "response_type": "ephemeral",
+                                    "text": "❌ Invalid time: for AM/PM format, hour must be between 1 and 12.",
+                                }
+                            )
                         if am_pm.upper() == "PM" and hour < 12:
                             hour += 12
                         elif am_pm.upper() == "AM" and hour == 12:
                             hour = 0
+                    else:
+                        if not (0 <= hour <= 23):
+                            return JsonResponse(
+                                {
+                                    "response_type": "ephemeral",
+                                    "text": "❌ Invalid time: hour must be between 0 and 23 (use AM/PM for 12-hour format).",
+                                }
+                            )
+
                     now = timezone.now()
                     scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
                     if scheduled_at < now:
@@ -3972,11 +3999,36 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 minute = int(at_match.group(2))
                 am_pm = at_match.group(3)
 
+                # Validate minute range
+                if not (0 <= minute <= 59):
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Invalid time: minutes must be between 0 and 59.",
+                        }
+                    )
+
+                # Validate hour range based on AM/PM
                 if am_pm:
+                    if not (1 <= hour <= 12):
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ Invalid time: for AM/PM format, hour must be between 1 and 12.",
+                            }
+                        )
                     if am_pm.upper() == "PM" and hour < 12:
                         hour += 12
                     elif am_pm.upper() == "AM" and hour == 12:
                         hour = 0
+                else:
+                    if not (0 <= hour <= 23):
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ Invalid time: hour must be between 0 and 23 (use AM/PM for 12-hour format).",
+                            }
+                        )
 
                 now = timezone.now()
                 scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
