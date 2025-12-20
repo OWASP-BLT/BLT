@@ -512,9 +512,7 @@ def slack_commands(request):
 
         # Initialize workspace client
         try:
-            slack_integration = SlackIntegration.objects.get(
-                Q(workspace_id=team_id) | Q(workspace_name=team_id)
-            )
+            slack_integration = SlackIntegration.objects.get(Q(workspace_id=team_id) | Q(workspace_name=team_id))
             workspace_client = WebClient(token=slack_integration.bot_access_token)
         except SlackIntegration.DoesNotExist:
             # Fallback: if a global bot token is configured, use it to proceed.

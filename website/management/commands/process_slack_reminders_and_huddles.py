@@ -342,7 +342,9 @@ class Command(BaseCommand):
                         logger.info("DRY-RUN huddle=%s has no participants; marking as reminded", huddle.id)
                     else:
                         SlackHuddle.objects.filter(id=huddle.id, reminder_sent=False).update(reminder_sent=True)
-                        logger.info("Huddle id=%s has no participants; marking reminder_sent to avoid reprocessing", huddle.id)
+                        logger.info(
+                            "Huddle id=%s has no participants; marking reminder_sent to avoid reprocessing", huddle.id
+                        )
                     continue
 
                 title = getattr(huddle, "title", "Huddle")
