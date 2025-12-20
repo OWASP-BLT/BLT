@@ -3738,6 +3738,32 @@ def escape_slack_markdown(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def _compute_huddle_time(amount, unit):
+    """Compute scheduled_at datetime for huddles with validation and upper bounds.
+
+    Returns: (scheduled_at datetime, error_message string or None)
+    """
+    if amount <= 0:
+        return None, "❌ Time amount must be positive. Use: in <number> <minutes|hours|days>"
+
+    now = timezone.now()
+
+    if "minute" in unit:
+        if amount > 60 * 24 * 365:  # ~1 year in minutes
+            return None, "❌ Time too far in the future. Maximum is 365 days."
+        return now + timedelta(minutes=amount), None
+    elif "hour" in unit:
+        if amount > 24 * 365:  # ~1 year in hours
+            return None, "❌ Time too far in the future. Maximum is 365 days."
+        return now + timedelta(hours=amount), None
+    elif "day" in unit:
+        if amount > 365:  # 1 year
+            return None, "❌ Time too far in the future. Maximum is 365 days."
+        return now + timedelta(days=amount), None
+    else:
+        return None, "❌ Invalid time unit. Use: minutes, hours, or days"
+
+
 def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, activity):
     """Handle the /huddle command to schedule huddles/meetings"""
     try:
@@ -3820,13 +3846,10 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
             if time_match:
                 amt = int(time_match.group(1))
                 unit = time_match.group(2)
-                now = timezone.now()
-                if "minute" in unit:
-                    scheduled_at = now + timedelta(minutes=amt)
-                elif "hour" in unit:
-                    scheduled_at = now + timedelta(hours=amt)
-                elif "day" in unit:
-                    scheduled_at = now + timedelta(days=amt)
+                # Use helper with validation and upper bounds
+                scheduled_at, error = _compute_huddle_time(amt, unit)
+                if error:
+                    return JsonResponse({"response_type": "ephemeral", "text": error})
             if not scheduled_at:
                 at_match = re.search(r"at\s+(\d{1,2}):(\d{2})\s*(AM|PM)?", remainder, re.IGNORECASE)
                 if at_match:
@@ -3858,11 +3881,20 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                 huddle = SlackHuddle.objects.get(id=huddle_id, creator_id=user_id)
             except SlackHuddle.DoesNotExist:
                 return JsonResponse({"response_type": "ephemeral", "text": "❌ Huddle not found or not owned by you."})
+
+            # Only allow editing scheduled huddles to prevent lifecycle violations
+            if huddle.status != "scheduled":
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": f"❌ Cannot edit a {huddle.status} huddle. Only scheduled huddles can be edited.",
+                    }
+                )
+
             huddle.scheduled_at = scheduled_at
             if new_title:
                 huddle.title = escape_slack_markdown(new_title)
-            huddle.status = "scheduled"
-            huddle.save(update_fields=["scheduled_at", "title", "status", "updated_at"])
+            huddle.save(update_fields=["scheduled_at", "title", "updated_at"])
             blocks = build_huddle_blocks(huddle)
             try:
                 _ensure_bot_in_channel(workspace_client, huddle.channel_id)
@@ -3911,13 +3943,10 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
         if time_match:
             amount = int(time_match.group(1))
             unit = time_match.group(2)
-            now = timezone.now()
-            if "minute" in unit:
-                scheduled_at = now + timedelta(minutes=amount)
-            elif "hour" in unit:
-                scheduled_at = now + timedelta(hours=amount)
-            elif "day" in unit:
-                scheduled_at = now + timedelta(days=amount)
+            # Use helper with validation and upper bounds
+            scheduled_at, error = _compute_huddle_time(amount, unit)
+            if error:
+                return JsonResponse({"response_type": "ephemeral", "text": error})
 
         # If "in" didn't match, try simple "at" with time
         if not scheduled_at:

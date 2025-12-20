@@ -1084,7 +1084,7 @@ class SlackHuddleParticipantAdmin(admin.ModelAdmin):
     list_display = ("id", "huddle", "user_id", "response", "responded_at", "created_at")
     list_filter = ("response", "created_at", "huddle__workspace_id", "huddle__status")
     search_fields = ("user_id", "huddle__title", "huddle__workspace_id")
-    readonly_fields = ("created_at", "responded_at")
+    readonly_fields = ("huddle", "user_id", "response", "created_at", "responded_at")
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
     raw_id_fields = ("huddle",)
