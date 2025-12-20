@@ -38,47 +38,29 @@ class Command(BaseCommand):
         empty_cutoff = now - timedelta(days=empty_days)
         inactive_cutoff = now - timedelta(days=inactive_days)
 
-        empty_rooms = (
-            Room.objects
-            .annotate(message_count=Count("messages"))
-            .filter(message_count=0, created_at__lt=empty_cutoff)
+        empty_rooms = Room.objects.annotate(message_count=Count("messages")).filter(
+            message_count=0, created_at__lt=empty_cutoff
         )
 
-        inactive_rooms = (
-            Room.objects
-            .annotate(
-                message_count=Count("messages"),
-                last_message=Max("messages__timestamp"),
-            )
-            .filter(message_count__gt=0, last_message__lt=inactive_cutoff)
-        )
+        inactive_rooms = Room.objects.annotate(
+            message_count=Count("messages"),
+            last_message=Max("messages__timestamp"),
+        ).filter(message_count__gt=0, last_message__lt=inactive_cutoff)
 
         total_to_delete = empty_rooms.count() + inactive_rooms.count()
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    f"DRY RUN: Would delete {total_to_delete} inactive discussion rooms"
-                )
-            )
+            self.stdout.write(self.style.WARNING(f"DRY RUN: Would delete {total_to_delete} inactive discussion rooms"))
 
             if empty_rooms.exists():
-                self.stdout.write(
-                    f"\nRooms with no messages older than {empty_days} days:"
-                )
+                self.stdout.write(f"\nRooms with no messages older than {empty_days} days:")
                 for room in empty_rooms[:10]:
-                    self.stdout.write(
-                        f"  - {room.name} (created: {room.created_at})"
-                    )
+                    self.stdout.write(f"  - {room.name} (created: {room.created_at})")
 
             if inactive_rooms.exists():
-                self.stdout.write(
-                    f"\nRooms inactive for more than {inactive_days} days:"
-                )
+                self.stdout.write(f"\nRooms inactive for more than {inactive_days} days:")
                 for room in inactive_rooms[:10]:
-                    self.stdout.write(
-                        f"  - {room.name} (last message: {room.last_message})"
-                    )
+                    self.stdout.write(f"  - {room.name} (last message: {room.last_message})")
 
             if total_to_delete > 20:
                 self.stdout.write("  ... and more")
