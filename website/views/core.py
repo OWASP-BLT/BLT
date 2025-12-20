@@ -94,7 +94,7 @@ def get_popular_searches(limit=5, min_users=3):
     popular = (
         SearchHistory.objects.values("query")
         .annotate(user_count=Count("user", distinct=True), avg_results=Avg("result_count"))
-        .filter(user_count__gte=min_users, avg_count__gt=0)
+        .filter(user_count__gte=min_users, avg_results__gt=0)
         .order_by("-user_count", "-avg_results")[:limit]
     )
 
