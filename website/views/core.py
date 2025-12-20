@@ -41,6 +41,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -559,10 +560,11 @@ def status_page(request):
 
 
 def find_key(request, token):
-    if token == os.environ.get("ACME_TOKEN"):
+    acme_token = os.environ.get("ACME_TOKEN")
+    if acme_token and constant_time_compare(token, acme_token):
         return HttpResponse(os.environ.get("ACME_KEY"))
     for k, v in list(os.environ.items()):
-        if v == token and k.startswith("ACME_TOKEN_"):
+        if k.startswith("ACME_TOKEN_") and constant_time_compare(v, token):
             n = k.replace("ACME_TOKEN_", "")
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")

@@ -510,9 +510,13 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework.authentication.TokenAuthentication",),
     "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": f"{anon_throttle}/day",
-        "user": f"{user_throttle}/day",
+        "anon": f"{anon_throttle}/hour",
+        "user": f"{user_throttle}/hour",
     },
 }
 
@@ -557,6 +561,13 @@ SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for soc
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
 
 MDEDITOR_CONFIGS = {
     "default": {
