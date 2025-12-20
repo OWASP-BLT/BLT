@@ -669,6 +669,7 @@ class SlackHandlerTests(TestCase):
         response_data = json.loads(response.content)
         self.assertIn("help", response_data["text"].lower())
 
+    @patch("website.views.slack_handlers.SLACK_TOKEN", "xoxb-test")
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     def test_huddle_command_create(self, mock_webclient, mock_verify):

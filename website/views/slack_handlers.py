@@ -298,7 +298,9 @@ def slack_events(request):
 
                 # Get the correct token for the workspace
                 try:
-                    slack_integration = SlackIntegration.objects.get(workspace_id=team_id)
+                    slack_integration = SlackIntegration.objects.get(
+                        Q(workspace_id=team_id) | Q(workspace_name=team_id)
+                    )
                     workspace_token = slack_integration.bot_access_token
                 except SlackIntegration.DoesNotExist:
                     if team_id == "T04T40NHX":  # OWASP workspace
@@ -510,7 +512,9 @@ def slack_commands(request):
 
         # Initialize workspace client
         try:
-            slack_integration = SlackIntegration.objects.get(workspace_id=team_id)
+            slack_integration = SlackIntegration.objects.get(
+                Q(workspace_id=team_id) | Q(workspace_name=team_id)
+            )
             workspace_client = WebClient(token=slack_integration.bot_access_token)
         except SlackIntegration.DoesNotExist:
             # Fallback: if a global bot token is configured, use it to proceed.

@@ -336,6 +336,15 @@ class Command(BaseCommand):
 
                 participants = [p for p in participants if p]
 
+                # If no participants, mark as reminded to avoid infinite retries
+                if not participants:
+                    if options["dry_run"]:
+                        logger.info("DRY-RUN huddle=%s has no participants; marking as reminded", huddle.id)
+                    else:
+                        SlackHuddle.objects.filter(id=huddle.id, reminder_sent=False).update(reminder_sent=True)
+                        logger.info("Huddle id=%s has no participants; marking reminder_sent to avoid reprocessing", huddle.id)
+                    continue
+
                 title = getattr(huddle, "title", "Huddle")
                 title = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 start_at = timezone.localtime(huddle.scheduled_at).strftime("%Y-%m-%d %H:%M")

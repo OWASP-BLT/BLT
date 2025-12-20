@@ -96,6 +96,29 @@ class SlackSchedulerTests(TestCase):
         self.assertEqual(upcoming.status, "scheduled")
         self.assertFalse(upcoming.reminder_sent)
 
+    @patch("website.management.commands.process_slack_reminders_and_huddles._user_exists", return_value=(True, None))
+    @override_settings(SLACK_BOT_TOKEN="xoxb-test")
+    def test_huddle_with_no_participants_marked_reminded(self, mock_user_exists):
+        # Ensure workspace token is available for the command
+        self.slack_integration.bot_access_token = "xoxb-test"
+        self.slack_integration.save(update_fields=["bot_access_token"])
+
+        h = SlackHuddle.objects.create(
+            workspace_id="T070JPE5BQQ",
+            creator_id="U123",
+            channel_id="C123",
+            title="Solo",
+            description="No attendees",
+            status="scheduled",
+            scheduled_at=timezone.now() + timedelta(minutes=5),
+            reminder_sent=False,
+        )
+
+        call_command("process_slack_reminders_and_huddles", "--window-minutes=60")
+
+        h.refresh_from_db()
+        self.assertTrue(h.reminder_sent)
+
 
 class SlackSchedulerRateLimitTests(TestCase):
     """Test rate limiting (HTTP 429) handling"""
