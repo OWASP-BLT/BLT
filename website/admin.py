@@ -1013,7 +1013,7 @@ class SlackPollAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "created_at", "workspace_id")
     search_fields = ("question", "workspace_id", "channel_id", "creator_id", "message_ts")
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "closed_at", "status")
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
 
@@ -1030,7 +1030,7 @@ class SlackPollVoteAdmin(admin.ModelAdmin):
     list_display = ("id", "poll", "option", "voter_id", "voted_at")
     list_filter = ("voted_at", "poll__workspace_id")
     search_fields = ("voter_id", "poll__question", "option__option_text")
-    readonly_fields = ("voted_at",)
+    readonly_fields = ("poll", "option", "voter_id", "voted_at")
     date_hierarchy = "voted_at"
     ordering = ("-voted_at",)
     raw_id_fields = ("poll", "option")
@@ -1050,7 +1050,7 @@ class SlackReminderAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "target_type", "workspace_id", "remind_at", "created_at")
     search_fields = ("workspace_id", "target_id", "message", "error_message")
-    readonly_fields = ("created_at", "sent_at")
+    readonly_fields = ("created_at", "sent_at", "status", "error_message")
     date_hierarchy = "remind_at"
     ordering = ("-remind_at",)
 
@@ -1075,7 +1075,7 @@ class SlackHuddleAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "reminder_sent", "workspace_id", "scheduled_at", "created_at")
     search_fields = ("title", "description", "workspace_id", "channel_id", "creator_id", "message_ts")
-    readonly_fields = ("created_at", "updated_at", "message_ts")
+    readonly_fields = ("created_at", "updated_at", "message_ts", "status", "reminder_sent")
     date_hierarchy = "scheduled_at"
     ordering = ("-scheduled_at",)
 

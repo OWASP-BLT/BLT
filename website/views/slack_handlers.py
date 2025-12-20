@@ -3250,9 +3250,16 @@ def handle_poll_command(workspace_client, user_id, team_id, channel_id, text, ac
         _ensure_bot_in_channel(workspace_client, channel_id)
         response = workspace_client.chat_postMessage(channel=channel_id, text=f"📊 Poll: {question}", blocks=blocks)
 
-        # Store message timestamp for updates
-        poll.message_ts = response["ts"]
-        poll.save()
+        # Store message timestamp for updates (guard missing/invalid responses)
+        try:
+            ts = response.get("ts") if hasattr(response, "get") else response["ts"]
+        except (KeyError, TypeError, AttributeError):
+            ts = None
+        if ts:
+            poll.message_ts = ts
+            poll.save(update_fields=["message_ts"])
+        else:
+            logger.warning("Poll %s created but chat_postMessage returned no ts; message updates disabled", poll.id)
 
         activity.success = True
         activity.details["poll_id"] = poll.id
@@ -3476,10 +3483,19 @@ def handle_reminder_command(workspace_client, user_id, team_id, channel_id, text
                 return JsonResponse({"response_type": "ephemeral", "text": error})
 
             try:
-                reminder = SlackReminder.objects.get(id=reminder_id, creator_id=user_id, status="pending")
-                reminder.message = escape_slack_markdown(new_message)
-                reminder.remind_at = remind_at
-                reminder.save(update_fields=["message", "remind_at"])
+                with transaction.atomic():
+                    reminder = SlackReminder.objects.select_for_update(skip_locked=True).get(
+                        id=reminder_id, creator_id=user_id
+                    )
+
+                    if reminder.status != "pending":
+                        return JsonResponse(
+                            {"response_type": "ephemeral", "text": "❌ Reminder not found or not editable."}
+                        )
+
+                    reminder.message = escape_slack_markdown(new_message)
+                    reminder.remind_at = remind_at
+                    reminder.save(update_fields=["message", "remind_at"])
                 return JsonResponse({"response_type": "ephemeral", "text": "✅ Reminder updated."})
             except SlackReminder.DoesNotExist:
                 return JsonResponse({"response_type": "ephemeral", "text": "❌ Reminder not found or not editable."})
@@ -3975,9 +3991,16 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
             _ensure_bot_in_channel(workspace_client, channel_id)
             response = workspace_client.chat_postMessage(channel=channel_id, text=f"🎯 Huddle: {title}", blocks=blocks)
 
-            # Store message timestamp only after successful post
-            huddle.message_ts = response["ts"]
-            huddle.save(update_fields=["message_ts"])
+            # Store message timestamp only after successful post (guard missing/invalid responses)
+            try:
+                ts = response.get("ts") if hasattr(response, "get") else response["ts"]
+            except (KeyError, TypeError, AttributeError):
+                ts = None
+            if ts:
+                huddle.message_ts = ts
+                huddle.save(update_fields=["message_ts"])
+            else:
+                logger.warning("Huddle %s posted but chat_postMessage returned no ts; updates disabled", huddle.id)
 
         activity.success = True
         activity.details["huddle_id"] = huddle.id
