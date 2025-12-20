@@ -407,9 +407,9 @@ def _handle_team_join(user_id, request):
         workspace_client = None
         try:
             # Backward-compatible lookup: support both workspace_id and legacy workspace_name storing team IDs
-            slack_integration = (
-                SlackIntegration.objects.filter(Q(workspace_id=team_id) | Q(workspace_name=team_id)).first()
-            )
+            slack_integration = SlackIntegration.objects.filter(
+                Q(workspace_id=team_id) | Q(workspace_name=team_id)
+            ).first()
             if not slack_integration:
                 raise SlackIntegration.DoesNotExist
             # Populate human-readable workspace name (organization name) for activity logs
