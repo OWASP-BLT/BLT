@@ -161,14 +161,19 @@ class ActivityTrackingMiddleware(MiddlewareMixin):
 
     def _get_client_ip(self, request):
         """Extract client IP address from request."""
-        # Check if behind a trusted proxy (Django SECURE_PROXY_SSL_HEADER is configured)
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        if x_forwarded_for:
-            # Get the first IP in the chain (actual client IP)
-            # X-Forwarded-For format: "client_ip, proxy1_ip, proxy2_ip"
-            ip = x_forwarded_for.split(",")[0].strip()
-            return ip
-        # Fallback to REMOTE_ADDR if not behind proxy
+        from django.conf import settings
+
+        # Only trust X-Forwarded-For if we're behind a trusted proxy
+        # (indicated by SECURE_PROXY_SSL_HEADER being configured)
+        if hasattr(settings, "SECURE_PROXY_SSL_HEADER") and settings.SECURE_PROXY_SSL_HEADER:
+            x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+            if x_forwarded_for:
+                # Get the first IP in the chain (actual client IP)
+                # X-Forwarded-For format: "client_ip, proxy1_ip, proxy2_ip"
+                ip = x_forwarded_for.split(",")[0].strip()
+                return ip
+
+        # Fallback to REMOTE_ADDR (either no proxy or no trusted proxy)
         return request.META.get("REMOTE_ADDR")
 
     def _get_organization_from_request(self, request):

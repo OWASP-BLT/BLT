@@ -865,6 +865,12 @@
             if (!canvas) return;
 
             try {
+                // Destroy existing chart instance to prevent memory leak
+                const existingChart = Chart.getChart(canvas);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
                 const el = document.getElementById("peak-hours-data");
                 const peakHoursData = el ? JSON.parse(el.textContent) : [];
 
