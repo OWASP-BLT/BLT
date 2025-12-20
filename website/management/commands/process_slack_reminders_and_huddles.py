@@ -384,7 +384,8 @@ class Command(BaseCommand):
                     # Make network calls outside transaction
                     for pid in participants:
                         exists, retry_after_exists = _user_exists(ws_token, pid)
-                        if not exists and not retry_after_exists:
+                        # Skip only when user definitively does not exist; allow rate-limit retries
+                        if not exists and retry_after_exists is None:
                             continue
                         if _send_slack_message(ws_token, pid, text)[0]:
                             ok_count += 1

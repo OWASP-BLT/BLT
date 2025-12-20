@@ -1388,10 +1388,9 @@ def send_dm(client, user_id, text, blocks=None):
             )
 
     except SlackApiError as e:
-        resp = getattr(e, "response", None)
-        if resp is not None and hasattr(resp, "get"):
-            err = resp.get("error", "unknown_error")
-        else:
+        try:
+            err = e.response.get("error", "unknown_error")
+        except (AttributeError, TypeError):
             err = "unknown_error"
         if err == "ratelimited":
             return JsonResponse(
@@ -3899,7 +3898,21 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                             )
 
                     now = timezone.now()
-                    scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    try:
+                        scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    except ValueError:
+                        logger.warning(
+                            "Failed to construct scheduled_at with hour=%s, minute=%s",
+                            hour,
+                            minute,
+                            exc_info=True,
+                        )
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ Unable to parse the time you provided. Please check the format and try again.",
+                            }
+                        )
                     if scheduled_at < now:
                         return JsonResponse(
                             {
@@ -4033,7 +4046,21 @@ def handle_huddle_command(workspace_client, user_id, team_id, channel_id, text, 
                         )
 
                 now = timezone.now()
-                scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                try:
+                    scheduled_at = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                except ValueError:
+                    logger.warning(
+                        "Failed to construct scheduled_at with hour=%s, minute=%s",
+                        hour,
+                        minute,
+                        exc_info=True,
+                    )
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Unable to parse the time you provided. Please check the format and try again.",
+                        }
+                    )
 
                 # If time has passed today, don't silently move to tomorrow
                 if scheduled_at < now:
@@ -4318,7 +4345,17 @@ def handle_poll_vote(payload, workspace_client):
                 poll=poll, voter_id=user_id, defaults={"option": option}
             )
         except IntegrityError:
-            created = False
+            # On IntegrityError, verify the vote actually exists; if not, it's a genuine DB error
+            if SlackPollVote.objects.filter(poll=poll, voter_id=user_id).exists():
+                created = False
+            else:
+                logger.error(
+                    "IntegrityError for poll=%s voter=%s but vote doesn't exist; likely transient DB error",
+                    poll.id,
+                    user_id,
+                    exc_info=True,
+                )
+                raise
         if not created:
             return JsonResponse(
                 {"response_type": "ephemeral", "text": "✅ Your vote has already been recorded for this poll."}
