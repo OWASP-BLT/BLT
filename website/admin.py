@@ -1273,19 +1273,20 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
 
+
 @admin.register(UserActivity)
 class UserActivityAdmin(admin.ModelAdmin):
-    list_display = ('user', 'organization', 'activity_type', 'timestamp', 'ip_address')
-    list_filter = ('activity_type', 'timestamp', 'organization')
-    search_fields = ('user__username', 'user__email', 'organization__name', 'ip_address')
-    readonly_fields = ('user', 'organization', 'activity_type', 'timestamp', 'ip_address', 'user_agent', 'metadata')
-    date_hierarchy = 'timestamp'
-    ordering = ('-timestamp',)
-    
+    list_display = ("user", "organization", "activity_type", "timestamp", "ip_address")
+    list_filter = ("activity_type", "timestamp", "organization")
+    search_fields = ("user__username", "user__email", "organization__name", "ip_address")
+    readonly_fields = ("user", "organization", "activity_type", "timestamp", "ip_address", "user_agent", "metadata")
+    date_hierarchy = "timestamp"
+    ordering = ("-timestamp",)
+
     def has_add_permission(self, request):
         # Activity records should only be created programmatically
         return False
-    
+
     def has_change_permission(self, request, obj=None):
         # Activity records should be immutable
         return False

@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.utils import timezone
-from django.urls import reverse
+
 from website.models import Organization, UserActivity
 from website.views.company import OrganizationDashboardAnalyticsView
 
