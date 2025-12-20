@@ -374,13 +374,15 @@ class Command(BaseCommand):
                     if channel_id:
                         _send_slack_message(ws_token, channel_id, f"📣 Huddle '{title}' will start at {start_at}")
 
-                # Re-acquire lock to mark as reminded
+                # Re-acquire lock to mark as reminded only if at least one notification succeeded
                 with transaction.atomic():
                     h = SlackHuddle.objects.select_for_update().filter(id=huddle.id, reminder_sent=False).first()
                     if h:
-                        h.reminder_sent = True
-                        if not options["dry_run"]:
-                            h.save(update_fields=["reminder_sent"])
+                        # Only mark as reminded if at least one participant was notified successfully
+                        if ok_count > 0:
+                            h.reminder_sent = True
+                            if not options["dry_run"]:
+                                h.save(update_fields=["reminder_sent"])
 
             except Exception:
                 logger.error("Failed pre-notify for SlackHuddle id=%s", huddle.id, exc_info=True)
