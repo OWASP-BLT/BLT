@@ -106,6 +106,8 @@ class Integration(models.Model):
 class SlackIntegration(models.Model):
     integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
     bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
+    # Slack team ID (e.g., T12345678); use this for lookups instead of workspace_name
+    workspace_id = models.CharField(max_length=255, null=True, blank=True)
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
     default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
     default_channel_id = models.CharField(max_length=255, null=True, blank=True)

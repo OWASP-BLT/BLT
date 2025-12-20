@@ -160,7 +160,7 @@ class Command(BaseCommand):
         self._process_huddles(token, now, window, options)
 
     def _token_for_workspace(self, workspace_id: str, default_token: str | None):
-        integ = SlackIntegration.objects.filter(workspace_name=workspace_id).first()
+        integ = SlackIntegration.objects.filter(workspace_id=workspace_id).first()
         return integ.bot_access_token if integ and integ.bot_access_token else default_token
 
     def _process_reminders(self, token: str | None, now, options):
@@ -180,8 +180,8 @@ class Command(BaseCommand):
         # Step 2: Load full reminder objects (no locks held)
         reminders = SlackReminder.objects.filter(id__in=reminder_ids).select_related()
         workspace_ids = {r.workspace_id for r in reminders}
-        integrations = SlackIntegration.objects.filter(workspace_name__in=workspace_ids)
-        token_map = {i.workspace_name: i.bot_access_token for i in integrations if i.bot_access_token}
+        integrations = SlackIntegration.objects.filter(workspace_id__in=workspace_ids)
+        token_map = {i.workspace_id: i.bot_access_token for i in integrations if i.bot_access_token}
 
         # Step 3: Process each reminder (make network calls without holding locks)
         for reminder in reminders:
@@ -344,26 +344,20 @@ class Command(BaseCommand):
                 # Compose a concise pre-notification
                 text = f"⏰ Reminder: '{title}' starts at {start_at}. Join the huddle in the channel."
 
+                ok_count = 0
                 if options["dry_run"]:
                     logger.info("DRY-RUN huddle=%s notify %d participants", huddle.id, len(participants))
                 else:
                     ws_token = self._token_for_workspace(huddle.workspace_id, token)
                     if not ws_token:
-                        # Mark as reminded to avoid infinite loop
-                        with transaction.atomic():
-                            h = (
-                                SlackHuddle.objects.select_for_update()
-                                .filter(id=huddle.id, reminder_sent=False)
-                                .first()
-                            )
-                            if h:
-                                h.reminder_sent = True
-                                if not options["dry_run"]:
-                                    h.save(update_fields=["reminder_sent"])
+                        logger.error(
+                            "Missing Slack token for workspace=%s; cannot send huddle reminders for id=%s",
+                            huddle.workspace_id,
+                            huddle.id,
+                        )
                         continue
 
                     # Make network calls outside transaction
-                    ok_count = 0
                     for pid in participants:
                         exists, retry_after_exists = _user_exists(ws_token, pid)
                         if not exists and not retry_after_exists:

@@ -162,8 +162,8 @@ def get_project_with_least_members():
             .first()
         )
         return project.slack_channel if project else None
-    except Exception as e:
-        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
+    except Exception:
+        logger.error("Failed to fetch project with least members", exc_info=True)
         return None
 
 
