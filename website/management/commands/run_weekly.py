@@ -26,3 +26,10 @@ class Command(BaseCommand):
             logger.info("Completed sample invites cleanup")
         except Exception:
             logger.exception("Error cleaning up sample invites")
+
+        # Send weekly Slack report
+        try:
+            management.call_command("slack_weekly_report")
+            logger.info("Completed weekly Slack report")
+        except Exception:
+            logger.exception("Error sending weekly Slack report")

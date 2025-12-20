@@ -1,0 +1,594 @@
+<!-- Change History Section -->
+{% load custom_filters %}
+{{ history_json|json_script:"history-data" }}
+<div class="mt-12">
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                <i class="fas fa-history text-purple-600 dark:text-purple-400 text-lg"></i>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Change History</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track all modifications made to this incident</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="toggle-history"
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
+                <i class="fas fa-eye"></i>
+                <span class="hidden sm:inline">Show/Hide</span>
+            </button>
+            <button id="export-history"
+                    type="button"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2">
+                <i class="fas fa-download"></i>
+                <span class="hidden sm:inline">Export</span>
+            </button>
+        </div>
+    </div>
+    <div id="history-container" class="transition-all duration-300">
+        {% if history_entries %}
+            <!-- History Summary Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                                {{ history_entries|length
+                                }}
+                            </div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Total Changes</div>
+                        </div>
+                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-edit text-blue-600 dark:text-blue-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                                {% with last=history_entries|first %}
+                                    {% if last.changed_by %}
+                                        {{ last.changed_by.username }}
+                                    {% else %}
+                                        System
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Last Editor</div>
+                        </div>
+                        <div class="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-edit text-green-600 dark:text-green-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                                {{ history_entries|slice:"0:1"|first.changed_at|date:"M j" }}
+                            </div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Last Updated</div>
+                        </div>
+                        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-alt text-purple-600 dark:text-purple-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ unique_editors_count }}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Unique Editors</div>
+                        </div>
+                        <div class="w-10 h-10 bg-orange-100 dark:bg-orange-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-orange-600 dark:text-orange-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- History Timeline -->
+            <div class="relative">
+                <!-- Timeline Line -->
+                <div class="absolute left-6 md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400 via-purple-400 to-pink-400 dark:from-blue-600 dark:via-purple-600 dark:to-pink-600">
+                </div>
+                <!-- History Items -->
+                <div class="space-y-6">
+                    {% for h in history_entries %}
+                        <div class="history-item relative pl-12 md:pl-16 group"
+                             data-field="{{ h.field_name }}">
+                            <!-- Timeline Dot -->
+                            <div class="absolute left-0 w-12 h-12 flex items-center justify-center">
+                                <div class="w-4 h-4 rounded-full bg-gradient-to-r {% if forloop.counter == 1 %}from-blue-500 to-indigo-500 {% elif forloop.counter == 2 %}from-purple-500 to-pink-500 {% elif forloop.counter == 3 %}from-green-500 to-emerald-500 {% else %}from-gray-500 to-gray-600{% endif %} transform group-hover:scale-125 transition-transform duration-300">
+                                </div>
+                            </div>
+                            <!-- History Card -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform group-hover:-translate-y-1">
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-gradient-to-r {% if h.field_name == 'severity' %}from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 {% elif h.field_name == 'status' %}from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 {% elif h.field_name == 'title' %}from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 {% else %}from-gray-100 to-gray-200 dark:from-gray-900/30 dark:to-gray-800/30{% endif %} flex items-center justify-center">
+                                            <i class=" {% if h.field_name == 'severity' %}fas fa-exclamation-triangle text-red-600 dark:text-red-400 {% elif h.field_name == 'status' %}fas fa-tasks text-blue-600 dark:text-blue-400 {% elif h.field_name == 'title' %}fas fa-heading text-yellow-600 dark:text-yellow-400 {% elif h.field_name == 'affected_systems' %}fas fa-server text-gray-600 dark:text-gray-400 {% else %}fas fa-edit text-gray-600 dark:text-gray-400{% endif %} "></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 dark:text-gray-200 capitalize">
+                                                {{
+                                                h.field_name|replace:"_| " }}
+                                            </h4>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                                                <i class="fas fa-clock text-xs"></i>
+                                                {{ h.changed_at|date:"F j, Y • g:i A" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        {% if h.changed_by %}
+                                            <div class="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                                                {% if h.changed_by.avatar %}
+                                                    <img src="{{ h.changed_by.avatar }}"
+                                                         height="20px"
+                                                         width="20px"
+                                                         class="w-6 h-6 rounded-full"
+                                                         alt="{{ h.changed_by.username }}">
+                                                {% else %}
+                                                    <div class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                                                        <i class="fas fa-user text-white text-xs"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{
+                                                h.changed_by.username }}</span>
+                                            </div>
+                                        {% else %}
+                                            <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                <i class="fas fa-robot mr-1"></i> System
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- Change Details -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-100 dark:border-red-800">
+                                        <div class="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">
+                                            <i class="fas fa-arrow-left mr-1"></i> Old Value
+                                        </div>
+                                        <div class="text-sm text-gray-700 dark:text-gray-300 font-medium truncate"
+                                             data-full-value="{{ h.old_value }}">
+                                            {{ h.old_value|truncatechars:50 }}
+                                        </div>
+                                        {% if h.old_value|length > 50 %}
+                                            <button type="button"
+                                                    class="text-xs text-red-600 dark:text-red-400 mt-1 hover:underline show-full-value">
+                                                Show
+                                                more
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-100 dark:border-green-800">
+                                        <div class="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2">
+                                            <i class="fas fa-arrow-right mr-1"></i> New Value
+                                        </div>
+                                        <div class="text-sm text-gray-700 dark:text-gray-300 font-medium truncate"
+                                             data-full-value="{{ h.new_value }}">
+                                            {{ h.new_value|truncatechars:50 }}
+                                        </div>
+                                        {% if h.new_value|length > 50 %}
+                                            <button type="button"
+                                                    class="text-xs text-green-600 dark:text-green-400 mt-1 hover:underline show-full-value">
+                                                Show
+                                                more
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- Change Summary -->
+                                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+                                            <i class="fas fa-exchange-alt text-blue-600 dark:text-blue-400 text-xs"></i>
+                                        </div>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300 capitalize">{{
+                                            h.field_name|replace:"_| " }}</span>
+                                            changed from
+                                            <span class="font-medium text-red-600 dark:text-red-400">"{{
+                                            h.old_value|truncatechars:30 }}"</span>
+                                            to
+                                            <span class="font-medium text-green-600 dark:text-green-400">"{{
+                                            h.new_value|truncatechars:30 }}"</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Quick Actions -->
+                                <div class="mt-4 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <button type="button"
+                                            class="text-xs px-3 py-1 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 copy-value"
+                                            data-value="{{ h.old_value }}"
+                                            title="Copy old value">
+                                        <i class="fas fa-copy mr-1"></i> Old
+                                    </button>
+                                    <button type="button"
+                                            class="text-xs px-3 py-1 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 copy-value"
+                                            data-value="{{ h.new_value }}"
+                                            title="Copy new value">
+                                        <i class="fas fa-copy mr-1"></i> New
+                                    </button>
+                                    {% if HISTORY_REVERT_ENABLED %}
+                                        <button type="button"
+                                                class="text-xs px-3 py-1 text-[#e74c3c] bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors duration-200 revert-change"
+                                                data-field="{{ h.field_name }}"
+                                                data-old-value="{{ h.old_value }}"
+                                                title="Revert this change">
+                                            <i class="fas fa-undo mr-1"></i> Revert
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- History Filters -->
+            <div class="mt-8 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        <i class="fas fa-filter mr-2"></i>
+                        Showing {{ history_entries|length }} changes
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button class="filter-btn px-3 py-1 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                                data-field="all">All Changes</button>
+                        <button class="filter-btn px-3 py-1 text-xs font-medium rounded-full border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors duration-200"
+                                data-field="severity">Severity</button>
+                        <button class="filter-btn px-3 py-1 text-xs font-medium rounded-full border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200"
+                                data-field="status">Status</button>
+                        <button class="filter-btn px-3 py-1 text-xs font-medium rounded-full border border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-colors duration-200"
+                                data-field="title">Title</button>
+                        <button class="filter-btn px-3 py-1 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                                data-field="affected_systems">Systems</button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                    <i class="fas fa-history text-3xl text-gray-400 dark:text-gray-600"></i>
+                </div>
+                <h4 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Change History</h4>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                    No changes have been recorded for this incident yet. Changes will appear here when the incident is
+                    modified.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button type="button"
+                            class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300 flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i>
+                        Make First Change
+                    </button>
+                    <button type="button"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh History
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+<style>
+    /* Custom styling for history section */
+    .filter-btn.active {
+        background-color: rgba(231, 76, 60, 0.1);
+        border-color: #e74c3c;
+        color: #e74c3c;
+        font-weight: 600;
+    }
+
+    .dark .filter-btn.active {
+        background-color: rgba(231, 76, 60, 0.2);
+    }
+
+    .history-item {
+        transition: all 0.3s ease;
+    }
+
+    .history-item:hover {
+        transform: translateX(5px);
+    }
+
+    /* Timeline dot animation */
+    @keyframes timelinePulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        50% {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+    }
+
+    /* Truncated text expansion */
+    .text-expanded {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .text-truncated {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+<script>
+    const INCIDENT_API_BASE = `/api/v1/security-incidents/{{ incident.id }}/`;
+    document.addEventListener("DOMContentLoaded", function () {
+        // Toggle history visibility
+        const toggleBtn = document.getElementById('toggle-history');
+        const historyContainer = document.getElementById('history-container');
+
+        if (toggleBtn && historyContainer) {
+            let isVisible = true;
+
+            toggleBtn.addEventListener('click', function () {
+                isVisible = !isVisible;
+
+                if (isVisible) {
+                    historyContainer.style.opacity = '1';
+                    historyContainer.style.maxHeight = 'none';
+                    historyContainer.style.overflow = 'visible';
+                    toggleBtn.innerHTML = '<i class="fas fa-eye"></i> <span class="hidden sm:inline">Hide</span>';
+                } else {
+                    historyContainer.style.opacity = '0';
+                    historyContainer.style.maxHeight = '0';
+                    historyContainer.style.overflow = 'hidden';
+                    toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> <span class="hidden sm:inline">Show</span>';
+                }
+            });
+        }
+
+        // Export history functionality
+        const exportBtn = document.getElementById('export-history');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                const historyEl = document.getElementById('history-data');
+                if (!historyEl) {
+                    showToast('Export failed: missing history data', 'error');
+                    return;
+                }
+                let historyData;
+                try {
+                    historyData = JSON.parse(historyEl.textContent);
+                } catch (_) {
+                    showToast('Export failed: invalid history JSON', 'error');
+                    return;
+                }
+
+                // Create downloadable JSON file
+                const dataStr = JSON.stringify(historyData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `incident-{{ incident.id }}-history-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showToast('History exported successfully', 'success');
+            });
+        }
+
+        // Filter history by field
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const historyItems = document.querySelectorAll('.history-item');
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const field = this.dataset.field;
+
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                // Filter items
+                historyItems.forEach(item => {
+                    if (field === 'all' || item.dataset.field === field) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Show full text for truncated values
+        const showButtons = document.querySelectorAll('.show-full-value');
+        showButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const parentDiv = this.parentElement;
+                const valueDiv = parentDiv.querySelector('[data-full-value]');
+
+                if (valueDiv.classList.contains('truncate')) {
+                    valueDiv.classList.remove('truncate');
+                    valueDiv.textContent = valueDiv.dataset.fullValue;
+                    this.innerHTML = '<i class="fas fa-chevron-up mr-1"></i> Show less';
+                } else {
+                    valueDiv.classList.add('truncate');
+                    valueDiv.textContent = valueDiv.dataset.fullValue.substring(0, 50) + '...';
+                    this.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> Show more';
+                }
+            });
+        });
+
+        // Copy value to clipboard
+        const copyButtons = document.querySelectorAll('.copy-value');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const value = this.dataset.value;
+                navigator.clipboard.writeText(value)
+                    .then(() => showToast('Value copied to clipboard', 'success'))
+                    .catch(() => showToast('Copy failed (clipboard unavailable)', 'error'));
+            });
+        });
+        const HISTORY_REALTIME_ENABLED = false;
+        const HISTORY_REVERT_ENABLED = false;
+
+        // Revert change functionality
+        if (HISTORY_REVERT_ENABLED) {
+            const revertButtons = document.querySelectorAll('.revert-change');
+            revertButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const field = this.dataset.field;
+                    const oldValue = this.dataset.oldValue;
+
+                    if (confirm(`Are you sure you want to revert ${field} to "${oldValue}"?`)) {
+                        // Make API call to revert change
+                        fetch(`${INCIDENT_API_BASE}revert/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: JSON.stringify({
+                                field: field,
+                                value: oldValue
+                            })
+                        })
+                            .then(response => {
+                                if (response.ok) {
+                                    showToast(`Reverted ${field} successfully`, 'success');
+                                    setTimeout(() => location.reload(), 1500);
+                                } else {
+                                    showToast('Failed to revert change', 'error');
+                                }
+                            })
+                            .catch(() => {
+                                showToast('Network error occurred', 'error');
+                            });
+                    }
+                });
+            });
+        }
+
+        // Real-time updates for history
+        let lastUpdate = new Date().toISOString();
+
+        function checkForUpdates() {
+            fetch(`${INCIDENT_API_BASE}history/updates/?since=${lastUpdate}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.updates && data.updates.length > 0) {
+                        lastUpdate = new Date().toISOString();
+                        showToast('New changes detected', 'info');
+                        // In a real implementation, you would append new items
+                        // For now, just reload after a delay
+                        setTimeout(() => {
+                            if (confirm('New changes detected. Refresh page?')) {
+                                location.reload();
+                            }
+                        }, 2000);
+                    }
+                })
+                .catch(() => {
+                    // Silently fail
+                });
+        }
+
+        // Check for updates every 30 seconds
+        if (HISTORY_REALTIME_ENABLED && {{ history_count|default:0 }} > 0) {
+            setInterval(checkForUpdates, 30000);
+         }
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+
+            toast.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-y-full`;
+            const iconClass = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+            const icon = document.createElement('i');
+            icon.className = `fas fa-${iconClass}`;
+            const span = document.createElement('span');
+            span.textContent = message;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center gap-3';
+            wrapper.appendChild(icon);
+            wrapper.appendChild(span);
+            toast.appendChild(wrapper);
+
+            document.body.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-full');
+            }, 100);
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-full');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 5000);
+        }
+
+        // Search functionality for history
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search changes...';
+        searchInput.className = 'w-full md:w-64 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent';
+
+        // Insert search box if there are history items
+        if ({{ history_count|default:0 }} > 0) {
+            const headerActions = document.querySelector('.flex.items-center.justify-between');
+            if (headerActions) {
+                headerActions.insertBefore(searchInput, headerActions.firstChild);
+
+                searchInput.addEventListener('input', function () {
+                    const searchTerm = this.value.toLowerCase();
+
+                    historyItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        }
+    });
+</script>

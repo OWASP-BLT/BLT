@@ -166,6 +166,9 @@ class IPRestrictMiddleware:
                     duplicate_ids = list(duplicates.values_list("id", flat=True))
                     IP.objects.filter(id__in=duplicate_ids).delete()
 
+        except transaction.TransactionManagementError as e:
+            # Failed to record IP due to transaction management error
+            logger.warning(f"Failed to record IP {ip} - transaction management error: {str(e)}")
         except Exception as e:
             # Log the error but don't let it break the request
             logger.error(f"Error recording IP {ip}: {str(e)}", exc_info=True)

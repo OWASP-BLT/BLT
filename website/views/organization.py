@@ -1,6 +1,7 @@
 import ipaddress
 import json
 import logging
+import os
 import re
 import time
 from collections import defaultdict
@@ -1184,7 +1185,9 @@ class HuntCreate(CreateView):
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
         data = request.body
-        for event in json.loads(data):
+        events = json.loads(data)
+
+        for event in events:
             try:
                 # Try to find a matching domain first
                 domain = Domain.objects.filter(email__iexact=event.get("email")).first()
@@ -1222,7 +1225,61 @@ class InboundParseWebhookView(View):
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
                 logger.error(f"Error processing SendGrid webhook event: {str(e)}")
 
+        # Send events to Slack webhook
+        self._send_to_slack(events)
+
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
+
+    def _send_to_slack(self, events):
+        """
+        Send SendGrid webhook events to Slack webhook.
+
+        Args:
+            events: List of SendGrid webhook event dictionaries
+        """
+        try:
+            slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+
+            if not slack_webhook_url:
+                logger.debug("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
+                return
+
+            # Format events for Slack
+            for event in events:
+                event_type = event.get("event", "unknown")
+                email = event.get("email", "unknown")
+                timestamp = event.get("timestamp", "")
+
+                # Create a formatted message for this event
+                event_text = f"*📧 SendGrid Event: {event_type.upper()}*\n"
+                event_text += f"*Email:* {email}\n"
+                event_text += f"*Timestamp:* {timestamp}\n"
+
+                # Add additional details based on event type
+                if event_type == "bounce":
+                    reason = event.get("reason", "Unknown")
+                    event_text += f"*Reason:* {reason}\n"
+                elif event_type == "click":
+                    url = event.get("url", "N/A")
+                    event_text += f"*URL:* {url}\n"
+
+                # Add any other relevant fields
+                if "sg_message_id" in event:
+                    event_text += f"*Message ID:* {event.get('sg_message_id')}\n"
+
+                # Prepare Slack payload
+                payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": event_text}}]}
+
+                # Send to Slack
+                response = requests.post(slack_webhook_url, json=payload, timeout=5)
+                response.raise_for_status()
+
+            logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error sending to Slack: {str(e)}")
 
 
 class CreateHunt(TemplateView):
@@ -2668,11 +2725,17 @@ def update_organization_repos(request, slug):
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error testing token in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
+                        )
+                        yield "data: Error testing GitHub API. Please try again later.\n\n"
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    yield f"data: $ Error testing GitHub API: {str(e)[:50]}\n\n"
+                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2691,18 +2754,21 @@ def update_organization_repos(request, slug):
                     )
 
                     if response.status_code == 404:
-                        yield f"data: $ Error: GitHub organization '{github_org_name}' not found\n\n"
+                        yield f"data: Error: GitHub organization '{github_org_name}' not found\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code == 401:
-                        yield "data: $ Error: GitHub authentication failed\n\n"
+                        yield "data: Error: GitHub authentication failed\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error fetching organization in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
                         )
+                        yield "data: Error: GitHub API returned an error\n\n"
                         yield "data: DONE\n\n"
                         return
 
@@ -2724,9 +2790,10 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            yield f"data: $ Error updating logo: {str(e)[:50]}\n\n"
+                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
-                    yield "data: $ Error: Failed to connect to GitHub\n\n"
+                    yield "data: Error: Failed to connect to GitHub\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2754,21 +2821,19 @@ def update_organization_repos(request, slug):
                         if response.status_code == 403:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             if "rate limit" in response.text.lower():
-                                yield (f"data: $ Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
+                                yield (f"data: Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
                             else:
-                                yield (
-                                    f"data: $ Error: GitHub API access forbidden (403). Response: {response_text}\n\n"
-                                )
+                                yield (f"data: Error: GitHub API access forbidden (403). Response: {response_text}\n\n")
                             break
                         elif response.status_code == 401:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                            yield (f"data: $ Error: GitHub authentication failed (401). Response: {response_text}\n\n")
+                            yield (f"data: Error: GitHub authentication failed (401). Response: {response_text}\n\n")
                             yield "data: DONE\n\n"
                             return
                         elif response.status_code != 200:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             yield (
-                                f"data: $ Error: GitHub API returned {response.status_code}. "
+                                f"data: Error: GitHub API returned {response.status_code}. "
                                 f"Response: {response_text}\n\n"
                             )
                             yield "data: DONE\n\n"
@@ -2821,10 +2886,12 @@ def update_organization_repos(request, slug):
                                         repo.tags.add(tag)
 
                             except Exception as e:
-                                yield f"data: $ Error with {repo_name}: {str(e)[:50]}\n\n"
+                                logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
+                                yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        yield f"data: $ Network error: {str(e)[:50]}\n\n"
+                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
+                        yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
                     page += 1
@@ -2838,12 +2905,14 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
+                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
+        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
 

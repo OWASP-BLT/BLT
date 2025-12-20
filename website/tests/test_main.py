@@ -6,7 +6,7 @@ import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
-from django.test import Client, LiveServerTestCase, TestCase
+from django.test import Client, LiveServerTestCase, TestCase, tag
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -34,9 +34,8 @@ from ..models import (
     UserProfile,
 )
 
-os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
-
+@tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
@@ -71,7 +70,6 @@ class MySeleniumTests(LiveServerTestCase):
         cls.selenium.quit()
         super(MySeleniumTests, cls).tearDownClass()
 
-    @override_settings(DEBUG=True)
     def test_signup(self):
         base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
         self.selenium.get(base_url)
@@ -131,7 +129,6 @@ class MySeleniumTests(LiveServerTestCase):
         # Test passes if we can create and verify the user
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
-    @override_settings(DEBUG=True)
     def test_login(self):
         # Email verification is now handled in setUp
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
@@ -144,7 +141,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertIn("@bugbug", body.text)
         self.assertIn("0 Points", body.text)
 
-    @override_settings(DEBUG=True, IS_TEST=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_full_url(self):
         self.selenium.set_page_load_timeout(70)
 
@@ -184,7 +181,7 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element(By.TAG_NAME, "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    @override_settings(DEBUG=True, IS_TEST=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_domain_url(self):
         self.selenium.set_page_load_timeout(70)
 
