@@ -633,13 +633,12 @@
 
         // Generic pie chart initializer
         function initPieChart(canvasId, labelsRaw, dataRaw, emptyMessage, errorIcon) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
             const existingChart = Chart.getChart(canvas);
                 if (existingChart) {
                     existingChart.destroy();
                 }
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-
             const result = parseChartData(labelsRaw, dataRaw, emptyMessage, errorIcon);
             if (!result.success) {
                 showChartMessage(ctx.parentElement, result.message, result.icon);
@@ -668,13 +667,12 @@
 
         // Monthly Bar Chart with enhanced design
         function initMonthlyChart() {
+            const ctx = document.getElementById('monthlyChart');
+            if (!ctx) return;
             const existingChart = Chart.getChart(canvas);
                 if (existingChart) {
                     existingChart.destroy();
                 }
-            const ctx = document.getElementById('monthlyChart');
-            if (!ctx) return;
-
             const result = parseChartData(
                 '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_labels|safe }}',
                 '{{ get_current_year_monthly_reported_bar_data.bug_monthly_report_data|safe }}',
@@ -822,8 +820,7 @@
 
                 const labels = weeklyTrendData.map(item => item.date);
                 const data = weeklyTrendData.map(item => item.count);
-                
-                const isDarkMode = document.documentElement.classList.contains('dark');
+            
 
                 new Chart(canvas, {
                     type: "bar",
@@ -893,8 +890,7 @@
 
                 const labels = peakHoursData.map(item => `${item.hour}:00`);
                 const data = peakHoursData.map(item => item.count);
-                
-                const isDarkMode = document.documentElement.classList.contains('dark');
+
 
                 new Chart(canvas, {
                     type: "bar",
