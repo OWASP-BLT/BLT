@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0261_merge_20251208_2234"),
         ("website", "0263_githubissue_githubissue_pr_merged_idx_and_more"),
