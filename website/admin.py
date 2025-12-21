@@ -1301,9 +1301,9 @@ def deactivate_users(modeladmin, request, queryset):
 
 class ActivityStatusFilter(admin.SimpleListFilter):
     """
-    Filter users by contribution activity status.
-    Active = has bugs, forum posts, or forum comments
-    Inactive = no contributions whatsoever
+    Filter users by activity status.
+    Active = has logged in OR has bugs OR has forum posts OR has forum comments
+    Inactive = never logged in AND no bugs AND no forum posts AND no forum comments
     """
 
     title = "Activity Status"
@@ -1317,17 +1317,24 @@ class ActivityStatusFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         """
-        Filter based on CONTRIBUTION activity only:
-        - Active: Has bugs reported OR forum posts OR forum comments
-        - Inactive: No contributions
+        Filter based on all activity:
+        - Active: Has logged in OR has bugs OR has forum posts OR has forum comments
+        - Inactive: Never logged in AND no bugs AND no forum posts AND no forum comments
         """
         if self.value() == "active":
+            # Active = has logged in OR has bugs OR has forum posts OR has forum comments
             return queryset.filter(
-                Q(issue__isnull=False) | Q(forumpost__isnull=False) | Q(forumcomment__isnull=False)
+                Q(last_login__isnull=False)
+                | Q(issue__isnull=False)
+                | Q(forumpost__isnull=False)
+                | Q(forumcomment__isnull=False)
             ).distinct()
 
         if self.value() == "inactive":
-            return queryset.filter(issue__isnull=True, forumpost__isnull=True, forumcomment__isnull=True).distinct()
+            # Inactive = never logged in AND no bugs AND no forum posts AND no forum comments
+            return queryset.filter(
+                last_login__isnull=True, issue__isnull=True, forumpost__isnull=True, forumcomment__isnull=True
+            ).distinct()
 
         return queryset
 
@@ -1392,9 +1399,8 @@ class CustomUserAdmin(DjangoUserAdmin):
     forum_comment_count.admin_order_field = "comments_created"
 
     def activity_status(self, obj):
-        has_contributions = obj.bugs_reported > 0 or obj.posts_created > 0 or obj.comments_created > 0
-
-        if has_contributions:
+        # Active if: has logged in OR has bugs OR has forum posts OR has forum comments
+        if obj.last_login or obj.bugs_reported > 0 or obj.posts_created > 0 or obj.comments_created > 0:
             return format_html('<span style="color: green; font-weight: 600;">Active</span>')
         return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
 
