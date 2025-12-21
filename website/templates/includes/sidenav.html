@@ -1039,21 +1039,35 @@
         const teamsMenu = document.getElementById('teams-menu');
         const teamsChevron = document.getElementById('teams-chevron');
 
+        // ✅ ADD THESE FUNCTION DEFINITIONS
+        function expandTeamsMenu() {
+            teamsMenu.style.maxHeight = teamsMenu.scrollHeight + 'px';
+            teamsChevron.style.transform = 'rotate(180deg)';
+            teamsToggle.classList.add('bg-gray-50', 'dark:bg-gray-800');
+        }
+
+        function collapseTeamsMenu() {
+            teamsMenu.style.maxHeight = '0px';
+            teamsChevron.style.transform = 'rotate(0deg)';
+            teamsToggle.classList.remove('bg-gray-50', 'dark:bg-gray-800');
+        }
+
+        // Now the null check and usage works correctly
         if (!teamsToggle || !teamsMenu || !teamsChevron) {
-            console.warn('SideNav: Missing teams menu elements');
+        console.warn('SideNav: Missing teams menu elements');
         } else {
             const isTeamPage = currentPath.includes('/team') || currentPath.includes('team_') || currentPath.includes('team');
 
             if (isTeamPage) {
-                expandTeamsMenu();
+                expandTeamsMenu();  // ✅ Now safe to call!
             }
 
             teamsToggle.addEventListener('click', function (e) {
                 e.preventDefault();
                 if (teamsMenu.style.maxHeight === '0px' || teamsMenu.style.maxHeight === '') {
-                    expandTeamsMenu();
+                    expandTeamsMenu();  // ✅ Now safe to call!
                 } else {
-                    collapseTeamsMenu();
+                    collapseTeamsMenu();  // ✅ Now safe to call!
                 }
             });
         }
