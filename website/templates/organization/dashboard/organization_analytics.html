@@ -633,6 +633,10 @@
 
         // Generic pie chart initializer
         function initPieChart(canvasId, labelsRaw, dataRaw, emptyMessage, errorIcon) {
+            const existingChart = Chart.getChart(canvas);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
 
@@ -664,6 +668,10 @@
 
         // Monthly Bar Chart with enhanced design
         function initMonthlyChart() {
+            const existingChart = Chart.getChart(canvas);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
             const ctx = document.getElementById('monthlyChart');
             if (!ctx) return;
 
@@ -800,6 +808,10 @@
             if (!canvas) return;
 
             try {
+                const existingChart = Chart.getChart(canvas);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
                 const el = document.getElementById("weekly-trend-data");
                 const weeklyTrendData = el ? JSON.parse(el.textContent) : [];
 
