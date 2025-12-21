@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.db import transaction
 
 from website.models import GitHubIssue, Repo
 
@@ -144,26 +145,38 @@ def timed_bounty(request):
         if duration_hours < 0:
             logger.warning(f"Bounty expiry date is in the past for issue #{issue_number}")
             return JsonResponse({"status": "error", "message": "Bounty expiry date cannot be in the past"}, status=400)
+        
+        try:
+            with transaction.atomic():
+                # Lock the row to prevent concurrent updates
+                github_issue = GitHubIssue.objects.select_for_update().get(
+                    issue_id=issue_number, 
+                    repo=repo
+                )
+                github_issue.bounty_expiry_date = expiry_dt
+                github_issue.save(update_fields=["bounty_expiry_date"])
+                
+            logger.info(
+                "Stored timed bounty expiry for issue #%s in %s/%s at %s",
+                issue_number,
+                owner_name,
+                repo_name,
+                expiry_dt.isoformat(),
+            )
 
-        github_issue.bounty_expiry_date = expiry_dt
-        github_issue.save(update_fields=["bounty_expiry_date"])
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Timed bounty recorded",
+                    "issue_number": issue_number,
+                    "bounty_expiry_date": expiry_dt.isoformat(),
+                }
+            )
+        except GitHubIssue.DoesNotExist:
+            logger.error(f"GitHubIssue not found for issue #{issue_number} in {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        logger.info(
-            "Stored timed bounty expiry for issue #%s in %s/%s at %s",
-            issue_number,
-            owner_name,
-            repo_name,
-            expiry_dt.isoformat(),
-        )
-
-        return JsonResponse(
-            {
-                "status": "success",
-                "message": "Timed bounty recorded",
-                "issue_number": issue_number,
-                "bounty_expiry_date": expiry_dt.isoformat(),
-            }
-        )
+        
 
     except Exception:
         logger.exception("Unexpected error in timed_bounty")
@@ -223,72 +236,78 @@ def bounty_payout(request):
         if not repo:
             logger.error(f"Repo not found: {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+        
+        
 
         github_issue = GitHubIssue.objects.filter(issue_id=issue_number, repo=repo).first()
         if not github_issue:
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
-
-        # Validate timed bounty expiry if applicable
-        if is_timed_bounty:
-            expiry = github_issue.bounty_expiry_date
-            if not expiry:
-                logger.warning(
-                    "Timed bounty flag provided but no bounty_expiry_date stored for issue #%s in %s/%s",
-                    issue_number,
-                    owner_name,
-                    repo_name,
+        
+        try:
+            with transaction.atomic():
+                # Lock the row to prevent concurrent modifications
+                github_issue = GitHubIssue.objects.select_for_update().get(
+                    issue_id=issue_number,
+                    repo=repo
                 )
-                return JsonResponse(
-                    {"status": "error", "message": "Timed bounty metadata missing for this issue"},
-                    status=400,
+                
+                # Check timed bounty expiry
+                if is_timed_bounty:
+                    if not github_issue.bounty_expiry_date:
+                        logger.warning(
+                            f"Timed bounty flag set but no expiry date found for issue #{issue_number}"
+                        )
+                        return JsonResponse({
+                            "status": "error",
+                            "message": "Timed bounty expiry date not set"
+                        }, status=400)
+                    
+                    now = timezone.now()
+                    if now > github_issue.bounty_expiry_date:
+                        logger.info(
+                            f"Bounty for issue #{issue_number} expired at {github_issue.bounty_expiry_date.isoformat()}"
+                        )
+                        return JsonResponse({
+                            "status": "error",
+                            "message": "Bounty expired"
+                        }, status=400)
+                
+                # Check for duplicate payment
+                if github_issue.sponsors_tx_id:
+                    logger.info(f"Payment already processed for issue #{issue_number}")
+                    return JsonResponse(
+                        {
+                            "status": "warning",
+                            "message": "Bounty payment already processed for this issue.",
+                            "transaction_id": github_issue.sponsors_tx_id,
+                        },
+                        status=200,
+                    )
+
+                # Process payment via GitHub Sponsors API
+                transaction_id = process_github_sponsors_payment(
+                    username=contributor_username,
+                    amount=bounty_amount,
+                    note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
                 )
 
-            now = timezone.now()
-            if now > expiry:
+                if not transaction_id:
+                    logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
+                    return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
+
                 logger.info(
-                    "Timed bounty expired for issue #%s in %s/%s (expiry %s)",
-                    issue_number,
-                    owner_name,
-                    repo_name,
-                    expiry.isoformat(),
+                    f"Successfully processed bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
+                    f"for PR #{pr_number} (Issue #{issue_number})"
                 )
-                return JsonResponse(
-                    {"status": "error", "message": "Timed bounty has expired"},
-                    status=400,
-                )
-
-        # Check for duplicate payment
-        if github_issue.sponsors_tx_id:
-            logger.info(f"Payment already processed for issue #{issue_number}")
-            return JsonResponse(
-                {
-                    "status": "warning",
-                    "message": "Bounty payment already processed for this issue.",
-                    "transaction_id": github_issue.sponsors_tx_id,
-                },
-                status=200,
-            )
-
-        # Process payment via GitHub Sponsors API
-        transaction_id = process_github_sponsors_payment(
-            username=contributor_username,
-            amount=bounty_amount,
-            note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
-        )
-
-        if not transaction_id:
-            logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
-            return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
-
-        logger.info(
-            f"Successfully processed bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
-            f"for PR #{pr_number} (Issue #{issue_number})"
-        )
-
-        # Save transaction ID to database
-        github_issue.sponsors_tx_id = transaction_id
-        github_issue.save()
+                
+                # Save transaction ID
+                github_issue.sponsors_tx_id = transaction_id
+                github_issue.save()
+                
+        except GitHubIssue.DoesNotExist:
+            logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name}")
+            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
         # Add comment and labels to GitHub issue
         github_token = os.environ.get("GITHUB_TOKEN")
