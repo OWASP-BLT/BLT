@@ -635,7 +635,7 @@
         function initPieChart(canvasId, labelsRaw, dataRaw, emptyMessage, errorIcon) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
-            const existingChart = Chart.getChart(canvas);
+            const existingChart = Chart.getChart(ctx);
                 if (existingChart) {
                     existingChart.destroy();
                 }
@@ -669,7 +669,7 @@
         function initMonthlyChart() {
             const ctx = document.getElementById('monthlyChart');
             if (!ctx) return;
-            const existingChart = Chart.getChart(canvas);
+            const existingChart = Chart.getChart(ctx);
                 if (existingChart) {
                     existingChart.destroy();
                 }
