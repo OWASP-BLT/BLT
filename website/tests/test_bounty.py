@@ -336,7 +336,7 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Timed bounty has expired", response.json()["message"])
+        self.assertIn("Bounty expired", response.json()["message"])
         mock_payment.assert_not_called()
 
     @override_settings(BLT_API_TOKEN="test_token_12345")
@@ -361,5 +361,5 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Timed bounty metadata missing", response.json()["message"])
+        self.assertIn("Timed bounty expiry date not set", response.json()["message"])
         mock_payment.assert_not_called()
