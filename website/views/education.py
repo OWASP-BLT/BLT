@@ -1,6 +1,6 @@
 import json
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,8 +14,15 @@ from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
 
+from website.forms import EducationalVideoForm
 logger = logging.getLogger(__name__)
 
+import openai
+from django.conf import settings
+from youtube_transcript_api import YouTubeTranscriptApi
+
+openai.api_key = settings.OPENAI_API_KEY
+logger = logging.getLogger(__name__)
 
 def is_valid_url(url, url_type):
     """Helper function to validate URLs based on their type."""
@@ -46,6 +53,92 @@ def education_home(request):
     context = {"is_instructor": is_instructor, "featured_lectures": featured_lectures, "courses": courses}
     return render(request, template, context)
 
+def extract_youtube_video_id(url):
+    parsed_url = urlparse(url)
+
+    if "youtu.be" in parsed_url.netloc:
+        return parsed_url.path.lstrip("/")
+    elif "youtube.com" in parsed_url.netloc:
+        qs = parse_qs(parsed_url.query)
+        return qs.get("v", [None])[0]
+
+    return None
+
+def get_transcript(video_id):
+    try:
+        ytt = YouTubeTranscriptApi()      # ✅ create instance
+        transcript = ytt.fetch(video_id) # ✅ instance method
+
+        # transcript items are OBJECTS, not dicts
+        return " ".join(item.text for item in transcript)
+
+    except Exception as e:
+        logger.error(f"Transcript fetch failed: {e}")
+        return ""
+    
+def submit_educational_video(request):
+    quiz = None
+
+    if request.method == "POST":
+        form = EducationalVideoForm(request.POST)
+
+        if form.is_valid():
+            video_url = form.cleaned_data["video_url"]
+            video_id = extract_youtube_video_id(video_url)
+
+            if not video_id:
+                messages.error(request, "Invalid YouTube URL.")
+            else:
+                transcript_text = get_transcript(video_id)
+
+                if not transcript_text:
+                    messages.error(request, "Transcript not available for this video.")
+                else:
+                    try:
+                        quiz = generate_quiz(transcript_text)
+                        messages.success(request, "Quiz generated successfully!")
+                    except Exception as e:
+                        logger.error(f"Quiz generation error: {e}")
+                        messages.error(request, "Failed to generate quiz.")
+
+    else:
+        form = EducationalVideoForm()
+
+    return render(
+        request,
+        "education/submit_video.html",
+        {"form": form, "quiz": quiz},
+    )
+
+def generate_quiz(transcript_text):
+    return {
+        "question": "Placeholder",
+        "answer": "Transcript received successfully"
+    }
+"""
+def generate_quiz(transcript_text):
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an educational quiz generator."
+            },
+            {
+                "role": "user",
+                "content": f"""
+"""Generate 5 multiple-choice questions based on the following transcript.
+Return JSON with keys: question, options, answer.
+
+Transcript:
+{transcript_text}
+"""
+   """         }
+        ],
+        temperature=0.3,
+    )
+
+    return response["choices"][0]["message"]["content"]"""
 
 @login_required(login_url="/accounts/login")
 def instructor_dashboard(request):

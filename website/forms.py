@@ -4,6 +4,8 @@ from captcha.fields import CaptchaField
 from django import forms
 from django.db.models import Q
 from mdeditor.fields import MDTextFormField
+from django import forms
+from urllib.parse import urlparse
 
 from website.models import (
     Bid,
@@ -603,3 +605,28 @@ class JobForm(forms.ModelForm):
             "application_url": "Optional: Link to external application page",
             "application_instructions": "Optional: Custom instructions for applicants",
         }
+class EducationalVideoForm(forms.Form):
+    video_url = forms.URLField(
+        label="Educational Video URL",
+        required=True,
+        help_text="Paste a YouTube or Vimeo video link",
+    )
+
+    def clean_video_url(self):
+        url = self.cleaned_data["video_url"]
+        parsed = urlparse(url)
+
+        allowed_domains = [
+            "youtube.com",
+            "www.youtube.com",
+            "youtu.be",
+            "vimeo.com",
+            "www.vimeo.com",
+        ]
+
+        if parsed.netloc not in allowed_domains:
+            raise forms.ValidationError(
+                "Only YouTube or Vimeo URLs are allowed."
+            )
+
+        return url

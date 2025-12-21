@@ -1,0 +1,27 @@
+<h1>Submit Educational Video</h1>
+
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Submit</button>
+</form>
+
+{% if quiz %}
+  <h2>Generated Quiz</h2>
+  <h3>Question:</h3>
+  <p>{{ quiz.question }}</p>
+  
+  <h3>Answer:</h3>
+  <p>{{ quiz.answer }}</p>
+{% else %}
+  <p>No quiz generated yet.</p>
+{% endif %}
+
