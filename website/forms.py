@@ -618,11 +618,7 @@ class EducationalVideoForm(forms.Form):
         url = self.cleaned_data["video_url"]
         parsed = urlparse(url)
 
-        allowed_domains = [
-            "youtube.com",
-            "www.youtube.com",
-            "youtu.be"
-        ]
+        allowed_domains = ["youtube.com", "www.youtube.com", "youtu.be"]
 
         if parsed.netloc not in allowed_domains:
             raise forms.ValidationError("Only YouTube URLs are allowed.")
