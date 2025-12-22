@@ -3,7 +3,7 @@
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
     <!-- HTMX fragment for like/dislike/flag -->
-    {% include "includes/_like_section.html" with object=object positive_votes=positive_votes|default:likes negative_votes=negative_votes|default:dislikes flags_count=flags_count|default:flags user_vote=user_vote user_has_flagged=user_has_flagged|default:isFlagged %}
+    {% include "includes/_like_section.html" with object=object positive_votes=positive_votes|default_if_none:likes negative_votes=negative_votes|default_if_none:dislikes flags_count=flags_count|default_if_none:flags user_vote=user_vote user_has_flagged=user_has_flagged|default_if_none:isFlagged %}
     <!-- Share button (static) -->
     <button onclick="copyClipboard()"
             class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -28,9 +28,7 @@
         {% endif %}
     </div>
     <!-- Bookmark section for HTMX updates -->
-    <div id="bookmark-section-{{ object.id }}" class="flex items-center">
-        <!-- This div is for HTMX updates from bookmark button -->
-    </div>
+    {% include "includes/_bookmark_section.html" with object=object user_has_saved=user_has_saved|default:False %}
 </div>
 {% include "includes/_like_modal.html" %}
 {% include "includes/_flag_modal.html" %}

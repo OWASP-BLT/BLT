@@ -2266,6 +2266,16 @@ def flag_issue(request, issue_pk):
 
     userprof.save()
     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
+    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
+    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+
+    # Derive user vote/save state for consistency with other endpoints
+    user_vote = None
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
+        user_vote = "upvote"
+    elif userprof.issue_downvoted.filter(pk=issue.pk).exists():
+        user_vote = "downvote"
+    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
@@ -2273,9 +2283,12 @@ def flag_issue(request, issue_pk):
             "includes/_like_dislike_share.html",
             {
                 "object": issue,
+                "user_vote": user_vote,
                 "user_has_flagged": is_flagged,
+                "user_has_saved": user_has_saved,
+                "positive_votes": total_upvotes,
+                "negative_votes": total_downvotes,
                 "flags_count": total_flag_votes,
-                # REQUIRED: Add these context variables
                 "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
                 "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
