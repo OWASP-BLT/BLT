@@ -18,10 +18,9 @@ django-import-export = "^4.3.14"
 django-annoying = "^0.10.7"
 dj-rest-auth = "^5.0.2"
 user-agents = "^2.2.0"
-youtube-transcript-api = "^1.2.3"
 whitenoise = "^6.9.0"
 
-
+pylibmc = "^1.6.1"
 psycopg2-binary = "^2.9.10"
 protobuf = "^4.25.3"
 django-storages = { extras = ["google"], version = "^1.14.6" }
