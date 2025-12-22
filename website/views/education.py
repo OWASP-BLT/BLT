@@ -21,8 +21,8 @@ _openai_client = None
 def get_openai_client():
     global _openai_client
     if _openai_client is None:
-        from openai import OpenAI
         from django.conf import settings
+        from openai import OpenAI
 
         _openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
     return _openai_client
