@@ -60,13 +60,16 @@ def education_home(request):
 
 def extract_youtube_video_id(url):
     parsed_url = urlparse(url)
+    netloc = parsed_url.netloc.lower() 
 
-    if "youtu.be" in parsed_url.netloc:
-        return parsed_url.path.lstrip("/")
-    elif "youtube.com" in parsed_url.netloc:
-        qs = parse_qs(parsed_url.query)
-        return qs.get("v", [None])[0]
+    allowed_domains = ["youtu.be", "youtube.com", "www.youtube.com"]
 
+    if netloc in allowed_domains:
+        if netloc == "youtu.be":
+            return parsed_url.path.lstrip("/")
+        elif "youtube.com" in netloc:
+            qs = parse_qs(parsed_url.query)
+            return qs.get("v", [None])[0]
     return None
 
 
