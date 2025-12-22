@@ -144,7 +144,7 @@ def like_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_dislike_share.html",
+            "includes/_like_dislike_share.html",  # Updated template name
             {
                 "object": issue,
                 "user_vote": "upvote" if is_liked else None,
@@ -153,6 +153,9 @@ def like_issue(request, issue_pk):
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+                # REQUIRED: Add these context variables
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
         )
         return HttpResponse(html)
@@ -191,10 +194,8 @@ def dislike_issue(request, issue_pk):
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
-        from django.template.loader import render_to_string
-
         html = render_to_string(
-            "includes/_like_dislike_share.html",
+            "includes/_like_dislike_share.html",  # Updated template name
             {
                 "object": issue,
                 "user_vote": "downvote" if is_disliked else None,
@@ -203,6 +204,9 @@ def dislike_issue(request, issue_pk):
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+                # REQUIRED: Add these context variables
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
         )
         return HttpResponse(html)
@@ -244,10 +248,8 @@ def issue_votes(request, issue_pk):
         user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     if request.headers.get("HX-Request"):
-        from django.template.loader import render_to_string
-
         html = render_to_string(
-            "includes/_like_dislike_share.html",
+            "includes/_like_dislike_share.html",  # Updated template name
             {
                 "object": issue,
                 "user_vote": user_vote,
@@ -256,6 +258,9 @@ def issue_votes(request, issue_pk):
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": total_flags,
+                # REQUIRED: Add these context variables
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
         )
         return HttpResponse(html)
@@ -2263,14 +2268,15 @@ def flag_issue(request, issue_pk):
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
-        from django.template.loader import render_to_string
-
         html = render_to_string(
             "includes/_flag_section.html",
             {
                 "object": issue,
                 "user_has_flagged": is_flagged,
                 "flags_count": total_flag_votes,
+                # REQUIRED: Add these context variables
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
         )
         return HttpResponse(html)

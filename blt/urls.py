@@ -1256,8 +1256,6 @@ urlpatterns = [
     path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
     path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
     path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
-    path("upvote_issue/<int:issue_id>/", like_issue, name="upvote_issue"),
-    path("downvote_issue/<int:issue_id>/", dislike_issue, name="downvote_issue"),
     path("issue_votes/<int:issue_pk>/", issue_votes, name="issue_votes"),
 ]
 

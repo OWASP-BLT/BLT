@@ -3,7 +3,7 @@
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
     <!-- HTMX fragment for like/dislike/flag -->
-    {% include "includes/_like_section.html" with object=object positive_votes=likes negative_votes=dislikes flags_count=flags user_vote=user_vote user_has_flagged=isFlagged %}
+    {% include "includes/_like_section.html" with object=object positive_votes=positive_votes|default:likes negative_votes=negative_votes|default:dislikes flags_count=flags_count|default:flags user_vote=user_vote user_has_flagged=user_has_flagged|default:isFlagged %}
     <!-- Share button (static) -->
     <button onclick="copyClipboard()"
             class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -35,20 +35,29 @@
 {% include "includes/_like_modal.html" %}
 {% include "includes/_flag_modal.html" %}
 <script>
-    // Clipboard function
+    // SAFE Clipboard function with browser compatibility checks
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
-        
-        navigator.clipboard.writeText(textToCopy).then(function() {
-            if (window.createMessage) {
-                window.createMessage("Bug details copied to clipboard!", "success", 3000);
-            } else {
-                // Fallback notification
-                alert("Bug details copied to clipboard!");
-            }
-        }).catch(function(err) {
-            console.error('Failed to copy: ', err);
-        });
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(function () {
+                    if (window.createMessage) {
+                        window.createMessage("Bug details copied to clipboard!", "success", 3000);
+                    } else {
+                        // Fallback notification
+                        alert("Bug details copied to clipboard!");
+                    }
+                })
+                .catch(function (err) {
+                    console.error("Failed to copy:", err);
+                    // Fallback for older browsers or non-secure contexts
+                    alert("Bug details copied to clipboard!");
+                });
+        } else {
+            // Fallback for browsers without clipboard API
+            alert("Bug details copied to clipboard!");
+        }
     }
     
     // Modal functions

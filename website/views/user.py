@@ -1887,38 +1887,43 @@ def delete_notification(request, notification_id):
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
+@require_POST
 @login_required
 def toggle_follow(request, username):
-    """Toggle follow without page reload"""
-    if request.method != "POST":
-        return JsonResponse({"error": "Invalid method"}, status=405)
+    """Toggle follow/unfollow for a user (HTMX + non-HTMX safe)"""
 
     target_user = get_object_or_404(User, username=username)
-    follower = request.user
 
-    if follower == target_user:
+    if request.user == target_user:
         return JsonResponse({"error": "Cannot follow yourself"}, status=400)
 
-    follow_relation, created = UserFollow.objects.get_or_create(follower=follower, following=target_user)
+    follower_profile = request.user.userprofile
+    target_profile = target_user.userprofile
 
-    if not created:
-        # Already following, so unfollow
-        follow_relation.delete()
+    if target_profile in follower_profile.follows.all():
+        follower_profile.follows.remove(target_profile)
         is_following = False
         action = "unfollowed"
     else:
+        follower_profile.follows.add(target_profile)
         is_following = True
         action = "followed"
 
-    follower_count = target_user.followers.count()
+    follower_count = target_profile.follower.count()
 
-    # If HTMX request, return partial HTML
+    # HTMX response
     if request.headers.get("HX-Request"):
         html = render_to_string(
             "includes/_follow_button.html",
-            {"user": target_user, "is_following": is_following, "follower_count": follower_count, "request": request},
+            {
+                "user": target_user,
+                "is_following": is_following,
+                "follower_count": follower_count,
+            },
+            request=request,
         )
         return HttpResponse(html)
 
+    # Normal request fallback
     messages.success(request, f"You {action} {target_user.username}")
     return redirect("profile", slug=username)
