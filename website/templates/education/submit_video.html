@@ -1,36 +1,29 @@
 <h1>Submit Educational Video</h1>
-
 {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
-
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Submit</button>
-</form>
-
-{% if quiz %}
-  <h2>Generated Quiz</h2>
-
-  {% for q in quiz %}
-    <div style="margin-bottom: 20px;">
-      <h4>{{ forloop.counter }}. {{ q.question }}</h4>
-
-      <ul>
-        {% for option in q.options %}
-          <li>{{ option }}</li>
+    <ul class="messages">
+        {% for message in messages %}
+            <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
-      </ul>
-
-      <p><strong>Correct Answer:</strong> {{ q.answer }}</p>
-    </div>
-  {% endfor %}
-
+    </ul>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+</form>
+{% if quiz %}
+    <h2>Generated Quiz</h2>
+    {% for q in quiz %}
+        <div style="margin-bottom: 20px;">
+            <h4>{{ forloop.counter }}. {{ q.question }}</h4>
+            <ul>
+                {% for option in q.options %}<li>{{ option }}</li>{% endfor %}
+            </ul>
+            <p>
+                <strong>Correct Answer:</strong> {{ q.answer }}
+            </p>
+        </div>
+    {% endfor %}
 {% else %}
-  <p>No quiz generated yet.</p>
+    <p>No quiz generated yet.</p>
 {% endif %}
