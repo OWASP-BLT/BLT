@@ -23,10 +23,22 @@ from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
 openai.api_key = settings.OPENAI_API_KEY
-logger = logging.getLogger(__name__)
 
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth.models import User
+
+class EducationSubmitViewTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass123"
+        )
+
+    def test_submit_page_loads(self):
+        self.client.login(username="testuser", password="testpass123")
+        response = self.client.get("/education/submit/")
+        self.assertEqual(response.status_code, 200)
 
 def is_valid_url(url, url_type):
     """Helper function to validate URLs based on their type."""
@@ -165,7 +177,7 @@ Transcript:
 {transcript_text[:3500]}
 """
 
-    response = client.chat.completions.create(
+    response = client.with_options(timeout=5.0).chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a strict JSON-only quiz generator."},
@@ -212,7 +224,7 @@ Transcript:
 {transcript_text[:2000]}
 """
 
-    response = client.chat.completions.create(
+    response = client.with_options(timeout=5.0).chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "system", "content": "You are a strict classifier."}, {"role": "user", "content": prompt}],
         temperature=0,
