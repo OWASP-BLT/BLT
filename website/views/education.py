@@ -27,6 +27,7 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 openai.api_key = settings.OPENAI_API_KEY
 logger = logging.getLogger(__name__)
 
+
 def is_valid_url(url, url_type):
     """Helper function to validate URLs based on their type."""
     if url_type == "video":
@@ -56,6 +57,7 @@ def education_home(request):
     context = {"is_instructor": is_instructor, "featured_lectures": featured_lectures, "courses": courses}
     return render(request, template, context)
 
+
 def extract_youtube_video_id(url):
     parsed_url = urlparse(url)
 
@@ -66,6 +68,7 @@ def extract_youtube_video_id(url):
         return qs.get("v", [None])[0]
 
     return None
+
 
 def get_transcript_text(video_id):
     try:
@@ -80,6 +83,7 @@ def get_transcript_text(video_id):
     except Exception as e:
         logger.error(f"Transcript fetch failed: {e}")
         return ""
+
 
 def submit_educational_video(request):
     quiz = None
@@ -110,8 +114,7 @@ def submit_educational_video(request):
 
             if not is_educational:
                 messages.error(
-                    request,
-                    "This video does not appear to be educational. Please submit an educational video."
+                    request, "This video does not appear to be educational. Please submit an educational video."
                 )
                 return redirect("/education/submit/")
 
@@ -134,6 +137,7 @@ def submit_educational_video(request):
             "quiz": quiz,
         },
     )
+
 
 def generate_quiz(transcript_text):
     if not transcript_text:
@@ -164,7 +168,7 @@ Transcript:
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a strict JSON-only quiz generator."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
         temperature=0.4,
     )
@@ -176,6 +180,7 @@ Transcript:
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON from OpenAI: {content}")
         raise
+
 
 def is_educational_video(transcript_text):
     prompt = f"""
@@ -208,15 +213,13 @@ Transcript:
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a strict classifier."},
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{"role": "system", "content": "You are a strict classifier."}, {"role": "user", "content": prompt}],
         temperature=0,
     )
 
     answer = response.choices[0].message.content.strip().upper()
     return answer == "YES"
+
 
 @login_required(login_url="/accounts/login")
 def instructor_dashboard(request):

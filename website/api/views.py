@@ -37,15 +37,14 @@ from rest_framework.views import APIView
 
 openai.api_key = settings.OPENAI_API_KEY
 
+
 def generate_quiz(transcript_text):
     prompt = f"Create 5 multiple choice questions (with 4 options each) from the following educational content:\n\n{transcript_text}"
-    
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    
+
+    response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
+
     return response.choices[0].message.content
+
 
 from youtube_transcript_api import YouTubeTranscriptApi
 
@@ -59,24 +58,21 @@ def get_transcript(video_id):
         logger.error(f"Transcript error: {e}")
         return None
 
-#processes the video submission:
+
+# processes the video submission:
 def submit_educational_video(request):
     if request.method == "POST":
         video_url = request.POST.get("video_url")
-        video_id = extract_youtube_video_id(video_url) 
+        video_id = extract_youtube_video_id(video_url)
 
         if is_educational(video_url):
-            transcript_text = get_transcript(video_id)  
+            transcript_text = get_transcript(video_id)
             quiz_text = generate_quiz(transcript_text)
-            
+
             # Save only metadata + quiz
-            video = EducationalVideo(
-                url=video_url,
-                title="Some title here", 
-                quiz=quiz_text
-            )
+            video = EducationalVideo(url=video_url, title="Some title here", quiz=quiz_text)
             video.save()
-            
+
             return Response({"message": "Video and quiz saved!"})
 
         else:

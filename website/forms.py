@@ -605,6 +605,8 @@ class JobForm(forms.ModelForm):
             "application_url": "Optional: Link to external application page",
             "application_instructions": "Optional: Custom instructions for applicants",
         }
+
+
 class EducationalVideoForm(forms.Form):
     video_url = forms.URLField(
         label="Educational Video URL",
@@ -625,8 +627,6 @@ class EducationalVideoForm(forms.Form):
         ]
 
         if parsed.netloc not in allowed_domains:
-            raise forms.ValidationError(
-                "Only YouTube or Vimeo URLs are allowed."
-            )
+            raise forms.ValidationError("Only YouTube or Vimeo URLs are allowed.")
 
         return url
