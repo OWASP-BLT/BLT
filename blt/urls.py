@@ -215,6 +215,7 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
+    toggle_follow,
     unsave_issue,
     update_content_comment,
     vote_count,
