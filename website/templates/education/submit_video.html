@@ -16,12 +16,21 @@
 
 {% if quiz %}
   <h2>Generated Quiz</h2>
-  <h3>Question:</h3>
-  <p>{{ quiz.question }}</p>
-  
-  <h3>Answer:</h3>
-  <p>{{ quiz.answer }}</p>
+
+  {% for q in quiz %}
+    <div style="margin-bottom: 20px;">
+      <h4>{{ forloop.counter }}. {{ q.question }}</h4>
+
+      <ul>
+        {% for option in q.options %}
+          <li>{{ option }}</li>
+        {% endfor %}
+      </ul>
+
+      <p><strong>Correct Answer:</strong> {{ q.answer }}</p>
+    </div>
+  {% endfor %}
+
 {% else %}
   <p>No quiz generated yet.</p>
 {% endif %}
-

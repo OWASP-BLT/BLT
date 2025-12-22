@@ -18,8 +18,10 @@ from website.forms import EducationalVideoForm
 logger = logging.getLogger(__name__)
 
 import openai
+from openai import OpenAI
 from django.conf import settings
 from youtube_transcript_api import YouTubeTranscriptApi
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 openai.api_key = settings.OPENAI_API_KEY
 logger = logging.getLogger(__name__)
@@ -64,18 +66,20 @@ def extract_youtube_video_id(url):
 
     return None
 
-def get_transcript(video_id):
+def get_transcript_text(video_id):
     try:
-        ytt = YouTubeTranscriptApi()      # ✅ create instance
-        transcript = ytt.fetch(video_id) # ✅ instance method
+        ytt_api = YouTubeTranscriptApi()
+        fetched_transcript = ytt_api.fetch(video_id)
 
-        # transcript items are OBJECTS, not dicts
-        return " ".join(item.text for item in transcript)
+        # fetched_transcript is iterable
+        text = " ".join(snippet.text for snippet in fetched_transcript)
+
+        return text.strip()
 
     except Exception as e:
         logger.error(f"Transcript fetch failed: {e}")
         return ""
-    
+
 def submit_educational_video(request):
     quiz = None
 
@@ -88,18 +92,35 @@ def submit_educational_video(request):
 
             if not video_id:
                 messages.error(request, "Invalid YouTube URL.")
-            else:
-                transcript_text = get_transcript(video_id)
+                return redirect("/education/submit/")
 
-                if not transcript_text:
-                    messages.error(request, "Transcript not available for this video.")
-                else:
-                    try:
-                        quiz = generate_quiz(transcript_text)
-                        messages.success(request, "Quiz generated successfully!")
-                    except Exception as e:
-                        logger.error(f"Quiz generation error: {e}")
-                        messages.error(request, "Failed to generate quiz.")
+            transcript_text = get_transcript_text(video_id)
+
+            if not transcript_text:
+                messages.error(request, "Transcript not available for this video.")
+                return redirect("/education/submit/")
+
+            try:
+                is_educational = is_educational_video(transcript_text)
+            except Exception as e:
+                logger.error(f"Education detection failed: {e}")
+                messages.error(request, "Failed to analyze video content.")
+                return redirect("/education/submit/")
+
+            if not is_educational:
+                messages.error(
+                    request,
+                    "This video does not appear to be educational. Please submit an educational video."
+                )
+                return redirect("/education/submit/")
+
+            try:
+                quiz = generate_quiz(transcript_text)
+                messages.success(request, "Quiz generated successfully!")
+            except Exception as e:
+                logger.error(f"Quiz generation error: {e}")
+                messages.error(request, "Failed to generate quiz.")
+                return redirect("/education/submit/")
 
     else:
         form = EducationalVideoForm()
@@ -107,38 +128,94 @@ def submit_educational_video(request):
     return render(
         request,
         "education/submit_video.html",
-        {"form": form, "quiz": quiz},
+        {
+            "form": form,
+            "quiz": quiz,
+        },
     )
 
 def generate_quiz(transcript_text):
-    return {
-        "question": "Placeholder",
-        "answer": "Transcript received successfully"
-    }
-"""
-def generate_quiz(transcript_text):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an educational quiz generator."
-            },
-            {
-                "role": "user",
-                "content": f"""
-"""Generate 5 multiple-choice questions based on the following transcript.
-Return JSON with keys: question, options, answer.
+    if not transcript_text:
+        return None
+
+    prompt = f"""
+Create 20 multiple-choice questions (MCQs) from the transcript below.
+
+Rules:
+- Output ONLY valid JSON
+- No markdown
+- No explanations
+- Format EXACTLY like this:
+
+[
+  {{
+    "question": "Question text",
+    "options": ["A", "B", "C", "D"],
+    "answer": "Correct option text"
+  }}
+]
 
 Transcript:
-{transcript_text}
+{transcript_text[:3500]}
 """
-   """         }
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a strict JSON-only quiz generator."},
+            {"role": "user", "content": prompt}
         ],
-        temperature=0.3,
+        temperature=0.4,
     )
 
-    return response["choices"][0]["message"]["content"]"""
+    content = response.choices[0].message.content.strip()
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON from OpenAI: {content}")
+        raise
+
+def is_educational_video(transcript_text):
+    prompt = f"""
+You are a strict classifier.
+
+Decide whether the following transcript is EDUCATIONAL.
+
+Educational means:
+- Teaching concepts
+- Tutorials
+- Courses
+- Explanations
+- How-to guides
+- Academic or skill-based learning
+
+Non-educational means:
+- Music
+- Lyrics
+- Vlogs
+- Comedy
+- Entertainment
+- Interviews without teaching
+
+Respond with ONLY one word:
+YES or NO
+
+Transcript:
+{transcript_text[:2000]}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a strict classifier."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0,
+    )
+
+    answer = response.choices[0].message.content.strip().upper()
+    return answer == "YES"
 
 @login_required(login_url="/accounts/login")
 def instructor_dashboard(request):
