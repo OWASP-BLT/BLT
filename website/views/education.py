@@ -31,14 +31,13 @@ from django.test import TestCase
 
 class EducationSubmitViewTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
 
     def test_submit_page_loads(self):
         self.client.login(username="testuser", password="testpass123")
         response = self.client.get("/education/submit/")
         self.assertEqual(response.status_code, 200)
+
 
 def is_valid_url(url, url_type):
     """Helper function to validate URLs based on their type."""
