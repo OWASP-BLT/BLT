@@ -53,6 +53,9 @@
             <script src="https://unpkg.com/htmx.org@1.9.10"
                     integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
                     crossorigin="anonymous"></script>
+            <!-- HTMX extensions for better UX -->
+            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/loading-states.js"></script>
+            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"></script>
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -108,6 +111,54 @@
                 }
             })();
         </script>
+        <!-- HTMX Global Configuration -->
+        <script>
+            // Show toast notifications for HTMX responses
+            document.body.addEventListener('htmx:afterRequest', function(event) {
+                const xhr = event.detail.xhr;
+                
+                // Only parse JSON if response is JSON
+                if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (xhr.status === 200 && response.message) {
+                            if (window.createMessage) {
+                                window.createMessage(response.message, 'success', 3000);
+                            }
+                        } else if (xhr.status >= 400) {
+                            if (window.createMessage) {
+                                window.createMessage(response.error || 'An error occurred', 'error', 5000);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse JSON response:', e);
+                    }
+                }
+            });
+            
+            // Show loading indicator during requests
+            document.body.addEventListener('htmx:beforeRequest', function(event) {
+                const target = event.detail.target;
+                if (target && target.style) {
+                    target.style.opacity = '0.6';
+                    target.style.pointerEvents = 'none';
+                }
+            });
+            
+            document.body.addEventListener('htmx:afterRequest', function(event) {
+                const target = event.detail.target;
+                if (target && target.style) {
+                    target.style.opacity = '1';
+                    target.style.pointerEvents = 'auto';
+                }
+            });
+            
+            // Add afterSettle event to handle DOM updates
+            document.body.addEventListener('htmx:afterSettle', function(event) {
+                // Re-initialize any dynamic elements if needed
+                console.log('HTMX settled for target:', event.detail.target);
+            });
+        </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
@@ -124,7 +175,8 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300"
+          hx-ext="json-enc, loading-states">
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
@@ -387,13 +439,17 @@
                             if (data.success) {
                                 hideModal(); // Hide the modal on successful submission
                                 localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
-                                alert('Your report has been submitted successfully!');
+                                if (window.createMessage) {
+                                    window.createMessage('Your report has been submitted successfully!', 'success', 3000);
+                                }
                             } else {
                                 throw new Error(data.error || 'Submission failed');
                             }
                         })
                         .catch(error => {
-                            alert(`There was an error submitting your report: ${error.message}. Please try again.`);
+                            if (window.createMessage) {
+                                window.createMessage(`There was an error submitting your report: ${error.message}. Please try again.`, 'error', 5000);
+                            }
                         })
                         .finally(() => {
                             // Re-enable the submit button and reset its text

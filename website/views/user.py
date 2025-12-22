@@ -1885,3 +1885,40 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@login_required
+def toggle_follow(request, username):
+    """Toggle follow without page reload"""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method"}, status=405)
+
+    target_user = get_object_or_404(User, username=username)
+    follower = request.user
+
+    if follower == target_user:
+        return JsonResponse({"error": "Cannot follow yourself"}, status=400)
+
+    follow_relation, created = UserFollow.objects.get_or_create(follower=follower, following=target_user)
+
+    if not created:
+        # Already following, so unfollow
+        follow_relation.delete()
+        is_following = False
+        action = "unfollowed"
+    else:
+        is_following = True
+        action = "followed"
+
+    follower_count = target_user.followers.count()
+
+    # If HTMX request, return partial HTML
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_follow_button.html",
+            {"user": target_user, "is_following": is_following, "follower_count": follower_count, "request": request},
+        )
+        return HttpResponse(html)
+
+    messages.success(request, f"You {action} {target_user.username}")
+    return redirect("profile", slug=username)

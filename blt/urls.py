@@ -203,6 +203,7 @@ from website.views.issue import (
     get_github_issue,
     get_unique_issues,
     issue_count,
+    issue_votes,
     like_issue,
     newhome,
     page_vote,
@@ -1251,6 +1252,13 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
+    path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
+    path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
+    path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
+    path("upvote_issue/<int:issue_id>/", like_issue, name="upvote_issue"),
+    path("downvote_issue/<int:issue_id>/", dislike_issue, name="downvote_issue"),
+    path("issue_votes/<int:issue_pk>/", issue_votes, name="issue_votes"),
 ]
 
 if settings.DEBUG:

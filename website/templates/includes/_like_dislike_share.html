@@ -2,340 +2,110 @@
 {% load custom_tags %}
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
-    <!-- We're removing the three-dot dropdown button for mobile -->
-    <!-- Like/dislike widget for all screen sizes -->
-    {% include "./_like_dislike_widget.html" %}
-    <!-- Flag modal -->
-    <div id="flag-modal"
-         class="hidden relative z-10"
-         aria-labelledby="modal-title"
-         role="dialog"
-         aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
-             aria-hidden="true"></div>
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
-                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start lg:w-full">
-                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                                <div class="mt-2">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Flagged by:</h3>
-                                    <div class="mt-4">
-                                        <div class="space-y-3">
-                                            {% for usr in flagers %}
-                                                <div class="flex items-center p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                                                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                             class="h-10 w-10 rounded-full object-cover"
-                                                             alt="{{ usr.user.username }}"
-                                                             height="40"
-                                                             width="40">
-                                                    {% else %}
-                                                        <img src="{% gravatar_url usr.user.email 50 %}"
-                                                             class="h-10 w-10 rounded-full object-cover"
-                                                             alt="{{ usr.user.username }}"
-                                                             height="40"
-                                                             width="40">
-                                                    {% endif %}
-                                                    <a href="{% url 'profile' slug=usr.user.username %}"
-                                                       class="ml-3 font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900">
-                                                        {{ usr.user.username }}
-                                                    </a>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button"
-                                class="inline-flex w-full justify-center rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                id="close-flag">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- HTMX fragment for like/dislike/flag -->
+    {% include "includes/_like_section.html" with object=object positive_votes=likes negative_votes=dislikes flags_count=flags user_vote=user_vote user_has_flagged=isFlagged %}
+    <!-- Share button (static) -->
+    <button onclick="copyClipboard()"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <i class="fa-solid fa-share-nodes text-gray-400"></i>
+        <span class="font-semibold">Share</span>
+    </button>
+    <!-- View buttons section -->
+    <div class="flex items-center gap-4">
+        <!-- View Flags button -->
+        {% if flagers %}
+            <button onclick="openFlagModal()"
+                    class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                View Flags
+            </button>
+        {% endif %}
+        <!-- View Likes button -->
+        {% if likers %}
+            <button onclick="openLikeModal()"
+                    class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                View Likes
+            </button>
+        {% endif %}
     </div>
-    <!-- Like modal -->
-    <div id="like-modal"
-         class="hidden relative z-10"
-         aria-labelledby="modal-title"
-         role="dialog"
-         aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 dark:bg-gray-400 bg-opacity-75 transition-opacity"
-             aria-hidden="true"></div>
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
-                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start lg:w-full">
-                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                                <div class="mt-2">
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Liked By:</h3>
-                                    <div class="mt-4">
-                                        <div class="space-y-3">
-                                            {% for usr in likers %}
-                                                <div class="flex items-center p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-                                                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                             class="h-10 w-10 rounded-full object-cover"
-                                                             alt="{{ usr.user.username }}"
-                                                             height="40"
-                                                             width="40">
-                                                    {% else %}
-                                                        <img src="{% gravatar_url usr.user.email 50 %}"
-                                                             class="h-10 w-10 rounded-full object-cover"
-                                                             alt="{{ usr.user.username }}"
-                                                             height="40"
-                                                             width="40">
-                                                    {% endif %}
-                                                    <a href="{% url 'profile' slug=usr.user.username %}"
-                                                       class="ml-3 font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900">
-                                                        {{ usr.user.username }}
-                                                    </a>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button"
-                                class="inline-flex w-full justify-center rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                id="close-like">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Bookmark section for HTMX updates -->
+    <div id="bookmark-section-{{ object.id }}" class="flex items-center">
+        <!-- This div is for HTMX updates from bookmark button -->
     </div>
 </div>
-<!-- Keep the existing JavaScript -->
+{% include "includes/_like_modal.html" %}
+{% include "includes/_flag_modal.html" %}
 <script>
+    // Clipboard function
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
         
-        navigator.clipboard.writeText(textToCopy);
-      
-        $.notify("Bug details copied to clipboard!", {
-            style: "custom",
-            className: "success"
-        });
-    }
-
-    function like_unlike_handler(e) {
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/like_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-
-    $('body').on('click', '#like_unlike', like_unlike_handler);
-
-    function dislike_handler(e){
-        e.preventDefault();
-        var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
-        $.ajax({
-            type: 'GET',
-            url: '/dislike_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-    $('body').on('click', '#dislike-btn', dislike_handler);
-</script>
-<script>
-    function flag_unflag_handler(e){
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/flag_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-
-    $('body').on('click', '#flag-unflag', flag_unflag_handler);
-
-</script>
-<script>
-    function bookmark_handler(e){
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/save_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-            error: function (e) {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
+        navigator.clipboard.writeText(textToCopy).then(function() {
+            if (window.createMessage) {
+                window.createMessage("Bug details copied to clipboard!", "success", 3000);
+            } else {
+                // Fallback notification
+                alert("Bug details copied to clipboard!");
             }
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
         });
-    }
-
-    $('body').on('click', '#bookmark', bookmark_handler);
-</script>
-<script>
-    async function resolveIssue(){
-        var id = {{object.pk}};
-
-        const request = await fetch(`/resolve/${id}/`)
-        window.location.reload();
-        if (request.status == 403){
-            $.notify("Permission Denied", {
-                style: "custom",
-                className: "danger"
-            });
-        }
-    }
-</script>
-<script>
-    function createIssue(){
-        var issue_pk = $("#create_issue").attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/create_github_issue/' + issue_pk,
-            data: {},
-            success: function (data) {
-                if(data["status"] != "ok"){
-                    $.notify(data["status_reason"], {
-                        style: "custom",
-                        className: "danger"
-                    });
-                }else{
-                    window.location.reload();
-                }
-            },
-        });
-    }
-
-    function sanitizeURL(url) {
-        var a = document.createElement('a');
-        a.href = encodeURI(url);
-        return a.href;
-    }
-    var label = "{{object.label}}";
-
-    $(document).on('click', '.edit-issue', function (e) {
-        $issue_desc = $('.issue-desc').text().trim();
-        $('.form input[name=description]').val($issue_desc);
-        $('.form input[name=domain]').val($('.issue-domain').text());
-        $('.form select').val(label);
-        $('.editables').hide();
-        $('.form').show();
-    });
-
-    $(document).on('click', '.cancel-edit', function (e) {
-        $('.form').hide();
-        $('.editables').show();
-    });
-
-    $(document).on('click', '.save-issue', function (e) {
-        e.preventDefault();
-
-        if ($('.form input[name=description]').val().trim().length == 0 ||
-            $('.form input[name=domain]').val().trim().length == 0) {
-            return;
-        }
-        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
-        dom_regex = new RegExp(dom_regex);
-        var domain_url = $('.form input[name=domain]').val();
-        if (domain_url.match(dom_regex) == null) {
-            alert('Enter a valid url');
-            return;
-        }
-
-
-        $.ajax({
-            type: 'POST',
-            url: '/issue/edit/',
-            data: {
-                issue_pk: $('#issue_pk').val(),
-                domain: $('.form input[name=domain]').val(),
-                description: $('.form input[name=description]').val(),
-                label: $('.form select').val(),
-                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
-            },
-            success: function (data) {
-                $('.issue-desc').text($('.form input[name=description]').val());
-                $('.issue-domain').text($('.form input[name=domain]').val());
-                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
-                $('.issue-domain').attr("href", sanitizedDomain);
-                label = $('.form select').val();
-                var l = $(".form select option[value='" + label + "']").text();
-                $('.bug-label').text(l);
-                $('.form').hide();
-                $('.editables').show();
-                $.notify("Issue updated!", {
-                    style: "custom",
-                    className: "success"
-                });
-                if (data === "Domain Created")
-                    $.notify("Domain Added!", {
-                        style: "custom",
-                        className: "success"
-                    });
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        });
-    });
-</script>
-<script>
-    function subscribe_domain(){
-        $.ajax({
-            type: 'GET',
-            url: '/domain/{{ object.domain.id }}/subscribe/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        })
     }
     
-    function likeOpenn() {
+    // Modal functions
+    function openLikeModal() {
         document.getElementById('like-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     }
     
-    function flagOpenn() {
-        document.getElementById('flag-modal').classList.remove('hidden');
-    }
-    
-    document.getElementById('close-like').addEventListener('click', function() {
+    function closeLikeModal() {
         document.getElementById('like-modal').classList.add('hidden');
-    });
+        document.body.style.overflow = 'auto';
+    }
     
-    document.getElementById('close-flag').addEventListener('click', function() {
+    function openFlagModal() {
+        document.getElementById('flag-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeFlagModal() {
         document.getElementById('flag-modal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Close modals when clicking outside or pressing Escape
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const likeModal = document.getElementById('like-modal');
+            const flagModal = document.getElementById('flag-modal');
+            
+            if (likeModal && !likeModal.classList.contains('hidden')) {
+                if (event.target === likeModal) {
+                    closeLikeModal();
+                }
+            }
+            
+            if (flagModal && !flagModal.classList.contains('hidden')) {
+                if (event.target === flagModal) {
+                    closeFlagModal();
+                }
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const likeModal = document.getElementById('like-modal');
+                const flagModal = document.getElementById('flag-modal');
+                
+                if (likeModal && !likeModal.classList.contains('hidden')) {
+                    closeLikeModal();
+                }
+                
+                if (flagModal && !flagModal.classList.contains('hidden')) {
+                    closeFlagModal();
+                }
+            }
+        });
     });
 </script>
