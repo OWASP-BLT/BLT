@@ -586,13 +586,6 @@ urlpatterns = [
         name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$",
-        dislike_issue,
-        name="dislike_issue",
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",

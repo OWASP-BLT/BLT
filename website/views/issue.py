@@ -187,7 +187,7 @@ def dislike_issue(request, issue_pk):
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
-                "user_vote": user_vote,
+                "user_vote": "downvote" if is_disliked else None,
             },
             request=request,
         )
