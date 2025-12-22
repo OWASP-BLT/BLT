@@ -20,31 +20,16 @@ logger = logging.getLogger(__name__)
 import openai
 from django.conf import settings
 from openai import OpenAI
-from youtube_transcript_api import YouTubeTranscriptApi
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 openai.api_key = settings.OPENAI_API_KEY
 
-from django.contrib.auth.models import User
-from django.test import TestCase
-
-
-class EducationSubmitViewTests(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass123")
-
-    def test_submit_page_loads(self):
-        self.client.login(username="testuser", password="testpass123")
-        response = self.client.get("/education/submit/")
-        self.assertEqual(response.status_code, 200)
-
-
 def is_valid_url(url, url_type):
     """Helper function to validate URLs based on their type."""
     if url_type == "video":
-        allowed_domains = {"www.youtube.com", "youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com"}
+        allowed_domains = {"www.youtube.com", "youtube.com", "youtu.be"}
     elif url_type == "live":
-        allowed_domains = {"zoom.us", "meet.google.com", "vimeo.com", "www.vimeo.com"}
+        allowed_domains = {"zoom.us", "meet.google.com"}
     else:
         return False
 
@@ -83,6 +68,7 @@ def extract_youtube_video_id(url):
 
 def get_transcript_text(video_id):
     try:
+        from youtube_transcript_api import YouTubeTranscriptApi
         ytt_api = YouTubeTranscriptApi()
         fetched_transcript = ytt_api.fetch(video_id)
 
@@ -108,7 +94,7 @@ def submit_educational_video(request):
             video_id = extract_youtube_video_id(video_url)
 
             if not video_id:
-                messages.error(request, "Invalid YouTube URL.")
+                messages.error(request, "Only YouTube videos are supported for quiz generation.")
                 return redirect("/education/submit/")
 
             transcript_text = get_transcript_text(video_id)
@@ -134,9 +120,28 @@ def submit_educational_video(request):
                 quiz = generate_quiz(transcript_text)
                 messages.success(request, "Quiz generated successfully!")
             except Exception as e:
+                logger.error(f"OpenAI error: {e}")
+
+                if "rate limit" in str(e).lower() or "429" in str(e):
+                    messages.error(
+                        request,
+                        "AI service is temporarily rate-limited. Please wait 20 seconds and try again."
+                    )
+                else:
+                    messages.error(
+                        request,
+                        "Failed to generate quiz due to an AI service error."
+                    )
+
+                return redirect("/education/submit/")
+
+            '''try:
+                quiz = generate_quiz(transcript_text)
+                messages.success(request, "Quiz generated successfully!")
+            except Exception as e:
                 logger.error(f"Quiz generation error: {e}")
                 messages.error(request, "Failed to generate quiz.")
-                return redirect("/education/submit/")
+                return redirect("/education/submit/")'''
 
     else:
         form = EducationalVideoForm()
@@ -176,7 +181,7 @@ Transcript:
 {transcript_text[:3500]}
 """
 
-    response = client.with_options(timeout=5.0).chat.completions.create(
+    response = client.with_options(timeout=40.0).chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a strict JSON-only quiz generator."},
@@ -223,7 +228,7 @@ Transcript:
 {transcript_text[:2000]}
 """
 
-    response = client.with_options(timeout=5.0).chat.completions.create(
+    response = client.with_options(timeout=40.0).chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "system", "content": "You are a strict classifier."}, {"role": "user", "content": prompt}],
         temperature=0,
