@@ -611,7 +611,7 @@ class EducationalVideoForm(forms.Form):
     video_url = forms.URLField(
         label="Educational Video URL",
         required=True,
-        help_text="Paste a YouTube or Vimeo video link",
+        help_text="Paste a YouTube link",
     )
 
     def clean_video_url(self):
@@ -621,12 +621,10 @@ class EducationalVideoForm(forms.Form):
         allowed_domains = [
             "youtube.com",
             "www.youtube.com",
-            "youtu.be",
-            "vimeo.com",
-            "www.vimeo.com",
+            "youtu.be"
         ]
 
         if parsed.netloc not in allowed_domains:
-            raise forms.ValidationError("Only YouTube or Vimeo URLs are allowed.")
+            raise forms.ValidationError("Only YouTube URLs are allowed.")
 
         return url
