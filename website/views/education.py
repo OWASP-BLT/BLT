@@ -18,6 +18,7 @@ from website.utils import validate_file_type
 logger = logging.getLogger(__name__)
 _openai_client = None
 
+
 def get_openai_client():
     global _openai_client
     if _openai_client is None:
@@ -26,6 +27,7 @@ def get_openai_client():
 
         _openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
     return _openai_client
+
 
 def is_valid_url(url, url_type):
     if url_type == "video":
