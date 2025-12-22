@@ -1,5 +1,6 @@
 <div id="bookmark-section-{{ object.id }}" class="flex items-center">
-    <button hx-post="{% url 'save_issue' object.id %}"
+    <button type="button"
+            hx-post="{% url 'save_issue' object.id %}"
             hx-target="#bookmark-section-{{ object.id }}"
             hx-swap="outerHTML"
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'

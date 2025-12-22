@@ -1906,6 +1906,29 @@ class IssueView(DetailView):
             context["users_score"] = (
                 list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
             )
+        issue = self.object
+        user = self.request.user
+
+        # Map existing values → canonical names
+        context["positive_votes"] = context.get("likes", 0)
+        context["negative_votes"] = context.get("dislikes", 0)
+        context["flags_count"] = context.get("flags", 0)
+
+        # User-specific state
+        context["user_vote"] = None
+        context["user_has_flagged"] = False
+        context["user_has_saved"] = False
+
+        if user.is_authenticated:
+            profile = user.userprofile
+
+            if profile.issue_upvoted.filter(pk=issue.pk).exists():
+                context["user_vote"] = "upvote"
+            elif profile.issue_downvoted.filter(pk=issue.pk).exists():
+                context["user_vote"] = "downvote"
+
+            context["user_has_flagged"] = profile.issue_flaged.filter(pk=issue.pk).exists()
+            context["user_has_saved"] = profile.issue_saved.filter(pk=issue.pk).exists()
 
         return context
 
@@ -2180,8 +2203,6 @@ def save_issue(request, issue_pk):
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
-        from django.template.loader import render_to_string
-
         html = render_to_string(
             "includes/_bookmark_section.html",
             {

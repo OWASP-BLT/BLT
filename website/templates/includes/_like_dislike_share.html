@@ -3,7 +3,7 @@
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
     <!-- HTMX fragment for like/dislike/flag -->
-    {% include "includes/_like_section.html" with object=object positive_votes=positive_votes|default_if_none:likes negative_votes=negative_votes|default_if_none:dislikes flags_count=flags_count|default_if_none:flags user_vote=user_vote user_has_flagged=user_has_flagged|default_if_none:isFlagged %}
+    {% include "includes/_like_section.html" with object=object positive_votes=positive_votes negative_votes=negative_votes flags_count=flags_count user_vote=user_vote user_has_flagged=user_has_flagged %}
     <!-- Share button (static) -->
     <button onclick="copyClipboard()"
             class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -14,14 +14,14 @@
     <div class="flex items-center gap-4">
         <!-- View Flags button -->
         {% if flagers %}
-            <button onclick="openFlagModal()"
+            <button onclick="openFlagModal('{{ object.id }}')"
                     class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 View Flags
             </button>
         {% endif %}
         <!-- View Likes button -->
         {% if likers %}
-            <button onclick="openLikeModal()"
+            <button onclick="openLikeModal('{{ object.id }}')"
                     class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                 View Likes
             </button>
@@ -30,105 +30,135 @@
     <!-- Bookmark section for HTMX updates -->
     {% include "includes/_bookmark_section.html" with object=object user_has_saved=user_has_saved|default:False %}
 </div>
-{% include "includes/_like_modal.html" %}
-{% include "includes/_flag_modal.html" %}
+{% include "includes/_like_modal.html" with modal_id="like-modal-"|add:object.id|stringformat:"s" %}
+{% include "includes/_flag_modal.html" with modal_id="flag-modal-"|add:object.id|stringformat:"s" %}
 <script>
-    // SAFE Clipboard function with browser compatibility checks
-    function copyClipboard() {
-        var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
+    // Only define copyClipboard if not already defined
+    if (typeof copyClipboard === 'undefined') {
+        function copyClipboard() {
+            var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(textToCopy)
-                .then(function () {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(function () {
+                        if (window.createMessage) {
+                            window.createMessage("Bug details copied to clipboard!", "success", 3000);
+                        } else {
+                            // Fallback notification
+                            alert("Bug details copied to clipboard!");
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error("Failed to copy:", err);
+                        // Fallback failed - inform user
+                        alert("Failed to copy. Please copy manually.");
+                    });
+            } else {
+                // Fallback: create temporary textarea for older browsers
+                var textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
                     if (window.createMessage) {
                         window.createMessage("Bug details copied to clipboard!", "success", 3000);
                     } else {
-                        // Fallback notification
                         alert("Bug details copied to clipboard!");
                     }
-                })
-                .catch(function (err) {
-                    console.error("Failed to copy:", err);
-                    // Fallback failed - inform user
+                } catch (err) {
                     alert("Failed to copy. Please copy manually.");
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+    }
+    
+    // Define modal functions with issue ID support
+    function openLikeModal(issueId) {
+        const modalId = issueId ? 'like-modal-' + issueId : 'like-modal';
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    function closeLikeModal(issueId) {
+        const modalId = issueId ? 'like-modal-' + issueId : 'like-modal';
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        document.body.style.overflow = 'auto';
+    }
+    
+    function openFlagModal(issueId) {
+        const modalId = issueId ? 'flag-modal-' + issueId : 'flag-modal';
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    function closeFlagModal(issueId) {
+        const modalId = issueId ? 'flag-modal-' + issueId : 'flag-modal';
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Only attach event listeners once globally
+    if (!window.modalListenersAttached) {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close modals when clicking outside
+            document.addEventListener('click', function(event) {
+                // Find all visible modals
+                const visibleLikeModals = document.querySelectorAll('[id^="like-modal-"]:not(.hidden), #like-modal:not(.hidden)');
+                const visibleFlagModals = document.querySelectorAll('[id^="flag-modal-"]:not(.hidden), #flag-modal:not(.hidden)');
+                
+                // Close like modals when clicking outside
+                visibleLikeModals.forEach(function(modal) {
+                    if (event.target === modal) {
+                        const issueId = modal.id.replace('like-modal-', '') || (modal.id === 'like-modal' ? '' : '');
+                        closeLikeModal(issueId || null);
+                    }
                 });
-        } else {
-             // Fallback: create temporary textarea for older browsers
-        var textArea = document.createElement("textarea");
-        textArea.value = textToCopy;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            if (window.createMessage) {
-                window.createMessage("Bug details copied to clipboard!", "success", 3000);
-            } else {
-                alert("Bug details copied to clipboard!");
-            }
-        } catch (err) {
-            alert("Failed to copy. Please copy manually.");
-        }
-        document.body.removeChild(textArea);
-        }
-    }
-    
-    // Modal functions
-    function openLikeModal() {
-        document.getElementById('like-modal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeLikeModal() {
-        document.getElementById('like-modal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
-    
-    function openFlagModal() {
-        document.getElementById('flag-modal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeFlagModal() {
-        document.getElementById('flag-modal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-    }
-    
-    // Close modals when clicking outside or pressing Escape
-    document.addEventListener('DOMContentLoaded', function() {
-        // Close modals when clicking outside
-        document.addEventListener('click', function(event) {
-            const likeModal = document.getElementById('like-modal');
-            const flagModal = document.getElementById('flag-modal');
+                
+                // Close flag modals when clicking outside
+                visibleFlagModals.forEach(function(modal) {
+                    if (event.target === modal) {
+                        const issueId = modal.id.replace('flag-modal-', '') || (modal.id === 'flag-modal' ? '' : '');
+                        closeFlagModal(issueId || null);
+                    }
+                });
+            });
             
-            if (likeModal && !likeModal.classList.contains('hidden')) {
-                if (event.target === likeModal) {
-                    closeLikeModal();
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    // Close all visible modals
+                    const visibleLikeModals = document.querySelectorAll('[id^="like-modal-"]:not(.hidden), #like-modal:not(.hidden)');
+                    const visibleFlagModals = document.querySelectorAll('[id^="flag-modal-"]:not(.hidden), #flag-modal:not(.hidden)');
+                    
+                    visibleLikeModals.forEach(function(modal) {
+                        modal.classList.add('hidden');
+                    });
+                    
+                    visibleFlagModals.forEach(function(modal) {
+                        modal.classList.add('hidden');
+                    });
+                    
+                    document.body.style.overflow = 'auto';
                 }
-            }
-            
-            if (flagModal && !flagModal.classList.contains('hidden')) {
-                if (event.target === flagModal) {
-                    closeFlagModal();
-                }
-            }
+            });
         });
         
-        // Close modals with Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const likeModal = document.getElementById('like-modal');
-                const flagModal = document.getElementById('flag-modal');
-                
-                if (likeModal && !likeModal.classList.contains('hidden')) {
-                    closeLikeModal();
-                }
-                
-                if (flagModal && !flagModal.classList.contains('hidden')) {
-                    closeFlagModal();
-                }
-            }
-        });
-    });
+        window.modalListenersAttached = true;
+    }
 </script>
