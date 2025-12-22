@@ -92,6 +92,7 @@ from .constants import GSOC25_PROJECTS
 logger = logging.getLogger(__name__)
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
@@ -173,6 +174,7 @@ def like_issue(request, issue_pk):
     )
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
@@ -233,19 +235,16 @@ def issue_votes(request, issue_pk):
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
     total_flags = UserProfile.objects.filter(issue_flaged=issue).count()
 
+    userprof = UserProfile.objects.get(user=request.user)
+
     user_vote = None
-    user_has_flagged = False
-    user_has_saved = False
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
+        user_vote = "upvote"
+    elif userprof.issue_downvoted.filter(pk=issue.pk).exists():
+        user_vote = "downvote"
 
-    if request.user.is_authenticated:
-        userprof = UserProfile.objects.get(user=request.user)
-        if userprof.issue_upvoted.filter(pk=issue.pk).exists():
-            user_vote = "upvote"
-        elif userprof.issue_downvoted.filter(pk=issue.pk).exists():
-            user_vote = "downvote"
-
-        user_has_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
-        user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
+    user_has_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
+    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     if request.headers.get("HX-Request"):
         html = render_to_string(
@@ -2161,6 +2160,7 @@ def unsave_issue(request, issue_pk):
     return HttpResponse("OK")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
@@ -2250,6 +2250,7 @@ def IssueEdit(request):
         return HttpResponse("POST ONLY")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
@@ -2269,7 +2270,7 @@ def flag_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_flag_section.html",
+            "includes/_like_dislike_share.html",
             {
                 "object": issue,
                 "user_has_flagged": is_flagged,

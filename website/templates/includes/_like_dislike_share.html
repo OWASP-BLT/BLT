@@ -51,12 +51,28 @@
                 })
                 .catch(function (err) {
                     console.error("Failed to copy:", err);
-                    // Fallback for older browsers or non-secure contexts
-                    alert("Bug details copied to clipboard!");
+                    // Fallback failed - inform user
+                    alert("Failed to copy. Please copy manually.");
                 });
         } else {
-            // Fallback for browsers without clipboard API
-            alert("Bug details copied to clipboard!");
+             // Fallback: create temporary textarea for older browsers
+        var textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            if (window.createMessage) {
+                window.createMessage("Bug details copied to clipboard!", "success", 3000);
+            } else {
+                alert("Bug details copied to clipboard!");
+            }
+        } catch (err) {
+            alert("Failed to copy. Please copy manually.");
+        }
+        document.body.removeChild(textArea);
         }
     }
     

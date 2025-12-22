@@ -1,0 +1,16 @@
+<div id="bookmark-section-{{ object.id }}" class="flex items-center">
+    <button hx-post="{% url 'save_issue' object.id %}"
+            hx-target="#bookmark-section-{{ object.id }}"
+            hx-swap="outerHTML"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title="{% if user_has_saved %}Remove bookmark{% else %}Bookmark this issue{% endif %}">
+        {% if user_has_saved %}
+            <i class="fa-solid fa-bookmark text-yellow-500"></i>
+            <span class="font-semibold">Bookmarked</span>
+        {% else %}
+            <i class="fa-regular fa-bookmark text-gray-400"></i>
+            <span class="font-semibold">Bookmark</span>
+        {% endif %}
+    </button>
+</div>

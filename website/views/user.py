@@ -1896,9 +1896,14 @@ def toggle_follow(request, username):
 
     if request.user == target_user:
         return JsonResponse({"error": "Cannot follow yourself"}, status=400)
-
-    follower_profile = request.user.userprofile
-    target_profile = target_user.userprofile
+    try:
+        follower_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        target_profile, _ = UserProfile.objects.get_or_create(user=target_user)
+    except UserProfile.DoesNotExist:
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "User profile not found"}, status=404)
+        messages.error(request, "User profile not found")
+        return redirect("profile", slug=username)
 
     if target_profile in follower_profile.follows.all():
         follower_profile.follows.remove(target_profile)
