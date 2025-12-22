@@ -27,7 +27,6 @@ openai.api_key = settings.OPENAI_API_KEY
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django.urls import reverse
 
 
 class EducationSubmitViewTests(TestCase):
