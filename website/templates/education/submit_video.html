@@ -14,7 +14,7 @@
 {% if quiz %}
     <h2>Generated Quiz</h2>
     {% for q in quiz %}
-        <div style="margin-bottom: 20px;">
+        <div class="quiz-question">
             <h4>{{ forloop.counter }}. {{ q.question }}</h4>
             <ul>
                 {% for option in q.options %}<li>{{ option }}</li>{% endfor %}
