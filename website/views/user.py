@@ -1912,23 +1912,14 @@ def toggle_follow(request, username):
         is_following = True
         action = "followed"
 
-        if target_profile in follower_profile.follows.all():
-            follower_profile.follows.remove(target_profile)
-            is_following = False
-            action = "unfollowed"
-        else:
-            follower_profile.follows.add(target_profile)
-            is_following = True
-            action = "followed"
-
-            if target_user.email:
-                send_mail(
-                    "You got a new follower!!",
-                    f"{request.user.username} started following you.",
-                    settings.EMAIL_TO_STRING,
-                    [target_user.email],
-                    fail_silently=True,
-                )
+        if target_user.email:
+            send_mail(
+                "You got a new follower!!",
+                f"{request.user.username} started following you.",
+                settings.EMAIL_TO_STRING,
+                [target_user.email],
+                fail_silently=True,
+            )
 
     follower_count = target_profile.follower.count()
 
