@@ -26,7 +26,6 @@ openai.api_key = settings.OPENAI_API_KEY
 
 
 def is_valid_url(url, url_type):
-    """Helper function to validate URLs based on their type."""
     if url_type == "video":
         allowed_domains = {"www.youtube.com", "youtube.com", "youtu.be"}
     elif url_type == "live":
@@ -132,14 +131,6 @@ def submit_educational_video(request):
                     messages.error(request, "Failed to generate quiz due to an AI service error.")
 
                 return redirect("/education/submit/")
-
-            """try:
-                quiz = generate_quiz(transcript_text)
-                messages.success(request, "Quiz generated successfully!")
-            except Exception as e:
-                logger.error(f"Quiz generation error: {e}")
-                messages.error(request, "Failed to generate quiz.")
-                return redirect("/education/submit/")"""
 
     else:
         form = EducationalVideoForm()
