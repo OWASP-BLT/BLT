@@ -16,14 +16,16 @@ from website.models import Course, Enrollment, Lecture, LectureStatus, Section, 
 from website.utils import validate_file_type
 
 logger = logging.getLogger(__name__)
+_openai_client = None
 
-import openai
-from django.conf import settings
-from openai import OpenAI
+def get_openai_client():
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+        from django.conf import settings
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
-openai.api_key = settings.OPENAI_API_KEY
-
+        _openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    return _openai_client
 
 def is_valid_url(url, url_type):
     if url_type == "video":
@@ -169,7 +171,7 @@ Rules:
 Transcript:
 {transcript_text[:3500]}
 """
-
+    client = get_openai_client()
     response = client.with_options(timeout=40.0).chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -216,7 +218,7 @@ YES or NO
 Transcript:
 {transcript_text[:2000]}
 """
-
+    client = get_openai_client()
     response = client.with_options(timeout=40.0).chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "system", "content": "You are a strict classifier."}, {"role": "user", "content": prompt}],
