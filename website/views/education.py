@@ -69,6 +69,7 @@ def extract_youtube_video_id(url):
         return query.get("v")
     return None
 
+
 def get_transcript_text(video_id):
     try:
         ytt_api = YouTubeTranscriptApi()
@@ -81,7 +82,8 @@ def get_transcript_text(video_id):
 
     except Exception as e:
         logger.error(f"Transcript fetch failed: {e}")
-        return "" 
+        return ""
+
 
 @login_required
 def submit_educational_video(request):
