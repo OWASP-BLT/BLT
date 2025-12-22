@@ -57,16 +57,18 @@ def education_home(request):
     context = {"is_instructor": is_instructor, "featured_lectures": featured_lectures, "courses": courses}
     return render(request, template, context)
 
+
 def extract_youtube_video_id(url):
     parsed = urlparse(url)
     hostname = parsed.hostname or ""
-    
+
     if hostname in ["youtu.be", "www.youtu.be"]:
         return parsed.path.lstrip("/")
     elif hostname in ["youtube.com", "www.youtube.com"]:
         query = dict(qc.split("=") for qc in parsed.query.split("&") if "=" in qc)
         return query.get("v")
     return None
+
 
 def get_transcript_text(video_id):
     try:
@@ -81,6 +83,7 @@ def get_transcript_text(video_id):
     except Exception as e:
         logger.error(f"Transcript fetch failed: {e}")
         return ""
+
 
 @login_required
 def submit_educational_video(request):
@@ -217,6 +220,7 @@ Transcript:
 
     answer = response.choices[0].message.content.strip().upper()
     return answer.startswith("YES")
+
 
 @login_required(login_url="/accounts/login")
 def instructor_dashboard(request):
