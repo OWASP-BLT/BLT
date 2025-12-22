@@ -24,6 +24,7 @@ from openai import OpenAI
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 openai.api_key = settings.OPENAI_API_KEY
 
+
 def is_valid_url(url, url_type):
     """Helper function to validate URLs based on their type."""
     if url_type == "video":
@@ -69,6 +70,7 @@ def extract_youtube_video_id(url):
 def get_transcript_text(video_id):
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
+
         ytt_api = YouTubeTranscriptApi()
         fetched_transcript = ytt_api.fetch(video_id)
 
@@ -124,24 +126,20 @@ def submit_educational_video(request):
 
                 if "rate limit" in str(e).lower() or "429" in str(e):
                     messages.error(
-                        request,
-                        "AI service is temporarily rate-limited. Please wait 20 seconds and try again."
+                        request, "AI service is temporarily rate-limited. Please wait 20 seconds and try again."
                     )
                 else:
-                    messages.error(
-                        request,
-                        "Failed to generate quiz due to an AI service error."
-                    )
+                    messages.error(request, "Failed to generate quiz due to an AI service error.")
 
                 return redirect("/education/submit/")
 
-            '''try:
+            """try:
                 quiz = generate_quiz(transcript_text)
                 messages.success(request, "Quiz generated successfully!")
             except Exception as e:
                 logger.error(f"Quiz generation error: {e}")
                 messages.error(request, "Failed to generate quiz.")
-                return redirect("/education/submit/")'''
+                return redirect("/education/submit/")"""
 
     else:
         form = EducationalVideoForm()
