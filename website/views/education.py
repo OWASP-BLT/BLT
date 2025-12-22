@@ -1,6 +1,6 @@
 import json
 import logging
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,16 +11,17 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
+from website.forms import EducationalVideoForm
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
 
-from website.forms import EducationalVideoForm
 logger = logging.getLogger(__name__)
 
 import openai
-from openai import OpenAI
 from django.conf import settings
+from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
+
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 openai.api_key = settings.OPENAI_API_KEY

@@ -1,11 +1,11 @@
+from urllib.parse import urlparse
+
 import pytz
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from django.db.models import Q
 from mdeditor.fields import MDTextFormField
-from django import forms
-from urllib.parse import urlparse
 
 from website.models import (
     Bid,

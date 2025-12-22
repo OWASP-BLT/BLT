@@ -9,6 +9,7 @@ from functools import wraps
 from urllib.parse import urlparse
 
 import django
+import openai
 import psutil
 import requests
 from bs4 import BeautifulSoup
@@ -34,7 +35,6 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, I
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-import openai
 openai.api_key = settings.OPENAI_API_KEY
 
 def generate_quiz(transcript_text):
@@ -48,6 +48,7 @@ def generate_quiz(transcript_text):
     return response.choices[0].message.content
 
 from youtube_transcript_api import YouTubeTranscriptApi
+
 
 def get_transcript(video_id):
     try:
