@@ -145,33 +145,17 @@ def like_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_dislike_share.html",  # Updated template name
+            "includes/_like_section.html",
             {
                 "object": issue,
-                "user_vote": "upvote" if is_liked else None,
-                "user_has_flagged": request.user.userprofile.issue_flaged.filter(pk=issue.pk).exists(),
-                "user_has_saved": request.user.userprofile.issue_saved.filter(pk=issue.pk).exists(),
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
-                # REQUIRED: Add these context variables
-                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
-                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
+                "user_vote": "upvote" if is_liked else None,
             },
+            request=request,
         )
         return HttpResponse(html)
-
-    # Return JSON for API requests
-    return JsonResponse(
-        {
-            "success": True,
-            "message": "Liked successfully" if is_liked else "Like removed",
-            "likes": total_upvotes,
-            "dislikes": total_downvotes,
-            "isLiked": is_liked,
-            "isDisliked": False,
-        }
-    )
 
 
 @require_POST
@@ -197,33 +181,17 @@ def dislike_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_dislike_share.html",  # Updated template name
+            "includes/_like_section.html",
             {
                 "object": issue,
-                "user_vote": "downvote" if is_disliked else None,
-                "user_has_flagged": request.user.userprofile.issue_flaged.filter(pk=issue.pk).exists(),
-                "user_has_saved": request.user.userprofile.issue_saved.filter(pk=issue.pk).exists(),
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
-                # REQUIRED: Add these context variables
-                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
-                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
+                "user_vote": "downvote" if is_disliked else None,
             },
+            request=request,
         )
         return HttpResponse(html)
-
-    # Return JSON for API requests
-    return JsonResponse(
-        {
-            "success": True,
-            "message": "Disliked successfully" if is_disliked else "Dislike removed",
-            "likes": total_upvotes,
-            "dislikes": total_downvotes,
-            "isLiked": False,
-            "isDisliked": is_disliked,
-        }
-    )
 
 
 @login_required(login_url="/accounts/login")
@@ -2301,30 +2269,17 @@ def flag_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_dislike_share.html",
+            "includes/_like_section.html",
             {
                 "object": issue,
-                "user_vote": user_vote,
-                "user_has_flagged": is_flagged,
-                "user_has_saved": user_has_saved,
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
-                "flags_count": total_flag_votes,
-                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
-                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
+                "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+                "user_vote": "downvote" if is_disliked else None,
             },
+            request=request,
         )
         return HttpResponse(html)
-
-    # Return JSON for API requests
-    return JsonResponse(
-        {
-            "success": True,
-            "message": "Flagged successfully" if is_flagged else "Flag removed",
-            "flags": total_flag_votes,
-            "isFlagged": is_flagged,
-        }
-    )
 
 
 def select_bid(request):

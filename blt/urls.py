@@ -1257,6 +1257,7 @@ urlpatterns = [
     path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
     path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
     path("issue_votes/<int:issue_pk>/", issue_votes, name="issue_votes"),
+    path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 
 if settings.DEBUG:
