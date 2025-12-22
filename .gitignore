@@ -25,3 +25,4 @@ google-credentials.json
 
 
 .env
+.DS_Store

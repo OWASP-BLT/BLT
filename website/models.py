@@ -35,6 +35,76 @@ from rest_framework.authtoken.models import Token
 logger = logging.getLogger(__name__)
 
 
+class TrademarkMatch(models.Model):
+    """
+    Records a trademark match/conflict detected for an organization.
+    """
+
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.CASCADE,
+        related_name="trademark_matches",
+        null=True,
+        blank=True,
+        help_text="Organization this trademark check is for",
+    )
+
+    # Remove the website field entirely for now
+    # website = models.ForeignKey(...)
+
+    checked_name = models.CharField(max_length=255, help_text="Company/website name that was checked")
+
+    matched_trademark_name = models.CharField(max_length=255, help_text="Name of the matched trademark from database")
+
+    similarity_score = models.FloatField(help_text="Similarity score from matcher (0-100)")
+
+    RISK_LEVEL_CHOICES = [
+        ("low", "Low Risk (70-80)"),
+        ("medium", "Medium Risk (80-90)"),
+        ("high", "High Risk (90+)"),
+    ]
+    risk_level = models.CharField(
+        max_length=10, choices=RISK_LEVEL_CHOICES, help_text="Risk level based on similarity score"
+    )
+
+    checked_at = models.DateTimeField(auto_now_add=True, help_text="When this trademark check was performed")
+    verified_at = models.DateTimeField(auto_now=True, help_text="Last time this match was verified/updated")
+
+    notes = models.TextField(blank=True, help_text="Additional notes about this trademark match")
+
+    is_reviewed = models.BooleanField(default=False, help_text="Whether a maintainer has reviewed this match")
+
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("false_positive", "False Positive"),
+        ("acknowledged", "Acknowledged (OK to proceed)"),
+        ("action_taken", "Action Taken (name/domain changed)"),
+    ]
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", help_text="Resolution status of this match"
+    )
+
+    class Meta:
+        ordering = ["-similarity_score", "-checked_at"]
+        verbose_name_plural = "Trademark Matches"
+        indexes = [
+            models.Index(fields=["organization", "-similarity_score"]),
+            models.Index(fields=["status", "-checked_at"]),
+        ]
+
+    def __str__(self):
+        target = self.organization.name if self.organization else self.checked_name
+        return f"{target} → {self.matched_trademark_name} ({self.similarity_score}%)"
+
+    @property
+    def is_high_risk(self):
+        return self.similarity_score >= 90.0
+
+    @property
+    def is_medium_risk(self):
+        return 80.0 <= self.similarity_score < 90.0
+
+
 # Custom validators for cryptocurrency addresses
 def validate_bch_address(value):
     """Validates that a BCH address is in the new CashAddr format."""
