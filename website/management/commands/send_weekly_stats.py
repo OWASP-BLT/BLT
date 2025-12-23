@@ -22,11 +22,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING("Starting weekly statistics email delivery..."))
 
         # Filter domains: must have organization AND organization must have owner (admin)
-        domains = Domain.objects.filter(
-            organization__isnull=False,
-            organization__admin__isnull=False,
-            email__isnull=False,
-        ).exclude(email="").select_related('organization')
+        domains = (
+            Domain.objects.filter(
+                organization__isnull=False,
+                organization__admin__isnull=False,
+                email__isnull=False,
+            )
+            .exclude(email="")
+            .select_related("organization")
+        )
 
         total_domains = domains.count()
         successful_sends = 0
