@@ -23,10 +23,10 @@ class Command(BaseCommand):
 
         # Filter domains: must have organization AND organization must have owner (admin)
         domains = Domain.objects.filter(
-            organization__isnull=False,  
-            organization__admin__isnull=False,  
-            email__isnull=False, 
-        ).exclude(email="") 
+            organization__isnull=False,
+            organization__admin__isnull=False,
+            email__isnull=False,
+        ).exclude(email="")
 
         total_domains = domains.count()
         successful_sends = 0
@@ -43,12 +43,12 @@ class Command(BaseCommand):
                 # Generate report data for this domain - FILTER BY WEEK
                 open_issues = domain.open_issues.filter(created__gte=week_ago)
                 closed_issues = domain.closed_issues.filter(created__gte=week_ago)
-                
+
                 # Store counts to avoid redundant queries
                 open_count = open_issues.count()
                 closed_count = closed_issues.count()
                 total_issues = open_count + closed_count
-                
+
                 issues = Issue.objects.filter(domain=domain, created__gte=week_ago)
 
                 # Build the email message
@@ -73,10 +73,7 @@ class Command(BaseCommand):
                         views = issue.views
                         label = issue.get_label_display()
                         report_data.append(
-                            f"\nDescription: {description}\n"
-                            f"Views: {views}\n"
-                            f"Labels: {label}\n"
-                            f"{'-' * 50}\n"
+                            f"\nDescription: {description}\n" f"Views: {views}\n" f"Labels: {label}\n" f"{'-' * 50}\n"
                         )
                 else:
                     report_data.append("No issues reported this week.\n")
@@ -99,7 +96,9 @@ class Command(BaseCommand):
             except Exception as e:
                 failed_sends += 1
                 logger.error(f"Failed to send weekly stats to {domain.organization.name} ({domain.email}): {str(e)}")
-                self.stdout.write(self.style.ERROR(f"✗ Failed to send to {domain.organization.name} ({domain.email}): {str(e)}"))
+                self.stdout.write(
+                    self.style.ERROR(f"✗ Failed to send to {domain.organization.name} ({domain.email}): {str(e)}")
+                )
 
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write(
