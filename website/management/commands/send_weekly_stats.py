@@ -26,7 +26,7 @@ class Command(BaseCommand):
             organization__isnull=False,
             organization__admin__isnull=False,
             email__isnull=False,
-        ).exclude(email="")
+        ).exclude(email="").select_related('organization')
 
         total_domains = domains.count()
         successful_sends = 0
@@ -70,13 +70,10 @@ class Command(BaseCommand):
                     report_data.append("-" * 50 + "\n")
                     for issue in issues:
                         description = issue.description
-                        views = issue.views if issue.views is not None else 0  
+                        views = issue.views if issue.views is not None else 0
                         label = issue.get_label_display()
                         report_data.append(
-                        f"\nDescription: {description}\n" 
-                        f"Views: {views}\n" 
-                        f"Labels: {label}\n" 
-                        f"{'-' * 50}\n"
+                            f"\nDescription: {description}\n" f"Views: {views}\n" f"Labels: {label}\n" f"{'-' * 50}\n"
                         )
                 else:
                     report_data.append("No issues reported this week.\n")
