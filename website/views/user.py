@@ -42,6 +42,7 @@ from website.models import (
     ContributorStats,
     Domain,
     GitHubIssue,
+    GitHubComment,
     GitHubReview,
     Hunt,
     InviteFriend,
@@ -632,6 +633,31 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
+        # Comment Leaderboard
+        # PR comments (is_bot=False) from last 6 months
+        comment_leaderboard = (
+            GitHubComment.objects.filter(
+                is_bot=False,
+                issue__type="pull_request",
+                created_at__gte=since_date,
+            )
+            .filter(
+                Q(issue__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(issue__repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .filter(user_profile__isnull=False)  # Only show linked users for now to have avatars/profiles
+            .values(
+                "user_profile__user__username",
+                "user_profile__user_avatar",
+                "user_profile__github_url",
+            )
+            .annotate(total_comments=Count("id"))
+            .order_by("-total_comments")[:10]
+        )
+        context["comment_leaderboard"] = comment_leaderboard
+        
+        context["code_review_leaderboard"] = reviewed_pr_leaderboard
+
         # Top visitors leaderboard
         top_visitors = (
             UserProfile.objects.select_related("user")
@@ -1216,6 +1242,8 @@ def github_webhook(request):
             "push": handle_push_event,
             "pull_request_review": handle_review_event,
             "issues": handle_issue_event,
+            "issue_comment": handle_issue_comment_event,
+            "pull_request_review_comment": handle_review_comment_event,
             "status": handle_status_event,
             "fork": handle_fork_event,
             "create": handle_create_event,
@@ -1350,6 +1378,120 @@ def handle_create_event(payload):
         if user_profile:
             user = user_profile.user
             assign_github_badge(user, "First Branch Created")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_issue_comment_event(payload):
+    action = payload.get("action")
+    if action not in ["created", "edited"]:
+        return JsonResponse({"status": "ignored"}, status=200)
+
+    comment_data = payload.get("comment", {})
+    issue_data = payload.get("issue", {})
+    sender = payload.get("sender", {})
+    repo_data = payload.get("repository", {})
+
+    # Check if this comment is on a PR (GitHub API returns 'pull_request' key in issue object for PRs)
+    if "pull_request" not in issue_data:
+        return JsonResponse({"status": "ignored", "reason": "Not a PR comment"}, status=200)
+
+    # Bot filtering
+    login = sender.get("login", "")
+    is_bot = sender.get("type") == "Bot" or "bot" in login.lower()
+    bots = [
+        "copilot",
+        "coderabbitai",
+        "github-actions[bot]",
+        "dependabot",
+        "sonarcloud",
+        "vercel",
+        "netlify",
+    ]
+    if login.lower() in bots or (
+        is_bot and login.lower() not in ["..."]
+    ):  # Add exceptions if any bot is allowed
+        return JsonResponse({"status": "ignored", "reason": "Bot comment"}, status=200)
+
+    # Find Issue
+    issue_number = issue_data.get("number")
+    repo_html_url = repo_data.get("html_url")
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+        github_issue = GitHubIssue.objects.get(issue_id=issue_number, repo=repo)
+    except (Repo.DoesNotExist, GitHubIssue.DoesNotExist):
+        return JsonResponse({"status": "ignored", "reason": "Repo or Issue not found"}, status=200)
+
+    # Find/Create User Profile
+    user_profile = UserProfile.objects.filter(github_url=sender.get("html_url")).first()
+
+    # Create Comment
+    GitHubComment.objects.update_or_create(
+        comment_id=comment_data.get("id"),
+        defaults={
+            "issue": github_issue,
+            "user_profile": user_profile,
+            "body": comment_data.get("body", ""),
+            "created_at": dateutil_parser.parse(comment_data.get("created_at")),
+            "updated_at": dateutil_parser.parse(comment_data.get("updated_at")),
+            "html_url": comment_data.get("html_url"),
+            "author_name": login,
+            "is_bot": False,  # We filtered bots effectively
+        },
+    )
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_review_comment_event(payload):
+    action = payload.get("action")
+    if action not in ["created", "edited"]:
+        return JsonResponse({"status": "ignored"}, status=200)
+
+    comment_data = payload.get("comment", {})
+    pr_data = payload.get("pull_request", {})
+    sender = payload.get("sender", {})
+    repo_data = payload.get("repository", {})
+
+    # Bot filtering
+    login = sender.get("login", "")
+    is_bot = sender.get("type") == "Bot" or "bot" in login.lower()
+    bots = [
+        "copilot",
+        "coderabbitai",
+        "github-actions[bot]",
+        "dependabot",
+        "sonarcloud",
+        "vercel",
+        "netlify",
+    ]
+    if login.lower() in bots or is_bot:
+        return JsonResponse({"status": "ignored", "reason": "Bot comment"}, status=200)
+
+    # Find Issue (PR is also a GitHubIssue)
+    pr_number = pr_data.get("number")
+    repo_html_url = repo_data.get("html_url")
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+        github_issue = GitHubIssue.objects.get(issue_id=pr_number, repo=repo)
+    except (Repo.DoesNotExist, GitHubIssue.DoesNotExist):
+        return JsonResponse({"status": "ignored", "reason": "Repo or Issue not found"}, status=200)
+
+    # Find/Create User Profile
+    user_profile = UserProfile.objects.filter(github_url=sender.get("html_url")).first()
+
+    # Create Comment
+    GitHubComment.objects.update_or_create(
+        comment_id=comment_data.get("id"),
+        defaults={
+            "issue": github_issue,
+            "user_profile": user_profile,
+            "body": comment_data.get("body", ""),
+            "created_at": dateutil_parser.parse(comment_data.get("created_at")),
+            "updated_at": dateutil_parser.parse(comment_data.get("updated_at")),
+            "html_url": comment_data.get("html_url"),
+            "author_name": login,
+            "is_bot": False,
+        },
+    )
     return JsonResponse({"status": "success"}, status=200)
 
 
