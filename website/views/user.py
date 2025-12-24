@@ -584,14 +584,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
         # Filter for PRs merged in the last 6 months
         from dateutil.relativedelta import relativedelta
+
         bots = ["copilot", "[bot]"]
         since_date = timezone.now() - relativedelta(months=6)
-        
+
         # Create dynamic bot exclusion query
         bot_exclusions = Q()
         for bot in bots:
             bot_exclusions |= Q(contributor__name__icontains=bot)
-        
+
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
