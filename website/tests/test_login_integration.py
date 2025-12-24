@@ -8,13 +8,11 @@ Usage:
     python manage.py test website.tests.test_login_integration
 """
 
-import time
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
-from django.core.exceptions import ValidationError
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
