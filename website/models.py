@@ -2315,6 +2315,31 @@ class GitHubIssue(models.Model):
             return False
 
 
+
+class GitHubComment(models.Model):
+    issue = models.ForeignKey(GitHubIssue, on_delete=models.CASCADE, related_name="comments")
+    user_profile = models.ForeignKey(
+        UserProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="github_comments",
+    )
+    comment_id = models.BigIntegerField(unique=True)
+    body = models.TextField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    html_url = models.URLField()
+    author_name = models.CharField(max_length=255, null=True, blank=True)
+    is_bot = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Comment {self.comment_id} by {self.author_name}"
+
+
 class BaconEarning(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     tokens_earned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Tokens earned by user
