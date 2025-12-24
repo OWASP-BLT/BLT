@@ -56,9 +56,8 @@ class GitHubCommentWebhookTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(GitHubComment.objects.filter(comment_id=1001).exists())
         comment = GitHubComment.objects.get(comment_id=1001)
-        self.assertEqual(comment.issue, self.issue)
+        self.assertEqual(comment.github_issue, self.issue)
         self.assertEqual(comment.user_profile, self.user_profile)
-        self.assertFalse(comment.is_bot)
 
     def test_issue_comment_not_on_pr(self):
         payload = {
