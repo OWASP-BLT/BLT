@@ -17,7 +17,7 @@ from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
@@ -46,7 +46,7 @@ from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -76,6 +76,7 @@ from website.models import (
     Wallet,
 )
 from website.utils import (
+    admin_required,
     get_client_ip,
     get_email_from_domain,
     get_page_votes,
@@ -425,18 +426,21 @@ def search_issues(request, template="search.html"):
     if query is None:
         return render(request, template)
     query = query.strip()
-    if query[:6] == "issue:":
+    # Safe prefix checking with length validation to prevent IndexError
+    if len(query) >= 6 and query[:6] == "issue:":
         stype = "issue"
-        query = query[6:]
-    elif query[:7] == "domain:":
+        query = query[6:].strip()
+    elif len(query) >= 7 and query[:7] == "domain:":
         stype = "domain"
-        query = query[7:]
-    elif query[:5] == "user:":
+        query = query[7:].strip()
+    elif len(query) >= 5 and query[:5] == "user:":
         stype = "user"
-        query = query[5:]
-    elif query[:6] == "label:":
+        query = query[5:].strip()
+    elif len(query) >= 6 and query[:6] == "label:":
         stype = "label"
-        query = query[6:]
+        query = query[6:].strip()
+    # Handle search by type - using elif chain to ensure only one search type executes
+    # Unprefixed searches (stype is None) default to issue search
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
@@ -450,30 +454,65 @@ def search_issues(request, template="search.html"):
             "type": stype,
             "issues": issues,
         }
-    if stype == "domain" or stype is None:
+    elif stype == "domain":
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
+        else:
+            issues = Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues,
         }
-    if stype == "user" or stype is None:
+    elif stype == "user":
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(Q(is_hidden=True))[
+                0:20
+            ]
+        else:
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues,
+        }
+    elif stype == "label":
+        label_values = []
+        q_lower = query.lower()
+
+        # Allow numeric label ID
+        if query.isdigit():
+            label_values.append(int(query))
+
+        # Match against label display names
+        for value, name in Issue._meta.get_field("label").choices:
+            if q_lower in str(name).lower():
+                label_values.append(value)
+
+        issues_base_qs = (
+            Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+        )
+        if request.user.is_anonymous:
+            issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+        else:
+            issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": issues_qs,
         }
 
-    if stype == "label" or stype is None:
+    # Fallback: if context is None (shouldn't happen with current logic, but defensive)
+    if context is None:
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": Issue.objects.none(),
         }
 
     if request.user.is_authenticated:
@@ -1329,10 +1368,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
+            # Safely fetch CVE score - get_cve_score() may raise various exceptions
             try:
                 obj.cve_score = obj.get_cve_score()
-            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
+            except Exception as e:
                 # If CVE score fetch fails, continue without it
+                logger.error(f"Error fetching CVE score for {obj.cve_id}: {str(e)}", exc_info=True)
                 obj.cve_score = None
                 messages.warning(
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
@@ -2525,101 +2566,119 @@ class GsocView(View):
         return render(request, "gsoc.html", {"projects": sorted_project_data})
 
 
+@login_required
+@user_passes_test(admin_required)
+@require_http_methods(["POST"])
 def refresh_gsoc_project(request):
     """
     View to handle refreshing PRs for a specific GSoC project.
     Only staff users can access this view.
     """
-    if request.method == "POST":
-        project_name = request.POST.get("project_name")
-        reset_counter = request.POST.get("reset_counter") == "true"
+    project_name = request.POST.get("project_name")
+    reset_counter = request.POST.get("reset_counter") == "true"
 
-        if not project_name or project_name not in GSOC25_PROJECTS:
-            messages.error(request, "Invalid project name")
+    if not project_name:
+        messages.error(request, "Project name is required.")
+        return redirect("gsoc")
+
+    if project_name not in GSOC25_PROJECTS:
+        messages.error(request, "Invalid project name")
+        return redirect("gsoc")
+
+    repos = GSOC25_PROJECTS.get(project_name, [])
+
+    if not repos:
+        messages.error(request, f"No repositories found for project {project_name}")
+        return redirect("gsoc")
+
+    for repo in repos:
+        if not isinstance(repo, str) or repo.count("/") != 1:
+            messages.error(request, f"Invalid repository format: {repo}")
             return redirect("gsoc")
 
-        # Get the repositories for this project
-        repos = GSOC25_PROJECTS.get(project_name, [])
+    today = timezone.now().date()
+    refresh_count = DailyStats.objects.filter(name=f"refresh_gsoc_{request.user.id}", created__date=today).count()
 
-        if not repos:
-            messages.error(request, f"No repositories found for project {project_name}")
-            return redirect("gsoc")
+    if refresh_count >= 5:
+        messages.error(request, "You have reached your daily limit of 5 refreshes.")
+        return redirect("gsoc")
 
-        # Fixed start date: 2024-11-11
-        since_date = timezone.make_aware(datetime(2024, 11, 11))
+    since_date = timezone.make_aware(datetime(2024, 11, 11))
 
-        try:
-            # Call the fetch_gsoc_prs command with the specific repositories
-            # We pass the repositories as a comma-separated string
-            repo_list = ",".join(repos)
-            command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
+    try:
+        repo_list = ",".join(repos)
+        command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
 
-            # Add reset flag if requested
-            if reset_counter:
-                command_args.append("--reset")
-                messages.info(request, f"Resetting page counter for {project_name} repositories")
+        if reset_counter:
+            command_args.append("--reset")
+            messages.info(request, f"Resetting page counter for {project_name} repositories")
 
-            # Run the command
-            call_command(*command_args)
+        call_command(*command_args)
 
-            # Debug: Count how many GitHubIssues were created with contributors
-            repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
-            issue_count = GitHubIssue.objects.filter(
-                repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
-            ).count()
+        repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
 
-            contributor_count = GitHubIssue.objects.filter(
-                repo__in=repo_objs,
-                type="pull_request",
-                is_merged=True,
-                merged_at__gte=since_date,
-                contributor__isnull=False,
-            ).count()
+        issue_count = GitHubIssue.objects.filter(
+            repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
+        ).count()
 
-            messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
+        contributor_count = GitHubIssue.objects.filter(
+            repo__in=repo_objs,
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=since_date,
+            contributor__isnull=False,
+        ).count()
 
-            # Update user profiles for PRs that don't have them
-            for repo_full_name in repos:
-                try:
-                    owner, repo_name = repo_full_name.split("/")
-                    repo = Repo.objects.filter(name=repo_name).first()
+        messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
 
-                    if repo:
-                        # Get PRs without user profiles
-                        prs_without_profiles = GitHubIssue.objects.filter(
-                            repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date, user_profile=None
-                        )
+        for repo_full_name in repos:
+            try:
+                owner, repo_name = repo_full_name.split("/")
+                repo = Repo.objects.filter(name=repo_name).first()
 
-                        for pr in prs_without_profiles:
+                if repo:
+                    prs_without_profiles = GitHubIssue.objects.filter(
+                        repo=repo,
+                        type="pull_request",
+                        is_merged=True,
+                        merged_at__gte=since_date,
+                        user_profile=None,
+                    )
+
+                    batch_size = 50
+                    for i in range(0, prs_without_profiles.count(), batch_size):
+                        batch = prs_without_profiles[i : i + batch_size]
+
+                        for pr in batch:
                             try:
-                                # Extract username from PR URL
                                 pr_url_parts = pr.url.split("/")
                                 if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                                    # Get or create a user profile
                                     github_url = f"https://github.com/{pr_url_parts[3]}"
 
-                                    # Skip bot accounts
                                     if github_url.endswith("[bot]") or "bot" in github_url.lower():
                                         continue
 
-                                    # Find existing user profile with this GitHub URL
                                     user_profile = UserProfile.objects.filter(github_url=github_url).first()
 
                                     if user_profile:
-                                        # Link the PR to the user profile
                                         pr.user_profile = user_profile
                                         pr.save()
+
                             except (IndexError, AttributeError):
                                 continue
-                except Exception as e:
-                    messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
-            messages.success(
-                request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
-            )
-        except Exception as e:
-            messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
+            except Exception as e:
+                messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
+        messages.success(
+            request,
+            f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed.",
+        )
+
+    except Exception as e:
+        messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
         return redirect("gsoc")
+
+    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
 
     return redirect("gsoc")
