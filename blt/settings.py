@@ -364,7 +364,10 @@ else:
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
+ACCOUNT_FORMS = {
+    "signup": "website.forms.SignupFormWithCaptcha",
+    "login": "website.forms.CustomLoginForm"
+}
 # Security: Do not send emails to unknown accounts during password reset
 # This prevents account enumeration attacks
 ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
@@ -547,7 +550,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "website.account_adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 # Social account settings for better UX

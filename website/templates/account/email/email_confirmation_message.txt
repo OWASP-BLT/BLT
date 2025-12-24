@@ -2,7 +2,18 @@
 {% load account %}
 {% load i18n %}
 
-{% block content %}{% autoescape off %}{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}You're receiving this e-mail because user {{ user_display }} has given your e-mail address to register an account on {{ site_domain }}.
+{% block content %}{% autoescape off %}{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}Hello {{ user_display }},
 
-To confirm this is correct, go to {{ activate_url }}{% endblocktrans %}{% endautoescape %}{% endblock %}
+You're receiving this email because you registered an account on {{ site_domain }}.
+
+To complete your registration and verify your email address, please click the link below:
+
+{{ activate_url }}
+
+If you didn't create an account, please ignore this email.
+
+Welcome to {{ site_name }}!
+
+Best regards,
+The {{ site_name }} Team{% endblocktrans %}{% endautoescape %}{% endblock %}
 

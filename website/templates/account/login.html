@@ -57,16 +57,37 @@
                                name="{{ redirect_field_name }}"
                                value="{{ redirect_field_value }}" />
                     {% endif %}
+                <form class="flex flex-col space-y-4 login"
+                      method="post"
+                      action="{% url 'account_login' %}?next={{ request.path }}">
+                    {% csrf_token %}
+                    {% if redirect_field_value %}
+                        <input type="hidden"
+                               name="{{ redirect_field_name }}"
+                               value="{{ redirect_field_value }}" />
+                    {% endif %}
+                    
+                    <!-- Display form errors -->
+                    {% if form.non_field_errors %}
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4">
+                            {% for error in form.non_field_errors %}
+                                <p class="text-sm">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="id_login"
-                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username</label>
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username or Email</label>
                         <input autofocus
                                id="id_login"
                                name="login"
                                value="{{ form.login.value|default:'' }}"
-                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
-                        <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white{% if form.login.errors %} border-red-500{% endif %}" />
+                        {% if form.login.errors %}
+                            <span class="help-block text-sm text-red-500">{{ form.login.errors.0 }}</span>
+                        {% endif %}
                     </div>
                     <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
@@ -81,7 +102,7 @@
                                    id="id_password"
                                    name="password"
                                    value="{{ form.password.value|default:'' }}"
-                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white{% if form.password.errors %} border-red-500{% endif %}" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -96,7 +117,9 @@
                                 </svg>
                             </button>
                         </div>
-                        <span class="help-block text-sm text-red-500">{{ form.password.errors }}</span>
+                        {% if form.password.errors %}
+                            <span class="help-block text-sm text-red-500">{{ form.password.errors.0 }}</span>
+                        {% endif %}
                     </div>
                     <!-- Remember Me Checkbox -->
                     <div class="flex items-center space-x-2">
