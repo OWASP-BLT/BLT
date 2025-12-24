@@ -2328,7 +2328,6 @@ class GitHubIssue(models.Model):
             return False
 
 
-
 class GitHubComment(models.Model):
     github_issue = models.ForeignKey(GitHubIssue, on_delete=models.CASCADE, related_name="comments")
     user_profile = models.ForeignKey(

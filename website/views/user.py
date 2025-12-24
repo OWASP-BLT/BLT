@@ -43,8 +43,8 @@ from website.models import (
     Contributor,
     ContributorStats,
     Domain,
-    GitHubIssue,
     GitHubComment,
+    GitHubIssue,
     GitHubReview,
     Hunt,
     InviteFriend,
@@ -652,18 +652,16 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .select_related("contributor")
             .values(
                 "contributor__name",
-                "contributor__github_url", 
+                "contributor__github_url",
                 "contributor__avatar_url",
             )
             .annotate(
                 total_comments=Count("id"),
-                latest_comment=Max("created_at")  # Get the most recent comment date
+                latest_comment=Max("created_at"),  # Get the most recent comment date
             )
             .order_by("-total_comments", "-latest_comment")[:10]  # Order by comment count, then by recent activity
         )
         context["comment_leaderboard"] = comment_leaderboard
-        
-        context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         # Top visitors leaderboard
         top_visitors = (
@@ -1630,9 +1628,7 @@ def handle_issue_comment_event(payload):
         "vercel",
         "netlify",
     ]
-    if login.lower() in bots or (
-        is_bot and login.lower() not in ["..."]
-    ):  # Add exceptions if any bot is allowed
+    if login.lower() in bots or (is_bot and login.lower() not in ["..."]):  # Add exceptions if any bot is allowed
         return JsonResponse({"status": "ignored", "reason": "Bot comment"}, status=200)
 
     # Find Issue
