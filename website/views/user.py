@@ -585,7 +585,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Filter for PRs merged in the last 6 months
         from dateutil.relativedelta import relativedelta
 
-        bots = ["copilot", "[bot]"]
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
         since_date = timezone.now() - relativedelta(months=6)
 
         # Create dynamic bot exclusion query
