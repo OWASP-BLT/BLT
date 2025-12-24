@@ -2317,7 +2317,7 @@ class GitHubIssue(models.Model):
 
 
 class GitHubComment(models.Model):
-    issue = models.ForeignKey(GitHubIssue, on_delete=models.CASCADE, related_name="comments")
+    github_issue = models.ForeignKey(GitHubIssue, on_delete=models.CASCADE, related_name="comments")
     user_profile = models.ForeignKey(
         UserProfile,
         on_delete=models.SET_NULL,
@@ -2325,19 +2325,32 @@ class GitHubComment(models.Model):
         blank=True,
         related_name="github_comments",
     )
+    contributor = models.ForeignKey(
+        Contributor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="github_comments",
+    )
+    repo = models.ForeignKey(
+        Repo,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="github_comments",
+    )
     comment_id = models.BigIntegerField(unique=True)
     body = models.TextField()
+    comment_type = models.CharField(max_length=50)
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-    html_url = models.URLField()
-    author_name = models.CharField(max_length=255, null=True, blank=True)
-    is_bot = models.BooleanField(default=False)
+    url = models.URLField()
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Comment {self.comment_id} by {self.author_name}"
+        return f"Comment {self.comment_id} - {self.comment_type}"
 
 
 class BaconEarning(models.Model):
