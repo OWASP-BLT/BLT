@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.db.models import Count, F, Q, Sum
+from django.db.models import Count, F, Max, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
 from django.http import Http404, HttpResponse, HttpResponseNotFound, JsonResponse
@@ -633,25 +633,31 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
-        # Comment Leaderboard
-        # PR comments from last 6 months
+        # Comment Leaderboard - Use contributor data directly
+        # PR comments from last 6 months, ordered by recent activity
         comment_leaderboard = (
             GitHubComment.objects.filter(
                 github_issue__type="pull_request",
                 created_at__gte=since_date,
+                contributor__isnull=False,  # Only comments with contributors
             )
             .filter(
                 Q(github_issue__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(github_issue__repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
-            .filter(user_profile__isnull=False)  # Only show linked users for now to have avatars/profiles
+            .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
+            .exclude(contributor__name__icontains="dependabot")  # Exclude dependabot
+            .select_related("contributor")
             .values(
-                "user_profile__user__username",
-                "user_profile__user_avatar",
-                "user_profile__github_url",
+                "contributor__name",
+                "contributor__github_url", 
+                "contributor__avatar_url",
             )
-            .annotate(total_comments=Count("id"))
-            .order_by("-total_comments")[:10]
+            .annotate(
+                total_comments=Count("id"),
+                latest_comment=Max("created_at")  # Get the most recent comment date
+            )
+            .order_by("-total_comments", "-latest_comment")[:10]  # Order by comment count, then by recent activity
         )
         context["comment_leaderboard"] = comment_leaderboard
         
