@@ -82,7 +82,7 @@ class SpamDetection:
 
     def get_gemini_response(self, prompt: str) -> str:
         response = self.client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
             config={
                 "response_mime_type": "application/json",

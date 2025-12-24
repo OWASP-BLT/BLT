@@ -1042,6 +1042,50 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         return super().post(request, *args, **kwargs)
 
+    def _save_issue_screenshots(self, obj):
+        """
+        Persist all uploaded screenshots to the issue.
+        Returns an HttpResponse if there's an error (e.g. file not found), otherwise None.
+        """
+        # Handle screenshot-hash uploads
+        if self.request.POST.get("screenshot-hash"):
+            try:
+                # Fix path separators and use os.path.join for cross-platform compatibility
+                screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
+
+                # Check if file exists before trying to open to avoid generic errors
+                if not default_storage.exists(screenshot_path):
+                    raise FileNotFoundError
+
+                try:
+                    reopen = default_storage.open(screenshot_path, "rb")
+                    django_file = File(reopen)
+                    obj.screenshot.save(
+                        f"{self.request.POST.get('screenshot-hash')}.png",
+                        django_file,
+                        save=True,
+                    )
+                finally:
+                    if "reopen" in locals() and reopen:
+                        reopen.close()
+            except FileNotFoundError:
+                messages.error(self.request, "Screenshot file not found. Please try uploading again.")
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                )
+
+        # Save uploaded screenshots
+        for screenshot in self.request.FILES.getlist("screenshots"):
+            filename = screenshot.name
+            extension = filename.split(".")[-1] if "." in filename else "png"
+            screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+            default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+
+        return None
+
     def _check_for_spam(self, form):
         try:
             spam_detector = SpamDetection()
@@ -1275,6 +1319,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.is_hidden = True
                 obj.verified = False
                 obj.save()
+
+                error_response = self._save_issue_screenshots(obj)
+                if error_response:
+                    return error_response
+
                 messages.warning(
                     self.request,
                     "Your submission has been flagged for review and will be visible once approved by a moderator. Try again with a better description.",
@@ -1473,37 +1522,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
                 messages.success(self.request, "Domain added! + 1")
 
-            if self.request.POST.get("screenshot-hash"):
-                try:
-                    # Fix path separators and use os.path.join for cross-platform compatibility
-                    screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
-
-                    try:
-                        reopen = default_storage.open(screenshot_path, "rb")
-                        django_file = File(reopen)
-                        obj.screenshot.save(
-                            f"{self.request.POST.get('screenshot-hash')}.png",
-                            django_file,
-                            save=True,
-                        )
-                    finally:
-                        if "reopen" in locals():
-                            reopen.close()
-                except FileNotFoundError:
-                    messages.error(self.request, "Screenshot file not found. Please try uploading again.")
-                    return render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    )
-
-            # Save screenshots
-            for screenshot in self.request.FILES.getlist("screenshots"):
-                filename = screenshot.name
-                extension = filename.split(".")[-1]
-                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+            error_response = self._save_issue_screenshots(obj)
+            if error_response:
+                return error_response
 
             # Handle team members
             team_members_id = [
