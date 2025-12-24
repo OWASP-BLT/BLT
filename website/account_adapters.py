@@ -22,7 +22,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
             message = "Invalid username/email or password. Please check your credentials and try again."
         elif message_tag == "account_email_verification_sent":
             message = "We've sent a verification email to your address. Please check your inbox and click the verification link to activate your account."
-        
+
         return super().add_message(request, level, message_tag, message, **kwargs)
 
     def get_email_confirmation_redirect_url(self, request):
@@ -36,10 +36,10 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         Override to customize email confirmation behavior.
         """
         super().send_confirmation_mail(request, emailconfirmation, signup)
-        
+
         # Add a user-friendly message
         if signup:
             messages.success(
                 request,
-                "Account created successfully! Please check your email to verify your account before signing in."
+                "Account created successfully! Please check your email to verify your account before signing in.",
             )

@@ -1,5 +1,5 @@
 import pytz
-from allauth.account.forms import SignupForm, LoginForm
+from allauth.account.forms import LoginForm, SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from django.db.models import Q
@@ -23,19 +23,23 @@ from website.models import (
 
 class CustomLoginForm(LoginForm):
     """Custom login form with better error handling."""
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Update field labels and help text
-        self.fields['login'].label = 'Username or Email'
-        self.fields['login'].widget.attrs.update({
-            'placeholder': 'Enter your username or email',
-            'class': 'px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white'
-        })
-        self.fields['password'].widget.attrs.update({
-            'class': 'px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white'
-        })
-    
+        self.fields["login"].label = "Username or Email"
+        self.fields["login"].widget.attrs.update(
+            {
+                "placeholder": "Enter your username or email",
+                "class": "px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white",
+            }
+        )
+        self.fields["password"].widget.attrs.update(
+            {
+                "class": "px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white"
+            }
+        )
+
     def clean(self):
         """Override clean to provide better error messages."""
         try:
