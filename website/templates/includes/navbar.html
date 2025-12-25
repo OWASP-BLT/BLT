@@ -24,7 +24,9 @@
         const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
         const mobileDropdownMenu = document.getElementById('dropdown-mobile');
         if (mobileDropdownButton && mobileDropdownMenu) {
-            mobileDropdownButton.addEventListener('click', () => {
+            mobileDropdownButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 mobileDropdownMenu.classList.toggle('hidden');
             });
             document.addEventListener('click', (e) => {
@@ -40,11 +42,11 @@
         <div class="flex items-center gap-[30px] ml-[20px]">
             <!-- Settings Icon -->
             <div>
-                <a id="dropdown-toggle-mobile"
-                   class="hover:no-underline lg:hidden"
-                   href="#">
+                <button id="dropdown-toggle-mobile"
+                        type="button"
+                        class="hover:no-underline lg:hidden bg-transparent border-0 cursor-pointer">
                     <i class="fa fa-bars !text-5xl text-red-500 z-50"></i>
-                </a>
+                </button>
                 <!-- Dropdown for Settings Icon -->
                 <ul id="dropdown-mobile"
                     class="z-50 fixed top-32 flex flex-col gap-2 shadow-xl rounded py-4 px-6 bg-white left-1 hidden">
@@ -52,6 +54,12 @@
                         <a href="{% url 'report' %}">
                             <i class="fa fa-bug fa-fw"></i>
                             {% trans "Report a Bug" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'project_leaderboard' %}">
+                            <i class="fa fa-trophy fa-fw"></i>
+                            {% trans "Project Leaderboard" %}
                         </a>
                     </li>
                     <li>
@@ -108,6 +116,10 @@
                 <a href="{% url 'hunts' %}"
                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
                     {% trans "Bug Bounties" %}
+                </a>
+                <a href="{% url 'project_leaderboard' %}"
+                   class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                    <i class="fa fa-trophy"></i> {% trans "Leaderboard" %}
                 </a>
             </div>
         </form>

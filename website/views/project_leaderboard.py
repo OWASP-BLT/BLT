@@ -58,6 +58,15 @@ class ProjectLeaderboardView(TemplateView):
 
     def filter_and_sort(self, projects_data, filters):
         """Apply filters and sorting"""
+        # Filter by search
+        if filters.get("search"):
+            search_term = filters["search"].lower()
+            projects_data = [
+                p
+                for p in projects_data
+                if search_term in p["name"].lower() or (p["description"] and search_term in p["description"].lower())
+            ]
+
         # Filter by organization
         if filters.get("organization"):
             projects_data = [p for p in projects_data if p["organization_id"] == int(filters["organization"])]
@@ -93,6 +102,7 @@ class ProjectLeaderboardView(TemplateView):
 
         # Get filter parameters
         filters = {
+            "search": self.request.GET.get("search", ""),
             "organization": self.request.GET.get("organization", ""),
             "status": self.request.GET.get("status", ""),
             "sort": self.request.GET.get("sort", "stars"),
