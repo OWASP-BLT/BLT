@@ -1,8 +1,11 @@
+from datetime import timedelta
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.test import Client, TestCase
 from django.urls import reverse
-
-# UserProfile is created automatically by signal, so we don't need to import it
+from django.utils import timezone
 
 
 class UserProfileUpdateTest(TestCase):
@@ -107,11 +110,14 @@ class UserProfileUpdateTest(TestCase):
         # The current implementation doesn't update the User model's email
         # It only validates that the email is unique
         # So we just verify that the form was submitted successfully
-        self.assertIn("Profile updated successfully!", [m.message for m in response.context["messages"]])
+        messages_list = [m.message for m in response.context["messages"]]
+        self.assertTrue(
+            any(m.startswith("A verification link has been sent to your new email.") for m in messages_list)
+        )
 
-        # Now also verify that the email was actually updated
+        # Verify that the email was NOT updated (remains original until verification)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.email, new_email)
+        self.assertEqual(self.user.email, "test@example.com")
 
     def test_update_email_to_existing_email(self):
         """Test updating to an email that's already in use by another user"""
@@ -146,3 +152,147 @@ class UserProfileUpdateTest(TestCase):
         # Verify the email was not updated
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "test@example.com")
+
+
+class UserProfileVerifierTest(TestCase):
+    def setUp(self):
+        # Create test users
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.verifier_user = User.objects.create_user(
+            username="verifieruser", email="verifier@example.com", password="testpass123"
+        )
+        # UserProfile is created automatically by signal
+
+    def test_default_is_verifier_false(self):
+        """Test that new users are not verifiers by default"""
+        self.assertFalse(self.user.userprofile.is_verifier)
+
+    def test_set_user_as_verifier(self):
+        """Test setting a user as a verifier"""
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+        self.user.userprofile.refresh_from_db()
+        self.assertTrue(self.user.userprofile.is_verifier)
+
+    def test_check_verifier_permission_method(self):
+        """Test the check_verifier_permission method"""
+        # Test with non-verifier user
+        self.assertFalse(self.user.userprofile.check_verifier_permission())
+
+        # Set user as verifier
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+
+        # Test with verifier user
+        self.assertTrue(self.user.userprofile.check_verifier_permission())
+
+    def test_verifier_permission_independent_of_role(self):
+        """Test that verifier permission is independent of role field"""
+        # Set a role and verify permission
+        self.user.userprofile.role = "Developer"
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+        self.user.userprofile.refresh_from_db()
+
+        self.assertEqual(self.user.userprofile.role, "Developer")
+        self.assertTrue(self.user.userprofile.is_verifier)
+
+    def test_remove_verifier_permission(self):
+        """Test removing verifier permission from a user"""
+        # First set as verifier
+        self.user.userprofile.is_verifier = True
+        self.user.userprofile.save()
+        self.assertTrue(self.user.userprofile.is_verifier)
+
+        # Then remove verifier permission
+        self.user.userprofile.is_verifier = False
+        self.user.userprofile.save()
+        self.user.userprofile.refresh_from_db()
+        self.assertFalse(self.user.userprofile.is_verifier)
+
+
+class UserProfileVisitCounterTest(TestCase):
+    def setUp(self):
+        """Create test user with profile"""
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        # UserProfile is created automatically by signal
+        self.profile = self.user.userprofile
+
+    def test_update_visit_counter_first_visit(self):
+        """Test that first visit increments both counters"""
+        initial_visit_count = self.profile.visit_count
+        initial_daily_count = self.profile.daily_visit_count
+
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        self.assertEqual(self.profile.visit_count, initial_visit_count + 1)
+        self.assertEqual(self.profile.daily_visit_count, initial_daily_count + 1)
+        self.assertIsNotNone(self.profile.last_visit_day)
+
+    def test_update_visit_counter_same_day(self):
+        """Test that multiple visits on same day only increment general counter"""
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_daily_count = self.profile.daily_visit_count
+        first_visit_count = self.profile.visit_count
+
+        # Second visit on same day
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Daily count should stay the same
+        self.assertEqual(self.profile.daily_visit_count, first_daily_count)
+        # General visit count should increment
+        self.assertEqual(self.profile.visit_count, first_visit_count + 1)
+
+    def test_update_visit_counter_different_days(self):
+        """Test that visits on different days increment both counters"""
+        from website.models import UserProfile
+
+        # First visit
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+        first_daily_count = self.profile.daily_visit_count
+        first_visit_count = self.profile.visit_count
+
+        # Set the last_visit_day to yesterday using atomic update
+        yesterday = timezone.now().date() - timedelta(days=1)
+        UserProfile.objects.filter(pk=self.profile.pk).update(last_visit_day=yesterday)
+        self.profile.refresh_from_db()
+
+        # Visit on current day (which is different from yesterday)
+        self.profile.update_visit_counter()
+        self.profile.refresh_from_db()
+
+        # Both counters should increment since it's a different day
+        self.assertEqual(self.profile.daily_visit_count, first_daily_count + 1)
+        self.assertEqual(self.profile.visit_count, first_visit_count + 1)
+        # Last visit day should be updated to today
+        self.assertEqual(self.profile.last_visit_day, timezone.now().date())
+
+    def test_update_visit_counter_atomic_operations(self):
+        """Test that update_visit_counter uses QuerySet.update() with F() expressions instead of save()"""
+        initial_visit_count = self.profile.visit_count
+
+        with transaction.atomic():
+            with patch.object(self.profile, "save") as mock_save:
+                self.profile.update_visit_counter()
+                mock_save.assert_not_called()
+
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.visit_count, initial_visit_count + 1)
+
+    def test_update_visit_counter_no_transaction_error(self):
+        """Test that update_visit_counter doesn't raise TransactionManagementError when called multiple times"""
+        try:
+            with transaction.atomic():
+                self.profile.update_visit_counter()
+                self.profile.update_visit_counter()
+            # If we get here, no TransactionManagementError was raised
+            success = True
+        except transaction.TransactionManagementError:
+            success = False
+
+        self.assertTrue(success, "update_visit_counter raised TransactionManagementError")

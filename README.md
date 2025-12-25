@@ -17,9 +17,6 @@
 ## 📊 Project Stats
 
 <p align="center">
-  <a href="https://github.com/OWASP-BLT/BLT/actions">
-    <img src="https://github.com/OWASP-BLT/BLT/actions/workflows/auto-merge.yml/badge.svg" alt="Build Status">
-  </a>
   <a href="https://github.com/OWASP-BLT/BLT/blob/main/LICENSE.md">
     <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License">
   </a>
@@ -60,7 +57,7 @@
 
 ## 🎯 What is OWASP BLT?
 
-**OWASP BLT (Bug Logging Tool)** is an open-source platform that democratizes bug bounties and security research. Built by the community for the community, BLT makes it easy for security researchers, developers, and organizations to collaborate on finding and fixing security vulnerabilities.
+**OWASP BLT (Bug Logging Tool)** is an open-source platform that democratizes bug finding and security research. Built by the community for the community, BLT makes it easy for security researchers, developers, and organizations to collaborate on finding and fixing security vulnerabilities.
 
 ### ✨ Key Features
 
@@ -136,7 +133,7 @@ We welcome contributions from everyone! Whether you're fixing bugs, adding featu
 
 - 🌐 **Website**: [owaspblt.org](https://owaspblt.org)
 - 💬 **Slack**: [Join OWASP Slack](https://owasp.org/slack/invite)
-- 🐦 **Twitter**: [@OWASP_BLT](https://twitter.com/OWASP_BLT)
+- 🐦 **Twitter**: [@OWASP_BLT](https://x.com/OWASP_BLT)
 - 💰 **Sponsor**: [Support the project](https://github.com/sponsors/OWASP-BLT)
 - 📧 **Contact**: Reach out through GitHub issues
 

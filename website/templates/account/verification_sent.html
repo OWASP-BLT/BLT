@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% load i18n %}
+{% block title %}
+    Verify Your Email Address | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Please check your email for a verification link to complete your account registration.
+{% endblock description %}
+{% block keywords %}
+    Email Verification, Account Verification, Complete Registration
+{% endblock keywords %}
+{% block og_title %}
+    Email Verification Required
+{% endblock og_title %}
+{% block og_description %}
+    Please check your email for a verification link to complete your account registration.
+{% endblock og_description %}
+{% block natural_content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-800">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <div class="text-center">
+                <!-- Success Icon -->
+                <div class="mx-auto mb-6 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-green-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <!-- Heading -->
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">{% trans "Verify Your Email Address" %}</h1>
+                <!-- Message -->
+                <div class="text-gray-600 dark:text-gray-400 mb-6 space-y-3">
+                    <p>
+                        {% blocktrans %}We have sent an email to you for verification. Follow the link provided to finalize the signup process.{% endblocktrans %}
+                    </p>
+                    <p>
+                        {% blocktrans %}If you do not see the verification email in your main inbox, check your spam folder.{% endblocktrans %}
+                    </p>
+                    <p class="text-sm text-gray-500 dark:text-gray-500">
+                        {% blocktrans %}Please contact us if you do not receive the verification email within a few minutes.{% endblocktrans %}
+                    </p>
+                </div>
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    <a href="{% url 'home' %}"
+                       class="w-full inline-block px-4 py-2 text-lg font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4 transition-colors duration-300 text-center">
+                        {% trans "Return to Home" %}
+                    </a>
+                    <a href="{% url 'account_login' %}"
+                       class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
+                        {% trans "Sign In" %}
+                    </a>
+                </div>
+                <!-- Resend Email Link -->
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{% trans "Didn't receive the email?" %}</p>
+                    <a href="{% url 'account_email' %}"
+                       class="text-red-500 hover:text-red-600 font-medium text-sm underline">
+                        {% trans "Resend verification email" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock natural_content %}

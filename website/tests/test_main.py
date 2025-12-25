@@ -6,7 +6,7 @@ import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
-from django.test import Client, LiveServerTestCase, TestCase
+from django.test import Client, LiveServerTestCase, TestCase, tag
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -20,6 +20,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from ..models import (
     Activity,
     ContentType,
+    Contributor,
     Domain,
     GitHubIssue,
     GitHubReview,
@@ -28,13 +29,13 @@ from ..models import (
     Organization,
     Points,
     Project,
+    Repo,
     User,
     UserProfile,
 )
 
-os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
-
+@tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
@@ -69,7 +70,6 @@ class MySeleniumTests(LiveServerTestCase):
         cls.selenium.quit()
         super(MySeleniumTests, cls).tearDownClass()
 
-    @override_settings(DEBUG=True)
     def test_signup(self):
         base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
         self.selenium.get(base_url)
@@ -129,7 +129,6 @@ class MySeleniumTests(LiveServerTestCase):
         # Test passes if we can create and verify the user
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
-    @override_settings(DEBUG=True)
     def test_login(self):
         # Email verification is now handled in setUp
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
@@ -142,53 +141,109 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertIn("@bugbug", body.text)
         self.assertIn("0 Points", body.text)
 
-    @override_settings(DEBUG=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_full_url(self):
-        # Email verification is now handled in setUp
         self.selenium.set_page_load_timeout(70)
-        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+
+        # Log in
+        self.selenium.get(f"{self.live_server_url}/accounts/login/")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
+
+        # Ensure login is complete before proceeding
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        # Add explicit wait for the URL input field
-        url_input = WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.NAME, "url")))
+        WebDriverWait(self.selenium, 30).until(lambda d: "@bugbug" in d.find_element(By.TAG_NAME, "body").text)
+
+        # Now go to report page
+        self.selenium.get(f"{self.live_server_url}/report/")
+        WebDriverWait(self.selenium, 60).until(lambda d: d.execute_script("return document.readyState") == "complete")
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        # Make sure we didn't get bounced back to login or somewhere else
+        WebDriverWait(self.selenium, 10).until(
+            lambda d: "/report" in d.current_url and "/accounts/login" not in d.current_url
+        )
+
+        # Find and fill the form
+        url_input = WebDriverWait(self.selenium, 30).until(EC.visibility_of_element_located((By.NAME, "url")))
         url_input.send_keys("https://blt.owasp.org/report/")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
-        self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
-        self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
-        # pass captacha if in test mode
-        self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
-        self.selenium.find_element("name", "reportbug_button").click()
-        self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
+        self.selenium.find_element(By.ID, "description").send_keys("XSS Attack on Google")
+        self.selenium.find_element(By.ID, "markdownInput").send_keys("Description of bug")
+        image_path = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
+        self.selenium.find_element(By.NAME, "screenshots").send_keys(image_path)
+        self.selenium.find_element(By.NAME, "captcha_1").send_keys("PASSED")
+        self.selenium.find_element(By.NAME, "reportbug_button").click()
+
+        # Verify that the bug report was submitted successfully
+        self.selenium.get(f"{self.live_server_url}/all_activity/")
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
+        body = self.selenium.find_element(By.TAG_NAME, "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    @override_settings(DEBUG=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_domain_url(self):
-        # Email verification is now handled in setUp
         self.selenium.set_page_load_timeout(70)
-        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+
+        # Log in
+        self.selenium.get(f"{self.live_server_url}/accounts/login/")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
+
+        # Ensure login is complete before proceeding
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        self.selenium.find_element("name", "url").send_keys("https://google.com")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
-        self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
-        self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
-        # pass captacha if in test mode
-        self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
-        self.selenium.find_element("name", "reportbug_button").click()
-        self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
+        WebDriverWait(self.selenium, 30).until(lambda d: "@bugbug" in d.find_element(By.TAG_NAME, "body").text)
+
+        # Now go to report page
+        self.selenium.get(f"{self.live_server_url}/report/")
+        WebDriverWait(self.selenium, 60).until(lambda d: d.execute_script("return document.readyState") == "complete")
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
-        self.assertIn("XSS Attack on Google", body.text)
+
+        # Make sure we didn't get bounced back to login or somewhere else
+        WebDriverWait(self.selenium, 10).until(
+            lambda d: "/report" in d.current_url and "/accounts/login" not in d.current_url
+        )
+
+        # Find and fill the form
+        url_input = WebDriverWait(self.selenium, 30).until(EC.visibility_of_element_located((By.NAME, "url")))
+        url_input.send_keys("https://google.com")
+        self.selenium.find_element(By.ID, "description").send_keys("XSS Attack on Google")
+        self.selenium.find_element(By.ID, "markdownInput").send_keys("Description of bug")
+        image_path = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
+        self.selenium.find_element(By.NAME, "screenshots").send_keys(image_path)
+        self.selenium.find_element(By.NAME, "captcha_1").send_keys("PASSED")
+        self.selenium.find_element(By.NAME, "reportbug_button").click()
+
+        # Wait for form submission and page transition
+        WebDriverWait(self.selenium, 30).until(
+            lambda d: (
+                "/report" not in d.current_url
+                and ("error" in d.page_source.lower() or "success" in d.page_source.lower())
+            )
+        )
+
+        # Ensure page has fully loaded before checking content
+        WebDriverWait(self.selenium, 30).until(lambda d: d.execute_script("return document.readyState") == "complete")
+
+        # Verify that the bug report was submitted successfully
+        self.selenium.get(f"{self.live_server_url}/all_activity/")
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        body = self.selenium.find_element(By.TAG_NAME, "body")
+        page_content = body.text
+
+        # Check for server errors
+        self.assertNotIn("500", page_content, "Server error encountered on /all_activity/")
+        self.assertNotIn("TransactionManagementError", page_content, "Transaction error encountered")
+        self.assertNotIn("Server Error", page_content, "Server error encountered")
+
+        # Verify the bug appears in the UI
+        self.assertIn("XSS Attack on Google", page_content, "Bug was not found in activity feed UI")
+
+        # Verify the bug was actually created in the database
+        bug_exists = Issue.objects.filter(user__username="bugbug", description="XSS Attack on Google").exists()
+        self.assertTrue(bug_exists, "Bug report was not found in database after submission")
 
     def setUp(self):
         super().setUp()
@@ -299,46 +354,79 @@ class LeaderboardTests(TestCase):
         Points.objects.create(user=self.user1, score=30)
         Points.objects.create(user=self.user2, score=40)
 
-        # Create GitHub PRs
+        # Create test repo with OWASP-BLT URL
+        self.repo = Repo.objects.create(
+            name="BLT",
+            repo_url="https://github.com/OWASP-BLT/BLT",
+            description="Test BLT repo",
+        )
+
+        # Create contributors for the users
+        self.contributor1 = Contributor.objects.create(
+            name="user1",
+            github_id=1001,
+            github_url="https://github.com/user1",
+            avatar_url="https://avatars.githubusercontent.com/u/1001",
+            contributor_type="User",
+            contributions=1,
+        )
+        self.contributor2 = Contributor.objects.create(
+            name="user2",
+            github_id=1002,
+            github_url="https://github.com/user2",
+            avatar_url="https://avatars.githubusercontent.com/u/1002",
+            contributor_type="User",
+            contributions=1,
+        )
+
+        # Create GitHub PRs with repo and contributor
         self.pr1 = GitHubIssue.objects.create(
             user_profile=self.profile1,
+            contributor=self.contributor1,
+            repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 1",
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            url="https://github.com/test/test/pull/1",
+            url="https://github.com/OWASP-BLT/BLT/pull/1",
             issue_id=1,
         )
         self.pr2 = GitHubIssue.objects.create(
             user_profile=self.profile2,
+            contributor=self.contributor2,
+            repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 2",
             state="closed",
             created_at=timezone.now(),
             updated_at=timezone.now(),
-            url="https://github.com/test/test/pull/2",
+            url="https://github.com/OWASP-BLT/BLT/pull/2",
             issue_id=2,
         )
 
-        # Create GitHub Reviews
+        # Create GitHub Reviews with reviewer_contributor
         self.review1 = GitHubReview.objects.create(
             reviewer=self.profile1,
+            reviewer_contributor=self.contributor1,
             state="APPROVED",
             submitted_at=timezone.now(),
             pull_request=self.pr1,
             review_id=1,
-            url="https://github.com/test/test/pull/1/reviews/1",
+            url="https://github.com/OWASP-BLT/BLT/pull/1/reviews/1",
         )
         self.review2 = GitHubReview.objects.create(
             reviewer=self.profile2,
+            reviewer_contributor=self.contributor2,
             state="CHANGES_REQUESTED",
             submitted_at=timezone.now(),
             pull_request=self.pr2,
             review_id=2,
-            url="https://github.com/test/test/pull/2/reviews/2",
+            url="https://github.com/OWASP-BLT/BLT/pull/2/reviews/2",
         )
 
     def test_global_leaderboard(self):
@@ -357,7 +445,7 @@ class LeaderboardTests(TestCase):
         self.assertContains(response, "80")
         self.assertContains(response, "40")
 
-        # Check PR leaderboard
+        # Check PR leaderboard - GitHub URLs should appear in href attributes
         self.assertContains(response, "https://github.com/user1")
         self.assertContains(response, "https://github.com/user2")
 
@@ -398,7 +486,7 @@ class OrganizationTests(TestCase):
             "organization_name": org_name,
             "organization_url": org_url,
             "support_email": "support@test-org.com",
-            "twitter_url": "https://twitter.com/testorg",
+            "twitter_url": "https://x.com/testorg",
             "facebook_url": "https://facebook.com/testorg",
             "email": "manager@test-org.com",
         }
@@ -412,7 +500,7 @@ class OrganizationTests(TestCase):
         self.assertIsNotNone(org)
         self.assertEqual(org.url, org_url)
         self.assertEqual(org.email, "support@test-org.com")
-        self.assertEqual(org.twitter, "https://twitter.com/testorg")
+        self.assertEqual(org.twitter, "https://x.com/testorg")
         self.assertEqual(org.facebook, "https://facebook.com/testorg")
         self.assertEqual(org.admin, self.user)
         self.assertTrue(org.is_active)

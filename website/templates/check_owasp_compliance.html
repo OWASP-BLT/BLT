@@ -7,25 +7,26 @@
     {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">OWASP Project Compliance Checker</h1>
-            <p class="mt-2 text-gray-600">Verify if your project follows OWASP guidelines and best practices</p>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">OWASP Project Compliance Checker</h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">Verify if your project follows OWASP guidelines and best practices</p>
         </div>
         {% if not url %}
             <!-- Input Form -->
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
                 <form method="post" class="space-y-6">
                     {% csrf_token %}
                     <div>
-                        <label for="url" class="block text-sm font-medium text-gray-700">Project URL</label>
+                        <label for="url"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Project URL</label>
                         <div class="mt-1">
                             <input type="url"
                                    name="url"
                                    id="url"
                                    required
-                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm"
+                                   class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm"
                                    placeholder="https://github.com/OWASP/SecureTea-Project">
                         </div>
-                        <p class="mt-2 text-sm text-gray-500">Enter the GitHub repository URL or project website</p>
+                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-500">Enter the GitHub repository URL or project website</p>
                     </div>
                     <div>
                         <button type="submit"
@@ -38,15 +39,15 @@
         {% endif %}
         {% if url %}
             <!-- Results Section -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                    <h2 class="text-lg font-medium text-gray-900">Compliance Check Results</h2>
-                    <p class="mt-1 text-sm text-gray-500">{{ url }}</p>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-6 py-4">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">Compliance Check Results</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{{ url }}</p>
                 </div>
                 <div class="px-6 py-4">
                     <!-- Overall Status -->
                     <div class="mb-6">
-                        <h3 class="text-lg font-medium text-gray-900">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                             Overall Status:
                             {% if overall_status == 'compliant' %}
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -62,14 +63,14 @@
                     <!-- Recommendations -->
                     {% if recommendations %}
                         <div class="mb-6">
-                            <h4 class="text-base font-medium text-gray-900 mb-3">Recommendations:</h4>
+                            <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Recommendations:</h4>
                             <ul class="space-y-2">
                                 {% for rec in recommendations %}
                                     <li class="flex items-start">
                                         <span class="flex-shrink-0 h-5 w-5 text-[#e74c3c]">
                                             <i class="fas fa-exclamation-circle"></i>
                                         </span>
-                                        <span class="ml-2 text-sm text-gray-500">{{ rec }}</span>
+                                        <span class="ml-2 text-sm text-gray-500 dark:text-gray-500">{{ rec }}</span>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -78,11 +79,11 @@
                     <!-- Detailed Results -->
                     <div class="space-y-6">
                         <!-- GitHub Compliance -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="text-base font-medium text-gray-900 mb-3">GitHub Compliance</h4>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">GitHub Compliance</h4>
                             <ul class="space-y-3">
                                 <li class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">Hosted on GitHub</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">Hosted on GitHub</span>
                                     {% if github_compliance.github_hosted %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
                                     {% else %}
@@ -90,7 +91,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">Under OWASP Organization</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">Under OWASP Organization</span>
                                     {% if github_compliance.under_owasp_org %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
                                     {% else %}
@@ -100,11 +101,11 @@
                             </ul>
                         </div>
                         <!-- Website Compliance -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="text-base font-medium text-gray-900 mb-3">Website Compliance</h4>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Website Compliance</h4>
                             <ul class="space-y-3">
                                 <li class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">OWASP Mention</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">OWASP Mention</span>
                                     {% if website_compliance.has_owasp_mention %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
                                     {% else %}
@@ -112,7 +113,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">Links to OWASP</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">Links to OWASP</span>
                                     {% if website_compliance.has_project_link %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
                                     {% else %}
@@ -120,7 +121,7 @@
                                     {% endif %}
                                 </li>
                                 <li class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">Up-to-date Information</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">Up-to-date Information</span>
                                     {% if website_compliance.has_dates %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Yes</span>
                                     {% else %}
@@ -130,11 +131,11 @@
                             </ul>
                         </div>
                         <!-- Vendor Neutrality -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="text-base font-medium text-gray-900 mb-3">Vendor Neutrality</h4>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Vendor Neutrality</h4>
                             <ul class="space-y-3">
                                 <li class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">Possible Paywall Detected</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-500">Possible Paywall Detected</span>
                                     {% if vendor_neutrality.possible_paywall %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Yes</span>
                                     {% else %}
@@ -147,7 +148,7 @@
                     <!-- Action Buttons -->
                     <div class="mt-6 flex space-x-3">
                         <a href="{% url 'check_owasp_compliance' %}"
-                           class="inline-flex items-center px-4 py-2 border border-[#e74c3c] text-sm font-medium rounded-md text-[#e74c3c] bg-white hover:bg-[#e74c3c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                           class="inline-flex items-center px-4 py-2 border border-[#e74c3c] text-sm font-medium rounded-md text-[#e74c3c] bg-white dark:bg-gray-800 hover:bg-[#e74c3c] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
                             Check Another Project
                         </a>
                     </div>
