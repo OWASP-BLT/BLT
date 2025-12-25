@@ -2,6 +2,7 @@
 GitHub API Service for fetching repository statistics
 """
 import logging
+import re
 from typing import Dict, Optional
 
 import requests
@@ -96,8 +97,6 @@ class GitHubService:
             link_header = response.headers.get("Link", "")
             if "last" in link_header:
                 # Parse the last page number from Link header
-                import re
-
                 match = re.search(r'page=(\d+)>; rel="last"', link_header)
                 if match:
                     return int(match.group(1))
@@ -118,8 +117,6 @@ class GitHubService:
             # Parse Link header for total pages
             link_header = response.headers.get("Link", "")
             if "last" in link_header:
-                import re
-
                 match = re.search(r'page=(\d+)>; rel="last"', link_header)
                 if match:
                     return int(match.group(1))

@@ -3,6 +3,7 @@ REST API endpoints for Project Leaderboard
 """
 import logging
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Max, Min, Q
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
@@ -32,29 +33,35 @@ class LeaderboardAPIView(View):
         - search: Search query for project name
         - limit: Number of results (default: 10)
         """
-        # Get query parameters
+        # Get query parameters with error handling
         sort_by = request.GET.get("sort_by", "stars")
         order = request.GET.get("order", "desc")
         language = request.GET.get("language")
-        min_stars = request.GET.get("min_stars")
         search = request.GET.get("search")
-        limit = int(request.GET.get("limit", 10))
 
-        # Build query
-        projects = Project.objects.filter(repos__isnull=False).distinct()
+        # Safe integer conversions
+        try:
+            min_stars = int(request.GET.get("min_stars", 0))
+        except (ValueError, TypeError):
+            min_stars = 0
 
-        # Apply filters
-        if search:
-            projects = projects.filter(Q(name__icontains=search) | Q(description__icontains=search))
+        try:
+            limit = int(request.GET.get("limit", 10))
+        except (ValueError, TypeError):
+            limit = 10
 
         # Get repos with their stats
         repos = Repo.objects.select_related("project").all()
+
+        # Apply search filter
+        if search:
+            repos = repos.filter(Q(project__name__icontains=search) | Q(project__description__icontains=search))
 
         if language:
             repos = repos.filter(repo_url__icontains=language)
 
         if min_stars:
-            repos = repos.filter(stars__gte=int(min_stars))
+            repos = repos.filter(stars__gte=min_stars)
 
         # Sort mapping
         sort_fields = {
@@ -171,6 +178,7 @@ class ProjectStatsAPIView(View):
 class RefreshStatsAPIView(View):
     """API endpoint to refresh GitHub stats"""
 
+    @method_decorator(login_required)
     def post(self, request, project_id):
         """Trigger refresh of GitHub stats for a project"""
         try:
@@ -180,15 +188,13 @@ class RefreshStatsAPIView(View):
             updated_repos = []
             for repo in project.repos.all():
                 # Parse owner/repo from URL
-                if "github.com" in repo.repo_url:
+                if "github.com/" in repo.repo_url:
                     parts = repo.repo_url.rstrip("/").split("/")
-                    owner, repo_name = parts[-2], parts[-1]
+                    if len(parts) >= 2:
+                        owner, repo_name = parts[-2], parts[-1]
 
-                    # Fetch fresh data
-                    stats = github_service.refresh_repo_cache(owner, repo_name)
-
-                    if stats:
-                        # Update repo
+                        # Fetch fresh data
+                        stats = github_service.refresh_repo_cache(owner, repo_name)
                         repo.stars = stats.get("stars", repo.stars)
                         repo.forks = stats.get("forks", repo.forks)
                         repo.open_issues = stats.get("open_issues", repo.open_issues)
@@ -213,16 +219,12 @@ class RefreshStatsAPIView(View):
             return JsonResponse({"success": False, "error": "Project not found"}, status=404)
         except Exception as e:
             logger.error(f"Error refreshing stats: {e}")
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
+            return JsonResponse({"success": False, "error": "Failed to refresh stats"}, status=500)
 
 
 @require_http_methods(["GET"])
 def leaderboard_filters(request):
     """Get available filter options"""
-    # Get unique languages from repos
-    languages = Repo.objects.values_list("repo_url", flat=True).distinct()
-    # Extract language from GitHub URLs (simplified)
-
     # Get min/max stars
     stats = Repo.objects.aggregate(
         min_stars=Min("stars"),

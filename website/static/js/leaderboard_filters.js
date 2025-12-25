@@ -110,11 +110,17 @@ class LeaderboardFilters {
                 this.showError('Failed to load leaderboard data');
             }
         } catch (error) {
-            console.error('Error loading leaderboard:', error);
             this.showError('Network error loading data');
         } finally {
             this.hideLoading();
         }
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     renderLeaderboard(projects) {
@@ -137,6 +143,12 @@ class LeaderboardFilters {
             const rank = index + 1;
             const rankClass = rank <= 3 ? 'top-rank' : '';
             const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+            
+            // Escape HTML to prevent XSS
+            const escapedName = this.escapeHtml(project.name);
+            const escapedDesc = project.description ? this.escapeHtml(project.description) : 'OWASP Project';
+            const escapedSlug = this.escapeHtml(project.slug);
+            const escapedRepoUrl = this.escapeHtml(project.repo_url);
 
             return `
                 <div class="leaderboard-item ${rankClass} bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" data-rank="${rank}">
@@ -147,11 +159,11 @@ class LeaderboardFilters {
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                                    <a href="/project/${project.slug}/" class="hover:text-red-500 transition-colors">
-                                        ${project.name}
+                                    <a href="/project/${escapedSlug}/" class="hover:text-red-500 transition-colors">
+                                        ${escapedName}
                                     </a>
                                 </h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${project.description || 'OWASP Project'}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${escapedDesc}</p>
                                 
                                 <div class="flex flex-wrap gap-4 text-sm">
                                     <div class="stat-item" title="Stars">
@@ -179,7 +191,7 @@ class LeaderboardFilters {
                         </div>
                         
                         <div class="flex flex-col items-end space-y-2">
-                            <a href="${project.repo_url}" target="_blank" class="text-gray-500 hover:text-red-500 transition-colors">
+                            <a href="${escapedRepoUrl}" target="_blank" class="text-gray-500 hover:text-red-500 transition-colors">
                                 <i class="fab fa-github text-2xl"></i>
                             </a>
                             <button class="refresh-project-btn text-xs text-gray-500 hover:text-red-500" data-project-id="${project.id}" title="Refresh stats">
@@ -217,12 +229,27 @@ class LeaderboardFilters {
 
     calculatePercentage(value, metric) {
         // Calculate percentage based on max value in current dataset
-        const maxValues = {
-            stars: 31000,
-            forks: 15900,
-            commits: 21432
+        if (!this.projects || this.projects.length === 0) {
+            return 0;
+        }
+
+        const metricMap = {
+            stars: 'stars',
+            forks: 'forks',
+            commits: 'commits',
+            contributors: 'contributors'
         };
-        return Math.min((value / maxValues[metric]) * 100, 100);
+
+        const dataKey = metricMap[metric];
+        if (!dataKey) return 0;
+
+        // Find max value dynamically from current dataset
+        const maxValue = Math.max(
+            ...this.projects.map(p => p.stats[dataKey] || 0)
+        );
+
+        if (maxValue === 0) return 0;
+        return Math.min((value / maxValue) * 100, 100);
     }
 
     updateCharts(projects) {
@@ -256,7 +283,6 @@ class LeaderboardFilters {
                 this.showNotification('Failed to refresh stats', 'error');
             }
         } catch (error) {
-            console.error('Error refreshing stats:', error);
             this.showNotification('Network error', 'error');
         } finally {
             if (btn) {

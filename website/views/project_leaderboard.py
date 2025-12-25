@@ -69,7 +69,12 @@ class ProjectLeaderboardView(TemplateView):
 
         # Filter by organization
         if filters.get("organization"):
-            projects_data = [p for p in projects_data if p["organization_id"] == int(filters["organization"])]
+            try:
+                org_id = int(filters["organization"])
+                projects_data = [p for p in projects_data if p["organization_id"] == org_id]
+            except (ValueError, TypeError):
+                # Skip invalid organization filter value
+                pass
 
         # Filter by status
         if filters.get("status"):
@@ -193,4 +198,5 @@ def refresh_project_stats(request, project_id):
         )
 
     except Exception as e:
-        return JsonResponse({"status": "error", "message": f"Failed to refresh stats: {str(e)}"}, status=500)
+        logger.error(f"Error refreshing project stats: {e}")
+        return JsonResponse({"status": "error", "message": "Failed to refresh stats"}, status=500)
