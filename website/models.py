@@ -957,6 +957,7 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    private_reports_count = models.PositiveIntegerField(default=0)
 
     def check_team_membership(self):
         return self.team is not None
