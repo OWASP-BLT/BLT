@@ -921,19 +921,35 @@ class OrganizationSocialRedirectView(View):
             return redirect("organization_analytics", id=org_id)
 
         # Increment the click counter atomically to prevent race conditions
-        with transaction.atomic():
-            # Lock the row to ensure atomic update
-            organization = Organization.objects.select_for_update().get(id=org_id)
+        # Add retry logic to handle SQLite database locking in concurrent scenarios
+        import time
 
-            # Get current clicks dict (handle None case)
-            clicks = organization.social_clicks or {}
+        from django.db.utils import OperationalError
 
-            # Increment the counter for this platform
-            clicks[platform] = clicks.get(platform, 0) + 1
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                with transaction.atomic():
+                    # Lock the row to ensure atomic update
+                    organization = Organization.objects.select_for_update().get(id=org_id)
 
-            # Save the updated clicks
-            organization.social_clicks = clicks
-            organization.save(update_fields=["social_clicks"])
+                    # Get current clicks dict (handle None case)
+                    clicks = organization.social_clicks or {}
+
+                    # Increment the counter for this platform
+                    clicks[platform] = clicks.get(platform, 0) + 1
+
+                    # Save the updated clicks
+                    organization.social_clicks = clicks
+                    organization.save(update_fields=["social_clicks"])
+                break  # Success, exit retry loop
+            except OperationalError as e:
+                if "database is locked" in str(e) and attempt < max_retries - 1:
+                    # Exponential backoff: wait longer with each retry
+                    time.sleep(0.1 * (attempt + 1))
+                    continue
+                # If it's the last attempt or not a lock error, re-raise
+                raise
 
         # Redirect to the actual social media URL
         return redirect(target_url)
