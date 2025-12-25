@@ -193,7 +193,7 @@ class Command(BaseCommand):
                     Repo.objects.create(
                         project=project,
                         name=repo_data["name"],
-                        url=f'https://github.com/OWASP/{repo_data["name"]}',
+                        repo_url=f'https://github.com/OWASP/{repo_data["name"]}',
                         stars=repo_data["stars"],
                         forks=repo_data["forks"],
                         open_issues=repo_data["open_issues"],

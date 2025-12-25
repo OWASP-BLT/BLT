@@ -127,6 +127,9 @@ class LeaderboardFilters {
         const container = document.getElementById('leaderboard-results');
         if (!container) return;
 
+        // Store projects for percentage calculation
+        this.projects = projects;
+
         if (projects.length === 0) {
             container.innerHTML = `
                 <div class="text-center py-12">

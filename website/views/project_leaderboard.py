@@ -3,6 +3,8 @@ Project Leaderboard Views
 Displays comprehensive GitHub statistics for all OWASP projects
 with tabs for different metric views.
 """
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -10,6 +12,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
 
 from website.models import Organization, Project
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectLeaderboardView(TemplateView):

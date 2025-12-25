@@ -2,6 +2,7 @@
 REST API endpoints for Project Leaderboard
 """
 import logging
+import re
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Max, Min, Q
@@ -58,7 +59,7 @@ class LeaderboardAPIView(View):
             repos = repos.filter(Q(project__name__icontains=search) | Q(project__description__icontains=search))
 
         if language:
-            repos = repos.filter(repo_url__icontains=language)
+            repos = repos.filter(primary_language__iexact=language)
 
         if min_stars:
             repos = repos.filter(stars__gte=min_stars)
@@ -187,25 +188,34 @@ class RefreshStatsAPIView(View):
 
             updated_repos = []
             for repo in project.repos.all():
-                # Parse owner/repo from URL
-                if "github.com/" in repo.repo_url:
-                    parts = repo.repo_url.rstrip("/").split("/")
-                    if len(parts) >= 2:
-                        owner, repo_name = parts[-2], parts[-1]
+                # Parse owner/repo from URL with strict validation
+                try:
+                    if "github.com" in repo.repo_url:
+                        # Extract owner/repo from GitHub URL
+                        # Expected format: https://github.com/owner/repo or github.com/owner/repo
+                        match = re.search(r"github\.com[:/]([^/]+)/([^/]+)", repo.repo_url)
+                        if match:
+                            owner, repo_name = match.group(1), match.group(2)
+                            # Remove .git suffix if present
+                            repo_name = repo_name.rstrip("/").replace(".git", "")
 
-                        # Fetch fresh data
-                        stats = github_service.refresh_repo_cache(owner, repo_name)
-                        repo.stars = stats.get("stars", repo.stars)
-                        repo.forks = stats.get("forks", repo.forks)
-                        repo.open_issues = stats.get("open_issues", repo.open_issues)
-                        repo.watchers = stats.get("watchers", repo.watchers)
-                        repo.commit_count = stats.get("commit_count", repo.commit_count)
-                        repo.contributor_count = stats.get("contributors_count", repo.contributor_count)
-                        repo.open_pull_requests = stats.get("open_pull_requests", repo.open_pull_requests)
-                        repo.closed_pull_requests = stats.get("closed_pull_requests", repo.closed_pull_requests)
-                        repo.save()
+                            # Fetch fresh data
+                            stats = github_service.refresh_repo_cache(owner, repo_name)
+                            if stats:
+                                repo.stars = stats.get("stars", repo.stars)
+                                repo.forks = stats.get("forks", repo.forks)
+                                repo.open_issues = stats.get("open_issues", repo.open_issues)
+                                repo.watchers = stats.get("watchers", repo.watchers)
+                                repo.commit_count = stats.get("commit_count", repo.commit_count)
+                                repo.contributor_count = stats.get("contributors_count", repo.contributor_count)
+                                repo.open_pull_requests = stats.get("open_pull_requests", repo.open_pull_requests)
+                                repo.closed_pull_requests = stats.get("closed_pull_requests", repo.closed_pull_requests)
+                                repo.save()
 
-                        updated_repos.append(repo.name)
+                                updated_repos.append(repo.name)
+                except Exception as e:
+                    logger.warning(f"Failed to parse GitHub URL for repo {repo.id}: {e}")
+                    continue
 
             return JsonResponse(
                 {
