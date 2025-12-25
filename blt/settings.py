@@ -361,6 +361,8 @@ else:
             "NAME": ":memory:",
         }
 
+
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
@@ -368,6 +370,13 @@ ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
 # This prevents account enumeration attacks
 ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
+
+# IMPORTANT: Before enabling ACCOUNT_UNIQUE_EMAIL, you must run the deduplication
+# management command to clean up existing duplicate emails.
+# 1. Run: `python manage.py deduplicate_emails`
+# 2. Review the output and manually resolve any critical issues reported.
+# 3. Once all duplicates are cleared, you can safely set this to True.
+ACCOUNT_UNIQUE_EMAIL = True
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
