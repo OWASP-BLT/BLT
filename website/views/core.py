@@ -2081,8 +2081,176 @@ def check_owasp_compliance(request):
 
 
 def management_commands(request):
+    def cron_expression_to_frequency(expr: str) -> str:
+        expr = (expr or "").strip()
+        if not expr:
+            return "Not scheduled"
+
+        macros = {
+            "@reboot": "At reboot",
+            "@yearly": "Yearly",
+            "@annually": "Yearly",
+            "@monthly": "Monthly",
+            "@weekly": "Weekly",
+            "@daily": "Daily",
+            "@midnight": "Daily",
+            "@hourly": "Hourly",
+        }
+        if expr in macros:
+            return macros[expr]
+
+        parts = expr.split()
+        if len(parts) != 5:
+            return expr
+
+        minute, hour, dom, month, dow = parts
+        if minute.startswith("*/") and hour == dom == month == dow == "*":
+            try:
+                return f"Every {int(minute[2:])} minutes"
+            except ValueError:
+                return expr
+
+        if minute == "*" and hour == dom == month == dow == "*":
+            return "Every minute"
+
+        if minute == "0" and hour.startswith("*/") and dom == month == dow == "*":
+            try:
+                return f"Every {int(hour[2:])} hours"
+            except ValueError:
+                return expr
+
+        if minute == "0" and hour == "*" and dom == month == dow == "*":
+            return "Hourly"
+
+        if minute == "0" and hour == "0" and dom == month == dow == "*":
+            return "Daily"
+
+        if minute == "0" and hour == "0" and dom == "*" and month == "*" and dow in {"0", "7"}:
+            return "Weekly"
+
+        if minute == "0" and hour == "0" and dom == "1" and month == "*" and dow == "*":
+            return "Monthly"
+
+        if minute == "0" and hour == "0" and dom == "1" and month == "1" and dow == "*":
+            return "Yearly"
+
+        return expr
+
+    def load_command_schedules_from_cron_files() -> dict[str, list[dict[str, str]]]:
+        """Parse cron entries from a cron_files directory and map them to Django management commands.
+
+        This supports typical cron formats:
+        - 5-field:  */10 * * * * python manage.py some_command
+        - cron.d:   */10 * * * * root python manage.py some_command
+        - macros:   @daily python manage.py some_command
+        """
+
+        cron_dir = os.environ.get("CRON_FILES_DIR") or os.path.join(settings.BASE_DIR, "cron_files")
+        schedules: dict[str, list[dict[str, str]]] = {}
+
+        if not os.path.isdir(cron_dir):
+            return schedules
+
+        manage_re = re.compile(r"\bmanage\.py\s+(?P<cmd>[a-zA-Z0-9_:-]+)\b")
+
+        for entry in sorted(os.listdir(cron_dir)):
+            path = os.path.join(cron_dir, entry)
+            if not os.path.isfile(path):
+                continue
+
+            try:
+                with open(path, encoding="utf-8") as f:
+                    lines = f.readlines()
+            except OSError:
+                continue
+
+            for raw_line in lines:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+
+                tokens = line.split()
+                if not tokens:
+                    continue
+
+                cron_expr = ""
+                command_part_tokens: list[str] = []
+
+                if tokens[0].startswith("@"):  # macro form
+                    cron_expr = tokens[0]
+                    command_part_tokens = tokens[1:]
+                elif len(tokens) >= 6:  # 5 schedule fields + command (plus optional user)
+                    cron_expr = " ".join(tokens[:5])
+                    command_part_tokens = tokens[5:]
+                else:
+                    continue
+
+                command_str = " ".join(command_part_tokens)
+                match = manage_re.search(command_str)
+                if not match:
+                    continue
+
+                cmd_name = match.group("cmd")
+                schedules.setdefault(cmd_name, []).append(
+                    {
+                        "expression": cron_expr,
+                        "frequency": cron_expression_to_frequency(cron_expr),
+                        "source": entry,
+                    }
+                )
+
+        return schedules
+
+    def load_command_schedules_from_run_wrappers() -> dict[str, list[dict[str, str]]]:
+        """Infer schedules by parsing the run_* management commands.
+
+        Many deployments schedule only wrapper commands in cron (e.g. run_daily),
+        which then call individual commands via call_command/management.call_command.
+        """
+
+        wrapper_to_frequency = {
+            "run_ten_minutes": "Every 10 minutes",
+            "run_hourly": "Hourly",
+            "run_daily": "Daily",
+            "run_weekly": "Weekly",
+            "run_monthly": "Monthly",
+        }
+
+        commands_dir = os.path.join(settings.BASE_DIR, "website", "management", "commands")
+        schedules: dict[str, list[dict[str, str]]] = {}
+        call_re = re.compile(r"\b(?:call_command|management\.call_command)\(\s*['\"](?P<cmd>[a-zA-Z0-9_:-]+)['\"]")
+
+        for wrapper, frequency in wrapper_to_frequency.items():
+            wrapper_path = os.path.join(commands_dir, f"{wrapper}.py")
+            if not os.path.exists(wrapper_path):
+                continue
+
+            try:
+                content = ""
+                with open(wrapper_path, encoding="utf-8") as f:
+                    content = f.read()
+            except OSError:
+                continue
+
+            for match in call_re.finditer(content):
+                cmd_name = match.group("cmd")
+                if cmd_name.startswith("run_"):
+                    continue
+                schedules.setdefault(cmd_name, []).append(
+                    {
+                        "expression": wrapper,
+                        "frequency": frequency,
+                        "source": os.path.basename(wrapper_path),
+                    }
+                )
+
+        return schedules
+
     # Get list of available management commands
     available_commands = []
+
+    cron_schedules = load_command_schedules_from_cron_files()
+    wrapper_schedules = load_command_schedules_from_run_wrappers()
 
     # Get the date 30 days ago for stats
     thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
@@ -2099,7 +2267,15 @@ def management_commands(request):
         sort_key = sort_param
 
     # Validate sort key
-    valid_sort_keys = ["name", "last_run", "status", "run_count", "activity"]
+    valid_sort_keys = [
+        "name",
+        "last_run",
+        "status",
+        "run_count",
+        "activity",
+        "file_modified",
+        "run_frequency",
+    ]
     if sort_key not in valid_sort_keys:
         sort_key = "name"
         sort_param = "name"
@@ -2118,6 +2294,19 @@ def management_commands(request):
                 "name": name,
                 "help_text": help_text,
             }
+
+            schedule_entries = cron_schedules.get(name, []) or wrapper_schedules.get(name, [])
+            if schedule_entries:
+                primary = schedule_entries[0]
+                command_info["run_frequency"] = primary.get("frequency")
+                command_info["cron_expression"] = primary.get("expression")
+                command_info["cron_source"] = primary.get("source")
+                if len(schedule_entries) > 1:
+                    command_info[
+                        "run_frequency"
+                    ] = f"{command_info['run_frequency']} (+{len(schedule_entries) - 1} more)"
+            else:
+                command_info["run_frequency"] = "Not scheduled"
 
             # Get command file path and metadata
             try:
@@ -2228,6 +2417,41 @@ def management_commands(request):
             available_commands.append(command_info)
 
     # Sort the commands based on the sort parameter
+    def run_frequency_sort_value(value: str):
+        value = (value or "").strip()
+        if not value or value == "Not scheduled":
+            return (1, 10**9, "Not scheduled")
+
+        base = value.split(" (+", 1)[0].strip()
+
+        fixed_minutes = {
+            "At reboot": 0,
+            "Every minute": 1,
+            "Hourly": 60,
+            "Daily": 60 * 24,
+            "Weekly": 60 * 24 * 7,
+            "Monthly": 60 * 24 * 30,
+            "Yearly": 60 * 24 * 365,
+        }
+        if base in fixed_minutes:
+            return (0, fixed_minutes[base], base)
+
+        if base.startswith("Every ") and base.endswith(" minutes"):
+            try:
+                minutes = int(base[len("Every ") : -len(" minutes")].strip())
+                return (0, minutes, base)
+            except ValueError:
+                return (0, 10**8, base)
+
+        if base.startswith("Every ") and base.endswith(" hours"):
+            try:
+                hours = int(base[len("Every ") : -len(" hours")].strip())
+                return (0, hours * 60, base)
+            except ValueError:
+                return (0, 10**8, base)
+
+        return (0, 10**8, base)
+
     def sort_commands(cmd):
         if sort_key == "name":
             return cmd["name"]
@@ -2240,6 +2464,10 @@ def management_commands(request):
             return cmd.get("run_count", 0)
         elif sort_key == "activity":
             return cmd.get("total_activity", 0)
+        elif sort_key == "file_modified":
+            return cmd.get("file_modified", datetime.min.replace(tzinfo=pytz.UTC))
+        elif sort_key == "run_frequency":
+            return run_frequency_sort_value(cmd.get("run_frequency"))
         else:
             return cmd["name"]
 
