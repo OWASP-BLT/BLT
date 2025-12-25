@@ -100,7 +100,7 @@ class ProjectLeaderboardView(TemplateView):
 
         sort_field = sort_fields.get(sort_key, "stars")
         projects_data.sort(
-            key=lambda x: x[sort_field] if isinstance(x[sort_field], (int, float)) else x[sort_field].lower(),
+            key=lambda x: (x[sort_field] if isinstance(x[sort_field], (int, float)) else (x[sort_field] or "").lower()),
             reverse=reverse,
         )
 

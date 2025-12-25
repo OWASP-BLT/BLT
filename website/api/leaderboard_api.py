@@ -51,69 +51,84 @@ class LeaderboardAPIView(View):
         except (ValueError, TypeError):
             limit = 10
 
-        # Get repos with their stats
-        repos = Repo.objects.select_related("project").all()
+        # Get projects with their repos
+        projects = Project.objects.prefetch_related("repos").all()
 
         # Apply search filter
         if search:
-            repos = repos.filter(Q(project__name__icontains=search) | Q(project__description__icontains=search))
+            projects = projects.filter(Q(name__icontains=search) | Q(description__icontains=search))
 
-        if language:
-            repos = repos.filter(primary_language__iexact=language)
+        # Build project data with aggregated stats
+        projects_data = []
+        for project in projects:
+            repos = project.repos.all()
+            if not repos:
+                continue
 
-        if min_stars:
-            repos = repos.filter(stars__gte=min_stars)
+            # Aggregate stats across all repos
+            total_stats = {
+                "stars": sum(r.stars or 0 for r in repos),
+                "forks": sum(r.forks or 0 for r in repos),
+                "open_issues": sum(r.open_issues or 0 for r in repos),
+                "watchers": sum(r.watchers or 0 for r in repos),
+                "commits": sum(r.commit_count or 0 for r in repos),
+                "contributors": sum(r.contributor_count or 0 for r in repos),
+                "open_prs": sum(r.open_pull_requests or 0 for r in repos),
+                "closed_prs": sum(r.closed_pull_requests or 0 for r in repos),
+            }
 
-        # Sort mapping
-        sort_fields = {
-            "stars": "stars",
-            "forks": "forks",
-            "commits": "commit_count",
-            "contributors": "contributor_count",
-            "issues": "open_issues",
-            "watchers": "watchers",
-            "prs": "open_pull_requests",
-            "activity": "updated_at",
-        }
+            # Apply filters
+            if language:
+                if not any(r.primary_language and r.primary_language.lower() == language.lower() for r in repos):
+                    continue
 
-        sort_field = sort_fields.get(sort_by, "stars")
-        if order == "asc":
-            repos = repos.order_by(sort_field)
-        else:
-            repos = repos.order_by(f"-{sort_field}")
+            if min_stars and total_stats["stars"] < min_stars:
+                continue
 
-        repos = repos[:limit]
+            # Get primary repo URL
+            main_repo = repos.filter(is_main=True).first() or repos.first()
 
-        # Format response
-        data = []
-        for repo in repos:
-            project = repo.project
-            data.append(
+            projects_data.append(
                 {
                     "id": project.id,
                     "name": project.name,
                     "slug": project.slug,
                     "description": project.description,
-                    "repo_url": repo.repo_url,
-                    "stats": {
-                        "stars": repo.stars,
-                        "forks": repo.forks,
-                        "open_issues": repo.open_issues,
-                        "watchers": repo.watchers,
-                        "commits": repo.commit_count,
-                        "contributors": repo.contributor_count,
-                        "open_prs": repo.open_pull_requests,
-                        "closed_prs": repo.closed_pull_requests,
-                    },
-                    "updated_at": repo.updated_at.isoformat() if repo.updated_at else None,
+                    "repo_url": main_repo.repo_url if main_repo else "",
+                    "stats": total_stats,
+                    "updated_at": max((r.updated_at for r in repos if r.updated_at), default=None),
                 }
             )
+
+        # Sort the aggregated data
+        sort_fields = {
+            "stars": "stars",
+            "forks": "forks",
+            "commits": "commits",
+            "contributors": "contributors",
+            "issues": "open_issues",
+            "watchers": "watchers",
+            "prs": "open_prs",
+            "activity": "updated_at",
+        }
+
+        sort_key = sort_fields.get(sort_by, "stars")
+        reverse_sort = order == "desc"
+
+        # Handle None values in sorting
+        if sort_key == "updated_at":
+            projects_data.sort(key=lambda x: x.get(sort_key) or "", reverse=reverse_sort)
+        else:
+            projects_data.sort(key=lambda x: x["stats"].get(sort_key, 0), reverse=reverse_sort)
+
+        # Apply limit
+        projects_data = projects_data[:limit]
 
         return JsonResponse(
             {
                 "success": True,
-                "count": len(data),
-                "data": data,
+                "count": len(projects_data),
+                "data": projects_data,
                 "filters": {
                     "sort_by": sort_by,
                     "order": order,
@@ -190,29 +205,26 @@ class RefreshStatsAPIView(View):
             for repo in project.repos.all():
                 # Parse owner/repo from URL with strict validation
                 try:
-                    if "github.com" in repo.repo_url:
-                        # Extract owner/repo from GitHub URL
-                        # Expected format: https://github.com/owner/repo or github.com/owner/repo
-                        match = re.search(r"github\.com[:/]([^/]+)/([^/]+)", repo.repo_url)
-                        if match:
-                            owner, repo_name = match.group(1), match.group(2)
-                            # Remove .git suffix if present
-                            repo_name = repo_name.rstrip("/").replace(".git", "")
+                    # Extract owner/repo from GitHub URL using regex
+                    # Expected format: https://github.com/owner/repo or git@github.com:owner/repo
+                    match = re.search(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?(?:/|$)", repo.repo_url)
+                    if match:
+                        owner, repo_name = match.group(1), match.group(2)
 
-                            # Fetch fresh data
-                            stats = github_service.refresh_repo_cache(owner, repo_name)
-                            if stats:
-                                repo.stars = stats.get("stars", repo.stars)
-                                repo.forks = stats.get("forks", repo.forks)
-                                repo.open_issues = stats.get("open_issues", repo.open_issues)
-                                repo.watchers = stats.get("watchers", repo.watchers)
-                                repo.commit_count = stats.get("commit_count", repo.commit_count)
-                                repo.contributor_count = stats.get("contributors_count", repo.contributor_count)
-                                repo.open_pull_requests = stats.get("open_pull_requests", repo.open_pull_requests)
-                                repo.closed_pull_requests = stats.get("closed_pull_requests", repo.closed_pull_requests)
-                                repo.save()
+                        # Fetch fresh data
+                        stats = github_service.refresh_repo_cache(owner, repo_name)
+                        if stats:
+                            repo.stars = stats.get("stars", repo.stars)
+                            repo.forks = stats.get("forks", repo.forks)
+                            repo.open_issues = stats.get("open_issues", repo.open_issues)
+                            repo.watchers = stats.get("watchers", repo.watchers)
+                            repo.commit_count = stats.get("commit_count", repo.commit_count)
+                            repo.contributor_count = stats.get("contributors_count", repo.contributor_count)
+                            repo.open_pull_requests = stats.get("open_pull_requests", repo.open_pull_requests)
+                            repo.closed_pull_requests = stats.get("closed_pull_requests", repo.closed_pull_requests)
+                            repo.save()
 
-                                updated_repos.append(repo.name)
+                            updated_repos.append(repo.name)
                 except Exception as e:
                     logger.warning(f"Failed to parse GitHub URL for repo {repo.id}: {e}")
                     continue
