@@ -960,6 +960,7 @@
             console.warn('SideNav: Missing projects menu elements');
         } else {
             // Check if this is the projects page or any project-related page
+            const currentPath = window.location.pathname;
             const isProjectPage = currentPath.includes('/repo/') ||
                 currentPath.includes('project') ||
                 currentPath.includes('/projects/') ||
@@ -1006,6 +1007,7 @@
             console.warn('SideNav: Missing users menu elements');
         } else {
             // Check if this is the users page or any user-related page
+            const currentPath = window.location.pathname;
             const isUserPage = currentPath.includes('/users/') ||
                 currentPath.includes('messaging') ||
                 currentPath.includes('challenges') ||
@@ -1056,6 +1058,7 @@
         if (!teamsToggle || !teamsMenu || !teamsChevron) {
         console.warn('SideNav: Missing teams menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isTeamPage = currentPath.includes('/team') || currentPath.includes('team_') || currentPath.includes('team');
 
             if (isTeamPage) {
@@ -1092,6 +1095,7 @@
         if (!aboutToggle || !aboutMenu || !aboutChevron) {
             console.warn('SideNav: Missing about menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isAboutPage = currentPath.includes('/about') || currentPath.includes('features') || currentPath.includes('sponsor') || currentPath.includes('donate') || currentPath.includes('view_forum');
 
             if (isAboutPage) {
@@ -1128,6 +1132,7 @@
         if (!contributeToggle || !contributeMenu || !contributeChevron) {
             console.warn('SideNav: Missing contribute menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isContributePage = currentPath.includes('contribution') || currentPath.includes('swagger') || currentPath.includes('education') || currentPath.includes('simulation') || currentPath.includes('ossh') || currentPath.includes('gsoc') || currentPath.includes('roadmap') || currentPath.includes('github_issue_prompt');
 
             if (isContributePage) {
@@ -1164,6 +1169,7 @@
         if (!githubToggle || !githubMenu || !githubChevron) {
             console.warn('SideNav: Missing github menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isGithubPage = currentPath.toLowerCase().includes('github') || currentPath.includes('/repo/') || currentPath.includes('blt-');
 
             if (isGithubPage) {
@@ -1200,6 +1206,7 @@
         if (!communicationToggle || !communicationMenu || !communicationChevron) {
             console.warn('SideNav: Missing communication menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isCommunicationPage = currentPath.includes('similarity') || currentPath.includes('rooms') || currentPath.includes('video') || currentPath.includes('banned_apps');
 
             if (isCommunicationPage) {
@@ -1236,6 +1243,7 @@
         if (!appsToggle || !appsMenu || !appsChevron) {
             console.warn('SideNav: Missing apps menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isAppsPage = currentPath.includes('app') || currentPath.includes('extension');
 
             if (isAppsPage) {
@@ -1272,6 +1280,7 @@
         if (!socialToggle || !socialMenu || !socialChevron) {
             console.warn('SideNav: Missing social menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isSocialPage = currentPath.includes('twitter') || currentPath.includes('facebook') || currentPath.includes('post_list') || currentPath.includes('slack');
 
             if (isSocialPage) {
@@ -1308,6 +1317,7 @@
         if (!siteinfoToggle || !siteinfoMenu || !siteinfoChevron) {
             console.warn('SideNav: Missing site info menu elements');
         } else {
+            const currentPath = window.location.pathname;
             const isSiteInfoPage = currentPath.includes('sitemap') || currentPath.includes('/status') || currentPath.includes('/stats') || currentPath.includes('template_list') || currentPath.includes('website_stats');
 
             if (isSiteInfoPage) {
