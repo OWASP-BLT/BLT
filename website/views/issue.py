@@ -68,7 +68,6 @@ from website.models import (
     GitHubIssue,
     Hunt,
     Issue,
-    IssuePledge,
     IssueScreenshot,
     Points,
     Repo,
