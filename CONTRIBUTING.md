@@ -10,6 +10,7 @@ Thank you for your interest in contributing to OWASP BLT! We welcome contributio
   - [Docker Setup (Recommended)](#docker-setup-recommended)
   - [Vagrant Setup](#vagrant-setup)
   - [Python Virtual Environment Setup](#python-virtual-environment-setup)
+  - [Populating Test Data for Local Development](#populating-test-data-for-local-development)
 - [Making Contributions](#making-contributions)
   - [Finding Issues to Work On](#finding-issues-to-work-on)
   - [Creating a Pull Request](#creating-a-pull-request)
@@ -137,6 +138,70 @@ Before you start contributing, you'll need to set up your development environmen
    ```
 
 4. Access the application at [http://localhost:8000](http://localhost:8000)
+
+### Populating Test Data for Local Development
+For faster local development and testing, the project provides a built-in Django management command to automatically populate the database with realistic sample data.
+
+#### Generate Sample Data
+
+Run the following command after migrations:
+
+   ```bash
+   python manage.py generate_sample_data
+   ```
+
+This command automatically creates:
+- Users with profiles and follow relationships
+- Organizations
+- Domains
+- Issues
+- Hunts
+- Projects
+- Repositories
+- Pull Requests
+- Reviews
+- Points & Activity records
+- Badges
+- Tags
+
+### Additional Seed Commands
+
+In addition to the main sample data generator, the project provides specialized seed commands for security labs and OWASP adventures.
+
+#### 1. Seed OWASP BLT Adventures
+
+This command populates the platform with predefined OWASP BLT adventure challenges.
+
+   ```bash
+   python manage.py seed_adventures
+   ```
+
+#### 2. Seed Security Lab Challenges
+This command seeds vulnerable security labs used for hands-on security practice, including:
+- IDOR
+- XSS
+- CSRF
+- SQL Injection
+- Other OWASP Top 10 style vulnerabilities
+
+   ```bash
+   python manage.py seed_all_security_lab
+   ```
+
+#### Important Notes
+This command clears existing data before creating sample data.
+It is intended strictly for local development and testing.
+Do not run this in production environments.
+
+#### Full Local Setup Example
+   ```bash
+   python manage.py migrate
+   python manage.py generate_sample_data
+   python manage.py createsuperuser
+   python manage.py runserver
+   ```
+
+This will give you a fully populated development environment with realistic relationships across the platform.
 
 ## Making Contributions
 

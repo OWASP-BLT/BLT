@@ -97,11 +97,27 @@ def create_activity(instance, action_type):
 def giveBacon(user, instance=None, action_type=None, amt=None):
     """
     Award BACON tokens to a user based on their contribution.
-    If amt is provided, use that amount directly.
-    Otherwise, analyze the contribution using AI to determine the amount.
-    Falls back to default rewards if AI analysis fails.
+
+    Args:
+        user: User object to award tokens to
+        instance: Optional model instance for AI analysis
+        action_type: Optional action type for AI analysis
+        amt: Optional fixed amount to award (bypasses AI analysis)
+
+    Returns:
+        int: Amount of BACON tokens awarded
+
+    Security:
+        - Validates user exists and has ID
+        - Ensures reward amount is within valid range (1-50)
+        - Handles errors gracefully
     """
-    if user is None or user.is_authenticated is False:
+    if user is None:
+        return
+
+    # Security: Validate user has been saved to database
+    if not user.id:
+        logger.warning("giveBacon: User has no ID yet, skipping reward")
         return
 
     token_earning, created = BaconEarning.objects.get_or_create(user=user)
