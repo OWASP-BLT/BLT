@@ -11,6 +11,7 @@ from website.models import (
     HackathonPrize,
     HackathonSponsor,
     IpReport,
+    IssuePledge,
     Job,
     Monitor,
     Organization,
@@ -18,7 +19,6 @@ from website.models import (
     Repo,
     Room,
     UserProfile,
-    IssuePledge
 )
 
 

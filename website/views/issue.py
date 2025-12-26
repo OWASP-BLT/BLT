@@ -68,13 +68,13 @@ from website.models import (
     GitHubIssue,
     Hunt,
     Issue,
+    IssuePledge,
     IssueScreenshot,
     Points,
     Repo,
     User,
     UserProfile,
     Wallet,
-    IssuePledge
 )
 from website.utils import (
     admin_required,

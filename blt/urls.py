@@ -213,11 +213,11 @@ from website.views.issue import (
     search_issues,
     select_bid,
     submit_bug,
+    submit_pledge,
     submit_pr,
     unsave_issue,
     update_content_comment,
     vote_count,
-    submit_pledge,
 )
 from website.views.organization import (
     BountyPayoutsView,
