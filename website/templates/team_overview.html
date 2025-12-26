@@ -1,458 +1,540 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
-    <aside id="toast-container" class="fixed top-5 right-5 z-50">
-    </aside>
-    <div class="container mx-auto px-4 py-8">
-        {% if user.is_authenticated %}
-            {% if user.userprofile.team %}
-                <!-- Team Header Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
-                    <div class="flex items-center gap-6">
-                        <div class="relative">
-                            {% if user.userprofile.team.logo %}
-                                <img src="{{ user.userprofile.team.logo.url }}"
-                                     alt="{{ user.userprofile.team.name }}"
-                                     width="96"
-                                     height="96"
-                                     class="w-24 h-24 rounded-full border-4 border-[#e74c3c] object-cover shadow-lg">
-                            {% else %}
-                                <div class="w-24 h-24 rounded-full border-4 border-[#e74c3c] bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-lg">
-                                    <i class="fas fa-users text-2xl text-gray-400 dark:text-gray-600"></i>
-                                </div>
-                            {% endif %}
-                            <div class="absolute -bottom-2 -right-2 bg-[#e74c3c] text-white p-2 rounded-full">
-                                <i class="fas fa-users text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-2">{{ user.userprofile.team.name }}</h1>
-                            <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-crown text-[#e74c3c]"></i>
-                                    <span class="font-medium">Team Leader:</span>
-                                    <span>{{ user.userprofile.team.admin.username }}</span>
-                                    {% if user.userprofile.team.admin.kudos_count %}
-                                        <span class="bg-[#e74c3c] text-white px-3 py-1 rounded-full text-sm">
-                                            {{ user.userprofile.team.admin.kudos_count }} kudos
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Team Members Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Team Members</h2>
-                        {% if user.userprofile.team.admin == user %}
-                            <button onclick="openAddMemberModal()"
-                                    class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
-                                <i class="fas fa-plus"></i>
-                                Add Member
-                            </button>
-                        {% endif %}
-                    </div>
-                    <!-- Members Slider -->
-                    <div class="relative h-[280px]">
-                        <button class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
-                                onclick="prevMember()">
-                            <i class="fas fa-chevron-left text-[#e74c3c]"></i>
-                        </button>
-                        <div class="overflow-hidden px-12 h-full">
-                            <div class="flex gap-4 transition-transform duration-300 ease-in-out h-full items-center">
-                                {% for member in team_members %}
-                                    <div class="member-card flex-shrink-0 w-48 bg-gray-50 dark:bg-gray-900 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
-                                         id="member-{{ member.username }}">
-                                        <div class="relative inline-block">
-                                            <div class="w-16 h-16 mx-auto mb-3 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-user text-xl text-gray-400 dark:text-gray-600"></i>
-                                            </div>
-                                            {% if member.username == user.userprofile.team.admin.username %}
-                                                <div class="absolute -top-1 -right-1 bg-[#e74c3c] text-white p-1 rounded-full">
-                                                    <i class="fas fa-crown text-xs"></i>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 truncate">{{ member.username }}</h3>
-                                        <div class="flex flex-col gap-2">
-                                            {% if member != user %}
-                                                <button onclick="openKudosModal('{{ member.username }}')"
-                                                        class="px-2 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 w-full">
-                                                    <i class="fas fa-star mr-1"></i> Give Kudos
-                                                </button>
-                                            {% endif %}
-                                            {% if user.userprofile.team.admin == user and user.userprofile.team.admin != member %}
-                                                <button onclick="kickMember('{{ member.username }}')"
-                                                        class="px-2 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 w-full">
-                                                    <i class="fas fa-times mr-1"></i> Remove
-                                                </button>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <button class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
-                                onclick="nextMember()">
-                            <i class="fas fa-chevron-right text-[#e74c3c]"></i>
-                        </button>
-                    </div>
-                </div>
-                <!-- Team Actions Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Team Actions</h2>
-                    <div class="flex gap-4">
-                        <a href="{% url 'join_requests' %}"
-                           class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300">
-                            <i class="fas fa-bell"></i>
-                            View Join Requests
-                        </a>
-                        {% if user.userprofile.team.admin == user %}
-                            <form method="post" action="{% url 'delete_team' %}" class="inline">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300">
-                                    <i class="fas fa-trash"></i>
-                                    Delete Team
-                                </button>
-                            </form>
-                        {% endif %}
-                        <form method="post" action="{% url 'leave_team' %}" class="inline">
-                            {% csrf_token %}
-                            <button type="submit"
-                                    class="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-300">
-                                <i class="fas fa-sign-out-alt"></i>
-                                Leave Team
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            {% else %}
-                {% if join_requests %}
-                    <!-- Join Requests Section -->
-                    <div class="max-w-2xl mx-auto mb-8">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-                            <div class="flex items-center justify-between mb-6">
-                                <div class="flex items-center gap-6">
-                                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
-                                        <i class="fas fa-bell text-2xl text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
-                                        <p class="text-gray-600 dark:text-gray-400 mt-2">You have pending team invitations</p>
-                                    </div>
-                                </div>
-                                <a href="{% url 'join_requests' %}"
-                                   class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
-                                    <i class="fas fa-external-link-alt"></i>
-                                    View All Invitations
-                                </a>
-                            </div>
-                            <div class="space-y-4">
-                                {% for request in join_requests|slice:":2" %}
-                                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors duration-300">
-                                        <div class="flex items-center gap-4">
-                                            {% if request.team.logo %}
-                                                <img src="{{ request.team.logo.url }}"
-                                                     alt="{{ request.team.name }}"
-                                                     width="48"
-                                                     height="48"
-                                                     class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
-                                            {% else %}
-                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
-                                                    <i class="fas fa-users text-gray-400 dark:text-gray-600"></i>
-                                                </div>
-                                            {% endif %}
-                                            <div>
-                                                <h3 class="font-semibold text-gray-800 dark:text-gray-200">{{ request.team.name }}</h3>
-                                                <p class="text-sm text-gray-600 dark:text-gray-400">Invited by {{ request.team.admin.username }}</p>
-                                            </div>
-                                        </div>
-                                        <form method="post" action="{% url 'join_requests' %}" class="flex gap-2">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="team_id" value="{{ request.team.id }}">
-                                            <button type="submit"
-                                                    class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
-                                                Accept Invitation
-                                            </button>
-                                        </form>
-                                    </div>
-                                {% endfor %}
-                                {% if join_requests|length > 2 %}
-                                    <div class="text-center mt-4">
-                                        <a href="{% url 'join_requests' %}"
-                                           class="text-[#e74c3c] hover:underline">
-                                            View {{ join_requests|length|add:"-2" }} more invitation{{ join_requests|length|add:"-2"|pluralize }}
-                                        </a>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
+{% include "includes/sidenav.html" %}
+<aside id="toast-container" class="fixed top-5 right-5 z-50">
+</aside>
+<div class="container mx-auto px-4 py-8">
+    {% if user.is_authenticated %}
+    {% if user.userprofile.team %}
+    <!-- Team Header Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+        <div class="flex items-center gap-6">
+            <div class="relative">
+                {% if user.userprofile.team.logo %}
+                <img src="{{ user.userprofile.team.logo.url }}" alt="{{ user.userprofile.team.name }}" width="96"
+                    height="96" class="w-24 h-24 rounded-full border-4 border-[#e74c3c] object-cover shadow-lg">
                 {% else %}
-                    <div class="max-w-2xl mx-auto mb-8">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
-                            <div class="flex items-center justify-between mb-6">
-                                <div class="flex items-center gap-6">
-                                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
-                                        <i class="fas fa-bell text-2xl text-white"></i>
-                                    </div>
-                                    <div>
-                                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
-                                        <p class="text-gray-600 dark:text-gray-400 mt-2">Check your pending team invitations</p>
-                                    </div>
-                                </div>
-                                <a href="{% url 'join_requests' %}"
-                                   class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
-                                    <i class="fas fa-external-link-alt"></i>
-                                    View All Invitations
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <div
+                    class="w-24 h-24 rounded-full border-4 border-[#e74c3c] bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-users text-2xl text-gray-400 dark:text-gray-600"></i>
+                </div>
                 {% endif %}
-                <!-- Create Team Section -->
-                <div class="max-w-2xl mx-auto text-center">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
-                        <div class="w-20 h-20 mx-auto mb-6 bg-[#e74c3c] rounded-full flex items-center justify-center">
-                            <i class="fas fa-users text-3xl text-white"></i>
-                        </div>
-                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Create Your Team</h1>
-                        <p class="text-gray-600 dark:text-gray-400 mb-8">
-                            Join forces with other security enthusiasts! Create a team to collaborate, share knowledge, and tackle security challenges together.
-                        </p>
-                        <button onclick="openModal()"
-                                class="inline-flex items-center gap-2 px-8 py-4 bg-[#e74c3c] text-white text-lg font-semibold rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
-                            <i class="fas fa-plus"></i>
-                            Create a New Team
-                        </button>
+                <div class="absolute -bottom-2 -right-2 bg-[#e74c3c] text-white p-2 rounded-full">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-2">{{ user.userprofile.team.name }}
+                </h1>
+                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-crown text-[#e74c3c]"></i>
+                        <span class="font-medium">Team Leader:</span>
+                        <span>{{ user.userprofile.team.admin.username }}</span>
+                        {% if user.userprofile.team.admin.kudos_count %}
+                        <span class="bg-[#e74c3c] text-white px-3 py-1 rounded-full text-sm">
+                            {{ user.userprofile.team.admin.kudos_count }} kudos
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
-            {% endif %}
-        {% else %}
-            <!-- Login Required Section -->
-            <div class="max-w-2xl mx-auto text-center">
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
-                    <div class="w-20 h-20 mx-auto mb-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                        <i class="fas fa-lock text-3xl text-gray-400 dark:text-gray-600"></i>
-                    </div>
-                    <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Login Required</h1>
-                    <p class="text-gray-600 dark:text-gray-400 mb-8">
-                        Please login to create or join a team. Join our community of security enthusiasts!
+            </div>
+        </div>
+    </div>
+   <!-- Team Badges Section -->
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+
+    <h2 class="text-2xl font-bold mb-6">
+        Team Badges
+    </h2>
+
+    <div class="flex flex-wrap gap-4">
+        {% for team_badge in team_badges %}
+            <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border select-none border-blue-500 bg-blue-100/20 px-6 py-4 rounded-lg">
+
+                {% if team_badge.badge.icon %}
+                    <img src="{{ team_badge.badge.icon.url }}"
+                         alt="{{ team_badge.badge.title }}"
+                         class="w-14 h-14 object-contain"
+                         width="56" height="56">
+                {% endif %}
+
+                <h4 class="font-medium">{{ team_badge.badge.title }}</h4>
+
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Awarded: {{ team_badge.awarded_at|date:"M d, Y" }}
+                </p>
+
+                {% if team_badge.reason %}
+                    <p class="text-xs text-gray-400 dark:text-gray-500 italic">
+                        “{{ team_badge.reason }}”
                     </p>
-                </div>
+                {% endif %}
             </div>
-        {% endif %}
+        {% empty %}
+            <p class="text-gray-500">No team badges awarded yet.</p>
+        {% endfor %}
     </div>
-    <!-- Create Team Modal -->
-    <div id="teamModal"
-         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Create New Team</h2>
-                <button onclick="closeModal()"
-                        class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
-            </div>
-            <form id="createTeamForm"
-                  method="post"
-                  action="{% url 'create_team' %}"
-                  enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="space-y-4">
-                    <div>
-                        <label for="teamName"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Name</label>
-                        <input type="text"
-                               id="teamName"
-                               name="teamName"
-                               required
-                               class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
-                    </div>
-                    <div>
-                        <label for="teamAvatar"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team Avatar</label>
-                        <input type="file"
-                               id="teamAvatar"
-                               name="teamAvatar"
-                               accept="image/*"
-                               required
-                               class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#e74c3c] file:text-white hover:file:bg-[#c0392b]">
-                    </div>
-                    <div>
-                        <label for="teamMembers"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Add Members (Optional)
-                        </label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="teamMembers"
-                                   name="teamMembers"
-                                   placeholder="Search usernames..."
-                                   onkeyup="searchUsers(this.value)"
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
-                            <input type="hidden" id="selectedMembers" name="selectedMembers">
-                            <div id="userDropdown"
-                                 class="absolute left-0 right-0 bg-white dark:bg-gray-800 mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+</div>
+
+    <!-- Team Members Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Team Members</h2>
+            {% if user.userprofile.team.admin == user %}
+            <button onclick="openAddMemberModal()"
+                class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                <i class="fas fa-plus"></i>
+                Add Member
+            </button>
+            {% endif %}
+        </div>
+        <!-- Members Slider -->
+        <div class="relative h-[280px] ">
+            <button
+                class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
+                onclick="prevMember()">
+                <i class="fas fa-chevron-left text-[#e74c3c]"></i>
+            </button>
+            <div class="overflow-hidden px-12 h-full">
+                <div class="flex gap-4 transition-transform duration-300 ease-in-out h-full items-center">
+                    {% for member in team_members %}
+                    <div class="member-card max-h-80 overflow-y-auto flex-shrink-0 w-48 bg-gray-50 dark:bg-gray-900 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
+                        id="member-{{ member.username }}">
+                        <div class="relative inline-block">
+                            <div
+                                class="w-16 h-16 mx-auto mb-3 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-xl text-gray-400 dark:text-gray-600"></i>
                             </div>
-                            <div id="selectedUsers" class="flex flex-wrap gap-2 mt-2"></div>
+                            {% if member.username == user.userprofile.team.admin.username %}
+                            <div class="absolute -top-1 -right-1 bg-[#e74c3c] text-white p-1 rounded-full">
+                                <i class="fas fa-crown text-xs"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 truncate">
+                           <a href="{% url 'profile' slug=member.username %}" > {{ member.username }}</a></h3>
+                        <!-- Member Badges -->
+                          {% if member.badges %}
+<div class="flex flex-wrap gap-2 justify-center mb-3">
+    {% for badge in member.badges %}
+        <button
+    class="p-1 rounded-xl bg-gray-100 dark:bg-gray-700 hover:scale-105 transition"
+    onclick="openBadgeModal(
+        `{{ badge.badge.title|escapejs }}`,
+        `{% if badge.badge.icon %}{{ badge.badge.icon.url }}{% endif %}`,
+        `{% if badge.awarded_at %}{{ badge.awarded_at|date:'M d, Y' }}{% endif %}`,
+        `{{ badge.reason|default:''|escapejs }}`
+    )"
+>
+
+            {% if badge.badge.icon %}
+                <img src="{{ badge.badge.icon.url }}"
+                    alt="{{ badge.badge.title }}"
+                    class="w-7 h-7 object-contain">
+            {% else %}
+                ⭐
+            {% endif %}
+        </button>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+{% if user == user.userprofile.team.admin and member != user.userprofile.team.admin%}
+<div class="relative m-3">
+  <button 
+      onclick="this.nextElementSibling.classList.toggle('hidden')" 
+      class="block w-full border border-red-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 p-1 rounded">
+      Assign Badge
+  </button>
+
+  <div class="hidden absolute left-0 mt-1 w-full bg-white dark:bg-gray-800 rounded shadow-lg border border-red-500 z-20">
+      {% for badge in available_badges %}
+          <a href="{% url 'assign_team_member_badge' member.id %}?badge={{ badge.id }}"
+             class="block px-3 py-2 text-gray-900 dark:text-white hover:bg-red-50 dark:hover:bg-red-900/30">
+             {{ badge.title }}
+          </a>
+      {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+                        <div class="flex flex-col gap-2">
+                            {% if member != user %}
+                            <button onclick="openKudosModal('{{ member.username }}')"
+                                class="px-2 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 w-full">
+                                <i class="fas fa-star mr-1"></i> Give Kudos
+                            </button>
+                            {% endif %}
+                            {% if user.userprofile.team.admin == user and user.userprofile.team.admin != member %}
+                            <button onclick="kickMember('{{ member.username }}')"
+                                class="px-2 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 w-full">
+                                <i class="fas fa-times mr-1"></i> Remove
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="flex justify-end gap-4">
-                        <button type="button"
-                                onclick="closeModal()"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                            Create Team
-                        </button>
-                    </div>
+                    {% endfor %}
                 </div>
+            </div>
+            <button
+                class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
+                onclick="nextMember()">
+                <i class="fas fa-chevron-right text-[#e74c3c]"></i>
+            </button>
+        </div>
+    </div>
+    <!-- Team Actions Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Team Actions</h2>
+        <div class="flex gap-4">
+            <a href="{% url 'join_requests' %}"
+                class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300">
+                <i class="fas fa-bell"></i>
+                View Join Requests
+            </a>
+            {% if user.userprofile.team.admin == user %}
+            <form method="post" action="{% url 'delete_team' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                    class="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300">
+                    <i class="fas fa-trash"></i>
+                    Delete Team
+                </button>
+            </form>
+            {% endif %}
+            <form method="post" action="{% url 'leave_team' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                    class="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-300">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Leave Team
+                </button>
             </form>
         </div>
     </div>
-    <!-- Add Member Modal -->
-    <div id="addMemberModal"
-         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Add New Member</h2>
-                <button onclick="closeAddMemberModal()"
-                        class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
-            </div>
-            <form id="addMemberForm" method="post" action="{% url 'add_member' %}">
-                {% csrf_token %}
-                <div class="space-y-4">
+    {% else %}
+    {% if join_requests %}
+    <!-- Join Requests Section -->
+    <div class="max-w-2xl mx-auto mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                        <i class="fas fa-bell text-2xl text-white"></i>
+                    </div>
                     <div>
-                        <label for="newMember"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="newMember"
-                                   name="newMember"
-                                   placeholder="Enter username"
-                                   onkeyup="searchNewMember(this.value)"
-                                   required
-                                   class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
-                            <div id="newMemberDropdown"
-                                 class="absolute left-0 right-0 bg-white dark:bg-gray-800 mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
-                            </div>
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">You have pending team invitations</p>
+                    </div>
+                </div>
+                <a href="{% url 'join_requests' %}"
+                    class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                    <i class="fas fa-external-link-alt"></i>
+                    View All Invitations
+                </a>
+            </div>
+            <div class="space-y-4">
+                {% for request in join_requests|slice:":2" %}
+                <div
+                    class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors duration-300">
+                    <div class="flex items-center gap-4">
+                        {% if request.team.logo %}
+                        <img src="{{ request.team.logo.url }}" alt="{{ request.team.name }}" width="48" height="48"
+                            class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                        {% else %}
+                        <div
+                            class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
+                            <i class="fas fa-users text-gray-400 dark:text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h3 class="font-semibold text-gray-800 dark:text-gray-200">{{ request.team.name }}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Invited by {{
+                                request.team.admin.username }}</p>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-4">
-                        <button type="button"
-                                onclick="closeAddMemberModal()"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200">
-                            Cancel
-                        </button>
+                    <form method="post" action="{% url 'join_requests' %}" class="flex gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="team_id" value="{{ request.team.id }}">
                         <button type="submit"
-                                class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-[#c0392b]">
-                            Send Join Request
+                            class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            Accept Invitation
                         </button>
-                    </div>
+                    </form>
                 </div>
-            </form>
+                {% endfor %}
+                {% if join_requests|length > 2 %}
+                <div class="text-center mt-4">
+                    <a href="{% url 'join_requests' %}" class="text-[#e74c3c] hover:underline">
+                        View {{ join_requests|length|add:"-2" }} more invitation{{
+                        join_requests|length|add:"-2"|pluralize }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-    <!-- Kudos Modal -->
-    <div id="kudosModal"
-         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Send Kudos</h2>
-                <button onclick="closeKudosModal()"
-                        class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
+    {% else %}
+    <div class="max-w-2xl mx-auto mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                        <i class="fas fa-bell text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Invitations</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Check your pending team invitations</p>
+                    </div>
+                </div>
+                <a href="{% url 'join_requests' %}"
+                    class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                    <i class="fas fa-external-link-alt"></i>
+                    View All Invitations
+                </a>
             </div>
-            <form method="post" onsubmit="sendKudos(event)" class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" id="kudosReceiver" name="kudosReceiver">
+        </div>
+    </div>
+    {% endif %}
+    <!-- Create Team Section -->
+    <div class="max-w-2xl mx-auto text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
+            <div class="w-20 h-20 mx-auto mb-6 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                <i class="fas fa-users text-3xl text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Create Your Team</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-8">
+                Join forces with other security enthusiasts! Create a team to collaborate, share knowledge, and tackle
+                security challenges together.
+            </p>
+            <button onclick="openModal()"
+                class="inline-flex items-center gap-2 px-8 py-4 bg-[#e74c3c] text-white text-lg font-semibold rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                <i class="fas fa-plus"></i>
+                Create a New Team
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <!-- Login Required Section -->
+    <div class="max-w-2xl mx-auto text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
+            <div
+                class="w-20 h-20 mx-auto mb-6 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <i class="fas fa-lock text-3xl text-gray-400 dark:text-gray-600"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Login Required</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-8">
+                Please login to create or join a team. Join our community of security enthusiasts!
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+<!-- Create Team Modal -->
+<div id="teamModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Create New Team</h2>
+            <button onclick="closeModal()"
+                class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        </div>
+        <form id="createTeamForm" method="post" action="{% url 'create_team' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="space-y-4">
                 <div>
-                    <label for="kudosLink"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link (optional)</label>
-                    <input type="url"
-                           id="kudosLink"
-                           name="kudosLink"
-                           placeholder="Enter an optional link"
-                           class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]" />
+                    <label for="teamName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team
+                        Name</label>
+                    <input type="text" id="teamName" name="teamName" required
+                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
                 </div>
                 <div>
-                    <label for="kudosComment"
-                           class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Comment (optional)
+                    <label for="teamAvatar" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Team
+                        Avatar</label>
+                    <input type="file" id="teamAvatar" name="teamAvatar" accept="image/*" required
+                        class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#e74c3c] file:text-white hover:file:bg-[#c0392b]">
+                </div>
+                <div>
+                    <label for="teamMembers" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Add Members (Optional)
                     </label>
-                    <textarea id="kudosComment"
-                              name="kudosComment"
-                              rows="3"
-                              placeholder="Add an optional note"
-                              class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"></textarea>
+                    <div class="relative">
+                        <input type="text" id="teamMembers" name="teamMembers" placeholder="Search usernames..."
+                            onkeyup="searchUsers(this.value)"
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                        <input type="hidden" id="selectedMembers" name="selectedMembers">
+                        <div id="userDropdown"
+                            class="absolute left-0 right-0 bg-white dark:bg-gray-800 mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+                        </div>
+                        <div id="selectedUsers" class="flex flex-wrap gap-2 mt-2"></div>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-4">
-                    <button type="button"
-                            onclick="closeKudosModal()"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200">
+                    <button type="button" onclick="closeModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         Cancel
                     </button>
                     <button type="submit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600">
-                        Send Kudos
+                        class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                        Create Team
                     </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
-    <script>
-        // JavaScript for Slider Navigation
-        let currentIndex = 0;
-        function updateSlider() {
-            const members = document.querySelectorAll('.member-card');
-            members.forEach((member, index) => {
-                member.classList.remove('active');
-                if (index === currentIndex) {
-                    member.classList.add('active');
-                    // Show the "Kick" button for active member only
-                    const kickButton = member.querySelector('.kick-button');
-                    if (kickButton) {
-                        kickButton.style.display = 'block';
-                    }
-                } else {
-                    // Hide the "Kick" button for non-active members
-                    const kickButton = member.querySelector('.kick-button');
-                    if (kickButton) {
-                        kickButton.style.display = 'none';
-                    }
-                }
-            });
-        }
+</div>
+<!-- Add Member Modal -->
+<div id="addMemberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Add New Member</h2>
+            <button onclick="closeAddMemberModal()"
+                class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        </div>
+        <form id="addMemberForm" method="post" action="{% url 'add_member' %}">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label for="newMember"
+                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                    <div class="relative">
+                        <input type="text" id="newMember" name="newMember" placeholder="Enter username"
+                            onkeyup="searchNewMember(this.value)" required
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                        <div id="newMemberDropdown"
+                            class="absolute left-0 right-0 bg-white dark:bg-gray-800 mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" onclick="closeAddMemberModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-[#c0392b]">
+                        Send Join Request
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Kudos Modal -->
+<div id="kudosModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Send Kudos</h2>
+            <button onclick="closeKudosModal()"
+                class="text-gray-500 dark:text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        </div>
+        <form method="post" onsubmit="sendKudos(event)" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="kudosReceiver" name="kudosReceiver">
+            <div>
+                <label for="kudosLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Link
+                    (optional)</label>
+                <input type="url" id="kudosLink" name="kudosLink" placeholder="Enter an optional link"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]" />
+            </div>
+            <div>
+                <label for="kudosComment" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Comment (optional)
+                </label>
+                <textarea id="kudosComment" name="kudosComment" rows="3" placeholder="Add an optional note"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"></textarea>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="closeKudosModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600">
+                    Send Kudos
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!--Badge Modal-->
+<div id="badgeModal"
+     class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+     
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-[350px] p-5 relative">
+    
+    <button onclick="closeBadgeModal()"
+            class="absolute right-2 top-2 text-gray-500 hover:text-gray-800 dark:hover:text-white">
+        ✕
+    </button>
 
-        function prevMember() {
-            const members = document.querySelectorAll('.member-card');
-            currentIndex = (currentIndex - 1 + members.length) % members.length;
-            updateSlider();
-        }
+    <div class="text-center">
+        <img id="badgeModalIcon"
+             class="w-14 h-14 mx-auto mb-2 object-contain hidden">
 
-        function nextMember() {
-            const members = document.querySelectorAll('.member-card');
-            currentIndex = (currentIndex + 1) % members.length;
-            updateSlider();
-        }
+        <h3 id="badgeModalTitle"
+            class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+        </h3>
 
-        // Initialize slider
+        <p id="badgeModalDate"
+           class="text-sm text-gray-500 dark:text-gray-400 mb-2 hidden">
+        </p>
+
+        <p id="badgeModalReason"
+           class="text-sm text-gray-700 dark:text-gray-300 italic hidden">
+        </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+    // JavaScript for Slider Navigation
+    let currentIndex = 0;
+   function updateSlider() {
+    const members = document.querySelectorAll('.member-card');
+    members.forEach((member, index) => {
+        member.classList.remove('active');
+        const kickButton = member.querySelector('.kick-button');
+        if (index === currentIndex) {
+            member.classList.add('active');
+            if (kickButton) kickButton.style.display = 'block';
+            // Scroll active member into view
+            member.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        } else {
+            if (kickButton) kickButton.style.display = 'none';
+        }
+    });
+}
+
+    function prevMember() {
+        const members = document.querySelectorAll('.member-card');
+        currentIndex = (currentIndex - 1 + members.length) % members.length;
         updateSlider();
+    }
 
-        // Kick member function
-        function kickMember(username) {
-            fetch('/teams/kick-member/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({ member: username })
-            }).then(response => response.json())
+    function nextMember() {
+        const members = document.querySelectorAll('.member-card');
+        currentIndex = (currentIndex + 1) % members.length;
+        updateSlider();
+    }
+
+    // Initialize slider
+    updateSlider();
+
+    // Kick member function
+    function kickMember(username) {
+        fetch('/teams/kick-member/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ member: username })
+        }).then(response => response.json())
             .then(data => {
                 if (data.success) {
                     window.location.reload();
@@ -463,69 +545,69 @@
                 console.error('Error:', error);
                 alert('Failed to kick member. Please try again.');
             });
-        }
+    }
 
-        // Function to set the active member and show the "Kick" button
-        function setActiveMember(username) {
-            // First, hide all kick buttons
-            const kickButtons = document.querySelectorAll('.kick-button');
-            kickButtons.forEach(button => button.style.display = 'none');
+    // Function to set the active member and show the "Kick" button
+    function setActiveMember(username) {
+        // First, hide all kick buttons
+        const kickButtons = document.querySelectorAll('.kick-button');
+        kickButtons.forEach(button => button.style.display = 'none');
 
-            // Remove "active" class from all member cards
-            const memberCards = document.querySelectorAll('.member-card');
-            memberCards.forEach(card => card.classList.remove('active'));
+        // Remove "active" class from all member cards
+        const memberCards = document.querySelectorAll('.member-card');
+        memberCards.forEach(card => card.classList.remove('active'));
 
-            // Add "active" class to the clicked member
-            const activeCard = document.getElementById('member-' + username);
-            activeCard.classList.add('active');
+        // Add "active" class to the clicked member
+        const activeCard = document.getElementById('member-' + username);
+        activeCard.classList.add('active');
 
-            // Only show the "Kick" button if the current user is not the admin
-            if (username !== '{{ user.userprofile.team.admin.username }}') {
-                const kickButton = document.getElementById('kick-' + username);
-                if (kickButton) {
-                    kickButton.style.display = 'inline';
-                }
+        // Only show the "Kick" button if the current user is not the admin
+        if (username !== '{{ user.userprofile.team.admin.username }}') {
+            const kickButton = document.getElementById('kick-' + username);
+            if (kickButton) {
+                kickButton.style.display = 'inline';
             }
         }
+    }
 
-        // Update the modal functions
-        function openModal() {
-            const modal = document.getElementById('teamModal');
-            if (modal) {
-                modal.style.display = "block";
-            } else {
-                console.error("Team modal element not found");
-            }
+    // Update the modal functions
+    function openModal() {
+        const modal = document.getElementById('teamModal');
+        if (modal) {
+            modal.style.display = "block";
+        } else {
+            console.error("Team modal element not found");
         }
+    }
 
-        function closeModal() {
-            const modal = document.getElementById('teamModal');
-            if (modal) {
-                modal.style.display = "none";
-            }
+    function closeModal() {
+        const modal = document.getElementById('teamModal');
+        if (modal) {
+            modal.style.display = "none";
         }
+    }
 
-        // Update the window click handler to handle multiple modals
-        window.onclick = function(event) {
-            const teamModal = document.getElementById('teamModal');
-            const addMemberModal = document.getElementById('addMemberModal');
-            const kudosModal = document.getElementById('kudosModal');
+    // Update the window click handler to handle multiple modals
+    window.onclick = function (event) {
+        const teamModal = document.getElementById('teamModal');
+        const addMemberModal = document.getElementById('addMemberModal');
+        const kudosModal = document.getElementById('kudosModal');
 
-            if (event.target === teamModal) {
-                teamModal.style.display = "none";
-            }
-            if (event.target === addMemberModal) {
-                addMemberModal.style.display = "none";
-            }
-            if (event.target === kudosModal) {
-                kudosModal.style.display = "none";
-            }
+        if (event.target === teamModal) {
+            teamModal.style.display = "none";
         }
+        if (event.target === addMemberModal) {
+            addMemberModal.style.display = "none";
+        }
+        if (event.target === kudosModal) {
+            kudosModal.style.display = "none";
+        }
+    }
 
-        // Make sure the createTeamForm event listener only runs if the form exists
-        const createTeamForm = document.getElementById('createTeamForm');
-        if (createTeamForm) {
-            createTeamForm.onsubmit = function(event) {
+    // Make sure the createTeamForm event listener only runs if the form exists
+    const createTeamForm = document.getElementById('createTeamForm');
+    if (createTeamForm) {
+        createTeamForm.onsubmit = function (event) {
             event.preventDefault();
             const formData = new FormData(this);
             fetch(this.action, {
@@ -545,90 +627,90 @@
                 console.error('Error:', error);
                 alert('Failed to create team. Please try again.');
             });
-            }
+        }
+    }
+
+    // Search users and display in dropdown
+    function searchUsers(query) {
+        if (query.length < 2) {
+            document.getElementById('userDropdown').innerHTML = "";
+            return;
         }
 
-        // Search users and display in dropdown
-        function searchUsers(query) {
-            if (query.length < 2) {
-                document.getElementById('userDropdown').innerHTML = "";
-                return;
-            }
-
-            fetch(`/teams/search-users/?query=${query}`)
-                .then(response => response.json())
-                .then(data => {
-                    let dropdownContent = "";
-                    data.forEach(user => {
-                        dropdownContent += `
+        fetch(`/teams/search-users/?query=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                let dropdownContent = "";
+                data.forEach(user => {
+                    dropdownContent += `
                             <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-b-0" onclick="selectUser('${user.username}')">
                                 ${user.username} ${user.team ? ' - ' + user.team : ''}
                             </div>`;
-                    });
-                    document.getElementById('userDropdown').innerHTML = dropdownContent;
                 });
-        }
+                document.getElementById('userDropdown').innerHTML = dropdownContent;
+            });
+    }
 
-        function selectUser(username) {
-            const selectedUsersContainer = document.getElementById('selectedUsers');
-            const currentMembers = Array.from(selectedUsersContainer.children).map(child => child.dataset.username);
+    function selectUser(username) {
+        const selectedUsersContainer = document.getElementById('selectedUsers');
+        const currentMembers = Array.from(selectedUsersContainer.children).map(child => child.dataset.username);
 
-            if (!currentMembers.includes(username)) {
-                const userDiv = document.createElement('div');
-                userDiv.className = 'inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-sm';
-                userDiv.dataset.username = username;
-                userDiv.innerHTML = `
+        if (!currentMembers.includes(username)) {
+            const userDiv = document.createElement('div');
+            userDiv.className = 'inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-sm';
+            userDiv.dataset.username = username;
+            userDiv.innerHTML = `
                     <span class="text-gray-700 dark:text-gray-300">${username}</span>
                     <button type="button" onclick="removeUser(this)" class="text-gray-500 dark:text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times"></i>
                     </button>`;
-                selectedUsersContainer.appendChild(userDiv);
+            selectedUsersContainer.appendChild(userDiv);
+        }
+
+        document.getElementById('teamMembers').value = "";
+        document.getElementById('selectedMembers').value = Array.from(selectedUsersContainer.children)
+            .map(child => child.dataset.username)
+            .join(',');
+        document.getElementById('userDropdown').innerHTML = "";
+    }
+
+    // Remove user from selected list
+    function removeUser(element) {
+        const userDiv = element.parentElement;
+        userDiv.remove();
+    }
+
+    // Modal functions for adding a new member
+    function openAddMemberModal() {
+        document.getElementById('addMemberModal').style.display = "block";
+    }
+
+    function closeAddMemberModal() {
+        document.getElementById('addMemberModal').style.display = "none";
+    }
+
+    // Close the modal when clicking outside of it
+    window.onclick = function (event) {
+        const modal = document.getElementById('addMemberModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // Update the addMemberForm submission handler
+    document.getElementById('addMemberForm').onsubmit = function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
             }
-
-            document.getElementById('teamMembers').value = "";
-            document.getElementById('selectedMembers').value = Array.from(selectedUsersContainer.children)
-                .map(child => child.dataset.username)
-                .join(',');
-            document.getElementById('userDropdown').innerHTML = "";
-        }
-
-        // Remove user from selected list
-        function removeUser(element) {
-            const userDiv = element.parentElement;
-            userDiv.remove();
-        }
-
-        // Modal functions for adding a new member
-        function openAddMemberModal() {
-            document.getElementById('addMemberModal').style.display = "block";
-        }
-
-        function closeAddMemberModal() {
-            document.getElementById('addMemberModal').style.display = "none";
-        }
-
-        // Close the modal when clicking outside of it
-        window.onclick = function(event) {
-            const modal = document.getElementById('addMemberModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-        // Update the addMemberForm submission handler
-        document.getElementById('addMemberForm').onsubmit = function(event) {
-            event.preventDefault();
-            const formData = new FormData(this);
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                }
-            })
+        })
             .then(response => response.json())
             .then(data => {
-                    closeAddMemberModal();
+                closeAddMemberModal();
                 if (data.success) {
                     showMessage("Join request sent successfully!", false);
                 } else {
@@ -639,65 +721,65 @@
                 console.error('Error:', error);
                 showMessage("Failed to send join request. Please try again.", true);
             });
+    }
+
+    // Search users and display in dropdown for adding a new member
+    function searchNewMember(query) {
+        if (query.length < 2) {
+            document.getElementById('newMemberDropdown').innerHTML = "";
+            return;
         }
 
-        // Search users and display in dropdown for adding a new member
-        function searchNewMember(query) {
-            if (query.length < 2) {
-                document.getElementById('newMemberDropdown').innerHTML = "";
-                return;
-            }
-
-            fetch(`/teams/search-users/?query=${query}`)
-                .then(response => response.json())
-                .then(data => {
-                    let dropdownContent = "";
-                    data.forEach(user => {
-                        dropdownContent += `
+        fetch(`/teams/search-users/?query=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                let dropdownContent = "";
+                data.forEach(user => {
+                    dropdownContent += `
                             <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800 last:border-b-0" onclick="selectNewMember('${user.username}')">
                                 ${user.username} ${user.team ? ' - ' + user.team : ''}
                             </div>`;
-                    });
-                    document.getElementById('newMemberDropdown').innerHTML = dropdownContent;
                 });
-        }
+                document.getElementById('newMemberDropdown').innerHTML = dropdownContent;
+            });
+    }
 
-        // Select user from dropdown for adding a new member
-        function selectNewMember(username) {
-            document.getElementById('newMember').value = username;
-            document.getElementById('newMemberDropdown').innerHTML = "";
-        }
+    // Select user from dropdown for adding a new member
+    function selectNewMember(username) {
+        document.getElementById('newMember').value = username;
+        document.getElementById('newMemberDropdown').innerHTML = "";
+    }
 
-        // Kudos Modal functions
-        function openKudosModal(username) {
-            document.getElementById('kudosReceiver').value = username;
-            document.getElementById('kudosModal').style.display = 'block';
-        }
+    // Kudos Modal functions
+    function openKudosModal(username) {
+        document.getElementById('kudosReceiver').value = username;
+        document.getElementById('kudosModal').style.display = 'block';
+    }
 
-        function closeKudosModal() {
-            document.getElementById('kudosModal').style.display = 'none';
-        }
+    function closeKudosModal() {
+        document.getElementById('kudosModal').style.display = 'none';
+    }
 
-        function sendKudos(e) {
-            e.preventDefault();
-            const receiver = document.getElementById('kudosReceiver').value;
-            const linkUrl = document.getElementById('kudosLink').value.trim();
-            const commentText = document.getElementById('kudosComment').value.trim();
-            const userUsername = "{{ request.user.username|default:'' }}";
-            const sender = userUsername || "{{ user.username }}";
-            fetch("/teams/give-kudos/", { 
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": document.querySelector("#kudosModal [name=csrfmiddlewaretoken]").value,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    kudosReceiver: receiver,
-                    kudosSender: sender,
-                    link: linkUrl,
-                    comment: commentText
-                })
+    function sendKudos(e) {
+        e.preventDefault();
+        const receiver = document.getElementById('kudosReceiver').value;
+        const linkUrl = document.getElementById('kudosLink').value.trim();
+        const commentText = document.getElementById('kudosComment').value.trim();
+        const userUsername = "{{ request.user.username|default:'' }}";
+        const sender = userUsername || "{{ user.username }}";
+        fetch("/teams/give-kudos/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": document.querySelector("#kudosModal [name=csrfmiddlewaretoken]").value,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                kudosReceiver: receiver,
+                kudosSender: sender,
+                link: linkUrl,
+                comment: commentText
             })
+        })
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Network response was not ok");
@@ -717,61 +799,100 @@
                 console.error("Error:", error);
                 showMessage(error.message, true);
             });
+    }
+
+    function updateKudosCount(username) {
+        const kudosMemberCard = document.getElementById(`member-${username}`);
+        if (!kudosMemberCard) {
+            console.error(`Member card not found for ${username}`);
+            return;
         }
-
-        function updateKudosCount(username) {
-            const kudosMemberCard = document.getElementById(`member-${username}`);
-            if (!kudosMemberCard) {
-                console.error(`Member card not found for ${username}`);
-                return;
-            } 
-            let memberInfo = kudosMemberCard.querySelector('.member-info');
-            if (!memberInfo) {
-                memberInfo = document.createElement('div');
-                memberInfo.className = 'member-info';
-            }
-            let countBadge = memberInfo.querySelector('.kudos-count-badge');
-            const currentCount = countBadge ? 
-                parseInt(countBadge.textContent.split(' ')[0]) : 0;
-
-            if (countBadge) {
-                countBadge.textContent = `${currentCount + 1} kudos`;
-                countBadge.style.display = 'inline-block';
-            } else {
-                countBadge = document.createElement('span');
-                countBadge.className = 'kudos-count-badge';
-                countBadge.textContent = '1 kudos';
-                memberInfo.appendChild(countBadge);
-            }
+        let memberInfo = kudosMemberCard.querySelector('.member-info');
+        if (!memberInfo) {
+            memberInfo = document.createElement('div');
+            memberInfo.className = 'member-info';
         }
+        let countBadge = memberInfo.querySelector('.kudos-count-badge');
+        const currentCount = countBadge ?
+            parseInt(countBadge.textContent.split(' ')[0]) : 0;
 
-        // Update the showMessage function to make toasts more visible
-        function showMessage(message, isError = false) {
-            const container = document.getElementById('toast-container');
-            container.innerHTML = '';
-
-            const toast = document.createElement('div');
-            toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg ${isError ? 'bg-red-500' : 'bg-green-500'} text-white transform transition-all duration-300`;
-            
-            // Add icon based on message type
-            const icon = document.createElement('i');
-            icon.className = `fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-xl`;
-            toast.appendChild(icon);
-            
-            // Add message text
-            const text = document.createElement('span');
-            text.className = 'font-medium';
-            text.textContent = message;
-            toast.appendChild(text);
-            
-            container.appendChild(toast);
-
-            // Animate the toast
-            setTimeout(() => {
-                     toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-100%)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        if (countBadge) {
+            countBadge.textContent = `${currentCount + 1} kudos`;
+            countBadge.style.display = 'inline-block';
+        } else {
+            countBadge = document.createElement('span');
+            countBadge.className = 'kudos-count-badge';
+            countBadge.textContent = '1 kudos';
+            memberInfo.appendChild(countBadge);
         }
-    </script>
+    }
+
+    // Update the showMessage function to make toasts more visible
+    function showMessage(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        container.innerHTML = '';
+
+        const toast = document.createElement('div');
+        toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg ${isError ? 'bg-red-500' : 'bg-green-500'} text-white transform transition-all duration-300`;
+
+        // Add icon based on message type
+        const icon = document.createElement('i');
+        icon.className = `fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-xl`;
+        toast.appendChild(icon);
+
+        // Add message text
+        const text = document.createElement('span');
+        text.className = 'font-medium';
+        text.textContent = message;
+        toast.appendChild(text);
+
+        container.appendChild(toast);
+
+        // Animate the toast
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+     //Function to show badge popups
+    function openBadgeModal(title, iconUrl, date, reason) {
+    const modal = document.getElementById("badgeModal");
+
+    const titleEl = document.getElementById("badgeModalTitle");
+    const iconEl = document.getElementById("badgeModalIcon");
+    const dateEl = document.getElementById("badgeModalDate");
+    const reasonEl = document.getElementById("badgeModalReason");
+
+    titleEl.innerText = title || "";
+
+    if (iconUrl) {
+        iconEl.src = iconUrl;
+        iconEl.classList.remove("hidden");
+    } else {
+        iconEl.classList.add("hidden");
+    }
+
+    if (date) {
+        dateEl.innerText = "Awarded: " + date;
+        dateEl.classList.remove("hidden");
+    } else {
+        dateEl.classList.add("hidden");
+    }
+
+    if (reason) {
+        reasonEl.innerText = `"${reason}"`;
+        reasonEl.classList.remove("hidden");
+    } else {
+        reasonEl.classList.add("hidden");
+    }
+
+    modal.classList.remove("hidden");
+}
+
+function closeBadgeModal() {
+    document.getElementById("badgeModal").classList.add("hidden");
+}
+
+</script>
 {% endblock content %}
