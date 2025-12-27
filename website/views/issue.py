@@ -126,6 +126,7 @@ def submit_pledge(request):
     pledge.save()
     return JsonResponse({"success": True})
 
+
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     context = {}

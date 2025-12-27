@@ -200,6 +200,7 @@ class IssueAdmin(admin.ModelAdmin):
     inlines = [ImageInline]
     list_filter = ["domain", "user"]
 
+
 @admin.register(IssuePledge)
 class IssuePledgeAdmin(admin.ModelAdmin):
     """
@@ -207,6 +208,7 @@ class IssuePledgeAdmin(admin.ModelAdmin):
 
     Allows filtering, searching, and viewing pledge status.
     """
+
     list_display = (
         "id",
         "issue",
@@ -225,7 +227,8 @@ class IssuePledgeAdmin(admin.ModelAdmin):
         "created",
         "txid",
     )
-    
+
+
 class HuntAdmin(admin.ModelAdmin):
     list_display = (
         "domain",
