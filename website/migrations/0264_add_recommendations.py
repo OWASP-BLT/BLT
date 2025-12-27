@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("website", "0260_add_username_to_slackbotactivity"),
+        ("website", "0263_githubissue_githubissue_pr_merged_idx_and_more"),
     ]
 
     operations = [

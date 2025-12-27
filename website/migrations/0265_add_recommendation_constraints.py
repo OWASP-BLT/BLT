@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0261_add_recommendations"),
+        ("website", "0264_add_recommendations"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
