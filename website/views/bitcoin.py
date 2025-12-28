@@ -283,7 +283,6 @@ def bacon_requests_view(request):
 
 
 @login_required
-@csrf_exempt
 def update_submission_status(request, submission_id):
     """Allows a mentor to update the submission status and bacon amount."""
     if request.method == "POST":

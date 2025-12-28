@@ -3201,7 +3201,6 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
 def set_theme(request):
     """View to save user's theme preference"""
     if request.method == "POST":
@@ -3210,6 +3209,10 @@ def set_theme(request):
 
             data = json.loads(request.body)
             theme = data.get("theme", "light")
+
+            # Validate theme value
+            if theme not in ["light", "dark"]:
+                return JsonResponse({"status": "error", "message": "Invalid theme"}, status=400)
 
             # Save theme in session
             request.session["theme"] = theme
@@ -3221,8 +3224,10 @@ def set_theme(request):
             #     profile.save()
 
             return JsonResponse({"status": "success", "theme": theme})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
         except Exception as e:
             logging.exception("Error occurred while setting theme")
             return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)

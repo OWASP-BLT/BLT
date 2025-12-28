@@ -250,7 +250,6 @@ def create_github_issue(request, id):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
@@ -2455,7 +2454,6 @@ class GitHubIssueDetailView(DetailView):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def page_vote(request):
     """
     Handle upvote/downvote for a page

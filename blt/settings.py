@@ -57,6 +57,12 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+
+# Require SECRET_KEY in production, but allow default for local dev
+if not DEBUG:
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    if not SECRET_KEY:
+        raise ValueError("SECRET_KEY environment variable must be set in production")
 TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
@@ -286,6 +292,33 @@ if "DYNO" in os.environ:  # for Heroku
     EMAIL_USE_TLS = True
     if not TESTING:
         SECURE_SSL_REDIRECT = True
+
+# HTTP Strict Transport Security (HSTS)
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Prevent MIME type sniffing
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Enable browser XSS filtering
+SECURE_BROWSER_XSS_FILTER = True
+
+# Referrer Policy - don't send referrer to external sites
+SECURE_REFERRER_POLICY = "same-origin"
+
+# Content Security Policy (CSP)
+# Note: Requires django-csp package: pip install django-csp
+# After installing, add "csp.middleware.CSPMiddleware" to MIDDLEWARE
+if not DEBUG:
+    CSP_DEFAULT_SRC = ("'self'",)
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "www.google.com", "www.gstatic.com")
+    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com")
+    CSP_FONT_SRC = ("'self'", "fonts.gstatic.com", "cdn.jsdelivr.net")
+    CSP_IMG_SRC = ("'self'", "data:", "https:")
+    CSP_FRAME_SRC = ("'self'", "www.google.com")
+    CSP_CONNECT_SRC = ("'self'",)
 
     # import logging
 
@@ -560,7 +593,7 @@ SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it f
 SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for social signups
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
-X_FRAME_OPTIONS = "SAMEORIGIN"
+X_FRAME_OPTIONS = "DENY"  # Prevents any framing (stricter than SAMEORIGIN)
 
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
