@@ -293,33 +293,6 @@ if "DYNO" in os.environ:  # for Heroku
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
-# HTTP Strict Transport Security (HSTS)
-if not DEBUG:
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-
-# Prevent MIME type sniffing
-SECURE_CONTENT_TYPE_NOSNIFF = True
-
-# Enable browser XSS filtering
-SECURE_BROWSER_XSS_FILTER = True
-
-# Referrer Policy - don't send referrer to external sites
-SECURE_REFERRER_POLICY = "same-origin"
-
-# Content Security Policy (CSP)
-# Note: Requires django-csp package: pip install django-csp
-# After installing, add "csp.middleware.CSPMiddleware" to MIDDLEWARE
-if not DEBUG:
-    CSP_DEFAULT_SRC = ("'self'",)
-    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "www.google.com", "www.gstatic.com")
-    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "fonts.googleapis.com")
-    CSP_FONT_SRC = ("'self'", "fonts.gstatic.com", "cdn.jsdelivr.net")
-    CSP_IMG_SRC = ("'self'", "data:", "https:")
-    CSP_FRAME_SRC = ("'self'", "www.google.com")
-    CSP_CONNECT_SRC = ("'self'",)
-
     # import logging
 
     # logging.basicConfig(level=logging.DEBUG)
@@ -370,6 +343,18 @@ else:
     # Keep using our custom backend even in debug mode
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
+
+# HTTP Strict Transport Security (HSTS)
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Prevent MIME type sniffing
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Referrer Policy - don't send referrer to external sites
+SECURE_REFERRER_POLICY = "same-origin"
 
 DATABASES = {
     "default": {
@@ -599,7 +584,7 @@ SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token for AJAX calls
 CSRF_COOKIE_SAMESITE = "Lax"
 
 MDEDITOR_CONFIGS = {
