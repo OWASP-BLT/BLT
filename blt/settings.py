@@ -59,27 +59,18 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
-# Check if running management commands that don't need SECRET_KEY (e.g., collectstatic)
-# These commands run before production env vars are set in CI/CD
-is_management_command = len(sys.argv) > 1 and sys.argv[1] in [
-    "collectstatic",
-    "check",
-    "migrate",
-    "makemigrations",
-    "showmigrations",
-    "loaddata",
-    "dumpdata",
-    "inspectdb",
-    "compilemessages",
-    "makemessages",
-]
-skip_secret_key_check = os.environ.get("SKIP_SECRET_KEY_CHECK", "False").lower() == "true"
+# Safe management commands that can run without a real SECRET_KEY
+SAFE_COMMANDS = ["collectstatic", "check", "compilemessages", "makemessages"]
+is_safe_command = len(sys.argv) > 1 and sys.argv[1] in SAFE_COMMANDS
 
-# Require SECRET_KEY in production, but allow default for local dev and management commands
-if not DEBUG and not TESTING and not is_management_command and not skip_secret_key_check:
-    SECRET_KEY = os.environ.get("SECRET_KEY")
-    if not SECRET_KEY:
-        raise ValueError("SECRET_KEY environment variable must be set in production")
+# Require SECRET_KEY in production (fail-fast approach)
+if not DEBUG and not TESTING and not is_safe_command:
+    # Check if still using default key
+    if SECRET_KEY == "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s":
+        raise ValueError(
+            "SECRET_KEY environment variable must be set in production. "
+            "The default SECRET_KEY is not allowed in production environments."
+        )
 
 SITE_ID = 1
 
@@ -123,6 +114,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "csp",
 )
 
 if DEBUG:
@@ -144,6 +136,7 @@ MIDDLEWARE = [
     "website.middleware.BaconRewardMessageMiddleware",  # Show BACON reward messages after OAuth
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "blt.middleware.throttling.ThrottlingMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
@@ -372,6 +365,52 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 # Referrer Policy - don't send referrer to external sites
 SECURE_REFERRER_POLICY = "same-origin"
 
+# Content Security Policy (CSP)
+if not DEBUG:
+    # CSP settings for production
+    CSP_DEFAULT_SRC = ("'self'",)
+    CSP_SCRIPT_SRC = (
+        "'self'",
+        "'unsafe-inline'",  # Required for inline scripts - consider using nonces in future
+        "https://cdn.jsdelivr.net",  # Common CDN
+        "https://code.jquery.com",
+        "https://stackpath.bootstrapcdn.com",
+        "https://www.google.com/recaptcha/",
+        "https://www.gstatic.com/recaptcha/",
+    )
+    CSP_STYLE_SRC = (
+        "'self'",
+        "'unsafe-inline'",  # Required for inline styles
+        "https://cdn.jsdelivr.net",
+        "https://stackpath.bootstrapcdn.com",
+        "https://fonts.googleapis.com",
+    )
+    CSP_FONT_SRC = (
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://cdn.jsdelivr.net",
+    )
+    CSP_IMG_SRC = (
+        "'self'",
+        "data:",  # For inline images
+        "https:",  # Allow images from HTTPS sources
+        "https://bhfiles.storage.googleapis.com",  # Your Google Cloud Storage
+    )
+    CSP_FRAME_SRC = (
+        "'self'",
+        "https://www.google.com/recaptcha/",  # For reCAPTCHA
+    )
+    CSP_CONNECT_SRC = (
+        "'self'",
+        "https://www.google-analytics.com",  # If using GA
+    )
+
+    # Report CSP violations (optional - configure endpoint later)
+    # CSP_REPORT_URI = "/csp-report/"
+
+    # Use report-only mode first to test without breaking functionality
+    # CSP_REPORT_ONLY = True  # Remove this line once CSP is tested
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -549,8 +588,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": f"{anon_throttle}/hour",
-        "user": f"{user_throttle}/hour",
+        "anon": f"{anon_throttle}/day",
+        "user": f"{user_throttle}/day",
     },
 }
 
@@ -594,7 +633,7 @@ SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it f
 SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for social signups
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
-X_FRAME_OPTIONS = "DENY"  # Prevents any framing (stricter than SAMEORIGIN)
+X_FRAME_OPTIONS = "SAMEORIGIN"  # Allows same-origin framing while preventing external embedding
 
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
