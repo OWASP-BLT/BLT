@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid dashboard">
+
+  <!-- HEADER -->
+  <div class="row mb-3">
+    <div class="col">
+      <h4 class="fw-bold mb-0">Security Operations Dashboard</h4>
+      <small class="text-muted">Last 30 days · Read-only · Internal</small>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <!-- LEFT KPI COLUMN -->
+    <div class="col-xl-2 col-lg-3 col-md-4">
+
+      <div class="kpi-card">
+        <span>Total Issues</span>
+        <h3>{{ total }}</h3>
+      </div>
+
+      <div class="kpi-card warning">
+        <span>Open Issues</span>
+        <h3>{{ open }}</h3>
+      </div>
+
+      <div class="kpi-card success">
+        <span>Closed Issues</span>
+        <h3>{{ closed }}</h3>
+      </div>
+
+      <div class="kpi-card danger">
+        <span>Issues with CVE</span>
+        <h3>{{ with_cve }}</h3>
+      </div>
+
+    </div>
+
+    <!-- CENTER DASHBOARD -->
+    <div class="col-xl-8 col-lg-9 col-md-8">
+
+      <!-- ROW 1 -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="panel">
+            <div class="panel-title">Daily Security Trend</div>
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="panel">
+            <div class="panel-title">Issue Status</div>
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2 -->
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="panel">
+            <div class="panel-title">Severity Distribution (CVSS)</div>
+            <canvas id="severityChart"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="panel">
+            <div class="panel-title">Top Affected Organizations</div>
+            <canvas id="orgChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT INSIGHTS -->
+    <div class="col-xl-2 d-none d-xl-block">
+
+      <div class="side-panel">
+        <h6 class="fw-bold">Security Insights</h6>
+
+        <ul class="insights">
+          <li><span class="dot danger"></span>{{ with_cve }} issues include CVEs</li>
+          <li><span class="dot warning"></span>{{ open }} unresolved issues</li>
+          <li><span class="dot success"></span>{{ closed }} resolved issues</li>
+          <li><span class="dot info"></span>Continuous monitoring active</li>
+        </ul>
+
+        <hr>
+        <small class="text-muted">
+          Aggregated security vulnerability data across monitored domains.
+        </small>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+/* DAILY TREND */
+new Chart(trendChart, {
+  type: 'line',
+  data: {
+    labels: {{ daily_labels|safe }},
+    datasets: [{
+      data: {{ daily_counts|safe }},
+      borderColor: "#dc3545",
+      backgroundColor: "rgba(220,53,69,0.15)",
+      fill: true,
+      tension: 0.35,
+      pointRadius: 2
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+/* ISSUE STATUS */
+new Chart(statusChart, {
+  type: 'doughnut',
+  data: {
+    labels: [{% for s in status_qs %}"{{ s.status|capfirst|default:'Unknown' }}",{% endfor %}],
+    datasets: [{
+      data: [{% for s in status_qs %}{{ s.count }},{% endfor %}],
+      backgroundColor: ["#dc3545","#198754","#6c757d"],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    cutout: "70%",
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          label: function(ctx) {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            const pct = ((ctx.raw / total) * 100).toFixed(1);
+            return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+          }
+        }
+      }
+    }
+  }
+});
+
+/* SEVERITY */
+new Chart(severityChart, {
+  type: 'bar',
+  data: {
+    labels: [{% for s in severity_qs %}"{{ s.severity }}",{% endfor %}],
+    datasets: [{
+      data: [{% for s in severity_qs %}{{ s.count }},{% endfor %}],
+      backgroundColor: ["#dc3545","#fd7e14","#ffc107","#198754"],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+/* ORG */
+new Chart(orgChart, {
+  type: 'bar',
+  data: {
+    labels: [{% for o in org_qs %}"{{ o.domain__name|default:'Unknown' }}",{% endfor %}],
+    datasets: [{
+      data: [{% for o in org_qs %}{{ o.count }},{% endfor %}],
+      backgroundColor: "#6f42c1",
+      borderRadius: 6
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+</script>
+
+<style>
+.dashboard { background:#f4f6f9; min-height:100vh; }
+
+.kpi-card {
+  background:#fff;
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06);
+}
+.kpi-card span { font-size:12px; color:#6c757d; }
+.kpi-card h3 { margin:4px 0 0; }
+
+.kpi-card.warning h3 { color:#ffc107; }
+.kpi-card.success h3 { color:#198754; }
+.kpi-card.danger h3 { color:#dc3545; }
+
+.panel {
+  background:#fff;
+  padding:14px;
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06);
+}
+.panel-title {
+  font-weight:600;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+.side-panel {
+  background:#fff;
+  padding:14px;
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06);
+}
+
+.insights {
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+.insights li {
+  font-size:13px;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+}
+.dot {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  margin-right:8px;
+}
+.dot.danger { background:#dc3545; }
+.dot.warning { background:#ffc107; }
+.dot.success { background:#198754; }
+.dot.info { background:#0dcaf0; }
+
+canvas { max-height:240px; }
+</style>
+
+{% endblock %}
+
