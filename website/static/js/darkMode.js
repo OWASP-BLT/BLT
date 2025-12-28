@@ -21,7 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
               "X-CSRFToken": csrfToken,
             },
             body: JSON.stringify({ theme: newTheme }),
-          }).catch(error => console.error("Error saving theme preference:", error));
+          }).catch(() => {
+            // Silently handle errors - theme preference is saved in localStorage
+          });
         }
     }
   });
