@@ -57,13 +57,26 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+TESTING = sys.argv[1:2] == ["test"]
 
-# Require SECRET_KEY in production, but allow default for local dev
-if not DEBUG:
+# Check if running management commands that don't need SECRET_KEY (e.g., collectstatic)
+# These commands run before production env vars are set in CI/CD
+is_management_command = len(sys.argv) > 1 and sys.argv[1] in [
+    "collectstatic",
+    "migrate",
+    "makemigrations",
+    "showmigrations",
+    "loaddata",
+    "dumpdata",
+    "inspectdb",
+]
+skip_secret_key_check = os.environ.get("SKIP_SECRET_KEY_CHECK", "False").lower() == "true"
+
+# Require SECRET_KEY in production, but allow default for local dev and management commands
+if not DEBUG and not TESTING and not is_management_command and not skip_secret_key_check:
     SECRET_KEY = os.environ.get("SECRET_KEY")
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable must be set in production")
-TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
 
