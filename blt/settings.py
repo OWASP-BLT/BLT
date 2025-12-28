@@ -63,12 +63,15 @@ TESTING = sys.argv[1:2] == ["test"]
 # These commands run before production env vars are set in CI/CD
 is_management_command = len(sys.argv) > 1 and sys.argv[1] in [
     "collectstatic",
+    "check",
     "migrate",
     "makemigrations",
     "showmigrations",
     "loaddata",
     "dumpdata",
     "inspectdb",
+    "compilemessages",
+    "makemessages",
 ]
 skip_secret_key_check = os.environ.get("SKIP_SECRET_KEY_CHECK", "False").lower() == "true"
 

@@ -3205,8 +3205,6 @@ def set_theme(request):
     """View to save user's theme preference"""
     if request.method == "POST":
         try:
-            import json
-
             data = json.loads(request.body)
             theme = data.get("theme", "light")
 
