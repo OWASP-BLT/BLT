@@ -1,5 +1,6 @@
 from django.db.models import Sum
-from website.models import Organization, ContributorStats
+
+from website.models import ContributorStats, Organization
 
 
 def get_weekly_team_stats(start_date, end_date):
