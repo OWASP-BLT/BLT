@@ -27,11 +27,7 @@ def security_dashboard(request):
     with_cve = qs.filter(cve_id__isnull=False).count()
 
     # ---- DAILY TREND ----
-    daily_qs = (
-        qs.annotate(day=TruncDate("created"))
-        .values("day")
-        .annotate(count=Count("id"))
-    )
+    daily_qs = qs.annotate(day=TruncDate("created")).values("day").annotate(count=Count("id"))
 
     daily_map = {x["day"]: x["count"] for x in daily_qs}
 
@@ -61,11 +57,7 @@ def security_dashboard(request):
     status_qs = qs.values("status").annotate(count=Count("id"))
 
     # ---- ORG / DOMAIN ----
-    org_qs = (
-        qs.values("domain__name")
-        .annotate(count=Count("id"))
-        .order_by("-count")[:8]
-    )
+    org_qs = qs.values("domain__name").annotate(count=Count("id")).order_by("-count")[:8]
 
     context = {
         "total": total,
@@ -80,4 +72,3 @@ def security_dashboard(request):
     }
 
     return render(request, "dashboard/security_dashboard.html", context)
-
