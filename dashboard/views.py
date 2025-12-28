@@ -1,10 +1,10 @@
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Case, CharField, Count, Value, When
+from django.db.models.functions import TruncDate
 from django.shortcuts import render
 from django.utils import timezone
-from django.db.models import Count, Case, When, Value, CharField
-from django.db.models.functions import TruncDate
 
 from website.models import Issue
 
