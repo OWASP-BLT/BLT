@@ -134,7 +134,34 @@ def task_detail(request, lab_id, task_id):
 
 @login_required
 def submit_answer(request, lab_id, task_id):
-    """Handle task answer submission (MCQ or simulation results)"""
+    """
+    Process a submitted answer for a lab task, evaluate correctness, update the user's task and lab progress, and return a JSON response.
+    
+    Returns:
+        JsonResponse: On success, a JSON object describing the result and updated status:
+            - For theory tasks:
+                {
+                    "correct": bool,
+                    "user_answer": str,
+                    "correct_answer": str,
+                    "message": str,
+                    "task_completed": bool
+                }
+            - For simulation tasks:
+                {
+                    "correct": bool,
+                    "user_payload": str,
+                    "expected_payload": str,           # "Not defined" when no expected payload is configured
+                    "user_cleaned": str or "N/A",      # normalized user payload when expected exists, otherwise "N/A"
+                    "expected_cleaned": str or "N/A",  # normalized expected payload when defined, otherwise "N/A"
+                    "message": str,
+                    "task_completed": bool
+                }
+        Error responses:
+            - 405: {"error": "Method not allowed"} when request method is not POST.
+            - 404: {"error": "Task content not found"} when the task has no associated content.
+            - 400: {"error": "Invalid task type"} when the task type is neither "theory" nor "simulation".
+    """
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -171,9 +198,9 @@ def submit_answer(request, lab_id, task_id):
                 "correct": is_correct,
                 "user_answer": user_answer,
                 "correct_answer": correct_answer,
-                "message": "Correct! Task completed!"
-                if is_correct
-                else f"Incorrect. The correct answer is {correct_answer}.",
+                "message": (
+                    "Correct! Task completed!" if is_correct else f"Incorrect. The correct answer is {correct_answer}."
+                ),
                 "task_completed": user_task_progress.completed,
             }
         )
@@ -210,9 +237,11 @@ def submit_answer(request, lab_id, task_id):
                 "expected_payload": expected_payload if expected_payload else "Not defined",
                 "user_cleaned": user_payload.strip().lower() if expected_payload else "N/A",
                 "expected_cleaned": expected_payload.strip().lower() if expected_payload else "N/A",
-                "message": "Great job! You successfully completed the simulation!"
-                if is_correct
-                else "Try a different approach. Check the hints for guidance.",
+                "message": (
+                    "Great job! You successfully completed the simulation!"
+                    if is_correct
+                    else "Try a different approach. Check the hints for guidance."
+                ),
                 "task_completed": user_task_progress.completed,
             }
         )

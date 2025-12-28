@@ -10,6 +10,11 @@ class Command(BaseCommand):
     help = "Fetches public programming-related Discord servers"
 
     def handle(self, *args, **options):
+        """
+        Fetch public programming-related Discord servers and create or update matching OsshDiscussionChannel records.
+        
+        Queries Discord's discovery API for programming-related servers, deduplicates results, and for each server creates or updates an OsshDiscussionChannel (setting name, description, member_count, source="Discord", and logo_url) and associates Tag records for server keywords. Writes per-server status and a summary to stdout. Network or API errors are reported to stderr.
+        """
         token = settings.DISCORD_BOT_TOKEN
         limit = 20
 
@@ -105,9 +110,11 @@ class Command(BaseCommand):
                         "description": server.get("description", ""),
                         "member_count": server.get("approximate_member_count", 0),
                         "id": server_id,
-                        "logo_url": f"https://cdn.discordapp.com/icons/{server_id}/{server.get('icon')}.png"
-                        if server.get("icon")
-                        else "",
+                        "logo_url": (
+                            f"https://cdn.discordapp.com/icons/{server_id}/{server.get('icon')}.png"
+                            if server.get("icon")
+                            else ""
+                        ),
                         "tags": server.get("keywords", []),
                     }
 

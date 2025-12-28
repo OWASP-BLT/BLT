@@ -7,6 +7,7 @@ from mdeditor.fields import MDTextFormField
 
 from website.models import (
     Bid,
+    Badge,
     Hackathon,
     HackathonPrize,
     HackathonSponsor,
@@ -18,6 +19,7 @@ from website.models import (
     Repo,
     Room,
     UserProfile,
+    TeamBadge,
 )
 
 
@@ -430,6 +432,12 @@ class HackathonPrizeForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the form and limit the sponsor field choices to sponsors associated with a specific hackathon when provided.
+        
+        Parameters:
+            hackathon (Hackathon or None): If provided, the form's `sponsor` field will be populated with sponsors linked to this hackathon; if omitted or None, the `sponsor` field will have no choices.
+        """
         hackathon = kwargs.pop("hackathon", None)
         super().__init__(*args, **kwargs)
 
@@ -438,6 +446,7 @@ class HackathonPrizeForm(forms.ModelForm):
             self.fields["sponsor"].queryset = HackathonSponsor.objects.filter(hackathon=hackathon)
         else:
             self.fields["sponsor"].queryset = HackathonSponsor.objects.none()
+
 
 
 class ReminderSettingsForm(forms.ModelForm):

@@ -2564,6 +2564,21 @@ class OrganizationListView(ListView):
         return queryset
 
     def get_context_data(self, **kwargs):
+        """
+        Builds and returns template context enriched with recently viewed and popular organizations, tag summaries, totals, and per-domain top testers.
+        
+        Adds the following to the context:
+        - `recently_viewed`: up to 5 recently visited Organization objects.
+        - `most_popular`: top 5 Organization objects for today sorted by view count.
+        - `total_organizations`: total number of Organization records.
+        - `top_tags`: up to 10 Tag objects ordered by number of associated organizations.
+        - `selected_tag`: the Tag matching the `tag` GET parameter, if present.
+        
+        Additionally, each domain in `context["organizations"]` will have a `top_testers` attribute containing the user(s) with the most related issues for that domain.
+        
+        Returns:
+            dict: The context dictionary to be used by the template.
+        """
         context = super().get_context_data(**kwargs)
 
         # Get recently viewed organizations efficiently using a single query
@@ -2572,9 +2587,7 @@ class OrganizationListView(ListView):
                 path__startswith="/organization/",
                 path__regex=r"^/organization/[^/]+/$",  # Only match exact organization paths
             )
-            .exclude(
-                path="/organizations/"  # Exclude the main organizations list page
-            )
+            .exclude(path="/organizations/")  # Exclude the main organizations list page
             .order_by("-created")
             .values_list("path", flat=True)
             .distinct()[:5]

@@ -23,6 +23,21 @@ class Command(LoggedBaseCommand):
         )
 
     def handle(self, *_, **options):
+        """
+        Fetches merged pull requests and reviews from GitHub for users with GitHub profiles and updates related database records.
+        
+        This command:
+        - Looks back six months and queries GitHub for pull requests authored by each UserProfile with a non-empty github_url.
+        - Skips pull requests that are not merged or whose merged date is before the six-month cutoff.
+        - Creates or updates Contributor, GitHubIssue (type="pull_request"), and GitHubReview records; associates contributors with repos.
+        - Tracks and bulk-updates each user's merged_pr_count and assigns contribution_rank based on merged PR counts.
+        - If no users have GitHub URLs, calls the management command "fetch_gsoc_prs" to fetch BLT repository PRs instead.
+        - If the `all_blt_repos` option is true, also calls "fetch_gsoc_prs" after processing users to fetch all BLT repo PRs.
+        
+        Parameters:
+            options (dict): Command options. Recognized key:
+                - "all_blt_repos" (bool): If true, fetch PRs from all BLT repositories after processing user data.
+        """
         fetch_all_blt = options.get("all_blt_repos", False)
 
         # Fetch PRs from the last 6 months
@@ -162,16 +177,18 @@ class Command(LoggedBaseCommand):
                                 "updated_at": timezone.make_aware(
                                     datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
                                 ),
-                                "closed_at": timezone.make_aware(
-                                    datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ")
-                                )
-                                if pr.get("closed_at")
-                                else None,
-                                "merged_at": timezone.make_aware(
-                                    datetime.strptime(pr["pull_request"]["merged_at"], "%Y-%m-%dT%H:%M:%SZ")
-                                )
-                                if merged
-                                else None,
+                                "closed_at": (
+                                    timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                                    if pr.get("closed_at")
+                                    else None
+                                ),
+                                "merged_at": (
+                                    timezone.make_aware(
+                                        datetime.strptime(pr["pull_request"]["merged_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                    )
+                                    if merged
+                                    else None
+                                ),
                                 "is_merged": merged,
                                 "url": pr["html_url"],
                                 "user_profile": user,

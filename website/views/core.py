@@ -1443,6 +1443,16 @@ def view_suggestions(request):
 
 
 def sitemap(request):
+    """
+    Render the sitemap page populated with a random domain and an active non-superuser username.
+    
+    The template context contains:
+    - `random_domain`: a randomly selected Domain.name, or "example.com" if none exist.
+    - `random_username`: a randomly selected active non-superuser User.username, or "user" if none exist.
+    
+    Returns:
+        HttpResponse: The rendered sitemap page.
+    """
     random_domain = Domain.objects.order_by("?").first()
     random_user = User.objects.filter(is_active=True).exclude(is_superuser=True).order_by("?").first()
 
@@ -1454,13 +1464,39 @@ def sitemap(request):
     return render(request, "sitemap.html", context)
 
 
-def badge_list(request):
-    badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
-    return render(request, "badges.html", {"badges": badges})
+def badge_list(request, scope):
+    """
+    Render a list of badges filtered by the requested scope.
+    
+    Parameters:
+        scope (str): If "team", returns badges with scope "team" or "topuser_team". For any other value, returns user-scoped badges annotated with their `user_count` and ordered by descending `user_count`.
+    
+    Returns:
+        HttpResponse: Rendered "badges.html" whose context contains a "badges" queryset matching the selected scope.
+    """
+    if scope == "team":
+        badges = ( Badge.objects.filter(scope__in=["team", "topuser_team"]))
+    else:
+       badges = (
+            Badge.objects
+            .filter(scope="user")
+            .annotate(user_count=Count("userbadge"))
+            .order_by("-user_count")
+        )
+       
+    return render(request, "badges.html", {
+        "badges": badges
+        
+    })
 
 
 def features_view(request):
+    """
+    Render the static features page.
+    
+    Returns:
+        HttpResponse: The rendered "features.html" template.
+    """
     return render(request, "features.html")
 
 
