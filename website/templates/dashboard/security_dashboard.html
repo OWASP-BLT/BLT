@@ -1,110 +1,93 @@
 {% extends "base.html" %}
 {% block content %}
-
-<div class="container-fluid dashboard">
-
-  <!-- HEADER -->
-  <div class="row mb-3">
-    <div class="col">
-      <h4 class="fw-bold mb-0">Security Operations Dashboard</h4>
-      <small class="text-muted">Last 30 days · Read-only · Internal</small>
-    </div>
-  </div>
-
-  <div class="row">
-
-    <!-- LEFT KPI COLUMN -->
-    <div class="col-xl-2 col-lg-3 col-md-4">
-
-      <div class="kpi-card">
-        <span>Total Issues</span>
-        <h3>{{ total }}</h3>
-      </div>
-
-      <div class="kpi-card warning">
-        <span>Open Issues</span>
-        <h3>{{ open }}</h3>
-      </div>
-
-      <div class="kpi-card success">
-        <span>Closed Issues</span>
-        <h3>{{ closed }}</h3>
-      </div>
-
-      <div class="kpi-card danger">
-        <span>Issues with CVE</span>
-        <h3>{{ with_cve }}</h3>
-      </div>
-
-    </div>
-
-    <!-- CENTER DASHBOARD -->
-    <div class="col-xl-8 col-lg-9 col-md-8">
-
-      <!-- ROW 1 -->
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <div class="panel">
-            <div class="panel-title">Daily Security Trend</div>
-            <canvas id="trendChart"></canvas>
-          </div>
+    <div class="container-fluid dashboard">
+        <!-- HEADER -->
+        <div class="row mb-3">
+            <div class="col">
+                <h4 class="fw-bold mb-0">Security Operations Dashboard</h4>
+                <small class="text-muted">Last 30 days · Read-only · Internal</small>
+            </div>
         </div>
-
-        <div class="col-md-6">
-          <div class="panel">
-            <div class="panel-title">Issue Status</div>
-            <canvas id="statusChart"></canvas>
-          </div>
+        <div class="row">
+            <!-- LEFT KPI COLUMN -->
+            <div class="col-xl-2 col-lg-3 col-md-4">
+                <div class="kpi-card">
+                    <span>Total Issues</span>
+                    <h3>{{ total }}</h3>
+                </div>
+                <div class="kpi-card warning">
+                    <span>Open Issues</span>
+                    <h3>{{ open }}</h3>
+                </div>
+                <div class="kpi-card success">
+                    <span>Closed Issues</span>
+                    <h3>{{ closed }}</h3>
+                </div>
+                <div class="kpi-card danger">
+                    <span>Issues with CVE</span>
+                    <h3>{{ with_cve }}</h3>
+                </div>
+            </div>
+            <!-- CENTER DASHBOARD -->
+            <div class="col-xl-8 col-lg-9 col-md-8">
+                <!-- ROW 1 -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="panel">
+                            <div class="panel-title">Daily Security Trend</div>
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="panel">
+                            <div class="panel-title">Issue Status</div>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- ROW 2 -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="panel">
+                            <div class="panel-title">Severity Distribution (CVSS)</div>
+                            <canvas id="severityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="panel">
+                            <div class="panel-title">Top Affected Organizations</div>
+                            <canvas id="orgChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- RIGHT INSIGHTS -->
+            <div class="col-xl-2 d-none d-xl-block">
+                <div class="side-panel">
+                    <h6 class="fw-bold">Security Insights</h6>
+                    <ul class="insights">
+                        <li>
+                            <span class="dot danger"></span>{{ with_cve }} issues include CVEs
+                        </li>
+                        <li>
+                            <span class="dot warning"></span>{{ open }} unresolved issues
+                        </li>
+                        <li>
+                            <span class="dot success"></span>{{ closed }} resolved issues
+                        </li>
+                        <li>
+                            <span class="dot info"></span>Continuous monitoring active
+                        </li>
+                    </ul>
+                    <hr>
+                    <small class="text-muted">Aggregated security vulnerability data across monitored domains.</small>
+                </div>
+            </div>
         </div>
-      </div>
-
-      <!-- ROW 2 -->
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="panel">
-            <div class="panel-title">Severity Distribution (CVSS)</div>
-            <canvas id="severityChart"></canvas>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="panel">
-            <div class="panel-title">Top Affected Organizations</div>
-            <canvas id="orgChart"></canvas>
-          </div>
-        </div>
-      </div>
-
     </div>
-
-    <!-- RIGHT INSIGHTS -->
-    <div class="col-xl-2 d-none d-xl-block">
-
-      <div class="side-panel">
-        <h6 class="fw-bold">Security Insights</h6>
-
-        <ul class="insights">
-          <li><span class="dot danger"></span>{{ with_cve }} issues include CVEs</li>
-          <li><span class="dot warning"></span>{{ open }} unresolved issues</li>
-          <li><span class="dot success"></span>{{ closed }} resolved issues</li>
-          <li><span class="dot info"></span>Continuous monitoring active</li>
-        </ul>
-
-        <hr>
-        <small class="text-muted">
-          Aggregated security vulnerability data across monitored domains.
-        </small>
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-<!-- CHART.JS -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
 /* DAILY TREND */
 new Chart(trendChart, {
   type: 'line',
@@ -195,9 +178,8 @@ new Chart(orgChart, {
     }
   }
 });
-</script>
-
-<style>
+    </script>
+    <style>
 .dashboard { background:#f4f6f9; min-height:100vh; }
 
 .kpi-card {
@@ -256,7 +238,5 @@ new Chart(orgChart, {
 .dot.info { background:#0dcaf0; }
 
 canvas { max-height:240px; }
-</style>
-
+    </style>
 {% endblock %}
-
