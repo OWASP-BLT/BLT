@@ -1,44 +1,52 @@
+import logging
+from datetime import date
+from typing import Any, Dict, List
+
 from django.db.models import Sum
+from django.db.models.functions import Coalesce
 
-from website.models import ContributorStats, Organization
+from website.models import ContributorStats, OrganisationType, Organization
+
+logger = logging.getLogger(__name__)
 
 
-def get_weekly_team_stats(start_date, end_date):
+def get_weekly_team_stats(start_date: date, end_date: date) -> List[Dict[str, Any]]:
     """
-    Aggregate weekly stats for teams (Organization type = TEAM).
+    Aggregate weekly stats for TEAM organizations.
 
     Returns an empty list if no TEAM organizations or contributor stats
     exist in the given date range.
     """
 
-    # Step 1: Get all teams
-    teams = Organization.objects.filter(type="team")
+    logger.info("Aggregating weekly team stats from %s to %s", start_date, end_date)
+
+    teams = Organization.objects.filter(type=OrganisationType.TEAM.value).only("id", "name")
 
     if not teams.exists():
+        logger.debug("No TEAM organizations found")
         return []
 
-    # Step 2: Aggregate stats for all repos of all teams at once
+    # ContributorStats are stored at daily granularity.
+    # Weekly stats are computed by aggregating daily records
+    # over the given date range.
     stats_queryset = (
         ContributorStats.objects.filter(
             repo__organization__in=teams,
             granularity="day",
-            date__gte=start_date,
-            date__lte=end_date,
+            date__range=(start_date, end_date),
         )
-        .values("repo__organization_id")  # Group by team
+        .values("repo__organization_id")
         .annotate(
-            commits=Sum("commits"),
-            issues_opened=Sum("issues_opened"),
-            issues_closed=Sum("issues_closed"),
-            pull_requests=Sum("pull_requests"),
-            comments=Sum("comments"),
+            commits=Coalesce(Sum("commits"), 0),
+            issues_opened=Coalesce(Sum("issues_opened"), 0),
+            issues_closed=Coalesce(Sum("issues_closed"), 0),
+            pull_requests=Coalesce(Sum("pull_requests"), 0),
+            comments=Coalesce(Sum("comments"), 0),
         )
     )
 
-    # Step 3: Map stats by team ID
     stats_map = {s["repo__organization_id"]: s for s in stats_queryset}
 
-    # Step 4: Build final list
     team_stats = []
     for team in teams:
         s = stats_map.get(team.id, {})
