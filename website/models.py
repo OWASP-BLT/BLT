@@ -289,6 +289,55 @@ class Organization(models.Model):
         super().save(*args, **kwargs)
 
 
+class OrgEncryptionConfig(models.Model):
+    ENCRYPTION_METHOD_AGE = "age"
+    ENCRYPTION_METHOD_OPENPGP = "openpgp"
+    ENCRYPTION_METHOD_SYM_7Z = "sym_7z"
+
+    ENCRYPTION_METHOD_CHOICES = [
+        (ENCRYPTION_METHOD_AGE, "age (public key)"),
+        (ENCRYPTION_METHOD_OPENPGP, "OpenPGP (GnuPG)"),
+        (ENCRYPTION_METHOD_SYM_7Z, "Symmetric 7z (AES-256, OOB password)"),
+    ]
+
+    organization = models.OneToOneField(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="encryption_config",
+    )
+    contact_email = models.EmailField(
+        help_text="Disclosure contact for this organization (receives encrypted artifacts)."
+    )
+    preferred_method = models.CharField(
+        max_length=20,
+        choices=ENCRYPTION_METHOD_CHOICES,
+        default=ENCRYPTION_METHOD_AGE,
+    )
+
+    # Public key info
+    age_recipient = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="age recipient string (e.g. age1...) if using age.",
+    )
+    pgp_fingerprint = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="OpenPGP key fingerprint if using GnuPG.",
+    )
+    pgp_key_text = models.TextField(
+        blank=True,
+        help_text="Optional ASCII-armored public key text.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_verified_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"OrgEncryptionConfig({self.organization.name})"
+
+
 class JoinRequest(models.Model):
     team = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -737,6 +786,38 @@ class Issue(models.Model):
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
         ]
+
+    # --- Zero-trust fields (new) ---
+    is_zero_trust = models.BooleanField(
+        default=False,
+        help_text="If true, this issue was submitted via the zero-trust pipeline; no PoC/plaintext stored.",
+    )
+    artifact_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="SHA-256 of the encrypted disclosure artifact sent to the org.",
+    )
+    encryption_method = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Encryption method used (e.g. age, openpgp, sym_7z).",
+    )
+    delivery_method = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Delivery channel, e.g. email:smtp.",
+    )
+    delivery_status = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Zero-trust pipeline status: pending_build, delivered, failed, etc.",
+    )
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the encrypted artifact delivery completed.",
+    )
+    # --- end zero-trust fields ---
 
 
 def is_using_gcs():

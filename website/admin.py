@@ -195,9 +195,25 @@ class IssueAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
+
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
     list_filter = ["domain", "user"]
+
+    # 🔐 Zero-trust safety
+    readonly_fields = (
+        "is_zero_trust",
+        "artifact_sha256",
+        "encryption_method",
+        "delivery_method",
+        "delivery_status",
+        "delivered_at",
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and getattr(obj, "is_zero_trust", False):
+            return self.readonly_fields
+        return super().get_readonly_fields(request, obj)
 
 
 class HuntAdmin(admin.ModelAdmin):

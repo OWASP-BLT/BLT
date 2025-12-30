@@ -30,6 +30,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -46,6 +47,7 @@ from website.models import (
     IssueScreenshot,
     Job,
     Organization,
+    OrgEncryptionConfig,
     Points,
     Project,
     Repo,
@@ -77,6 +79,7 @@ from website.serializers import (
 )
 from website.utils import image_validator
 from website.views.user import LeaderboardBase
+from website.zero_trust_pipeline import build_and_deliver_zero_trust_issue
 
 logger = logging.getLogger(__name__)
 # API's
@@ -1988,3 +1991,69 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ZeroTrustIssueCreateView(APIView):
+    """
+    Zero-trust Issue creation endpoint.
+    Stores only metadata in DB; PoC files are encrypted and delivered ephemerally.
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        domain_id = request.data.get("domain_id")
+        url = request.data.get("url")
+        summary = request.data.get("summary")
+        files = request.FILES.getlist("files")
+
+        if not domain_id or not url or not summary or not files:
+            return Response(
+                {"error": "domain_id, url, summary and files are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            domain = Domain.objects.get(id=domain_id)
+        except Domain.DoesNotExist:
+            return Response({"error": "Invalid domain_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue = Issue.objects.create(
+            user=request.user,
+            domain=domain,
+            url=url,
+            description=summary,  # non-sensitive summary only
+            is_hidden=True,
+            is_zero_trust=True,
+            delivery_status="pending_build",
+        )
+        # HARD GUARANTEES (do not remove)
+        assert issue.is_hidden is True
+        assert issue.is_zero_trust is True
+        try:
+            OrgEncryptionConfig.objects.get(organization=issue.domain.organization)
+        except OrgEncryptionConfig.DoesNotExist:
+            return Response(
+                {"error": "Zero-trust delivery is not configured for this organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            build_and_deliver_zero_trust_issue(issue, files)
+        except Exception:
+            return Response(
+                {"error": "Zero-trust submission failed"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        # Reload in case pipeline mutated fields
+        issue.refresh_from_db()
+
+        return Response(
+            {
+                "id": issue.id,
+                "artifact_sha256": issue.artifact_sha256,
+                "delivery_status": issue.delivery_status,
+            },
+            status=status.HTTP_201_CREATED,
+        )

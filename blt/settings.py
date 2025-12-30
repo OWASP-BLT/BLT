@@ -660,3 +660,11 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# Ephemeral directory for zero-trust artifacts (OK to be dyno/local FS)
+REPORT_TMP_DIR = os.path.join(BASE_DIR, "tmp_reports")
+
+# Binaries for encryption tools (can be overridden via env)
+AGE_BINARY = os.environ.get("AGE_BINARY", "age")
+GPG_BINARY = os.environ.get("GPG_BINARY", "gpg")
+SEVENZ_BINARY = os.environ.get("SEVENZ_BINARY", "7z")
