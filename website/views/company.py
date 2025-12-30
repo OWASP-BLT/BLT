@@ -1244,7 +1244,7 @@ class AddDomainView(View):
             if is_valid_https_url(domain_data["url"]):
                 safe_url = rebuild_safe_url(domain_data["url"])
                 try:
-                    response = requests.get(safe_url, timeout=5, verify=False)
+                    response = requests.get(safe_url, timeout=5)
                     if response.status_code != 200:
                         raise Exception
                 except requests.exceptions.RequestException:
