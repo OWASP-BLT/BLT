@@ -357,7 +357,7 @@ else:
 if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # Note: HSTS preload is not recommended per https://hstspreload.org/
 
 # Prevent MIME type sniffing
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -374,6 +374,7 @@ if not DEBUG:
                 "'self'",
                 "'unsafe-inline'",  # Required for inline scripts - consider using nonces in future
                 "https://cdn.jsdelivr.net",
+                "https://unpkg.com",  # Used for alpinejs, leaflet, marked, easymde, htmx
                 "https://code.jquery.com",
                 "https://stackpath.bootstrapcdn.com",
                 "https://www.google.com/recaptcha/",
@@ -383,6 +384,7 @@ if not DEBUG:
                 "'self'",
                 "'unsafe-inline'",  # Required for inline styles
                 "https://cdn.jsdelivr.net",
+                "https://unpkg.com",  # Used for tailwindcss, leaflet CSS
                 "https://stackpath.bootstrapcdn.com",
                 "https://fonts.googleapis.com",
             ),
@@ -394,12 +396,13 @@ if not DEBUG:
             "img-src": (
                 "'self'",
                 "data:",  # For inline images
-                "https:",  # Allow images from HTTPS sources
-                "https://bhfiles.storage.googleapis.com",  # Your Google Cloud Storage
+                "https:",  # Allow images from HTTPS sources (includes bhfiles.storage.googleapis.com)
             ),
             "frame-src": (
                 "'self'",
                 "https://www.google.com/recaptcha/",  # For reCAPTCHA
+                "https://www.youtube.com",  # For education videos
+                "https://player.vimeo.com",  # For Vimeo videos
             ),
             "connect-src": (
                 "'self'",
