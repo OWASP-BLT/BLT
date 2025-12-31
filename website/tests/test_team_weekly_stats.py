@@ -28,8 +28,21 @@ def test_team_with_no_stats_returns_zeros():
         end_date=date(2025, 1, 7),
     )
 
-    assert result[0]["stats"]["commits"] == 0
-    assert result[0]["stats"]["issues_opened"] == 0
+    assert len(result) == 1
+    team_result = result[0]
+
+    assert team_result["team_id"] == team.id
+    assert team_result["team_name"] == "Test Team"
+    assert team_result["start_date"] == date(2025, 1, 1)
+    assert team_result["end_date"] == date(2025, 1, 7)
+
+    assert team_result["stats"] == {
+        "commits": 0,
+        "issues_opened": 0,
+        "issues_closed": 0,
+        "pull_requests": 0,
+        "comments": 0,
+    }
 
 
 @pytest.mark.django_db
@@ -76,6 +89,22 @@ def test_single_team_with_stats():
         start_date=date(2025, 1, 1),
         end_date=date(2025, 1, 7),
     )
+    assert len(result) == 1
+
+    team_result = result[0]
+
+    assert team_result["team_id"] == team.id
+    assert team_result["team_name"] == "Team A"
+    assert team_result["start_date"] == date(2025, 1, 1)
+    assert team_result["end_date"] == date(2025, 1, 7)
+
+    assert team_result["stats"] == {
+        "commits": 5,
+        "issues_opened": 2,
+        "issues_closed": 1,
+        "pull_requests": 1,
+        "comments": 3,
+    }
 
     # Assert stats are correctly aggregated
     assert result[0]["stats"]["commits"] == 5
