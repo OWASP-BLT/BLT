@@ -353,69 +353,131 @@ else:
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
-# HTTP Strict Transport Security (HSTS)
+# ============================================================================
+# SECURITY HEADERS CONFIGURATION
+# ============================================================================
+# These headers protect against common web vulnerabilities and attacks.
+# Each header serves a specific security purpose:
+#
+# 1. HSTS (HTTP Strict Transport Security)
+#    Purpose: Forces browsers to use HTTPS for all future requests to this domain
+#    Attack Prevented: Man-in-the-Middle (MITM) attacks, protocol downgrade attacks
+#    Why BLT Needs It: Protects user credentials, session cookies, and sensitive
+#                      bug report data from being intercepted over HTTP
+#    Implementation: Only enabled in production (not DEBUG) to allow local HTTP development
+#
 if not DEBUG:
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year - browsers remember to use HTTPS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply to all subdomains
     # Note: HSTS preload is not recommended per https://hstspreload.org/
+    #       Preload requires commitment to HTTPS forever and can cause issues
 
-# Prevent MIME type sniffing
+# 2. X-Content-Type-Options: nosniff
+#    Purpose: Prevents browsers from MIME-sniffing responses and overriding Content-Type
+#    Attack Prevented: MIME type confusion attacks, XSS via malicious file uploads
+#    Why BLT Needs It: Users upload files/images for bug reports - prevents browsers
+#                      from executing malicious scripts disguised as images
+#    Example Attack: Attacker uploads a .jpg file containing JavaScript. Without this
+#                    header, browser might execute it as JS instead of displaying as image
+#
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# Referrer Policy - don't send referrer to external sites
+# 3. Referrer-Policy: same-origin
+#    Purpose: Controls how much referrer information is sent with requests
+#    Attack Prevented: Information leakage to third-party sites, privacy violations
+#    Why BLT Needs It: Prevents sensitive URLs (e.g., bug report IDs, user profiles)
+#                      from being leaked to external sites via referrer headers
+#    Behavior: Only sends referrer for same-origin requests, not to external sites
+#
 SECURE_REFERRER_POLICY = "same-origin"
 
-# Content Security Policy (CSP) - django-csp 4.0 format
+# 4. Content Security Policy (CSP)
+#    Purpose: Restricts which resources (scripts, styles, images, etc.) can be loaded
+#    Attack Prevented: XSS attacks, data injection attacks, unauthorized resource loading
+#    Why BLT Needs It: User-generated content (bug reports, comments) could contain
+#                      malicious scripts - CSP prevents execution even if XSS occurs
+#    Implementation: Whitelist approach - only allow trusted sources
+#
+#    CSP Verification Steps (for screen recording):
+#    1. Open browser DevTools (F12 or Cmd+Option+I)
+#    2. Go to Network tab and reload the page
+#    3. Check Response Headers for "Content-Security-Policy" header
+#    4. Go to Console tab - verify no CSP violation errors appear
+#    5. Test functionality:
+#       - Verify external scripts load (jQuery, Bootstrap from CDN)
+#       - Verify reCAPTCHA works (Google domains allowed)
+#       - Verify YouTube/Vimeo videos embed correctly
+#       - Verify images load from Google Cloud Storage
+#    6. Test CSP enforcement:
+#       - Try to inject a script tag pointing to an untrusted domain
+#       - Browser should block it and show CSP violation in console
+#
 if not DEBUG:
     CONTENT_SECURITY_POLICY = {
         "DIRECTIVES": {
-            "default-src": ("'self'",),
+            # Default policy for all resource types (fallback)
+            "default-src": ("'self'",),  # Only allow same-origin resources by default
+            
+            # Script sources - controls which JavaScript can execute
             "script-src": (
-                "'self'",
-                "'unsafe-inline'",  # Required for inline scripts - consider using nonces in future
-                "https://cdn.jsdelivr.net",
+                "'self'",  # Allow scripts from same origin
+                "'unsafe-inline'",  # Required for inline scripts (Django templates, etc.)
+                # Consider using nonces in future for better security
+                "https://cdn.jsdelivr.net",  # CDN for various JS libraries
                 "https://unpkg.com",  # Used for alpinejs, leaflet, marked, easymde, htmx
-                "https://code.jquery.com",
-                "https://stackpath.bootstrapcdn.com",
-                "https://www.google.com/recaptcha/",
-                "https://www.gstatic.com/recaptcha/",
+                "https://code.jquery.com",  # jQuery library
+                "https://stackpath.bootstrapcdn.com",  # Bootstrap JS
+                "https://www.google.com/recaptcha/",  # reCAPTCHA script
+                "https://www.gstatic.com/recaptcha/",  # reCAPTCHA resources
             ),
+            
+            # Style sources - controls which CSS can be loaded
             "style-src": (
-                "'self'",
-                "'unsafe-inline'",  # Required for inline styles
-                "https://cdn.jsdelivr.net",
+                "'self'",  # Allow styles from same origin
+                "'unsafe-inline'",  # Required for inline styles (Django templates, etc.)
+                "https://cdn.jsdelivr.net",  # CDN for CSS libraries
                 "https://unpkg.com",  # Used for tailwindcss, leaflet CSS
-                "https://stackpath.bootstrapcdn.com",
-                "https://fonts.googleapis.com",
+                "https://stackpath.bootstrapcdn.com",  # Bootstrap CSS
+                "https://fonts.googleapis.com",  # Google Fonts CSS
             ),
+            
+            # Font sources - controls which fonts can be loaded
             "font-src": (
-                "'self'",
-                "https://fonts.gstatic.com",
-                "https://cdn.jsdelivr.net",
+                "'self'",  # Allow fonts from same origin
+                "https://fonts.gstatic.com",  # Google Fonts
+                "https://cdn.jsdelivr.net",  # CDN fonts
             ),
+            
+            # Image sources - controls which images can be displayed
             "img-src": (
-                "'self'",
-                "data:",  # For inline images
-                "https:",  # Allow images from HTTPS sources (includes bhfiles.storage.googleapis.com)
+                "'self'",  # Allow images from same origin
+                "data:",  # Allow inline images (data URIs)
+                "https:",  # Allow images from any HTTPS source (includes Google Cloud Storage)
             ),
+            
+            # Frame sources - controls which sites can be embedded in iframes
             "frame-src": (
-                "'self'",
-                "https://www.google.com/recaptcha/",  # For reCAPTCHA
-                "https://www.youtube.com",  # For education videos
-                "https://player.vimeo.com",  # For Vimeo videos
+                "'self'",  # Allow same-origin frames
+                "https://www.google.com/recaptcha/",  # reCAPTCHA iframe
+                "https://www.youtube.com",  # YouTube videos for education section
+                "https://player.vimeo.com",  # Vimeo videos for education section
             ),
+            
+            # Connect sources - controls which URLs can be fetched via fetch/XHR
             "connect-src": (
-                "'self'",
-                "https://www.google-analytics.com",  # If using GA
+                "'self'",  # Allow AJAX requests to same origin
+                "https://www.google-analytics.com",  # Google Analytics (if used)
             ),
         }
     }
 
-    # Report CSP violations (optional - configure endpoint later)
+    # Optional: Configure CSP violation reporting endpoint
+    # This would allow monitoring CSP violations in production
     # CONTENT_SECURITY_POLICY["REPORT_URI"] = "/csp-report/"
 
-    # Use report-only mode first to test without breaking functionality
-    # CONTENT_SECURITY_POLICY["REPORT_ONLY"] = True  # Remove this line once CSP is tested
+    # Note: CSP is active (not report-only) to provide actual protection
+    # If testing CSP changes, temporarily enable report-only mode:
+    # CONTENT_SECURITY_POLICY["REPORT_ONLY"] = True
 
 DATABASES = {
     "default": {
@@ -639,6 +701,16 @@ SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it f
 SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for social signups
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
+# 5. X-Frame-Options: SAMEORIGIN
+#    Purpose: Controls whether the site can be embedded in an iframe/frame
+#    Attack Prevented: Clickjacking attacks, UI redressing attacks
+#    Why BLT Needs It: Prevents malicious sites from embedding BLT pages in iframes
+#                      to trick users into clicking buttons they don't see
+#    Behavior: Allows same-origin framing (for internal use) but blocks external sites
+#              from embedding BLT pages
+#    Example Attack: Attacker creates a malicious site with BLT login page in invisible
+#                    iframe, overlays fake buttons to steal credentials
+#
 X_FRAME_OPTIONS = "SAMEORIGIN"  # Allows same-origin framing while preventing external embedding
 
 SESSION_COOKIE_SECURE = not DEBUG
