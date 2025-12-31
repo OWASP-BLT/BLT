@@ -2,6 +2,7 @@ import logging
 from datetime import date
 from typing import Any, Dict, List
 
+from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 
@@ -13,10 +14,11 @@ logger = logging.getLogger(__name__)
 def get_weekly_team_stats(start_date: date, end_date: date) -> List[Dict[str, Any]]:
     """
     Aggregate weekly stats for TEAM organizations.
-
     Returns an empty list if no TEAM organizations or contributor stats
     exist in the given date range.
     """
+    if start_date > end_date:
+        raise ValidationError("start_date must be before or equal to end_date")
 
     logger.info("Aggregating weekly team stats from %s to %s", start_date, end_date)
 

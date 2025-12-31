@@ -1,9 +1,19 @@
 from datetime import date
 
 import pytest
+from django.core.exceptions import ValidationError
 
 from website.models import Contributor, ContributorStats, OrganisationType, Organization
 from website.services.team_weekly_stats import get_weekly_team_stats
+
+
+@pytest.mark.django_db
+def test_get_weekly_team_stats_invalid_date_range():
+    with pytest.raises(ValidationError):
+        get_weekly_team_stats(
+            start_date=date(2024, 5, 10),
+            end_date=date(2024, 5, 1),
+        )
 
 
 @pytest.mark.django_db
