@@ -369,16 +369,21 @@ else:
 if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year - browsers remember to use HTTPS
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply to all subdomains
-    # Note: HSTS preload is not recommended per https://hstspreload.org/
-    #       Preload requires commitment to HTTPS forever and can cause issues
+    # Note: HSTS preload is a long-term commitment requiring careful testing.
+    #       See https://hstspreload.org/ for requirements and staged deployment guide.
+    #       Uncomment SECURE_HSTS_PRELOAD after testing and before submitting to preload list.
+    # SECURE_HSTS_PRELOAD = True  # Uncomment when ready for preload submission
 
 # 2. X-Content-Type-Options: nosniff
 #    Purpose: Prevents browsers from MIME-sniffing responses and overriding Content-Type
 #    Attack Prevented: MIME type confusion attacks, XSS via malicious file uploads
 #    Why BLT Needs It: Users upload files/images for bug reports - prevents browsers
 #                      from executing malicious scripts disguised as images
+#    Prevents MIME-sniffing attacks where browsers try to guess content type
 #    Example Attack: Attacker uploads a .jpg file containing JavaScript. Without this
-#                    header, browser might execute it as JS instead of displaying as image
+#                    header, browsers might execute it as JS. This header prevents that
+#                    by enforcing Content-Type. Combine with upload validation, CSP,
+#                    and serving uploads from a separate domain for defense-in-depth.
 #
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
@@ -391,93 +396,107 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 #
 SECURE_REFERRER_POLICY = "same-origin"
 
-# 4. Content Security Policy (CSP)
-#    Purpose: Restricts which resources (scripts, styles, images, etc.) can be loaded
-#    Attack Prevented: XSS attacks, data injection attacks, unauthorized resource loading
-#    Why BLT Needs It: User-generated content (bug reports, comments) could contain
-#                      malicious scripts - CSP prevents execution even if XSS occurs
-#    Implementation: Whitelist approach - only allow trusted sources
+# =============================================================================
+# Content Security Policy (CSP)
+# =============================================================================
+# CSP helps prevent XSS attacks by controlling which resources can be loaded
+# References:
+#   - django-csp docs: https://django-csp.readthedocs.io/
+#   - MDN CSP Guide: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
 #
-#    CSP Verification Steps (for screen recording):
-#    1. Open browser DevTools (F12 or Cmd+Option+I)
-#    2. Go to Network tab and reload the page
-#    3. Check Response Headers for "Content-Security-Policy" header
-#    4. Go to Console tab - verify no CSP violation errors appear
-#    5. Test functionality:
-#       - Verify external scripts load (jQuery, Bootstrap from CDN)
-#       - Verify reCAPTCHA works (Google domains allowed)
-#       - Verify YouTube/Vimeo videos embed correctly
-#       - Verify images load from Google Cloud Storage
-#    6. Test CSP enforcement:
-#       - Try to inject a script tag pointing to an untrusted domain
-#       - Browser should block it and show CSP violation in console
+# CRITICAL: Before deploying, verify all external resources are whitelisted below.
+#           Missing domains will cause CSP violations and break functionality.
 #
+# To test CSP violations locally:
+#   1. Set DEBUG = False temporarily
+#   2. Open browser DevTools → Console
+#   3. Look for CSP violation warnings
+#   4. Add missing domains to appropriate directives below
+#
+# Production deployment checklist:
+#   □ Test with CSP_REPORT_ONLY = True first (monitor violations)
+#   □ Verify all pages load correctly (especially email templates, dashboards)
+#   □ Check browser console for CSP violations
+#   □ Once confirmed working, remove CSP_REPORT_ONLY
+#   □ Consider setting up CSP_REPORT_URI endpoint for monitoring
+
 if not DEBUG:
     CONTENT_SECURITY_POLICY = {
         "DIRECTIVES": {
-            # Default policy for all resource types (fallback)
-            "default-src": ("'self'",),  # Only allow same-origin resources by default
+            # Default policy - fallback for any directive not explicitly set
+            "default-src": ("'self'",),
             
             # Script sources - controls which JavaScript can execute
+            # Note: 'unsafe-inline' is required for inline <script> tags.
+            #       Consider migrating to nonces for better security.
             "script-src": (
-                "'self'",  # Allow scripts from same origin
-                "'unsafe-inline'",  # Required for inline scripts (Django templates, etc.)
-                # Consider using nonces in future for better security
-                "https://cdn.jsdelivr.net",  # CDN for various JS libraries
-                "https://unpkg.com",  # Used for alpinejs, leaflet, marked, easymde, htmx
-                "https://code.jquery.com",  # jQuery library
-                "https://stackpath.bootstrapcdn.com",  # Bootstrap JS
+                "'self'",
+                "'unsafe-inline'",  # TODO: Replace with nonces in future
+                "https://cdn.jsdelivr.net",  # General CDN
+                "https://unpkg.com",  # Package CDN
+                "https://code.jquery.com",  # jQuery
+                "https://stackpath.bootstrapcdn.com",  # Bootstrap
+                "https://cdn.tailwindcss.com",  # Tailwind (email templates)
+                "https://cdnjs.cloudflare.com",  # Cloudflare CDN (Font Awesome, etc.)
                 "https://www.google.com/recaptcha/",  # reCAPTCHA script
                 "https://www.gstatic.com/recaptcha/",  # reCAPTCHA resources
             ),
             
             # Style sources - controls which CSS can be loaded
             "style-src": (
-                "'self'",  # Allow styles from same origin
-                "'unsafe-inline'",  # Required for inline styles (Django templates, etc.)
-                "https://cdn.jsdelivr.net",  # CDN for CSS libraries
-                "https://unpkg.com",  # Used for tailwindcss, leaflet CSS
-                "https://stackpath.bootstrapcdn.com",  # Bootstrap CSS
-                "https://fonts.googleapis.com",  # Google Fonts CSS
+                "'self'",
+                "'unsafe-inline'",  # Required for inline styles
+                "https://cdn.jsdelivr.net",
+                "https://unpkg.com",
+                "https://stackpath.bootstrapcdn.com",
+                "https://cdnjs.cloudflare.com",  # Font Awesome CSS
+                "https://fonts.googleapis.com",  # Google Fonts
             ),
             
             # Font sources - controls which fonts can be loaded
             "font-src": (
-                "'self'",  # Allow fonts from same origin
+                "'self'",
                 "https://fonts.gstatic.com",  # Google Fonts
-                "https://cdn.jsdelivr.net",  # CDN fonts
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com",  # Font Awesome fonts
             ),
             
-            # Image sources - controls which images can be displayed
+            # Image sources - controls which images can be loaded
+            # Note: Explicit whitelist instead of permissive "https:"
             "img-src": (
-                "'self'",  # Allow images from same origin
-                "data:",  # Allow inline images (data URIs)
-                "https:",  # Allow images from any HTTPS source (includes Google Cloud Storage)
+                "'self'",
+                "data:",  # Inline data URIs (base64 images)
+                "https://bhfiles.storage.googleapis.com",  # Your GCS bucket
+                "https://storage.googleapis.com",  # Google Cloud Storage
+                "https://*.googleusercontent.com",  # Google user avatars
+                "https://www.gravatar.com",  # Gravatar images
+                "https://i.pravatar.cc",  # Avatar placeholders (if used)
             ),
             
-            # Frame sources - controls which sites can be embedded in iframes
+            # Frame sources - controls which sites can be embedded in <iframe>
             "frame-src": (
-                "'self'",  # Allow same-origin frames
-                "https://www.google.com/recaptcha/",  # reCAPTCHA iframe
-                "https://www.youtube.com",  # YouTube videos for education section
-                "https://player.vimeo.com",  # Vimeo videos for education section
+                "'self'",
+                "https://www.google.com/recaptcha/",  # reCAPTCHA frames
             ),
             
-            # Connect sources - controls which URLs can be fetched via fetch/XHR
+            # Connect sources - controls AJAX/WebSocket/EventSource connections
             "connect-src": (
-                "'self'",  # Allow AJAX requests to same origin
+                "'self'",
                 "https://www.google-analytics.com",  # Google Analytics (if used)
             ),
-        }
+            
+            # Optional: CSP violation reporting endpoint
+            # Uncomment and implement /csp-report/ endpoint to monitor violations
+            # "report-uri": "/csp-report/",
+            
+            # Optional: Report-only mode for testing (logs violations without blocking)
+            # Uncomment to test CSP without breaking functionality, then remove after verification
+            # Note: This is set at the CONTENT_SECURITY_POLICY level, not in DIRECTIVES
+        },
+        
+        # Optional: Enable report-only mode for testing
+        # "REPORT_ONLY": True,  # Remove this line once CSP is tested and working
     }
-
-    # Optional: Configure CSP violation reporting endpoint
-    # This would allow monitoring CSP violations in production
-    # CONTENT_SECURITY_POLICY["REPORT_URI"] = "/csp-report/"
-
-    # Note: CSP is active (not report-only) to provide actual protection
-    # If testing CSP changes, temporarily enable report-only mode:
-    # CONTENT_SECURITY_POLICY["REPORT_ONLY"] = True
 
 DATABASES = {
     "default": {
