@@ -20,6 +20,7 @@ def test_team_with_no_stats_returns_zeros():
     team = Organization.objects.create(
         name="Test Team",
         type=OrganisationType.TEAM.value,
+        url="https://example.com/test-team",
     )
 
     result = get_weekly_team_stats(
@@ -37,21 +38,24 @@ def test_single_team_with_stats():
     team = Organization.objects.create(
         name="Team A",
         type=OrganisationType.TEAM.value,
+        url="https://example.com/test-team",
     )
 
     # Create a repo under the team
-    from website.models import Repo  # import here to avoid unused import warnings
+    from website.models import Repo
 
     repo = Repo.objects.create(
         name="test-repo",
         organization=team,
+        repo_url="https://github.com/example/test-repo",
     )
     contributor = Contributor.objects.create(
         name="Test User",
-        github_id=12345,  # optional if nullable
+        github_id=12345,
         github_url="https://github.com/test-user",
-        contributor_type="INDIVIDUAL",  # or whatever valid type
-        contributions=0,  # can default to 0
+        avatar_url="https://avatars.githubusercontent.com/u/12345",
+        contributor_type="INDIVIDUAL",
+        contributions=0,  # default to 0
     )
 
     # Add contributor stats for that repo
