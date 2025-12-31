@@ -365,51 +365,54 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 # Referrer Policy - don't send referrer to external sites
 SECURE_REFERRER_POLICY = "same-origin"
 
-# Content Security Policy (CSP)
+# Content Security Policy (CSP) - django-csp 4.0 format
 if not DEBUG:
-    # CSP settings for production
-    CSP_DEFAULT_SRC = ("'self'",)
-    CSP_SCRIPT_SRC = (
-        "'self'",
-        "'unsafe-inline'",  # Required for inline scripts - consider using nonces in future
-        "https://cdn.jsdelivr.net",  # Common CDN
-        "https://code.jquery.com",
-        "https://stackpath.bootstrapcdn.com",
-        "https://www.google.com/recaptcha/",
-        "https://www.gstatic.com/recaptcha/",
-    )
-    CSP_STYLE_SRC = (
-        "'self'",
-        "'unsafe-inline'",  # Required for inline styles
-        "https://cdn.jsdelivr.net",
-        "https://stackpath.bootstrapcdn.com",
-        "https://fonts.googleapis.com",
-    )
-    CSP_FONT_SRC = (
-        "'self'",
-        "https://fonts.gstatic.com",
-        "https://cdn.jsdelivr.net",
-    )
-    CSP_IMG_SRC = (
-        "'self'",
-        "data:",  # For inline images
-        "https:",  # Allow images from HTTPS sources
-        "https://bhfiles.storage.googleapis.com",  # Your Google Cloud Storage
-    )
-    CSP_FRAME_SRC = (
-        "'self'",
-        "https://www.google.com/recaptcha/",  # For reCAPTCHA
-    )
-    CSP_CONNECT_SRC = (
-        "'self'",
-        "https://www.google-analytics.com",  # If using GA
-    )
+    CONTENT_SECURITY_POLICY = {
+        "DIRECTIVES": {
+            "default-src": ("'self'",),
+            "script-src": (
+                "'self'",
+                "'unsafe-inline'",  # Required for inline scripts - consider using nonces in future
+                "https://cdn.jsdelivr.net",
+                "https://code.jquery.com",
+                "https://stackpath.bootstrapcdn.com",
+                "https://www.google.com/recaptcha/",
+                "https://www.gstatic.com/recaptcha/",
+            ),
+            "style-src": (
+                "'self'",
+                "'unsafe-inline'",  # Required for inline styles
+                "https://cdn.jsdelivr.net",
+                "https://stackpath.bootstrapcdn.com",
+                "https://fonts.googleapis.com",
+            ),
+            "font-src": (
+                "'self'",
+                "https://fonts.gstatic.com",
+                "https://cdn.jsdelivr.net",
+            ),
+            "img-src": (
+                "'self'",
+                "data:",  # For inline images
+                "https:",  # Allow images from HTTPS sources
+                "https://bhfiles.storage.googleapis.com",  # Your Google Cloud Storage
+            ),
+            "frame-src": (
+                "'self'",
+                "https://www.google.com/recaptcha/",  # For reCAPTCHA
+            ),
+            "connect-src": (
+                "'self'",
+                "https://www.google-analytics.com",  # If using GA
+            ),
+        }
+    }
 
     # Report CSP violations (optional - configure endpoint later)
-    # CSP_REPORT_URI = "/csp-report/"
+    # CONTENT_SECURITY_POLICY["REPORT_URI"] = "/csp-report/"
 
     # Use report-only mode first to test without breaking functionality
-    # CSP_REPORT_ONLY = True  # Remove this line once CSP is tested
+    # CONTENT_SECURITY_POLICY["REPORT_ONLY"] = True  # Remove this line once CSP is tested
 
 DATABASES = {
     "default": {

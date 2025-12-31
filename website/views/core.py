@@ -3201,6 +3201,7 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
+@ensure_csrf_cookie
 def set_theme(request):
     """View to save user's theme preference"""
     if request.method == "POST":
