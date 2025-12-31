@@ -60,7 +60,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.2
+          python-version: 3.12
 
       - name: Get Poetry cache directory
         id: poetry-cache
@@ -102,7 +102,7 @@ jobs:
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11.2
+          python-version: 3.12
       - name: Run pre-commit
         id: pre-commit
         run: |
@@ -281,7 +281,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11.2
+          python-version: 3.12
       - name: Cache apt packages
         uses: actions/cache@v4
         id: apt-cache
@@ -299,7 +299,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver libmemcached-dev zlib1g-dev
       - name: Copy apt cache to user directory
         if: always()
         run: |

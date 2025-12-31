@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM python:3.11.2 AS builder
+FROM python:3.12 AS builder
 
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
@@ -42,13 +42,13 @@ RUN poetry install --no-root --no-interaction
 RUN pip install opentelemetry-api opentelemetry-instrumentation
 
 # Stage 2: Runtime stage
-FROM python:3.11.2-slim
+FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED 1
 WORKDIR /blt
 
 # Copy only necessary files from builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Install runtime system dependencies
