@@ -20,18 +20,19 @@ def get_weekly_team_stats(start_date: date, end_date: date) -> List[Dict[str, An
 
     logger.info("Aggregating weekly team stats from %s to %s", start_date, end_date)
 
-    teams = Organization.objects.filter(type=OrganisationType.TEAM.value).only("id", "name")
+    teams = list(Organization.objects.filter(type=OrganisationType.TEAM.value).only("id", "name"))
 
-    if not teams.exists():
+    if not teams:
         logger.debug("No TEAM organizations found")
         return []
 
     # ContributorStats are stored at daily granularity.
     # Weekly stats are computed by aggregating daily records
     # over the given date range.
+    team_ids = [t.id for t in teams]
     stats_queryset = (
         ContributorStats.objects.filter(
-            repo__organization__in=teams,
+            repo__organization_id__in=team_ids,
             granularity="day",
             date__range=(start_date, end_date),
         )
