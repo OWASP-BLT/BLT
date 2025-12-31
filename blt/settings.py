@@ -425,7 +425,6 @@ if not DEBUG:
         "DIRECTIVES": {
             # Default policy - fallback for any directive not explicitly set
             "default-src": ("'self'",),
-            
             # Script sources - controls which JavaScript can execute
             # Note: 'unsafe-inline' is required for inline <script> tags.
             #       Consider migrating to nonces for better security.
@@ -441,7 +440,6 @@ if not DEBUG:
                 "https://www.google.com/recaptcha/",  # reCAPTCHA script
                 "https://www.gstatic.com/recaptcha/",  # reCAPTCHA resources
             ),
-            
             # Style sources - controls which CSS can be loaded
             "style-src": (
                 "'self'",
@@ -452,7 +450,6 @@ if not DEBUG:
                 "https://cdnjs.cloudflare.com",  # Font Awesome CSS
                 "https://fonts.googleapis.com",  # Google Fonts
             ),
-            
             # Font sources - controls which fonts can be loaded
             "font-src": (
                 "'self'",
@@ -460,7 +457,6 @@ if not DEBUG:
                 "https://cdn.jsdelivr.net",
                 "https://cdnjs.cloudflare.com",  # Font Awesome fonts
             ),
-            
             # Image sources - controls which images can be loaded
             # Note: Explicit whitelist instead of permissive "https:"
             "img-src": (
@@ -472,28 +468,23 @@ if not DEBUG:
                 "https://www.gravatar.com",  # Gravatar images
                 "https://i.pravatar.cc",  # Avatar placeholders (if used)
             ),
-            
             # Frame sources - controls which sites can be embedded in <iframe>
             "frame-src": (
                 "'self'",
                 "https://www.google.com/recaptcha/",  # reCAPTCHA frames
             ),
-            
             # Connect sources - controls AJAX/WebSocket/EventSource connections
             "connect-src": (
                 "'self'",
                 "https://www.google-analytics.com",  # Google Analytics (if used)
             ),
-            
             # Optional: CSP violation reporting endpoint
             # Uncomment and implement /csp-report/ endpoint to monitor violations
             # "report-uri": "/csp-report/",
-            
             # Optional: Report-only mode for testing (logs violations without blocking)
             # Uncomment to test CSP without breaking functionality, then remove after verification
             # Note: This is set at the CONTENT_SECURITY_POLICY level, not in DIRECTIVES
         },
-        
         # Optional: Enable report-only mode for testing
         # "REPORT_ONLY": True,  # Remove this line once CSP is tested and working
     }
