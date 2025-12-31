@@ -83,14 +83,22 @@ class TestWeeklyTeamStats(TestCase):
             pull_requests=1,
             comments=3,
         )
-
         result = get_weekly_team_stats(
             start_date=date(2025, 1, 1),
             end_date=date(2025, 1, 7),
         )
 
+        self.assertEqual(len(result), 1)
+
+        team_result = result[0]
+
+        self.assertEqual(team_result["team_id"], team.id)
+        self.assertEqual(team_result["team_name"], "Team A")
+        self.assertEqual(team_result["start_date"], date(2025, 1, 1))
+        self.assertEqual(team_result["end_date"], date(2025, 1, 7))
+
         self.assertEqual(
-            result[0]["stats"],
+            team_result["stats"],
             {
                 "commits": 5,
                 "issues_opened": 2,
