@@ -249,6 +249,7 @@ def create_github_issue(request, id):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
