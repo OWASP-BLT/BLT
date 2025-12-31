@@ -1,124 +1,101 @@
 from datetime import date
 
-import pytest
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 
-from website.models import Contributor, ContributorStats, OrganisationType, Organization
+from website.models import Contributor, ContributorStats, OrganisationType, Organization, Repo
 from website.services.team_weekly_stats import get_weekly_team_stats
 
 
-@pytest.mark.django_db
-def test_get_weekly_team_stats_invalid_date_range():
-    with pytest.raises(ValidationError):
-        get_weekly_team_stats(
-            start_date=date(2024, 5, 10),
-            end_date=date(2024, 5, 1),
+class TestWeeklyTeamStats(TestCase):
+    def test_invalid_date_range_raises_error(self):
+        with self.assertRaises(ValidationError):
+            get_weekly_team_stats(
+                start_date=date(2024, 5, 10),
+                end_date=date(2024, 5, 1),
+            )
+
+    def test_no_teams_returns_empty_list(self):
+        result = get_weekly_team_stats(
+            start_date=date(2025, 1, 1),
+            end_date=date(2025, 1, 7),
+        )
+        self.assertEqual(result, [])
+
+    def test_team_with_no_stats_returns_zeros(self):
+        team = Organization.objects.create(
+            name="Test Team",
+            type=OrganisationType.TEAM.value,
+            url="https://example.com/test-team",
         )
 
+        result = get_weekly_team_stats(
+            start_date=date(2025, 1, 1),
+            end_date=date(2025, 1, 7),
+        )
 
-@pytest.mark.django_db
-def test_no_teams_returns_empty_list():
-    result = get_weekly_team_stats(
-        start_date=date(2025, 1, 1),
-        end_date=date(2025, 1, 7),
-    )
-    assert result == []
+        self.assertEqual(len(result), 1)
+        team_result = result[0]
 
+        self.assertEqual(team_result["team_id"], team.id)
+        self.assertEqual(team_result["team_name"], "Test Team")
+        self.assertEqual(
+            team_result["stats"],
+            {
+                "commits": 0,
+                "issues_opened": 0,
+                "issues_closed": 0,
+                "pull_requests": 0,
+                "comments": 0,
+            },
+        )
 
-@pytest.mark.django_db
-def test_team_with_no_stats_returns_zeros():
-    team = Organization.objects.create(
-        name="Test Team",
-        type=OrganisationType.TEAM.value,
-        url="https://example.com/test-team",
-    )
+    def test_single_team_with_stats(self):
+        team = Organization.objects.create(
+            name="Team A",
+            type=OrganisationType.TEAM.value,
+            url="https://example.com/test-team",
+        )
 
-    result = get_weekly_team_stats(
-        start_date=date(2025, 1, 1),
-        end_date=date(2025, 1, 7),
-    )
+        repo = Repo.objects.create(
+            name="test-repo",
+            organization=team,
+            repo_url="https://github.com/example/test-repo",
+        )
 
-    assert len(result) == 1
-    team_result = result[0]
+        contributor = Contributor.objects.create(
+            name="Test User",
+            github_id=12345,
+            github_url="https://github.com/test-user",
+            avatar_url="https://avatars.githubusercontent.com/u/12345",
+            contributor_type="INDIVIDUAL",
+            contributions=0,
+        )
 
-    assert team_result["team_id"] == team.id
-    assert team_result["team_name"] == "Test Team"
-    assert team_result["start_date"] == date(2025, 1, 1)
-    assert team_result["end_date"] == date(2025, 1, 7)
+        ContributorStats.objects.create(
+            repo=repo,
+            contributor=contributor,
+            granularity="day",
+            date=date(2025, 1, 3),
+            commits=5,
+            issues_opened=2,
+            issues_closed=1,
+            pull_requests=1,
+            comments=3,
+        )
 
-    assert team_result["stats"] == {
-        "commits": 0,
-        "issues_opened": 0,
-        "issues_closed": 0,
-        "pull_requests": 0,
-        "comments": 0,
-    }
+        result = get_weekly_team_stats(
+            start_date=date(2025, 1, 1),
+            end_date=date(2025, 1, 7),
+        )
 
-
-@pytest.mark.django_db
-def test_single_team_with_stats():
-    # Create a TEAM
-    team = Organization.objects.create(
-        name="Team A",
-        type=OrganisationType.TEAM.value,
-        url="https://example.com/test-team",
-    )
-
-    # Create a repo under the team
-    from website.models import Repo
-
-    repo = Repo.objects.create(
-        name="test-repo",
-        organization=team,
-        repo_url="https://github.com/example/test-repo",
-    )
-    contributor = Contributor.objects.create(
-        name="Test User",
-        github_id=12345,
-        github_url="https://github.com/test-user",
-        avatar_url="https://avatars.githubusercontent.com/u/12345",
-        contributor_type="INDIVIDUAL",
-        contributions=0,  # default to 0
-    )
-
-    # Add contributor stats for that repo
-    ContributorStats.objects.create(
-        repo=repo,
-        contributor=contributor,
-        granularity="day",
-        date=date(2025, 1, 3),
-        commits=5,
-        issues_opened=2,
-        issues_closed=1,
-        pull_requests=1,
-        comments=3,
-    )
-
-    # Call the service
-    result = get_weekly_team_stats(
-        start_date=date(2025, 1, 1),
-        end_date=date(2025, 1, 7),
-    )
-    assert len(result) == 1
-
-    team_result = result[0]
-
-    assert team_result["team_id"] == team.id
-    assert team_result["team_name"] == "Team A"
-    assert team_result["start_date"] == date(2025, 1, 1)
-    assert team_result["end_date"] == date(2025, 1, 7)
-
-    assert team_result["stats"] == {
-        "commits": 5,
-        "issues_opened": 2,
-        "issues_closed": 1,
-        "pull_requests": 1,
-        "comments": 3,
-    }
-
-    # Assert stats are correctly aggregated
-    assert result[0]["stats"]["commits"] == 5
-    assert result[0]["stats"]["issues_opened"] == 2
-    assert result[0]["stats"]["issues_closed"] == 1
-    assert result[0]["stats"]["pull_requests"] == 1
-    assert result[0]["stats"]["comments"] == 3
+        self.assertEqual(
+            result[0]["stats"],
+            {
+                "commits": 5,
+                "issues_opened": 2,
+                "issues_closed": 1,
+                "pull_requests": 1,
+                "comments": 3,
+            },
+        )
