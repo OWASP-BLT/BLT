@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import tempfile
+import uuid
 import zipfile
 from pathlib import Path
 
@@ -11,7 +12,6 @@ import aiohttp
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -321,11 +321,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
             self.room_group_name = f"chat_{self.room_id}"
+            self.user = self.scope.get("user")
+            self.session_key = None
             self.connected = False
 
-            # Verify room exists
-            room_exists = await self.check_room_exists()
-            if not room_exists:
+            if not await self.check_room_exists():
                 await self.close(code=4004)
                 return
 
@@ -333,261 +333,195 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.connected = True
             await self.accept()
 
-            # Send connection status
+            if self.user and self.user.is_authenticated:
+                # Authenticated user
+                pass
+            else:
+                # Anonymous user: generate and send a session key
+                self.session_key = str(uuid.uuid4())
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "session_key",
+                            "session_key": self.session_key,
+                            "message": "Store this session key for this session.",
+                        }
+                    )
+                )
+
             await self.send(text_data=json.dumps({"type": "connection_status", "status": "connected"}))
 
         except Exception as e:
+            logger.error(f"Error in ChatConsumer connect: {e}")
             await self.close(code=4000)
 
     async def disconnect(self, close_code):
         try:
-            self.connected = False
-            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+            if self.connected:
+                await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+                self.connected = False
+        except Exception as e:
+            logger.error(f"Error in ChatConsumer disconnect: {e}")
 
-            # Send disconnect status if possible
-            try:
-                await self.send(
-                    text_data=json.dumps({"type": "connection_status", "status": "disconnected", "code": close_code})
-                )
-            except:
-                pass
-        except:
-            pass
+    def _get_user_identifier(self):
+        """Returns a consistent identifier for the user."""
+        if self.user and self.user.is_authenticated:
+            return self.user.username
+        elif self.session_key:
+            return f"anon_{self.session_key}"
+        return "Anonymous"
 
     @database_sync_to_async
     def check_room_exists(self):
-        try:
-            return Room.objects.filter(id=self.room_id).exists()
-        except:
-            return False
+        return Room.objects.filter(id=self.room_id).exists()
 
     @database_sync_to_async
-    def save_message(self, message, username):
+    def save_message(self, message, username, user, session_key):
         """Saves a message in the database."""
         try:
             room = Room.objects.get(id=self.room_id)
-            user = None
-            session_key = None
-
-            if username.startswith("anon_"):
-                session_key = username.split("_")[1]
-            else:
-                user = User.objects.filter(username=username).first()
-
+            db_user = user if user and user.is_authenticated else None
             return Message.objects.create(
-                room=room, user=user, username=username, content=message, session_key=session_key
+                room=room, user=db_user, username=username, content=message, session_key=session_key
             )
         except Exception as e:
+            logger.error(f"Error saving message: {e}")
             return None
 
     @database_sync_to_async
     def delete_message(self, message_id, username, room_id):
         """Deletes a message if it exists and belongs to the user in the room."""
         try:
-            message_object = Message.objects.filter(id=message_id, username=username, room=room_id).first()
-
+            # This logic correctly handles both authenticated users and anonymous users via their unique username
+            message_object = Message.objects.filter(id=message_id, username=username, room_id=room_id).first()
             if message_object:
-                rows_deleted, _ = message_object.delete()
-                return rows_deleted > 0  # True if deleted, False otherwise
+                message_object.delete()
+                return True
             return False
         except Exception as e:
-            return False  # Handle unexpected errors gracefully
+            logger.error(f"Error deleting message: {e}")
+            return False
 
     @database_sync_to_async
-    def add_reaction(self, message_id, emoji, username):
+    def add_reaction(self, message_id, emoji, user, session_key):
         """Adds or toggles a reaction on a message."""
         try:
             message = Message.objects.get(id=message_id)
             reactions = message.reactions or {}
 
+            # Use PK for authenticated users, session_key for anonymous
+            user_id = str(user.pk) if user and user.is_authenticated else session_key
+
+            if not user_id:
+                return None  # Cannot add reaction without a user identifier
+
             if emoji not in reactions:
                 reactions[emoji] = []
 
-            if username in reactions[emoji]:
-                reactions[emoji].remove(username)
+            # Toggle reaction
+            if user_id in reactions[emoji]:
+                reactions[emoji].remove(user_id)
                 if not reactions[emoji]:
                     del reactions[emoji]
             else:
-                reactions[emoji] = reactions.get(emoji, []) + [username]
+                reactions[emoji].append(user_id)
 
             message.reactions = reactions
             message.save()
             return reactions
         except Message.DoesNotExist:
+            logger.warning(f"Attempted to react to non-existent message {message_id}")
             return None
         except Exception as e:
+            logger.error(f"Error adding reaction: {e}")
             return None
 
     async def receive(self, text_data):
-        """Handles incoming WebSocket messages, including sending and deleting chat messages."""
-
+        """Handles incoming WebSocket messages."""
         if not self.connected:
-            await self.send(
-                text_data=json.dumps(
-                    {"type": "error", "code": "not_connected", "message": "Not connected to chat room"}
-                )
-            )
             return
 
         try:
             data = json.loads(text_data)
             message_type = data.get("type", "message")
+            username = self._get_user_identifier()
+            session_key = self.session_key if not (self.user and self.user.is_authenticated) else None
 
-            # Handle reactions
             if message_type == "add_reaction":
                 message_id = data.get("message_id")
                 emoji = data.get("emoji")
-                username = self.scope["user"].username if self.scope["user"].is_authenticated else "Anonymous"
 
                 if not message_id or not emoji:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "error", "code": "invalid_reaction", "message": "Message ID and emoji required"}
-                        )
-                    )
                     return
 
-                reactions = await self.add_reaction(message_id, emoji, username)
+                reactions = await self.add_reaction(message_id, emoji, self.user, session_key)
                 if reactions is not None:
-                    # Broadcast reaction update to all clients
-                    reaction_data = {"type": "reaction_update", "message_id": message_id, "reactions": reactions}
-                    await self.channel_layer.group_send(self.room_group_name, reaction_data)
-                else:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "error", "code": "reaction_failed", "message": "Failed to add reaction"}
-                        )
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {"type": "reaction_update", "message_id": message_id, "reactions": reactions},
                     )
 
-            # Handle new messages
-            elif message_type == "message" or message_type == "chat_message":
+            elif message_type in ("message", "chat_message"):
                 message = data.get("message", "").strip()
-                username = data.get("username", "Anonymous")
-
-                if not message:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "error", "code": "invalid_message", "message": "Message cannot be empty"}
-                        )
-                    )
+                if not message or len(message) > 1000:
                     return
 
-                if len(message) > 1000:
-                    await self.send(
-                        text_data=json.dumps(
-                            {
-                                "type": "error",
-                                "code": "message_too_long",
-                                "message": "Message too long (max 1000 chars)",
-                            }
-                        )
-                    )
-                    return
-
-                saved_message = await self.save_message(message, username)
-
+                saved_message = await self.save_message(message, username, self.user, session_key)
                 if saved_message:
-                    # Broadcast message to all clients
-                    message_data = {
-                        "type": "chat_message",
-                        "message": message,
-                        "username": username,
-                        "message_id": saved_message.id,
-                        "timestamp": saved_message.timestamp.isoformat(),
-                    }
-                    await self.channel_layer.group_send(self.room_group_name, message_data)
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            "type": "chat_message",
+                            "message": message,
+                            "username": username,
+                            "message_id": saved_message.id,
+                            "timestamp": saved_message.timestamp.isoformat(),
+                        },
+                    )
                     await self.send(json.dumps({"type": "message_ack", "message_id": saved_message.id}))
-                else:
-                    await self.send(json.dumps({"type": "error", "code": "save_failed", "message": "Failed to save"}))
 
-            # Handle message deletion
             elif message_type == "deleteMessage":
                 message_id = data.get("messageId")
-                username = data.get("username", "Anonymous")
-
                 if not message_id:
-                    await self.send(
-                        json.dumps({"type": "error", "code": "invalid_message_id", "message": "Message ID required"})
-                    )
                     return
 
-                # Attempt to delete the message
-                message_deleted = await self.delete_message(message_id, username, self.room_id)
-
-                if message_deleted:
-                    # Notify all clients to remove the message from their UI
-                    delete_notification = {"type": "delete_message_broadcast", "message_id": message_id}
-                    await self.channel_layer.group_send(self.room_group_name, delete_notification)
-                    await self.send(json.dumps(delete_notification))  # Send acknowledgment to the sender
-                else:
-                    await self.send(
-                        json.dumps({"type": "error", "code": "delete_failed", "message": "Failed to delete"})
+                # The username for deletion is the one tied to the connection
+                if await self.delete_message(message_id, username, self.room_id):
+                    await self.channel_layer.group_send(
+                        self.room_group_name, {"type": "delete_message_broadcast", "message_id": message_id}
                     )
 
             elif message_type == "ping":
                 await self.send(text_data=json.dumps({"type": "pong", "timestamp": timezone.now().isoformat()}))
 
         except json.JSONDecodeError:
-            await self.send(
-                text_data=json.dumps({"type": "error", "code": "invalid_format", "message": "Invalid message format"})
-            )
+            pass  # Ignore invalid JSON
         except Exception as e:
-            await self.send(
-                text_data=json.dumps({"type": "error", "code": "internal_error", "message": "Internal server error"})
-            )
+            logger.error(f"Error in ChatConsumer receive: {e}")
 
     async def chat_message(self, event):
         if not self.connected:
             return
-
         try:
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "type": "chat_message",
-                        "message": event["message"],
-                        "username": event["username"],
-                        "timestamp": event.get("timestamp"),
-                        "message_id": event.get("message_id"),
-                    }
-                )
-            )
-        except Exception as error:
-            # Log the error instead of silently passing
-            logger.error(f"Error sending chat message: {str(error)}")
+            await self.send(text_data=json.dumps(event))
+        except Exception as e:
+            logger.error(f"Error sending chat message: {e}")
 
     async def delete_message_broadcast(self, event):
-        """Handles broadcasting delete notifications to all users in the room."""
-
         if not self.connected:
             return
-
         try:
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "type": "delete_ack",
-                        "message_id": event["message_id"],
-                    }
-                )
-            )
-
+            await self.send(text_data=json.dumps({"type": "delete_ack", "message_id": event["message_id"]}))
         except Exception as e:
             logger.error(f"Error in delete_message_broadcast: {e}")
 
     async def reaction_update(self, event):
-        """Handles broadcasting reaction updates to all users in the room."""
         if not self.connected:
             return
-
         try:
-            await self.send(
-                text_data=json.dumps(
-                    {"type": "reaction_update", "message_id": event["message_id"], "reactions": event["reactions"]}
-                )
-            )
-        except Exception as error:
-            logger.error(f"Error sending reaction update: {str(error)}")
+            await self.send(text_data=json.dumps(event))
+        except Exception as e:
+            logger.error(f"Error sending reaction update: {e}")
 
 
 class DirectChatConsumer(AsyncWebsocketConsumer):
