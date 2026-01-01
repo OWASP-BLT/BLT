@@ -1833,6 +1833,26 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 )
                 return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             label = request.POST["label"]
+
+            # Use NLP to analyze bug description and suggest improvements
+            nlp_analysis = analyze_bug_with_nlp(description, url)
+            if nlp_analysis:
+                # If NLP suggests a different category and user selected "General", use the suggestion
+                if label == "0" and nlp_analysis.get("suggested_category"):
+                    try:
+                        suggested_category = nlp_analysis["suggested_category"]
+                        # Validate it's a string representation of an integer
+                        if isinstance(suggested_category, str) and suggested_category.isdigit():
+                            suggested_label = int(suggested_category)
+                            if 0 <= suggested_label <= 8:
+                                label = str(suggested_label)
+                                logger.info(f"NLP suggested category {label} for bug report")
+                        elif isinstance(suggested_category, int) and 0 <= suggested_category <= 8:
+                            label = str(suggested_category)
+                            logger.info(f"NLP suggested category {label} for bug report")
+                    except (ValueError, TypeError, KeyError):
+                        pass
+
             if request.POST.get("file"):
                 if isinstance(request.POST.get("file"), six.string_types):
                     import imghdr
@@ -1873,6 +1893,30 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             issue.hunt = hunt
             issue.save()
+
+            # Process screenshot with vision API to extract text and analysis
+            if issue.screenshot:
+                try:
+                    # Check if screenshot file exists before processing
+                    if hasattr(issue.screenshot, "path") and os.path.exists(issue.screenshot.path):
+                        screenshot_path = issue.screenshot.path
+                        vision_analysis = process_screenshot_with_vision(screenshot_path)
+                        if vision_analysis:
+                            # Store extracted text in OCR field
+                            extracted_text = vision_analysis.get("extracted_text", "")
+                            visual_analysis = vision_analysis.get("visual_analysis", "")
+
+                            # Combine OCR text and visual analysis
+                            ocr_content = f"Extracted Text:\n{extracted_text}\n\nVisual Analysis:\n{visual_analysis}"
+                            issue.ocr = ocr_content
+                            issue.save()
+                            logger.info(f"Successfully processed screenshot with vision API for issue {issue.id}")
+                    else:
+                        logger.warning(f"Screenshot file not accessible for issue {issue.id}")
+                except Exception as e:
+                    # Log error but don't fail the bug submission
+                    logger.error(f"Error processing screenshot with vision API: {str(e)}")
+
             issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )
@@ -2210,9 +2254,44 @@ def get_github_issue(request):
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
+@login_required(login_url="/accounts/login")
+def get_bug_analysis(request):
+    """
+    API endpoint to get NLP analysis for bug description.
+    Returns suggested category, tags, and severity.
+    """
+    if request.method == "POST":
+        description = request.POST.get("description", "")
+        url = request.POST.get("url", "")
+
+        if not description:
+            return JsonResponse({"error": "Description is required"}, status=400)
+
+        # Call the NLP analysis function
+        analysis = analyze_bug_with_nlp(description, url)
+
+        if analysis:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "suggested_category": analysis.get("suggested_category", "0"),
+                    "tags": analysis.get("tags", []),
+                    "severity": analysis.get("severity", "medium"),
+                    "enhanced_description": analysis.get("enhanced_description", ""),
+                }
+            )
+        else:
+            return JsonResponse({"error": "Unable to analyze bug report"}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return {"error": "OpenAI API key not configured"}
+        client = OpenAI(api_key=api_key)
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
@@ -2255,6 +2334,133 @@ def generate_github_issue(description):
         return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
     except Exception as e:
         return {"error": "There's a problem with OpenAI", "details": str(e)}
+
+
+def analyze_bug_with_nlp(description, url=""):
+    """
+    Analyze bug description using NLP to extract insights, suggest category, and provide tags.
+    Returns a dictionary with suggested_category, tags, severity, and enhanced_description.
+    """
+    try:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            return None
+        client = OpenAI(api_key=api_key)
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are a security expert analyzing bug reports. 
+                    Analyze the bug description and respond with a valid JSON object in this exact format:
+                    {
+                        "suggested_category": "number (0-8, where 0=General, 1=Number Error, 2=Functional, 3=Performance, 4=Security, 5=Typo, 6=Design, 7=Server Down, 8=Trademark Squatting)",
+                        "tags": ["tag1", "tag2", "tag3"],
+                        "severity": "low|medium|high|critical",
+                        "enhanced_description": "Enhanced description with technical details"
+                    }""",
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyze this bug report. URL: {url}\nDescription: {description}",
+                },
+            ],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+
+        if response.choices and response.choices[0].message:
+            analysis_str = response.choices[0].message.content
+            analysis = json.loads(analysis_str)
+
+            # Validate the response
+            if not all(k in analysis for k in ["suggested_category", "tags", "severity"]):
+                return None
+
+            return analysis
+
+        return None
+
+    except Exception as e:
+        logger.error(f"Error in NLP analysis: {str(e)}")
+        return None
+
+
+def process_screenshot_with_vision(screenshot_path):
+    """
+    Process screenshot using OpenAI Vision API to extract text and identify issues.
+    Returns a dictionary with extracted_text and visual_analysis.
+    """
+    try:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            return None
+        client = OpenAI(api_key=api_key)
+
+        # Read and encode the image
+        with Image.open(screenshot_path) as img:
+            # Convert to RGB if necessary
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+
+            # Resize if too large
+            max_size = (1024, 1024)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+            # Convert to bytes
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format="JPEG")
+            img_byte_arr = img_byte_arr.getvalue()
+
+            # Encode to base64
+            img_base64 = base64.b64encode(img_byte_arr).decode("utf-8")
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are analyzing a bug report screenshot. 
+                    Extract any visible text (OCR) and describe what you see that might be relevant to the bug.
+                    Respond with a valid JSON object in this exact format:
+                    {
+                        "extracted_text": "All visible text from the image",
+                        "visual_analysis": "Description of visual elements, errors, UI issues etc.",
+                        "error_messages": ["any error messages visible"],
+                        "ui_elements": ["notable UI elements or issues"]
+                    }""",
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Analyze this bug screenshot and extract all relevant information:"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
+                        },
+                    ],
+                },
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+        )
+
+        if response.choices and response.choices[0].message:
+            analysis_str = response.choices[0].message.content
+            analysis = json.loads(analysis_str)
+
+            # Validate the response
+            if "extracted_text" in analysis and "visual_analysis" in analysis:
+                return analysis
+
+        return None
+
+    except Exception as e:
+        logger.error(f"Error processing screenshot with vision API: {str(e)}")
+        return None
 
 
 class ContributeView(TemplateView):
