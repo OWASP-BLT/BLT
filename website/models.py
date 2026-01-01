@@ -738,6 +738,36 @@ class Issue(models.Model):
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
         ]
 
+class IssuePledge(models.Model):
+    """
+    Stores a Bitcoin Cash (BCH) pledge made toward resolving an issue.
+
+    Pledges can be anonymous and are linked to an issue.
+    Funds are intended to be donated or tipped once the issue is closed.
+    """
+    PENDING = 'pending'
+    CONFIRMED = 'confirmed'
+    PAID = 'paid'
+    REFUNDED = 'refunded'
+
+    STATUS_CHOICES = (
+        (PENDING, 'Pending'),
+        (CONFIRMED, 'Confirmed'),
+        (PAID, 'Paid'),
+        (REFUNDED, 'Refunded'),
+    )
+
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='pledges')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=8)
+    bch_address = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    txid = models.CharField(max_length=255, blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.amount} BCH → Issue #{self.issue.id}"
+
 
 def is_using_gcs():
     """
