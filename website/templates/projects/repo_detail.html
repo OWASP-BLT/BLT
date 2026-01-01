@@ -1033,6 +1033,71 @@
             </div>
             <!-- Sidebar -->
             <div class="space-y-8">
+                <!-- Active Hackathon Card -->
+                {% if active_hackathon %}
+                    <section class="bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-[#e74c3c] mr-2 animate-pulse"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                    </svg>
+                                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Active Hackathon</h2>
+                                </div>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                                    {{ active_hackathon.status_text }}
+                                </span>
+                            </div>
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{{ active_hackathon.name }}</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ active_hackathon.description|truncatewords:20 }}</p>
+                            </div>
+                            <!-- Time Remaining -->
+                            <div class="mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg">
+                                <div class="flex items-center text-sm">
+                                    <svg class="w-5 h-5 text-[#e74c3c] mr-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ active_hackathon.time_remaining }}</span>
+                                </div>
+                            </div>
+                            <!-- Stats -->
+                            <div class="grid grid-cols-3 gap-3 mb-4">
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-[#e74c3c]">{{ active_hackathon_stats.total_prs }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Total PRs</div>
+                                </div>
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-green-600">{{ active_hackathon_stats.merged_prs }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Merged</div>
+                                </div>
+                                <div class="bg-white dark:bg-gray-800 p-3 rounded-lg text-center">
+                                    <div class="text-2xl font-bold text-blue-600">{{ active_hackathon_stats.participants }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Participants</div>
+                                </div>
+                            </div>
+                            <!-- Call to Action Button -->
+                            <a href="{% url 'hackathon_detail' slug=active_hackathon.slug %}"
+                               class="block w-full text-center px-4 py-3 bg-[#e74c3c] hover:bg-[#c0392b] text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg">
+                                <span class="flex items-center justify-center">
+                                    <svg class="w-5 h-5 mr-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                    View Hackathon Details
+                                </span>
+                            </a>
+                        </div>
+                    </section>
+                {% endif %}
                 <!-- Related Repositories -->
                 <section class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
