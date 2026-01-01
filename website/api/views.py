@@ -19,7 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -179,6 +179,60 @@ class IssueViewSet(viewsets.ModelViewSet):
         if domain_url:
             queryset = queryset.filter(domain__url=domain_url)
 
+        cve_id = self.request.GET.get("cve_id")
+        if cve_id:
+            # Normalize CVE ID to match stored format (uppercase, trimmed)
+            # Use case-insensitive matching to handle both normalized and unnormalized data
+            from website.cache.cve_cache import normalize_cve_id
+
+            normalized_cve_id = normalize_cve_id(cve_id)
+            if normalized_cve_id:
+                # Use case-insensitive matching to handle existing unnormalized data
+                queryset = queryset.filter(cve_id__iexact=normalized_cve_id)
+
+        # Parse and validate CVE score filters
+        cve_score_min = self.request.GET.get("cve_score_min")
+        cve_score_max = self.request.GET.get("cve_score_max")
+        min_score = None
+        max_score = None
+
+        # Parse cve_score_min
+        if cve_score_min:
+            try:
+                min_score = float(cve_score_min)
+                if min_score < 0 or min_score > 10:
+                    logger.warning("Invalid cve_score_min value: %s (must be 0-10)", cve_score_min)
+                    min_score = None
+            except (ValueError, TypeError):
+                logger.warning("Invalid cve_score_min value: %s (not a number)", cve_score_min)
+
+        # Parse cve_score_max
+        if cve_score_max:
+            try:
+                max_score = float(cve_score_max)
+                if max_score < 0 or max_score > 10:
+                    logger.warning("Invalid cve_score_max value: %s (must be 0-10)", cve_score_max)
+                    max_score = None
+            except (ValueError, TypeError):
+                logger.warning("Invalid cve_score_max value: %s (not a number)", cve_score_max)
+
+        # Validate range BEFORE applying filters
+        if min_score is not None and max_score is not None:
+            if min_score > max_score:
+                logger.warning(
+                    "Invalid score range: min (%s) > max (%s), ignoring both filters",
+                    min_score,
+                    max_score,
+                )
+                min_score = None
+                max_score = None
+
+        # Apply filters only if valid
+        if min_score is not None:
+            queryset = queryset.filter(cve_score__gte=min_score)
+        if max_score is not None:
+            queryset = queryset.filter(cve_score__lte=max_score)
+
         return queryset
 
     def get_issue_info(self, request, issue):
@@ -256,9 +310,53 @@ class IssueViewSet(viewsets.ModelViewSet):
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
         data = super().create(request, *args, **kwargs).data
-        issue = Issue.objects.filter(id=data["id"]).first()
 
-        if tags:
+        # Fetch the created issue and normalize CVE data if present
+        # Use select_for_update within transaction to prevent race conditions during CVE processing
+        issue = None
+        with transaction.atomic():
+            try:
+                issue = Issue.objects.select_for_update().filter(id=data["id"]).first()
+
+                if issue and issue.cve_id:
+                    from website.views.issue import normalize_and_populate_cve_score
+
+                    try:
+                        original_cve_id = issue.cve_id
+                        normalize_and_populate_cve_score(issue)
+                        update_fields = []
+                        if issue.cve_id != original_cve_id:
+                            update_fields.append("cve_id")
+                        # Always include cve_score in update_fields after normalization
+                        # This ensures stale cve_score values are cleared when NVD lookup returns None
+                        # and ensures the score is persisted even if it didn't change
+                        update_fields.append("cve_score")
+                        if update_fields:
+                            issue.save(update_fields=update_fields)
+                    except ValidationError as e:
+                        # Invalid CVE ID format - clear it and log the error
+                        # The issue will still be created but without the invalid CVE ID
+                        logger.warning(
+                            f"Invalid CVE ID format for issue {issue.id if issue else 'unknown'}: {e}. Clearing CVE ID."
+                        )
+                        issue.cve_id = None
+                        issue.cve_score = None
+                        issue.save(update_fields=["cve_id", "cve_score"])
+                    except Exception as e:
+                        # Log the error but don't break the transaction
+                        # The issue will still be created even if CVE processing fails
+                        logger.exception(
+                            f"Failed to normalize/populate CVE score for issue {issue.id if issue else 'unknown'}: {e}"
+                        )
+            except Exception as e:
+                logger.exception(f"Unexpected error during CVE processing: {e}")
+                # Continue without CVE processing - issue creation already succeeded
+
+        # Continue with tags and screenshots outside of the CVE transaction
+        if issue is None:
+            issue = Issue.objects.filter(id=data["id"]).first()
+
+        if tags and issue:
             issue.tags.add(*tags)
 
         for screenshot in self.request.FILES.getlist("screenshots"):
