@@ -127,12 +127,30 @@
         });
     }
 
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
     function like_unlike_handler(e) {
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/like_issue/' + issue_pk + '/',
+            headers: {'X-CSRFToken': csrftoken},
             data: {},
             success: function (data) {
                 window.location.reload();
@@ -146,8 +164,9 @@
         e.preventDefault();
         var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/dislike_issue/' + issue_pk + '/',
+            headers: {'X-CSRFToken': csrftoken},
             data: {},
             success: function (data) {
                 window.location.reload();
@@ -161,8 +180,9 @@
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/flag_issue/' + issue_pk + '/',
+            headers: {'X-CSRFToken': csrftoken},
             data: {},
             success: function (data) {
                 window.location.reload();
@@ -178,8 +198,9 @@
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/save_issue/' + issue_pk + '/',
+            headers: {'X-CSRFToken': csrftoken},
             data: {},
             success: function (data) {
                 window.location.reload();
