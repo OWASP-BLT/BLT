@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.template import Context, Template
 from django.test import TestCase
 from django.urls import reverse
+from rest_framework.test import APIClient
 
 from website.models import Issue, SecurityIncident, SecurityIncidentHistory
 
@@ -201,7 +202,8 @@ class SecurityIncidentUpdateViewTest(TestCase):
 
     def test_api_update_creates_history(self):
         """Test that updating via API creates history records"""
-        self.client.force_authenticate(user=self.staff_user)
+        api_client = APIClient()
+        api_client.force_authenticate(user=self.staff_user)
 
         # Update the incident
         update_data = {
@@ -212,7 +214,7 @@ class SecurityIncidentUpdateViewTest(TestCase):
             "description": "Updated description",
         }
 
-        response = self.client.put(
+        response = api_client.put(
             reverse("securityincident-detail", args=[self.incident.pk]), update_data, format="json"
         )
 
