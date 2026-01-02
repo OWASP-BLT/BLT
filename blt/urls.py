@@ -25,6 +25,10 @@ from website.api.views import (
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CheckDuplicateBugApiView,
+    DebugCacheInfoApiView,
+    DebugClearCacheApiView,
+    DebugPopulateDataApiView,
+    DebugSystemStatsApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -38,6 +42,7 @@ from website.api.views import (
     ProjectViewSet,
     PublicJobListViewSet,
     SearchHistoryApiView,
+    SecurityIncidentViewSet,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -67,6 +72,7 @@ from website.views.company import (
     AddSlackIntegrationView,
     DomainView,
     EndBughuntView,
+    LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardIntegrations,
@@ -79,6 +85,7 @@ from website.views.company import (
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
+    TestSlackIntegrationView,
     accept_bug,
     check_domain_security_txt,
     create_job,
@@ -295,11 +302,18 @@ from website.views.project import (
     create_project,
     delete_project,
     distribute_bacon,
+    gsoc_pr_report,
     repo_activity_data,
     select_contribution,
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
+from website.views.security import SecurityDashboardView
+from website.views.security_incidents import (
+    SecurityIncidentCreateView,
+    SecurityIncidentDetailView,
+    SecurityIncidentUpdateView,
+)
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.slackbot import slack_landing_page
@@ -389,6 +403,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
+router.register(r"security-incidents", SecurityIncidentViewSet, basename="securityincident")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -935,6 +950,16 @@ urlpatterns = [
         name="add_slack_integration",
     ),
     path(
+        "organization/<int:id>/dashboard/test_slack_integration/",
+        TestSlackIntegrationView.as_view(),
+        name="test_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/lookup_slack_user/",
+        LookupSlackUserView.as_view(),
+        name="lookup_slack_user",
+    ),
+    path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
         AddDomainView.as_view(),
         name="edit_domain",
@@ -1221,6 +1246,11 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
+    path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
+    path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
+    path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
+    path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
 ]
 
 if settings.DEBUG:
@@ -1228,5 +1258,14 @@ if settings.DEBUG:
 
     urlpatterns = [
         re_path(r"^__debug__/", include(debug_toolbar.urls)),
+        # ⚠️ WARNING: Debug Panel APIs - ONLY FOR LOCAL DEVELOPMENT
+        # These endpoints expose sensitive system information and must NEVER be
+        # accessible in production. Ensure DEBUG=False in production settings.
+        # Endpoints are protected by @debug_required decorator.
+        path("api/debug/system-stats/", DebugSystemStatsApiView.as_view(), name="api_debug_system_stats"),
+        path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
+        path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
+        path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
     ] + urlpatterns
+
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

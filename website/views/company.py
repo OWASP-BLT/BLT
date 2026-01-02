@@ -44,6 +44,9 @@ from website.utils import check_security_txt, format_timedelta, is_valid_https_u
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
 
+# Slack user ID validation pattern
+SLACK_USER_ID_PATTERN = r"^U[A-Z0-9]+$"
+
 
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
@@ -1241,7 +1244,7 @@ class AddDomainView(View):
             if is_valid_https_url(domain_data["url"]):
                 safe_url = rebuild_safe_url(domain_data["url"])
                 try:
-                    response = requests.get(safe_url, timeout=5, verify=False)
+                    response = requests.get(safe_url, timeout=5, verify=True)
                     if response.status_code != 200:
                         raise Exception
                 except requests.exceptions.RequestException:
@@ -1527,6 +1530,189 @@ class AddSlackIntegrationView(View):
             messages.error(request, "Failed to delete Slack integration. Please try again.")
 
         return redirect("organization_manage_integrations", id=id)
+
+
+def _get_slack_integration_or_error(organization_id):
+    """Helper method to get Slack integration or return error response."""
+    integration = Integration.objects.filter(
+        organization_id=organization_id,
+        service_name=IntegrationServices.SLACK.value,
+    ).first()
+
+    if not integration or not hasattr(integration, "slack_integration"):
+        return None, JsonResponse(
+            {
+                "success": False,
+                "message": "Slack integration not found",
+            },
+            status=404,
+        )
+
+    slack_integration = integration.slack_integration
+
+    if not slack_integration.bot_access_token:
+        return None, JsonResponse(
+            {
+                "success": False,
+                "message": "Bot access token is missing",
+            },
+            status=400,
+        )
+
+    return slack_integration, None
+
+
+class TestSlackIntegrationView(View):
+    """Test the Slack integration by making an auth.test API call."""
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        try:
+            slack_integration, error_response = _get_slack_integration_or_error(id)
+            if error_response:
+                return error_response
+
+            # Test the connection using auth.test
+            app = App(token=slack_integration.bot_access_token)
+
+            try:
+                response = app.client.auth_test()
+
+                if response.get("ok"):
+                    team_name = response.get("team", "Unknown")
+                    bot_user = response.get("user", "Unknown")
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Connected to {team_name}",
+                            "team": team_name,
+                            "bot_user": bot_user,
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "Authentication failed",
+                        },
+                        status=401,
+                    )
+            except Exception as e:
+                logger.exception(f"Slack API error during test: {e}")
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Failed to connect to Slack",
+                    },
+                    status=500,
+                )
+
+        except Exception as e:
+            logger.exception(f"Error testing Slack integration: {e}")
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "An error occurred while testing the integration",
+                },
+                status=500,
+            )
+
+
+class LookupSlackUserView(View):
+    """Lookup a Slack user by their user ID."""
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        try:
+            slack_integration, error_response = _get_slack_integration_or_error(id)
+            if error_response:
+                return error_response
+
+            # Get user ID from request
+            try:
+                data = json.loads(request.body)
+                user_id = data.get("user_id", "").strip()
+            except json.JSONDecodeError:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Invalid request format",
+                    },
+                    status=400,
+                )
+
+            if not user_id:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "User ID is required",
+                    },
+                    status=400,
+                )
+
+            # Validate user ID format (Slack user IDs start with U and are alphanumeric)
+            if not re.match(SLACK_USER_ID_PATTERN, user_id):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Invalid user ID format. Slack user IDs start with 'U' followed by alphanumeric characters.",
+                    },
+                    status=400,
+                )
+
+            # Lookup user using users.info API
+            app = App(token=slack_integration.bot_access_token)
+
+            try:
+                response = app.client.users_info(user=user_id)
+
+                if response.get("ok") and response.get("user"):
+                    user = response.get("user")
+                    profile = user.get("profile", {})
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "user": {
+                                "id": user.get("id"),
+                                "name": user.get("name"),
+                                "real_name": profile.get("real_name"),
+                                "email": profile.get("email"),
+                                "avatar": profile.get("image_192") or profile.get("image_72"),
+                                "timezone": user.get("tz_label"),
+                                "is_bot": user.get("is_bot", False),
+                                "is_admin": user.get("is_admin", False),
+                            },
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "User not found. Please check the user ID and try again.",
+                        },
+                        status=404,
+                    )
+            except Exception as e:
+                logger.exception(f"Slack API error during user lookup: {e}")
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Failed to lookup user in Slack workspace",
+                    },
+                    status=500,
+                )
+
+        except Exception as e:
+            logger.exception(f"Error looking up Slack user: {e}")
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "An error occurred while looking up the user",
+                },
+                status=500,
+            )
 
 
 class SlackCallbackView(View):

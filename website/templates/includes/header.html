@@ -234,6 +234,13 @@
                                             Bacon Requests
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'gsoc_pr_report' %}"
+                                           class="flex items-center transition-colors {% if request.resolver_match.url_name == 'gsoc_pr_report' %} text-[#e74c3c] bg-[#feeae9] dark:bg-red-900/30 hover:bg-[#feeae9] dark:hover:bg-red-900/30 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
+                                            <i class="fas fa-code-pull-request w-5 mr-2 {% if request.resolver_match.url_name == 'gsoc_pr_report' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>
+                                            GSOC PR Reports
+                                        </a>
+                                    </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Users</h3>
                                 <ul class="space-y-2">
@@ -1126,7 +1133,9 @@
             const quickCommands = document.querySelectorAll('.quick-command');
         
             function escapeHtml(text) {
-                return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
+                const div = document.createElement("div");
+                div.textContent = text;
+                return div.innerHTML;
             }
         
             function handleSlashCommand(command, args) {
@@ -1330,7 +1339,7 @@
             }
             
             recentSearchesList.innerHTML = recentSearches.slice(0, 10).map(search => {
-                const searchTypeDisplay = search.search_type === 'all' ? 'All' : 
+                const searchTypeDisplay = (search.search_type === 'all' || !search.search_type) ? 'All' :
                     search.search_type.charAt(0).toUpperCase() + search.search_type.slice(1);
                 // Ensure search.id is a number to prevent XSS
                 const searchId = parseInt(search.id, 10);
@@ -1342,7 +1351,7 @@
                         <a href="{% url 'search' %}?query=${encodeURIComponent(search.query)}&type=${encodeURIComponent(search.search_type)}" class="flex-1 text-gray-700 dark:text-gray-300 text-sm">
                             <div class="flex items-center justify-between">
                                 <span>${escapeHtml(search.query)}</span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">${searchTypeDisplay}</span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">${escapeHtml(searchTypeDisplay)}</span>
                             </div>
                         </a>
                         <button type="button" class="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" onclick="deleteSearchItem(event, ${searchId})" title="Delete this search">
@@ -1351,13 +1360,6 @@
                     </div>
                 `;
             }).filter(html => html !== '').join('');
-        }
-        
-        // Escape HTML to prevent XSS
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
         
         // Show dropdown on focus
