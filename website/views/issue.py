@@ -141,6 +141,10 @@ def like_issue(request, issue_pk):
 
     total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    total_flags = UserProfile.objects.filter(issue_flaged=issue).count()
+
+    user_has_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
+    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
@@ -150,12 +154,25 @@ def like_issue(request, issue_pk):
                 "object": issue,
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
-                "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+                "flags_count": total_flags,
                 "user_vote": "upvote" if is_liked else None,
+                "user_has_flagged": user_has_flagged,
+                "user_has_saved": user_has_saved,
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
             request=request,
         )
         return HttpResponse(html)
+    # Fallback for non-HTMX POST requests
+    return JsonResponse(
+        {
+            "likes": total_upvotes,
+            "dislikes": total_downvotes,
+            "flags": total_flags,
+            "user_vote": "upvote" if is_liked else None,
+        }
+    )
 
 
 @require_POST
@@ -177,6 +194,10 @@ def dislike_issue(request, issue_pk):
 
     total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    total_flags = UserProfile.objects.filter(issue_flaged=issue).count()
+
+    user_has_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
+    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
@@ -186,12 +207,26 @@ def dislike_issue(request, issue_pk):
                 "object": issue,
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
-                "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+                "flags_count": total_flags,
                 "user_vote": "downvote" if is_disliked else None,
+                "user_has_flagged": user_has_flagged,
+                "user_has_saved": user_has_saved,
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
             request=request,
         )
         return HttpResponse(html)
+
+    # Fallback for non-HTMX POST requests
+    return JsonResponse(
+        {
+            "likes": total_upvotes,
+            "dislikes": total_downvotes,
+            "flags": total_flags,
+            "user_vote": "downvote" if is_disliked else None,
+        }
+    )
 
 
 @login_required(login_url="/accounts/login")
@@ -2275,12 +2310,27 @@ def flag_issue(request, issue_pk):
                 "object": issue,
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
-                "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+                "flags_count": total_flag_votes,
                 "user_vote": user_vote,
+                "user_has_flagged": is_flagged,
+                "user_has_saved": user_has_saved,
+                "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
+                "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
             request=request,
         )
         return HttpResponse(html)
+    # Fallback for non-HTMX POST requests
+    return JsonResponse(
+        {
+            "likes": total_upvotes,
+            "dislikes": total_downvotes,
+            "flags": total_flag_votes,
+            "user_vote": user_vote,
+            "user_has_flagged": is_flagged,
+            "user_has_saved": user_has_saved,
+        }
+    )
 
 
 def select_bid(request):
