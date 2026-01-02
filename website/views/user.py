@@ -457,6 +457,10 @@ class UserProfileDetailView(DetailView):
             .order_by()
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
+        bug_counts = Issue.objects.filter(user=self.object, hunt=None).values("label").annotate(count=Count("id"))
+        bug_count_map = {item["label"]: item["count"] for item in bug_counts}
+        for i in range(7):
+            context[f"bug_type_{i}_count"] = bug_count_map.get(str(i), 0)
         bug_qs = Issue.objects.filter(user=self.object, hunt=None)
         for i in range(7):
             context[f"bug_type_{i}"] = bug_qs.filter(label=str(i))
@@ -573,7 +577,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.get(user=self.request.user).first()
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
@@ -662,7 +666,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.get(user=self.request.user).first()
 
         year = self.request.GET.get("year")
 
@@ -713,7 +717,7 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.get(user=self.request.user).first()
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
@@ -1066,7 +1070,10 @@ def contributor_stats_view(request):
     return render(request, "weekly_activity.html", context)
 
 
+@login_required
 def create_wallet(request):
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
     existing_wallet_user_ids = Wallet.objects.values_list("user_id", flat=True)
     users_without_wallets = User.objects.exclude(id__in=existing_wallet_user_ids)
     wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
