@@ -231,7 +231,7 @@ def issue_votes(request, issue_pk):
             },
         )
         return HttpResponse(html)
-
+    # Fallback for non-HTMX POST requests
     return JsonResponse(
         {
             "likes": total_upvotes,
@@ -240,7 +240,8 @@ def issue_votes(request, issue_pk):
             "user_vote": user_vote,
             "user_has_flagged": user_has_flagged,
             "user_has_saved": user_has_saved,
-        }
+        },
+        status=200,
     )
 
 

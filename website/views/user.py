@@ -1910,7 +1910,7 @@ def toggle_follow(request, username):
     follower_profile, _ = UserProfile.objects.get_or_create(user=request.user)
     target_profile, _ = UserProfile.objects.get_or_create(user=target_user)
 
-    if target_profile in follower_profile.follows.all():
+    if follower_profile.follows.filter(pk=target_profile.pk).exists():
         follower_profile.follows.remove(target_profile)
         is_following = False
         action = "unfollowed"
