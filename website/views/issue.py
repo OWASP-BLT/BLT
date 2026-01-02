@@ -260,7 +260,6 @@ def issue_votes(request, issue_pk):
                 "positive_votes": total_upvotes,
                 "negative_votes": total_downvotes,
                 "flags_count": total_flags,
-                # REQUIRED: Add these context variables
                 "likers": UserProfile.objects.filter(issue_upvoted=issue).select_related("user"),
                 "flagers": UserProfile.objects.filter(issue_flaged=issue).select_related("user"),
             },
