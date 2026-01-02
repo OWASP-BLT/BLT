@@ -1441,7 +1441,7 @@ class Project(models.Model):
         MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
         freshness = min((raw_score / MAX_SCORE) * 100, 100)
 
-        return round(freshness, 2)
+        return Decimal(str(round(freshness, 2)))
 
     def save(self, *args, **kwargs):
         # Always ensure a valid slug exists before saving
