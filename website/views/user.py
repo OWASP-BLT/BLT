@@ -577,7 +577,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
@@ -666,7 +666,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         year = self.request.GET.get("year")
 
@@ -717,7 +717,7 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
