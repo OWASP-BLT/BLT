@@ -1,164 +1,141 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}Reports for Issue #{{ issue.id }} - Admin{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="mb-6">
-        <div class="flex items-center gap-4 mb-4">
-            <a href="{% url 'issue_view' slug=issue.id %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                <i class="fas fa-arrow-left mr-2"></i>Back to Issue
-            </a>
-        </div>
-        
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Reports for Issue #{{ issue.id }}
-            </h1>
-            <div class="text-gray-600 dark:text-gray-400 mb-4">
-                <strong>Issue:</strong> {{ issue.description }}
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-6">
+            <div class="flex items-center gap-4 mb-4">
+                <a href="{% url 'issue_view' slug=issue.id %}"
+                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Issue
+                </a>
             </div>
-            <div class="text-gray-600 dark:text-gray-400 mb-4">
-                <strong>URL:</strong> <a href="{{ issue.url }}" target="_blank" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">{{ issue.url }}</a>
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Reports for Issue #{{ issue.id }}</h1>
+                <div class="text-gray-600 dark:text-gray-400 mb-4">
+                    <strong>Issue:</strong> {{ issue.description }}
+                </div>
+                <div class="text-gray-600 dark:text-gray-400 mb-4">
+                    <strong>URL:</strong> <a href="{{ issue.url }}"
+    target="_blank"
+    class="text-blue-600 hover:text-blue-800 dark:text-blue-400">{{ issue.url }}</a>
+                </div>
+                <div class="text-gray-600 dark:text-gray-400">
+                    <strong>Reported by:</strong>
+                    {% if issue.user %}
+                        <a href="{% url 'profile' slug=issue.user.username %}"
+                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400">@{{ issue.user.username }}</a>
+                    {% else %}
+                        Anonymous
+                    {% endif %}
+                </div>
             </div>
-            <div class="text-gray-600 dark:text-gray-400">
-                <strong>Reported by:</strong> 
-                {% if issue.user %}
-                    <a href="{% url 'profile' slug=issue.user.username %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">@{{ issue.user.username }}</a>
-                {% else %}
-                    Anonymous
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Reports ({{ reports.count }})</h2>
+                {% if pending_count > 0 %}
+                    <div class="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 px-3 py-1 rounded-full">
+                        {{ pending_count }} Pending
+                    </div>
                 {% endif %}
             </div>
         </div>
-        
-        <div class="flex justify-between items-center">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Reports ({{ reports.count }})
-            </h2>
-            {% if pending_count > 0 %}
-                <div class="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 px-3 py-1 rounded-full">
-                    {{ pending_count }} Pending
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if reports %}
-        <div class="space-y-4">
-            {% for report in reports %}
-                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border-l-4 
-                    {% if report.status == 'pending' %}border-red-500
-                    {% elif report.status == 'reviewed' %}border-blue-500
-                    {% elif report.status == 'resolved' %}border-green-500
-                    {% else %}border-gray-500{% endif %}">
-                    
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                                <i class="fas fa-user text-gray-600 dark:text-gray-400"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium text-gray-900 dark:text-gray-100">
-                                    {{ report.reporter.username }}
+        {% if reports %}
+            <div class="space-y-4">
+                {% for report in reports %}
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border-l-4 {% if report.status == 'pending' %}border-red-500 {% elif report.status == 'reviewed' %}border-blue-500 {% elif report.status == 'resolved' %}border-green-500 {% else %}border-gray-500{% endif %}">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-600 dark:text-gray-400"></i>
                                 </div>
-                                <div class="text-sm text-gray-500 dark:text-gray-400">
-                                    {{ report.created|date:"M d, Y H:i" }}
+                                <div>
+                                    <div class="font-medium text-gray-900 dark:text-gray-100">{{ report.reporter.username }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ report.created|date:"M d, Y H:i" }}</div>
                                 </div>
                             </div>
+                            <div class="flex items-center gap-3">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
+                                    {{ report.get_reason_display }}
+                                </span>
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full {% if report.status == 'pending' %}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200 {% elif report.status == 'reviewed' %}bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200 {% elif report.status == 'resolved' %}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200 {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200{% endif %}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </div>
                         </div>
-                        
-                        <div class="flex items-center gap-3">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
-                                {{ report.get_reason_display }}
-                            </span>
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                {% if report.status == 'pending' %}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200
-                                {% elif report.status == 'reviewed' %}bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200
-                                {% elif report.status == 'resolved' %}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200
-                                {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200{% endif %}">
-                                {{ report.get_status_display }}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Report Description:</h4>
-                        <p class="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
-                            {{ report.description }}
-                        </p>
-                    </div>
-                    
-                    {% if report.admin_notes %}
                         <div class="mb-4">
-                            <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Admin Notes:</h4>
-                            <p class="text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-                                {{ report.admin_notes }}
-                            </p>
-                            {% if report.reviewed_by %}
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                    Reviewed by {{ report.reviewed_by.username }} on {{ report.reviewed_at|date:"M d, Y H:i" }}
-                                </p>
-                            {% endif %}
+                            <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Report Description:</h4>
+                            <p class="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded-md">{{ report.description }}</p>
                         </div>
-                    {% endif %}
-                    
-                    <div class="flex justify-end">
-                        <button onclick="showReportDetails({{ report.id }}, '{{ report.description|escapejs }}', '{{ report.admin_notes|escapejs }}', '{{ report.status }}')" 
-                                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-                            <i class="fas fa-edit mr-1"></i>
-                            Update Status
-                        </button>
+                        {% if report.admin_notes %}
+                            <div class="mb-4">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Admin Notes:</h4>
+                                <p class="text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">{{ report.admin_notes }}</p>
+                                {% if report.reviewed_by %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                        Reviewed by {{ report.reviewed_by.username }} on {{ report.reviewed_at|date:"M d, Y H:i" }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        <div class="flex justify-end">
+                            <button onclick="showReportDetails({{ report.id }}, '{{ report.description|escapejs }}', '{{ report.admin_notes|escapejs }}', '{{ report.status }}')"
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-edit mr-1"></i>
+                                Update Status
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <div class="text-gray-500 dark:text-gray-400 text-lg">No reports found for this issue.</div>
+            </div>
+        {% endif %}
+    </div>
+    <!-- Report Details Modal (reuse from main reports page) -->
+    <div id="reportDetailsModal"
+         class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Update Report</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description:</label>
+                    <div id="reportDetailsDescription"
+                         class="p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-sm text-gray-900 dark:text-gray-100">
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-12">
-            <div class="text-gray-500 dark:text-gray-400 text-lg">No reports found for this issue.</div>
-        </div>
-    {% endif %}
-</div>
-
-<!-- Report Details Modal (reuse from main reports page) -->
-<div id="reportDetailsModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-        <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Update Report</h3>
-            
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description:</label>
-                <div id="reportDetailsDescription" class="p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-sm text-gray-900 dark:text-gray-100"></div>
-            </div>
-            
-            <div class="mb-4">
-                <label for="adminNotes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin Notes:</label>
-                <textarea id="adminNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100" placeholder="Add admin notes..."></textarea>
-            </div>
-            
-            <div class="mb-4">
-                <label for="reportStatus" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status:</label>
-                <select id="reportStatus" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100">
-                    <option value="pending">Pending Review</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="dismissed">Dismissed</option>
-                </select>
-            </div>
-            
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeReportDetailsModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
-                    Cancel
-                </button>
-                <button onclick="saveReportUpdate()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                    Update
-                </button>
+                <div class="mb-4">
+                    <label for="adminNotes"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin Notes:</label>
+                    <textarea id="adminNotes"
+                              rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                              placeholder="Add admin notes..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="reportStatus"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status:</label>
+                    <select id="reportStatus"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100">
+                        <option value="pending">Pending Review</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="dismissed">Dismissed</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeReportDetailsModal()"
+                            class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500">
+                        Cancel
+                    </button>
+                    <button onclick="saveReportUpdate()"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Update</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-<script>
+    <script>
 let currentReportId = null;
 
 function showReportDetails(reportId, description, adminNotes, status) {
@@ -201,5 +178,5 @@ function saveReportUpdate() {
         alert('Failed to update report. Please try again.');
     });
 }
-</script>
+    </script>
 {% endblock %}

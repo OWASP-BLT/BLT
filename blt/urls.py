@@ -590,7 +590,7 @@ urlpatterns = [
     ),
     re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
-    re_path(r"^report_issue/(?P<id>\w+)/$", report_issue, name="report_issue"),
+    path("report_issue/<int:id>/", report_issue, name="report_issue"),
     path("issue-reports/", view_issue_reports, name="view_issue_reports"),
     path("issue-reports/<int:report_id>/update/", update_report_status, name="update_report_status"),
     path("issue/<int:issue_id>/reports/", view_issue_specific_reports, name="view_issue_specific_reports"),

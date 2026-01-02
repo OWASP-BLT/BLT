@@ -271,7 +271,6 @@ def resolve(request, id):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def report_issue(request, id):
     """Allow users to report suspicious issues"""
     issue = get_object_or_404(Issue, id=id)
@@ -289,6 +288,12 @@ def report_issue(request, id):
             return JsonResponse({"status": "error", "message": "You have already reported this issue"}, status=400)
 
         reason = request.POST.get("reason", "other")
+
+        # Validate reason against allowed choices
+        valid_reasons = [choice[0] for choice in IssueReport.REPORT_REASONS]
+        if reason not in valid_reasons:
+            return JsonResponse({"status": "error", "message": "Invalid reason provided"}, status=400)
+
         description = request.POST.get("description", "")
 
         if not description.strip():
@@ -323,7 +328,6 @@ def view_issue_reports(request):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def update_report_status(request, report_id):
     """Admin endpoint to update report status"""
     if not (request.user.is_superuser or request.user.is_staff):
