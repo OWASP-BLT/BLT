@@ -14,6 +14,7 @@ Usage:
     python manage.py resolve_duplicate_emails --update-email <user_id> <new_email>
 """
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand, CommandError
@@ -176,12 +177,13 @@ The Team
                 if dry_run:
                     self.stdout.write(f"   📧 Would send email to {user.username}")
                     self.stdout.write(f"      Subject: {subject}")
+                    total_emails_sent += 1
                 else:
                     try:
                         send_mail(
                             subject,
                             message,
-                            "noreply@example.com",  # Replace with your from email
+                            settings.DEFAULT_FROM_EMAIL,
                             [email],
                             fail_silently=False,
                         )
@@ -211,7 +213,7 @@ The Team
         self.stdout.write(f"   TO: {to_user.username} (ID: {to_user_id})")
 
         # Import models
-        from website.models import Issue, Points
+        from website.models import Issue, Points, UserProfile
 
         if dry_run:
             # Show what would be merged
@@ -248,8 +250,8 @@ The Team
                     to_profile.daily_visit_count += from_profile.daily_visit_count
 
                     to_profile.save()
-                except:
-                    pass  # UserProfile might not exist
+                except UserProfile.DoesNotExist:
+                    pass
 
                 # Delete the from_user
                 from_user.delete()

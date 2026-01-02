@@ -2,7 +2,7 @@
 import logging
 
 from django.db import migrations
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def remove_duplicate_users_safely(apps, schema_editor):
     logger.info("=" * 80)
 
     # Find all duplicate emails
-    duplicate_emails = (
+    duplicate_emails = list(
         User.objects.using(db_alias)
         .exclude(email="")
         .exclude(email__isnull=True)
@@ -80,8 +80,8 @@ def remove_duplicate_users_safely(apps, schema_editor):
             # Count user's issues
             issue_count = Issue.objects.using(db_alias).filter(user=user).count()
 
-            # Count user's points
-            points_count = Points.objects.using(db_alias).filter(user=user).aggregate(total=Count("id"))["total"] or 0
+            # Sum user's points
+            total_points = Points.objects.using(db_alias).filter(user=user).aggregate(total=Sum("score"))["total"] or 0
 
             # Check recent login (last_login can be None)
             recent_login = False
@@ -92,12 +92,12 @@ def remove_duplicate_users_safely(apps, schema_editor):
             # Check if user exceeds activity thresholds
             is_high_activity = (
                 issue_count >= HIGH_ACTIVITY_THRESHOLDS["issues_reported"]
-                or points_count >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
+                or total_points >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
                 or recent_login
             )
 
             activity_info = (
-                f"Issues: {issue_count}, " f"Points: {points_count}, " f"Last login: {user.last_login or 'Never'}"
+                f"Issues: {issue_count}, " f"Points: {total_points}, " f"Last login: {user.last_login or 'Never'}"
             )
 
             if is_high_activity:
@@ -152,7 +152,7 @@ def remove_duplicate_users_safely(apps, schema_editor):
         for user in users_to_delete:
             # Double-check activity levels before deletion
             issue_count = Issue.objects.using(db_alias).filter(user=user).count()
-            points_count = Points.objects.using(db_alias).filter(user=user).aggregate(total=Count("id"))["total"] or 0
+            total_points = Points.objects.using(db_alias).filter(user=user).aggregate(total=Sum("score"))["total"] or 0
 
             recent_login = False
             if user.last_login:
@@ -162,7 +162,7 @@ def remove_duplicate_users_safely(apps, schema_editor):
             # Final safety check
             if (
                 issue_count >= HIGH_ACTIVITY_THRESHOLDS["issues_reported"]
-                or points_count >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
+                or total_points >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
                 or recent_login
             ):
                 logger.error(f"🚨 SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
@@ -201,7 +201,7 @@ def create_email_unique_index(apps, schema_editor):
 
     if vendor == "postgresql":
         sql = """
-            DO $
+            DO $$
             BEGIN
                 IF NOT EXISTS (
                     SELECT 1 FROM pg_indexes 
@@ -210,7 +210,7 @@ def create_email_unique_index(apps, schema_editor):
                     CREATE UNIQUE INDEX auth_user_email_unique_safe 
                     ON auth_user (email) WHERE email IS NOT NULL AND email != '';
                 END IF;
-            END $;
+            END $$;
         """
     elif vendor == "sqlite":
         sql = """

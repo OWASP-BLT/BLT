@@ -121,7 +121,7 @@ python manage.py migrate website 0260
 For each duplicate email:
 1. **Keeps**: The user with the **highest ID** (newest account)
 2. **Deletes**: All other users with that email
-3. **Preserves**: All related data through Django's CASCADE behavior
+3. **Deletes**: All related data via Django's CASCADE behavior
 
 ### Data That Gets Deleted
 
