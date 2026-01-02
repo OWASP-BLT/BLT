@@ -1932,6 +1932,9 @@ class IssueView(DetailView):
 
             context["user_has_flagged"] = profile.issue_flaged.filter(pk=issue.pk).exists()
             context["user_has_saved"] = profile.issue_saved.filter(pk=issue.pk).exists()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=issue).select_related("user")
+
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=issue).select_related("user")
 
         return context
 
