@@ -96,7 +96,7 @@ logger = logging.getLogger(__name__)
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Toggle like
     if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
@@ -149,7 +149,7 @@ def like_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_section.html",
+            "includes/_like_dislike_share.html",
             {
                 "object": issue,
                 "positive_votes": total_upvotes,
@@ -179,7 +179,7 @@ def like_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Toggle dislike
     if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
@@ -202,7 +202,7 @@ def dislike_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_section.html",
+            "includes/_like_dislike_share.html",
             {
                 "object": issue,
                 "positive_votes": total_upvotes,
@@ -238,7 +238,7 @@ def issue_votes(request, issue_pk):
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
     total_flags = UserProfile.objects.filter(issue_flaged=issue).count()
 
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     user_vote = None
     if userprof.issue_upvoted.filter(pk=issue.pk).exists():
@@ -2184,7 +2184,7 @@ def comment_on_content(request, content_pk):
 def unsave_issue(request, issue_pk):
     issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
     userprof.issue_saved.remove(issue)
     return HttpResponse("OK")
 
@@ -2193,7 +2193,7 @@ def unsave_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Toggle save
     already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
@@ -2281,7 +2281,7 @@ def IssueEdit(request):
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Toggle flag
     if userprof.issue_flaged.filter(pk=issue.pk).exists():
@@ -2307,7 +2307,7 @@ def flag_issue(request, issue_pk):
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
-            "includes/_like_section.html",
+            "includes/_like_dislike_share.html",
             {
                 "object": issue,
                 "positive_votes": total_upvotes,
