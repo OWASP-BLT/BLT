@@ -199,6 +199,39 @@ class SecurityIncidentUpdateViewTest(TestCase):
         self.assertEqual(title_history.new_value, "Updated Title")
         self.assertEqual(title_history.changed_by, self.staff_user)
 
+    def test_api_update_creates_history(self):
+        """Test that updating via API creates history records"""
+        self.client.force_authenticate(user=self.staff_user)
+
+        # Update the incident
+        update_data = {
+            "title": "Updated Critical Issue",
+            "severity": "high",
+            "status": "investigating",
+            "affected_systems": "web,mobile",
+            "description": "Updated description",
+        }
+
+        response = self.client.put(
+            reverse("securityincident-detail", args=[self.incident.pk]), update_data, format="json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verify history records were created
+        history = SecurityIncidentHistory.objects.filter(incident=self.incident)
+        self.assertGreater(history.count(), 0)
+
+        # Check that changed fields are tracked
+        changed_fields = list(history.values_list("field_name", flat=True))
+        self.assertIn("title", changed_fields)
+        self.assertIn("severity", changed_fields)
+        self.assertIn("status", changed_fields)
+
+        # Verify changed_by is set
+        for entry in history:
+            self.assertEqual(entry.changed_by, self.staff_user)
+
     def test_update_unchanged_fields_no_history(self):
         """Test that unchanged fields don't create history records"""
         self.client.login(username="staffuser", password="testpass123")

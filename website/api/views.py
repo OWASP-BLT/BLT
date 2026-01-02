@@ -51,6 +51,7 @@ from website.models import (
     Repo,
     SearchHistory,
     SecurityIncident,
+    SecurityIncidentHistory,
     Tag,
     TimeLog,
     Token,
@@ -1462,8 +1463,29 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(reporter=self.request.user)
 
+    @transaction.atomic
     def perform_update(self, serializer):
+        # Capture old state before save
+        old_instance = SecurityIncident.objects.select_for_update().get(pk=serializer.instance.pk)
+
+        # Save the updated incident
         serializer.save()
+
+        # Create history records for changed fields
+        fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
+
+        for field in fields_to_track:
+            old_val = getattr(old_instance, field)
+            new_val = getattr(serializer.instance, field)
+
+            if old_val != new_val:
+                SecurityIncidentHistory.objects.create(
+                    incident=serializer.instance,
+                    field_name=field,
+                    old_value=old_val if old_val is not None else "",
+                    new_value=new_val if new_val is not None else "",
+                    changed_by=self.request.user,
+                )
 
     def get_queryset(self):
         queryset = self.queryset  # Use class-level queryset
