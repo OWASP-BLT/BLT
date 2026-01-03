@@ -1037,13 +1037,20 @@ def add_forum_post(request):
             title = data.get("title")
             description = data.get("description")
             category = data.get("category")
+            repo_id = data.get("repo")
+            project_id = data.get("project")
+            organization_id = data.get("organization")
 
             if not all([title, description, category]):
-                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": "Missing required fields"},
+                    status=400,
+                )
 
             category = int(category)
             ForumCategory.objects.get(id=category)
 
+            # validate optional foreign keys
             if repo_id:
                 repo_id = int(repo_id)
                 Repo.objects.get(id=repo_id)
@@ -1067,14 +1074,16 @@ def add_forum_post(request):
                 title=title,
                 description=description,
                 category_id=category,
-                repo_id=data.get("repo") or None,
-                project_id=data.get("project") or None,
-                organization_id=data.get("organization") or None,
+                repo_id=repo_id,
+                project_id=project_id,
+                organization_id=organization_id,
             )
 
             return JsonResponse({"success": True, "post_id": post.id})
         except ForumCategory.DoesNotExist:
             return JsonResponse({"success": False, "error": "Category not found"}, status=404)
+        except (Repo.DoesNotExist, Project.DoesNotExist, Organization.DoesNotExist):
+            return JsonResponse({"success": False, "error": "Invalid reference ID"}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
         except (ValueError, TypeError):
