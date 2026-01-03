@@ -1128,23 +1128,22 @@ def add_forum_comment(request):
 @login_required
 @require_POST
 def delete_forum_post(request):
-    if not request.user.is_superuser:
-        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-
     try:
         data = json.loads(request.body)
         post_id = data.get("post_id")
 
         if not post_id:
-            return JsonResponse({"status": "error", "message": "Post ID is required"})
+            return JsonResponse({"status": "error", "message": "Post ID is required"}, status=400)
 
-        # Validate post_id is an integer
         try:
             post_id = int(post_id)
         except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"}, status=400)
 
         post = ForumPost.objects.get(id=post_id)
+
+        if request.user != post.user and not request.user.is_superuser:
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
         post.delete()
 
         return JsonResponse({"status": "success", "message": "Post deleted successfully"})

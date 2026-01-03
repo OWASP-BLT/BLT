@@ -660,5 +660,12 @@
         });
     }
 
+    window.onclick = function (event) {
+    const modal = document.getElementById("newSuggestionModal");
+    if (event.target === modal) {
+        closeNewSuggestionModal();
+    }
+};
+
     </script>
 {% endblock content %}
