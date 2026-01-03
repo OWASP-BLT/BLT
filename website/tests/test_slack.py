@@ -1,7 +1,10 @@
 import json
+import urllib.parse
 from unittest.mock import MagicMock, patch
 
+from django.core.cache import cache
 from django.test import TestCase
+from django.utils import timezone
 
 from website.models import Integration, Organization, Project, SlackBotActivity, SlackIntegration
 from website.views.slack_handlers import get_project_with_least_members, slack_commands, slack_events
@@ -127,6 +130,7 @@ class GetProjectWithLeastMembersTests(TestCase):
 class SlackHandlerTests(TestCase):
     def setUp(self):
         # Create test organization and integration
+        cache.clear()
         self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
         self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
         self.slack_integration = SlackIntegration.objects.create(
@@ -314,3 +318,427 @@ class SlackHandlerTests(TestCase):
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
         self.assertEqual(activity.details["command"], "/installed_apps")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_poll_command_help(self, mock_webclient, mock_verify):
+        """Test /blt_poll command with no arguments shows help"""
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Create test request for /blt_poll with no text
+        request = MagicMock()
+        request.body = b"command=/blt_poll&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = {
+            "command": "/blt_poll",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test-workspace",
+            "channel_id": "C123",
+            "text": "",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the command handler
+        response = slack_commands(request)
+
+        # Check that help was sent
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn("help", response_data["text"].lower())
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_poll_command_create(self, mock_webclient, mock_verify):
+        """Test creating a poll with /blt_poll command"""
+        from website.models import SlackPoll
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Create test request for /blt_poll
+        request = MagicMock()
+        poll_text = '"What time?" "Morning" "Afternoon" "Evening"'
+        request.body = f"command=/blt_poll&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={poll_text}".encode()
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = {
+            "command": "/blt_poll",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test-workspace",
+            "channel_id": "C123",
+            "text": poll_text,
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the command handler
+        response = slack_commands(request)
+
+        # Check that poll was created
+        self.assertEqual(response.status_code, 200)
+        poll = SlackPoll.objects.filter(workspace_id="T070JPE5BQQ").first()
+        self.assertIsNotNone(poll)
+        self.assertEqual(poll.question, "What time?")
+        self.assertEqual(poll.options.count(), 3)
+        self.assertEqual(poll.status, "active")
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details.get("command"), "/blt_poll")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_remind_command_help(self, mock_webclient, mock_verify):
+        """Test /blt_remind command with no arguments shows help"""
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Create test request for /blt_remind with no text
+        request = MagicMock()
+        request.body = b"command=/blt_remind&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test-workspace",
+            "channel_id": "C123",
+            "text": "",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the command handler
+        response = slack_commands(request)
+
+        # Check that help was sent
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn("help", response_data["text"].lower())
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_remind_command_create(self, mock_webclient, mock_verify):
+        """Test creating a reminder with /blt_remind command"""
+        from website.models import SlackBotActivity, SlackReminder
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Create test request for /blt_remind
+        request = MagicMock()
+        remind_text = '"Team meeting" in 30 minutes'
+        post_data = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "channel_id": "C123",
+            "text": remind_text,
+        }
+        request.body = urllib.parse.urlencode(post_data).encode()
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test-workspace",
+            "channel_id": "C123",
+            "text": remind_text,
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the command handler
+        response = slack_commands(request)
+
+        # Check that reminder was created
+        self.assertEqual(response.status_code, 200)
+        reminder = SlackReminder.objects.filter(workspace_id="T070JPE5BQQ").first()
+        self.assertIsNotNone(reminder)
+        self.assertEqual(reminder.message, "Team meeting")
+        self.assertEqual(reminder.status, "pending")
+        self.assertEqual(reminder.target_id, "U123")
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details.get("command"), "/blt_remind")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_remind_command_snooze_zero_amount_error(self, mock_webclient, mock_verify):
+        """Snooze subcommand should reject zero amount."""
+        from website.models import SlackReminder
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Prepare an existing reminder
+        r = SlackReminder.objects.create(
+            creator_id="U123",
+            workspace_id="T070JPE5BQQ",
+            target_type="user",
+            target_id="U123",
+            message="Ping",
+            remind_at=timezone.now() + timezone.timedelta(minutes=10),
+            status="pending",
+        )
+
+        # Build request for snooze with 0 minutes
+        request = MagicMock()
+        post_data = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "channel_id": "C123",
+            "text": f"snooze {r.id} in 0 minutes",
+        }
+        request.body = urllib.parse.urlencode(post_data).encode()
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = post_data
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("positive", json.loads(response.content)["text"].lower())
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_remind_command_snooze_excessive_minutes_error(self, mock_webclient, mock_verify):
+        """Snooze subcommand should cap minutes to 1 year equivalent."""
+        from website.models import SlackReminder
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        r = SlackReminder.objects.create(
+            creator_id="U123",
+            workspace_id="T070JPE5BQQ",
+            target_type="user",
+            target_id="U123",
+            message="Ping",
+            remind_at=timezone.now() + timezone.timedelta(minutes=10),
+            status="pending",
+        )
+
+        request = MagicMock()
+        post_data = {
+            "command": "/blt_remind",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "channel_id": "C123",
+            "text": f"snooze {r.id} in 525601 minutes",
+        }
+        request.body = urllib.parse.urlencode(post_data).encode()
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = post_data
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("too long", json.loads(response.content)["text"].lower())
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_huddle_command_help(self, mock_webclient, mock_verify):
+        """Test /blt_huddle command with no arguments shows help"""
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {
+                "id": "U123",
+                "name": "testuser",
+                "real_name": "Test User",
+                "profile": {"display_name": "Test User"},
+            },
+        }
+
+        # Create test request for /blt_huddle with no text
+        request = MagicMock()
+        request.body = b"command=/blt_huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text="
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = {
+            "command": "/blt_huddle",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test-workspace",
+            "channel_id": "C123",
+            "text": "",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the command handler
+        response = slack_commands(request)
+
+        # Check that help was sent
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn("help", response_data["text"].lower())
+
+    @patch("website.views.slack_handlers.SLACK_TOKEN", "xoxb-test")
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_huddle_command_create(self, mock_webclient, mock_verify):
+        """Test creating a huddle with /blt_huddle command"""
+        from website.models import SlackHuddle
+
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.chat_postMessage.return_value = {"ok": True, "ts": "1234567890.123456"}
+
+        # Mock users_info to handle both users
+        def mock_users_info(user=None):
+            if user == "U123":
+                return {
+                    "ok": True,
+                    "user": {
+                        "id": "U123",
+                        "name": "testuser",
+                        "real_name": "Test User",
+                        "profile": {"display_name": "Test User"},
+                    },
+                }
+            elif user == "U456":
+                return {
+                    "ok": True,
+                    "user": {
+                        "id": "U456",
+                        "name": "participant",
+                        "real_name": "Participant User",
+                        "profile": {"display_name": "Participant User"},
+                    },
+                }
+            return {"ok": False}
+
+        mock_client.users_info.side_effect = mock_users_info
+
+        # Create test request for /blt_huddle
+        request = MagicMock()
+        huddle_text = '"Sprint Planning" "Q1 planning" in 2 hours with <@U456>'
+        request.body = (
+            f"command=/blt_huddle&user_id=U123&team_id=T070JPE5BQQ&channel_id=C123&text={huddle_text}".encode()
+        )
+        request.method = "POST"
+        request.content_type = "application/x-www-form-urlencoded"
+        request.POST = {
+            "command": "/blt_huddle",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test-workspace",
+            "channel_id": "C123",
+            "text": huddle_text,
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the command handler
+        response = slack_commands(request)
+
+        # Check that huddle was created
+        self.assertEqual(response.status_code, 200)
+        huddle = SlackHuddle.objects.filter(workspace_id="T070JPE5BQQ").first()
+        self.assertIsNotNone(huddle)
+        self.assertEqual(huddle.title, "Sprint Planning")
+        self.assertEqual(huddle.description, "Q1 planning")
+        self.assertEqual(huddle.status, "scheduled")
+        self.assertEqual(huddle.participants.count(), 1)
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.details.get("command"), "/blt_huddle")
