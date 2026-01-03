@@ -224,36 +224,33 @@ class HackathonDetailView(DetailView):
         # Get the reviewer leaderboard
         context["reviewer_leaderboard"] = hackathon.get_reviewer_leaderboard()
 
-        # Get repositories with merged PR counts
-        repositories = hackathon.repositories.all()
-        repo_ids = repositories.values_list("id", flat=True)
+        repositories = list(
+            hackathon.repositories.annotate(
+                merged_pr_count=Count(
+                    "github_issues",
+                    filter=Q(
+                        github_issues__type="pull_request",
+                        github_issues__is_merged=True,
+                        github_issues__merged_at__gte=hackathon.start_time,
+                        github_issues__merged_at__lte=hackathon.end_time,
+                    )
+                    & ~Q(github_issues__contributor__contributor_type="Bot")
+                    & ~Q(github_issues__contributor__name__endswith="[bot]")
+                    & ~Q(github_issues__contributor__name__icontains="bot"),
+                )
+            )
+        )
+        repo_ids = [repo.id for repo in repositories]
+
         repos_with_pr_counts = []
 
         for repo in repositories:
-            # Count merged PRs for this repository (excluding bots)
-            merged_pr_count = (
-                GitHubIssue.objects.filter(
-                    repo=repo,
-                    type="pull_request",
-                    is_merged=True,
-                    merged_at__gte=hackathon.start_time,
-                    merged_at__lte=hackathon.end_time,
-                )
-                .exclude(
-                    Q(contributor__contributor_type="Bot")
-                    | Q(contributor__name__endswith="[bot]")
-                    | Q(contributor__name__icontains="bot")
-                )
-                .count()
-            )
-
-            # Generate the GitHub search URL for merged PRs
             merged_prs_url = self._get_github_merged_prs_url(repo, hackathon)
 
             repos_with_pr_counts.append(
                 {
                     "repo": repo,
-                    "merged_pr_count": merged_pr_count,
+                    "merged_pr_count": repo.merged_pr_count,
                     "merged_prs_url": merged_prs_url,
                 }
             )
