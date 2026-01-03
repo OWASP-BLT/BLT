@@ -27,8 +27,11 @@ jobs:
   check_peer_review:
     runs-on: ubuntu-latest
     if: >
-     github.event.pull_request.user.login != 'dependabot[bot]'
-     && github.event.pull_request.user.login != 'dependabot-preview[bot]'
+     github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != 'DonnieBLT'
+      && !contains(github.actor, 'copilot')
     steps:
       - name: Check for Peer Review and Add Label
         id: check_peer_review
