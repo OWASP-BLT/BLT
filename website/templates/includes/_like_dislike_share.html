@@ -198,14 +198,24 @@
 <script>
     async function resolveIssue(){
         var id = {{object.pk}};
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-        const request = await fetch(`/resolve/${id}/`)
-        window.location.reload();
+        const request = await fetch(`/resolve/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+        
         if (request.status == 403){
             $.notify("Permission Denied", {
                 style: "custom",
                 className: "danger"
             });
+        } else if (request.ok) {
+            window.location.reload();
         }
     }
 </script>
