@@ -27,11 +27,11 @@ jobs:
   check_peer_review:
     runs-on: ubuntu-latest
     if: >
-     github.actor != 'dependabot[bot]'
-      && github.actor != 'dependabot-preview[bot]'
-      && github.actor != 'dependabot'
-      && github.actor != 'DonnieBLT'
-      && !contains(github.actor, 'copilot')
+     github.event.pull_request.user.login != 'dependabot[bot]'
+     && github.event.pull_request.user.login != 'dependabot-preview[bot]'
+     && github.event.pull_request.user.login != 'dependabot'
+     && github.event.pull_request.user.login != 'DonnieBLT'
+     && !contains(github.event.pull_request.user.login, 'copilot')
     steps:
       - name: Check for Peer Review and Add Label
         id: check_peer_review
@@ -58,7 +58,7 @@ jobs:
           echo "PR Author: $PR_AUTHOR"
 
           # Skip Dependabot PRs entirely (defense in depth)
-          if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "dependabot-preview[bot]" ]]; then
+          if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "dependabot-preview[bot]" || "$PR_AUTHOR" == "dependabot" ]]; then
           echo "Dependabot PR detected. Skipping peer review check."
           echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
           exit 0
