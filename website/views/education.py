@@ -11,18 +11,29 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
+from website.forms import EducationalVideoForm
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
 
 logger = logging.getLogger(__name__)
+_openai_client = None
+
+
+def get_openai_client():
+    global _openai_client
+    if _openai_client is None:
+        from django.conf import settings
+        from openai import OpenAI
+
+        _openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    return _openai_client
 
 
 def is_valid_url(url, url_type):
-    """Helper function to validate URLs based on their type."""
     if url_type == "video":
-        allowed_domains = {"www.youtube.com", "youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com"}
+        allowed_domains = {"www.youtube.com", "youtube.com", "youtu.be"}
     elif url_type == "live":
-        allowed_domains = {"zoom.us", "meet.google.com", "vimeo.com", "www.vimeo.com"}
+        allowed_domains = {"zoom.us", "meet.google.com"}
     else:
         return False
 
@@ -45,6 +56,179 @@ def education_home(request):
     courses = Course.objects.all()
     context = {"is_instructor": is_instructor, "featured_lectures": featured_lectures, "courses": courses}
     return render(request, template, context)
+
+
+def extract_youtube_video_id(url):
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+
+    if hostname in ["youtu.be", "www.youtu.be"]:
+        return parsed.path.lstrip("/")
+    elif hostname in ["youtube.com", "www.youtube.com"]:
+        query = dict(qc.split("=") for qc in parsed.query.split("&") if "=" in qc)
+        return query.get("v")
+    return None
+
+
+def get_transcript_text(video_id):
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+
+        ytt_api = YouTubeTranscriptApi()
+        fetched_transcript = ytt_api.fetch(video_id)
+
+        # fetched_transcript is iterable
+        text = " ".join(snippet.text for snippet in fetched_transcript)
+
+        return text.strip()
+
+    except Exception as e:
+        logger.error(f"Transcript fetch failed: {e}")
+        return ""
+
+
+@login_required
+def submit_educational_video(request):
+    quiz = None
+
+    if request.method == "POST":
+        form = EducationalVideoForm(request.POST)
+
+        if form.is_valid():
+            video_url = form.cleaned_data["video_url"]
+            video_id = extract_youtube_video_id(video_url)
+
+            if not video_id:
+                messages.error(request, "Only YouTube videos are supported for quiz generation.")
+                return redirect("/education/submit/")
+
+            transcript_text = get_transcript_text(video_id)
+
+            if not transcript_text:
+                messages.error(request, "Transcript not available for this video.")
+                return redirect("/education/submit/")
+
+            try:
+                is_educational = is_educational_video(transcript_text)
+            except Exception as e:
+                logger.error(f"Education detection failed: {e}")
+                messages.error(request, "Failed to analyze video content.")
+                return redirect("/education/submit/")
+
+            if not is_educational:
+                messages.error(
+                    request, "This video does not appear to be educational. Please submit an educational video."
+                )
+                return redirect("/education/submit/")
+
+            try:
+                quiz = generate_quiz(transcript_text)
+                messages.success(request, "Quiz generated successfully!")
+            except Exception as e:
+                logger.error(f"OpenAI error: {e}")
+
+                if "rate limit" in str(e).lower() or "429" in str(e):
+                    messages.error(
+                        request, "AI service is temporarily rate-limited. Please wait 20 seconds and try again."
+                    )
+                else:
+                    messages.error(request, "Failed to generate quiz due to an AI service error.")
+
+                return redirect("/education/submit/")
+
+    else:
+        form = EducationalVideoForm()
+
+    return render(
+        request,
+        "education/submit_video.html",
+        {
+            "form": form,
+            "quiz": quiz,
+        },
+    )
+
+
+def generate_quiz(transcript_text):
+    if not transcript_text:
+        return None
+
+    prompt = f"""
+Create 20 multiple-choice questions (MCQs) from the transcript below.
+
+Rules:
+- Output ONLY valid JSON
+- No markdown
+- No explanations
+- Format EXACTLY like this:
+
+[
+  {{
+    "question": "Question text",
+    "options": ["A", "B", "C", "D"],
+    "answer": "Correct option text"
+  }}
+]
+
+Transcript:
+{transcript_text[:3500]}
+"""
+    client = get_openai_client()
+    response = client.with_options(timeout=40.0).chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a strict JSON-only quiz generator."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.4,
+    )
+
+    content = response.choices[0].message.content.strip()
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON from OpenAI: {content}")
+        raise
+
+
+def is_educational_video(transcript_text):
+    prompt = f"""
+You are a strict classifier.
+
+Decide whether the following transcript is EDUCATIONAL.
+
+Educational means:
+- Teaching concepts
+- Tutorials
+- Courses
+- Explanations
+- How-to guides
+- Academic or skill-based learning
+
+Non-educational means:
+- Music
+- Lyrics
+- Vlogs
+- Comedy
+- Entertainment
+- Interviews without teaching
+
+Respond with ONLY one word:
+YES or NO
+
+Transcript:
+{transcript_text[:2000]}
+"""
+    client = get_openai_client()
+    response = client.with_options(timeout=40.0).chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": "You are a strict classifier."}, {"role": "user", "content": prompt}],
+        temperature=0,
+    )
+
+    answer = response.choices[0].message.content.strip().upper()
+    return answer.startswith("YES")
 
 
 @login_required(login_url="/accounts/login")
