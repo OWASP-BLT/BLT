@@ -1589,6 +1589,42 @@ class IpReport(models.Model):
         return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"
 
 
+class IssueReport(models.Model):
+    REPORT_REASONS = [
+        ("spam", "Spam"),
+        ("duplicate", "Duplicate"),
+        ("fake", "Fake/Invalid"),
+        ("inappropriate", "Inappropriate Content"),
+        ("other", "Other"),
+    ]
+
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("reviewed", "Reviewed"),
+        ("resolved", "Resolved"),
+        ("dismissed", "Dismissed"),
+    ]
+
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="issue_reports")
+    reported_issue = models.ForeignKey("Issue", on_delete=models.CASCADE, related_name="reports")
+    reason = models.CharField(max_length=20, choices=REPORT_REASONS)
+    description = models.TextField(help_text="Please provide details about why you're reporting this issue")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    created = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_reports"
+    )
+    admin_notes = models.TextField(blank=True, help_text="Admin notes about this report")
+
+    class Meta:
+        unique_together = ("reporter", "reported_issue")  # Prevent duplicate reports from same user
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"Report by {self.reporter.username} on Issue #{self.reported_issue.id} - {self.get_reason_display()}"
+
+
 class Activity(models.Model):
     ACTION_TYPES = [
         ("create", "Created"),
