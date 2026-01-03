@@ -1,0 +1,177 @@
+[
+    {
+        "title": "Team Powerhouse",
+        "slug": "team-powerhouse",
+        "description": "Awarded to a team with 20 or more accepted issues.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_total_issues",
+            "threshold": 20
+        }
+    },
+    {
+        "title": "Collaborative Force",
+        "slug": "collaborative-force",
+        "description": "Team with 50+ total contributions.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_contributions",
+            "threshold": 50
+        }
+    },
+    {
+        "title": "Most Active Team",
+        "slug": "most-active-team",
+        "description": "Awarded to the most active team overall compared to all other teams.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_top_activity_rank",
+            "rank": 1
+        }
+    },
+    {
+        "title": "Challenge Conquerors",
+        "slug": "challenge-conquerors",
+        "description": "Awarded to a team that successfully completes 3 or more team challenges.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_completed_challenges",
+            "threshold": 3
+        }
+    },
+    {
+        "title": "Issue Dominators",
+        "slug": "issue-dominators",
+        "description": "Team that has closed 40 or more issues.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_issues_closed",
+            "threshold": 40
+        }
+    },
+    {
+        "title": "Discussion Driven Team",
+        "slug": "discussion-driven-team",
+        "description": "Team that actively participates in discussions with 100+ meaningful comments.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_comments",
+            "threshold": 100
+        }
+    },
+    {
+        "title": "Consistent Performers",
+        "slug": "consistent-performers",
+        "description": "Team showing steady activity with contributions across at least 10 different days.",
+        "type": "automatic",
+        "scope": "team",
+        "criteria": {
+            "metric": "team_active_days",
+            "threshold": 10
+        }
+    },
+    {
+        "title": "Top Contributor",
+        "slug": "top-contributor",
+        "description": "Highest contributing member in the team.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "top_contributor_team_rank",
+            "rank": 1
+        }
+    },
+    {
+        "title": "Early Bird",
+        "slug": "early-bird",
+        "description": "First member to ever make a contribution in the team.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "first_contributor_team",
+            "rank": 1
+        }
+    },
+    {
+        "title": "Issue Crusher",
+        "slug": "issue-crusher",
+        "description": "Member who completed 30 or more accepted issues inside their team.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "user_team_issues",
+            "threshold": 30
+        }
+    },
+    {
+        "title": "Dependable Contributor",
+        "slug": "dependable-contributor",
+        "description": "Consistent contributing member of the team.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "user_team_contributions",
+            "threshold": 5
+        }
+    },
+    {
+        "title": "Pull Request Pro",
+        "slug": "pull-request-pro",
+        "description": "Member who raised 15 or more pull requests inside their team.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "user_team_pull_requests",
+            "threshold": 15
+        }
+    },
+    {
+        "title": "Issue Initiator",
+        "slug": "issue-initiator",
+        "description": "Member who opened 20 or more issues inside their team.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "user_team_issues_opened",
+            "threshold": 20
+        }
+    },
+    {
+        "title": "Discussion Driver",
+        "slug": "discussion-driver",
+        "description": "Member who actively participates with 50+ meaningful comments.",
+        "type": "automatic",
+        "scope": "topuser_team",
+        "criteria": {
+            "metric": "user_team_comments",
+            "threshold": 50
+        }
+    },
+    {
+        "title": "Team MVP",
+        "slug": "team-mvp",
+        "description": "Awarded manually by the team leader to a standout performer.",
+        "type": "manual",
+        "scope": "topuser_team"
+    },
+    {
+        "title": "Team Support Star",
+        "slug": "team-support-star",
+        "description": "Awarded manually by the team leader to someone who supported others exceptionally well.",
+        "type": "manual",
+        "scope": "topuser_team"
+    },
+    {
+        "title": "Community Hero",
+        "slug": "community-hero",
+        "description": "Awarded manually to a member who went above and beyond to help the team and community.",
+        "type": "manual",
+        "scope": "topuser_team"
+    }
+]
