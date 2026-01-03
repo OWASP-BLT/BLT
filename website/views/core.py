@@ -1041,7 +1041,7 @@ def add_forum_post(request):
             project_id = data.get("project")
             organization_id = data.get("organization")
 
-            if not all([title, description, category]):
+            if title is None or description is None or category is None:
                 return JsonResponse(
                     {"success": False, "error": "Missing required fields"},
                     status=400,
