@@ -27,7 +27,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -1892,3 +1892,57 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@require_POST
+@login_required
+def toggle_follow(request, username):
+    """Toggle follow/unfollow for a user (HTMX + non-HTMX safe)"""
+
+    target_user = get_object_or_404(User, username=username)
+
+    if request.user == target_user:
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "Cannot follow yourself"}, status=400)
+        messages.error(request, "You cannot follow yourself")
+        return redirect("profile", slug=username)
+
+    follower_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    target_profile, _ = UserProfile.objects.get_or_create(user=target_user)
+
+    if follower_profile.follows.filter(pk=target_profile.pk).exists():
+        follower_profile.follows.remove(target_profile)
+        is_following = False
+        action = "unfollowed"
+    else:
+        follower_profile.follows.add(target_profile)
+        is_following = True
+        action = "followed"
+
+        if target_user.email:
+            send_mail(
+                "You got a new follower!!",
+                f"{request.user.username} started following you.",
+                settings.EMAIL_TO_STRING,
+                [target_user.email],
+                fail_silently=True,
+            )
+
+    follower_count = target_profile.follower.count()
+
+    # HTMX response
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_follow_button.html",
+            {
+                "user": target_user,
+                "is_following": is_following,
+                "follower_count": follower_count,
+            },
+            request=request,
+        )
+        return HttpResponse(html)
+
+    # Normal request fallback
+    messages.success(request, f"You {action} {target_user.username}")
+    return redirect("profile", slug=username)
