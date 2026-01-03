@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -1396,6 +1396,52 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    freshness = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, db_index=True)
+
+    def calculate_freshness(self):
+        """
+        Calculate freshness using a Bumper-style activity decay model,
+        based on GitHub commit recency.
+        """
+        now = timezone.now()
+
+        last_7_days = now - timedelta(days=7)
+        last_30_days = now - timedelta(days=30)
+        last_90_days = now - timedelta(days=90)
+
+        counts = self.repos.filter(
+            is_archived=False,
+            last_commit_date__isnull=False,
+        ).aggregate(
+            active_7=Count(
+                "id",
+                filter=Q(last_commit_date__gte=last_7_days),
+            ),
+            active_30=Count(
+                "id",
+                filter=Q(
+                    last_commit_date__lt=last_7_days,
+                    last_commit_date__gte=last_30_days,
+                ),
+            ),
+            active_90=Count(
+                "id",
+                filter=Q(
+                    last_commit_date__lt=last_30_days,
+                    last_commit_date__gte=last_90_days,
+                ),
+            ),
+        )
+
+        raw_score = counts["active_7"] * 1.0 + counts["active_30"] * 0.6 + counts["active_90"] * 0.3
+
+        if raw_score == 0:
+            return 0.0
+
+        MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
+        freshness = min((raw_score / MAX_SCORE) * 100, 100)
+
+        return Decimal(str(round(freshness, 2)))
 
     def save(self, *args, **kwargs):
         # Always ensure a valid slug exists before saving
