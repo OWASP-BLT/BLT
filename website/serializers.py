@@ -308,6 +308,20 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "timestamp"]
 
 
+class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username")
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            "username",
+            "leaderboard_score",
+            "quality_score",
+            "current_streak",
+            "check_in_count",
+        ]
+
+
 class SecurityIncidentSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecurityIncident

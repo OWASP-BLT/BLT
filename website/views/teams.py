@@ -3,6 +3,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError
@@ -11,7 +12,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 # Create your views here.
-from django.views.generic import TemplateView
+from django.views.generic import ListView, TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -297,51 +298,87 @@ class TeamChallenges(TemplateView):
 
 
 class TeamLeaderboard(TemplateView):
-    """View to display the team leaderboard based on total points with pagination."""
+    template_name = "teams/team_leaderboard.html"
 
     def get(self, request):
-        # Get all teams and their points
-        teams = Organization.objects.all()
+        teams = Organization.objects.annotate(member_count=Count("managers"))
         leaderboard_data = []
 
         for team in teams:
-            team_points = team.team_points
+            team_points = team.compute_team_score()
             leaderboard_data.append((team, team_points))
 
-        # Sort by points in descending order
+        # Sort teams by points descending
         leaderboard_data.sort(key=lambda x: x[1], reverse=True)
 
-        # Create a paginator object with 20 items per page
+        # Paginate (20 teams per page)
         paginator = Paginator(leaderboard_data, 20)
-
-        # Get the page number from the request
         page = request.GET.get("page", 1)
 
         try:
-            # Get the Page object for the requested page
             leaderboard = paginator.page(page)
         except PageNotAnInteger:
-            # If page is not an integer, deliver first page
             leaderboard = paginator.page(1)
         except EmptyPage:
-            # If page is out of range, deliver last page of results
             leaderboard = paginator.page(paginator.num_pages)
 
-        # Add rank information based on overall position
+        # Rank + tier calculation
         for index, (team, points) in enumerate(leaderboard, start=(leaderboard.number - 1) * 20 + 1):
             if points >= 1000:
-                team.rank = "PLATINUM"
+                rank = "PLATINUM"
             elif points >= 500:
-                team.rank = "GOLD"
+                rank = "GOLD"
             elif points >= 250:
-                team.rank = "SILVER"
+                rank = "SILVER"
             elif points >= 100:
-                team.rank = "BRONZE"
+                rank = "BRONZE"
             else:
-                team.rank = "UNRATED"
+                rank = "UNRATED"
 
-        context = {
-            "leaderboard": leaderboard,
-        }
+            team.rank_display = rank
+            team.rank_position = index
 
-        return render(request, "team_leaderboard.html", context)
+        return render(request, self.template_name, {"leaderboard": leaderboard})
+
+
+class TeamMemberLeaderboardView(LoginRequiredMixin, ListView):
+    template_name = "teams/member_leaderboard.html"
+    context_object_name = "members"
+    paginate_by = 20
+
+    def get_queryset(self):
+        try:
+            user_team = self.request.user.userprofile.team
+        except UserProfile.DoesNotExist:
+            return UserProfile.objects.none()
+
+        if not user_team:
+            return UserProfile.objects.none()
+
+        return UserProfile.objects.filter(team=user_team).order_by("-leaderboard_score", "-current_streak")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        members = context["members"]
+        ranked = []
+        # Calculate offset based on pagination
+        page_obj = context.get("page_obj")
+        start_rank = 1
+        if page_obj:
+            start_rank = (page_obj.number - 1) * self.paginate_by + 1
+
+        # Assign rank numbers
+        for idx, member in enumerate(members, start=start_rank):
+            ranked.append(
+                {
+                    "rank": idx,
+                    "profile": member,
+                    "score": member.leaderboard_score,
+                    "streak": member.current_streak,
+                    "quality": member.quality_score,
+                }
+            )
+
+        context["ranked_members"] = ranked
+        return context
