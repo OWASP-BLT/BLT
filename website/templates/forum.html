@@ -77,6 +77,10 @@
                     <option value="most_votes">Most Votes</option>
                     <option value="most_comments">Most Comments</option>
                 </select>
+                <button onclick="applyFilters()"
+                        class="px-6 py-2 bg-[#e74c3c] text-white rounded-md font-medium hover:bg-[#c0392b] transition-colors duration-200">
+                    Apply
+                </button>
             </div>
             <!-- Posts List -->
             <ul class="space-y-4">
@@ -153,7 +157,7 @@
                                     <i class="fas fa-comments hover:text-gray-900 dark:hover:text-white"></i>
                                     <span class="hover:text-gray-900 dark:hover:text-white">{{ post.comments.count }} Comments</span>
                                 </div>
-                                {% if request.user.is_superuser %}
+                                {% if request.user == post.user or request.user.is_superuser %}
                                     <button type="button"
                                             class="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-[#e74c3c] hover:bg-red-200 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
                                             onclick="deletePost({{ post.id }})"
@@ -626,24 +630,35 @@
     }
 
     function filterByCategory(categoryId) {
+        updateFilters({ category: categoryId });
+    }
+
+
+    function updateFilters(params) {
         const url = new URL(window.location.href);
-        if (categoryId) {
-            url.searchParams.set('category', categoryId);
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+            url.searchParams.set(key, value);
         } else {
-            url.searchParams.delete('category');
+            url.searchParams.delete(key);
         }
+    });
+
         window.location.href = url.toString();
     }
 
-    // Initialize voting when the page loads
-    document.addEventListener('DOMContentLoaded', initializeVoting);
+    function applyFilters() {
+        const category = document.getElementById("categoryFilter").value;
+        const status = document.getElementById("statusFilter").value;
+        const sort = document.getElementById("sortFilter").value;
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('newSuggestionModal');
-        if (event.target === modal) {
-            closeNewSuggestionModal();
-        }
+        updateFilters({
+            category: category,
+            status: status,
+            sort: sort,
+        });
     }
+
     </script>
 {% endblock content %}
