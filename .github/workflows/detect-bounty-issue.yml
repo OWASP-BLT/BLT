@@ -1,0 +1,44 @@
+name: Detect Bounty Issue on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  detect-bounty:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check for linked bounty issue
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+
+            const matches = body.match(/(close|closes|closed|fix|fixes|fixed)\s+#(\d+)/gi);
+            if (!matches) {
+              console.log("No linked issues found");
+              return;
+            }
+
+            for (const ref of matches) {
+              const issueNumber = ref.match(/#(\d+)/)[1];
+              const issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+              });
+
+              const hasBounty = issue.data.labels.some(
+                label => label.name.includes("$")
+              );
+
+              if (hasBounty) {
+                console.log(
+                  `Bounty issue detected: #${issueNumber} | Labels: ${issue.data.labels.map(l => l.name).join(", ")}`
+                );
+              }
+            }
