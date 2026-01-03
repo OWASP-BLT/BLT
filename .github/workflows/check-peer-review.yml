@@ -26,19 +26,15 @@ permissions:
 jobs:
   check_peer_review:
     runs-on: ubuntu-latest
-    if: >
-      github.actor != 'dependabot[bot]'
-      && github.actor != 'dependabot-preview[bot]'
-      && github.actor != 'dependabot'
-      && github.actor != 'DonnieBLT'
-      && github.actor != 'Copilot'
-      && github.actor != 'copilot-swe-agent[bot]'
     steps:
-      - name: Check for Peer Review and Add Label
-        id: check_peer_review
-        env:
+    - name: Install jq
+      run: sudo apt-get update && sudo apt-get install -y jq
+       
+    - name: Check for Peer Review and Add Label
+      id: check_peer_review
+      env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+      run: |
           # Get PR number (available for both pull_request and pull_request_review events)
           PR_NUMBER="${{ github.event.pull_request.number }}"
           
@@ -69,12 +65,7 @@ jobs:
             echo "Error: Could not fetch PR reviews. Response: $REVIEWS_RESPONSE"
             exit 1
           fi
-          
-          # Define excluded users (users whose reviews don't count as valid peer reviews)
-          EXCLUDED_USERS=("$PR_AUTHOR" "DonnieBLT" "coderabbitai[bot]")
-          
           # Extract reviewer usernames from APPROVED reviews only
-          # Filter out the PR author, specific excluded users, and any user with "copilot" in their username
           VALID_REVIEWERS=$(echo "$REVIEWS_RESPONSE" | jq -r --arg author "$PR_AUTHOR" \
             '.[] | 
             select(.state == "APPROVED") | 
