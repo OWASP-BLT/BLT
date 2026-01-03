@@ -1,6 +1,9 @@
 import json
 import logging
 
+from collections import defaultdict
+
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,14 +11,16 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError
 from django.db.models import Count
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
+
+from ..models import Badge, TeamBadge, User
 
 # Create your views here.
 from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile
+from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile, TeamBadge
 
 logger = logging.getLogger(__name__)
 
@@ -24,20 +29,39 @@ class TeamOverview(TemplateView):
     template_name = "team_overview.html"
 
     def get_context_data(self, **kwargs):
+        """
+        Populate the template context with team-related members, badges, and kudos for the current authenticated user.
+        
+        When the request user is authenticated, the context is extended with:
+        - "team_members": team managers annotated with `kudos_count`; each member will have a `badges` attribute containing that member's TeamBadge queryset.
+        - "team_badges": TeamBadge objects awarded to the team (where `user` is None).
+        - "available_badges": Badge objects of type "manual".
+        - "received_kudos": Kudos received by the current user.
+        - "team_kudos": Kudos received by any team member, ordered newest first.
+        
+        Returns:
+            context (dict): The view context updated with the keys described above when applicable.
+        """
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
             user_profile = self.request.user.userprofile
             team_members = []
             team_kudos = []
+            team_badges = [] #for team badges as a whole
             if user_profile.team:
                 user_profile.team.managers.add(user_profile.team.admin)
                 team_members = user_profile.team.managers.annotate(kudos_count=Count("kudos_received"))
                 team_kudos = Kudos.objects.filter(receiver__in=team_members).order_by("-timestamp")
-
+                for member in team_members: #for badges for indivitual members
+                   member.badges = TeamBadge.objects.filter(user=member)
+            team_badges = TeamBadge.objects.filter(team=self.request.user.userprofile.team, user=None)
+            available_badges = Badge.objects.filter(type="manual")
             received_kudos = self.request.user.kudos_received.all()
             context.update(
                 {
                     "team_members": team_members,
+                    "team_badges":team_badges,
+                    "available_badges":available_badges,
                     "received_kudos": received_kudos,
                     "team_kudos": team_kudos,
                 }
@@ -301,6 +325,11 @@ class TeamLeaderboard(TemplateView):
 
     def get(self, request):
         # Get all teams and their points
+        """
+        Render the team leaderboard page with teams sorted by total points, paginated, and labeled with rank tiers.
+        
+        @returns HttpResponse: Rendered "team_leaderboard.html" with a context key "leaderboard" containing a Paginator page of (team, points) tuples; each `team` in the page is annotated with a `rank` attribute set to one of: "PLATINUM", "GOLD", "SILVER", "BRONZE", or "UNRATED".
+        """
         teams = Organization.objects.all()
         leaderboard_data = []
 
@@ -345,3 +374,62 @@ class TeamLeaderboard(TemplateView):
         }
 
         return render(request, "team_leaderboard.html", context)
+
+@login_required
+def assign_team_member_badge(request, user_id):
+    """
+    Assigns a badge to a teammate when performed by the team's admin.
+    
+    Validates that the requester belongs to a team and is the team's admin, verifies the target user is a member of the same team, and creates a TeamBadge linking the badge, team, and user. Adds user-facing messages describing success or why the operation was not performed.
+    
+    Parameters:
+        request (HttpRequest): The HTTP request containing the current user and GET parameter `badge` with the badge id.
+        user_id (int): The primary key of the user to receive the badge.
+    
+    Returns:
+        HttpResponseRedirect: Redirects to the team overview page.
+    
+    Raises:
+        django.http.Http404: If the target user or the requested Badge does not exist.
+    """
+    user_profile = request.user.userprofile
+
+    if not user_profile.team:
+        messages.error(request, "You are not in a team.")
+        return redirect("team_overview")
+
+    team = user_profile.team
+    target_user = get_object_or_404(User, id=user_id)
+
+    # Ensure target is in same team
+    if not hasattr(target_user, "userprofile") or target_user.userprofile.team != team:
+        messages.error(request, "This user is not in your team.")
+        return redirect("team_overview")
+
+    # Permissions — only team admin
+    if team.admin != request.user:
+        messages.error(request, "You are not allowed to assign badges in this team.")
+        return redirect("team_overview")
+
+    # -------- Handle ?badge= --------
+    badge_id = request.GET.get("badge")
+    if not badge_id:
+        messages.error(request, "No badge selected.")
+        return redirect("team_overview")
+
+    badge = get_object_or_404(Badge, id=badge_id)
+    existing = TeamBadge.objects.filter(user=target_user, badge=badge, team=team ).exists()
+
+    if existing:
+        messages.info(request, f"{target_user.username} already has the '{badge.title}' badge.")
+        return redirect("team_overview")
+    
+    # Create the badge assignment
+    TeamBadge.objects.create(user=target_user, badge=badge, team=team, awarded_by=request.user, reason="Awarded by team admin" )
+
+    messages.success(
+        request,
+        f"Badge '{badge.title}' awarded to {target_user.username}!"
+    )
+
+    return redirect("team_overview")

@@ -33,6 +33,9 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
+from itertools import chain
+
+from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -55,6 +58,7 @@ from website.models import (
     Repo,
     Tag,
     Thread,
+    TeamBadge,
     User,
     UserBadge,
     UserProfile,
@@ -394,6 +398,33 @@ class UserProfileDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         # if userprofile does not exist, create it
+        """
+        Builds and returns the template context for the user profile detail view, populating profile-related statistics, badges, points, activity, followers/following, saved issues, GitHub PR stats, and optional wallet data.
+        
+        Returns:
+            context (dict): Context dictionary containing keys such as:
+                - bacon_earned: total bacon tokens earned (int)
+                - bacon_submissions: dict with pending/completed submission counts
+                - base_milestone, next_milestone: streak milestone integers
+                - user_badges: iterable of UserBadge/TeamBadge entries
+                - is_mentor: `true` if user has the Mentor badge, `false` otherwise
+                - available_badges: all Badge objects
+                - user_points, my_score: Points queryset and aggregated total score
+                - websites: domains with counts of reported issues
+                - activities: recent Issue queryset and activity_screenshots mapping
+                - profile_form: UserProfileForm instance
+                - total_open, total_closed, total_bugs: counts of issues by state
+                - current_month: current month integer
+                - wallet: Wallet instance for the request user when authenticated
+                - graph: issue counts grouped by month for the recent period
+                - bug_type_0..bug_type_6: querysets of issues by label
+                - followers, following: lists of User objects
+                - followers_list: list of follower emails
+                - bookmarks: saved issues for the profile
+                - user_related_tags: tags associated with the profile
+                - issues_hidden: "checked" or "!checked" depending on preference
+                - overall_stats, repos_with_prs: GitHub statistics produced by get_github_stats
+        """
         if not UserProfile.objects.filter(user=self.object).exists():
             UserProfile.objects.create(user=self.object)
 
@@ -423,7 +454,10 @@ class UserProfileDetailView(DetailView):
         context["next_milestone"] = next_milestone
         # Fetch badges
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
+        team_badges =TeamBadge.objects.filter(user=user)
+        user_badges = chain(user_badges, team_badges)#combining them
         context["user_badges"] = user_badges  # Add badges to context
+        
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 

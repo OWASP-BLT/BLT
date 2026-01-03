@@ -363,7 +363,14 @@ class Command(LoggedBaseCommand):
     @transaction.atomic
     def save_issues_and_prs(self, repo, dollar_issues, closed_prs):
         """
-        Save the fetched issues and PRs to the database.
+        Persist fetched dollar-tagged issues and closed pull requests to the database.
+        
+        Upserts a GitHubIssue record for each entry in `dollar_issues` and `closed_prs`. Issue records are marked with `has_dollar_tag = True`. Pull request records record `merged_at` and `is_merged` when applicable. ISO 8601 timestamps from GitHub are converted to timezone-aware datetimes before saving. Individual-item failures are logged and written to stdout; processing continues for remaining items.
+        
+        Parameters:
+            repo (Repo): The repository model instance to which the issues/PRs belong.
+            dollar_issues (list[dict]): List of issue payloads from GitHub that contain a dollar-sign label.
+            closed_prs (list[dict]): List of closed pull request payloads from GitHub.
         """
         # Process issues with $ in labels
         for issue in dollar_issues:
@@ -378,9 +385,11 @@ class Command(LoggedBaseCommand):
                         "type": "issue",
                         "created_at": timezone.make_aware(datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
                         "updated_at": timezone.make_aware(datetime.strptime(issue["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                        "closed_at": timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                        if issue.get("closed_at")
-                        else None,
+                        "closed_at": (
+                            timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                            if issue.get("closed_at")
+                            else None
+                        ),
                         "url": issue["html_url"],
                         "has_dollar_tag": True,
                     },
@@ -402,12 +411,16 @@ class Command(LoggedBaseCommand):
                         "type": "pull_request",
                         "created_at": timezone.make_aware(datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
                         "updated_at": timezone.make_aware(datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                        "closed_at": timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                        if pr.get("closed_at")
-                        else None,
-                        "merged_at": timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                        if pr.get("merged_at")
-                        else None,
+                        "closed_at": (
+                            timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                            if pr.get("closed_at")
+                            else None
+                        ),
+                        "merged_at": (
+                            timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                            if pr.get("merged_at")
+                            else None
+                        ),
                         "is_merged": bool(pr.get("merged_at")),
                         "url": pr["html_url"],
                     },
