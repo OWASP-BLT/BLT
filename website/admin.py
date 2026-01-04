@@ -195,6 +195,9 @@ class IssueAdmin(admin.ModelAdmin):
         "screenshot",
         "created",
         "modified",
+        "is_zero_trust",  # NEW
+        "delivery_status",  # NEW
+        "encryption_method",  # NEW
     )
 
     search_fields = ["url", "description", "domain__name", "user__username"]
