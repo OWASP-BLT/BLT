@@ -39,7 +39,7 @@ jobs:
                 "$PR_AUTHOR" == "dependabot-preview[bot]" || 
                 "$PR_AUTHOR" == "dependabot" || 
                 "$PR_AUTHOR" == "DonnieBLT" || 
-                "$PR_AUTHOR" == *"copilot"* ]]; then
+                "$PR_AUTHOR" == *copilot* ]]; then
             echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
