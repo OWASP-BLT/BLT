@@ -48,4 +48,4 @@ class ZeroTrustAPITests(APITestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertIn("artifact_sha256", response.data)
-        self.assertEqual(response.data["delivery_status"], "pending_build")
+        self.assertEqual(response.data["delivery_status"], "delivered")

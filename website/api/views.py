@@ -2030,8 +2030,18 @@ class ZeroTrustIssueCreateView(APIView):
             delivery_status="pending_build",
         )
         # HARD GUARANTEES (do not remove)
-        assert issue.is_hidden is True
-        assert issue.is_zero_trust is True
+        if issue.is_hidden is not True:
+            logger.error(
+                "Zero-trust issue invariant violated: issue.is_hidden is not True (id=%s)",
+                issue.id,
+            )
+            raise RuntimeError("Zero-trust issue must be hidden")
+        if issue.is_zero_trust is not True:
+            logger.error(
+                "Zero-trust issue invariant violated: issue.is_zero_trust is not True (id=%s)",
+                issue.id,
+            )
+            raise RuntimeError("Zero-trust issue must be marked as zero_trust")
         try:
             OrgEncryptionConfig.objects.get(organization=issue.domain.organization)
         except OrgEncryptionConfig.DoesNotExist:
@@ -2042,8 +2052,20 @@ class ZeroTrustIssueCreateView(APIView):
         try:
             build_and_deliver_zero_trust_issue(issue, files)
         except Exception:
+             # Mark the issue as failed and expose its identifier so clients can track it
+            logger.error(
+                "Zero-trust submission failed for issue %s",
+                issue.id,
+                exc_info=True,
+            )
+            issue.delivery_status = "failed"
+            issue.save(update_fields=["delivery_status"])
             return Response(
-                {"error": "Zero-trust submission failed"},
+                {
+                    "error": "Zero-trust submission failed",
+                    "id": issue.id,
+                    "delivery_status": issue.delivery_status,
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         # Reload in case pipeline mutated fields
