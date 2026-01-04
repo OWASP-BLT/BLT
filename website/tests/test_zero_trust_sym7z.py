@@ -73,10 +73,16 @@ class SymmetricEncryptionTests(TestCase):
         fixed_uuid = uuid.UUID("12345678-1234-5678-1234-567812345678")
         mock_uuid.return_value = fixed_uuid
 
-        # Mock encryption to create a fake .7z file
+        # Mock encryption to create a fake .7z file AND call _deliver_password_oob
         def fake_encrypt(org_config, input_path, tmp_dir, issue):
             out = Path(tmp_dir) / "report_payload.tar.gz.7z"
             out.write_bytes(b"fake-7z-encrypted-content")
+            
+            # IMPORTANT: Also call _deliver_password_oob to simulate real sym_7z behavior
+            # Import here to avoid circular dependency
+            from website.zero_trust_pipeline import _deliver_password_oob
+            _deliver_password_oob(org_config, issue.id, "fake-password-12345")
+            
             return str(out), "sym_7z"
 
         mock_encrypt.side_effect = fake_encrypt
