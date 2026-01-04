@@ -26,6 +26,12 @@ permissions:
 jobs:
   check_peer_review:
     runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'dependabot-preview[bot]' &&
+      github.actor != 'dependabot' &&
+      github.actor != 'DonnieBLT' &&
+      !contains(github.actor, 'copilot')
     steps:
      - name: Install jq
        run: sudo apt-get update && sudo apt-get install -y jq
