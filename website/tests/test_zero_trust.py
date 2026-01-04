@@ -22,10 +22,13 @@ class ZeroTrustPipelineTests(TestCase):
 
         self.domain = Domain.objects.create(organization=self.org, url="https://example.com")
 
+        # FIXED: Use "age" instead of "sym_7z" (which is now disabled)
+        # We mock _encrypt_artifact_for_org anyway, so we don't need real age binary
         self.enc = OrgEncryptionConfig.objects.create(
             organization=self.org,
             contact_email="security@example.com",
-            preferred_method="sym_7z",  # avoids needing age/gpg in CI
+            preferred_method="age",
+            age_recipient="age1" + "q" * 58,  # Valid format age recipient
         )
 
         self.issue = Issue.objects.create(
