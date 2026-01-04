@@ -1,19 +1,14 @@
-import os
 import uuid
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
 from website.models import Domain, Issue, Organization, OrgEncryptionConfig
-from website.zero_trust_pipeline import (
-    _generate_secure_password,
-    build_and_deliver_zero_trust_issue,
-)
+from website.zero_trust_pipeline import _generate_secure_password, build_and_deliver_zero_trust_issue
 
 User = get_user_model()
 
@@ -45,16 +40,16 @@ class SymmetricEncryptionTests(TestCase):
     def test_generate_secure_password(self):
         """Test that password generation meets security requirements."""
         password = _generate_secure_password(32)
-        
+
         # Check length
         self.assertEqual(len(password), 32)
-        
+
         # Check character diversity
         self.assertTrue(any(c.isupper() for c in password), "Must contain uppercase")
         self.assertTrue(any(c.islower() for c in password), "Must contain lowercase")
         self.assertTrue(any(c.isdigit() for c in password), "Must contain digit")
         self.assertTrue(any(c in "!@#$%^&*-_=+" for c in password), "Must contain special char")
-        
+
         # Check uniqueness (extremely unlikely to generate same password twice)
         password2 = _generate_secure_password(32)
         self.assertNotEqual(password, password2)
@@ -77,12 +72,13 @@ class SymmetricEncryptionTests(TestCase):
         def fake_encrypt(org_config, input_path, tmp_dir, issue):
             out = Path(tmp_dir) / "report_payload.tar.gz.7z"
             out.write_bytes(b"fake-7z-encrypted-content")
-            
+
             # IMPORTANT: Also call _deliver_password_oob to simulate real sym_7z behavior
             # Import here to avoid circular dependency
             from website.zero_trust_pipeline import _deliver_password_oob
+
             _deliver_password_oob(org_config, issue.id, "fake-password-12345")
-            
+
             return str(out), "sym_7z"
 
         mock_encrypt.side_effect = fake_encrypt
@@ -100,7 +96,7 @@ class SymmetricEncryptionTests(TestCase):
         # Find which email is which
         artifact_email = None
         password_email = None
-        
+
         for email in mail.outbox:
             if "PASSWORD" in email.subject:
                 password_email = email
@@ -146,11 +142,11 @@ class SymmetricEncryptionTests(TestCase):
 
         # Find the 7z encryption call
         calls = [call for call in mock_subprocess.call_args_list if call[0][0][0].endswith("7z")]
-        
+
         self.assertGreater(len(calls), 0, "7z should have been called")
-        
+
         cmd = calls[0][0][0]  # First positional arg is the command list
-        
+
         # Verify critical security flags
         self.assertIn("7z", str(cmd))
         self.assertIn("-mhe=on", cmd, "Should encrypt headers")
@@ -161,6 +157,7 @@ class SymmetricEncryptionTests(TestCase):
     @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
     def test_sym7z_password_not_in_database(self, mock_encrypt):
         """Ensure password is never stored in database."""
+
         def fake_encrypt(org_config, input_path, tmp_dir, issue):
             out = Path(tmp_dir) / "report_payload.tar.gz.7z"
             out.write_bytes(b"encrypted")
@@ -181,14 +178,14 @@ class SymmetricEncryptionTests(TestCase):
             self.issue.encryption_method,
             self.issue.delivery_method,
         ]
-        
+
         for field in fields_to_check:
             if field:
                 # Password should not appear in any field
                 self.assertNotRegex(
                     str(field),
                     r"[A-Za-z0-9!@#$%^&*\-_=+]{32}",
-                    f"Field should not contain password-like string: {field}"
+                    f"Field should not contain password-like string: {field}",
                 )
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")

@@ -65,7 +65,7 @@ def _sanitize_filename(filename: str) -> str:
 def _generate_secure_password(length: int = 32) -> str:
     """
     Generate a cryptographically secure random password.
-    
+
     Uses uppercase, lowercase, digits, and safe special characters.
     Ensures at least one character from each category.
     """
@@ -74,9 +74,9 @@ def _generate_secure_password(length: int = 32) -> str:
     lowercase = "abcdefghijkmnopqrstuvwxyz"
     digits = "23456789"
     special = "!@#$%^&*-_=+"
-    
+
     all_chars = uppercase + lowercase + digits + special
-    
+
     # Ensure at least one from each category
     password_chars = [
         secrets.choice(uppercase),
@@ -84,14 +84,14 @@ def _generate_secure_password(length: int = 32) -> str:
         secrets.choice(digits),
         secrets.choice(special),
     ]
-    
+
     # Fill the rest randomly
     password_chars.extend(secrets.choice(all_chars) for _ in range(length - 4))
-    
+
     # Shuffle to avoid predictable pattern
     password_list = list(password_chars)
     secrets.SystemRandom().shuffle(password_list)
-    
+
     return "".join(password_list)
 
 
@@ -299,7 +299,7 @@ def _encrypt_artifact_for_org(
     if preferred == OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z:
         # Generate cryptographically secure random password
         password = _generate_secure_password()
-        
+
         out = os.path.join(tmp_dir, "report_payload.tar.gz.7z")
         cmd = [
             getattr(settings, "SEVENZ_BINARY", "7z"),
@@ -313,7 +313,7 @@ def _encrypt_artifact_for_org(
             out,
             input_path,
         ]
-        
+
         try:
             subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
         except subprocess.TimeoutExpired as e:
@@ -328,14 +328,14 @@ def _encrypt_artifact_for_org(
             raise RuntimeError(
                 f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
             )
-        
+
         # Deliver password out-of-band BEFORE returning
         _deliver_password_oob(org_config, issue.id, password)
-        
+
         # Overwrite password in memory (defense-in-depth)
         password = "X" * len(password)
         del password
-        
+
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z
 
     # No valid method configured
@@ -398,21 +398,21 @@ Regards,
 def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, password: str) -> None:
     """
     Deliver the symmetric encryption password via out-of-band email channel.
-    
+
     Security model:
     - Password is sent in a SEPARATE email from the encrypted artifact
     - Both emails go to the same contact_email (organization's secure contact)
     - Organizations should implement additional controls (e.g., require both
       artifact email and password email to be present before decryption)
     - Password is NEVER logged or stored in the database
-    
+
     Args:
         org_config: Organization encryption configuration
         issue_id: Issue ID for reference
         password: The symmetric encryption password (will be sent then discarded)
     """
     subject = f"[VULN REPORT PASSWORD] Decryption key for issue_id: {issue_id}"
-    
+
     body = f"""Hello {org_config.organization.name} Security Team,
 
 This email contains the decryption password for vulnerability report issue_id: {issue_id}.
@@ -452,22 +452,22 @@ This password will not be stored or sent again. If lost, contact the reporter.
         from_email=settings.EMAIL_TO_STRING,
         to=[org_config.contact_email],
     )
-    
+
     try:
         email.send(fail_silently=False)
         logger.info(
             f"OOB password delivered for issue {issue_id} to {org_config.contact_email}",
-            extra={"issue_id": issue_id, "org": org_config.organization.name}
+            extra={"issue_id": issue_id, "org": org_config.organization.name},
         )
     except Exception as e:
         logger.error(
             f"CRITICAL: OOB password delivery failed for issue {issue_id}",
             exc_info=True,
-            extra={"issue_id": issue_id, "org": org_config.organization.name}
+            extra={"issue_id": issue_id, "org": org_config.organization.name},
         )
         raise RuntimeError(
-            f"Failed to deliver password out-of-band. Encryption was successful but "
-            f"organization cannot decrypt without the password. Manual intervention required."
+            "Failed to deliver password out-of-band. Encryption was successful but "
+            "organization cannot decrypt without the password. Manual intervention required."
         )
 
 

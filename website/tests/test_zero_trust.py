@@ -83,6 +83,7 @@ class ZeroTrustPipelineTests(TestCase):
         self.issue.refresh_from_db()
         self.assertEqual(self.issue.delivery_status, "failed")
 
+
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
 @patch("website.zero_trust_pipeline.uuid.uuid4")
@@ -92,7 +93,7 @@ def test_pipeline_works_with_sym7z_config(self, mock_uuid, mock_encrypt):
     self.enc.preferred_method = "sym_7z"
     self.enc.age_recipient = ""  # Clear age recipient
     self.enc.save()
-    
+
     fixed_uuid = uuid.UUID("87654321-4321-8765-4321-876543218765")
     mock_uuid.return_value = fixed_uuid
 
