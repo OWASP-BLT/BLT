@@ -347,10 +347,6 @@ class OrgEncryptionConfig(models.Model):
                     {"pgp_fingerprint": 'PGP fingerprint is required when preferred method is "openpgp".'}
                 )
 
-        elif self.preferred_method == self.ENCRYPTION_METHOD_SYM_7Z:
-            # sym_7z is intentionally disabled until OOB password delivery is implemented
-            raise ValidationError({"preferred_method": "Symmetric 7z is not supported. Please use age or OpenPGP."})
-
     def save(self, *args, **kwargs):
         """Ensure validation runs on save."""
         self.full_clean()

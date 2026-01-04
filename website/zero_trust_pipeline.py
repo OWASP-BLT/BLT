@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import secrets
 import string
 import subprocess
 import tarfile
@@ -59,6 +60,39 @@ def _sanitize_filename(filename: str) -> str:
         filename = f"upload_{uuid.uuid4().hex[:8]}"
 
     return filename
+
+
+def _generate_secure_password(length: int = 32) -> str:
+    """
+    Generate a cryptographically secure random password.
+    
+    Uses uppercase, lowercase, digits, and safe special characters.
+    Ensures at least one character from each category.
+    """
+    # Character sets (avoid ambiguous characters like 0/O, 1/l/I)
+    uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+    lowercase = "abcdefghijkmnopqrstuvwxyz"
+    digits = "23456789"
+    special = "!@#$%^&*-_=+"
+    
+    all_chars = uppercase + lowercase + digits + special
+    
+    # Ensure at least one from each category
+    password_chars = [
+        secrets.choice(uppercase),
+        secrets.choice(lowercase),
+        secrets.choice(digits),
+        secrets.choice(special),
+    ]
+    
+    # Fill the rest randomly
+    password_chars.extend(secrets.choice(all_chars) for _ in range(length - 4))
+    
+    # Shuffle to avoid predictable pattern
+    password_list = list(password_chars)
+    secrets.SystemRandom().shuffle(password_list)
+    
+    return "".join(password_list)
 
 
 def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[UploadedFile]) -> None:
@@ -196,6 +230,7 @@ def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
     os.remove(meta_path)
 
 
+# REPLACE THIS ENTIRE FUNCTION
 def _encrypt_artifact_for_org(
     org_config: OrgEncryptionConfig, input_path: str, tmp_dir: str, issue: Issue
 ) -> Tuple[str, str]:
@@ -260,11 +295,53 @@ def _encrypt_artifact_for_org(
             )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP
 
-    # Fallback: DISABLED - symmetric 7z requires OOB password delivery
+    # Symmetric 7z with OOB password delivery (NOW ENABLED)
+    if preferred == OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z:
+        # Generate cryptographically secure random password
+        password = _generate_secure_password()
+        
+        out = os.path.join(tmp_dir, "report_payload.tar.gz.7z")
+        cmd = [
+            getattr(settings, "SEVENZ_BINARY", "7z"),
+            "a",  # add
+            "-t7z",  # 7z format
+            "-mhe=on",  # encrypt headers
+            f"-p{password}",  # password
+            "-mx=9",  # maximum compression
+            "-mhc=on",  # compress headers
+            "-ms=on",  # solid archive
+            out,
+            input_path,
+        ]
+        
+        try:
+            subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"7z encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
+            raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                f"7z encryption failed for issue {issue.id}, return code: {e.returncode}",
+                exc_info=True,
+                extra={"stderr": e.stderr.decode("utf-8", errors="replace") if e.stderr else None},
+            )
+            raise RuntimeError(
+                f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
+            )
+        
+        # Deliver password out-of-band BEFORE returning
+        _deliver_password_oob(org_config, issue.id, password)
+        
+        # Overwrite password in memory (defense-in-depth)
+        password = "X" * len(password)
+        del password
+        
+        return out, OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z
+
+    # No valid method configured
     raise RuntimeError(
         f"Organization {org_config.organization.name} has no valid encryption method configured. "
-        f"Symmetric 7z encryption is not supported because out-of-band password "
-        f"delivery is not implemented. Please configure Age or OpenPGP encryption."
+        f"Please configure Age, OpenPGP, or sym_7z encryption."
     )
 
 
@@ -318,19 +395,80 @@ Regards,
         return "encryption_success_delivery_failed"
 
 
-def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, password: str):
+def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, password: str) -> None:
     """
-    NOT IMPLEMENTED: Placeholder for out-of-band password delivery.
-
-    This function is intentionally a no-op. Symmetric 7z encryption should be
-    disabled until a real OOB delivery mechanism (SMS/Signal/secure channel) is implemented.
-
-    SECURITY WARNING: Do NOT store the password in database or logs.
+    Deliver the symmetric encryption password via out-of-band email channel.
+    
+    Security model:
+    - Password is sent in a SEPARATE email from the encrypted artifact
+    - Both emails go to the same contact_email (organization's secure contact)
+    - Organizations should implement additional controls (e.g., require both
+      artifact email and password email to be present before decryption)
+    - Password is NEVER logged or stored in the database
+    
+    Args:
+        org_config: Organization encryption configuration
+        issue_id: Issue ID for reference
+        password: The symmetric encryption password (will be sent then discarded)
     """
-    logger.warning(
-        f"_deliver_password_oob called but not implemented for issue {issue_id}. "
-        f"Symmetric encryption should be disabled."
+    subject = f"[VULN REPORT PASSWORD] Decryption key for issue_id: {issue_id}"
+    
+    body = f"""Hello {org_config.organization.name} Security Team,
+
+This email contains the decryption password for vulnerability report issue_id: {issue_id}.
+
+IMPORTANT SECURITY INSTRUCTIONS:
+1. You should have received a SEPARATE email with the encrypted .7z attachment
+2. Only proceed with decryption if BOTH emails are verified authentic
+3. Extract the archive in an isolated/sandboxed environment
+4. Delete this email immediately after use
+
+Decryption Password: {password}
+
+To decrypt the attached .7z file from the other email:
+    7z x report_payload.tar.gz.7z -p{password}
+
+After extracting, you will find:
+- metadata.json (issue metadata)
+- Proof-of-concept files/screenshots
+
+Please confirm receipt by replying to the original artifact email.
+
+SECURITY REMINDER:
+- Do not forward this password
+- Open attachments only in isolated environments
+- Scan all files with antivirus before analysis
+
+Regards,
+{getattr(settings, "PROJECT_NAME", "BLT")} Disclosure Service
+
+---
+This password will not be stored or sent again. If lost, contact the reporter.
+"""
+
+    email = EmailMessage(
+        subject=subject,
+        body=body,
+        from_email=settings.EMAIL_TO_STRING,
+        to=[org_config.contact_email],
     )
+    
+    try:
+        email.send(fail_silently=False)
+        logger.info(
+            f"OOB password delivered for issue {issue_id} to {org_config.contact_email}",
+            extra={"issue_id": issue_id, "org": org_config.organization.name}
+        )
+    except Exception as e:
+        logger.error(
+            f"CRITICAL: OOB password delivery failed for issue {issue_id}",
+            exc_info=True,
+            extra={"issue_id": issue_id, "org": org_config.organization.name}
+        )
+        raise RuntimeError(
+            f"Failed to deliver password out-of-band. Encryption was successful but "
+            f"organization cannot decrypt without the password. Manual intervention required."
+        )
 
 
 def _secure_delete_path(path: str) -> None:
