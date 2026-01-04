@@ -2065,13 +2065,13 @@ class ZeroTrustIssueCreateView(APIView):
         # signal handlers, or middleware that might modify these critical fields.
         # These should never fail in normal operation but provide early detection
         # of integrity violations in the zero-trust chain.
-        if issue.is_hidden is not True:
+        if not issue.is_hidden:
             logger.error(
                 "Zero-trust issue invariant violated: issue.is_hidden is not True (id=%s)",
                 issue.id,
             )
             raise RuntimeError("Zero-trust issue must be hidden")
-        if issue.is_zero_trust is not True:
+        if not issue.is_zero_trust:
             logger.error(
                 "Zero-trust issue invariant violated: issue.is_zero_trust is not True (id=%s)",
                 issue.id,

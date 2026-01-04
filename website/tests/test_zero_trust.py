@@ -83,33 +83,32 @@ class ZeroTrustPipelineTests(TestCase):
         self.issue.refresh_from_db()
         self.assertEqual(self.issue.delivery_status, "failed")
 
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
+    @patch("website.zero_trust_pipeline.uuid.uuid4")
+    def test_pipeline_works_with_sym7z_config(self, mock_uuid, mock_encrypt):
+        """Test that pipeline works when org uses sym_7z."""
+        # Update org config to use sym_7z
+        self.enc.preferred_method = "sym_7z"
+        self.enc.age_recipient = ""  # Clear age recipient
+        self.enc.save()
 
-@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-@patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
-@patch("website.zero_trust_pipeline.uuid.uuid4")
-def test_pipeline_works_with_sym7z_config(self, mock_uuid, mock_encrypt):
-    """Test that pipeline works when org uses sym_7z."""
-    # Update org config to use sym_7z
-    self.enc.preferred_method = "sym_7z"
-    self.enc.age_recipient = ""  # Clear age recipient
-    self.enc.save()
+        fixed_uuid = uuid.UUID("87654321-4321-8765-4321-876543218765")
+        mock_uuid.return_value = fixed_uuid
 
-    fixed_uuid = uuid.UUID("87654321-4321-8765-4321-876543218765")
-    mock_uuid.return_value = fixed_uuid
+        def fake_encrypt(org_config, input_path, tmp_dir, issue):
+            out = Path(tmp_dir) / "report.tar.gz.7z"
+            out.write_bytes(b"7z-encrypted-content")
+            return str(out), "sym_7z"
 
-    def fake_encrypt(org_config, input_path, tmp_dir, issue):
-        out = Path(tmp_dir) / "report.tar.gz.7z"
-        out.write_bytes(b"7z-encrypted-content")
-        return str(out), "sym_7z"
+        mock_encrypt.side_effect = fake_encrypt
 
-    mock_encrypt.side_effect = fake_encrypt
+        upload = SimpleUploadedFile("poc.txt", b"secret exploit", content_type="text/plain")
 
-    upload = SimpleUploadedFile("poc.txt", b"secret exploit", content_type="text/plain")
+        build_and_deliver_zero_trust_issue(self.issue, [upload])
+        self.issue.refresh_from_db()
 
-    build_and_deliver_zero_trust_issue(self.issue, [upload])
-    self.issue.refresh_from_db()
-
-    self.assertTrue(self.issue.is_zero_trust)
-    self.assertIsNotNone(self.issue.artifact_sha256)
-    self.assertEqual(self.issue.encryption_method, "sym_7z")
-    self.assertEqual(self.issue.delivery_status, "delivered")
+        self.assertTrue(self.issue.is_zero_trust)
+        self.assertIsNotNone(self.issue.artifact_sha256)
+        self.assertEqual(self.issue.encryption_method, "sym_7z")
+        self.assertEqual(self.issue.delivery_status, "delivered")

@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, URLValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
 from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
@@ -48,6 +48,16 @@ def validate_btc_address(value):
     if not (value.startswith("bc1") or value.startswith("3") or value.startswith("1")):
         raise ValidationError('BTC address must be in a valid format (SegWit addresses start with "bc1")')
     # Additional validation for the rest of the address could be added here
+
+
+def validate_sha256_if_present(value):
+    """Validate SHA-256 format only if value is non-empty."""
+    if value:  # Only validate non-empty strings
+        if not re.match(r"^[A-Fa-f0-9]{64}$", value):
+            raise ValidationError(
+                "artifact_sha256 must be exactly 64 hexadecimal characters.",
+                code="invalid_sha256",
+            )
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -814,13 +824,7 @@ class Issue(models.Model):
         max_length=64,
         blank=True,
         help_text="SHA-256 of the encrypted disclosure artifact sent to the org.",
-        validators=[
-            RegexValidator(
-                regex=r"^[A-Fa-f0-9]{64}$",
-                message="artifact_sha256 must be exactly 64 hexadecimal characters.",
-                code="invalid_sha256",
-            )
-        ],
+        validators=[validate_sha256_if_present],
     )
     encryption_method = models.CharField(
         max_length=20,

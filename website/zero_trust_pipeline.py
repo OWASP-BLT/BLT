@@ -7,6 +7,7 @@ import secrets
 import string
 import subprocess
 import tarfile
+import tempfile
 import unicodedata
 import uuid
 from typing import List, Tuple
@@ -145,18 +146,39 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         raise ValueError(f"Total upload size exceeds {MAX_FILE_SIZE} bytes")
 
     os.makedirs(REPORT_TMP_DIR, exist_ok=True)
-    submission_id = str(uuid.uuid4())
-    issue_tmp_dir = os.path.join(REPORT_TMP_DIR, submission_id)
-    os.makedirs(issue_tmp_dir, exist_ok=True)
+    # Use mkdtemp for guaranteed unique directory (prevents UUID collision and race conditions)
+    issue_tmp_dir = tempfile.mkdtemp(prefix=f"issue_{issue.id}_", dir=REPORT_TMP_DIR)
 
     try:
         # 1. Save uploaded files with sanitized names
         file_paths = []
+        used_names = set()  # Track used filenames to prevent overwrites
+        streamed_total_size = 0
         for f in uploaded_files:
             safe_name = _sanitize_filename(f.name)
+            # Handle duplicate filenames by appending counter
+            if safe_name in used_names:
+                name_parts = os.path.splitext(safe_name)
+                counter = 1
+                while f"{name_parts[0]}_{counter}{name_parts[1]}" in used_names:
+                    counter += 1
+                safe_name = f"{name_parts[0]}_{counter}{name_parts[1]}"
+            used_names.add(safe_name)
             dest_path = os.path.join(issue_tmp_dir, safe_name)
+            per_file_size = 0
             with open(dest_path, "wb") as out:
                 for chunk in f.chunks():
+                    chunk_size = len(chunk)
+                    per_file_size += chunk_size
+                    streamed_total_size += chunk_size
+                    if per_file_size > MAX_FILE_SIZE:
+                        if os.path.exists(dest_path):
+                            os.remove(dest_path)
+                        raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE} bytes")
+                    if streamed_total_size > MAX_FILE_SIZE:
+                        if os.path.exists(dest_path):
+                            os.remove(dest_path)
+                        raise ValueError(f"Total upload size exceeds {MAX_FILE_SIZE} bytes")
                     out.write(chunk)
             file_paths.append(dest_path)
 
@@ -211,6 +233,23 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
 
 
 def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
+    """
+    Build a compressed tarball containing metadata.json and uploaded files.
+
+    Creates a tar.gz archive with:
+    - metadata.json: Issue metadata (ID, domain, timestamp, label)
+    - Uploaded files: All files from file_paths with their basenames
+
+    The metadata.json is created temporarily and removed after archiving.
+
+    Args:
+        issue: The Issue instance to extract metadata from.
+        file_paths: List of absolute file paths to include in the archive.
+        output_tar: Path where the tar.gz file should be created.
+
+    Returns:
+        None (creates file at output_tar path)
+    """
     metadata = {
         "issue_id": issue.id,
         "domain_url": issue.domain.url if issue.domain else None,
@@ -332,8 +371,10 @@ def _encrypt_artifact_for_org(
         # Deliver password out-of-band BEFORE returning
         _deliver_password_oob(org_config, issue.id, password)
 
-        # Overwrite password in memory (defense-in-depth)
-        password = "X" * len(password)
+        # Remove password reference (Python's immutable strings prevent true memory clearing)
+        # Note: The password string will remain in memory until garbage collected.
+        # For production systems handling highly sensitive data, consider using
+        # libraries like 'securemem' or ctypes to zero memory buffers.
         del password
 
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z
@@ -426,7 +467,10 @@ IMPORTANT SECURITY INSTRUCTIONS:
 Decryption Password: {password}
 
 To decrypt the attached .7z file from the other email:
-    7z x report_payload.tar.gz.7z -p{password}
+    7z x report_payload.tar.gz.7z -p[PASSWORD_FROM_ABOVE]
+
+Replace [PASSWORD_FROM_ABOVE] with the password shown above. Do not copy/paste
+this entire command to avoid password exposure in shell history.
 
 After extracting, you will find:
 - metadata.json (issue metadata)
@@ -507,4 +551,4 @@ def _secure_delete_file(path: str) -> None:
         try:
             os.remove(path)
         except FileNotFoundError:
-            pass
+            logger.debug("Secure delete fallback: file %s already removed, ignoring.", path)
