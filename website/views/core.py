@@ -1046,6 +1046,14 @@ def add_forum_post(request):
                     {"success": False, "error": "Missing required fields"},
                     status=400,
                 )
+            if (
+                not isinstance(title, str)
+                or not title.strip()
+                or not isinstance(description, str)
+                or not description.strip()
+                or category is None
+            ):
+                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
             category = int(category)
             ForumCategory.objects.get(id=category)
@@ -1146,14 +1154,14 @@ def delete_forum_post(request):
             return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
         post.delete()
 
-        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"}, status=200)
     except ForumPost.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Post not found"})
+        return JsonResponse({"status": "error", "message": "Post not found"}, status=404)
     except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
     except Exception as e:
         logging.exception("Unexpected error deleting forum post")
-        return JsonResponse({"status": "error", "message": "Server error occurred"})
+        return JsonResponse({"status": "error", "message": "Server error occurred"}, status=500)
 
 
 @ensure_csrf_cookie
