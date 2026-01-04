@@ -8,8 +8,10 @@ import subprocess
 import tarfile
 import unicodedata
 import uuid
+from typing import List, Tuple
 
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 from django.core.mail import EmailMessage
 from django.utils import timezone
 
@@ -59,7 +61,7 @@ def _sanitize_filename(filename: str) -> str:
     return filename
 
 
-def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files) -> None:
+def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[UploadedFile]) -> None:
     """
     Synchronous zero-trust pipeline:
 
@@ -68,6 +70,26 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files) -> None:
     3. Encrypt using the org's configuration.
     4. Compute SHA-256, send via email, update Issue metadata.
     5. Securely delete all temp files.
+
+    Args:
+        issue: The Issue instance to attach metadata to.
+        uploaded_files: List of UploadedFile objects from the request.
+
+    Raises:
+        ValueError: If file validation fails (size, count).
+        RuntimeError: If organization config is missing or encryption fails.
+        Exception: Various exceptions from encryption/email operations.
+
+    File Handling Policy:
+        All file types are accepted as this is a security vulnerability reporting
+        system where proof-of-concept exploits, malware samples, and executable
+        files may be legitimate parts of a security disclosure. Organizations
+        receiving encrypted artifacts should:
+        - Open attachments in isolated/sandboxed environments
+        - Scan with antivirus before opening
+        - Follow their internal security procedures for handling untrusted files
+
+        Files are encrypted before delivery and never stored in plaintext on disk.
     """
     # Validation constants
     MAX_FILE_SIZE = getattr(settings, "ZERO_TRUST_MAX_FILE_SIZE", 50 * 1024 * 1024)  # 50MB
@@ -174,7 +196,15 @@ def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
     os.remove(meta_path)
 
 
-def _encrypt_artifact_for_org(org_config: OrgEncryptionConfig, input_path: str, tmp_dir: str, issue: Issue):
+def _encrypt_artifact_for_org(
+    org_config: OrgEncryptionConfig, input_path: str, tmp_dir: str, issue: Issue
+) -> Tuple[str, str]:
+    """
+    Encrypt the artifact using org's preferred method.
+
+    Returns:
+        Tuple of (encrypted_file_path, encryption_method_used)
+    """
     preferred = org_config.preferred_method
 
     # age
@@ -184,16 +214,15 @@ def _encrypt_artifact_for_org(org_config: OrgEncryptionConfig, input_path: str, 
         out = os.path.join(tmp_dir, "report_payload.tar.gz.age")
         cmd = [getattr(settings, "AGE_BINARY", "age"), "-r", org_config.age_recipient, "-o", out, input_path]
         try:
-            subprocess.run(cmd, check=True, timeout=300, capture_output=True)
+            subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
         except subprocess.TimeoutExpired as e:
-            logger.error(f"Age encryption timed out for issue {issue.id}: {' '.join(cmd)}", exc_info=True)
+            logger.error(f"Age encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
             raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
         except subprocess.CalledProcessError as e:
             logger.error(
-                f"Age encryption failed for issue {issue.id}: {' '.join(cmd)}\n"
-                f"Return code: {e.returncode}\n"
-                f"Stderr: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'N/A'}",
+                f"Age encryption failed for issue {issue.id}, return code: {e.returncode}",
                 exc_info=True,
+                extra={"stderr": e.stderr.decode("utf-8", errors="replace") if e.stderr else None},
             )
             raise RuntimeError(
                 f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
@@ -216,16 +245,15 @@ def _encrypt_artifact_for_org(org_config: OrgEncryptionConfig, input_path: str, 
             input_path,
         ]
         try:
-            subprocess.run(cmd, check=True, timeout=300, capture_output=True)
+            subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
         except subprocess.TimeoutExpired as e:
-            logger.error(f"OpenPGP encryption timed out for issue {issue.id}: {' '.join(cmd)}", exc_info=True)
+            logger.error(f"OpenPGP encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
             raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
         except subprocess.CalledProcessError as e:
             logger.error(
-                f"OpenPGP encryption failed for issue {issue.id}: {' '.join(cmd)}\n"
-                f"Return code: {e.returncode}\n"
-                f"Stderr: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'N/A'}",
+                f"OpenPGP encryption failed for issue {issue.id}, return code: {e.returncode}",
                 exc_info=True,
+                extra={"stderr": e.stderr.decode("utf-8", errors="replace") if e.stderr else None},
             )
             raise RuntimeError(
                 f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
@@ -303,7 +331,6 @@ def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, passwo
         f"_deliver_password_oob called but not implemented for issue {issue_id}. "
         f"Symmetric encryption should be disabled."
     )
-    pass
 
 
 def _secure_delete_path(path: str) -> None:

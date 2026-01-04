@@ -28,7 +28,7 @@ class ZeroTrustAPITests(APITestCase):
     def test_zero_trust_issue_creation(self, mock_pipeline):
         # Make the mock update the issue like the real pipeline would
         def fake_pipeline(issue, files):
-            issue.artifact_sha256 = "abc123def456"  # fake hash
+            issue.artifact_sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
             issue.delivery_status = "delivered"
             issue.encryption_method = "age"
             issue.save()

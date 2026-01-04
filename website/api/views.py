@@ -19,6 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
+from django.core.validators import URLValidator
 from django.db import connection
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
@@ -2016,7 +2017,17 @@ class ZeroTrustIssueCreateView(APIView):
 
         if not domain_id or not url or not summary or not files:
             return Response(
-                {"error": "domain_id, url, summary and files are required"},
+                {"error": "domain_id, url, summary, and files are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate URL format
+        url_validator = URLValidator()
+        try:
+            url_validator(url)
+        except ValidationError:
+            return Response(
+                {"error": "Invalid URL format"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -2025,9 +2036,16 @@ class ZeroTrustIssueCreateView(APIView):
         except Domain.DoesNotExist:
             return Response({"error": "Invalid domain_id"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Ensure the domain is associated with an organization
+        organization = domain.organization
+        if organization is None:
+            return Response(
+                {"error": "Domain is not associated with an organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         # NEW: Check org encryption config BEFORE creating the Issue
         try:
-            OrgEncryptionConfig.objects.get(organization=domain.organization)
+            OrgEncryptionConfig.objects.get(organization=organization)
         except OrgEncryptionConfig.DoesNotExist:
             return Response(
                 {"error": "Zero-trust delivery is not configured for this organization"},
@@ -2043,7 +2061,10 @@ class ZeroTrustIssueCreateView(APIView):
             is_zero_trust=True,
             delivery_status="pending_build",
         )
-        # HARD GUARANTEES (do not remove)
+        # HARD GUARANTEES: Defense-in-depth checks to catch database-level issues,
+        # signal handlers, or middleware that might modify these critical fields.
+        # These should never fail in normal operation but provide early detection
+        # of integrity violations in the zero-trust chain.
         if issue.is_hidden is not True:
             logger.error(
                 "Zero-trust issue invariant violated: issue.is_hidden is not True (id=%s)",
@@ -2056,13 +2077,6 @@ class ZeroTrustIssueCreateView(APIView):
                 issue.id,
             )
             raise RuntimeError("Zero-trust issue must be marked as zero_trust")
-        try:
-            OrgEncryptionConfig.objects.get(organization=issue.domain.organization)
-        except OrgEncryptionConfig.DoesNotExist:
-            return Response(
-                {"error": "Zero-trust delivery is not configured for this organization"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         try:
             build_and_deliver_zero_trust_issue(issue, files)
         except Exception:

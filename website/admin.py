@@ -212,9 +212,21 @@ class IssueAdmin(admin.ModelAdmin):
     )
 
     def get_readonly_fields(self, request, obj=None):
-        if obj and getattr(obj, "is_zero_trust", False):
-            return self.readonly_fields
-        return super().get_readonly_fields(request, obj)
+        """
+        Ensure zero-trust fields are always read-only, regardless of object state.
+        """
+        base_readonly = list(super().get_readonly_fields(request, obj))
+        for field_name in (
+            "is_zero_trust",
+            "artifact_sha256",
+            "encryption_method",
+            "delivery_method",
+            "delivery_status",
+            "delivered_at",
+        ):
+            if field_name not in base_readonly:
+                base_readonly.append(field_name)
+        return tuple(base_readonly)
 
 
 class HuntAdmin(admin.ModelAdmin):
