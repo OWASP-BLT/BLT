@@ -44,26 +44,25 @@ class ZeroTrustPipelineTests(TestCase):
         fixed_uuid = uuid.UUID("12345678123456781234567812345678")
         mock_uuid.return_value = fixed_uuid
 
-        issue_tmp_dir = Path(settings.REPORT_TMP_DIR) / str(fixed_uuid)
-        issue_tmp_dir.mkdir(parents=True, exist_ok=True)
+        # Let the pipeline create the temp dir; do NOT pre-create it.
 
-        fake_encrypted_path = issue_tmp_dir / "report.tar.gz.age"
-        fake_encrypted_path.write_bytes(b"encrypted-content")
+        def fake_encrypt(org_config, input_path, tmp_dir, issue):
+            out = Path(tmp_dir) / "report.tar.gz.age"
+            out.write_bytes(b"encrypted-content")
+            return str(out), "age"
 
-        mock_encrypt.return_value = (fake_encrypted_path, "age")
+        mock_encrypt.side_effect = fake_encrypt
 
         upload = SimpleUploadedFile("poc.txt", b"secret data", content_type="text/plain")
 
         build_and_deliver_zero_trust_issue(self.issue, [upload])
-
         self.issue.refresh_from_db()
 
-        # Assertions
         self.assertTrue(self.issue.is_zero_trust)
         self.assertIsNotNone(self.issue.artifact_sha256)
         self.assertEqual(self.issue.encryption_method, "age")
 
-        # Temp dir should be deleted
+        issue_tmp_dir = Path(settings.REPORT_TMP_DIR) / str(fixed_uuid)
         self.assertFalse(issue_tmp_dir.exists())
 
     def test_pipeline_fails_cleanly_without_org_config(self):

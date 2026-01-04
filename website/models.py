@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator,RegexValidator
 from django.db import models, transaction
 from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
@@ -796,6 +796,11 @@ class Issue(models.Model):
         max_length=64,
         blank=True,
         help_text="SHA-256 of the encrypted disclosure artifact sent to the org.",
+        validators=[RegexValidator(
+            regex=r"^[A-Fa-f0-9]{64}$",
+            message="artifact_sha256 must be exactly 64 hexadecimal characters.",
+            code="invalid_sha256",
+        )],
     )
     encryption_method = models.CharField(
         max_length=20,

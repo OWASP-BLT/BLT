@@ -33,6 +33,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
@@ -2003,6 +2004,10 @@ class ZeroTrustIssueCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
+    # NEW: throttle uploads by user/IP using a named scope
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "zero_trust_issues"
+
     def post(self, request):
         domain_id = request.data.get("domain_id")
         url = request.data.get("url")
@@ -2019,7 +2024,16 @@ class ZeroTrustIssueCreateView(APIView):
             domain = Domain.objects.get(id=domain_id)
         except Domain.DoesNotExist:
             return Response({"error": "Invalid domain_id"}, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        # NEW: Check org encryption config BEFORE creating the Issue
+        try:
+            OrgEncryptionConfig.objects.get(organization=domain.organization)
+        except OrgEncryptionConfig.DoesNotExist:
+            return Response(
+                {"error": "Zero-trust delivery is not configured for this organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         issue = Issue.objects.create(
             user=request.user,
             domain=domain,

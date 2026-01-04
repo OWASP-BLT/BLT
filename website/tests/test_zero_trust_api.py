@@ -19,14 +19,22 @@ class ZeroTrustAPITests(APITestCase):
             organization=self.org,
             contact_email="security@example.com",
             preferred_method="age",
-            age_recipient="age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+            age_recipient="age1" + "q" * 58,
         )
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
     @patch("website.api.views.build_and_deliver_zero_trust_issue")
     def test_zero_trust_issue_creation(self, mock_pipeline):
-        mock_pipeline.return_value = None
+        # Make the mock update the issue like the real pipeline would
+        def fake_pipeline(issue, files):
+            issue.artifact_sha256 = "abc123def456"  # fake hash
+            issue.delivery_status = "delivered"
+            issue.encryption_method = "age"
+            issue.save()
+        
+        mock_pipeline.side_effect = fake_pipeline
+        
         url = "/api/zero-trust/issues/"
 
         file = SimpleUploadedFile(
@@ -49,3 +57,8 @@ class ZeroTrustAPITests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIn("artifact_sha256", response.data)
         self.assertEqual(response.data["delivery_status"], "delivered")
+        
+        self.assertTrue(mock_pipeline.called)
+        called_issue, called_files = mock_pipeline.call_args[0]
+        self.assertEqual(called_issue.domain.id, self.domain.id)
+        self.assertEqual(len(called_files), 1)
