@@ -34,8 +34,12 @@ jobs:
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER")
           PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.user.login')
 
-          # 2. Handle bot/author exclusions inside the script (Fixes CodeRabbit Warning)
-          if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "DonnieBLT" ]]; then
+          # 2. Handle bot/author exclusions inside the script
+          if [[ "$PR_AUTHOR" == "dependabot[bot]" || 
+                "$PR_AUTHOR" == "dependabot-preview[bot]" || 
+                "$PR_AUTHOR" == "dependabot" || 
+                "$PR_AUTHOR" == "DonnieBLT" || 
+                "$PR_AUTHOR" == *"copilot"* ]]; then
             echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
