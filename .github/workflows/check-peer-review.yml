@@ -106,24 +106,24 @@ jobs:
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments")
             
-            # Check if a comment about peer review already exists (using a unique marker)
-            EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("")) | .id' | head -n 1)
-            
-            if [ -z "$EXISTING_COMMENT" ]; then
-              echo "Posting comment to request peer review..."
-              
-              # Create JSON payload for the comment with a unique marker
-              jq -n \
-                --arg body "👋 Hi @${PR_AUTHOR}!
+          # Check if a comment about peer review already exists (using a unique marker)
+          EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("")) | .id' | head -n 1)
+
+          if [ -z "$EXISTING_COMMENT" ]; then
+            echo "Posting comment to request peer review..."
+
+            # Create JSON payload for the comment with a unique marker
+            jq -n \
+              --arg body "👋 Hi @${PR_AUTHOR}!
 
           This pull request needs a peer review before it can be merged. Please request a review from a team member who is not:
-          - The PR author
-          - DonnieBLT
-          - coderabbitai
-          - copilot
+           - The PR author
+           - DonnieBLT
+           - coderabbitai
+           - copilot
 
-          Once a valid peer review is submitted, this check will pass automatically. Thank you!" \
-                '{body: $body}' > /tmp/comment.json
+           Once a valid peer review is submitted, this check will pass automatically. Thank you!" \
+              '{body: $body}' > /tmp/comment.json
                 
            
               POST_COMMENT_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
