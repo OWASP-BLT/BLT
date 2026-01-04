@@ -1,61 +1,63 @@
 import hashlib
 import json
-import os
-import secrets
-import subprocess
-import tarfile
-import uuid
 import logging
+import os
 import re
 import string
+import subprocess
+import tarfile
 import unicodedata
+import uuid
+
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.utils import timezone
 
 from website.models import Issue, OrgEncryptionConfig
 
-
 logger = logging.getLogger(__name__)
 REPORT_TMP_DIR = getattr(settings, "REPORT_TMP_DIR", os.path.join(settings.BASE_DIR, "tmp_reports"))
+
+
 def _validate_age_recipient(recipient: str) -> bool:
     """Validate age recipient format (age1... or ssh-ed25519/rsa key)."""
-    if recipient.startswith('age1'):
+    if recipient.startswith("age1"):
         # age public key format: age1[a-z0-9]{58}
-        return bool(re.match(r'^age1[a-z0-9]{58}$', recipient))
+        return bool(re.match(r"^age1[a-z0-9]{58}$", recipient))
     # Also allow SSH keys
-    return recipient.startswith(('ssh-ed25519 ', 'ssh-rsa '))
+    return recipient.startswith(("ssh-ed25519 ", "ssh-rsa "))
 
 
 def _validate_pgp_fingerprint(fingerprint: str) -> bool:
     """Validate PGP fingerprint is hexadecimal."""
     # PGP fingerprints are 40 hex characters (SHA-1) or 64 (SHA-256)
-    return bool(re.match(r'^[A-Fa-f0-9]{40}$|^[A-Fa-f0-9]{64}$', fingerprint))
+    return bool(re.match(r"^[A-Fa-f0-9]{40}$|^[A-Fa-f0-9]{64}$", fingerprint))
 
 
 def _sanitize_filename(filename: str) -> str:
     """Sanitize uploaded filename to prevent path traversal and other issues."""
     # Get basename to prevent path traversal
     filename = os.path.basename(filename)
-    
+
     # Normalize unicode
-    filename = unicodedata.normalize('NFKD', filename)
-    
+    filename = unicodedata.normalize("NFKD", filename)
+
     # Remove null bytes and control characters
-    filename = ''.join(c for c in filename if c not in ('\x00', '\r', '\n'))
-    
+    filename = "".join(c for c in filename if c not in ("\x00", "\r", "\n"))
+
     # Only allow alphanumeric, spaces, dots, dashes, underscores
-    safe_chars = string.ascii_letters + string.digits + ' .-_'
-    filename = ''.join(c if c in safe_chars else '_' for c in filename)
-    
+    safe_chars = string.ascii_letters + string.digits + " .-_"
+    filename = "".join(c if c in safe_chars else "_" for c in filename)
+
     # Prevent hidden files and ensure extension
-    filename = filename.strip('. ')
-    
+    filename = filename.strip(". ")
+
     # Fallback if name is empty
     if not filename:
         filename = f"upload_{uuid.uuid4().hex[:8]}"
-    
+
     return filename
+
 
 def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files) -> None:
     """
@@ -70,22 +72,22 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files) -> None:
     # Validation constants
     MAX_FILE_SIZE = getattr(settings, "ZERO_TRUST_MAX_FILE_SIZE", 50 * 1024 * 1024)  # 50MB
     MAX_FILES_COUNT = getattr(settings, "ZERO_TRUST_MAX_FILES", 10)
-    
+
     # Validate file count
     if len(uploaded_files) > MAX_FILES_COUNT:
         raise ValueError(f"Maximum {MAX_FILES_COUNT} files allowed")
-    
+
     # Validate file sizes
     total_size = 0
     for f in uploaded_files:
-        if hasattr(f, 'size'):
+        if hasattr(f, "size"):
             if f.size > MAX_FILE_SIZE:
                 raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE} bytes")
             total_size += f.size
-    
+
     if total_size > MAX_FILE_SIZE:
         raise ValueError(f"Total upload size exceeds {MAX_FILE_SIZE} bytes")
-    
+
     os.makedirs(REPORT_TMP_DIR, exist_ok=True)
     submission_id = str(uuid.uuid4())
     issue_tmp_dir = os.path.join(REPORT_TMP_DIR, submission_id)
@@ -145,7 +147,7 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files) -> None:
         logger.error(
             f"Zero-trust pipeline failed for issue {issue.id}: {str(e)}",
             exc_info=True,
-            extra={"issue_id": issue.id, "domain": issue.domain.url if issue.domain else None}
+            extra={"issue_id": issue.id, "domain": issue.domain.url if issue.domain else None},
         )
         raise
     finally:
@@ -184,19 +186,18 @@ def _encrypt_artifact_for_org(org_config: OrgEncryptionConfig, input_path: str, 
         try:
             subprocess.run(cmd, check=True, timeout=300, capture_output=True)
         except subprocess.TimeoutExpired as e:
-            logger.error(
-                f"Age encryption timed out for issue {issue.id}: {' '.join(cmd)}",
-                exc_info=True
-            )
+            logger.error(f"Age encryption timed out for issue {issue.id}: {' '.join(cmd)}", exc_info=True)
             raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
         except subprocess.CalledProcessError as e:
             logger.error(
                 f"Age encryption failed for issue {issue.id}: {' '.join(cmd)}\n"
                 f"Return code: {e.returncode}\n"
                 f"Stderr: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'N/A'}",
-                exc_info=True
+                exc_info=True,
             )
-            raise RuntimeError(f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}")
+            raise RuntimeError(
+                f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
+            )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_AGE
 
     # OpenPGP
@@ -217,19 +218,18 @@ def _encrypt_artifact_for_org(org_config: OrgEncryptionConfig, input_path: str, 
         try:
             subprocess.run(cmd, check=True, timeout=300, capture_output=True)
         except subprocess.TimeoutExpired as e:
-            logger.error(
-                f"OpenPGP encryption timed out for issue {issue.id}: {' '.join(cmd)}",
-                exc_info=True
-            )
+            logger.error(f"OpenPGP encryption timed out for issue {issue.id}: {' '.join(cmd)}", exc_info=True)
             raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
         except subprocess.CalledProcessError as e:
             logger.error(
                 f"OpenPGP encryption failed for issue {issue.id}: {' '.join(cmd)}\n"
                 f"Return code: {e.returncode}\n"
                 f"Stderr: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'N/A'}",
-                exc_info=True
+                exc_info=True,
             )
-            raise RuntimeError(f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}")
+            raise RuntimeError(
+                f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
+            )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP
 
     # Fallback: DISABLED - symmetric 7z requires OOB password delivery
@@ -286,19 +286,17 @@ Regards,
         email.send(fail_silently=False)
         return "delivered"
     except Exception as e:
-        logger.error(
-            f"Email delivery failed for issue {issue.id} to {org_config.contact_email}",
-            exc_info=True
-        )
+        logger.error(f"Email delivery failed for issue {issue.id} to {org_config.contact_email}", exc_info=True)
         return "encryption_success_delivery_failed"
+
 
 def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, password: str):
     """
     NOT IMPLEMENTED: Placeholder for out-of-band password delivery.
-    
+
     This function is intentionally a no-op. Symmetric 7z encryption should be
     disabled until a real OOB delivery mechanism (SMS/Signal/secure channel) is implemented.
-    
+
     SECURITY WARNING: Do NOT store the password in database or logs.
     """
     logger.warning(
@@ -326,12 +324,12 @@ def _secure_delete_path(path: str) -> None:
 def _secure_delete_file(path: str) -> None:
     """
     Attempt basic secure deletion by overwriting with zeros before removal.
-    
+
     WARNING: This is NOT cryptographically secure deletion on modern systems:
     - Copy-on-write filesystems (btrfs, ZFS) may preserve data
     - SSDs with wear-leveling don't overwrite in place
     - Encrypted filesystems already protect data at rest
-    
+
     This provides defense-in-depth by clearing RAM buffers and preventing
     simple file recovery, but should not be relied upon as the sole protection.
     """

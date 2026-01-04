@@ -2024,7 +2024,7 @@ class ZeroTrustIssueCreateView(APIView):
             domain = Domain.objects.get(id=domain_id)
         except Domain.DoesNotExist:
             return Response({"error": "Invalid domain_id"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # NEW: Check org encryption config BEFORE creating the Issue
         try:
             OrgEncryptionConfig.objects.get(organization=domain.organization)
@@ -2033,7 +2033,7 @@ class ZeroTrustIssueCreateView(APIView):
                 {"error": "Zero-trust delivery is not configured for this organization"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         issue = Issue.objects.create(
             user=request.user,
             domain=domain,
@@ -2066,7 +2066,7 @@ class ZeroTrustIssueCreateView(APIView):
         try:
             build_and_deliver_zero_trust_issue(issue, files)
         except Exception:
-             # Mark the issue as failed and expose its identifier so clients can track it
+            # Mark the issue as failed and expose its identifier so clients can track it
             logger.error(
                 "Zero-trust submission failed for issue %s",
                 issue.id,

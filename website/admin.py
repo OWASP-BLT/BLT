@@ -1288,10 +1288,13 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
 class OrgEncryptionConfigAdmin(admin.ModelAdmin):
     list_display = ("organization", "preferred_method", "contact_email", "updated_at", "last_verified_at")
     search_fields = ("organization__name", "contact_email", "age_recipient", "pgp_fingerprint")
     list_filter = ("preferred_method",)
     readonly_fields = ("created_at", "updated_at", "last_verified_at")
+
 
 admin.site.register(OrgEncryptionConfig, OrgEncryptionConfigAdmin)

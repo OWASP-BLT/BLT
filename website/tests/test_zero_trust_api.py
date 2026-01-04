@@ -32,9 +32,9 @@ class ZeroTrustAPITests(APITestCase):
             issue.delivery_status = "delivered"
             issue.encryption_method = "age"
             issue.save()
-        
+
         mock_pipeline.side_effect = fake_pipeline
-        
+
         url = "/api/zero-trust/issues/"
 
         file = SimpleUploadedFile(
@@ -57,7 +57,7 @@ class ZeroTrustAPITests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIn("artifact_sha256", response.data)
         self.assertEqual(response.data["delivery_status"], "delivered")
-        
+
         self.assertTrue(mock_pipeline.called)
         called_issue, called_files = mock_pipeline.call_args[0]
         self.assertEqual(called_issue.domain.id, self.domain.id)
