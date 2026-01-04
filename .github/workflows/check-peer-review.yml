@@ -27,15 +27,15 @@ jobs:
   check_peer_review:
     runs-on: ubuntu-latest
     steps:
-    - name: Install jq
-      run: sudo apt-get update && sudo apt-get install -y jq
+     - name: Install jq
+       run: sudo apt-get update && sudo apt-get install -y jq
      
   
-    - name: Check for Peer Review and Add Label
-      id: check_peer_review
-      env:
+     - name: Check for Peer Review and Add Label
+       id: check_peer_review
+       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
+       run: |
           # Get PR number (available for both pull_request and pull_request_review events)
           PR_NUMBER="${{ github.event.pull_request.number }}"
           
