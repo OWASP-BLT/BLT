@@ -63,7 +63,7 @@ jobs:
             COMMENTS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments")
             
-            EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("")) | .id' | head -n 1)
+            EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("<!-- peer-review-check -->")) | .id' | head -n 1)
 
             if [ -z "$EXISTING_COMMENT" ]; then
               jq -n --arg body "👋 Hi @${PR_AUTHOR}! This PR needs a peer review from a maintainer to proceed." '{body: $body}' > /tmp/comment.json
