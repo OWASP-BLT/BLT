@@ -1,19 +1,91 @@
 name: Check Peer Review
 
 on:
-  pull_request:
-	types: [opened, reopened, synchronize]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
-  check-peer-review:
-	runs-on: ubuntu-latest
-	steps:
-	  - name: Checkout code
-		uses: actions/checkout@v3
+  check_peer_review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Peer Review and Add Label
+        id: check_peer_review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO_FULL="${{ github.repository }}"
+          REPO_OWNER="${REPO_FULL%/*}"
+          REPO_NAME="${REPO_FULL#*/}"
 
-	  - name: Ensure PR has peer review
-		run: |
-		  if [ "$(gh pr view ${{ github.event.pull_request.number }} --json reviews --jq '.reviews | length')" -lt 1 ]; then
-			echo "Error: Pull request must have at least one peer review."
-			exit 1
-		  fi
+          # 1. Fetch PR details to find the author
+          PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER")
+          PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.user.login')
+
+          # 2. Handle bot/author exclusions inside the script (Fixes CodeRabbit Warning)
+          if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "DonnieBLT" ]]; then
+            echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 3. Get and filter reviews (Excluding author and known bots)
+          REVIEWS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews")
+          
+          VALID_REVIEWERS=$(echo "$REVIEWS_RESPONSE" | jq -r --arg author "$PR_AUTHOR" '
+            .[] | select(.state == "APPROVED") | 
+            select(.user.login != $author) | 
+            select(.user.login != "DonnieBLT") | 
+            select(.user.login != "coderabbitai[bot]") | 
+            select(.user.login | ascii_downcase | contains("copilot") | not) | 
+            .user.login' | sort -u)
+
+          if [ -z "$VALID_REVIEWERS" ]; then
+            echo "has_peer_review=false" >> "$GITHUB_OUTPUT"
+            
+            # 4. Anti-Spam fingerprint check
+            COMMENTS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments")
+            
+            EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("")) | .id' | head -n 1)
+
+            if [ -z "$EXISTING_COMMENT" ]; then
+              jq -n --arg body "👋 Hi @${PR_AUTHOR}! This PR needs a peer review from a maintainer to proceed." '{body: $body}' > /tmp/comment.json
+
+              curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -d @/tmp/comment.json \
+                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments"
+            fi
+          else
+            echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add status label
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
+            const label = hasReview ? 'has-peer-review' : 'needs-peer-review';
+            const old = hasReview ? 'needs-peer-review' : 'has-peer-review';
+            
+            try { await github.rest.issues.removeLabel({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number, name: old
+            }); } catch (e) {}
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, labels: [label]
+            });
