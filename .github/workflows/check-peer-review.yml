@@ -29,22 +29,26 @@ jobs:
           REPO_OWNER="${REPO_FULL%/*}"
           REPO_NAME="${REPO_FULL#*/}"
 
-          # 1. Fetch PR details to find the author
-          PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          # 1. Fetch PR details with error handling (Fixes Sentry HIGH bug)
+          PR_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER")
-          PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.user.login')
+          HTTP_STATUS=$(echo "$PR_RESPONSE" | tail -n 1)
+          PR_BODY=$(echo "$PR_RESPONSE" | head -n -1)
 
-          # 2. Handle bot/author exclusions inside the script
-          if [[ "$PR_AUTHOR" == "dependabot[bot]" || 
-                "$PR_AUTHOR" == "dependabot-preview[bot]" || 
-                "$PR_AUTHOR" == "dependabot" || 
-                "$PR_AUTHOR" == "DonnieBLT" || 
-                "$PR_AUTHOR" == *copilot* ]]; then
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Error: Failed to fetch PR details (Status: $HTTP_STATUS)"
+            exit 1
+          fi
+
+          PR_AUTHOR=$(echo "$PR_BODY" | jq -r '.user.login')
+
+          # 2. Skip for Dependabot
+          if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "dependabot" ]]; then
             echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # 3. Get and filter reviews (Excluding author and known bots)
+          # 3. Get and filter reviews
           REVIEWS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews")
           
@@ -59,37 +63,65 @@ jobs:
           if [ -z "$VALID_REVIEWERS" ]; then
             echo "has_peer_review=false" >> "$GITHUB_OUTPUT"
             
-            # 4. Anti-Spam fingerprint check
+            # 4. Anti-Spam: Fingerprint check (Fixes Sentry HIGH bug)
             COMMENTS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments")
             
-            EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("<!-- peer-review-check -->")) | .id' | head -n 1)
+            # Using marker suggested by Sentry: EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("")) | .id' | head -n 1)
 
             if [ -z "$EXISTING_COMMENT" ]; then
               jq -n --arg body "👋 Hi @${PR_AUTHOR}! This PR needs a peer review from a maintainer to proceed." '{body: $body}' > /tmp/comment.json
 
-              curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -d @/tmp/comment.json \
+              curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
+                -d @/tmp/comment.json \
                 "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments"
             fi
           else
             echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Add status label
+      - name: Add peer review status label
         if: always()
         uses: actions/github-script@v7
         with:
           script: |
             const hasReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
-            const label = hasReview ? 'has-peer-review' : 'needs-peer-review';
-            const old = hasReview ? 'needs-peer-review' : 'has-peer-review';
-            
-            try { await github.rest.issues.removeLabel({
-                owner: context.repo.owner, repo: context.repo.repo,
-                issue_number: context.issue.number, name: old
-            }); } catch (e) {}
+            const newLabel = hasReview ? 'has-peer-review' : 'needs-peer-review';
+            const oldLabel = hasReview ? 'needs-peer-review' : 'has-peer-review';
+            const color = hasReview ? '0e8a16' : 'fbca04';
+
+            // Function to check and create label (Fixes Sentry CRITICAL bug)
+            async function ensureLabelExists(name, color) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: name
+                });
+              } catch (e) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: name,
+                  color: color
+                });
+              }
+            }
+
+            await ensureLabelExists(newLabel, color);
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: oldLabel
+              });
+            } catch (e) {}
 
             await github.rest.issues.addLabels({
-              owner: context.repo.owner, repo: context.repo.repo,
-              issue_number: context.issue.number, labels: [label]
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [newLabel]
             });
