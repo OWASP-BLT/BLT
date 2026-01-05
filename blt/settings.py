@@ -513,7 +513,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": f"{anon_throttle}/day",
         "user": f"{user_throttle}/day",
-        "zero_trust_issues": "5/hour",  # NEW: limit heavy uploads
+        "zero_trust_issues": "10/hour",  # NEW: limit heavy uploads
     },
 }
 

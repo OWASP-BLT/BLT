@@ -2045,10 +2045,20 @@ class ZeroTrustIssueCreateView(APIView):
             )
         # NEW: Check org encryption config BEFORE creating the Issue
         try:
-            OrgEncryptionConfig.objects.get(organization=organization)
+            org_encryption_config = OrgEncryptionConfig.objects.get(organization=organization)
+            # If the configuration model exposes a validation hook, use it to ensure
+            # the config is complete and usable before creating the Issue.
+            validate_method = getattr(org_encryption_config, "validate_for_zero_trust", None)
+            if callable(validate_method):
+                validate_method()
         except OrgEncryptionConfig.DoesNotExist:
             return Response(
                 {"error": "Zero-trust delivery is not configured for this organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValidationError:
+            return Response(
+                {"error": "Zero-trust delivery is misconfigured for this organization"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

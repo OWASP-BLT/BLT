@@ -134,22 +134,10 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
     if len(uploaded_files) > MAX_FILES_COUNT:
         raise ValueError(f"Maximum {MAX_FILES_COUNT} files allowed")
 
-    # Validate file sizes
-    total_size = 0
-    for f in uploaded_files:
-        if hasattr(f, "size"):
-            if f.size > MAX_FILE_SIZE:
-                raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE} bytes")
-            total_size += f.size
-
-    if total_size > MAX_FILE_SIZE:
-        raise ValueError(f"Total upload size exceeds {MAX_FILE_SIZE} bytes")
-
-    os.makedirs(REPORT_TMP_DIR, exist_ok=True)
-    # Use mkdtemp for guaranteed unique directory (prevents UUID collision and race conditions)
-    issue_tmp_dir = tempfile.mkdtemp(prefix=f"issue_{issue.id}_", dir=REPORT_TMP_DIR)
-
     try:
+        os.makedirs(REPORT_TMP_DIR, exist_ok=True)
+        # Use mkdtemp for guaranteed unique directory (prevents UUID collision and race conditions)
+        issue_tmp_dir = tempfile.mkdtemp(prefix=f"issue_{issue.id}_", dir=REPORT_TMP_DIR)
         # 1. Save uploaded files with sanitized names
         file_paths = []
         used_names = set()  # Track used filenames to prevent overwrites
@@ -328,9 +316,6 @@ def _encrypt_artifact_for_org(
                 f"OpenPGP encryption failed for issue {issue.id}, return code: {e.returncode}",
                 exc_info=True,
                 extra={"stderr": e.stderr.decode("utf-8", errors="replace") if e.stderr else None},
-            )
-            raise RuntimeError(
-                f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
             )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP
 
@@ -547,8 +532,15 @@ def _secure_delete_file(path: str) -> None:
         with open(path, "wb") as f:
             f.write(b"\x00" * length)
         os.remove(path)
+    except FileNotFoundError:
+        # File already removed by the time we tried to overwrite/delete it.
+        logger.debug("Secure delete: file %s already removed, ignoring.", path)
     except Exception:
+        # Overwrite or initial delete failed for some other reason; log and attempt best-effort removal.
+        logger.warning("Secure delete failed for %s; attempting best-effort removal.", path, exc_info=True)
         try:
             os.remove(path)
         except FileNotFoundError:
             logger.debug("Secure delete fallback: file %s already removed, ignoring.", path)
+        except Exception:
+            logger.warning("Secure delete fallback removal failed for %s.", path, exc_info=True)

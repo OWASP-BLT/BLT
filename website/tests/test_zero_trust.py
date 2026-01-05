@@ -1,4 +1,3 @@
-import uuid
 from pathlib import Path
 from unittest.mock import patch
 
@@ -22,7 +21,6 @@ class ZeroTrustPipelineTests(TestCase):
 
         self.domain = Domain.objects.create(organization=self.org, url="https://example.com")
 
-        # FIXED: Use "age" instead of "sym_7z" (which is now disabled)
         # We mock _encrypt_artifact_for_org anyway, so we don't need real age binary
         self.enc = OrgEncryptionConfig.objects.create(
             organization=self.org,
@@ -42,12 +40,8 @@ class ZeroTrustPipelineTests(TestCase):
         )
 
     @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
-    @patch("website.zero_trust_pipeline.uuid.uuid4")
-    def test_pipeline_sets_hash_and_deletes_temp_files(self, mock_uuid, mock_encrypt):
-        fixed_uuid = uuid.UUID("12345678123456781234567812345678")
-        mock_uuid.return_value = fixed_uuid
-
-        # Let the pipeline create the temp dir; do NOT pre-create it.
+    def test_pipeline_sets_hash_and_deletes_temp_files(self, mock_encrypt):
+        # REMOVED: uuid mock - no longer needed since we use mkdtemp
 
         def fake_encrypt(org_config, input_path, tmp_dir, issue):
             out = Path(tmp_dir) / "report.tar.gz.age"
@@ -65,8 +59,10 @@ class ZeroTrustPipelineTests(TestCase):
         self.assertIsNotNone(self.issue.artifact_sha256)
         self.assertEqual(self.issue.encryption_method, "age")
 
-        issue_tmp_dir = Path(settings.REPORT_TMP_DIR) / str(fixed_uuid)
-        self.assertFalse(issue_tmp_dir.exists())
+        # Verify cleanup: no directories with this issue's prefix should remain
+        base = Path(settings.REPORT_TMP_DIR)
+        leftover_dirs = list(base.glob(f"issue_{self.issue.id}_*"))
+        self.assertEqual(leftover_dirs, [], f"Found leftover temp directories: {leftover_dirs}")
 
     def test_pipeline_fails_cleanly_without_org_config(self):
         self.enc.delete()
@@ -92,9 +88,6 @@ class ZeroTrustPipelineTests(TestCase):
         self.enc.preferred_method = "sym_7z"
         self.enc.age_recipient = ""  # Clear age recipient
         self.enc.save()
-
-        fixed_uuid = uuid.UUID("87654321-4321-8765-4321-876543218765")
-        mock_uuid.return_value = fixed_uuid
 
         def fake_encrypt(org_config, input_path, tmp_dir, issue):
             out = Path(tmp_dir) / "report.tar.gz.7z"
