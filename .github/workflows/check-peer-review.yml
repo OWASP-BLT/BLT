@@ -49,10 +49,16 @@ jobs:
           fi
 
           # 3. Get and filter reviews
-          REVIEWS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          REVIEWS_RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews")
-          
-          VALID_REVIEWERS=$(echo "$REVIEWS_RESPONSE" | jq -r --arg author "$PR_AUTHOR" '
+          HTTP_STATUS_REVIEWS=$(echo "$REVIEWS_RESPONSE" | tail -n 1)
+          REVIEWS_BODY=$(echo "$REVIEWS_RESPONSE" | head -n -1)
+          if [ "$HTTP_STATUS_REVIEWS" -ne 200 ]; then
+            echo "Error: Failed to fetch PR reviews (Status: $HTTP_STATUS_REVIEWS)"
+            exit 1
+          fi
+
+          VALID_REVIEWERS=$(echo "$REVIEWS_BODY" | jq -r --arg author "$PR_AUTHOR" '
             .[] | select(.state == "APPROVED") | 
             select(.user.login != $author) | 
             select(.user.login != "DonnieBLT") | 
@@ -67,11 +73,12 @@ jobs:
             COMMENTS_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments")
             
-            # Using marker suggested by Sentry: EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("")) | .id' | head -n 1)
+             EXISTING_COMMENT=$(echo "$COMMENTS_RESPONSE" | jq -r '.[] | select(.body | contains("<!-- peer-review-check -->")) | .id' | head -n 1)
 
             if [ -z "$EXISTING_COMMENT" ]; then
-              jq -n --arg body "👋 Hi @${PR_AUTHOR}! This PR needs a peer review from a maintainer to proceed." '{body: $body}' > /tmp/comment.json
-
+              COMMENT_BODY="<!-- peer-review-check -->
+            👋 Hi @${PR_AUTHOR}! This PR needs a peer review from a maintainer to proceed."
+              jq -n --arg body "$COMMENT_BODY" '{body: $body}' > /tmp/comment.json
               curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
                 -d @/tmp/comment.json \
                 "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/comments"
@@ -80,17 +87,18 @@ jobs:
             echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Add peer review status label
+      - name: Add Peer Review Status Label
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8 
         with:
-          script: |
-            const hasReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
+           github-token: ${{ secrets.GITHUB_TOKEN }}
+           script: |
+            const hasReview = '${{ steps.check_peer_review.outputs.has_peer_review }} === 'true';
             const newLabel = hasReview ? 'has-peer-review' : 'needs-peer-review';
             const oldLabel = hasReview ? 'needs-peer-review' : 'has-peer-review';
             const color = hasReview ? '0e8a16' : 'fbca04';
 
-            // Function to check and create label (Fixes Sentry CRITICAL bug)
+            // 1. Ensure the new label exists in the repository
             async function ensureLabelExists(name, color) {
               try {
                 await github.rest.issues.getLabel({
@@ -110,6 +118,7 @@ jobs:
 
             await ensureLabelExists(newLabel, color);
 
+            //2. Remove the old status label if it exists
             try {
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,
@@ -119,9 +128,10 @@ jobs:
               });
             } catch (e) {}
 
+            //3. Add the new status label
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
               labels: [newLabel]
-            });
+            });            });
