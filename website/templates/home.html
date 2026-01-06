@@ -984,96 +984,98 @@
                 <!-- Primary Tools Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
                     <!-- Organizations -->
-                   <a href="{% url 'organizations' %}"
-                    class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                     <i class="fas fa-building text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                     <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">
-                        Organizations
+                    <a href="{% url 'organizations' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-building text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">
+                            Organizations
                         </span>
-                     <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    Browse and manage organizations
-                     </p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Browse and manage organizations
+                        </p>
                     </a>
-
                     <!-- Add Organization -->
                     <a href="{% url 'register_organization' %}"
-                   class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-          hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                   <i class="fas fa-plus text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                   <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Register Organization</span>
-                 <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-        Add your company to our platform
-                 </p>
-                </a>
-
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-plus text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Register Organization</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Add your company to our platform
+                        </p>
+                    </a>
                     <!-- Domains -->
-                    <a href="{% url 'domains' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                    <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                    <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Domains</span>
-                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                     View associated domains
-                    </p>
+                    <a href="{% url 'domains' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Domains</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            View associated domains
+                        </p>
                     </a>
                     <!-- Bugs -->
-                    <a href="{% url 'issues' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                    <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                    <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bugs</span>
-                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                         Reported security bugs
-                    </p>
+                    <a href="{% url 'issues' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bugs</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Reported security bugs
+                        </p>
                     </a>
-
                     <!-- Issues -->
-                  <a href="{% url 'github_issues' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                  <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                  <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Issues</span>
-                  <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    View and manage issues
-                </p>
-                </a>
+                    <a href="{% url 'github_issues' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Issues</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            View and manage issues
+                        </p>
+                    </a>
                 </div>
                 <!-- Secondary Tools Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
                     <!-- Bounties -->
-                    <a href="{% url 'hunts' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                    <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                    <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bounties</span>
-                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                      Active bounty programs
-                    </p>
+                    <a href="{% url 'hunts' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bounties</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Active bounty programs
+                        </p>
                     </a>
-
                     <!-- Check-ins -->
-                    <a href="{% url 'checkIN' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                    <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                    <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Check-ins</span>
-                    <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                        Daily activity check-ins
-                    </p>
+                    <a href="{% url 'checkIN' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Check-ins</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Daily activity check-ins
+                        </p>
                     </a>
                     <!-- Time Logs -->
-                    <a href="{% url 'sizzle' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                     <i class="fas fa-clock text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                     <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Time Logs</span>
-                     <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                      Track time spent on security tasks
-                     </p>
+                    <a href="{% url 'sizzle' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-clock text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Time Logs</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Track time spent on security tasks
+                        </p>
                     </a>
-
                     <!-- Trademarks -->
-                    <a href="{% url 'trademark_search' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                         <i class="fas fa-trademark text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                         <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Trademarks</span>
-                         <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                    <a href="{% url 'trademark_search' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-trademark text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Trademarks</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
                             Search and monitor trademark usage
-                          </p>
+                        </p>
                     </a>
                     <!-- Map -->
-                    <a href="{% url 'map' %}" class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                       <i class="fas fa-map-marked-alt text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                    <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Map</span>
-                       <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                          View global security activity
+                    <a href="{% url 'map' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-map-marked-alt text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Map</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            View global security activity
                         </p>
                     </a>
                 </div>
@@ -1085,56 +1087,50 @@
                 <h2 class="text-3xl font-bold text-center mb-8">Tools for Projects</h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     <!-- Projects -->
-                     <a href="{% url 'project_list' %}" 
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-project-diagram text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Projects</span>
-                <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    Manage your security projects
-                </p>
-            </a> 
-              <!-- Repositories -->
-                   <a href="{% url 'repo_list' %}" 
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-code-branch text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Repositories</span>
-                <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    Connect and monitor GitHub repos
-                </p>
-            </a>
-
+                    <a href="{% url 'project_list' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-project-diagram text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Projects</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Manage your security projects
+                        </p>
+                    </a>
+                    <!-- Repositories -->
+                    <a href="{% url 'repo_list' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-code-branch text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Repositories</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Connect and monitor GitHub repos
+                        </p>
+                    </a>
                     <!-- Bid on Issues -->
-                    <a href="{% url 'BiddingData' %}" 
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-gavel text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bid on Issues</span>
-                <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    Place bids on open issues
-                </p>
-            </a>
+                    <a href="{% url 'BiddingData' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-gavel text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bid on Issues</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Place bids on open issues
+                        </p>
+                    </a>
                     <!-- Funding -->
-                    <a href="{% url 'sponsor' %}" 
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-hand-holding-usd text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Funding</span>
-                <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    Manage project funding & rewards
-                </p>
-            </a>
+                    <a href="{% url 'sponsor' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-hand-holding-usd text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Funding</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Manage project funding & rewards
+                        </p>
+                    </a>
                     <!-- Bacon -->
-                    <a href="{% url 'bacon' %}" 
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-bacon text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bacon</span>
-                <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
-                    Earn & manage Bacon tokens
-                </p>
-            </a>
+                    <a href="{% url 'bacon' %}"
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-bacon text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Bacon</span>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 text-center mt-1 transition-colors duration-300 group-hover:text-white">
+                            Earn & manage Bacon tokens
+                        </p>
+                    </a>
                 </div>
             </div>
         </section>
@@ -1145,68 +1141,58 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                     <!-- Users -->
                     <a href="{% url 'users' %}"
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-users text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Users</span>
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
-                    Manage team members
-                </p>
-            </a>
-
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-users text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Users</span>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
+                            Manage team members
+                        </p>
+                    </a>
                     <!-- Teams -->
                     <a href="{% url 'team_overview' %}"
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-user-friends text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Teams</span>
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
-                    Create & manage teams
-                </p>
-            </a>
-
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-user-friends text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Teams</span>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
+                            Create & manage teams
+                        </p>
+                    </a>
                     <!-- Challenges -->
                     <a href="{% url 'team_challenges' %}"
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-flag text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Challenges</span>
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
-                    Security challenges
-                </p>
-            </a>
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-flag text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Challenges</span>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
+                            Security challenges
+                        </p>
+                    </a>
                     <!-- Leaderboards -->
                     <a href="{% url 'team_leaderboard' %}"
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-trophy text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Leaderboards</span>
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
-                    Track achievements
-                </p>
-            </a>
-
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-trophy text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Leaderboards</span>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
+                            Track achievements
+                        </p>
+                    </a>
                     <!-- Badges -->
                     <a href="{% url 'badges' %}"
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-medal text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Badges</span>
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
-                    Earn achievements
-                </p>
-            </a>
-
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-medal text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Badges</span>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
+                            Earn achievements
+                        </p>
+                    </a>
                     <!-- Analytics -->
                     <a href="{% url 'team_leaderboard' %}"
-               class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 
-                      hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
-                <i class="fas fa-chart-line text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
-                <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Analytics</span>
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
-                    Team performance
-                </p>
-            </a>
+                       class="group bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center transition-all duration-300 hover:bg-[#e74c3c] hover:-translate-y-2 hover:shadow-xl">
+                        <i class="fas fa-chart-line text-3xl text-[#e74c3c] mb-3 transition-colors duration-300 group-hover:text-white"></i>
+                        <span class="text-lg font-medium text-center transition-colors duration-300 group-hover:text-white">Analytics</span>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 text-center mt-2 transition-colors duration-300 group-hover:text-white">
+                            Team performance
+                        </p>
+                    </a>
                 </div>
             </div>
         </section>
