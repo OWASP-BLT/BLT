@@ -21,6 +21,7 @@ from website.models import (
     Room,
     UserProfile,
 )
+from website.utils import is_valid_host_for_domain
 
 
 class UserProfileForm(forms.ModelForm):
@@ -622,21 +623,8 @@ class OrganizationProfileForm(forms.ModelForm):
                 raise forms.ValidationError(f"{platform_name} URL must use http or https")
 
             hostname = (parsed.hostname or "").lower()
-
-            def _is_valid_host_for_domain(host: str, domain: str) -> bool:
-                """Return True if host is exactly domain or a proper subdomain of domain."""
-                if not host or not domain:
-                    return False
-                parts = host.split(".")
-                # Reject hosts with empty labels (e.g., consecutive dots or leading/trailing dots)
-                if any(not part for part in parts):
-                    return False
-                if host == domain:
-                    return True
-                return host.endswith(f".{domain}")
-
             # Only allow specified domains and their subdomains (prevent suffix attacks)
-            if not any(_is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
+            if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
                 allowed_str = " or ".join(allowed_domains)
                 raise forms.ValidationError(f"{platform_name} URL must be from {allowed_str} domain")
         return url

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
 from datetime import datetime, timedelta
 from typing import ClassVar
@@ -16,6 +17,7 @@ from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
+from django.db.utils import OperationalError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -41,7 +43,13 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
-from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
+from website.utils import (
+    check_security_txt,
+    format_timedelta,
+    is_valid_host_for_domain,
+    is_valid_https_url,
+    rebuild_safe_url,
+)
 from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
 logger = logging.getLogger("slack_bolt")
@@ -910,27 +918,12 @@ class OrganizationSocialRedirectView(View):
         allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
 
         # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
-        def is_valid_domain_or_subdomain(hostname, domain):
-            if hostname == domain:
-                return True
-            parts = hostname.split(".")
-            domain_parts = domain.split(".")
-            # Reject if any part is empty (indicates double dots or invalid format)
-            if any(part == "" for part in parts):
-                return False
-            # Check that hostname ends with domain parts and has at least one subdomain part
-            return len(parts) > len(domain_parts) and parts[-len(domain_parts) :] == domain_parts
-
-        if not any(is_valid_domain_or_subdomain(hostname, domain) for domain in allowed_domains):
+        if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured")
             return redirect("organization_analytics", id=org_id)
 
         # Increment the click counter atomically to prevent race conditions
         # Add retry logic to handle SQLite database locking in concurrent scenarios
-        import time
-
-        from django.db.utils import OperationalError
-
         max_retries = 3
         for attempt in range(max_retries):
             try:

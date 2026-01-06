@@ -263,6 +263,208 @@ class OrganizationProfileFormSecurityTests(TestCase):
         self.assertIn("facebook", form.errors)
         self.assertIn("linkedin", form.errors)
 
+    def test_valid_slack_url_accepted(self):
+        """Test that valid Slack URLs are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "slack_url": "https://testorg.slack.com/",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_slack_subdomain_accepted(self):
+        """Test that Slack workspace subdomains are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "slack_url": "https://app.slack.com/client/T123456/C123456",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_invalid_slack_domain_rejected(self):
+        """Test that non-Slack domains are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "slack_url": "https://evil.com/phishing",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("slack_url", form.errors)
+        self.assertIn("slack.com", str(form.errors["slack_url"]))
+
+    def test_slack_domain_suffix_attack_rejected(self):
+        """Test that slack.com.attacker.com is rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "slack_url": "https://slack.com.evil.com/phishing",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("slack_url", form.errors)
+
+    def test_valid_matrix_url_accepted(self):
+        """Test that valid Matrix.to URLs are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://matrix.to/#/@user:matrix.org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_matrix_org_domain_accepted(self):
+        """Test that matrix.org domain is accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://matrix.org/#/@user:matrix.org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_matrix_subdomain_accepted(self):
+        """Test that Matrix subdomains are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://app.matrix.to/#/@user:matrix.org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_invalid_matrix_domain_rejected(self):
+        """Test that non-Matrix domains are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://evil.com/phishing",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("matrix_url", form.errors)
+        self.assertIn("matrix.to or matrix.org", str(form.errors["matrix_url"]))
+
+    def test_matrix_domain_suffix_attack_rejected(self):
+        """Test that matrix.to.attacker.com is rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://matrix.to.evil.com/phishing",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("matrix_url", form.errors)
+
+    def test_valid_github_org_handle_accepted(self):
+        """Test that valid GitHub organization handles are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_github_org_with_hyphens_accepted(self):
+        """Test that GitHub handles with hyphens are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "test-org-123",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_github_org_with_numbers_accepted(self):
+        """Test that GitHub handles with numbers are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "testorg123",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_single_character_github_org_accepted(self):
+        """Test that single character GitHub handles are accepted"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "a",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_github_org_starting_with_hyphen_rejected(self):
+        """Test that GitHub handles starting with hyphen are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "-testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+        self.assertIn("letters, numbers, and hyphens", str(form.errors["github_org"]))
+
+    def test_github_org_ending_with_hyphen_rejected(self):
+        """Test that GitHub handles ending with hyphen are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "testorg-",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+
+    def test_github_org_with_special_characters_rejected(self):
+        """Test that GitHub handles with special characters are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "test@org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+
+    def test_github_org_with_spaces_rejected(self):
+        """Test that GitHub handles with spaces are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "test org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+
+    def test_github_org_too_long_rejected(self):
+        """Test that GitHub handles longer than 39 characters are rejected"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "a" * 40,  # 40 characters - should be rejected
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertFalse(form.is_valid())
+        self.assertIn("github_org", form.errors)
+
+    def test_empty_github_org_accepted(self):
+        """Test that empty GitHub handle is acceptable"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "github_org": "",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
 
 class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
     """Test OrganizationSocialRedirectView security against open redirect attacks"""
