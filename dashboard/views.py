@@ -15,7 +15,7 @@ def security_dashboard(request):
     start_date = today - timedelta(days=29)
 
     qs = Issue.objects.filter(
-        label=4,
+        label=4,  # Security
         created__date__gte=start_date,
         is_hidden=False,
     )
@@ -41,10 +41,11 @@ def security_dashboard(request):
     severity_qs = (
         qs.annotate(
             severity=Case(
+                When(cve_score__isnull=True, then=Value("Not Scored")),
                 When(cve_score__gte=9, then=Value("Critical")),
                 When(cve_score__gte=7, then=Value("High")),
                 When(cve_score__gte=4, then=Value("Medium")),
-                default=Value("Low"),
+                When(cve_score__lt=4, then=Value("Low")),
                 output_field=CharField(),
             )
         )
