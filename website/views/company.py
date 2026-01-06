@@ -4,6 +4,7 @@ import os
 import re
 import uuid
 from datetime import datetime, timedelta
+from typing import ClassVar
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
@@ -23,6 +24,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
+from website.forms import OrganizationProfileForm
 from website.models import (
     DailyStatusReport,
     Domain,
@@ -75,6 +77,9 @@ def calculate_social_stats(organization):
                 "total_clicks": 0,
             }
     else:
+        # Validate that organization is an Organization instance
+        if not isinstance(organization, Organization):
+            raise TypeError(f"organization must be an Organization instance or int, got {type(organization).__name__}")
         org = organization
 
     social_clicks = org.social_clicks or {}
@@ -860,7 +865,7 @@ class OrganizationSocialRedirectView(View):
     """
 
     # Allowed domains for each platform to prevent open redirect attacks
-    ALLOWED_DOMAINS = {
+    ALLOWED_DOMAINS: ClassVar[dict[str, list[str]]] = {
         "twitter": ["twitter.com", "x.com"],
         "facebook": ["facebook.com", "fb.com"],
         "linkedin": ["linkedin.com"],
@@ -966,18 +971,8 @@ class OrganizationProfileEditView(View):
             return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
         return []
 
-    def _get_social_stats(self, organization):
-        """Helper method to get social media click statistics for an organization.
-
-        Returns:
-            dict: Social media statistics from calculate_social_stats utility
-        """
-        return calculate_social_stats(organization)
-
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        from website.forms import OrganizationProfileForm
-
         organization = get_object_or_404(Organization, id=id)
 
         # Get list of organizations for dropdown
@@ -986,7 +981,7 @@ class OrganizationProfileEditView(View):
         form = OrganizationProfileForm(instance=organization)
 
         # Get social media click statistics
-        social_stats = self._get_social_stats(organization)
+        social_stats = calculate_social_stats(organization)
 
         context = {
             "organization": id,
@@ -1000,8 +995,6 @@ class OrganizationProfileEditView(View):
 
     @validate_organization_user
     def post(self, request, id, *args, **kwargs):
-        from website.forms import OrganizationProfileForm
-
         organization = get_object_or_404(Organization, id=id)
 
         form = OrganizationProfileForm(request.POST, request.FILES, instance=organization)
@@ -1015,7 +1008,7 @@ class OrganizationProfileEditView(View):
             organizations = self._get_user_organizations(request.user)
 
             # Get social media click statistics for error case
-            social_stats = self._get_social_stats(organization)
+            social_stats = calculate_social_stats(organization)
 
             context = {
                 "organization": id,

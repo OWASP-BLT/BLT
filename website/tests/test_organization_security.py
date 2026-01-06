@@ -2,6 +2,8 @@
 Security-focused tests for organization views, especially open redirect vulnerabilities
 and URL validation in forms.
 """
+import threading
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
@@ -434,8 +436,6 @@ class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
 
     def test_concurrent_clicks_tracked_correctly(self):
         """Test that concurrent clicks are tracked atomically using threads"""
-        import threading
-
         org = Organization.objects.create(
             name="Concurrent Clicks",
             slug="concurrent",
@@ -452,8 +452,6 @@ class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
 
         def click_link():
             # Each thread needs its own client instance
-            from django.test import Client
-
             client = Client()
             client.get(url)
 

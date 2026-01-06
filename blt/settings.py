@@ -338,6 +338,9 @@ else:
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
+# NOTE: SQLite is used for local development and testing only.
+# For production deployments, use PostgreSQL as recommended in the project documentation.
+# SQLite is not designed for high-concurrency write scenarios.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

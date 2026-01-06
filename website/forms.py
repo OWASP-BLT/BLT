@@ -1,3 +1,5 @@
+import re
+
 import pytz
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
@@ -620,11 +622,21 @@ class OrganizationProfileForm(forms.ModelForm):
                 raise forms.ValidationError(f"{platform_name} URL must use http or https")
 
             hostname = (parsed.hostname or "").lower()
+
+            def _is_valid_host_for_domain(host: str, domain: str) -> bool:
+                """Return True if host is exactly domain or a proper subdomain of domain."""
+                if not host or not domain:
+                    return False
+                parts = host.split(".")
+                # Reject hosts with empty labels (e.g., consecutive dots or leading/trailing dots)
+                if any(not part for part in parts):
+                    return False
+                if host == domain:
+                    return True
+                return host.endswith(f".{domain}")
+
             # Only allow specified domains and their subdomains (prevent suffix attacks)
-            if not any(
-                hostname == domain or (hostname.endswith(f".{domain}") and not hostname.endswith(f"..{domain}"))
-                for domain in allowed_domains
-            ):
+            if not any(_is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
                 allowed_str = " or ".join(allowed_domains)
                 raise forms.ValidationError(f"{platform_name} URL must be from {allowed_str} domain")
         return url
@@ -663,8 +675,6 @@ class OrganizationProfileForm(forms.ModelForm):
         """Validate GitHub organization handle"""
         github_org = self.cleaned_data.get("github_org")
         if github_org:
-            import re
-
             # GitHub usernames can only contain alphanumeric characters and hyphens
             # Cannot start or end with hyphen, no consecutive hyphens
             if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$", github_org):
