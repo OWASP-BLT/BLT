@@ -946,8 +946,11 @@ class OrganizationSocialRedirectView(View):
                     # Exponential backoff: wait longer with each retry
                     time.sleep(0.1 * (attempt + 1))
                     continue
-                # If it's the last attempt or not a lock error, re-raise
-                raise
+                # Log the error but don't fail the redirect - click counting is non-critical
+                logger.warning(
+                    f"Failed to update social clicks for organization {org_id} on platform {platform}: {str(e)}"
+                )
+                break  # Exit retry loop and continue with redirect
 
         # Redirect to the actual social media URL
         return redirect(target_url)
