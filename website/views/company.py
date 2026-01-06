@@ -948,7 +948,10 @@ class OrganizationSocialRedirectView(View):
                     continue
                 # Log the error but don't fail the redirect - click counting is non-critical
                 logger.warning(
-                    f"Failed to update social clicks for organization {org_id} on platform {platform}: {str(e)}"
+                    "Failed to update social clicks for organization %s on platform %s",
+                    org_id,
+                    platform,
+                    exc_info=True,
                 )
                 break  # Exit retry loop and continue with redirect
 
