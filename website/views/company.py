@@ -937,9 +937,9 @@ class OrganizationSocialRedirectView(View):
                     # Increment the counter for this platform
                     clicks[platform] = clicks.get(platform, 0) + 1
 
-                    # Save the updated clicks
-                    organization.social_clicks = clicks
-                    organization.save(update_fields=["social_clicks"])
+                    # Use atomic database update to prevent race conditions
+                    # This ensures the JSON update happens at the database level
+                    Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
                 break  # Success, exit retry loop
             except OperationalError as e:
                 if "database is locked" in str(e) and attempt < max_retries - 1:
