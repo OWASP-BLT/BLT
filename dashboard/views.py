@@ -20,16 +20,16 @@ def security_dashboard(request):
         is_hidden=False,
     )
 
-    # ---- KPIs ----
+    # ---------------- KPIs ----------------
     total = qs.count()
     open_count = qs.filter(status="open").count()
     closed_count = qs.filter(status="closed").count()
     with_cve = qs.filter(cve_id__isnull=False).count()
 
-    # ---- DAILY TREND ----
+    # ---------------- DAILY TREND ----------------
     daily_qs = qs.annotate(day=TruncDate("created")).values("day").annotate(count=Count("id"))
 
-    daily_map = {x["day"]: x["count"] for x in daily_qs}
+    daily_map = {row["day"]: row["count"] for row in daily_qs}
 
     daily_labels = []
     daily_counts = []
@@ -38,15 +38,17 @@ def security_dashboard(request):
         daily_labels.append(day.strftime("%d %b"))
         daily_counts.append(daily_map.get(day, 0))
 
-    # ---- SEVERITY (CVSS, FIXED ORDER) ----
+    # ---------------- SEVERITY (CVSS v3.0 COMPLIANT) ----------------
     severity_qs = (
         qs.annotate(
             severity=Case(
+                # CVSS v3.0 mapping
+                When(cve_score=0, then=Value("None")),
                 When(cve_score__gte=9, then=Value("Critical")),
                 When(cve_score__gte=7, then=Value("High")),
                 When(cve_score__gte=4, then=Value("Medium")),
+                When(cve_score__gt=0, then=Value("Low")),
                 When(cve_score__isnull=True, then=Value("Not Scored")),
-                default=Value("Low"),
                 output_field=CharField(),
             ),
         )
@@ -56,7 +58,8 @@ def security_dashboard(request):
                 When(severity="High", then=Value(2)),
                 When(severity="Medium", then=Value(3)),
                 When(severity="Low", then=Value(4)),
-                When(severity="Not Scored", then=Value(5)),
+                When(severity="None", then=Value(5)),
+                When(severity="Not Scored", then=Value(6)),
                 output_field=IntegerField(),
             ),
         )
@@ -65,10 +68,10 @@ def security_dashboard(request):
         .order_by("severity_order")
     )
 
-    # ---- STATUS ----
+    # ---------------- STATUS ----------------
     status_qs = qs.values("status").annotate(count=Count("id"))
 
-    # ---- ORGANIZATIONS / DOMAINS ----
+    # ---------------- ORGANIZATIONS / DOMAINS ----------------
     org_qs = qs.values("domain__name").annotate(count=Count("id")).order_by("-count")[:8]
 
     context = {
