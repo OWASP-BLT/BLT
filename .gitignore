@@ -22,6 +22,6 @@ requirements.txt
 ssl
 ansible/inventory.yml
 google-credentials.json
-
-
+poetry
+test_log.txt
 .env

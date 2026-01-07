@@ -1,5 +1,7 @@
 import os
+import shutil
 import time
+from unittest import skipIf
 from unittest.mock import patch
 
 import chromedriver_autoinstaller
@@ -35,6 +37,10 @@ from ..models import (
 )
 
 
+@skipIf(
+    not shutil.which("google-chrome") and not shutil.which("google-chrome-stable"),
+    "Chrome not installed; skipping Selenium tests",
+)
 @tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
