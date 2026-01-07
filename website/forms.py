@@ -59,7 +59,6 @@ class UserProfileForm(forms.ModelForm):
         return profile
 
 class IssueForm(forms.ModelForm):
-    # This is a virtual field. It must NOT be in Meta.fields.
     captcha = CaptchaField(
         label="Verify you are human",
         widget=forms.TextInput(attrs={
@@ -70,8 +69,6 @@ class IssueForm(forms.ModelForm):
 
     class Meta:
         model = Issue
-        # FIX: Removed 'title', 'issue_type', and 'captcha' per bot analysis.
-        # FIX: Added 'label' as the correct model field.
         fields = ["description", "label"]
         widgets = {
             "description": forms.Textarea(attrs={
