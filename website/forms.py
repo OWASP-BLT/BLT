@@ -59,27 +59,27 @@ class UserProfileForm(forms.ModelForm):
         return profile
 
 class IssueForm(forms.ModelForm):
-    # Form-only field: Must stay OUTSIDE Meta.fields to avoid FieldError
+    # This is a virtual field. It must NOT be in Meta.fields.
     captcha = CaptchaField(
         label="Verify you are human",
         widget=forms.TextInput(attrs={
             "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-[#e74c3c]",
-            "placeholder": "Enter captcha characters"
+            "placeholder": "Enter captcha characters",
         })
     )
 
     class Meta:
         model = Issue
-        # Removed 'title', 'issue_type', and 'captcha' per Sentry/CodeRabbit feedback
-        # Added 'label' which is the correct model field
+        # FIX: Removed 'title', 'issue_type', and 'captcha' per bot analysis.
+        # FIX: Added 'label' as the correct model field.
         fields = ["description", "label"]
         widgets = {
             "description": forms.Textarea(attrs={
-                "class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]", 
-                "rows": 4
+                "class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]",
+                "rows": 4,
             }),
             "label": forms.Select(attrs={
-                "class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]"
+                "class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]",
             }),
         }
 
@@ -89,8 +89,8 @@ class HackathonForm(forms.ModelForm):
         widget=forms.Textarea(attrs={
             "rows": 3,
             "class": "w-full rounded-lg border-gray-300 focus:ring-[#e74c3c]",
-            "placeholder": "https://github.com/owner/repo\n(One URL per line)"
-        })
+            "placeholder": "https://github.com/owner/repo\n(One URL per line)",
+        }),
     )
 
     class Meta:
@@ -98,7 +98,7 @@ class HackathonForm(forms.ModelForm):
         fields = [
             "name", "description", "organization", "start_time", "end_time",
             "banner_image", "rules", "registration_open", "max_participants",
-            "repositories", "sponsor_note", "sponsor_link"
+            "repositories", "sponsor_note", "sponsor_link",
         ]
         base_style = "w-full rounded-lg border-gray-300 focus:ring-[#e74c3c] focus:ring-opacity-50"
         widgets = {
@@ -134,7 +134,7 @@ class HackathonForm(forms.ModelForm):
                 repo_name = url.rstrip("/").split("/")[-1]
                 repo, _ = Repo.objects.get_or_create(
                     repo_url=url,
-                    defaults={"name": repo_name, "organization": instance.organization}
+                    defaults={"name": repo_name, "organization": instance.organization},
                 )
                 instance.repositories.add(repo)
         return instance
@@ -145,7 +145,7 @@ class JobForm(forms.ModelForm):
         fields = [
             "title", "description", "requirements", "location", "job_type",
             "salary_range", "is_public", "status", "expires_at",
-            "application_email", "application_url", "application_instructions"
+            "application_email", "application_url", "application_instructions",
         ]
         base_class = "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c]"
         widgets = {
