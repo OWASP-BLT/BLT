@@ -59,6 +59,7 @@ class UserProfileForm(forms.ModelForm):
         return profile
 
 class IssueForm(forms.ModelForm):
+    # Form-only field: Must stay OUTSIDE Meta.fields to avoid FieldError
     captcha = CaptchaField(
         label="Verify you are human",
         widget=forms.TextInput(attrs={
@@ -69,11 +70,17 @@ class IssueForm(forms.ModelForm):
 
     class Meta:
         model = Issue
-        fields = ["title", "description", "issue_type", "captcha"]
+        # Removed 'title', 'issue_type', and 'captcha' per Sentry/CodeRabbit feedback
+        # Added 'label' which is the correct model field
+        fields = ["description", "label"]
         widgets = {
-            "title": forms.TextInput(attrs={"class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]"}),
-            "description": forms.Textarea(attrs={"class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]", "rows": 4}),
-            "issue_type": forms.Select(attrs={"class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]"}),
+            "description": forms.Textarea(attrs={
+                "class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]", 
+                "rows": 4
+            }),
+            "label": forms.Select(attrs={
+                "class": "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#e74c3c]"
+            }),
         }
 
 class HackathonForm(forms.ModelForm):
@@ -83,8 +90,7 @@ class HackathonForm(forms.ModelForm):
             "rows": 3,
             "class": "w-full rounded-lg border-gray-300 focus:ring-[#e74c3c]",
             "placeholder": "https://github.com/owner/repo\n(One URL per line)"
-        }),
-        help_text="Automatically creates and links new repositories to this hackathon."
+        })
     )
 
     class Meta:
