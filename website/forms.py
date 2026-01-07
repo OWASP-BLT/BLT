@@ -7,6 +7,7 @@ from mdeditor.fields import MDTextFormField
 
 from website.models import (
     Bid,
+    Issue,
     Hackathon,
     HackathonPrize,
     HackathonSponsor,
@@ -118,6 +119,32 @@ class IpReportForm(forms.ModelForm):
             "activity_type",
         ]
 
+class IssueForm(forms.ModelForm):
+    captcha = CaptchaField()
+
+    class Meta:
+        model = Issue
+        fields = [
+            "title", 
+            "description", 
+            "issue_type", 
+            "captcha"
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "Brief summary of the issue",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 4,
+                    "placeholder": "Provide details about the bug or feature request...",
+                }
+            ),
+        }
 
 class BidForm(forms.ModelForm):
     class Meta:
