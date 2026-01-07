@@ -73,10 +73,10 @@ jobs:
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-poetry-py3.12-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-poetry-py3.12-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-poetry-py3.12-
 
       - name: Print memory usage
         run: free -h
