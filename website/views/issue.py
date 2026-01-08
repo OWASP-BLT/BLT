@@ -107,7 +107,7 @@ def submit_pledge(request):
 
     issue = get_object_or_404(Issue, id=issue_id)
 
-    if issue.status != "closed":
+    if issue.status == "closed":
         return JsonResponse({"error": "Cannot pledge on an open issue"}, status=400)
 
     form = IssuePledgeForm(request.POST)
