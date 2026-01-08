@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 import pytz
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
@@ -603,3 +605,22 @@ class JobForm(forms.ModelForm):
             "application_url": "Optional: Link to external application page",
             "application_instructions": "Optional: Custom instructions for applicants",
         }
+
+
+class EducationalVideoForm(forms.Form):
+    video_url = forms.URLField(
+        label="Educational Video URL",
+        required=True,
+        help_text="Paste a YouTube link",
+    )
+
+    def clean_video_url(self):
+        url = self.cleaned_data["video_url"]
+        parsed = urlparse(url)
+
+        allowed_domains = ["youtube.com", "www.youtube.com", "youtu.be"]
+
+        if parsed.netloc not in allowed_domains:
+            raise forms.ValidationError("Only YouTube URLs are allowed.")
+
+        return url

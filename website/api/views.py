@@ -9,6 +9,7 @@ from functools import wraps
 from urllib.parse import urlparse
 
 import django
+import openai
 import psutil
 import requests
 from bs4 import BeautifulSoup
@@ -33,6 +34,50 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+openai.api_key = settings.OPENAI_API_KEY
+
+
+def generate_quiz(transcript_text):
+    prompt = f"Create 5 multiple choice questions (with 4 options each) from the following educational content:\n\n{transcript_text}"
+
+    response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
+
+    return response.choices[0].message.content
+
+
+from youtube_transcript_api import YouTubeTranscriptApi
+
+
+def get_transcript(video_id):
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        text = " ".join([t["text"] for t in transcript])
+        return text
+    except Exception as e:
+        logger.error(f"Transcript error: {e}")
+        return None
+
+
+# processes the video submission:
+def submit_educational_video(request):
+    if request.method == "POST":
+        video_url = request.POST.get("video_url")
+        video_id = extract_youtube_video_id(video_url)
+
+        if is_educational(video_url):
+            transcript_text = get_transcript(video_id)
+            quiz_text = generate_quiz(transcript_text)
+
+            # Save only metadata + quiz
+            video = EducationalVideo(url=video_url, title="Some title here", quiz=quiz_text)
+            video.save()
+
+            return Response({"message": "Video and quiz saved!"})
+
+        else:
+            return Response({"message": "Video is not educational."}, status=400)
+
 
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
