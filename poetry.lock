@@ -185,18 +185,6 @@ files = [
 tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
-name = "asn1crypto"
-version = "1.5.1"
-description = "Fast ASN.1 parser and serializer with definitions for private keys, public keys, certificates, CRL, OCSP, CMS, PKCS#3, PKCS#7, PKCS#8, PKCS#12, PKCS#5, X.509 and TSP"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "asn1crypto-1.5.1-py2.py3-none-any.whl", hash = "sha256:db4e40728b728508912cbb3d44f19ce188f218e9eba635821bb4b68564f8fd67"},
-    {file = "asn1crypto-1.5.1.tar.gz", hash = "sha256:13ae38502be632115abf8a24cbe5f4da52e3b5231990aff31123c805306ccb9c"},
-]
-
-[[package]]
 name = "async-timeout"
 version = "4.0.3"
 description = "Timeout context manager for asyncio programs"
@@ -284,26 +272,6 @@ files = [
     {file = "better_profanity-0.7.0-py3-none-any.whl", hash = "sha256:bd4c529ea6aa2db1aaa50524be1ed14d0fe5c664f1fd88c8bc388c7e9f9f00e8"},
     {file = "better_profanity-0.7.0.tar.gz", hash = "sha256:8a6fdc8606d7471e7b5f6801917eca98ec211098262e82f62da4f5de3a73145b"},
 ]
-
-[[package]]
-name = "bitcash"
-version = "1.0.2"
-description = "Bitcoin Cash made easier."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "BitCash-1.0.2-py3-none-any.whl", hash = "sha256:a139003b56b7d954bfe2716653b89180bedf87658d8193efab24fc15f36fbf90"},
-    {file = "bitcash-1.0.2-py2.py3-none-any.whl", hash = "sha256:2f52bf0f73513b82256aad8c9156cc5a8ca74ec9537467b2b3afe3de524d3577"},
-]
-
-[package.dependencies]
-coincurve = ">=4.3.0"
-requests = "*"
-
-[package.extras]
-cache = ["lmdb"]
-cli = ["appdirs", "click", "privy", "tinydb"]
 
 [[package]]
 name = "black"
@@ -668,73 +636,6 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
-name = "coincurve"
-version = "20.0.0"
-description = "Cross-platform Python CFFI bindings for libsecp256k1"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-files = [
-    {file = "coincurve-20.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d559b22828638390118cae9372a1bb6f6594f5584c311deb1de6a83163a0919b"},
-    {file = "coincurve-20.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:33d7f6ebd90fcc550f819f7f2cce2af525c342aac07f0ccda46ad8956ad9d99b"},
-    {file = "coincurve-20.0.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:22d70dd55d13fd427418eb41c20fde0a20a5e5f016e2b1bb94710701e759e7e0"},
-    {file = "coincurve-20.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:46f18d481eaae72c169f334cde1fd22011a884e0c9c6adc3fdc1fd13df8236a3"},
-    {file = "coincurve-20.0.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9de1ec57f43c3526bc462be58fb97910dc1fdd5acab6c71eda9f9719a5bd7489"},
-    {file = "coincurve-20.0.0-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:a6f007c44c726b5c0b3724093c0d4fb8e294f6b6869beb02d7473b21777473a3"},
-    {file = "coincurve-20.0.0-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:0ff1f3b81330db5092c24da2102e4fcba5094f14945b3eb40746456ceabdd6d9"},
-    {file = "coincurve-20.0.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:82f7de97694d9343f26bd1c8e081b168e5f525894c12445548ce458af227f536"},
-    {file = "coincurve-20.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:e905b4b084b4f3b61e5a5d58ac2632fd1d07b7b13b4c6d778335a6ca1dafd7a3"},
-    {file = "coincurve-20.0.0-cp310-cp310-win_arm64.whl", hash = "sha256:3657bb5ed0baf1cf8cf356e7d44aa90a7902cc3dd4a435c6d4d0bed0553ad4f7"},
-    {file = "coincurve-20.0.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:44087d1126d43925bf9a2391ce5601bf30ce0dba4466c239172dc43226696018"},
-    {file = "coincurve-20.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:5ccf0ba38b0f307a9b3ce28933f6c71dc12ef3a0985712ca09f48591afd597c8"},
-    {file = "coincurve-20.0.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:566bc5986debdf8572b6be824fd4de03d533c49f3de778e29f69017ae3fe82d8"},
-    {file = "coincurve-20.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f4d70283168e146f025005c15406086513d5d35e89a60cf4326025930d45013a"},
-    {file = "coincurve-20.0.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:763c6122dd7d5e7a81c86414ce360dbe9a2d4afa1ca6c853ee03d63820b3d0c5"},
-    {file = "coincurve-20.0.0-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:f00c361c356bcea386d47a191bb8ac60429f4b51c188966a201bfecaf306ff7f"},
-    {file = "coincurve-20.0.0-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:4af57bdadd2e64d117dd0b33cfefe76e90c7a6c496a7b034fc65fd01ec249b15"},
-    {file = "coincurve-20.0.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:a26437b7cbde13fb6e09261610b788ca2a0ca2195c62030afd1e1e0d1a62e035"},
-    {file = "coincurve-20.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:ed51f8bba35e6c7676ad65539c3dbc35acf014fc402101fa24f6b0a15a74ab9e"},
-    {file = "coincurve-20.0.0-cp311-cp311-win_arm64.whl", hash = "sha256:594b840fc25d74118407edbbbc754b815f1bba9759dbf4f67f1c2b78396df2d3"},
-    {file = "coincurve-20.0.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:4df4416a6c0370d777aa725a25b14b04e45aa228da1251c258ff91444643f688"},
-    {file = "coincurve-20.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1ccc3e4db55abf3fc0e604a187fdb05f0702bc5952e503d9a75f4ae6eeb4cb3a"},
-    {file = "coincurve-20.0.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ac8335b1658a2ef5b3eb66d52647742fe8c6f413ad5b9d5310d7ea6d8060d40f"},
-    {file = "coincurve-20.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c7ac025e485a0229fd5394e0bf6b4a75f8a4f6cee0dcf6f0b01a2ef05c5210ff"},
-    {file = "coincurve-20.0.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e46e3f1c21b3330857bcb1a3a5b942f645c8bce912a8a2b252216f34acfe4195"},
-    {file = "coincurve-20.0.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:df9ff9b17a1d27271bf476cf3fa92df4c151663b11a55d8cea838b8f88d83624"},
-    {file = "coincurve-20.0.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:4155759f071375699282e03b3d95fb473ee05c022641c077533e0d906311e57a"},
-    {file = "coincurve-20.0.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:0530b9dd02fc6f6c2916716974b79bdab874227f560c422801ade290e3fc5013"},
-    {file = "coincurve-20.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:eacf9c0ce8739c84549a89c083b1f3526c8780b84517ee75d6b43d276e55f8a0"},
-    {file = "coincurve-20.0.0-cp312-cp312-win_arm64.whl", hash = "sha256:52a67bfddbd6224dfa42085c88ad176559801b57d6a8bd30d92ee040de88b7b3"},
-    {file = "coincurve-20.0.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:61e951b1d695b62376f60519a84c4facaf756eeb9c5aff975bea0942833f185d"},
-    {file = "coincurve-20.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:4e9e548db77f4ea34c0d748dddefc698adb0ee3fab23ed19f80fb2118dac70f6"},
-    {file = "coincurve-20.0.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8cdbf0da0e0809366fdfff236b7eb6e663669c7b1f46361a4c4d05f5b7e94c57"},
-    {file = "coincurve-20.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d72222b4ecd3952e8ffcbf59bc7e0d1b181161ba170b60e5c8e1f359a43bbe7e"},
-    {file = "coincurve-20.0.0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9add43c4807f0c17a940ce4076334c28f51d09c145cd478400e89dcfb83fb59d"},
-    {file = "coincurve-20.0.0-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:bcc94cceea6ec8863815134083e6221a034b1ecef822d0277cf6ad2e70009b7f"},
-    {file = "coincurve-20.0.0-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:1ffbdfef6a6d147988eabaed681287a9a7e6ba45ecc0a8b94ba62ad0a7656d97"},
-    {file = "coincurve-20.0.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:13335c19c7e5f36eaba2a53c68073d981980d7dc7abfee68d29f2da887ccd24e"},
-    {file = "coincurve-20.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:7fbfb8d16cf2bea2cf48fc5246d4cb0a06607d73bb5c57c007c9aed7509f855e"},
-    {file = "coincurve-20.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:4870047704cddaae7f0266a549c927407c2ba0ec92d689e3d2b511736812a905"},
-    {file = "coincurve-20.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:81ce41263517b0a9f43cd570c87720b3c13324929584fa28d2e4095969b6015d"},
-    {file = "coincurve-20.0.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:572083ccce6c7b514d482f25f394368f4ae888f478bd0b067519d33160ea2fcc"},
-    {file = "coincurve-20.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ee5bc78a31a2f1370baf28aaff3949bc48f940a12b0359d1cd2c4115742874e6"},
-    {file = "coincurve-20.0.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f2895d032e281c4e747947aae4bcfeef7c57eabfd9be22886c0ca4e1365c7c1f"},
-    {file = "coincurve-20.0.0-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:d3e2f21957ada0e1742edbde117bb41758fa8691b69c8d186c23e9e522ea71cd"},
-    {file = "coincurve-20.0.0-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:c2baa26b1aad1947ca07b3aa9e6a98940c5141c6bdd0f9b44d89e36da7282ffa"},
-    {file = "coincurve-20.0.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:7eacc7944ddf9e2b7448ecbe84753841ab9874b8c332a4f5cc3b2f184db9f4a2"},
-    {file = "coincurve-20.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:c293c095dc690178b822cadaaeb81de3cc0d28f8bdf8216ed23551dcce153a26"},
-    {file = "coincurve-20.0.0-cp39-cp39-win_arm64.whl", hash = "sha256:11a47083a0b7092d3eb50929f74ffd947c4a5e7035796b81310ea85289088c7a"},
-    {file = "coincurve-20.0.0.tar.gz", hash = "sha256:872419e404300302e938849b6b92a196fabdad651060b559dc310e52f8392829"},
-]
-
-[package.dependencies]
-asn1crypto = "*"
-cffi = ">=1.3.0"
-
-[package.extras]
-dev = ["coverage", "pytest", "pytest-benchmark"]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -796,6 +697,18 @@ sdist = ["build"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["certifi", "cryptography-vectors (==43.0.3)", "pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-xdist"]
 test-randomorder = ["pytest-randomly"]
+
+[[package]]
+name = "defusedxml"
+version = "0.7.1"
+description = "XML bomb protection for Python stdlib modules"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+groups = ["main"]
+files = [
+    {file = "defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61"},
+    {file = "defusedxml-0.7.1.tar.gz", hash = "sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69"},
+]
 
 [[package]]
 name = "diff-match-patch"
@@ -4117,7 +4030,23 @@ idna = ">=2.0"
 multidict = ">=4.0"
 propcache = ">=0.2.0"
 
+[[package]]
+name = "youtube-transcript-api"
+version = "1.2.3"
+description = "This is an python API which allows you to get the transcripts/subtitles for a given YouTube video. It also works for automatically generated subtitles, supports translating subtitles and it does not require a headless browser, like other selenium based solutions do!"
+optional = false
+python-versions = "<3.15,>=3.8"
+groups = ["main"]
+files = [
+    {file = "youtube_transcript_api-1.2.3-py3-none-any.whl", hash = "sha256:0c1b32ea5e739f9efde8c42e3d43e67df475185af6f820109607577b83768375"},
+    {file = "youtube_transcript_api-1.2.3.tar.gz", hash = "sha256:76016b71b410b124892c74df24b07b052702cf3c53afb300d0a2c547c0b71b68"},
+]
+
+[package.dependencies]
+defusedxml = ">=0.7.1,<0.8.0"
+requests = "*"
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "199432e2f68b7be59367e46c2fd34dfa5b58e1290356942b9dc5b29aa5930ad9"
+content-hash = "88da054b7d3f2c115fdc2f4fda4465add1baf44728abaa180eb50432fed34597"

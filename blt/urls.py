@@ -143,6 +143,7 @@ from website.views.core import (
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
+    VideoDetailView,
     add_lecture,
     add_section,
     course_content_management,
@@ -162,6 +163,7 @@ from website.views.education import (
     instructor_dashboard,
     mark_lecture_complete,
     study_course,
+    submit_quiz,
     update_lectures_order,
     update_sections_order,
     view_course,
@@ -723,6 +725,18 @@ urlpatterns = [
     ),
     re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^education/$", education_home, name="education"),
+    # Video detail page (watch + AI summary + quiz)
+    re_path(
+        r"^education/video/(?P<pk>\d+)/$",
+        VideoDetailView.as_view(),
+        name="video_detail",
+    ),
+    # Quiz submission endpoint (AJAX POST)
+    re_path(
+        r"^education/video/(?P<video_id>\d+)/quiz/submit/$",
+        submit_quiz,
+        name="submit_quiz",
+    ),
     path("education/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("education/create-standalone-lecture/", create_standalone_lecture, name="create_standalone_lecture"),
     path("education/edit-standalone-lecture/<int:lecture_id>", edit_standalone_lecture, name="edit_standalone_lecture"),
