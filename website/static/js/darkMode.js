@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("theme", newTheme);
 
         // Send theme preference to server if CSRF token is available
-        const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]")?.value;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         if (csrfToken) {
           fetch("/set-theme/", {
             method: "POST",
@@ -21,7 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
               "X-CSRFToken": csrfToken,
             },
             body: JSON.stringify({ theme: newTheme }),
-          }).catch(error => console.error("Error saving theme preference:", error));
+          }).catch(() => {
+            // Silently handle errors - theme preference is saved in localStorage
+          });
         }
     }
   });

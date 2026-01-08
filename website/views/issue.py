@@ -45,7 +45,6 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
@@ -250,7 +249,7 @@ def create_github_issue(request, id):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
@@ -2455,7 +2454,6 @@ class GitHubIssueDetailView(DetailView):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def page_vote(request):
     """
     Handle upvote/downvote for a page

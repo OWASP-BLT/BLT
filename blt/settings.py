@@ -59,6 +59,19 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
 
+# Safe management commands that can run without a real SECRET_KEY
+SAFE_COMMANDS = ["collectstatic", "check", "compilemessages", "makemessages"]
+is_safe_command = len(sys.argv) > 1 and sys.argv[1] in SAFE_COMMANDS
+
+# Require SECRET_KEY in production (fail-fast approach)
+if not DEBUG and not TESTING and not is_safe_command:
+    # Check if still using default key
+    if SECRET_KEY == "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s":
+        raise ValueError(
+            "SECRET_KEY environment variable must be set in production. "
+            "The default SECRET_KEY is not allowed in production environments."
+        )
+
 SITE_ID = 1
 
 # Scout settings
@@ -101,6 +114,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "csp",
 )
 
 if DEBUG:
@@ -122,6 +136,7 @@ MIDDLEWARE = [
     "website.middleware.BaconRewardMessageMiddleware",  # Show BACON reward messages after OAuth
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "blt.middleware.throttling.ThrottlingMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
@@ -338,6 +353,142 @@ else:
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
+# ============================================================================
+# SECURITY HEADERS CONFIGURATION
+# ============================================================================
+# These headers protect against common web vulnerabilities and attacks.
+# Each header serves a specific security purpose:
+#
+# 1. HSTS (HTTP Strict Transport Security)
+#    Purpose: Forces browsers to use HTTPS for all future requests to this domain
+#    Attack Prevented: Man-in-the-Middle (MITM) attacks, protocol downgrade attacks
+#    Why BLT Needs It: Protects user credentials, session cookies, and sensitive
+#                      bug report data from being intercepted over HTTP
+#    Implementation: Only enabled in production (not DEBUG) to allow local HTTP development
+#
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000  # 1 year - browsers remember to use HTTPS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply to all subdomains
+    # Note: HSTS preload is a long-term commitment requiring careful testing.
+    #       See https://hstspreload.org/ for requirements and staged deployment guide.
+    #       Uncomment SECURE_HSTS_PRELOAD after testing and before submitting to preload list.
+    # SECURE_HSTS_PRELOAD = True  # Uncomment when ready for preload submission
+
+# 2. X-Content-Type-Options: nosniff
+#    Purpose: Prevents browsers from MIME-sniffing responses and overriding Content-Type
+#    Attack Prevented: MIME type confusion attacks, XSS via malicious file uploads
+#    Why BLT Needs It: Users upload files/images for bug reports - prevents browsers
+#                      from executing malicious scripts disguised as images
+#    Prevents MIME-sniffing attacks where browsers try to guess content type
+#    Example Attack: Attacker uploads a .jpg file containing JavaScript. Without this
+#                    header, browsers might execute it as JS. This header prevents that
+#                    by enforcing Content-Type. Combine with upload validation, CSP,
+#                    and serving uploads from a separate domain for defense-in-depth.
+#
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# 3. Referrer-Policy: same-origin
+#    Purpose: Controls how much referrer information is sent with requests
+#    Attack Prevented: Information leakage to third-party sites, privacy violations
+#    Why BLT Needs It: Prevents sensitive URLs (e.g., bug report IDs, user profiles)
+#                      from being leaked to external sites via referrer headers
+#    Behavior: Only sends referrer for same-origin requests, not to external sites
+#
+SECURE_REFERRER_POLICY = "same-origin"
+
+# =============================================================================
+# Content Security Policy (CSP)
+# =============================================================================
+# CSP helps prevent XSS attacks by controlling which resources can be loaded
+# References:
+#   - django-csp docs: https://django-csp.readthedocs.io/
+#   - MDN CSP Guide: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+#
+# CRITICAL: Before deploying, verify all external resources are whitelisted below.
+#           Missing domains will cause CSP violations and break functionality.
+#
+# To test CSP violations locally:
+#   1. Set DEBUG = False temporarily
+#   2. Open browser DevTools → Console
+#   3. Look for CSP violation warnings
+#   4. Add missing domains to appropriate directives below
+#
+# Production deployment checklist:
+#   □ Test with CSP_REPORT_ONLY = True first (monitor violations)
+#   □ Verify all pages load correctly (especially email templates, dashboards)
+#   □ Check browser console for CSP violations
+#   □ Once confirmed working, remove CSP_REPORT_ONLY
+#   □ Consider setting up CSP_REPORT_URI endpoint for monitoring
+
+if not DEBUG:
+    CONTENT_SECURITY_POLICY = {
+        "DIRECTIVES": {
+            # Default policy - fallback for any directive not explicitly set
+            "default-src": ("'self'",),
+            # Script sources - controls which JavaScript can execute
+            # Note: 'unsafe-inline' is required for inline <script> tags.
+            #       Consider migrating to nonces for better security.
+            "script-src": (
+                "'self'",
+                "'unsafe-inline'",  # TODO: Replace with nonces in future
+                "https://cdn.jsdelivr.net",  # General CDN
+                "https://unpkg.com",  # Package CDN
+                "https://code.jquery.com",  # jQuery
+                "https://stackpath.bootstrapcdn.com",  # Bootstrap
+                "https://cdn.tailwindcss.com",  # Tailwind (email templates)
+                "https://cdnjs.cloudflare.com",  # Cloudflare CDN (Font Awesome, etc.)
+                "https://www.google.com/recaptcha/",  # reCAPTCHA script
+                "https://www.gstatic.com/recaptcha/",  # reCAPTCHA resources
+            ),
+            # Style sources - controls which CSS can be loaded
+            "style-src": (
+                "'self'",
+                "'unsafe-inline'",  # Required for inline styles
+                "https://cdn.jsdelivr.net",
+                "https://unpkg.com",
+                "https://stackpath.bootstrapcdn.com",
+                "https://cdnjs.cloudflare.com",  # Font Awesome CSS
+                "https://fonts.googleapis.com",  # Google Fonts
+            ),
+            # Font sources - controls which fonts can be loaded
+            "font-src": (
+                "'self'",
+                "https://fonts.gstatic.com",  # Google Fonts
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com",  # Font Awesome fonts
+            ),
+            # Image sources - controls which images can be loaded
+            # Note: Explicit whitelist instead of permissive "https:"
+            "img-src": (
+                "'self'",
+                "data:",  # Inline data URIs (base64 images)
+                "https://bhfiles.storage.googleapis.com",  # Your GCS bucket
+                "https://storage.googleapis.com",  # Google Cloud Storage
+                "https://*.googleusercontent.com",  # Google user avatars
+                "https://www.gravatar.com",  # Gravatar images
+                "https://i.pravatar.cc",  # Avatar placeholders (if used)
+            ),
+            # Frame sources - controls which sites can be embedded in <iframe>
+            "frame-src": (
+                "'self'",
+                "https://www.google.com/recaptcha/",  # reCAPTCHA frames
+            ),
+            # Connect sources - controls AJAX/WebSocket/EventSource connections
+            "connect-src": (
+                "'self'",
+                "https://www.google-analytics.com",  # Google Analytics (if used)
+            ),
+            # Optional: CSP violation reporting endpoint
+            # Uncomment and implement /csp-report/ endpoint to monitor violations
+            # "report-uri": "/csp-report/",
+            # Optional: Report-only mode for testing (logs violations without blocking)
+            # Uncomment to test CSP without breaking functionality, then remove after verification
+            # Note: This is set at the CONTENT_SECURITY_POLICY level, not in DIRECTIVES
+        },
+        # Optional: Enable report-only mode for testing
+        # "REPORT_ONLY": True,  # Remove this line once CSP is tested and working
+    }
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -510,6 +661,10 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework.authentication.TokenAuthentication",),
     "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": f"{anon_throttle}/day",
         "user": f"{user_throttle}/day",
@@ -556,7 +711,24 @@ SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it f
 SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for social signups
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
-X_FRAME_OPTIONS = "SAMEORIGIN"
+# 5. X-Frame-Options: SAMEORIGIN
+#    Purpose: Controls whether the site can be embedded in an iframe/frame
+#    Attack Prevented: Clickjacking attacks, UI redressing attacks
+#    Why BLT Needs It: Prevents malicious sites from embedding BLT pages in iframes
+#                      to trick users into clicking buttons they don't see
+#    Behavior: Allows same-origin framing (for internal use) but blocks external sites
+#              from embedding BLT pages
+#    Example Attack: Attacker creates a malicious site with BLT login page in invisible
+#                    iframe, overlays fake buttons to steal credentials
+#
+X_FRAME_OPTIONS = "SAMEORIGIN"  # Allows same-origin framing while preventing external embedding
+
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token for AJAX calls
+CSRF_COOKIE_SAMESITE = "Lax"
 
 MDEDITOR_CONFIGS = {
     "default": {

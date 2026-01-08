@@ -41,6 +41,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -559,12 +560,26 @@ def status_page(request):
 
 
 def find_key(request, token):
-    if token == os.environ.get("ACME_TOKEN"):
-        return HttpResponse(os.environ.get("ACME_KEY"))
+    acme_token = os.environ.get("ACME_TOKEN")
+    if acme_token and constant_time_compare(token, acme_token):
+        acme_key = os.environ.get("ACME_KEY")
+        if not acme_key:
+            logger.error("ACME_KEY not configured in environment variables")
+            raise Http404("ACME_KEY not configured")
+        return HttpResponse(acme_key)
     for k, v in list(os.environ.items()):
-        if v == token and k.startswith("ACME_TOKEN_"):
+        if k.startswith("ACME_TOKEN_") and constant_time_compare(v, token):
             n = k.replace("ACME_TOKEN_", "")
-            return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
+            acme_key = os.environ.get("ACME_KEY_%s" % n)
+            if not acme_key:
+                logger.error("ACME_KEY_%s not configured in environment variables" % n)
+                raise Http404("ACME_KEY_%s not configured" % n)
+            return HttpResponse(acme_key)
+    logger.warning(
+        "Failed ACME token verification attempt from IP: %s",
+        request.META.get("REMOTE_ADDR"),
+        extra={"ip": request.META.get("REMOTE_ADDR"), "token_prefix": token[:10] if token else None},
+    )
     raise Http404("Token or key does not exist")
 
 
@@ -3186,15 +3201,17 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
+@ensure_csrf_cookie
 def set_theme(request):
     """View to save user's theme preference"""
     if request.method == "POST":
         try:
-            import json
-
             data = json.loads(request.body)
             theme = data.get("theme", "light")
+
+            # Validate theme value
+            if theme not in ["light", "dark"]:
+                return JsonResponse({"status": "error", "message": "Invalid theme"}, status=400)
 
             # Save theme in session
             request.session["theme"] = theme
@@ -3206,8 +3223,10 @@ def set_theme(request):
             #     profile.save()
 
             return JsonResponse({"status": "success", "theme": theme})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
         except Exception as e:
             logging.exception("Error occurred while setting theme")
             return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
 
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
