@@ -39,23 +39,23 @@
                         <ul class="text-sm">
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Memory Usage:</span>
-                                <span class="font-mono">{{ system_stats.memory_usage }}</span>
+                                <span class="font-mono" data-stat="memory">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>CPU Usage:</span>
-                                <span class="font-mono">{{ system_stats.cpu_percent }}</span>
+                                <span class="font-mono" data-stat="cpu">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Python Version:</span>
-                                <span class="font-mono text-xs">{{ system_stats.python_version|truncatechars:20 }}</span>
+                                <span class="font-mono text-xs" data-stat="python_version">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Django Version:</span>
-                                <span class="font-mono">{{ system_stats.django_version }}</span>
+                                <span class="font-mono" data-stat="django_version">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 dark:text-gray-400">
                                 <span>DB Connections:</span>
-                                <span class="font-mono">{{ system_stats.db_connections }}</span>
+                                <span class="font-mono" data-stat="db_connections">Loading...</span>
                             </li>
                         </ul>
                     </div>
@@ -119,10 +119,10 @@
                         <i class="fas fa-tachometer-alt mr-2"></i>
                         Check Performance
                     </button>
-                    <button id="sync-github-btn"
+                    <button id="management-commands-btn"
                             class="bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 px-4 rounded-lg flex items-center justify-center">
                         <i class="fab fa-github mr-2"></i>
-                        Sync GitHub Data
+                        Go to Management Commands
                     </button>
                 </div>
                 <!-- Status Messages -->
@@ -561,11 +561,11 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'blt' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
@@ -590,15 +590,17 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'flutter' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
-                            <a href="#"
+                            <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
+                               target="_blank"
+                               rel="noopener noreferrer"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
                                 <i class="fab fa-apple mr-2"></i> Download App
                             </a>
@@ -619,15 +621,16 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'extension' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
-                            <a href="#"
+                            <a href="{% url 'extension' %}"
+                               target="_blank"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
                                 <i class="fab fa-chrome mr-2"></i> Install Extension
                             </a>
@@ -648,15 +651,15 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Action"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'action' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
-                            <a href="#"
+                            <a href="https://github.com/marketplace/actions/owasp-blt-action-auto-assign-issue-and-unassign-after-5-days"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
                                 <i class="fas fa-code-branch mr-2"></i> Use Latest
                             </a>
@@ -1317,3 +1320,8 @@
     }
     </script>
 {% endblock content %}
+{% block extra_js %}
+    {% if debug_mode %}
+        <script src="{% static 'js/debug-panel.js' %}" defer></script>
+    {% endif %}
+{% endblock extra_js %}
