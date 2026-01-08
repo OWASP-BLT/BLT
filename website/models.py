@@ -760,7 +760,7 @@ class IssuePledge(models.Model):
     )
 
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="pledges")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=8)
     bch_address = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
