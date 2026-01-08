@@ -355,11 +355,6 @@ if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
-    # Apply test optimizations to configured database as well
-    if TESTING:
-        DATABASES["default"]["TEST"] = {
-            "NAME": ":memory:",
-        }
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True

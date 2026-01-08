@@ -761,7 +761,7 @@ class IssuePledge(models.Model):
 
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="pledges")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=8, validators=[MinValueValidator(Decimal('0.00000001'))])
+    amount = models.DecimalField(max_digits=12, decimal_places=8, validators=[MinValueValidator(Decimal("0.00000001"))])
     bch_address = models.CharField(max_length=255, validators=[validate_bch_address])
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     txid = models.CharField(max_length=255, blank=True, null=True)
@@ -769,7 +769,7 @@ class IssuePledge(models.Model):
 
     def __str__(self):
         return f"{self.amount} BCH → Issue #{self.issue.id}"
-    
+
     class Meta:
         ordering = ["-created"]
         verbose_name = "Issue Pledge"
@@ -779,6 +779,7 @@ class IssuePledge(models.Model):
             models.Index(fields=["user", "-created"], name="issuepledge_user_created_idx"),
             models.Index(fields=["status", "-created"], name="issuepledge_status_created_idx"),
         ]
+
 
 def is_using_gcs():
     """
