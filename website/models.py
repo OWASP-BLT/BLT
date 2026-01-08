@@ -762,7 +762,7 @@ class IssuePledge(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="pledges")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=8)
-    bch_address = models.CharField(max_length=255)
+    bch_address = models.CharField(max_length=255, validators=[validate_bch_address])
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     txid = models.CharField(max_length=255, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
