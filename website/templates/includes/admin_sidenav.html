@@ -7,5 +7,12 @@
                 <span>Organization</span>
             </a>
         </li>
+        <li class="{% if request.resolver_match.url_name == 'view_issue_reports' %}bg-gray-700 dark:bg-gray-800{% endif %}">
+            <a href="{% url 'view_issue_reports' %}"
+               class="flex items-center px-4 py-2 text-white hover:bg-gray-800 dark:hover:bg-gray-700">
+                <i class="fas fa-flag mr-2"></i>
+                <span>Issue Reports</span>
+            </a>
+        </li>
     </ul>
 </div>
