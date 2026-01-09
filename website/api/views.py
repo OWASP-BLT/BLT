@@ -314,12 +314,9 @@ class IssueViewSet(viewsets.ModelViewSet):
             data = super().create(request, *args, **kwargs).data
         except ValidationError as e:
             # Convert model-level ValidationError to HTTP 400 Bad Request
-            error_message = e.message if hasattr(e, 'message') else str(e)
-            return Response(
-                {"error": f"Invalid CVE ID: {error_message}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+            error_message = e.message if hasattr(e, "message") else str(e)
+            return Response({"error": f"Invalid CVE ID: {error_message}"}, status=status.HTTP_400_BAD_REQUEST)
+
         issue = Issue.objects.filter(id=data["id"]).first()
 
         # STEP 1: Fetch CVE data OUTSIDE transaction (before any DB locks)
@@ -329,18 +326,12 @@ class IssueViewSet(viewsets.ModelViewSet):
 
             try:
                 # Create a temporary issue instance to fetch CVE data without DB operations
-                temp_issue = Issue(
-                    cve_id=issue.cve_id,
-                    cve_score=issue.cve_score
-                )
+                temp_issue = Issue(cve_id=issue.cve_id, cve_score=issue.cve_score)
                 # This will normalize and fetch the score via network/cache
                 normalize_and_populate_cve_score(temp_issue)
-                
+
                 # Store the updates to apply later
-                cve_updates = {
-                    'cve_id': temp_issue.cve_id,
-                    'cve_score': temp_issue.cve_score
-                }
+                cve_updates = {"cve_id": temp_issue.cve_id, "cve_score": temp_issue.cve_score}
             except ValidationError as e:
                 logger.warning(f"CVE validation failed: {e}")
                 # Don't clear valid CVE ID - just skip score fetch
@@ -348,22 +339,22 @@ class IssueViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 logger.error(f"Error fetching CVE score: {e}")
                 # Continue without CVE score - don't fail the entire creation
-        
+
         # STEP 2: Apply CVE updates inside transaction (DB operations only, no network I/O)
         if cve_updates:
             with transaction.atomic():
                 try:
                     issue_locked = Issue.objects.select_for_update().get(pk=issue.pk)
-                    
+
                     # Apply CVE updates
                     update_fields = []
-                    if 'cve_id' in cve_updates and issue_locked.cve_id != cve_updates['cve_id']:
-                        issue_locked.cve_id = cve_updates['cve_id']
-                        update_fields.append('cve_id')
-                    if 'cve_score' in cve_updates and issue_locked.cve_score != cve_updates['cve_score']:
-                        issue_locked.cve_score = cve_updates['cve_score']
-                        update_fields.append('cve_score')
-                    
+                    if "cve_id" in cve_updates and issue_locked.cve_id != cve_updates["cve_id"]:
+                        issue_locked.cve_id = cve_updates["cve_id"]
+                        update_fields.append("cve_id")
+                    if "cve_score" in cve_updates and issue_locked.cve_score != cve_updates["cve_score"]:
+                        issue_locked.cve_score = cve_updates["cve_score"]
+                        update_fields.append("cve_score")
+
                     if update_fields:
                         issue_locked.save(update_fields=update_fields)
                         # Refresh the issue object to get updated values
