@@ -396,7 +396,7 @@ Workflows that handle issue lifecycle and assignment.
 **AI Relevance**: Manages contribution flow—important when AI tools make it easy to create many issues quickly.
 
 #### 5.3 Add Last Active Label (`add-last-active-label.yml`)
-**Purpose**: Automatically label issues and PRs based on days since last activity
+**Purpose**: Automatically label issues and PRs based on days since last human activity
 
 **Triggers**:
 - Daily schedule (midnight UTC)
@@ -404,7 +404,8 @@ Workflows that handle issue lifecycle and assignment.
 
 **Key Features**:
 - Adds `last-active: Xd` labels to all open issues and PRs
-- Based on `updated_at` timestamp (last activity), not when created
+- Based on last **comment** timestamp (or creation date if no comments) to track real human activity
+- Ignores non-human updates like label changes to prevent false activity detection
 - Automatically removes outdated last-active labels before adding new ones
 - Creates labels with color-coded severity:
   - 0-2 days: Green (fresh)
