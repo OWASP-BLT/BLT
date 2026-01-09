@@ -338,6 +338,7 @@ from website.views.teams import (
     kick_member,
     leave_team,
     search_users,
+    assign_team_member_badge,
 )
 from website.views.user import (
     CustomObtainAuthToken,
@@ -683,8 +684,8 @@ urlpatterns = [
     ),
     re_path(
         r"^badges/$",
-        badge_list,
-        name="badges",
+        badge_list, {"scope": "user"},
+        name="user_badges",
     ),
     re_path(
         r"^badges/(?P<badge_id>\d+)/users/$",
@@ -1119,6 +1120,8 @@ urlpatterns = [
     path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
     path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
     path("user_challenges/", UserChallengeListView.as_view(), name="user_challenges"),
+    path("teams/badges/",badge_list,  {"scope": "team"}, name="team_badges"),
+    path("teams/assign-badge/<int:user_id>/", assign_team_member_badge, name="assign_team_member_badge"),
     # Competitive Staking URLs
     path("staking/", staking_home, name="staking_home"),
     path("staking/pool/<int:pool_id>/", pool_detail, name="pool_detail"),

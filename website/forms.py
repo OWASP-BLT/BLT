@@ -7,6 +7,7 @@ from mdeditor.fields import MDTextFormField
 
 from website.models import (
     Bid,
+    Badge,
     Hackathon,
     HackathonPrize,
     HackathonSponsor,
@@ -18,6 +19,7 @@ from website.models import (
     Repo,
     Room,
     UserProfile,
+    TeamBadge,
 )
 
 
@@ -438,6 +440,7 @@ class HackathonPrizeForm(forms.ModelForm):
             self.fields["sponsor"].queryset = HackathonSponsor.objects.filter(hackathon=hackathon)
         else:
             self.fields["sponsor"].queryset = HackathonSponsor.objects.none()
+
 
 
 class ReminderSettingsForm(forms.ModelForm):
