@@ -72,7 +72,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black>=24.8.0,<25",
+    "black>=25.12.0,<26",
     "isort>=5.13.2,<6",
     "ruff>=0.14.8,<0.15",
     "pre-commit>=4.5.0,<5",

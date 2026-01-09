@@ -19,13 +19,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy UV
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /usr/local/bin/uv
 
 # Copy manifests
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies ONLY (Fixes missing source error)
-RUN uv sync --locked --compile-bytecode --no-install-project
+RUN uv sync --locked --no-install-project
 
 # Runtime stage
 FROM python:3.11.2-slim
@@ -35,7 +35,7 @@ WORKDIR /blt
 ENV PATH="/blt/.venv/bin:$PATH"
 
 # Copy UV
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.9.22 /uv /uvx /bin/
 
 # Install runtime libs
 RUN apt-get update && \
@@ -50,7 +50,7 @@ COPY --from=builder /blt/.venv /blt/.venv
 COPY . /blt
 
 # Install the project itself now that source is present
-RUN uv sync --locked --compile-bytecode
+RUN uv sync --locked --install-project --all-groups
 
 # Fix line endings and permissions
 RUN dos2unix docker-compose.yml scripts/entrypoint.sh ./blt/settings.py

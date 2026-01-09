@@ -99,7 +99,7 @@ jobs:
           enable-cache: true
 
       - name: Sync project dependencies
-        run: uv sync --locked --compile-bytecode --all-extras --dev
+        run: uv sync --locked --all-groups
 
       - name: Run pre-commit
         id: pre-commit
@@ -306,7 +306,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          uv run xvfb-run --auto-servernum python manage.py test -v 3 --failfast 2>&1 | tee test-output.txt
+          uv run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
           exit 0
         continue-on-error: true
