@@ -314,8 +314,17 @@ class IssueViewSet(viewsets.ModelViewSet):
             data = super().create(request, *args, **kwargs).data
         except ValidationError as e:
             # Convert model-level ValidationError to HTTP 400 Bad Request
-            error_message = e.message if hasattr(e, "message") else str(e)
-            return Response({"error": f"Invalid CVE ID: {error_message}"}, status=status.HTTP_400_BAD_REQUEST)
+            # Extract user-friendly message without exposing stack traces
+            if hasattr(e, "message_dict"):
+                # Multiple field errors
+                error_message = "; ".join([f"{k}: {', '.join(v)}" for k, v in e.message_dict.items()])
+            elif hasattr(e, "messages"):
+                # List of error messages
+                error_message = "; ".join(e.messages)
+            else:
+                # Fallback to generic message to avoid exposing internal details
+                error_message = "The CVE ID format is invalid. Expected format: CVE-YYYY-NNNN"
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
         issue = Issue.objects.filter(id=data["id"]).first()
 
