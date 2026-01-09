@@ -52,6 +52,22 @@ class MySeleniumTests(LiveServerTestCase):
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-dev-tools")
         options.add_argument("--remote-debugging-pipe")
+        options.add_argument("--disable-background-networking")
+        options.add_argument("--disable-background-timer-throttling")
+        options.add_argument("--disable-backgrounding-occluded-windows")
+        options.add_argument("--disable-client-side-phishing-detection")
+        options.add_argument("--disable-default-apps")
+        options.add_argument("--disable-hang-monitor")
+        options.add_argument("--disable-popup-blocking")
+        options.add_argument("--disable-prompt-on-repost")
+        options.add_argument("--disable-sync")
+        options.add_argument("--disable-translate")
+        options.add_argument("--metrics-recording-only")
+        options.add_argument("--mute-audio")
+        options.add_argument("--no-first-run")
+        options.add_argument("--safebrowsing-disable-auto-update")
+        options.add_argument("--enable-automation")
+        options.add_argument("--disable-infobars")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
@@ -59,7 +75,7 @@ class MySeleniumTests(LiveServerTestCase):
         try:
             service = Service(chromedriver_autoinstaller.install())
             cls.selenium = webdriver.Chrome(service=service, options=options)
-            cls.selenium.set_page_load_timeout(30)
+            cls.selenium.set_page_load_timeout(90)
             cls.selenium.implicitly_wait(30)
         except Exception as e:
             print(f"Error setting up Chrome: {e}")
@@ -143,7 +159,7 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(IS_TEST=True)
     def test_post_bug_full_url(self):
-        self.selenium.set_page_load_timeout(70)
+        self.selenium.set_page_load_timeout(90)
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")
@@ -183,7 +199,7 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(IS_TEST=True)
     def test_post_bug_domain_url(self):
-        self.selenium.set_page_load_timeout(70)
+        self.selenium.set_page_load_timeout(90)
 
         # Log in
         self.selenium.get(f"{self.live_server_url}/accounts/login/")

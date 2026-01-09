@@ -9,6 +9,14 @@ from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
 import pytz
+from decimal import Decimal, ROUND_HALF_UP
+from django.utils import timezone
+from datetime import timedelta
+from django.apps import apps
+from decimal import Decimal, ROUND_HALF_UP
+from django.utils import timezone
+from datetime import timedelta
+from django.apps import apps
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
@@ -1292,12 +1300,12 @@ class ForumCategory(models.Model):
 
 
 class ForumPost(models.Model):
-    STATUS_CHOICES = (
+    STATUS_CHOICES = [
         ("open", "Open"),
         ("in_progress", "In Progress"),
         ("completed", "Completed"),
         ("declined", "Declined"),
-    )
+    ]
 
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
@@ -1364,6 +1372,163 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
+    @staticmethod
+    def get_contributors(self_or_url, github_url=None):
+        """
+        Fetch contributors from GitHub for the given repo URL and return Contributor objects.
+        Accepts either a Project instance (self) or a github_url string as first arg.
+        """
+        import requests
+        from website.models import Contributor
+        from urllib.parse import urlparse
+
+        # Allow calling as Project.get_contributors(self, url) or Project.get_contributors(url)
+        if github_url is None and isinstance(self_or_url, str):
+            github_url = self_or_url
+        elif github_url is None and hasattr(self_or_url, 'github_url'):
+            github_url = getattr(self_or_url, 'github_url', None)
+        elif github_url is None:
+            github_url = None
+
+        if not github_url:
+            return []
+
+        # Extract owner/repo from URL
+        try:
+            parsed = urlparse(github_url)
+            path = parsed.path.strip('/')
+            if path.count('/') >= 1:
+                owner, repo = path.split('/')[:2]
+            else:
+                return []
+        except Exception:
+            return []
+
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/contributors"
+        headers = {}
+        from django.conf import settings
+        token = getattr(settings, 'GITHUB_TOKEN', None)
+        if token:
+            headers['Authorization'] = f'token {token}'
+
+        try:
+            resp = requests.get(api_url, headers=headers, timeout=10)
+            if resp.status_code != 200:
+                return []
+            data = resp.json()
+        except Exception:
+            return []
+
+        contributors = []
+        for c in data:
+            if 'id' not in c or 'login' not in c:
+                continue
+            obj, _ = Contributor.objects.get_or_create(
+                github_id=c['id'],
+                defaults={
+                    'name': c.get('login', ''),
+                    'github_url': c.get('html_url', ''),
+                    'avatar_url': c.get('avatar_url', ''),
+                    'contributor_type': 'User',
+                    'contributions': c.get('contributions', 0),
+                },
+            )
+            contributors.append(obj)
+        return contributors
+    # Persisted freshness score (0..100). Use DecimalField for precision; indexed for filtering/sorting.
+    freshness = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        db_index=True,
+        help_text="0..100 freshness score representing recent project activity",
+    )
+
+    def calculate_freshness(self, activity_graph_score: float | None = None) -> Decimal:
+        """
+        Deterministic calculation of a 0..100 freshness score.
+
+        Strategy:
+          - Three time windows: 0-7d (w=1.0), 8-30d (w=0.6), 31-90d (w=0.3)
+          - Metrics per window: commits *5 + PRs *3 + issues *2 + distinct contributors *4
+          - Normalize to 0..100 using a soft_max (tunable)
+          - Optionally blend an external activity_graph_score (0..100) with weight ~30%
+        Implementation details:
+          - Attempts to use an Activity-like model (Activity) if present in the app.
+          - Falls back to repo updated_at recency if Activity model not available.
+        """
+        now = timezone.now()
+        windows = [
+            (now - timedelta(days=7), now, 1.0),
+            (now - timedelta(days=30), now - timedelta(days=7), 0.6),
+            (now - timedelta(days=90), now - timedelta(days=30), 0.3),
+        ]
+
+        total_score = 0.0
+        any_activity = False
+
+        # Try to use Contribution model if it exists
+        try:
+            Contribution = apps.get_model("website", "Contribution")
+        except Exception:
+            Contribution = None
+
+        if Contribution:
+            for start, end, weight in windows:
+                # Contribution model has 'repository' field pointing to Project
+                window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
+
+                commits = window_qs.filter(contribution_type__iexact="commit").count()
+                prs = window_qs.filter(contribution_type__in=["pull_request", "pr"]).count()
+                issues = window_qs.filter(
+                    contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"]
+                ).count()
+                contributors = window_qs.values("github_username").distinct().count()
+
+                if commits + prs + issues + contributors > 0:
+                    any_activity = True
+
+                window_metric = (commits * 5) + (prs * 3) + (issues * 2) + (contributors * 4)
+                total_score += weight * window_metric
+        else:
+            # Fallback: use most recent repo update timestamp.
+            latest_repo = self.repos.order_by("-updated_at").first() if hasattr(self, "repos") else None
+            if latest_repo and getattr(latest_repo, "updated_at", None):
+                any_activity = True
+                days = (now - latest_repo.updated_at).days
+                # Simple mapping: recent -> higher, older -> lower
+                if days <= 0:
+                    total_score = 200.0  # maps to 100 after normalization
+                elif days < 7:
+                    total_score = 160.0
+                elif days < 30:
+                    total_score = 100.0
+                elif days < 90:
+                    total_score = 30.0
+                else:
+                    total_score = 0.0
+
+        if not any_activity:
+            return Decimal("0.00")
+
+        # Tune soft_max to map typical high activity to near 100.
+        soft_max = 200.0
+        normalized = min(total_score / soft_max, 1.0) * 100.0
+
+        # Blend in external activity_graph_score if provided (0..100)
+        if activity_graph_score is not None:
+            graph_weight = 0.3
+            normalized = (1 - graph_weight) * normalized + graph_weight * float(activity_graph_score)
+
+        return Decimal(normalized).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
+
+    def fetch_freshness(self) -> Decimal:
+        """
+        Keep serializer compatibility: serializer expects obj.fetch_freshness()
+        Return the persisted DB value (Decimal).
+        """
+        return self.freshness
+
     STATUS_CHOICES = [
         ("flagship", "Flagship"),
         ("production", "Production"),

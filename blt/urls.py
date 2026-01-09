@@ -715,6 +715,7 @@ urlpatterns = [
     ),
     re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
     re_path(r"^projects/compact/$", ProjectCompactListView.as_view(), name="project_compact_list"),
+    re_path(r"^projects/(?P<slug>[^/]+)/$", ProjectsDetailView.as_view(), name="project_detail"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -1065,6 +1066,16 @@ urlpatterns = [
         "api/v1/projects/",
         ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
+    ),
+    path(
+        "api/v1/projects/filter/",
+        ProjectViewSet.as_view({"get": "filter"}),
+        name="projects_filter_api",
+    ),
+    path(
+        "api/v1/projects/search/",
+        ProjectViewSet.as_view({"get": "search"}),
+        name="projects_search_api",
     ),
     path(
         "auth/delete",
