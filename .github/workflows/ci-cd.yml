@@ -28,7 +28,6 @@ on:
 
 env:
   FORCE_COLOR: 1
-  POETRY_CACHE_DIR: ~/.cache/pypoetry
 
 # Default permissions for the workflow
 permissions:
@@ -42,13 +41,11 @@ jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
-    permissions: 
-      contents: read  # Minimal permission for checking out code
-    outputs:
-      python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
         with:
@@ -58,25 +55,15 @@ jobs:
             ${{ runner.os }}-pre-commit-
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.11.2
+          python-version-file: ".python-version"
 
-      - name: Get Poetry cache directory
-        id: poetry-cache
-        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
-      
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-            .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+          # Caching support for uv environments
+          enable-cache: true
 
       - name: Print memory usage
         run: free -h
@@ -86,7 +73,7 @@ jobs:
     # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
     needs: setup
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
       pull-requests: write
       contents: write
@@ -100,18 +87,29 @@ jobs:
           # For forked PRs with pull_request_target, checkout from the fork repository
           # SECURITY: We run pre-commit which only executes linters/formatters, not arbitrary code from the PR
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.11.2
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Sync project dependencies
+        run: uv sync --locked --compile-bytecode --all-extras --dev
+
       - name: Run pre-commit
         id: pre-commit
         run: |
-          pip install pre-commit
           set +e
-          pre-commit run --all-files > pre-commit-output.txt 2>&1
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          uv run pre-commit run --all-files > pre-commit-output.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           set -e
         continue-on-error: true
+
       - name: Comment on PR if pre-commit fails
         if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
         uses: actions/github-script@v7
@@ -120,46 +118,46 @@ jobs:
           script: |
             const fs = require('fs');
             const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
-            
+
             // Get last 100 lines of output
             const lines = precommitOutput.split('\n');
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
-            
+
             const message = `## ❌ Pre-commit checks failed
-            
+
             The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
-            
+
             \`\`\`bash
             # Install pre-commit if you haven't already
-            pip install pre-commit
-            
+            uv run pre-commit install
+
             # Run pre-commit on all files
-            pre-commit run --all-files
-            
+            uv run pre-commit run --all-files
+
             # Or run pre-commit on staged files only
-            pre-commit run
+            uv run pre-commit run
             \`\`\`
-            
-            After running these commands, the pre-commit hooks will automatically fix most issues. 
+
+            After running these commands, the pre-commit hooks will automatically fix most issues.
             Please review the changes, commit them, and push to your branch.
-            
+
             💡 **Tip**: You can set up pre-commit to run automatically on every commit by running:
             \`\`\`bash
-            pre-commit install
+            uvx pre-commit install
             \`\`\`
-            
+
             <details>
             <summary>Pre-commit output${truncated ? ' (last 100 lines)' : ''}</summary>
-            
+
             \`\`\`
             ${last100Lines}
             \`\`\`
-            
+
             </details>
-            
+
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
-            
+
             try {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -174,6 +172,7 @@ jobs:
                 throw error;
               }
             }
+
       - name: Add pre-commit status label
         if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v7
@@ -182,32 +181,32 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
-            
+
             // Determine label based on pre-commit exit code
             const preCommitExitCode = '${{ steps.pre-commit.outputs.exit_code }}';
             const newLabel = preCommitExitCode === '0' ? 'pre-commit: passed' : 'pre-commit: failed';
             const labelColor = preCommitExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
             const description = preCommitExitCode === '0' ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
-            
+
             // Get current labels on the PR
-            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
-              owner, 
-              repo, 
-              issue_number: pull_number, 
-              per_page: 100 
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100
             });
             const currentNames = new Set(current.map(l => l.name));
-            
+
             // Remove any existing pre-commit labels
             const preCommitRegex = /^pre-commit:/i;
             for (const name of currentNames) {
               if (preCommitRegex.test(name) && name !== newLabel) {
                 try {
-                  await github.rest.issues.removeLabel({ 
-                    owner, 
-                    repo, 
-                    issue_number: pull_number, 
-                    name 
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    name
                   });
                   core.info(`Removed label ${name}`);
                 } catch (err) {
@@ -215,7 +214,7 @@ jobs:
                 }
               }
             }
-            
+
             // Ensure the new label exists (create if missing)
             async function ensureLabelExists(labelName) {
               try {
@@ -235,17 +234,17 @@ jobs:
                 }
               }
             }
-            
+
             await ensureLabelExists(newLabel);
-            
+
             // Add the label if it isn't already present
             if (!currentNames.has(newLabel)) {
               try {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: pull_number, 
-                  labels: [newLabel] 
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  labels: [newLabel]
                 });
                 core.info(`Applied label ${newLabel} to PR #${pull_number}`);
               } catch (error) {
@@ -258,14 +257,15 @@ jobs:
             } else {
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
-            
+
             core.info(`Pre-commit exit code: ${preCommitExitCode}`);
+
       - name: Fail the job if pre-commit failed
         if: steps.pre-commit.outputs.exit_code != '0'
         run: exit 1
+
       - name: Print memory usage
         run: free -h
-
 
   test:
     name: Run Tests
@@ -279,47 +279,38 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.11.2
-      - name: Cache apt packages
-        uses: actions/cache@v4
-        id: apt-cache
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          path: ~/apt-cache
-          key: ${{ runner.os }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-xvfb-chromium-
-            ${{ runner.os }}-apt-
-      - name: Restore apt cache from user directory
-        if: steps.apt-cache.outputs.cache-hit == 'true'
-        run: |
-          sudo cp -r ~/apt-cache/archives/* /var/cache/apt/archives/ 2>/dev/null || true
-          sudo cp -r ~/apt-cache/lists/* /var/lib/apt/lists/ 2>/dev/null || true
+          enable-cache: true
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
-      - name: Copy apt cache to user directory
-        if: always()
-        run: |
-          mkdir -p ~/apt-cache/archives ~/apt-cache/lists
-          sudo cp -r /var/cache/apt/archives/* ~/apt-cache/archives/ 2>/dev/null || true
-          sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
-          sudo chown -R $USER:$USER ~/apt-cache
-      - run: pip install poetry
-      - run: poetry lock
-      - run: poetry install --with dev
-      - run: poetry run python manage.py collectstatic --noinput
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Collect static files
+        run: uv run python manage.py collectstatic --noinput
+
       - name: Run tests
         id: run-tests
         shell: bash
         run: |
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          uv run xvfb-run --auto-servernum python manage.py test -v 3 --failfast 2>&1 | tee test-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
           exit 0
         continue-on-error: true
+
       - name: Upload test output
         if: always()
         uses: actions/upload-artifact@v4
@@ -327,6 +318,7 @@ jobs:
           name: test-output
           path: test-output.txt
           retention-days: 1
+
       - name: Fail the job if tests failed
         if: steps.run-tests.outputs.exit_code != '0'
         run: exit 1
@@ -349,6 +341,7 @@ jobs:
           name: test-output
           path: .
         continue-on-error: true
+
       - name: Comment on PR if tests failed
         if: needs.test.outputs.test_result != '0'
         uses: actions/github-script@v7
@@ -356,85 +349,54 @@ jobs:
           script: |
             const fs = require('fs');
             const pull_number = context.issue.number;
-            
+
             if (!pull_number) {
               core.warning('No pull request number found in context. Skipping comment.');
               return;
             }
-            
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            
-            // Delete any previous test failure comments
-            const testFailureMarker = '<!-- test-failure-comment -->';
-            try {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
-              
-              const existingComments = comments.filter(comment => 
-                comment.body && comment.body.includes(testFailureMarker)
-              );
-              
-              for (const comment of existingComments) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: comment.id,
-                });
-                core.info(`Deleted previous test failure comment #${comment.id} from PR #${pull_number}`);
-              }
-            } catch (error) {
-              core.warning(`Could not delete previous comments: ${error.message}`);
-            }
-            
             let testOutput = 'Test output not available.';
             try {
               testOutput = fs.readFileSync('test-output.txt', 'utf8');
             } catch (e) {
               core.warning(`Could not read test output: ${e.message}`);
             }
-            
+
             // Get last 100 lines of output
             const lines = testOutput.split('\n');
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
-            
-            const message = `${testFailureMarker}
-            ## ❌ Tests failed
-            
+
+            const message = `## ❌ Tests failed
+
             The Django tests found issues that need to be fixed. Please review the test output below and fix the failing tests.
-            
+
             ### How to run tests locally
-            
+
             \`\`\`bash
             # Install dependencies
-            poetry install --with dev
-            
+            uv sync --all-groups
+
             # Run all tests
-            poetry run python manage.py test
-            
+            uv run python manage.py test
+
             # Run tests with verbose output
-            poetry run python manage.py test -v 3
-            
+            uv run python manage.py test -v 3
+
             # Run a specific test
-            poetry run python manage.py test app.tests.TestClass.test_method
+            uv run python manage.py test app.tests.TestClass.test_method
             \`\`\`
-            
+
             <details>
             <summary>Test output${truncated ? ' (last 100 lines)' : ''}</summary>
-            
+
             \`\`\`text
             ${last100Lines}
             \`\`\`
-            
+
             </details>
-            
+
             For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`;
-            
+
             try {
               await github.rest.issues.createComment({
                 owner,
@@ -450,46 +412,6 @@ jobs:
                 throw error;
               }
             }
-      - name: Remove test failure comment if tests passed
-        if: needs.test.outputs.test_result == '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pull_number = context.issue.number;
-            
-            if (!pull_number) {
-              core.warning('No pull request number found in context. Skipping comment removal.');
-              return;
-            }
-            
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            
-            // Delete any previous test failure comments
-            const testFailureMarker = '<!-- test-failure-comment -->';
-            try {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
-              
-              const existingComments = comments.filter(comment => 
-                comment.body && comment.body.includes(testFailureMarker)
-              );
-              
-              for (const comment of existingComments) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: comment.id,
-                });
-                core.info(`Deleted test failure comment #${comment.id} from PR #${pull_number} (tests now passing)`);
-              }
-            } catch (error) {
-              core.warning(`Could not delete previous comments: ${error.message}`);
-            }
       - name: Add test status label
         uses: actions/github-script@v7
         with:
@@ -497,42 +419,44 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
-            
+
             // Validate PR context exists
             if (!pull_number) {
               core.warning('No pull request number found in context. Skipping label.');
               return;
             }
-            
+
             core.info(`Processing test result label for PR #${pull_number}`);
-            
+
             // Determine label based on test exit code
             const testExitCode = '${{ needs.test.outputs.test_result }}';
             core.info(`Test exit code from job output: ${testExitCode}`);
-            
+
             const newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
-            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
-            const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
-            
+            const description = testExitCode === '0'
+              ? 'Django tests passed'
+              : 'Django tests failed';
+            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c'; // Green or Red
+
             // Get current labels on the PR
-            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
-              owner, 
-              repo, 
-              issue_number: pull_number, 
-              per_page: 100 
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100
             });
             const currentNames = new Set(current.map(l => l.name));
-            
+
             // Remove any existing test labels
             const testRegex = /^tests:/i;
             for (const name of currentNames) {
               if (testRegex.test(name) && name !== newLabel) {
                 try {
-                  await github.rest.issues.removeLabel({ 
-                    owner, 
-                    repo, 
-                    issue_number: pull_number, 
-                    name 
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    name
                   });
                   core.info(`Removed label ${name}`);
                 } catch (err) {
@@ -540,7 +464,7 @@ jobs:
                 }
               }
             }
-            
+
             // Ensure the new label exists (create if missing)
             async function ensureLabelExists(labelName) {
               try {
@@ -560,17 +484,17 @@ jobs:
                 }
               }
             }
-            
+
             await ensureLabelExists(newLabel);
-            
+
             // Add the label if it isn't already present
             if (!currentNames.has(newLabel)) {
               try {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: pull_number, 
-                  labels: [newLabel] 
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  labels: [newLabel]
                 });
                 core.info(`Applied label ${newLabel} to PR #${pull_number}`);
               } catch (error) {
@@ -583,7 +507,7 @@ jobs:
             } else {
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
-            
+
             core.info(`Test exit code: ${testExitCode}`)
 
   docker-test:
@@ -608,9 +532,8 @@ jobs:
         run: |
           docker run -d --name my-container my-app
 
-      - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
-      - run: docker exec my-container poetry install --without dev --no-interaction
+      - name: Sync dependencies with uv
+        run: docker exec my-container uv sync --no-group dev
 
       - name: Clean up
         run: |
