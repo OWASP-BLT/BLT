@@ -114,7 +114,10 @@
                                          width="40"
                                          height="40">
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ user.username }}</p>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                            {{
+                                            user.username }}
+                                        </p>
                                         <p class="text-xs text-gray-500 dark:text-gray-500">{{ user.points }} points</p>
                                     </div>
                                     <div class="flex-shrink-0 text-[#e74c3c] font-medium">#{{ forloop.counter }}</div>

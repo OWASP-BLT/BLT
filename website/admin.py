@@ -49,6 +49,7 @@ from website.models import (
     InviteFriend,
     IpReport,
     Issue,
+    IssuePledge,
     IssueScreenshot,
     Job,
     JoinRequest,
@@ -198,6 +199,34 @@ class IssueAdmin(admin.ModelAdmin):
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
     list_filter = ["domain", "user"]
+
+
+@admin.register(IssuePledge)
+class IssuePledgeAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for managing issue pledges.
+
+    Allows filtering, searching, and viewing pledge status.
+    """
+
+    list_display = (
+        "id",
+        "issue",
+        "user",
+        "amount",
+        "status",
+        "created",
+    )
+    list_filter = ("status", "created")
+    search_fields = ("bch_address", "issue__id", "user__username")
+    readonly_fields = (
+        "issue",
+        "user",
+        "amount",
+        "bch_address",
+        "created",
+        "txid",
+    )
 
 
 class HuntAdmin(admin.ModelAdmin):
