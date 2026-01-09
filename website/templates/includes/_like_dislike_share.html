@@ -131,12 +131,20 @@
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/like_issue/' + issue_pk + '/',
-            data: {},
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
             success: function (data) {
                 window.location.reload();
             },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
         });
     }
 
@@ -146,12 +154,20 @@
         e.preventDefault();
         var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/dislike_issue/' + issue_pk + '/',
-            data: {},
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
             success: function (data) {
                 window.location.reload();
             },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
         });
     }
     $('body').on('click', '#dislike-btn', dislike_handler);
@@ -161,12 +177,20 @@
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/flag_issue/' + issue_pk + '/',
-            data: {},
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
             success: function (data) {
                 window.location.reload();
             },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
         });
     }
 
@@ -178,9 +202,11 @@
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/save_issue/' + issue_pk + '/',
-            data: {},
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
             success: function (data) {
                 window.location.reload();
             },
