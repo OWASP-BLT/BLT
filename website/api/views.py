@@ -309,7 +309,17 @@ class IssueViewSet(viewsets.ModelViewSet):
         elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        data = super().create(request, *args, **kwargs).data
+        # Wrap super().create() to catch model-level ValidationError from Issue.save()
+        try:
+            data = super().create(request, *args, **kwargs).data
+        except ValidationError as e:
+            # Convert model-level ValidationError to HTTP 400 Bad Request
+            error_message = e.message if hasattr(e, 'message') else str(e)
+            return Response(
+                {"error": f"Invalid CVE ID: {error_message}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         issue = Issue.objects.filter(id=data["id"]).first()
 
         # STEP 1: Fetch CVE data OUTSIDE transaction (before any DB locks)
@@ -325,7 +335,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                 )
                 # This will normalize and fetch the score via network/cache
                 normalize_and_populate_cve_score(temp_issue)
-
+                
                 # Store the updates to apply later
                 cve_updates = {
                     'cve_id': temp_issue.cve_id,
@@ -333,17 +343,18 @@ class IssueViewSet(viewsets.ModelViewSet):
                 }
             except ValidationError as e:
                 logger.warning(f"CVE validation failed: {e}")
-                cve_updates = {'cve_id': None, 'cve_score': None}
+                # Don't clear valid CVE ID - just skip score fetch
+                cve_updates = {}
             except Exception as e:
                 logger.error(f"Error fetching CVE score: {e}")
                 # Continue without CVE score - don't fail the entire creation
-
+        
         # STEP 2: Apply CVE updates inside transaction (DB operations only, no network I/O)
         if cve_updates:
             with transaction.atomic():
                 try:
                     issue_locked = Issue.objects.select_for_update().get(pk=issue.pk)
-
+                    
                     # Apply CVE updates
                     update_fields = []
                     if 'cve_id' in cve_updates and issue_locked.cve_id != cve_updates['cve_id']:
@@ -352,7 +363,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                     if 'cve_score' in cve_updates and issue_locked.cve_score != cve_updates['cve_score']:
                         issue_locked.cve_score = cve_updates['cve_score']
                         update_fields.append('cve_score')
-
+                    
                     if update_fields:
                         issue_locked.save(update_fields=update_fields)
                         # Refresh the issue object to get updated values
