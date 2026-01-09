@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
@@ -38,6 +39,7 @@ from website.models import (
     Points,
     SlackIntegration,
     Winner,
+    validate_bch_address,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 
@@ -2606,6 +2608,179 @@ def edit_prize(request, prize_id, organization_id):
     prize.save()
 
     return JsonResponse({"success": True})
+
+
+class AnonymousHuntView(View):
+    """View for creating bug hunts anonymously with upfront payment"""
+
+    def get(self, request, *args, **kwargs):
+        """Display form for anonymous bug hunt creation"""
+        # Get all active organizations for dropdown
+        organizations = Organization.objects.filter(is_active=True).values("id", "name", "slug")
+
+        context = {
+            "organizations": organizations,
+        }
+
+        return render(request, "anonymous_hunt.html", context)
+
+    def post(self, request, *args, **kwargs):
+        """Handle anonymous bug hunt creation with payment"""
+        data = request.POST
+
+        # Get organization and domain info
+        organization_id = data.get("organization")
+        domain_name = data.get("domain_name", "").strip()
+        domain_url = data.get("domain_url", "").strip()
+
+        if not organization_id or not domain_name or not domain_url:
+            messages.error(request, "Please provide all required fields.")
+            return redirect("anonymous_hunt")
+
+        # Validate domain URL
+        try:
+            parsed_url = urlparse(domain_url)
+            if not parsed_url.scheme or not parsed_url.netloc:
+                messages.error(
+                    request,
+                    "Invalid domain URL. Please provide a complete URL with protocol (e.g., https://example.com)",
+                )
+                return redirect("anonymous_hunt")
+        except Exception:
+            messages.error(request, "Invalid domain URL format")
+            return redirect("anonymous_hunt")
+
+        try:
+            organization = Organization.objects.get(id=organization_id, is_active=True)
+        except Organization.DoesNotExist:
+            messages.error(request, "Selected organization does not exist.")
+            return redirect("anonymous_hunt")
+
+        # Get or create domain for this organization
+        domain, created = Domain.objects.get_or_create(
+            name=domain_name,
+            defaults={
+                "organization": organization,
+                "url": domain_url,
+            },
+        )
+
+        # If domain exists but belongs to different organization, show error
+        if not created and domain.organization != organization:
+            messages.error(request, "This domain belongs to a different organization.")
+            return redirect("anonymous_hunt")
+
+        # Parse dates
+        start_date_str = data.get("start_date", "")
+        end_date_str = data.get("end_date", "")
+
+        if not start_date_str or not end_date_str:
+            messages.error(request, "Please provide both start and end dates.")
+            return redirect("anonymous_hunt")
+
+        try:
+            # Parse dates and make them timezone-aware
+            start_date = datetime.strptime(start_date_str, "%m/%d/%Y")
+            end_date = datetime.strptime(end_date_str, "%m/%d/%Y")
+            # Make dates timezone-aware using Django's default timezone
+            start_date = timezone.make_aware(start_date, timezone.get_current_timezone())
+            end_date = timezone.make_aware(end_date, timezone.get_current_timezone())
+        except ValueError:
+            messages.error(request, "Please enter dates in MM/DD/YYYY format (e.g., 12/25/2024)")
+            return redirect("anonymous_hunt")
+
+        # Validate dates
+        if start_date >= end_date:
+            messages.error(request, "Start date must be before end date")
+            return redirect("anonymous_hunt")
+
+        # Get anonymous creator email for notifications
+        creator_email = data.get("email", "").strip()
+        if not creator_email:
+            messages.error(request, "Please provide an email address for notifications.")
+            return redirect("anonymous_hunt")
+
+        # Validate email format
+        try:
+            validate_email(creator_email)
+        except ValidationError:
+            messages.error(request, "Please provide a valid email address.")
+            return redirect("anonymous_hunt")
+
+        # Get and validate BCH address as proof of payment availability
+        bch_address = data.get("bch_address", "").strip()
+        if not bch_address:
+            messages.error(request, "Please provide your BCH address as proof of payment availability.")
+            return redirect("anonymous_hunt")
+
+        # Validate BCH address format
+        try:
+            validate_bch_address(bch_address)
+        except ValidationError as e:
+            messages.error(request, f"Invalid BCH address: {str(e)}")
+            return redirect("anonymous_hunt")
+
+        # Parse prizes data
+        try:
+            prizes_data = json.loads(data.get("prizes", "[]"))
+            if not isinstance(prizes_data, list):
+                raise ValueError("Invalid prizes format")
+        except (json.JSONDecodeError, ValueError):
+            messages.error(request, "Invalid prize data. Please try again.")
+            return redirect("anonymous_hunt")
+
+        # Validate that at least one prize exists
+        valid_prizes = [p for p in prizes_data if p.get("prize_name", "").strip()]
+        if not valid_prizes:
+            messages.error(request, "Please add at least one prize.")
+            return redirect("anonymous_hunt")
+
+        # Validate bughunt name length
+        bughunt_name = data.get("bughunt_name", "").strip()
+        if len(bughunt_name) > 25:
+            messages.error(request, "Bug hunt name must be 25 characters or less.")
+            return redirect("anonymous_hunt")
+
+        # Create the hunt
+        hunt = Hunt.objects.create(
+            name=bughunt_name,
+            domain=domain,
+            url=domain_url,
+            description=data.get("markdown-description", ""),
+            starts_on=start_date,
+            end_on=end_date,
+            plan="free",
+            is_published=False,  # Require manual approval for anonymous hunts
+            is_anonymous=True,
+            anonymous_creator_email=creator_email,
+            anonymous_payer_bch_address=bch_address,
+            requires_bug_verification=True,
+        )
+
+        # Create prizes using validated list
+        for prize in valid_prizes:
+            # Prize names already validated above, no need to check again
+            HuntPrize.objects.create(
+                hunt=hunt,
+                name=prize["prize_name"],
+                value=prize.get("cash_value", 0),
+                no_of_eligible_projects=prize.get("number_of_winning_projects", 1),
+                valid_submissions_eligible=prize.get("every_valid_submissions", False),
+                prize_in_crypto=prize.get("paid_in_cryptocurrency", False),
+                description=prize.get("prize_description", ""),
+            )
+
+        # Success message with BCH payment workflow
+        messages.success(
+            request,
+            f"Bug hunt '{hunt.name}' created successfully! "
+            f"Your BCH address ({bch_address}) has been recorded. "
+            f"When bugs are verified, hunters will provide their BCH addresses and you'll send tips directly. "
+            f"The hunt will be published after approval by the organization. "
+            f"Updates will be sent to {creator_email}.",
+        )
+
+        return redirect("anonymous_hunt")
 
 
 def accept_bug(request, issue_id, reward_id=None):
