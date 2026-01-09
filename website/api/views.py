@@ -310,51 +310,59 @@ class IssueViewSet(viewsets.ModelViewSet):
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
         data = super().create(request, *args, **kwargs).data
+        issue = Issue.objects.filter(id=data["id"]).first()
 
-        # Fetch the created issue and normalize CVE data if present
-        # Use select_for_update within transaction to prevent race conditions during CVE processing
-        issue = None
-        with transaction.atomic():
+        # STEP 1: Fetch CVE data OUTSIDE transaction (before any DB locks)
+        cve_updates = {}
+        if issue and issue.cve_id:
+            from website.views.issue import normalize_and_populate_cve_score
+
             try:
-                issue = Issue.objects.select_for_update().filter(id=data["id"]).first()
+                # Create a temporary issue instance to fetch CVE data without DB operations
+                temp_issue = Issue(
+                    cve_id=issue.cve_id,
+                    cve_score=issue.cve_score
+                )
+                # This will normalize and fetch the score via network/cache
+                normalize_and_populate_cve_score(temp_issue)
 
-                if issue and issue.cve_id:
-                    from website.views.issue import normalize_and_populate_cve_score
-
-                    try:
-                        original_cve_id = issue.cve_id
-                        normalize_and_populate_cve_score(issue)
-                        update_fields = []
-                        if issue.cve_id != original_cve_id:
-                            update_fields.append("cve_id")
-                        # Always include cve_score in update_fields after normalization
-                        # This ensures stale cve_score values are cleared when NVD lookup returns None
-                        # and ensures the score is persisted even if it didn't change
-                        update_fields.append("cve_score")
-                        if update_fields:
-                            issue.save(update_fields=update_fields)
-                    except ValidationError as e:
-                        # Invalid CVE ID format - clear it and log the error
-                        # The issue will still be created but without the invalid CVE ID
-                        logger.warning(
-                            f"Invalid CVE ID format for issue {issue.id if issue else 'unknown'}: {e}. Clearing CVE ID."
-                        )
-                        issue.cve_id = None
-                        issue.cve_score = None
-                        issue.save(update_fields=["cve_id", "cve_score"])
-                    except Exception as e:
-                        # Log the error but don't break the transaction
-                        # The issue will still be created even if CVE processing fails
-                        logger.exception(
-                            f"Failed to normalize/populate CVE score for issue {issue.id if issue else 'unknown'}: {e}"
-                        )
+                # Store the updates to apply later
+                cve_updates = {
+                    'cve_id': temp_issue.cve_id,
+                    'cve_score': temp_issue.cve_score
+                }
+            except ValidationError as e:
+                logger.warning(f"CVE validation failed: {e}")
+                cve_updates = {'cve_id': None, 'cve_score': None}
             except Exception as e:
-                logger.exception(f"Unexpected error during CVE processing: {e}")
-                # Continue without CVE processing - issue creation already succeeded
+                logger.error(f"Error fetching CVE score: {e}")
+                # Continue without CVE score - don't fail the entire creation
 
-        # Continue with tags and screenshots outside of the CVE transaction
-        if issue is None:
-            issue = Issue.objects.filter(id=data["id"]).first()
+        # STEP 2: Apply CVE updates inside transaction (DB operations only, no network I/O)
+        if cve_updates:
+            with transaction.atomic():
+                try:
+                    issue_locked = Issue.objects.select_for_update().get(pk=issue.pk)
+
+                    # Apply CVE updates
+                    update_fields = []
+                    if 'cve_id' in cve_updates and issue_locked.cve_id != cve_updates['cve_id']:
+                        issue_locked.cve_id = cve_updates['cve_id']
+                        update_fields.append('cve_id')
+                    if 'cve_score' in cve_updates and issue_locked.cve_score != cve_updates['cve_score']:
+                        issue_locked.cve_score = cve_updates['cve_score']
+                        update_fields.append('cve_score')
+
+                    if update_fields:
+                        issue_locked.save(update_fields=update_fields)
+                        # Refresh the issue object to get updated values
+                        issue = issue_locked
+                except Issue.DoesNotExist:
+                    logger.error(f"Issue {issue.pk} not found after creation")
+                    # Continue anyway - issue was created successfully
+                except Exception as e:
+                    logger.error(f"Error updating CVE data in transaction: {e}")
+                    # Continue - issue exists, just without CVE score
 
         if tags and issue:
             issue.tags.add(*tags)
