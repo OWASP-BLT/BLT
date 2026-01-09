@@ -1659,12 +1659,18 @@ class Badge(models.Model):
     BADGE_TYPES = [
         ("automatic", "Automatic"),
         ("manual", "Manual"),
-    ]
 
+    ]
+    BADGE_SCOPES = [
+        ("user", "User"),   # Badge meant for individual users
+        ("team", "Team"),  # Badge meant for teams
+        ("topuser_team","Topuser Team") # Badge meant for indivitual users in a team
+    ]
     title = models.CharField(max_length=100)
     description = models.TextField()
     icon = models.ImageField(upload_to="badges/", blank=True, null=True)
     type = models.CharField(max_length=10, choices=BADGE_TYPES, default="automatic")
+    scope = models.CharField(max_length=20, choices=BADGE_SCOPES, default="user")
     criteria = models.JSONField(blank=True, null=True)  # For automatic badges
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1679,15 +1685,43 @@ class UserBadge(models.Model):
         User,
         null=True,
         blank=True,
-        related_name="awarded_badges",
+        related_name="awarded_badges_to_user",
         on_delete=models.SET_NULL,
     )
     awarded_at = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(blank=True, null=True)
 
     def __str__(self):
+        """
+        Provide a human-readable representation combining the badge recipient's username and the badge title.
+        
+        Returns:
+            A string in the format "<username> - <badge title>".
+        """
         return f"{self.user.username} - {self.badge.title}"
 
+class TeamBadge(models.Model):
+    team = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    user=models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, default=None)# assign a indivitual user the badge for achivement in a group
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    awarded_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        related_name="awarded_badges_to_team",
+        on_delete=models.SET_NULL,
+    )
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        """
+        String representation combining the team and the badge title.
+        
+        Returns:
+            str: A string in the format "<team> - <badge title>".
+        """
+        return f"{self.team} - {self.badge.title}"
 
 class Adventure(models.Model):
     """

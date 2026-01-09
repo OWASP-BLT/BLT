@@ -1950,6 +1950,18 @@ class OrganizationDashboardManageRolesView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # Get the organization object
+        """
+        Render the organization role management page for a given organization if the requester has administrator privileges.
+        
+        Validates that the organization exists and that the requesting user is the organization owner or an active organization administrator (role level 0). If validation fails, redirects to an appropriate page with an error message. When authorized, collects active organization roles, organization domains, and up to 100 candidate users (prefer users matching the organization's email domain when available), prepares serialized role data (including avatar, role display, domain info, and counts), and renders the "organization_manage_roles" template with the assembled context.
+        
+        Parameters:
+            request (HttpRequest): The incoming HTTP request from the client.
+            id (int | str): The primary key of the organization to manage.
+        
+        Returns:
+            HttpResponse: A rendered organization role management page when authorized, or a redirect response to an overview/home page on error or insufficient permissions.
+        """
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
@@ -2039,9 +2051,11 @@ class OrganizationDashboardManageRolesView(View):
                 "user_id": org_role.user.id if org_role.user else None,
                 "username": org_role.user.username if org_role.user else "Unknown",
                 "email": org_role.user.email if org_role.user else "",
-                "avatar": org_role.user.userprofile.user_avatar
-                if org_role.user and hasattr(org_role.user, "userprofile")
-                else None,
+                "avatar": (
+                    org_role.user.userprofile.user_avatar
+                    if org_role.user and hasattr(org_role.user, "userprofile")
+                    else None
+                ),
                 "role": org_role.role,
                 "role_display": "Administrator" if org_role.role == 0 else "Moderator",
                 "domain": org_role.domain,

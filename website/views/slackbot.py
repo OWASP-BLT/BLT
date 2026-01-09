@@ -420,6 +420,15 @@ def slack_landing_page(request):
 
 @csrf_exempt
 def slack_commands(request):
+    """
+    Handle incoming HTTP requests for Slack commands and delegate processing to the configured Slack request handler.
+    
+    Returns:
+        HttpResponse: The handler's response when the request is a POST with content type "application/x-www-form-urlencoded".
+        JsonResponse: An error response with status 400 if Slack integration is disabled.
+        JsonResponse: An error response with status 415 if the POST content type is not "application/x-www-form-urlencoded".
+        JsonResponse: An error response with status 405 if the HTTP method is not POST.
+    """
     logger.debug(f"Received Slack command with content type: {request.content_type}")
     if not handler:
         return JsonResponse({"error": "Slack integration is disabled."}, status=400)
