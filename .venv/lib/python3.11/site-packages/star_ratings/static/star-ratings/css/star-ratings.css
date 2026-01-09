@@ -1,0 +1,53 @@
+/* line 3, ../sass/star-ratings.scss */
+.star-ratings {
+  display: inline-block;
+  position: relative;
+}
+/* line 7, ../sass/star-ratings.scss */
+.star-ratings ul {
+  padding: 0;
+  margin: 0;
+  white-space: nowrap;
+  list-style: none outside none;
+  overflow: hidden;
+}
+/* line 14, ../sass/star-ratings.scss */
+.star-ratings ul li {
+  display: inline-block;
+}
+
+/* line 20, ../sass/star-ratings.scss */
+.star-ratings-rating-full, .star-ratings-rating-empty {
+  display: block;
+  background: url("/static/star-ratings/images/stars.png") no-repeat;
+  border: 0;
+}
+
+/* line 26, ../sass/star-ratings.scss */
+.star-ratings-rating-foreground {
+  top: 0;
+  position: absolute;
+  -moz-transition-property: width;
+  -o-transition-property: width;
+  -webkit-transition-property: width;
+  transition-property: width;
+  -moz-transition-duration: 0.15s;
+  -o-transition-duration: 0.15s;
+  -webkit-transition-duration: 0.15s;
+  transition-duration: 0.15s;
+  -moz-transition-timing-function: ease-in;
+  -o-transition-timing-function: ease-in;
+  -webkit-transition-timing-function: ease-in;
+  transition-timing-function: ease-in;
+}
+
+/* line 34, ../sass/star-ratings.scss */
+.star-ratings-rating-stars-container {
+  display: inline-block;
+  position: relative;
+}
+
+/* line 39, ../sass/star-ratings.scss */
+.star-ratings-clear-hidden {
+  display: none;
+}

@@ -1,0 +1,111 @@
+Metadata-Version: 2.2
+Name: tweepy
+Version: 4.15.0
+Summary: Twitter library for Python
+Home-page: https://www.tweepy.org/
+Download-URL: https://pypi.org/project/tweepy/
+Author: Joshua Roesslein
+Author-email: tweepy@googlegroups.com
+License: MIT
+Project-URL: Documentation, https://tweepy.readthedocs.io
+Project-URL: Issue Tracker, https://github.com/tweepy/tweepy/issues
+Project-URL: Source Code, https://github.com/tweepy/tweepy
+Keywords: twitter library
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Topic :: Software Development :: Libraries
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3 :: Only
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: oauthlib<4,>=3.2.0
+Requires-Dist: requests<3,>=2.27.0
+Requires-Dist: requests-oauthlib<3,>=1.2.0
+Provides-Extra: async
+Requires-Dist: aiohttp<4,>=3.7.3; extra == "async"
+Requires-Dist: async-lru<3,>=1.0.3; extra == "async"
+Provides-Extra: docs
+Requires-Dist: myst-parser==0.15.2; extra == "docs"
+Requires-Dist: readthedocs-sphinx-search==0.1.1; extra == "docs"
+Requires-Dist: sphinx==4.2.0; extra == "docs"
+Requires-Dist: sphinx-hoverxref==0.7b1; extra == "docs"
+Requires-Dist: sphinx-tabs==3.2.0; extra == "docs"
+Requires-Dist: sphinx_rtd_theme==1.0.0; extra == "docs"
+Provides-Extra: dev
+Requires-Dist: coverage>=4.4.2; extra == "dev"
+Requires-Dist: coveralls>=2.1.0; extra == "dev"
+Requires-Dist: tox>=3.21.0; extra == "dev"
+Provides-Extra: socks
+Requires-Dist: requests[socks]<3,>=2.27.0; extra == "socks"
+Provides-Extra: test
+Requires-Dist: urllib3<2; extra == "test"
+Requires-Dist: vcrpy>=1.10.3; extra == "test"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: project-url
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+Tweepy: Twitter for Python!
+======
+
+[![PyPI Version](https://img.shields.io/pypi/v/tweepy?label=PyPI)](https://pypi.org/project/tweepy/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/tweepy?label=Python)](https://pypi.org/project/tweepy/)
+[![DOI](https://zenodo.org/badge/244025.svg)](https://zenodo.org/badge/latestdoi/244025)
+
+[![Documentation Status](https://readthedocs.org/projects/tweepy/badge/?version=latest)](https://tweepy.readthedocs.io/en/latest/)
+[![Test Status](https://github.com/tweepy/tweepy/workflows/Test/badge.svg)](https://github.com/tweepy/tweepy/actions?query=workflow%3ATest)
+[![Coverage Status](https://img.shields.io/coveralls/tweepy/tweepy/master.svg?style=flat)](https://coveralls.io/github/tweepy/tweepy?branch=master)
+
+[![Discord Server](https://discord.com/api/guilds/432685901596852224/embed.png)](https://discord.gg/bJvqnhg)
+
+Installation
+------------
+
+The easiest way to install the latest version from PyPI is by using
+[pip](https://pip.pypa.io/):
+
+    pip install tweepy
+
+To use the `tweepy.asynchronous` subpackage, be sure to install with the
+`async` extra:
+
+    pip install tweepy[async]
+
+You can also use Git to clone the repository from GitHub to install the latest
+development version:
+
+    git clone https://github.com/tweepy/tweepy.git
+    cd tweepy
+    pip install .
+
+Alternatively, install directly from the GitHub repository:
+
+    pip install git+https://github.com/tweepy/tweepy.git
+
+Latest version of Python and older versions not end of life (bugfix and security) are supported.
+
+Links
+-----
+
+- [Documentation](https://tweepy.readthedocs.io/en/latest/)
+- [Official Discord Server](https://discord.gg/bJvqnhg)
+- [Twitter API Documentation](https://developer.twitter.com/en/docs/twitter-api)
+

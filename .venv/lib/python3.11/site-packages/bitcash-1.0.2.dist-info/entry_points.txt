@@ -1,0 +1,2 @@
+[console_scripts]
+bitcash = bitcash.cli:bitcash

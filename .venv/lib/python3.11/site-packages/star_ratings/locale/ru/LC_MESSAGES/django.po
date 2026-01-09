@@ -1,0 +1,64 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-05-23 11:34+0200\n"
+"PO-Revision-Date: 2019-11-19 15:24+0300\n"
+"Last-Translator: Dmitriy Efimov <daefimov@gmail.com>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 2.0.6\n"
+"Language-Team: \n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+#: admin.py:17 admin.py:30
+msgid "Score"
+msgstr "Счёт"
+
+#: admin.py:48
+msgid "Rating average"
+msgstr "Средний рейтинг"
+
+#: models.py:35
+msgid "User is mandatory!"
+msgstr "Пользователь обязателен!"
+
+#: models.py:40
+msgid "IP address is mandatory!"
+msgstr "IP-адрес обязателен!"
+
+#: models.py:44
+msgid "Already rated."
+msgstr "Уже оценено."
+
+#: templates/star_ratings/widget_base.html:29
+msgid "Log in to rate"
+msgstr "Войдите, чтобы оценить"
+
+#: templates/star_ratings/widget_base.html:52
+msgid "Average: "
+msgstr "Среднее: "
+
+#: templates/star_ratings/widget_base.html:55
+msgid "Rating Count: "
+msgstr "Подсчёт рейтинга: "
+
+#: templates/star_ratings/widget_base.html:58
+msgid "You Rated: "
+msgstr "Вы оценили: "
+
+#: templates/star_ratings/widget_base.html:58
+msgid "Not rated"
+msgstr "Не оценено"
+
+#: templates/star_ratings/widget_base.html:60
+msgid "Please log in to rate."
+msgstr "Пожалуйста, войдите, чтобы оценить."
