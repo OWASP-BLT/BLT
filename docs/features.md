@@ -51,6 +51,4 @@ How to verify implementation
 - Slack Bot docs: docs/bot-setup.md
 - Contribution rules and linters: CONTRIBUTING.md
 
-Notes
-- Many AI features are UI-first. Before enabling in production, audit the backend and any external services they depend on.
-- Keep this doc updated when adding new feature cards or exposing experimental features in the UI.
+
