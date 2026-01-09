@@ -144,7 +144,7 @@ jobs:
 
             💡 **Tip**: You can set up pre-commit to run automatically on every commit by running:
             \`\`\`bash
-            uvx pre-commit install
+            uv run pre-commit install
             \`\`\`
 
             <details>
@@ -296,7 +296,7 @@ jobs:
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
 
       - name: Install dependencies
-        run: uv sync --locked --all-extras --dev
+        run: uv sync --locked --all-groups
 
       - name: Collect static files
         run: uv run python manage.py collectstatic --noinput
@@ -533,7 +533,7 @@ jobs:
           docker run -d --name my-container my-app
 
       - name: Sync dependencies with uv
-        run: docker exec my-container uv sync --no-group dev
+        run: docker exec my-container uv sync --all-groups
 
       - name: Clean up
         run: |
