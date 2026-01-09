@@ -512,6 +512,14 @@ class LeaderboardBase:
         if year and month:
             data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
 
+        # Bot identifiers to exclude from leaderboard
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(username__icontains=bot)
+
         data = (
             data.annotate(total_score=Sum("points__score"))
             .order_by("-total_score")
@@ -520,6 +528,7 @@ class LeaderboardBase:
                 username__isnull=False,
             )
             .exclude(username="")
+            .exclude(bot_exclusions)  # Exclude bot users
         )
         if api:
             return data.values("id", "username", "total_score")
