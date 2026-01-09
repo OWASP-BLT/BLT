@@ -7,18 +7,21 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
+from smtplib import SMTPException
 from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -234,41 +237,65 @@ def link_slack_channel_to_project(request):
         return JsonResponse({"error": "Project not found"}, status=404)
 
 
+@staff_member_required
 def weekly_report(request):
-    domains = Domain.objects.all()
-    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
-    try:
-        for domain in domains:
-            open_issues = domain.open_issues
-            closed_issues = domain.closed_issues
-            total_issues = open_issues.count() + closed_issues.count()
-            issues = Issue.objects.filter(domain=domain)
-            email = domain.email
-            report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
-                f"\n\norganization Name: {domain.name}"
-                f"Open issues: {open_issues.count()}"
-                f"Closed issues: {closed_issues.count()}"
-                f"Total issues: {total_issues}"
-            )
-            for issue in issues:
-                description = issue.description
-                views = issue.views
-                label = issue.get_label_display()
-                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
-
-        report_string = "".join(report_data)
-        send_mail(
-            "Weekly Report!!!",
-            report_string,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
+    domains = Domain.objects.annotate(
+        open_count=Count("issue", filter=Q(issue__status="open")),
+        closed_count=Count("issue", filter=Q(issue__status="closed")),
+    ).prefetch_related(
+        Prefetch(
+            "issue_set",
+            queryset=Issue.objects.filter(Q(status="open") | Q(status="closed")).only(
+                "description", "views", "label", "status"
+            ),
+            to_attr="filtered_issues",  # Store filtered results here
         )
-    except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+    )
 
-    return HttpResponse("Weekly report sent successfully.")
+    results = {"success": [], "failed": []}
+
+    for domain in domains:
+        try:
+            if not domain.email:
+                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
+                continue
+
+            issues = domain.filtered_issues
+
+            open_issues_count = domain.open_count
+            closed_issues_count = domain.closed_count
+            total_issues = open_issues_count + closed_issues_count
+
+            report_data = [
+                "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
+                f"Organization Name: {domain.name}\n",
+                f"Open issues: {open_issues_count}\n",
+                f"Closed issues: {closed_issues_count}\n",
+                f"Total issues: {total_issues}\n\n",
+            ]
+
+            for issue in issues:
+                report_data.append(
+                    f"Description: {issue.description}\n"
+                    f"Views: {issue.views}\n"
+                    f"Label: {issue.get_label_display()}\n\n"
+                )
+
+            send_mail(
+                "Weekly Report!!!",
+                "".join(report_data),
+                settings.EMAIL_HOST_USER,
+                [domain.email],
+                fail_silently=False,
+            )
+
+            results["success"].append(domain.name)
+
+        except (BadHeaderError, SMTPException) as e:
+            logger.error(f"Failed to send report to {domain.name}: {e}")
+            results["failed"].append(domain.name)
+
+    return HttpResponse(f"Sent {len(results['success'])} reports. Failed: {len(results['failed'])}")
 
 
 @login_required(login_url="/accounts/login")
@@ -283,13 +310,14 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         context["hunt"] = hunt
         context["issues"] = issues
         if hunt.result_published:
-            context["winner"] = Winner.objects.get(hunt=hunt)
+            context["winner"] = Winner.objects.filter(hunt=hunt).first()
         return render(request, template, context)
     else:
         for issue in issues:
             issue.verified = False
             issue.score = 0
-            issue.save()
+        if issues:
+            Issue.objects.bulk_update(issues, ["verified", "score"])
 
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
@@ -312,32 +340,33 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if request.POST["submit"] == "save":
             pass
         elif request.POST["submit"] == "publish":
-            issue.save()
-            winner = Winner()
-            issue_with_score = (
-                Issue.objects.filter(hunt=hunt, verified=True)
-                .values("user")
-                .order_by("user")
-                .annotate(total_score=Sum("score"))
-            )
+            with transaction.atomic():
+                issue_with_score = (
+                    Issue.objects.filter(hunt=hunt, verified=True)
+                    .values("user")
+                    .annotate(total_score=Sum("score"))
+                    .order_by("-total_score")
+                )
 
-            for index, obj in enumerate(issue_with_score, 1):
-                user = User.objects.get(pk=obj["user"])
-                if index == 1:
-                    winner.winner = user
-                elif index == 2:
-                    winner.runner = user
-                elif index == 3:
-                    winner.second_runner = user
-                elif index == 4:
-                    break
+                top_users = list(issue_with_score[:3])
+                user_map = User.objects.in_bulk([u["user"] for u in top_users])
 
-            winner.prize_distributed = True
-            winner.hunt = hunt
-            winner.save()
-            hunt.result_published = True
-            hunt.save()
-            context["winner"] = winner
+                winner, _ = Winner.objects.get_or_create(hunt=hunt)
+
+                if len(top_users) > 0:
+                    winner.winner = user_map.get(top_users[0]["user"])
+                if len(top_users) > 1:
+                    winner.runner = user_map.get(top_users[1]["user"])
+                if len(top_users) > 2:
+                    winner.second_runner = user_map.get(top_users[2]["user"])
+
+                winner.prize_distributed = True
+                winner.save()
+
+                hunt.result_published = True
+                hunt.save()
+
+                context["winner"] = winner
 
         context["hunt"] = hunt
         context["issues"] = issues
