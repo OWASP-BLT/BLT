@@ -179,16 +179,24 @@
                                 <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
                             </a>
                         </li>
-                        <li>
-                            <a href="{% url 'organization_view' %}">
-                                <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'organization_dashboard' %}">
-                                <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
-                            </a>
-                        </li>
+                        {% if user.user_organizations.exists or user.organization_set.exists %}
+                            <li>
+                                <a href="{% url 'organization_view' %}">
+                                    <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization_dashboard' %}">
+                                    <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li>
+                                <a href="{% url 'register_organization' %}">
+                                    <i class="fa fa-plus fa-fw"></i> {% trans "Register Organization" %}
+                                </a>
+                            </li>
+                        {% endif %}
                         <!-- divider -->
                         <li class="border my-4 -mx-8"></li>
                         <li>
