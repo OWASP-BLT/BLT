@@ -3,6 +3,7 @@ import logging
 import os
 import smtplib
 import sys
+import time
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -32,6 +33,7 @@ from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
@@ -72,6 +74,7 @@ from website.serializers import (
     SearchHistorySerializer,
     SecurityIncidentSerializer,
     TagSerializer,
+    TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
@@ -80,6 +83,17 @@ from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
 # API's
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """
+    Session authentication without CSRF enforcement.
+    Used for API endpoints that need to support both browser sessions
+    and programmatic access without CSRF tokens.
+    """
+
+    def enforce_csrf(self, request):  # noqa: ARG002
+        return  # CSRF disabled to support API testing and non-browser clients
 
 
 class UserIssueViewSet(viewsets.ModelViewSet):
@@ -1676,6 +1690,105 @@ class FindSimilarBugsApiView(APIView):
                 {"error": "An error occurred while searching for similar bugs"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class TeamMemberLeaderboardAPIView(APIView):
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            userprofile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"detail": "User profile not found"}, status=404)
+
+        team = userprofile.team
+        if not team:
+            return Response({"detail": "User has no team"}, status=400)
+
+        # Sorting with validation
+        sort_param = request.GET.get("order_by", "score")
+        ordering_map = {
+            "score": "-leaderboard_score",
+            "streak": "-current_streak",
+            "quality": "-quality_score",
+        }
+
+        # Validate order_by parameter
+        if sort_param not in ordering_map:
+            return Response(
+                {"detail": "Invalid order_by parameter. Allowed values: score, streak, quality"}, status=400
+            )
+
+        ordering = ordering_map[sort_param]
+
+        # Pagination
+        try:
+            page = int(request.GET.get("page", 1))
+            page_size = int(request.GET.get("page_size", 20))
+        except (ValueError, TypeError):
+            return Response({"detail": "Invalid pagination parameters"}, status=400)
+
+        # Validate ranges
+        if page < 1 or page_size < 1 or page_size > 100:
+            return Response({"detail": "Invalid pagination parameters"}, status=400)
+
+        # Cache Key
+        cache_key = f"team_lb:{team.id}:{sort_param}:{page}:{page_size}"
+        cached_value = cache.get(cache_key)
+
+        if cached_value:
+            return Response(cached_value)
+
+        # Mutex to prevent stampede
+        lock_key = f"{cache_key}:lock"
+        lock_acquired = cache.add(lock_key, "1", timeout=10)  # 10-sec lock
+
+        if not lock_acquired:
+            # Wait for the leader to populate cache (max 2 seconds)
+            waited = 0
+            while waited < 2:
+                time.sleep(0.1)
+                waited += 0.1
+                cached_value = cache.get(cache_key)
+                if cached_value:
+                    return Response(cached_value)
+            lock_acquired = cache.add(lock_key, "1", timeout=10)
+            if not lock_acquired:
+                # Do NOT rebuild cache if we don't own the lock
+                return Response(
+                    {"detail": "Cache is being rebuilt, please retry shortly."},
+                    status=503,
+                )
+
+        try:
+            # Queryset
+            queryset = UserProfile.objects.filter(team=team).select_related("user").order_by(ordering)
+
+            total_count = queryset.count()
+            start = (page - 1) * page_size
+            end = start + page_size
+
+            sliced_members = queryset[start:end]
+
+            serializer = TeamMemberLeaderboardSerializer(sliced_members, many=True)
+
+            response_data = {
+                "results": serializer.data,
+                "count": total_count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (total_count + page_size - 1) // page_size,
+                "ordering": sort_param,
+            }
+
+            # Store in Cache for 5 minutes
+            cache.set(cache_key, response_data, timeout=300)
+            return Response(response_data)
+        finally:
+            if lock_acquired:
+                cache.delete(lock_key)
 
 
 def _is_local_host(host: str, db_name: str | None = None) -> bool:
