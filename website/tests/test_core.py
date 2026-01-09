@@ -25,7 +25,9 @@ class ForumTests(TestCase):
 
         # Check if post was created successfully
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post exists in database
         post = ForumPost.objects.first()
@@ -100,7 +102,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("comment_id", data)
 
         # Verify comment exists in database
         self.assertEqual(post.comments.count(), 1)
@@ -136,7 +140,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has repo link
         post = ForumPost.objects.first()
@@ -162,7 +168,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has project link
         post = ForumPost.objects.first()
@@ -188,7 +196,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has organization link
         post = ForumPost.objects.first()
@@ -220,7 +230,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has all links
         post = ForumPost.objects.first()
