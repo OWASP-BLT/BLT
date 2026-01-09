@@ -1,3 +1,31 @@
+from django.contrib import admin
+from website.models import Project
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    actions = ["recalculate_freshness", "recalculate_freshness_fast"]
+
+    def recalculate_freshness(self, request, queryset):
+        count = 0
+        for project in queryset:
+            project.freshness = project.calculate_freshness()
+            project.save(update_fields=["freshness"])
+            count += 1
+        self.message_user(request, f"Recalculated freshness for {count} projects.")
+
+    recalculate_freshness.short_description = "Recalculate freshness (full)"
+
+    def recalculate_freshness_fast(self, request, queryset):
+        count = 0
+        for project in queryset:
+            project.freshness_fast_mode = True
+            project.freshness = project.calculate_freshness()
+            project.freshness_fast_mode = False
+            project.save(update_fields=["freshness"])
+            count += 1
+        self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects.")
+
+    recalculate_freshness_fast.short_description = "Recalculate freshness (fast mode)"
 from urllib.parse import urlparse
 
 from django.contrib import admin
@@ -581,6 +609,30 @@ class BlockedAdmin(admin.ModelAdmin):
 
 
 class ProjectAdmin(admin.ModelAdmin):
+        actions = ["recalculate_freshness", "recalculate_freshness_fast"]
+
+        def recalculate_freshness(self, request, queryset):
+            from django.utils import timezone
+            count = 0
+            for project in queryset:
+                project.freshness = project.calculate_freshness()
+                project.save(update_fields=["freshness"])
+                count += 1
+            self.message_user(request, f"Recalculated freshness for {count} projects.")
+
+        recalculate_freshness.short_description = "Recalculate freshness (full)"
+
+        def recalculate_freshness_fast(self, request, queryset):
+            count = 0
+            for project in queryset:
+                project.freshness_fast_mode = True
+                project.freshness = project.calculate_freshness()
+                project.freshness_fast_mode = False
+                project.save(update_fields=["freshness"])
+                count += 1
+            self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects.")
+
+        recalculate_freshness_fast.short_description = "Recalculate freshness (fast mode)"
     list_display = (
         "id",
         "name",

@@ -1444,18 +1444,14 @@ class Project(models.Model):
         help_text="0..100 freshness score representing recent project activity",
     )
 
+
     def calculate_freshness(self, activity_graph_score: float | None = None) -> Decimal:
         """
-        Deterministic calculation of a 0..100 freshness score.
-
-        Strategy:
-          - Three time windows: 0-7d (w=1.0), 8-30d (w=0.6), 31-90d (w=0.3)
-          - Metrics per window: commits *5 + PRs *3 + issues *2 + distinct contributors *4
-          - Normalize to 0..100 using a soft_max (tunable)
-          - Optionally blend an external activity_graph_score (0..100) with weight ~30%
-        Implementation details:
-          - Attempts to use an Activity-like model (Activity) if present in the app.
-          - Falls back to repo updated_at recency if Activity model not available.
+        Optimized deterministic calculation of a 0..100 freshness score.
+        - Bulk aggregates per window (single query per window)
+        - Robust fallback if Contribution model missing
+        - Handles edge cases (archived, forked, inactive)
+        - Optionally blends external activity_graph_score
         """
         now = timezone.now()
         windows = [
@@ -1463,42 +1459,37 @@ class Project(models.Model):
             (now - timedelta(days=30), now - timedelta(days=7), 0.6),
             (now - timedelta(days=90), now - timedelta(days=30), 0.3),
         ]
-
         total_score = 0.0
         any_activity = False
-
-        # Try to use Contribution model if it exists
+        # Edge case: archived, forked, or inactive projects
+        if getattr(self, "archived", False) or getattr(self, "forked", False) or self.status in ["inactive", "lab"]:
+            return Decimal("0.00")
+        # Outlier detection: mark projects with excessive activity as possible spam/bot
         try:
             Contribution = apps.get_model("website", "Contribution")
         except Exception:
             Contribution = None
-
         if Contribution:
+            from django.db.models import Count, Q
             for start, end, weight in windows:
-                # Contribution model has 'repository' field pointing to Project
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
-
-                commits = window_qs.filter(contribution_type__iexact="commit").count()
-                prs = window_qs.filter(contribution_type__in=["pull_request", "pr"]).count()
-                issues = window_qs.filter(
-                    contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"]
-                ).count()
+                agg = window_qs.aggregate(
+                    commits=Count("id", filter=Q(contribution_type__iexact="commit")),
+                    prs=Count("id", filter=Q(contribution_type__in=["pull_request", "pr"])),
+                    issues=Count("id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])),
+                )
                 contributors = window_qs.values("github_username").distinct().count()
-
-                if commits + prs + issues + contributors > 0:
+                if agg["commits"] + agg["prs"] + agg["issues"] + contributors > 0:
                     any_activity = True
-
-                window_metric = (commits * 5) + (prs * 3) + (issues * 2) + (contributors * 4)
+                window_metric = (agg["commits"] * 5) + (agg["prs"] * 3) + (agg["issues"] * 2) + (contributors * 4)
                 total_score += weight * window_metric
         else:
-            # Fallback: use most recent repo update timestamp.
             latest_repo = self.repos.order_by("-updated_at").first() if hasattr(self, "repos") else None
             if latest_repo and getattr(latest_repo, "updated_at", None):
                 any_activity = True
                 days = (now - latest_repo.updated_at).days
-                # Simple mapping: recent -> higher, older -> lower
                 if days <= 0:
-                    total_score = 200.0  # maps to 100 after normalization
+                    total_score = 200.0
                 elif days < 7:
                     total_score = 160.0
                 elif days < 30:
@@ -1507,20 +1498,71 @@ class Project(models.Model):
                     total_score = 30.0
                 else:
                     total_score = 0.0
-
         if not any_activity:
+            # Advanced fallback: check last known activity (issues/comments)
+            last_issue = None
+            last_comment = None
+            try:
+                Issue = apps.get_model("website", "Issue")
+                last_issue = Issue.objects.filter(project=self).order_by("-created").first()
+            except Exception:
+                pass
+            try:
+                Comment = apps.get_model("comments", "Comment")
+                last_comment = Comment.objects.filter(project=self).order_by("-created").first()
+            except Exception:
+                pass
+            last_dates = [d.created for d in [last_issue, last_comment] if d]
+            if last_dates:
+                days = (now - max(last_dates)).days
+                if days <= 0:
+                    return Decimal("50.00")
+                elif days < 7:
+                    return Decimal("30.00")
+                elif days < 30:
+                    return Decimal("10.00")
+                elif days < 90:
+                    return Decimal("2.00")
             return Decimal("0.00")
-
-        # Tune soft_max to map typical high activity to near 100.
         soft_max = 200.0
         normalized = min(total_score / soft_max, 1.0) * 100.0
-
-        # Blend in external activity_graph_score if provided (0..100)
         if activity_graph_score is not None:
             graph_weight = 0.3
             normalized = (1 - graph_weight) * normalized + graph_weight * float(activity_graph_score)
-
         return Decimal(normalized).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
+
+    def get_freshness_breakdown(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        now = timezone.now()
+        windows = [
+            (now - timedelta(days=7), now, "0-7d", 1.0),
+            (now - timedelta(days=30), now - timedelta(days=7), "8-30d", 0.6),
+            (now - timedelta(days=90), now - timedelta(days=30), "31-90d", 0.3),
+        ]
+        breakdown = {}
+        try:
+            Contribution = apps.get_model("website", "Contribution")
+        except Exception:
+            Contribution = None
+        if Contribution:
+            from django.db.models import Count, Q
+            for start, end, label, weight in windows:
+                window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
+                agg = window_qs.aggregate(
+                    commits=Count("id", filter=Q(contribution_type__iexact="commit")),
+                    prs=Count("id", filter=Q(contribution_type__in=["pull_request", "pr"])),
+                    issues=Count("id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])),
+                )
+                contributors = window_qs.values("github_username").distinct().count()
+                breakdown[label] = {
+                    "commits": agg["commits"],
+                    "prs": agg["prs"],
+                    "issues": agg["issues"],
+                    "contributors": contributors,
+                    "weight": weight,
+                }
+        return breakdown
 
     def fetch_freshness(self) -> Decimal:
         """

@@ -127,14 +127,33 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    # Use the persisted DB field (read-only)
+
     freshness = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
+    freshness_breakdown = serializers.SerializerMethodField(read_only=True)
+    freshness_reason = serializers.SerializerMethodField(read_only=True)
 
-    total_stars = serializers.IntegerField(read_only=True)
-    total_forks = serializers.IntegerField(read_only=True)
+    def get_freshness_breakdown(self, obj):
+        if hasattr(obj, "get_freshness_breakdown"):
+            return obj.get_freshness_breakdown()
+        return {}
 
-    external_links = serializers.JSONField(required=False)
-    project_visit_count = serializers.IntegerField(required=False)
+    def get_freshness_reason(self, obj):
+        score = obj.freshness
+        if score == Decimal("0.00"):
+            if getattr(obj, "archived", False):
+                return "Archived project"
+            if getattr(obj, "forked", False):
+                return "Forked project"
+            if obj.status in ["inactive", "lab"]:
+                return f"Inactive status: {obj.status}"
+            return "No recent activity"
+        if score >= Decimal("80.00"):
+            return "High recent activity"
+        if score >= Decimal("50.00"):
+            return "Moderate recent activity"
+        if score >= Decimal("10.00"):
+            return "Low recent activity"
+        return "Very low activity"
 
     class Meta:
         model = Project

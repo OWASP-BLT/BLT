@@ -723,6 +723,30 @@ class ContributorViewSet(viewsets.ModelViewSet):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
+        queryset = Project.objects.all()
+        serializer_class = ProjectSerializer
+        filterset_fields = ["status", "org", "freshness"]
+        ordering_fields = ["freshness", "created", "updated"]
+
+        def get_queryset(self):
+            qs = super().get_queryset()
+            min_fresh = self.request.query_params.get("min_freshness")
+            max_fresh = self.request.query_params.get("max_freshness")
+            if min_fresh is not None:
+                qs = qs.filter(freshness__gte=min_fresh)
+            if max_fresh is not None:
+                qs = qs.filter(freshness__lte=max_fresh)
+            return qs
+
+        @action(detail=True, methods=["get"])
+        def freshness_breakdown(self, request, pk=None):
+            project = self.get_object()
+            return Response(project.get_freshness_breakdown())
+
+        @action(detail=True, methods=["get"])
+        def freshness_reason(self, request, pk=None):
+            project = self.get_object()
+            return Response({"reason": ProjectSerializer().get_freshness_reason(project)})
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     # permission_classes = (IsAuthenticatedOrReadOnly,)
