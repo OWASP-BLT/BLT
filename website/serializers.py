@@ -127,7 +127,8 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    freshness = serializers.SerializerMethodField()
+    # Use the persisted DB field (read-only)
+    freshness = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
 
     total_stars = serializers.IntegerField(read_only=True)
     total_forks = serializers.IntegerField(read_only=True)
@@ -140,8 +141,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("slug", "contributors")
 
-    def get_freshness(self, obj):
-        return obj.fetch_freshness()
 
 
 class ContributorSerializer(serializers.ModelSerializer):

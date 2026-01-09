@@ -842,20 +842,35 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def filter(self, request, *args, **kwargs):
+        from decimal import Decimal, InvalidOperation
+
         freshness = request.query_params.get("freshness", None)
+        fmin = request.query_params.get("freshness_min")
+        fmax = request.query_params.get("freshness_max")
         stars = request.query_params.get("stars", None)
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
-        # Annotate Project with aggregated stars and forks from related Repos
         projects = Project.objects.annotate(
             total_stars=Coalesce(Sum("repos__stars"), 0),
             total_forks=Coalesce(Sum("repos__forks"), 0),
         )
 
-        # Freshness is NOT a DB field (SerializerMethodField)
-        if freshness:
-            pass  # Safe no-op
+        # Numeric freshness filters
+        try:
+            if fmin is not None:
+                projects = projects.filter(freshness__gte=Decimal(fmin))
+            if fmax is not None:
+                projects = projects.filter(freshness__lte=Decimal(fmax))
+            if freshness is not None:
+                projects = projects.filter(freshness__gte=Decimal(freshness))
+        except InvalidOperation:
+            return Response({"error": "freshness_min / freshness_max / freshness must be numeric"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Optionally allow ordering by freshness via ?ordering=freshness or ?ordering=-freshness
+        ordering = request.query_params.get("ordering")
+        if ordering:
+            projects = projects.order_by(ordering)
 
         # SAFE stars validation
         if stars:
