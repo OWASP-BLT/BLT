@@ -22,7 +22,7 @@ repos:
     rev: v0.1.13
     hooks:
       - id: ruff
-        args: 
+        args:
           - --fix
       - id: ruff-format
 
@@ -42,14 +42,14 @@ repos:
         args: [pre-commit-hooks/check_style_tags.py]
         language: python
         types: [html]
-        pass_filenames: false  # <-- ADD THIS LINE
+        pass_filenames: false
         verbose: true
 
   - repo: local
     hooks:
       - id: django-collectstatic
         name: Django Collect Static
-        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py collectstatic --noinput; fi'
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then uv run python manage.py collectstatic --noinput; fi'
         language: system
         types: [python]
         pass_filenames: false
@@ -57,12 +57,11 @@ repos:
         verbose: true
       - id: django-test
         name: Django Tests
-        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then uv run python manage.py test --failfast; fi'
         language: system
         types: [python]
         pass_filenames: false
         always_run: true
         verbose: true
-
 
 fail_fast: true
