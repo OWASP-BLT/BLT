@@ -1,0 +1,22 @@
+{% load gravatar %}
+{% load custom_tags %}
+<div id="like-section-{{ object.id }}" class="flex items-center gap-4">
+    <!-- Like -->
+    <button hx-post="{% url 'like_issue' object.id %}"
+            hx-target="#like-section-{{ object.id }}"
+            hx-swap="outerHTML">
+        ❤️ <span>{{ positive_votes }}</span>
+    </button>
+    <!-- Dislike -->
+    <button hx-post="{% url 'dislike_issue' object.id %}"
+            hx-target="#like-section-{{ object.id }}"
+            hx-swap="outerHTML">
+        💔 <span>{{ negative_votes }}</span>
+    </button>
+    <!-- Flag -->
+    <button hx-post="{% url 'flag_issue' object.id %}"
+            hx-target="#like-section-{{ object.id }}"
+            hx-swap="outerHTML">
+        🚩 <span>{{ flags_count }}</span>
+    </button>
+</div>
