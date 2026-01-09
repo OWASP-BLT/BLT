@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import re
 from urllib.parse import urlparse
 
 from django.contrib import messages
@@ -8,11 +10,21 @@ from django.db.models import Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST , require_http_methods
 
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
+from openai import OpenAI
+from youtube_transcript_api import YouTubeTranscriptApi
+from website.models import EducationalVideo, VideoQuizQuestion, QuizAttempt, Course, Lecture
+from django.views.generic import DetailView
+from youtube_transcript_api import (
+    YouTubeTranscriptApi,
+    TranscriptsDisabled,
+    NoTranscriptFound,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +41,220 @@ def is_valid_url(url, url_type):
     parsed_url = urlparse(url)
     return parsed_url.netloc in allowed_domains
 
+import os
+import re
+import json
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+from openai import OpenAI
+from youtube_transcript_api import YouTubeTranscriptApi
+
+from website.models import (
+    Course, Lecture, EducationalVideo, VideoQuizQuestion, QuizAttempt
+)
+
+# Initialize OpenAI client
+openai_api_key = os.getenv('OPENAI_API_KEY')
+if openai_api_key:
+    client = OpenAI(api_key=openai_api_key)
+else:
+    client = None
+
+
+def get_youtube_transcript(youtube_id):
+    """
+    Fetch YouTube transcript as plain text (first ~3000 chars).
+    Compatible with the current YouTubeTranscriptApi version.
+    """
+    try:
+        print(f"DEBUG: get_youtube_transcript called for {youtube_id}")
+
+        api = YouTubeTranscriptApi()
+        transcript_list = api.list(youtube_id)      # Returns TranscriptList
+        transcript_list = list(transcript_list)     # Convert to [Transcript, ...]
+
+        # Each Transcript object has .fetch() which returns FetchedTranscriptSnippet iterable
+        snippets = []
+        for transcript in transcript_list:
+            for snippet in transcript.fetch():
+                snippets.append(snippet)
+
+        # FetchedTranscriptSnippet has .text attribute (not ['text'] dict access)
+        transcript_text = " ".join(snippet.text for snippet in snippets)
+
+        print(f"DEBUG: transcript length for {youtube_id} = {len(transcript_text)}")
+        return transcript_text[:3000]  # Limit to 3000 chars for efficiency
+
+    except Exception as e:
+        print(f"DEBUG: transcript error for {youtube_id}: {e}")
+        return None
+
+
+def generate_ai_summary_and_verify(youtube_id, title, transcript):
+    """
+    Use OpenAI to generate summary and verify if content is educational.
+    Returns (summary_text, is_educational_bool).
+    """
+    if not client:
+        print("DEBUG: OpenAI client not initialized (OPENAI_API_KEY missing)")
+        return None, False
+
+    if not openai_api_key:
+        print("DEBUG: OPENAI_API_KEY is missing")
+        return None, False
+
+    if not transcript:
+        print(f"DEBUG: no transcript provided for video {youtube_id}")
+        return None, False
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an educational content expert. "
+                        "Analyze the video transcript and determine if it's educational/security-related content. "
+                        "Respond in JSON format with 'summary' and 'is_educational' fields."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Video Title: {title}\n\nTranscript:\n{transcript}\n\n"
+                        "Provide a brief (100-150 word) summary and determine if this is educational security content. "
+                        "Respond ONLY with valid JSON using double quotes, like this:\n"
+                        '{"summary": "...", "is_educational": true}'
+                    ),
+                },
+            ],
+            max_tokens=500,
+            temperature=0.7,
+        )
+
+        content = response.choices[0].message.content
+        print(f"DEBUG: raw OpenAI content for {youtube_id}: {content[:100]}...")  # First 100 chars
+
+        # Strip code fences if model wraps JSON in ``` (triple backticks)
+        content_stripped = content.strip()
+        if content_stripped.startswith("```"):
+            lines = content_stripped.splitlines()
+            # Remove first line (opening fence)
+            if len(lines) > 1:
+                lines = lines[1:]
+            # Remove last line if it's a closing fence
+            if lines and lines[-1].strip().startswith("```"):
+                lines = lines[:-1]
+            content_stripped = "\n".join(lines).strip()
+
+        data = json.loads(content_stripped)
+        summary = data.get("summary", "")
+        is_educational = data.get("is_educational", False)
+
+        print(
+            f"DEBUG: parsed summary_present={bool(summary)}, "
+            f"is_educational={is_educational}"
+        )
+        return summary, is_educational
+
+    except json.JSONDecodeError as e:
+        print(f"DEBUG: JSON decode error for {youtube_id}: {e}")
+        print(f"DEBUG: content that failed to parse: {content_stripped[:200]}")
+        return None, False
+    except Exception as e:
+        print(f"DEBUG: OpenAI error for {youtube_id}: {e}")
+        return None, False
+
+
+def generate_quiz_from_transcript(youtube_id, transcript, title):
+    """
+    Generate 5-10 quiz questions from transcript using OpenAI.
+    Returns list of question dicts or empty list on error.
+    """
+    if not client:
+        print(f"DEBUG: OpenAI client not initialized, skipping quiz for {youtube_id}")
+        return []
+
+    if not openai_api_key:
+        print(f"DEBUG: OPENAI_API_KEY missing, skipping quiz for {youtube_id}")
+        return []
+
+    if not transcript:
+        print(f"DEBUG: no transcript for quiz generation for {youtube_id}")
+        return []
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a quiz generator expert. Create educational multiple-choice questions "
+                        "based on the video content. Respond ONLY with valid JSON array."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Create 5 multiple-choice questions from this video on '{title}':\n\n{transcript}\n\n"
+                        "Respond ONLY with valid JSON array in this exact format:\n"
+                        "[\n"
+                        "  {\n"
+                        '    "question": "What is...?",\n'
+                        '    "option_a": "Answer A",\n'
+                        '    "option_b": "Answer B",\n'
+                        '    "option_c": "Answer C",\n'
+                        '    "option_d": "Answer D",\n'
+                        '    "correct_answer": "A",\n'
+                        '    "explanation": "The correct answer is..."\n'
+                        "  }\n"
+                        "]"
+                    ),
+                },
+            ],
+            max_tokens=2000,
+            temperature=0.7,
+        )
+
+        content = response.choices[0].message.content
+        print(f"DEBUG: raw quiz content for {youtube_id}: {content[:100]}...")
+
+        # Strip code fences if present (triple backticks)
+        content_stripped = content.strip()
+        if content_stripped.startswith("```"):
+            lines = content_stripped.splitlines()
+            if len(lines) > 1:
+                lines = lines[1:]
+            if lines and lines[-1].strip().startswith("```"):
+                lines = lines[:-1]
+            content_stripped = "\n".join(lines).strip()
+
+        questions = json.loads(content_stripped)
+        print(f"DEBUG: parsed {len(questions)} quiz questions for {youtube_id}")
+        return questions[:10]  # Limit to 10 questions
+
+    except json.JSONDecodeError as e:
+        print(f"DEBUG: quiz JSON decode error for {youtube_id}: {e}")
+        return []
+    except Exception as e:
+        print(f"DEBUG: quiz generation error for {youtube_id}: {e}")
+        return []
+
 
 def education_home(request):
+    """
+    Main education page. Displays courses, lectures, and educational videos.
+    Handles YouTube video submission with AI-powered summary and quiz generation.
+    """
     template = "education/education.html"
     user = request.user
+
+    # Determine if current user is an instructor
     if user.is_authenticated:
         is_instructor = (
             Course.objects.filter(instructor__user=user).exists()
@@ -40,6 +262,176 @@ def education_home(request):
         )
     else:
         is_instructor = False
+
+    # Handle YouTube video submission with AI processing
+    if request.method == "POST":
+        print("DEBUG: education_home POST reached")
+        youtube_url = request.POST.get("youtube_url", "").strip()
+        title = request.POST.get("video_title", "").strip()
+        description = request.POST.get("video_description", "").strip()
+
+        print(f"DEBUG: raw POST values title={repr(title)}, url={repr(youtube_url)}")
+
+        if youtube_url and title:
+            print(f"DEBUG: got title and url {title} {youtube_url}")
+            try:
+                # Extract video ID from URL
+                match = re.search(
+                    r'(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)',
+                    youtube_url
+                )
+                if not match:
+                    messages.error(request, "Invalid YouTube URL format.")
+                    return redirect("education")
+
+                youtube_id = match.group(1)
+                print(f"DEBUG: extracted youtube_id={youtube_id}")
+
+                # Step 1: Get transcript
+                print("DEBUG: calling get_youtube_transcript")
+                transcript = get_youtube_transcript(youtube_id)
+                print(f"DEBUG: transcript present? {bool(transcript)}")
+
+                # Step 2: Generate summary and educational verification
+                print("DEBUG: calling generate_ai_summary_and_verify")
+                summary, is_verified = generate_ai_summary_and_verify(
+                    youtube_id, title, transcript
+                )
+
+                # Step 3: Create video record
+                video = EducationalVideo.objects.create(
+                    title=title,
+                    youtube_url=youtube_url,
+                    youtube_id=youtube_id,
+                    description=description,
+                    ai_summary=summary or "",
+                    is_verified=is_verified,
+                )
+                print(f"DEBUG: created video record with id={video.id}")
+
+                # Step 4: Generate quiz questions (only if transcript exists)
+                if transcript:
+                    print("DEBUG: calling generate_quiz_from_transcript")
+                    quiz_questions = generate_quiz_from_transcript(
+                        youtube_id, transcript, title
+                    )
+                    print(f"DEBUG: quiz_questions returned: {len(quiz_questions)} questions")
+
+                    for q_data in quiz_questions:
+                        try:
+                            VideoQuizQuestion.objects.create(
+                                video=video,
+                                question=q_data.get("question", ""),
+                                option_a=q_data.get("option_a", ""),
+                                option_b=q_data.get("option_b", ""),
+                                option_c=q_data.get("option_c", ""),
+                                option_d=q_data.get("option_d", ""),
+                                correct_answer=q_data.get("correct_answer", "A"),
+                                explanation=q_data.get("explanation", ""),
+                            )
+                            print(f"DEBUG: created quiz question for video {video.id}")
+                        except Exception as q_err:
+                            print(f"DEBUG: error creating quiz question: {q_err}")
+                else:
+                    print(f"DEBUG: skipping quiz generation, no transcript for {youtube_id}")
+
+                messages.success(
+                    request,
+                    "Video added successfully with AI-generated content!"
+                )
+                return redirect("education")
+
+            except Exception as e:
+                print(f"DEBUG: exception in POST handler: {e}")
+                import traceback
+                traceback.print_exc()
+                messages.error(request, f"Error processing video: {str(e)}")
+                return redirect("education")
+        else:
+            messages.error(request, "Please provide both title and YouTube URL.")
+
+    # Fetch all data for display
+    featured_lectures = Lecture.objects.filter(section__isnull=True)
+    courses = Course.objects.all()
+    educational_videos = EducationalVideo.objects.all()
+
+    # Get user's quiz history if authenticated
+    user_quiz_history = []
+    if user.is_authenticated:
+        user_quiz_history = QuizAttempt.objects.filter(user=user)
+
+    context = {
+        "is_instructor": is_instructor,
+        "featured_lectures": featured_lectures,
+        "courses": courses,
+        "educational_videos": educational_videos,
+        "user_quiz_history": user_quiz_history,
+    }
+    return render(request, template, context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_quiz(request, video_id):
+    """
+    Handle quiz submission and score calculation.
+    Returns JSON with score, total questions, and percentage.
+    """
+    try:
+        video = EducationalVideo.objects.get(id=video_id)
+        score = 0
+        total_questions = 0
+
+        # Get all questions for this video
+        questions = VideoQuizQuestion.objects.filter(video=video)
+        total_questions = questions.count()
+
+        if total_questions == 0:
+            return JsonResponse(
+                {"error": "No questions for this video"},
+                status=400
+            )
+
+        # Check each answer
+        for question in questions:
+            user_answer = request.POST.get(
+                f"question_{question.id}", ""
+            ).upper().strip()
+            if user_answer == question.correct_answer.upper():
+                score += 1
+
+        percentage = (score / total_questions * 100) if total_questions > 0 else 0
+
+        # Save quiz attempt
+        attempt = QuizAttempt.objects.create(
+            user=request.user,
+            video=video,
+            score=score,
+            total_questions=total_questions,
+            percentage=percentage,
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "score": score,
+                "total": total_questions,
+                "percentage": round(percentage, 2),
+                "attempt_id": attempt.id,
+            }
+        )
+
+    except EducationalVideo.DoesNotExist:
+        return JsonResponse(
+            {"error": "Video not found"},
+            status=404
+        )
+    except Exception as e:
+        print(f"DEBUG: quiz submission error: {e}")
+        return JsonResponse(
+            {"error": str(e)},
+            status=500
+        )
 
     featured_lectures = Lecture.objects.filter(section__isnull=True)
     courses = Course.objects.all()
@@ -580,3 +972,18 @@ def create_or_update_course(request):
     except Exception as e:
         logger.error(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
+
+class VideoDetailView(DetailView):
+    model = EducationalVideo
+    template_name = "education/video_detail.html"
+    context_object_name = "video"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        video = self.object
+        context["quiz_questions"] = VideoQuizQuestion.objects.filter(video=video)
+        if self.request.user.is_authenticated:
+            context["quiz_history"] = QuizAttempt.objects.filter(
+                user=self.request.user, video=video
+            )
+        return context
