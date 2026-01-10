@@ -1366,17 +1366,19 @@ class Contributor(models.Model):
 
 class Project(models.Model):
     @staticmethod
-    def get_contributors(self_or_url, github_url=None):
+    def get_contributors(self_or_url, github_url=None, max_pages=None):
         """
         Fetch contributors from GitHub for the given repo URL and return Contributor objects.
         Accepts either a Project instance (self) or a github_url string as first arg.
         Handles pagination, logs errors, and updates stale Contributor data.
+        Uses requests.Session, per_page param, max_pages cap, and rate-limit handling.
         """
         import logging
         from urllib.parse import urlparse
 
         import requests
         from django.apps import apps
+        from django.conf import settings
 
         Contributor = apps.get_model("website", "Contributor")
         logger = logging.getLogger(__name__)
@@ -1406,22 +1408,30 @@ class Project(models.Model):
             "User-Agent": "OWASP-BLT/1.0",
             "Accept": "application/vnd.github.v3+json",
         }
-        from django.conf import settings
-
         token = getattr(settings, "GITHUB_TOKEN", None)
         if token:
             headers["Authorization"] = f"token {token}"
         contributors = []
-        url = api_url
+        url = api_url + "?per_page=100"
+        session = requests.Session()
+        session.headers.update(headers)
+        # Max pages: from settings or argument
+        max_pages_setting = getattr(settings, "GITHUB_CONTRIB_MAX_PAGES", 10)
+        max_pages = max_pages if max_pages is not None else max_pages_setting
+        page_count = 0
         try:
-            while url:
-                resp = requests.get(url, headers=headers, timeout=10)
+            while url and page_count < max_pages:
+                resp = session.get(url, timeout=10)
                 if resp.status_code != 200:
                     logger.error(f"GitHub API error {resp.status_code} for {url}: {resp.text}")
                     # Optionally log rate limit headers
+                    if "X-RateLimit-Remaining" in resp.headers and resp.headers["X-RateLimit-Remaining"] == "0":
+                        reset = resp.headers.get("X-RateLimit-Reset")
+                        logger.error(f"GitHub API rate limit exhausted. Resets at: {reset}")
+                        break
                     if "X-RateLimit-Reset" in resp.headers:
                         logger.error(f"Rate limit resets at: {resp.headers['X-RateLimit-Reset']}")
-                    return []
+                    break
                 data = resp.json()
                 for c in data:
                     if "id" not in c or "login" not in c:
@@ -1454,9 +1464,12 @@ class Project(models.Model):
                             next_url = part.split(";")[0].strip().strip("<>")
                             break
                 url = next_url
+                page_count += 1
         except Exception as e:
             logger.error(f"Exception fetching contributors for {github_url}: {e}", exc_info=True)
-            return []
+            return contributors
+        finally:
+            session.close()
         return contributors
 
     # Persisted freshness score (0..100). Use DecimalField for precision; indexed for filtering/sorting.

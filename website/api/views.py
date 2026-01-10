@@ -726,27 +726,29 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     filterset_fields = ["status", "organization", "freshness"]
-    ordering_fields = ["freshness", "created", "updated"]
+    ordering_fields = ["freshness", "created", "modified"]
 
     def get_queryset(self):
+        from decimal import Decimal, InvalidOperation
+
+        from rest_framework.exceptions import ParseError
+
         qs = super().get_queryset()
         freshness_min = self.request.query_params.get("freshness_min")
         freshness_max = self.request.query_params.get("freshness_max")
         if freshness_min is not None:
             try:
-                freshness_min = int(freshness_min)
-                qs = qs.filter(freshness__gte=freshness_min)
-            except (ValueError, TypeError):
-                pass
+                freshness_min = Decimal(freshness_min)
+            except (InvalidOperation, ValueError, TypeError):
+                raise ParseError("Invalid decimal value for freshness_min")
+            qs = qs.filter(freshness__gte=freshness_min)
         if freshness_max is not None:
             try:
-                freshness_max = int(freshness_max)
-                qs = qs.filter(freshness__lte=freshness_max)
-            except (ValueError, TypeError):
-                pass
+                freshness_max = Decimal(freshness_max)
+            except (InvalidOperation, ValueError, TypeError):
+                raise ParseError("Invalid decimal value for freshness_max")
+            qs = qs.filter(freshness__lte=freshness_max)
         return qs
-
-    from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
