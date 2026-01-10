@@ -130,8 +130,9 @@ class IssueForm(forms.ModelForm):
                 'class': 'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent',
                 'placeholder': 'https://github.com/owner/repo/issues/1'
             }),
-            'description': forms.TextInput(attrs={
+            'description': forms.Textarea(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent',
+                'rows': 4,
             }),
         }
 
