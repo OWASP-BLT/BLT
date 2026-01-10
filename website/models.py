@@ -1479,11 +1479,14 @@ class Project(models.Model):
                     issues=Count("id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])),
                 )
                 contributors = window_qs.values("github_username").distinct().count()
+
                 if agg["commits"] + agg["prs"] + agg["issues"] + contributors > 0:
                     any_activity = True
                 window_metric = (agg["commits"] * 5) + (agg["prs"] * 3) + (agg["issues"] * 2) + (contributors * 4)
                 total_score += weight * window_metric
-        else:
+
+        # Fallback logic: repo updated_at
+        if not any_activity:
             latest_repo = self.repos.order_by("-updated_at").first() if hasattr(self, "repos") else None
             if latest_repo and getattr(latest_repo, "updated_at", None):
                 any_activity = True
@@ -1498,21 +1501,24 @@ class Project(models.Model):
                     total_score = 30.0
                 else:
                     total_score = 0.0
+
+        # Tertiary fallback: last activity (ForumPost or GitHubIssue)
         if not any_activity:
-            # Advanced fallback: check last known activity (issues/comments)
-            last_issue = None
-            last_comment = None
+            last_dates = []
             try:
-                Issue = apps.get_model("website", "Issue")
-                last_issue = Issue.objects.filter(project=self).order_by("-created").first()
+                ForumPost = apps.get_model("website", "ForumPost")
+                last_post = ForumPost.objects.filter(project=self).order_by("-created").first()
+                if last_post:
+                    last_dates.append(last_post.created)
             except Exception:
                 pass
             try:
-                Comment = apps.get_model("comments", "Comment")
-                last_comment = Comment.objects.filter(project=self).order_by("-created").first()
+                GitHubIssue = apps.get_model("website", "GitHubIssue")
+                last_gh_issue = GitHubIssue.objects.filter(repo__project=self).order_by("-updated_at").first()
+                if last_gh_issue:
+                    last_dates.append(last_gh_issue.updated_at)
             except Exception:
                 pass
-            last_dates = [d.created for d in [last_issue, last_comment] if d]
             if last_dates:
                 days = (now - max(last_dates)).days
                 if days <= 0:
@@ -1524,6 +1530,27 @@ class Project(models.Model):
                 elif days < 90:
                     return Decimal("2.00")
             return Decimal("0.00")
+            def freshness_reason(self):
+                """
+                Returns a string explaining why the project is considered fresh or stale.
+                """
+                score = self.fetch_freshness()
+                if score >= 90:
+                    return "Very active: recent commits, PRs, and contributors."
+                elif score >= 60:
+                    return "Active: recent activity in the last month."
+                elif score >= 30:
+                    return "Some activity: last 3 months."
+                elif score > 0:
+                    return "Stale: no recent activity, but not archived."
+                else:
+                    return "Inactive or archived."
+
+            def log_freshness_summary(self):
+                """
+                Logs a summary of the project's freshness score and breakdown for monitoring.
+                """
+                logger.info(f"[Freshness] Project {self.pk} ({self.name}): Score={self.fetch_freshness()} Reason={self.freshness_reason()} Breakdown={self.get_freshness_breakdown()}")
         soft_max = 200.0
         normalized = min(total_score / soft_max, 1.0) * 100.0
         if activity_graph_score is not None:

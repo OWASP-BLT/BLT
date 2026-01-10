@@ -4,14 +4,17 @@ from website.models import Project
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     actions = ["recalculate_freshness", "recalculate_freshness_fast"]
+    list_display = ("id", "name", "slug", "description", "created", "modified")
+    search_fields = ["id", "name", "slug", "description"]
 
     def recalculate_freshness(self, request, queryset):
         count = 0
         for project in queryset:
             project.freshness = project.calculate_freshness()
             project.save(update_fields=["freshness"])
+            project.log_freshness_summary()
             count += 1
-        self.message_user(request, f"Recalculated freshness for {count} projects.")
+        self.message_user(request, f"Recalculated freshness for {count} projects. See logs for summary.")
 
     recalculate_freshness.short_description = "Recalculate freshness (full)"
 
@@ -22,8 +25,9 @@ class ProjectAdmin(admin.ModelAdmin):
             project.freshness = project.calculate_freshness()
             project.freshness_fast_mode = False
             project.save(update_fields=["freshness"])
+            project.log_freshness_summary()
             count += 1
-        self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects.")
+        self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects. See logs for summary.")
 
     recalculate_freshness_fast.short_description = "Recalculate freshness (fast mode)"
 from urllib.parse import urlparse
@@ -608,40 +612,12 @@ class BlockedAdmin(admin.ModelAdmin):
     )
 
 
-class ProjectAdmin(admin.ModelAdmin):
-        actions = ["recalculate_freshness", "recalculate_freshness_fast"]
 
-        def recalculate_freshness(self, request, queryset):
-            from django.utils import timezone
-            count = 0
-            for project in queryset:
-                project.freshness = project.calculate_freshness()
-                project.save(update_fields=["freshness"])
-                count += 1
-            self.message_user(request, f"Recalculated freshness for {count} projects.")
-
-        recalculate_freshness.short_description = "Recalculate freshness (full)"
-
-        def recalculate_freshness_fast(self, request, queryset):
-            count = 0
-            for project in queryset:
-                project.freshness_fast_mode = True
-                project.freshness = project.calculate_freshness()
-                project.freshness_fast_mode = False
-                project.save(update_fields=["freshness"])
-                count += 1
-            self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects.")
-
-        recalculate_freshness_fast.short_description = "Recalculate freshness (fast mode)"
-    list_display = (
-        "id",
-        "name",
-        "slug",
-        "description",
-        "created",
-        "modified",
-    )
-    search_fields = ["name", "description", "slug"]
+    # Added for autocomplete_fields in ForumPostAdmin
+    # Must include the primary key for admin autocomplete
+    # and any fields referenced in autocomplete_fields
+    # (project, repo, organization)
+    # If project uses 'name' or 'slug' for autocomplete, those are included above
 
 
 class RepoAdmin(admin.ModelAdmin):
@@ -993,7 +969,6 @@ class UserLabProgressAdmin(admin.ModelAdmin):
 admin.site.register(UserTaskProgress, UserTaskProgressAdmin)
 admin.site.register(UserLabProgress, UserLabProgressAdmin)
 
-admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
 admin.site.register(ContributorStats, ContributorStatsAdmin)

@@ -42,6 +42,10 @@ class Command(BaseCommand):
             except Exception as e:
                 logger.error("Error fetching GSoC PRs", exc_info=True)
             try:
+                call_command("update_project_freshness")
+            except Exception as e:
+                logger.error("Error updating project freshness", exc_info=True)
+            try:
                 call_command("cron_send_reminders")
             except Exception as e:
                 logger.error("Error sending user reminders", exc_info=True)
