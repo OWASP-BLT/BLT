@@ -52,7 +52,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Finished. processed={processed} errors={errors}"))
         # Analytics summary: distribution of freshness scores
         from collections import Counter
-        scores = [p.freshness for p in Project.objects.all()]
+        scores = Project.objects.values_list("freshness", flat=True).iterator()
         bins = [0, 10, 30, 50, 70, 90, 100]
         dist = Counter()
         for s in scores:
