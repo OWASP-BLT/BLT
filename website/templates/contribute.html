@@ -538,11 +538,11 @@
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {% for issue in good_first_issues %}
-                                    <tr class="hover:bg-gray-100 transition-colors duration-200">
-                                        <td class="px-6 py-4 whitespace-nowrap md:whitespace-normal text-sm font-medium text-gray-800 dark:text-gray-400 dark:hover:text-gray-500">
+                                    <tr class="hover:bg-gray-200 transition-colors duration-200">
+                                        <td class="px-6 py-4 whitespace-nowrap md:whitespace-normal text-sm font-medium text-gray-800 dark:text-gray-500">
                                             {{ issue.title }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-400 dark:hover:text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-500">
                                             {{ issue.created_at|date:"M d, Y H:i" }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
