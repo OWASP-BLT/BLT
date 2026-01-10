@@ -727,6 +727,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     filterset_fields = ["status", "organization", "freshness"]
     ordering_fields = ["freshness", "created", "modified"]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
 
     def get_queryset(self):
         from decimal import Decimal, InvalidOperation

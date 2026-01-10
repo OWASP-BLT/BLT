@@ -1515,7 +1515,7 @@ class Project(models.Model):
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
                     commits=Count("id", filter=Q(contribution_type__iexact="commit")),
-                    prs=Count("id", filter=Q(contribution_type__in=["pull_request", "pr"])),
+                    prs=Count("id", filter=Q(contribution_type__iexact="pull_request")),
                     issues=Count(
                         "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
                     ),
@@ -1530,12 +1530,17 @@ class Project(models.Model):
                     + Decimal(agg["contributors"] or 0) * Decimal("4")
                 )
                 total_score += weight * window_metric
-        # Fallback logic: repo updated_at
+        # Fallback logic: repo last_updated
         if not any_activity:
-            latest_repo = self.repos.order_by("-updated_at").first() if hasattr(self, "repos") else None
-            if latest_repo and getattr(latest_repo, "updated_at", None):
+            latest_repo = (
+                self.repos.order_by("-last_updated", "-updated_at").first() if hasattr(self, "repos") else None
+            )
+            repo_dt = None
+            if latest_repo:
+                repo_dt = getattr(latest_repo, "last_updated", None) or getattr(latest_repo, "updated_at", None)
+            if latest_repo and repo_dt:
                 any_activity = True
-                days = (now - latest_repo.updated_at).days
+                days = (now - repo_dt).days
                 if days <= 0:
                     return Decimal("100.00")
                 elif days < 7:
