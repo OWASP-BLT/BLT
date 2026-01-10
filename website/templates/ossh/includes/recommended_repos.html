@@ -71,7 +71,7 @@
                         </div>
                         {% if repo.repo.homepage_url %}
                             <div class="flex items-center">
-                                <span class="mr-3 text-gray-400">🏠 Homepage:</span>
+                                <span class="mr-3 text-gray-600 dark:text-gray-400">🏠 Homepage:</span>
                                 <a href="{{ repo.repo.homepage_url }}"
                                    target="_blank"
                                    class="text-blue-400 hover:text-blue-300 hover:underline break-all">
@@ -81,7 +81,7 @@
                         {% endif %}
                         {% if repo.repo.project and repo.repo.project.url %}
                             <div class="flex items-center">
-                                <span class="mr-3 text-gray-400">📦 Project Page:</span>
+                                <span class="mr-3 text-gray-600 dark:text-gray-400">📦 Project Page:</span>
                                 <a href="{{ repo.repo.project.url }}"
                                    target="_blank"
                                    class="text-blue-400 hover:text-blue-300 hover:underline break-all">
