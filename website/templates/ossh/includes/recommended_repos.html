@@ -1,5 +1,7 @@
 <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700">
-    <h1 class="text-4xl font-bold text-center text-gray-900 dark:text-white mb-6 tracking-wider">Recommended Repositories</h1>
+    <h1 class="text-4xl font-bold text-center text-gray-900 dark:text-white mb-6 tracking-wider">
+        Recommended Repositories
+    </h1>
     <div class="space-y-6">
         {% for repo in repos %}
             <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-inner hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
@@ -10,7 +12,7 @@
                             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                 Part of project:
                                 <a href="{% url 'project_detail' repo.repo.project.slug %}"
-                                    class="text-[#e74c3c] hover:text-red-700 dark:hover:text-red-600 hover:underline">
+                                   class="text-[#e74c3c] hover:text-red-700 dark:hover:text-red-600 hover:underline">
                                     {{ repo.repo.project.name }}
                                 </a>
                             </p>
@@ -43,17 +45,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-700 dark:text-gray-300">
                     <p class="flex items-center">
                         <span class="mr-2">⭐</span>
-                        <span class="font-semibold text-gray-900 dark:text-white">{{ repo.repo.stars }}</span> 
-                        <span class="ml-1 text-gray-700 dark:text-gray-300">
-                            Stars
-                        </span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ repo.repo.stars }}</span>
+                        <span class="ml-1 text-gray-700 dark:text-gray-300">Stars</span>
                     </p>
                     <p class="flex items-center">
                         <span class="mr-2">🍴</span>
                         <span class="font-semibold text-gray-900 dark:text-white">{{ repo.repo.forks }}</span>
-                        <span class="ml-1 text-gray-700 dark:text-gray-300">
-                            Forks
-                        </span>
+                        <span class="ml-1 text-gray-700 dark:text-gray-300">Forks</span>
                     </p>
                     <p class="flex items-center">
                         <span class="mr-2">📅</span>

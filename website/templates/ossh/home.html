@@ -9,20 +9,18 @@
                 <div class="inline-block p-3 bg-gradient-to-br from-[#e74c3c] to-red-700 rounded-full mb-4">
                     <i class="fas fa-hat-wizard text-white text-4xl"></i>
                 </div>
-                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-3">
-                    Open Source Sorting Hat
-                </h1>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-3">Open Source Sorting Hat</h1>
                 <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
                     Let our AI-powered sorting hat analyze your GitHub profile and recommend the perfect open source projects, communities, and resources tailored to your interests and expertise.
                 </p>
             </div>
-
             <!-- Form Card -->
             <div class="bg-white dark:bg-gray-800 p-10 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
                 <form method="post" class="relative z-10" action="{% url 'ossh_results' %}">
                     {% csrf_token %}
                     <div class="mb-6">
-                        <label for="github-username" class="block text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        <label for="github-username"
+                               class="block text-xl font-semibold text-gray-900 dark:text-white mb-2">
                             GitHub Username
                         </label>
                         <div class="relative mt-2">
@@ -44,7 +42,6 @@
                     </div>
                 </form>
             </div>
-
             <!-- Info Section -->
             <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
