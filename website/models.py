@@ -1654,8 +1654,6 @@ class Project(models.Model):
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
                     commits=Count("id", filter=Q(contribution_type__iexact="commit")),
-                agg = window_qs.aggregate(
-                    commits=Count("id", filter=Q(contribution_type__iexact="commit")),
                     prs=Count("id", filter=Q(contribution_type__iexact="pull_request")),
                     issues=Count(
                         "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
