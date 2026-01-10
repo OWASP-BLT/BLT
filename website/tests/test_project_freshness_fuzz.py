@@ -1,6 +1,8 @@
-from decimal import Decimal
-from django.test import TestCase
 import random
+from decimal import Decimal
+
+from django.test import TestCase
+
 from website.models import Project
 
 

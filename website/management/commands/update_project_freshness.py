@@ -1,8 +1,9 @@
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+
 from website.models import Project
+
 
 class Command(BaseCommand):
     help = "Recalculate and persist freshness for all projects."
@@ -16,7 +17,9 @@ class Command(BaseCommand):
         limit = options["limit"]
 
         from django.db.models import Prefetch
+
         from website.models import Contribution, Repo
+
         qs = Project.objects.all().order_by("id")
         if limit and limit > 0:
             qs = qs[:limit]
@@ -34,24 +37,26 @@ class Command(BaseCommand):
         start_index = 0
         while start_index < total:
             chunk = list(qs[start_index : start_index + batch])
-            with transaction.atomic():
-                for p in chunk:
-                    try:
+            for p in chunk:
+                try:
+                    # Per-project transaction for safety on all DBs
+                    with transaction.atomic():
                         new_score = p.calculate_freshness()
                         p.freshness = new_score
                         p.save(update_fields=["freshness"])
-                        processed += 1
-                    except Exception as e:
-                        error_msg = f"Error processing project id={getattr(p, 'id', 'unknown')}: {e}"
-                        self.stderr.write(error_msg)
-                        error_details.append(error_msg)
-                        errors += 1
+                    processed += 1
+                except Exception as e:
+                    error_msg = f"Error processing project id={getattr(p, 'id', 'unknown')}: {e}"
+                    self.stderr.write(error_msg)
+                    error_details.append(error_msg)
+                    errors += 1
             start_index += batch
             self.stdout.write(f"Processed {min(start_index, total)}/{total}")
 
         self.stdout.write(self.style.SUCCESS(f"Finished. processed={processed} errors={errors}"))
         # Analytics summary: distribution of freshness scores
         from collections import Counter
+
         scores = Project.objects.values_list("freshness", flat=True).iterator()
         bins = [0, 10, 30, 50, 70, 90, 100]
         dist = Counter()

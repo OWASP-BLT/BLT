@@ -1,5 +1,7 @@
 from django.contrib import admin
+
 from website.models import Project
+
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
@@ -21,18 +23,17 @@ class ProjectAdmin(admin.ModelAdmin):
     def recalculate_freshness_fast(self, request, queryset):
         count = 0
         for project in queryset:
-            project.freshness_fast_mode = True
             project.freshness = project.calculate_freshness()
-            project.freshness_fast_mode = False
             project.save(update_fields=["freshness"])
             project.log_freshness_summary()
             count += 1
         self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects. See logs for summary.")
 
     recalculate_freshness_fast.short_description = "Recalculate freshness (fast mode)"
+
+
 from urllib.parse import urlparse
 
-from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -610,8 +611,6 @@ class BlockedAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
-
-
 
     # Added for autocomplete_fields in ForumPostAdmin
     # Must include the primary key for admin autocomplete

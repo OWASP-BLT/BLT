@@ -4,22 +4,15 @@ import re
 import time
 import uuid
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
 import pytz
-from decimal import Decimal, ROUND_HALF_UP
-from django.utils import timezone
-from datetime import timedelta
-from django.apps import apps
-from decimal import Decimal, ROUND_HALF_UP
-from django.utils import timezone
-from datetime import timedelta
-from django.apps import apps
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -1378,15 +1371,18 @@ class Project(models.Model):
         Fetch contributors from GitHub for the given repo URL and return Contributor objects.
         Accepts either a Project instance (self) or a github_url string as first arg.
         """
-        import requests
-        from website.models import Contributor
         from urllib.parse import urlparse
+
+        import requests
+        from django.apps import apps
+
+        Contributor = apps.get_model("website", "Contributor")
 
         # Allow calling as Project.get_contributors(self, url) or Project.get_contributors(url)
         if github_url is None and isinstance(self_or_url, str):
             github_url = self_or_url
-        elif github_url is None and hasattr(self_or_url, 'github_url'):
-            github_url = getattr(self_or_url, 'github_url', None)
+        elif github_url is None and hasattr(self_or_url, "github_url"):
+            github_url = getattr(self_or_url, "github_url", None)
         elif github_url is None:
             github_url = None
 
@@ -1396,9 +1392,9 @@ class Project(models.Model):
         # Extract owner/repo from URL
         try:
             parsed = urlparse(github_url)
-            path = parsed.path.strip('/')
-            if path.count('/') >= 1:
-                owner, repo = path.split('/')[:2]
+            path = parsed.path.strip("/")
+            if path.count("/") >= 1:
+                owner, repo = path.split("/")[:2]
             else:
                 return []
         except Exception:
@@ -1407,9 +1403,10 @@ class Project(models.Model):
         api_url = f"https://api.github.com/repos/{owner}/{repo}/contributors"
         headers = {}
         from django.conf import settings
-        token = getattr(settings, 'GITHUB_TOKEN', None)
+
+        token = getattr(settings, "GITHUB_TOKEN", None)
         if token:
-            headers['Authorization'] = f'token {token}'
+            headers["Authorization"] = f"token {token}"
 
         try:
             resp = requests.get(api_url, headers=headers, timeout=10)
@@ -1421,29 +1418,29 @@ class Project(models.Model):
 
         contributors = []
         for c in data:
-            if 'id' not in c or 'login' not in c:
+            if "id" not in c or "login" not in c:
                 continue
             obj, _ = Contributor.objects.get_or_create(
-                github_id=c['id'],
+                github_id=c["id"],
                 defaults={
-                    'name': c.get('login', ''),
-                    'github_url': c.get('html_url', ''),
-                    'avatar_url': c.get('avatar_url', ''),
-                    'contributor_type': 'User',
-                    'contributions': c.get('contributions', 0),
+                    "name": c.get("login", ""),
+                    "github_url": c.get("html_url", ""),
+                    "avatar_url": c.get("avatar_url", ""),
+                    "contributor_type": "User",
+                    "contributions": c.get("contributions", 0),
                 },
             )
             contributors.append(obj)
         return contributors
+
     # Persisted freshness score (0..100). Use DecimalField for precision; indexed for filtering/sorting.
     freshness = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=Decimal('0.00'),
+        default=Decimal("0.00"),
         db_index=True,
         help_text="0..100 freshness score representing recent project activity",
     )
-
 
     def calculate_freshness(self, activity_graph_score: float | None = None) -> Decimal:
         """
@@ -1464,22 +1461,24 @@ class Project(models.Model):
         # Edge case: archived, forked, or inactive projects
         if getattr(self, "archived", False) or getattr(self, "forked", False) or self.status in ["inactive", "lab"]:
             return Decimal("0.00")
-        # Outlier detection: mark projects with excessive activity as possible spam/bot
         try:
             Contribution = apps.get_model("website", "Contribution")
         except Exception:
             Contribution = None
         if Contribution:
             from django.db.models import Count, Q
+
             for start, end, weight in windows:
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
                     commits=Count("id", filter=Q(contribution_type__iexact="commit")),
                     prs=Count("id", filter=Q(contribution_type__in=["pull_request", "pr"])),
-                    issues=Count("id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])),
+                    issues=Count(
+                        "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
+                    ),
                 )
-                contributors = window_qs.values("github_username").distinct().count()
-
+                # Only count contributors with non-empty github_username
+                contributors = window_qs.exclude(github_username="").values("github_username").distinct().count()
                 if agg["commits"] + agg["prs"] + agg["issues"] + contributors > 0:
                     any_activity = True
                 window_metric = (agg["commits"] * 5) + (agg["prs"] * 3) + (agg["issues"] * 2) + (contributors * 4)
@@ -1492,15 +1491,15 @@ class Project(models.Model):
                 any_activity = True
                 days = (now - latest_repo.updated_at).days
                 if days <= 0:
-                    total_score = 200.0
+                    return Decimal("100.00")
                 elif days < 7:
-                    total_score = 160.0
+                    return Decimal("80.00")
                 elif days < 30:
-                    total_score = 100.0
+                    return Decimal("50.00")
                 elif days < 90:
-                    total_score = 30.0
+                    return Decimal("15.00")
                 else:
-                    total_score = 0.0
+                    return Decimal("0.00")
 
         # Tertiary fallback: last activity (ForumPost or GitHubIssue)
         if not any_activity:
@@ -1529,28 +1528,9 @@ class Project(models.Model):
                     return Decimal("10.00")
                 elif days < 90:
                     return Decimal("2.00")
-            return Decimal("0.00")
-            def freshness_reason(self):
-                """
-                Returns a string explaining why the project is considered fresh or stale.
-                """
-                score = self.fetch_freshness()
-                if score >= 90:
-                    return "Very active: recent commits, PRs, and contributors."
-                elif score >= 60:
-                    return "Active: recent activity in the last month."
-                elif score >= 30:
-                    return "Some activity: last 3 months."
-                elif score > 0:
-                    return "Stale: no recent activity, but not archived."
                 else:
-                    return "Inactive or archived."
-
-            def log_freshness_summary(self):
-                """
-                Logs a summary of the project's freshness score and breakdown for monitoring.
-                """
-                logger.info(f"[Freshness] Project {self.pk} ({self.name}): Score={self.fetch_freshness()} Reason={self.freshness_reason()} Breakdown={self.get_freshness_breakdown()}")
+                    return Decimal("0.00")
+        # Always normalize and cap at the end
         soft_max = 200.0
         normalized = min(total_score / soft_max, 1.0) * 100.0
         if activity_graph_score is not None:
@@ -1558,9 +1538,35 @@ class Project(models.Model):
             normalized = (1 - graph_weight) * normalized + graph_weight * float(activity_graph_score)
         return Decimal(normalized).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
 
+    def freshness_reason(self):
+        """
+        Returns a string explaining why the project is considered fresh or stale.
+        """
+        score = self.fetch_freshness()
+        if score >= 90:
+            return "Very active: recent commits, PRs, and contributors."
+        elif score >= 60:
+            return "High recent activity"
+        elif score >= 30:
+            return "Some activity: last 3 months."
+        elif score > 0:
+            return "Very low activity"
+        else:
+            return "Inactive or archived."
+
+    def log_freshness_summary(self):
+        """
+        Logs a summary of the project's freshness score and breakdown for monitoring.
+        """
+        logger.info(
+            f"[Freshness] Project {self.pk} ({self.name}): Score={self.fetch_freshness()} Reason={self.freshness_reason()} Breakdown={self.get_freshness_breakdown()}"
+        )
+
     def get_freshness_breakdown(self):
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
+
         now = timezone.now()
         windows = [
             (now - timedelta(days=7), now, "0-7d", 1.0),
@@ -1574,14 +1580,17 @@ class Project(models.Model):
             Contribution = None
         if Contribution:
             from django.db.models import Count, Q
+
             for start, end, label, weight in windows:
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
                     commits=Count("id", filter=Q(contribution_type__iexact="commit")),
                     prs=Count("id", filter=Q(contribution_type__in=["pull_request", "pr"])),
-                    issues=Count("id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])),
+                    issues=Count(
+                        "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
+                    ),
                 )
-                contributors = window_qs.values("github_username").distinct().count()
+                contributors = window_qs.exclude(github_username="").values("github_username").distinct().count()
                 breakdown[label] = {
                     "commits": agg["commits"],
                     "prs": agg["prs"],

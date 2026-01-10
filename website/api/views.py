@@ -1,5 +1,3 @@
-from rest_framework.decorators import action
-from rest_framework.response import Response
 import json
 import logging
 import os
@@ -724,22 +722,28 @@ class ContributorViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "post", "put")
 
 
-
-
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    filterset_fields = ["status", "org", "freshness"]
+    filterset_fields = ["status", "organization", "freshness"]
     ordering_fields = ["freshness", "created", "updated"]
 
     def get_queryset(self):
         qs = super().get_queryset()
-        min_fresh = self.request.query_params.get("min_freshness")
-        max_fresh = self.request.query_params.get("max_freshness")
-        if min_fresh is not None:
-            qs = qs.filter(freshness__gte=min_fresh)
-        if max_fresh is not None:
-            qs = qs.filter(freshness__lte=max_fresh)
+        freshness_min = self.request.query_params.get("freshness_min")
+        freshness_max = self.request.query_params.get("freshness_max")
+        if freshness_min is not None:
+            try:
+                freshness_min = int(freshness_min)
+                qs = qs.filter(freshness__gte=freshness_min)
+            except (ValueError, TypeError):
+                pass
+        if freshness_max is not None:
+            try:
+                freshness_max = int(freshness_max)
+                qs = qs.filter(freshness__lte=freshness_max)
+            except (ValueError, TypeError):
+                pass
         return qs
 
     @action(detail=True, methods=["get"])
@@ -751,16 +755,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def freshness_reason(self, request, pk=None):
         project = self.get_object()
         return Response({"reason": project.freshness_reason()})
-
-    @action(detail=True, methods=["get"])
-    def freshness_breakdown(self, request, pk=None):
-        project = self.get_object()
-        return Response(project.get_freshness_breakdown())
-
-    @action(detail=True, methods=["get"])
-    def freshness_reason(self, request, pk=None):
-        project = self.get_object()
-        return Response({"reason": ProjectSerializer().get_freshness_reason(project)})
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -787,7 +781,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.annotate(
+        qs = self.filter_queryset(self.get_queryset())
+        projects = qs.annotate(
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
@@ -899,7 +894,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
             if freshness is not None:
                 projects = projects.filter(freshness__gte=Decimal(freshness))
         except InvalidOperation:
-            return Response({"error": "freshness_min / freshness_max / freshness must be numeric"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "freshness_min / freshness_max / freshness must be numeric"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Optionally allow ordering by freshness via ?ordering=freshness or ?ordering=-freshness
         ordering = request.query_params.get("ordering")

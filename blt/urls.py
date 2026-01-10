@@ -715,7 +715,7 @@ urlpatterns = [
     ),
     re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
     re_path(r"^projects/compact/$", ProjectCompactListView.as_view(), name="project_compact_list"),
-    re_path(r"^projects/(?P<slug>[^/]+)/$", ProjectsDetailView.as_view(), name="project_detail"),
+    re_path(r"^projects/(?P<slug>[^/]+)/$", ProjectsDetailView.as_view(), name="project_detail_by_slug"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -1137,7 +1137,7 @@ urlpatterns = [
     path("staking/my-stakes/", my_staking, name="my_staking"),
     path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
     path("staking/create/", create_staking_pool, name="create_staking_pool"),
-    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
+    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail_by_slug"),
     path("project/<slug:slug>/delete/", delete_project, name="delete_project"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),

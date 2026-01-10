@@ -480,7 +480,7 @@ class ProjectPageTest(TestCase):
 
     def test_project_page_content(self):
         """Test that project page loads and displays content correctly"""
-        url = reverse("project_detail", kwargs={"slug": self.project.slug})
+        url = reverse("project_detail_by_slug", kwargs={"slug": self.project.slug})
         response = self.client.get(url)
 
         # Check response

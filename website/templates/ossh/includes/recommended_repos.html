@@ -9,7 +9,7 @@
                         {% if repo.repo.project %}
                             <p class="text-sm text-gray-400 dark:text-gray-600 mt-1">
                                 Part of project:
-                                <a href="{% url 'project_detail' repo.repo.project.slug %}"
+                                <a href="{% url 'project_detail_by_slug' repo.repo.project.slug %}"
                                    class="text-indigo-400 hover:text-indigo-300 hover:underline">
                                     {{ repo.repo.project.name }}
                                 </a>

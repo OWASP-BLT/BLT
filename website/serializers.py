@@ -1,4 +1,3 @@
-from decimal import Decimal
 from django.db.models import Sum
 from rest_framework import serializers
 
@@ -128,7 +127,6 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-
     freshness = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
     freshness_breakdown = serializers.SerializerMethodField(read_only=True)
     freshness_reason = serializers.SerializerMethodField(read_only=True)
@@ -139,28 +137,17 @@ class ProjectSerializer(serializers.ModelSerializer):
         return {}
 
     def get_freshness_reason(self, obj):
-        score = obj.freshness
-        if score == Decimal("0.00"):
-            if getattr(obj, "archived", False):
-                return "Archived project"
-            if getattr(obj, "forked", False):
-                return "Forked project"
-            if obj.status in ["inactive", "lab"]:
-                return f"Inactive status: {obj.status}"
-            return "No recent activity"
-        if score >= Decimal("80.00"):
-            return "High recent activity"
-        if score >= Decimal("50.00"):
-            return "Moderate recent activity"
-        if score >= Decimal("10.00"):
-            return "Low recent activity"
-        return "Very low activity"
+        method = getattr(obj, "freshness_reason", None)
+        if callable(method):
+            val = method()
+            if val:
+                return val
+        return "No recent activity"
 
     class Meta:
         model = Project
         fields = "__all__"
         read_only_fields = ("slug", "contributors")
-
 
 
 class ContributorSerializer(serializers.ModelSerializer):

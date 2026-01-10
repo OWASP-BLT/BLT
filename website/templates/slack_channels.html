@@ -65,7 +65,7 @@
                             <td class="px-6 py-4 whitespace-nowrap"
                                 id="project-cell-{{ channel.channel_id }}">
                                 {% if channel.project %}
-                                    <a href="{% url 'project_detail' channel.project.slug %}"
+                                    <a href="{% url 'project_detail_by_slug' channel.project.slug %}"
                                        class="text-blue-600 dark:text-blue-400 hover:underline">
                                         {{ channel.project.name }}
                                     </a>

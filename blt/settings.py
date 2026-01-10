@@ -345,21 +345,22 @@ DATABASES = {
     }
 }
 
-# Test database optimizations for faster test execution
+
+# Helper to apply in-memory SQLite test DB logic
+def _apply_sqlite_in_memory_test_db():
+    engine = DATABASES["default"].get("ENGINE")
+    if engine == "django.db.backends.sqlite3" and TESTING:
+        DATABASES["default"]["TEST"] = {"NAME": ":memory:"}
+
+
 if TESTING:
-    DATABASES["default"]["TEST"] = {
-        "NAME": ":memory:",  # Use in-memory database for tests
-    }
+    _apply_sqlite_in_memory_test_db()
 
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
-    # Apply test optimizations to configured database as well
-    if TESTING:
-        DATABASES["default"]["TEST"] = {
-            "NAME": ":memory:",
-        }
+    _apply_sqlite_in_memory_test_db()
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"

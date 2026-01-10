@@ -258,7 +258,7 @@
                                                 </div>
                                             {% endif %}
                                             <div>
-                                                <a href="{% url 'project_detail' item.project.slug %}"
+                                                <a href="{% url 'project_detail_by_slug' item.project.slug %}"
                                                    class="text-sm font-medium text-red-600 dark:text-red-400 hover:underline">{{ item.project.name }}</a>
                                                 {% if item.project.url %}
                                                     <a href="{{ item.project.url }}"
@@ -347,7 +347,7 @@
                                         {{ item.project.created|date:"Y-m-d" }}
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                        <a href="{% url 'project_detail' item.project.slug %}"
+                                        <a href="{% url 'project_detail_by_slug' item.project.slug %}"
                                            class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">View</a>
                                     </td>
                                 </tr>
