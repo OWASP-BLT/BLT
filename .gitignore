@@ -25,3 +25,8 @@ google-credentials.json
 
 
 .env
+.venv/
+
+# Local virtualenv
+.venv/
+venv/
