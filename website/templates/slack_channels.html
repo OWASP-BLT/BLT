@@ -64,11 +64,13 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap"
                                 id="project-cell-{{ channel.channel_id }}">
-                                {% if channel.project %}
+                                {% if channel.project and channel.project.slug %}
                                     <a href="{% url 'project_detail_by_slug' channel.project.slug %}"
                                        class="text-blue-600 dark:text-blue-400 hover:underline">
                                         {{ channel.project.name }}
                                     </a>
+                                {% elif channel.project %}
+                                    <span class="text-gray-400 dark:text-gray-500">{{ channel.project.name }}</span>
                                 {% else %}
                                     <span class="text-gray-400 dark:text-gray-500">Not linked</span>
                                 {% endif %}

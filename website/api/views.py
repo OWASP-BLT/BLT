@@ -746,12 +746,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 pass
         return qs
 
-    @action(detail=True, methods=["get"])
+    from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticatedOrReadOnly])
     def freshness_breakdown(self, request, pk=None):
         project = self.get_object()
         return Response(project.get_freshness_breakdown())
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticatedOrReadOnly])
     def freshness_reason(self, request, pk=None):
         project = self.get_object()
         return Response({"reason": project.freshness_reason()})
@@ -901,7 +905,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # Optionally allow ordering by freshness via ?ordering=freshness or ?ordering=-freshness
         ordering = request.query_params.get("ordering")
+        allowed_orderings = ["freshness", "-freshness", "created", "-created", "modified", "-modified"]
         if ordering:
+            if ordering not in allowed_orderings:
+                return Response(
+                    {"error": f"Invalid 'ordering' parameter: must be one of {allowed_orderings}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             projects = projects.order_by(ordering)
 
         # SAFE stars validation
