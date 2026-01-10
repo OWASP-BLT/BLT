@@ -1638,12 +1638,17 @@ class Project(models.Model):
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
                     commits=Count("id", filter=Q(contribution_type__iexact="commit")),
-                    prs=Count("id", filter=Q(contribution_type__in=["pull_request", "pr"])),
+                agg = window_qs.aggregate(
+                    commits=Count("id", filter=Q(contribution_type__iexact="commit")),
+                    prs=Count("id", filter=Q(contribution_type__iexact="pull_request")),
                     issues=Count(
                         "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
                     ),
                 )
-                contributors = window_qs.exclude(github_username="").values("github_username").distinct().count()
+                # Use same logic as calculate_freshness:
+                contributors = window_qs.aggregate(
+                    contributors=Count("github_username", filter=Q(~Q(github_username="")), distinct=True)
+                )["contributors"]
                 breakdown[label] = {
                     "commits": agg["commits"],
                     "prs": agg["prs"],
