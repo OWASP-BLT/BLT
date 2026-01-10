@@ -81,13 +81,13 @@
         <form id="submit_pr"
               action="{% url 'submit_pr' %}"
               method="post"
-              class="max-w-sm mx-auto mt-8 p-6 bg-white rounded shadow-md">
+              class="max-w-sm mx-auto mt-8 p-6 bg-white dark:bg-gray-800 rounded shadow-md">
             {% csrf_token %}
             <label for="issue_link" class="block mb-2 font-bold">Issue Link</label>
             <input type="text"
                    name="issue_link"
                    id="issue_link"
-                   class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                   class="w-full px-3 py-2 mb-4 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500">
             <button id="fetch"
                     type="button"
                     onclick="fetchData()"
@@ -102,13 +102,13 @@
                    name="bch_address"
                    id="bch_address"
                    required
-                   class="hidden w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                   class="hidden w-full px-3 py-2 mb-4 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500">
             <label for="pr_link" id="pr_label" class="hidden block mb-2 font-bold">Link to your Pull Request</label>
             <input type="text"
                    name="pr_link"
                    id="pr_link"
                    required
-                   class="hidden w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                   class="hidden w-full px-3 py-2 mb-4 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:border-blue-500">
             <button type="submit"
                     id="submit"
                     class="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 transition duration-300">
@@ -117,7 +117,7 @@
         </form>
         <div id="Link_bid" class="text-center mt-8">
             <a href="{% url 'BiddingData' %}"
-               class="inline-block px-6 py-3 bg-red-500 text-black rounded hover:bg-red-600 transition duration-300">Place a Bid</a>
+               class="inline-block px-6 py-3 bg-red-500 text-black dark:text-white rounded hover:bg-red-600 transition duration-300">Place a Bid</a>
         </div>
     </div>
 {% endblock content %}

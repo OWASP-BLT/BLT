@@ -3,7 +3,7 @@
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
         <li class="inline-flex items-center">
             <a href="{% url 'home' %}"
-               class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-[#e74c3c]">
+               class="inline-flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#e74c3c]">
                 <svg class="w-4 h-4 mr-2"
                      fill="currentColor"
                      viewBox="0 0 20 20"
@@ -17,7 +17,7 @@
         {% for item in breadcrumbs %}
             <li>
                 <div class="flex items-center">
-                    <svg class="w-6 h-6 text-gray-400"
+                    <svg class="w-6 h-6 text-gray-400 dark:text-gray-600"
                          fill="currentColor"
                          viewBox="0 0 20 20"
                          xmlns="http://www.w3.org/2000/svg">
@@ -26,9 +26,9 @@
                     </svg>
                     {% if item.url %}
                         <a href="{{ item.url }}"
-                           class="ml-1 text-sm font-medium text-gray-700 hover:text-[#e74c3c] md:ml-2">{{ item.title }}</a>
+                           class="ml-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#e74c3c] md:ml-2">{{ item.title }}</a>
                     {% else %}
-                        <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ item.title }}</span>
+                        <span class="ml-1 text-sm font-medium text-gray-500 dark:text-gray-500 md:ml-2">{{ item.title }}</span>
                     {% endif %}
                 </div>
             </li>

@@ -1,0 +1,180 @@
+name: Check Approval Status
+
+# Uses pull_request_target so it runs with base repo permissions for forked PRs.
+# SECURITY: We do NOT check out or execute PR code. We only use the GitHub API.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_run:
+    types:
+      - requested
+      - completed
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  check_approval_status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Workflows Waiting for Approval
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let pr_number;
+            let head_sha;
+            
+            // Determine PR number and head SHA based on event type
+            if (context.eventName === 'pull_request_target') {
+              pr_number = context.payload.pull_request.number;
+              head_sha = context.payload.pull_request.head.sha;
+            } else if (context.eventName === 'workflow_run') {
+              // For workflow_run events, we need to find the associated PR
+              const workflowRun = context.payload.workflow_run;
+              head_sha = workflowRun.head_sha;
+              
+              // Get PRs associated with this commit
+              const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: head_sha,
+              });
+              
+              if (prs.length === 0) {
+                core.info('No PR found for this workflow run. Skipping.');
+                return;
+              }
+              
+              pr_number = prs[0].number;
+            } else {
+              core.info('Not a supported event type. Skipping.');
+              return;
+            }
+            
+            core.info(`Checking approval status for PR #${pr_number} (commit: ${head_sha})`);
+            
+            // Get all workflow runs for this commit
+            const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: head_sha,
+              per_page: 100,
+            });
+            
+            core.info(`Found ${workflowRuns.total_count} workflow runs for this commit`);
+            
+            // Count workflow runs waiting for approval
+            // Status can be: queued, in_progress, completed
+            // Conclusion can be: action_required, cancelled, failure, neutral, success, skipped, stale, timed_out
+            let waitingCount = 0;
+            let waitingWorkflows = [];
+            
+            for (const run of workflowRuns.workflow_runs) {
+              // Workflows waiting for approval have status "waiting" or conclusion "action_required"
+              if (run.status === 'waiting' || run.conclusion === 'action_required') {
+                waitingCount++;
+                waitingWorkflows.push(run.name);
+                core.info(`Workflow "${run.name}" (ID: ${run.id}) is waiting for approval`);
+              }
+            }
+            
+            core.info(`Total workflows waiting for approval: ${waitingCount}`);
+            
+            // Determine the label based on the number of workflows waiting
+            const newLabel = waitingCount > 0 
+              ? `checks: ${waitingCount} waiting-approval` 
+              : 'checks: all-approved';
+            
+            // Set color based on the number of workflows waiting
+            let labelColor;
+            let description;
+            
+            if (waitingCount === 0) {
+              labelColor = '0e8a16'; // Green - no workflows waiting
+              description = 'All workflow checks are approved';
+            } else if (waitingCount >= 1 && waitingCount <= 2) {
+              labelColor = 'fbca04'; // Yellow
+              description = `${waitingCount} workflow check(s) waiting for approval`;
+            } else {
+              labelColor = 'e74c3c'; // Red (project's preferred red color)
+              description = `${waitingCount} workflow checks waiting for approval`;
+            }
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner: context.repo.owner, 
+              repo: context.repo.repo, 
+              issue_number: pr_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing check approval labels
+            const checksRegex = /^checks:.*(?:waiting-approval|all-approved)/i;
+            for (const name of currentNames) {
+              if (checksRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner: context.repo.owner, 
+                    repo: context.repo.repo, 
+                    issue_number: pr_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+            
+            // Ensure the new label exists (create if missing)
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ 
+                  owner: context.repo.owner, 
+                  repo: context.repo.repo, 
+                  name: labelName 
+                });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            await ensureLabelExists(newLabel);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
+              await github.rest.issues.addLabels({ 
+                owner: context.repo.owner, 
+                repo: context.repo.repo, 
+                issue_number: pr_number, 
+                labels: [newLabel] 
+              });
+              core.info(`Applied label ${newLabel} to PR #${pr_number}`);
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pr_number}`);
+            }
+            
+            // Log details for transparency
+            if (waitingCount > 0) {
+              core.info(`Workflows waiting for approval: ${waitingWorkflows.join(', ')}`);
+            }

@@ -47,7 +47,7 @@
                 </a>
                 <!-- Dropdown for Settings Icon -->
                 <ul id="dropdown-mobile"
-                    class="z-50 fixed top-32 flex flex-col gap-2 shadow-xl rounded py-4 px-6 bg-white left-1 hidden">
+                    class="z-50 fixed top-32 flex flex-col gap-2 shadow-xl rounded py-4 px-6 bg-white dark:bg-gray-800 left-1 hidden">
                     <li>
                         <a href="{% url 'report' %}">
                             <i class="fa fa-bug fa-fw"></i>
@@ -82,7 +82,7 @@
                     {% endif %}
                 </ul>
             </div>
-            <div class="flex flex-col items-start  h-full">
+            <div class="flex flex-col items-start h-full">
                 <a href="{% url 'home' %}">
                     <img src="{% logo 'TRANSPARENT' %}"
                          class="!max-w-[130px] lg:max-w-[200px]"
@@ -96,11 +96,11 @@
         <!-- Search Bar -->
         <form class="h-max m-0" action="{% url 'search' %}" method="get">
             <div class="items-center w-full h-full nav-hidden lg:!block">
-                <i class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 text-base nav-hidden lg:!inline-block"></i>
+                <i class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 dark:text-gray-300 text-base nav-hidden lg:!inline-block"></i>
                 <input type="text"
                        name="query"
                        placeholder="{% trans " Search" %}"
-                       class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px]">
+                       class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px] dark:bg-gray-700 dark:text-white dark:outline-gray-600">
                 <a href="{% url 'report' %}"
                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
                     {% trans "Report a Bug" %}
@@ -118,19 +118,19 @@
             </a>
             <!-- User Avatar -->
             {% if request.user.is_authenticated %}
-                <li class="h-[80px] flex justify-center items-center ">
+                <li class="h-[80px] flex justify-center items-center">
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
                         {% if request.user.userprofile.avatar %}
                             <img src="{{ request.user.userprofile.avatar }}"
-                                 class="h-[30px] w-[30px] rounded-full "
+                                 class="h-[30px] w-[30px] rounded-full"
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
                         {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="h-[30px] w-[30px] rounded-full "
+                                 class="h-[30px] w-[30px] rounded-full"
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
@@ -143,7 +143,7 @@
                 </button>
                 <!-- Dropdown for User Avatar -->
                 <div id="dropdownMenu"
-                     class="z-50 hidden absolute bg-white top-32 right-5">
+                     class="z-50 hidden absolute bg-white dark:bg-gray-800 top-32 right-5">
                     <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
                         <li>
                             <a href="{% url 'account_profile' %}">

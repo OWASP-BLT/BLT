@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import smtplib
 import socket
@@ -16,7 +17,7 @@ from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
@@ -45,7 +46,7 @@ from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -55,6 +56,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
@@ -74,6 +76,7 @@ from website.models import (
     Wallet,
 )
 from website.utils import (
+    admin_required,
     get_client_ip,
     get_email_from_domain,
     get_page_votes,
@@ -85,6 +88,8 @@ from website.utils import (
 )
 
 from .constants import GSOC25_PROJECTS
+
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="/accounts/login")
@@ -181,7 +186,13 @@ def create_github_issue(request, id):
     if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
-            screenshot_text += f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
+            # Get the image URL
+            image_url = screenshot.image.url
+            # Check if URL is already absolute (e.g., from Google Cloud Storage)
+            if not image_url.startswith(("http://", "https://")):
+                # Relative URL, prepend the domain with https protocol
+                image_url = f"https://{settings.FQDN}{image_url}"
+            screenshot_text += f"![{screenshot.image.name}]({image_url})\n"
 
         github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
         from giturlparse import parse as parse_github_url
@@ -223,7 +234,12 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": f"Failed: error is {e}"})
+            return JsonResponse(
+                {
+                    "status": "Failed",
+                    "status_reason": "Failed to create GitHub issue. Please check your GitHub settings.",
+                }
+            )
     else:
         return JsonResponse(
             {
@@ -268,7 +284,7 @@ def UpdateIssue(request):
                     break
     except:
         tokenauth = False
-    if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
+    if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
@@ -410,18 +426,21 @@ def search_issues(request, template="search.html"):
     if query is None:
         return render(request, template)
     query = query.strip()
-    if query[:6] == "issue:":
+    # Safe prefix checking with length validation to prevent IndexError
+    if len(query) >= 6 and query[:6] == "issue:":
         stype = "issue"
-        query = query[6:]
-    elif query[:7] == "domain:":
+        query = query[6:].strip()
+    elif len(query) >= 7 and query[:7] == "domain:":
         stype = "domain"
-        query = query[7:]
-    elif query[:5] == "user:":
+        query = query[7:].strip()
+    elif len(query) >= 5 and query[:5] == "user:":
         stype = "user"
-        query = query[5:]
-    elif query[:6] == "label:":
+        query = query[5:].strip()
+    elif len(query) >= 6 and query[:6] == "label:":
         stype = "label"
-        query = query[6:]
+        query = query[6:].strip()
+    # Handle search by type - using elif chain to ensure only one search type executes
+    # Unprefixed searches (stype is None) default to issue search
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
@@ -435,30 +454,65 @@ def search_issues(request, template="search.html"):
             "type": stype,
             "issues": issues,
         }
-    if stype == "domain" or stype is None:
+    elif stype == "domain":
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
+        else:
+            issues = Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues,
         }
-    if stype == "user" or stype is None:
+    elif stype == "user":
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(Q(is_hidden=True))[
+                0:20
+            ]
+        else:
+            issues = Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": issues,
+        }
+    elif stype == "label":
+        label_values = []
+        q_lower = query.lower()
+
+        # Allow numeric label ID
+        if query.isdigit():
+            label_values.append(int(query))
+
+        # Match against label display names
+        for value, name in Issue._meta.get_field("label").choices:
+            if q_lower in str(name).lower():
+                label_values.append(value)
+
+        issues_base_qs = (
+            Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+        )
+        if request.user.is_anonymous:
+            issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+        else:
+            issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": issues_qs,
         }
 
-    if stype == "label" or stype is None:
+    # Fallback: if context is None (shouldn't happen with current logic, but defensive)
+    if context is None:
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True) & ~Q(user_id=request.user.id)
-            )[0:20],
+            "issues": Issue.objects.none(),
         }
 
     if request.user.is_authenticated:
@@ -789,6 +843,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
     template_name = "report.html"
 
+    # Duplicate detection threshold - can be adjusted without code changes
+    DUPLICATE_CHECK_THRESHOLD = 0.65
+
     def get_initial(self):
         try:
             json_data = json.loads(self.request.body)
@@ -847,7 +904,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         if not settings.IS_TEST:
             try:
                 if settings.DOMAIN_NAME in url:
-                    print("Web site exists")
+                    logger.debug("Web site exists")
 
                 elif request.POST["label"] == "7":
                     pass
@@ -859,7 +916,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         try:
                             response = requests.get(safe_url, timeout=5)
                             if response.status_code == 200:
-                                print("Web site exists")
+                                logger.debug("Web site exists")
                             else:
                                 raise Exception
                         except Exception:
@@ -868,9 +925,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except Exception as e:
                 # Add debugging to understand URL validation issues
-                import logging
 
-                logger = logging.getLogger(__name__)
                 logger.warning(f"URL accessibility check failed for {url}: {str(e)}")
 
                 # Check if domain exists in our database before rejecting
@@ -975,6 +1030,72 @@ class IssueCreate(IssueBaseCreate, CreateView):
             return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
 
+        # Check for duplicate bugs before creating the issue
+        url = form.cleaned_data.get("url", "")
+        title = form.cleaned_data.get("description", "")  # This is the bug title
+        markdown_description = form.cleaned_data.get("markdown_description", "")
+
+        # Combine title and detailed description for better duplicate detection
+        full_description = title
+        if markdown_description:
+            full_description = f"{title}. {markdown_description}"
+
+        # Only check for duplicates if we have both URL and title
+        if url and title:
+            # Add https:// if not present for duplicate checking
+            check_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
+
+            try:
+                # Get domain object if available for more accurate matching
+                parsed_url = urlparse(check_url)
+                clean_domain = parsed_url.netloc.replace("www.", "").lower()
+                domain_obj = Domain.objects.filter(Q(name__iexact=clean_domain) | Q(url__iexact=clean_domain)).first()
+
+                duplicate_result = check_for_duplicates(
+                    check_url,
+                    full_description,  # Use combined title + description
+                    domain=domain_obj,
+                    threshold=self.DUPLICATE_CHECK_THRESHOLD,
+                )
+
+                if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
+                    # Check if user wants to proceed anyway
+                    if not self.request.POST.get("confirm_not_duplicate"):
+                        # Store similar bugs for display using shared helper
+                        similar_bugs_data = []
+                        for bug in duplicate_result["similar_bugs"][:5]:
+                            try:
+                                similar_bugs_data.append(format_similar_bug(bug, truncate_description=200))
+                            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                                logger.warning("Error formatting similar bug: %s", e)
+                                continue
+
+                        if similar_bugs_data:
+                            messages.warning(
+                                self.request,
+                                f"Similar bugs found ({duplicate_result['confidence']} confidence). Please review them before submitting.",
+                            )
+                            captcha_form = CaptchaForm(self.request.POST)
+                            return render(
+                                self.request,
+                                "report.html",
+                                {
+                                    "form": self.get_form(),
+                                    "captcha_form": captcha_form,
+                                    "similar_bugs": similar_bugs_data,
+                                    "duplicate_confidence": duplicate_result["confidence"],
+                                    "show_duplicate_warning": True,
+                                },
+                            )
+            except (KeyError, AttributeError, ValueError, TypeError) as e:
+                # If duplicate check fails, log it but don't block submission
+                logger.warning(
+                    "Duplicate check failed for URL %s: %s. Proceeding with submission.",
+                    url,
+                    e,
+                    exc_info=True,
+                )
+
         @atomic
         def create_issue(self, form):
             # Validate screenshots first before any database operations
@@ -1034,9 +1155,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             clean_domain_no_www = clean_domain.replace("www.", "")
 
             # Debug logging to help identify the issue
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
 
             # Try multiple domain lookup strategies to match domain creation logic
@@ -1090,7 +1208,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     dest_email = getattr(domain.organization, "email", None)
 
                 if dest_email:
-                    import logging
                     import secrets
                     import string
                     import tempfile
@@ -1099,8 +1216,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     import pyzipper
                     from django.core.exceptions import ValidationError
                     from django.core.mail import EmailMessage
-
-                    logger = logging.getLogger(__name__)
 
                     try:
                         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1253,10 +1368,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
+            # Safely fetch CVE score - get_cve_score() may raise various exceptions
             try:
                 obj.cve_score = obj.get_cve_score()
-            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
+            except Exception as e:
                 # If CVE score fetch fails, continue without it
+                logger.error(f"Error fetching CVE score for {obj.cve_id}: {str(e)}", exc_info=True)
                 obj.cve_score = None
                 messages.warning(
                     self.request, "Could not fetch CVE score at this time. Issue will be created without it."
@@ -1588,7 +1705,7 @@ class IssueView(DetailView):
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
+        ipdetails.user = self.request.user.username if self.request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
@@ -1597,22 +1714,22 @@ class IssueView(DetailView):
 
         try:
             if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
+                # Check if IP record already exists for this authenticated user and issue
+                if not IP.objects.filter(user=self.request.user.username, issuenumber=self.object.id).exists():
+                    # First time this user is viewing this issue
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                try:
-                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
+                # Check if IP record already exists for this address and issue
+                if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
+                    # First time this IP is viewing this issue
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-                except Exception as e:
-                    print(e)
-                    pass  # pass this temporarly to avoid error
         except Exception as e:
-            pass  # pass this temporarly to avoid error
+            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
+            pass  # Continue loading the page even if view tracking fails
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -1626,9 +1743,18 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
-        context["total_score"] = list(
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
-        )[0]
+
+        # Calculate user's total score
+        # Both total_score and users_score are set for backward compatibility
+        if self.object.user:
+            total_score = (
+                Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
+            )
+            context["total_score"] = total_score
+            context["users_score"] = total_score
+        else:
+            context["total_score"] = 0
+            context["users_score"] = 0
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1645,6 +1771,26 @@ class IssueView(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
+
+        # Add email-related data from domain
+        if self.object.domain:
+            context["email_clicks"] = self.object.domain.clicks
+            context["email_events"] = self.object.domain.email_event
+
+            # Generate GitHub issues URL from the domain's github field
+            if self.object.domain.github:
+                github_url = self.object.domain.github.rstrip("/")
+                context["github_issues_url"] = f"{github_url}/issues"
+        # Add CVE severity and suggested tip amount
+        if self.object.cve_id and self.object.cve_score:
+            context["cve_severity"] = self.object.get_cve_severity()
+            context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
+
+        # Add user score for the issue reporter
+        if self.object.user:
+            context["users_score"] = (
+                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
+            )
 
         return context
 
@@ -1741,10 +1887,29 @@ def issue_count(request):
 
 @login_required(login_url="/accounts/login")
 def delete_content_comment(request):
-    content_type = request.POST.get("content_type")
-    content_pk = int(request.POST.get("content_pk"))
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    try:
+        content_pk = int(request.POST.get("content_pk"))
+    except (ValueError, TypeError):
+        raise Http404("Invalid content ID")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
 
     if request.method == "POST":
         comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
@@ -1755,14 +1920,31 @@ def delete_content_comment(request):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
     return render(request, "comments2.html", context)
 
 
 def update_content_comment(request, content_pk, comment_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
+
     comment = Comment.objects.filter(pk=comment_pk).first()
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -1774,14 +1956,30 @@ def update_content_comment(request, content_pk, comment_pk):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
     return render(request, "comments2.html", context)
 
 
 def comment_on_content(request, content_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    # Get content_type from POST for POST requests or GET for GET requests
+    content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
+
+    # Validate that content_type is provided
+    if not content_type:
+        raise Http404("Content type is required")
+
+    # Validate and get content_type_obj
+    try:
+        content_type_obj = ContentType.objects.get(model=content_type)
+    except ContentType.DoesNotExist:
+        raise Http404("Invalid content type")
+
+    # Get the actual content object
+    try:
+        content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    except Exception:
+        raise Http404("Content does not exist")
 
     VALID_CONTENT_TYPES = ["issue", "post"]
 
@@ -1832,6 +2030,7 @@ def comment_on_content(request, content_pk):
             "-created_date"
         ),
         "object": content,
+        "content_type": content_type,
     }
 
     return render(request, "comments2.html", context)
@@ -1960,7 +2159,7 @@ class GithubIssueView(TemplateView):
         try:
             access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
         except SocialToken.DoesNotExist:
-            print("Access token not found")
+            logger.warning("Access token not found")
             return redirect("github_login")
 
         token = access_token.token
@@ -2121,12 +2320,21 @@ class GitHubIssuesView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Fetch all counts in a single query using aggregate to avoid N+1 query problem
+        counts = GitHubIssue.objects.aggregate(
+            total_count=Count("id"),
+            open_count=Count("id", filter=Q(state="open")),
+            closed_count=Count("id", filter=Q(state="closed")),
+            pr_count=Count("id", filter=Q(type="pull_request")),
+            issue_count=Count("id", filter=Q(type="issue")),
+        )
+
         # Add counts for filtering
-        context["total_count"] = GitHubIssue.objects.count()
-        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
-        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
-        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
-        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
+        context["total_count"] = counts["total_count"]
+        context["open_count"] = counts["open_count"]
+        context["closed_count"] = counts["closed_count"]
+        context["pr_count"] = counts["pr_count"]
+        context["issue_count"] = counts["issue_count"]
 
         # Add current filter states
         context["current_type"] = self.request.GET.get("type", "all")
@@ -2358,101 +2566,119 @@ class GsocView(View):
         return render(request, "gsoc.html", {"projects": sorted_project_data})
 
 
+@login_required
+@user_passes_test(admin_required)
+@require_http_methods(["POST"])
 def refresh_gsoc_project(request):
     """
     View to handle refreshing PRs for a specific GSoC project.
     Only staff users can access this view.
     """
-    if request.method == "POST":
-        project_name = request.POST.get("project_name")
-        reset_counter = request.POST.get("reset_counter") == "true"
+    project_name = request.POST.get("project_name")
+    reset_counter = request.POST.get("reset_counter") == "true"
 
-        if not project_name or project_name not in GSOC25_PROJECTS:
-            messages.error(request, "Invalid project name")
+    if not project_name:
+        messages.error(request, "Project name is required.")
+        return redirect("gsoc")
+
+    if project_name not in GSOC25_PROJECTS:
+        messages.error(request, "Invalid project name")
+        return redirect("gsoc")
+
+    repos = GSOC25_PROJECTS.get(project_name, [])
+
+    if not repos:
+        messages.error(request, f"No repositories found for project {project_name}")
+        return redirect("gsoc")
+
+    for repo in repos:
+        if not isinstance(repo, str) or repo.count("/") != 1:
+            messages.error(request, f"Invalid repository format: {repo}")
             return redirect("gsoc")
 
-        # Get the repositories for this project
-        repos = GSOC25_PROJECTS.get(project_name, [])
+    today = timezone.now().date()
+    refresh_count = DailyStats.objects.filter(name=f"refresh_gsoc_{request.user.id}", created__date=today).count()
 
-        if not repos:
-            messages.error(request, f"No repositories found for project {project_name}")
-            return redirect("gsoc")
+    if refresh_count >= 5:
+        messages.error(request, "You have reached your daily limit of 5 refreshes.")
+        return redirect("gsoc")
 
-        # Fixed start date: 2024-11-11
-        since_date = timezone.make_aware(datetime(2024, 11, 11))
+    since_date = timezone.make_aware(datetime(2024, 11, 11))
 
-        try:
-            # Call the fetch_gsoc_prs command with the specific repositories
-            # We pass the repositories as a comma-separated string
-            repo_list = ",".join(repos)
-            command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
+    try:
+        repo_list = ",".join(repos)
+        command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
 
-            # Add reset flag if requested
-            if reset_counter:
-                command_args.append("--reset")
-                messages.info(request, f"Resetting page counter for {project_name} repositories")
+        if reset_counter:
+            command_args.append("--reset")
+            messages.info(request, f"Resetting page counter for {project_name} repositories")
 
-            # Run the command
-            call_command(*command_args)
+        call_command(*command_args)
 
-            # Debug: Count how many GitHubIssues were created with contributors
-            repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
-            issue_count = GitHubIssue.objects.filter(
-                repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
-            ).count()
+        repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
 
-            contributor_count = GitHubIssue.objects.filter(
-                repo__in=repo_objs,
-                type="pull_request",
-                is_merged=True,
-                merged_at__gte=since_date,
-                contributor__isnull=False,
-            ).count()
+        issue_count = GitHubIssue.objects.filter(
+            repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
+        ).count()
 
-            messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
+        contributor_count = GitHubIssue.objects.filter(
+            repo__in=repo_objs,
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=since_date,
+            contributor__isnull=False,
+        ).count()
 
-            # Update user profiles for PRs that don't have them
-            for repo_full_name in repos:
-                try:
-                    owner, repo_name = repo_full_name.split("/")
-                    repo = Repo.objects.filter(name=repo_name).first()
+        messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
 
-                    if repo:
-                        # Get PRs without user profiles
-                        prs_without_profiles = GitHubIssue.objects.filter(
-                            repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date, user_profile=None
-                        )
+        for repo_full_name in repos:
+            try:
+                owner, repo_name = repo_full_name.split("/")
+                repo = Repo.objects.filter(name=repo_name).first()
 
-                        for pr in prs_without_profiles:
+                if repo:
+                    prs_without_profiles = GitHubIssue.objects.filter(
+                        repo=repo,
+                        type="pull_request",
+                        is_merged=True,
+                        merged_at__gte=since_date,
+                        user_profile=None,
+                    )
+
+                    batch_size = 50
+                    for i in range(0, prs_without_profiles.count(), batch_size):
+                        batch = prs_without_profiles[i : i + batch_size]
+
+                        for pr in batch:
                             try:
-                                # Extract username from PR URL
                                 pr_url_parts = pr.url.split("/")
                                 if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                                    # Get or create a user profile
                                     github_url = f"https://github.com/{pr_url_parts[3]}"
 
-                                    # Skip bot accounts
                                     if github_url.endswith("[bot]") or "bot" in github_url.lower():
                                         continue
 
-                                    # Find existing user profile with this GitHub URL
                                     user_profile = UserProfile.objects.filter(github_url=github_url).first()
 
                                     if user_profile:
-                                        # Link the PR to the user profile
                                         pr.user_profile = user_profile
                                         pr.save()
+
                             except (IndexError, AttributeError):
                                 continue
-                except Exception as e:
-                    messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
-            messages.success(
-                request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
-            )
-        except Exception as e:
-            messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
+            except Exception as e:
+                messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
+        messages.success(
+            request,
+            f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed.",
+        )
+
+    except Exception as e:
+        messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
         return redirect("gsoc")
+
+    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
 
     return redirect("gsoc")

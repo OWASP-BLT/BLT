@@ -18,11 +18,10 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count
+from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -127,6 +126,52 @@ class SlackIntegration(models.Model):
         return f"Slack Integration for {self.integration.organization.name}"
 
 
+class SlackChannel(models.Model):
+    """
+    Stores Slack channel data fetched from the Slack API.
+    This table captures all channels from the OWASP Slack workspace.
+    """
+
+    channel_id = models.CharField(max_length=50, unique=True, primary_key=True)
+    name = models.CharField(max_length=255, db_index=True)
+    topic = models.TextField(blank=True, default="")
+    purpose = models.TextField(blank=True, default="")
+    num_members = models.IntegerField(default=0)
+    is_private = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
+    is_general = models.BooleanField(default=False)
+    creator = models.CharField(max_length=50, blank=True, default="")
+    created_at = models.DateTimeField(null=True, blank=True)
+    slack_url = models.URLField(max_length=255, blank=True, default="")
+    last_synced = models.DateTimeField(auto_now=True)
+    organization = models.ForeignKey(
+        "Organization",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Organization this Slack channel belongs to",
+    )
+    project = models.ForeignKey(
+        "Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="slack_channels",
+        help_text="Project this Slack channel is linked to",
+    )
+
+    class Meta:
+        ordering = ["-num_members", "name"]
+        indexes = [
+            models.Index(fields=["name"], name="slackchannel_name_idx"),
+            models.Index(fields=["num_members"], name="slackchannel_members_idx"),
+        ]
+
+    def __str__(self):
+        return f"#{self.name} ({self.num_members} members)"
+
+
 class OrganisationType(Enum):
     ORGANIZATION = "organization"
     INDIVIDUAL = "individual"
@@ -139,8 +184,8 @@ class Organization(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
-    url = models.URLField(unique=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True, max_length=255)
+    url = models.URLField(unique=True, max_length=255)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
     matrix_url = models.URLField(null=True, blank=True)
@@ -199,6 +244,15 @@ class Organization(models.Model):
         max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
     )
 
+    # GitHub and GSOC fields
+    github_org = models.CharField(max_length=255, blank=True, null=True, help_text="GitHub organization name")
+    gsoc_years = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Comma-separated list of years participated in Google Summer of Code (e.g., '2024,2023,2022')",
+    )
+
     def is_admin(self, user):
         """Check if the user is an admin of the organization."""
         return self.admin == user
@@ -216,6 +270,9 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("organization_detail", kwargs={"slug": self.slug})
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -237,6 +294,93 @@ class JoinRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
+
+class Job(models.Model):
+    """Job posting model for organizations"""
+
+    JOB_TYPE_CHOICES = [
+        ("full-time", "Full Time"),
+        ("part-time", "Part Time"),
+        ("contract", "Contract"),
+        ("internship", "Internship"),
+        ("freelance", "Freelance"),
+    ]
+
+    JOB_STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("active", "Active"),
+        ("paused", "Paused"),
+        ("closed", "Closed"),
+    ]
+
+    # Basic Information
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="jobs", help_text="Organization posting the job"
+    )
+    title = models.CharField(max_length=255, help_text="Job title")
+    description = models.TextField(help_text="Detailed job description with responsibilities")
+    requirements = models.TextField(blank=True, null=True, help_text="Job requirements or qualifications")
+    location = models.CharField(max_length=255, blank=True, null=True, help_text="Job location (city, remote, hybrid)")
+    job_type = models.CharField(
+        max_length=20, choices=JOB_TYPE_CHOICES, default="full-time", help_text="Type of employment"
+    )
+    salary_range = models.CharField(
+        max_length=100, blank=True, null=True, help_text="Salary range (e.g., $50k-$70k, Competitive)"
+    )
+
+    # Visibility and Status
+    is_public = models.BooleanField(default=True, help_text="Whether this job is publicly visible")
+    status = models.CharField(
+        max_length=20, choices=JOB_STATUS_CHOICES, default="draft", help_text="Current status of the job posting"
+    )
+    expires_at = models.DateTimeField(blank=True, null=True, help_text="Date and time when this job posting expires")
+
+    # Application Methods
+    application_email = models.EmailField(blank=True, null=True, help_text="Email to receive applications")
+    application_url = models.URLField(blank=True, null=True, help_text="URL to external application page")
+    application_instructions = models.TextField(blank=True, null=True, help_text="Custom instructions for how to apply")
+
+    # Metadata
+    posted_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who created this job posting"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    views_count = models.IntegerField(default=0, help_text="Number of times this job has been viewed")
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["organization", "is_public", "status"], name="job_org_pub_status_idx"),
+            models.Index(fields=["is_public", "status"], name="job_public_status_idx"),
+            models.Index(fields=["-created_at"], name="job_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.title} at {self.organization.name}"
+
+    def get_absolute_url(self):
+        return reverse("job_detail", kwargs={"pk": self.pk})
+
+    def has_application_method(self):
+        """Check if at least one application method is provided"""
+        return bool(self.application_email or self.application_url or self.application_instructions)
+
+    def increment_views(self):
+        """Increment the view count for this job atomically"""
+        Job.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
+        self.refresh_from_db(fields=["views_count"])
+
+    def is_expired(self):
+        """Check if the job posting has expired"""
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+
+    def can_apply(self):
+        """Check if users can currently apply to this job"""
+        return self.status == "active" and not self.is_expired()
 
 
 class Domain(models.Model):
@@ -299,16 +443,13 @@ class Domain(models.Model):
     def get_logo(self):
         if self.logo:
             return self.logo.url
-        image_request = requests.get("https://logo.clearbit.com/" + self.name)
-        try:
-            if image_request.status_code == 200:
-                image_content = ContentFile(image_request.content)
-                self.logo.save(self.name + ".jpg", image_content)
-                return self.logo.url
-
-        except:
-            favicon_url = self.url + "/favicon.ico"
-            return favicon_url
+        # Use Google's favicon service as a free alternative to Clearbit
+        # Extract domain from URL for better compatibility
+        parsed_url = urlparse(self.url if "://" in self.url else f"http://{self.url}")
+        domain = parsed_url.netloc or self.name
+        # Google favicon service with 128px size for better quality
+        favicon_url = f"https://www.google.com/s2/favicons?domain={domain}&sz=128"
+        return favicon_url
 
     @property
     def hostname_domain(self):
@@ -334,7 +475,7 @@ class Domain(models.Model):
 
         validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
         try:
-            twitter_url = "https://twitter.com/%s" % (name)
+            twitter_url = "https://x.com/%s" % (name)
             validate(twitter_url)
             self.twitter = name
             self.save()
@@ -427,6 +568,9 @@ class Hunt(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def get_absolute_url(self):
+        return reverse("organization_detail", kwargs={"slug": self.domain.organization.slug})
 
 
 class HuntPrize(models.Model):
@@ -539,8 +683,54 @@ class Issue(models.Model):
                     cvss_metric_v = next(iter(metrics))
                     return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            print(e)
+            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
             return None
+
+    def get_cve_severity(self):
+        """
+        Get the severity level based on CVE score.
+        CVSS v3.0 Ratings:
+        - None: 0.0
+        - Low: 0.1-3.9
+        - Medium: 4.0-6.9
+        - High: 7.0-8.9
+        - Critical: 9.0-10.0
+        """
+        if self.cve_score is None:
+            return None
+
+        score = float(self.cve_score)
+        if score == 0.0:
+            return "None"
+        elif 0.1 <= score <= 3.9:
+            return "Low"
+        elif 4.0 <= score <= 6.9:
+            return "Medium"
+        elif 7.0 <= score <= 8.9:
+            return "High"
+        elif 9.0 <= score <= 10.0:
+            return "Critical"
+        return None
+
+    def get_suggested_tip_amount(self):
+        """
+        Get suggested tip amount based on CVE severity.
+        Returns amount in USD.
+        """
+        severity = self.get_cve_severity()
+        if severity is None:
+            return None
+
+        # Suggested tip amounts based on severity
+        tip_amounts = {
+            "None": 0,
+            "Low": 5,
+            "Medium": 10,
+            "High": 20,
+            "Critical": 50,
+        }
+
+        return tip_amounts.get(severity, 0)
 
     class Meta:
         ordering = ["-created"]
@@ -680,6 +870,22 @@ class InviteFriend(models.Model):
         return f"Invite from {self.sender}"
 
 
+class InviteOrganization(models.Model):
+    sender = models.ForeignKey(User, related_name="sent_org_invites", on_delete=models.SET_NULL, null=True)
+    email = models.EmailField()
+    organization_name = models.CharField(max_length=255, blank=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False, unique=True)
+    organization = models.ForeignKey(
+        "Organization", null=True, blank=True, related_name="invites", on_delete=models.SET_NULL
+    )
+    points_awarded = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        sender_name = self.sender.username if self.sender else "Unknown"
+        return f"Organization invite from {sender_name} to {self.email}"
+
+
 def user_images_path(instance, filename):
     from django.template.defaultfilters import slugify
 
@@ -707,6 +913,7 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+    is_verifier = models.BooleanField(default=False, help_text="Whether the user has verifier permissions")
 
     #  fields for visit tracking
     daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
@@ -754,6 +961,10 @@ class UserProfile(models.Model):
     def check_team_membership(self):
         return self.team is not None
 
+    def check_verifier_permission(self):
+        """Check if user has verifier permission"""
+        return self.is_verifier
+
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
@@ -773,21 +984,42 @@ class UserProfile(models.Model):
 
     def update_visit_counter(self):
         """
-        Update daily visit counter if last visit was on a different day
+        Update daily visit counter if last visit was on a different day.
+
+        Note: This method uses atomic database updates and does not refresh
+        the instance. Call refresh_from_db() after this method if you need
+        the updated values.
+
+        Returns:
+            None (previously returned daily_visit_count, but that value would
+            be stale after the atomic update)
         """
         today = timezone.now().date()
 
+        # Skip if transaction is marked for rollback to avoid TransactionManagementError
+        # This commonly occurs during Django test teardown when a transaction has
+        # encountered an error and is being rolled back
+        try:
+            if transaction.get_rollback():
+                return None
+        except transaction.TransactionManagementError:
+            # Called outside transaction context, proceed normally
+            pass
+
+        # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
         if not self.last_visit_day or today > self.last_visit_day:
-            self.daily_visit_count += 1
-            self.last_visit_day = today
-            self.save()
+            # Update both daily count, last visit day, and general visit count in one atomic operation
+            UserProfile.objects.filter(pk=self.pk).update(
+                daily_visit_count=F("daily_visit_count") + 1,
+                last_visit_day=today,
+                visit_count=F("visit_count") + 1,
+            )
+        else:
+            # Only increment the general visit_count
+            UserProfile.objects.filter(pk=self.pk).update(visit_count=F("visit_count") + 1)
 
-        # Always increment the general visit_count regardless of day
-        self.visit_count += 1
-        self.save(update_fields=["visit_count"])
-
-        return self.daily_visit_count
+        return None
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
@@ -1014,6 +1246,39 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
+class SearchHistory(models.Model):
+    """Track user search queries for displaying recent searches."""
+
+    SEARCH_TYPE_CHOICES = [
+        ("all", "All"),
+        ("issues", "Issues"),
+        ("domains", "Domains"),
+        ("users", "Users"),
+        ("labels", "Labels"),
+        ("organizations", "Organizations"),
+        ("projects", "Projects"),
+        ("repos", "Repositories"),
+        ("tags", "Tags"),
+        ("languages", "Languages"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="search_history")
+    query = models.CharField(max_length=255)
+    search_type = models.CharField(max_length=50, choices=SEARCH_TYPE_CHOICES, default="all")
+    result_count = models.PositiveIntegerField(null=True, blank=True, help_text="Number of results returned")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "-timestamp"], name="search_hist_user_time_idx"),
+        ]
+        verbose_name_plural = "Search Histories"
+
+    def __str__(self):
+        return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
+
+
 class ForumCategory(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -1044,6 +1309,11 @@ class ForumPost(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
     is_pinned = models.BooleanField(default=False)
+    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
+    )
 
     def __str__(self):
         return f"{self.title} by {self.user}"
@@ -1113,11 +1383,17 @@ class Project(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
+    url = models.URLField(
+        unique=True, null=True, blank=True, max_length=255
+    )  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
+    slack = models.URLField(null=True, blank=True)
+    slack_channel = models.CharField(max_length=255, blank=True, null=True)
+    slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    slack_user_count = models.IntegerField(default=0)
     facebook = models.URLField(null=True, blank=True)
-    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
@@ -1319,10 +1595,11 @@ class Activity(models.Model):
         ("update", "Updated"),
         ("delete", "Deleted"),
         ("signup", "Signed Up"),
+        ("connected", "Connected"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPES)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
@@ -1375,7 +1652,7 @@ class Activity(models.Model):
             self.save()
             return True
         except Exception as e:
-            print(e)
+            logger.error(f"Error posting activity to BlueSky: {e}")
 
 
 class Badge(models.Model):
@@ -1410,6 +1687,177 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.title}"
+
+
+class Adventure(models.Model):
+    """
+    Represents a gamified security adventure with multiple tasks.
+    Adventures encourage users to explore and learn OWASP security concepts.
+    """
+
+    DIFFICULTY_CHOICES = [
+        ("beginner", "Beginner"),
+        ("intermediate", "Intermediate"),
+        ("advanced", "Advanced"),
+    ]
+
+    CATEGORY_CHOICES = [
+        ("owasp_security", "OWASP Security"),
+        ("open_source", "Open Source Contribution"),
+    ]
+
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True, max_length=250)
+    description = models.TextField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="owasp_security")
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default="beginner")
+    badge = models.ForeignKey(Badge, on_delete=models.SET_NULL, null=True, blank=True, related_name="adventures")
+    badge_emoji = models.CharField(max_length=10, default="🏆", help_text="Emoji icon for the badge")
+    badge_title = models.CharField(max_length=100, help_text="Badge title to be awarded")
+    estimated_time = models.CharField(max_length=50, blank=True, help_text="e.g., '2-3 hours'")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category", "difficulty", "title"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("adventure_detail", kwargs={"slug": self.slug})
+
+    @property
+    def total_tasks(self):
+        return self.tasks.count()
+
+    @property
+    def completion_count(self):
+        return UserAdventureProgress.objects.filter(adventure=self, completed=True).count()
+
+
+class AdventureTask(models.Model):
+    """
+    Represents an individual task/action within an adventure.
+    """
+
+    adventure = models.ForeignKey(Adventure, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=300)
+    description = models.TextField()
+    order = models.PositiveIntegerField(default=0, help_text="Order in which the task appears")
+    is_required = models.BooleanField(default=True, help_text="Whether this task is required to complete the adventure")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["adventure", "order"]
+        unique_together = ["adventure", "order"]
+
+    def __str__(self):
+        return f"{self.adventure.title} - Task {self.order}: {self.title}"
+
+
+class UserAdventureProgress(models.Model):
+    """
+    Tracks a user's progress on an adventure.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="adventure_progress")
+    adventure = models.ForeignKey(Adventure, on_delete=models.CASCADE, related_name="user_progress")
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ["user", "adventure"]
+        verbose_name_plural = "User adventure progress"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.adventure.title} ({'Completed' if self.completed else 'In Progress'})"
+
+    @property
+    def progress_percentage(self):
+        total_tasks = self.adventure.tasks.filter(is_required=True).count()
+        if total_tasks == 0:
+            return 0
+        completed_tasks = self.task_submissions.filter(task__is_required=True, approved=True).count()
+        return int((completed_tasks / total_tasks) * 100)
+
+    def check_completion(self):
+        """Check if all required tasks are completed and mark adventure as complete."""
+        required_tasks = self.adventure.tasks.filter(is_required=True)
+        completed_required_tasks = self.task_submissions.filter(
+            task__is_required=True, task__in=required_tasks, approved=True
+        ).count()
+
+        if required_tasks.count() > 0 and completed_required_tasks == required_tasks.count():
+            if not self.completed:
+                self.completed = True
+                self.completed_at = timezone.now()
+                self.save()
+
+                # Award the badge if it exists
+                if self.adventure.badge:
+                    UserBadge.objects.get_or_create(
+                        user=self.user,
+                        badge=self.adventure.badge,
+                        defaults={"reason": f"Completed {self.adventure.title}"},
+                    )
+                return True
+        return False
+
+
+class UserTaskSubmission(models.Model):
+    """
+    Stores a user's submission/evidence for completing a task.
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    progress = models.ForeignKey(UserAdventureProgress, on_delete=models.CASCADE, related_name="task_submissions")
+    task = models.ForeignKey(AdventureTask, on_delete=models.CASCADE, related_name="submissions")
+    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, blog post, or other evidence")
+    notes = models.TextField(blank=True, help_text="Additional notes or explanation")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_task_submissions"
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    approved = models.BooleanField(default=False)
+    reviewer_notes = models.TextField(blank=True, help_text="Feedback from reviewer")
+
+    class Meta:
+        unique_together = ["progress", "task"]
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"{self.progress.user.username} - {self.task.title} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        # Auto-set approved based on status
+        if self.status == "approved":
+            self.approved = True
+            if not self.reviewed_at:
+                self.reviewed_at = timezone.now()
+        elif self.status == "rejected":
+            self.approved = False
+            if not self.reviewed_at:
+                self.reviewed_at = timezone.now()
+        super().save(*args, **kwargs)
+
+        # Check if adventure is completed after saving
+        if self.approved:
+            self.progress.check_completion()
 
 
 class Post(models.Model):
@@ -1555,7 +2003,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):
@@ -1570,6 +2018,7 @@ class SlackBotActivity(models.Model):
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
     user_id = models.CharField(max_length=20, null=True, blank=True)
+    username = models.CharField(max_length=255, null=True, blank=True)
     details = models.JSONField(default=dict)  # Stores flexible activity-specific data
     success = models.BooleanField(default=True)
     error_message = models.TextField(null=True, blank=True)
@@ -1709,6 +2158,18 @@ class GitHubIssue(models.Model):
     class Meta:
         # Make the combination of issue_id and repo unique
         unique_together = ("issue_id", "repo")
+        indexes = [
+            # Composite index for GSOC PR report queries
+            models.Index(
+                fields=["type", "is_merged", "merged_at"],
+                name="githubissue_pr_merged_idx",
+            ),
+            # Additional index for date range queries
+            models.Index(
+                fields=["merged_at"],
+                name="githubissue_merged_date_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
@@ -1728,19 +2189,26 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return []
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for comments (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
             response = requests.get(api_url, headers=headers)
             response.raise_for_status()
             comments = response.json()
@@ -1761,10 +2229,20 @@ class GitHubIssue(models.Model):
                 )
 
             return formatted_comments
-        except (requests.exceptions.RequestException, KeyError) as e:
-            # Log the error but don't raise it to avoid breaking the site
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+        except requests.exceptions.HTTPError as e:
+            # Handle HTTP errors with specific status codes
+            if e.response.status_code == 403:
+                logger.warning(
+                    f"GitHub API 403 Forbidden for issue ({self.url}). "
+                    f"This may indicate an invalid/expired GitHub token, rate limiting, or insufficient permissions. "
+                    f"Check GITHUB_TOKEN configuration."
+                )
+            else:
+                logger.error(f"GitHub API HTTP {e.response.status_code} error for issue ({self.url}): {str(e)}")
+            return []
+        except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+            # Log other request errors or data parsing errors
+            logger.error(f"Error fetching comments for issue ({self.url}): {str(e)}")
             return []
 
     def add_comment(self, comment_text):
@@ -1777,27 +2255,33 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        # URL format: https://github.com/owner/repo/issues/number
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding comments
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"body": comment_text}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding comments (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"body": comment_text}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
             return False
 
@@ -1813,26 +2297,33 @@ class GitHubIssue(models.Model):
         import requests
         from django.conf import settings
 
-        # Extract owner and repo from the URL
-        parts = self.url.split("/")
-        owner = parts[3]
-        repo = parts[4]
-        issue_number = parts[6]
-
-        # GitHub API endpoint for adding labels
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
-
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-
-        data = {"labels": labels}
+        logger = logging.getLogger(__name__)
 
         try:
+            # Extract owner and repo from the URL
+            # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
+            # Split gives: ['https:', '', 'github.com', 'owner', 'repo', 'issues'/'pull', 'number']
+            # Minimum 7 parts needed to access parts[6] (issue/PR number)
+            parts = self.url.split("/")
+            if len(parts) < 7 or parts[5] not in ("issues", "pull"):
+                logger.error(f"Malformed or non-issue GitHub URL: {self.url}")
+                return False
+            owner = parts[3]
+            repo = parts[4]
+            issue_number = parts[6]
+
+            # GitHub API endpoint for adding labels (works for both issues and PRs)
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            data = {"labels": labels}
+
             response = requests.post(api_url, headers=headers, json=data)
             response.raise_for_status()
             return True
-        except requests.exceptions.RequestException as e:
+        except (requests.exceptions.RequestException, IndexError) as e:
             # Log the error but don't raise it
-            logger = logging.getLogger(__name__)
             logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
             return False
 
@@ -1844,6 +2335,38 @@ class BaconEarning(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.tokens_earned} Tokens"
+
+
+class SocialAccountReward(models.Model):
+    """
+    Permanent record of social account connection rewards.
+    Ensures each user can only be rewarded once per provider, ever.
+    Uses database unique constraint to prevent duplicate rewards even if cache is cleared.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, help_text="User who received the reward")
+    provider = models.CharField(
+        max_length=30,
+        help_text="Social provider name (e.g., github, google, facebook)",
+    )
+    rewarded_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the reward was granted")
+
+    class Meta:
+        verbose_name = "Social Account Reward"
+        verbose_name_plural = "Social Account Rewards"
+        ordering = ["-rewarded_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "provider"],
+                name="unique_user_provider_reward",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "provider"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.provider} reward at {self.rewarded_at}"
 
 
 class GitHubReview(models.Model):
@@ -1859,16 +2382,38 @@ class GitHubReview(models.Model):
     )
     reviewer = models.ForeignKey(
         UserProfile,
-        on_delete=models.CASCADE,
-        related_name="reviews_made",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_user",
+    )
+    reviewer_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviews_made_as_contributor",
     )
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
     submitted_at = models.DateTimeField()
     url = models.URLField()
 
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
+                name="at_least_one_reviewer",
+            ),
+        )
+
     def __str__(self):
-        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+        reviewer_name = "Unknown"
+        if self.reviewer:
+            reviewer_name = self.reviewer.user.username
+        elif self.reviewer_contributor:
+            reviewer_name = self.reviewer_contributor.name
+        return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
 class Kudos(models.Model):
@@ -1955,6 +2500,11 @@ class ManagementCommandLog(models.Model):
     success = models.BooleanField(default=True)
     error_message = models.TextField(blank=True, null=True)
     run_count = models.IntegerField(default=0)
+    file_path = models.CharField(max_length=512, blank=True, null=True)
+    file_modified = models.DateTimeField(blank=True, null=True)
+    github_url = models.URLField(max_length=512, blank=True, null=True)
+    execution_time = models.FloatField(blank=True, null=True, help_text="Execution time in seconds")
+    output = models.TextField(blank=True, null=True, help_text="Command execution output")
 
     class Meta:
         get_latest_by = "last_run"
@@ -2249,6 +2799,26 @@ class Hackathon(models.Model):
             hours = remaining.seconds // 3600
             return f"{days} days, {hours} hours remaining"
 
+    @property
+    def status_badge_class(self):
+        """Returns CSS classes for the status badge based on hackathon status."""
+        if self.is_ongoing:
+            return "bg-green-100 text-green-800"
+        elif self.has_ended:
+            return "bg-gray-100 text-gray-800"
+        else:
+            return "bg-blue-100 text-blue-800"
+
+    @property
+    def status_text(self):
+        """Returns the status text for display."""
+        if self.is_ongoing:
+            return "Ongoing"
+        elif self.has_ended:
+            return "Ended"
+        else:
+            return "Upcoming"
+
     def get_leaderboard(self):
         """
         Generate a leaderboard of contributors based on merged pull requests
@@ -2274,7 +2844,9 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
-                # Skip bot accounts
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if pr.contributor.contributor_type == "Bot":
+                    continue
                 github_username = pr.contributor.name
                 if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
                     continue
@@ -2295,6 +2867,91 @@ class Hackathon(models.Model):
                         "prs": [pr],
                         "is_contributor": True,
                         "contributor": pr.contributor,  # Include the contributor object
+                    }
+
+        # Convert to list and sort by count (descending)
+        leaderboard_list = list(leaderboard.values())
+        leaderboard_list.sort(key=lambda x: x["count"], reverse=True)
+
+        return leaderboard_list
+
+    def get_reviewer_leaderboard(self):
+        """
+        Generate a leaderboard of reviewers based on PR reviews
+        during the hackathon timeframe.
+        """
+
+        # Get all merged pull requests from the hackathon's repositories within the timeframe
+        pull_requests = GitHubIssue.objects.filter(
+            repo__in=self.repositories.all(),
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=self.start_time,
+            merged_at__lte=self.end_time,
+        )
+
+        # Get all reviews for these pull requests within the hackathon timeframe
+        reviews = GitHubReview.objects.filter(
+            pull_request__in=pull_requests,
+            submitted_at__gte=self.start_time,
+            submitted_at__lte=self.end_time,
+        ).select_related("reviewer", "reviewer_contributor", "pull_request", "pull_request__repo")
+
+        # Group by reviewer and count reviews
+        leaderboard = {}
+        seen = set()
+
+        for review in reviews:
+            if review.reviewer_id:
+                # Registered user → unique ID
+                reviewer_identity = f"user_{review.reviewer_id}"
+            else:
+                # Contributor → unique ID even if names match
+                reviewer_identity = f"contrib_{review.reviewer_contributor_id}"
+
+            reviewer_key = (review.pull_request_id, reviewer_identity)
+            # Skip duplicate reviews for same PR+reviewer
+            if reviewer_key in seen:
+                continue
+            seen.add(reviewer_key)
+
+            if review.reviewer:
+                # Registered user reviewer
+                user_id = review.reviewer.user.id
+                if user_id in leaderboard:
+                    leaderboard[user_id]["count"] += 1
+                    leaderboard[user_id]["reviews"].append(review)
+                else:
+                    leaderboard[user_id] = {
+                        "user": review.reviewer.user,
+                        "count": 1,
+                        "reviews": [review],
+                        "is_contributor": False,
+                    }
+            elif review.reviewer_contributor:
+                # Skip bot accounts - check contributor_type field (primary) and name patterns (fallback)
+                if review.reviewer_contributor.contributor_type == "Bot":
+                    continue
+                github_username = review.reviewer_contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
+                # GitHub contributor reviewer
+                contributor_id = f"contributor_{review.reviewer_contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["reviews"].append(review)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": review.reviewer_contributor.name or review.reviewer_contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "reviews": [review],
+                        "is_contributor": True,
+                        "contributor": review.reviewer_contributor,
                     }
 
         # Convert to list and sort by count (descending)
@@ -2327,7 +2984,7 @@ class HackathonSponsor(models.Model):
         unique_together = ("hackathon", "organization")
 
     def __str__(self):
-        return f"{self.organization.name} - {self.get_sponsor_level_display()} " f"sponsor for {self.hackathon.name}"
+        return f"{self.organization.name} - {self.get_sponsor_level_display()} sponsor for {self.hackathon.name}"
 
 
 class HackathonPrize(models.Model):
@@ -2915,3 +3572,76 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class SecurityIncident(models.Model):
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        INVESTIGATING = "investigating", "Investigating"
+        RESOLVED = "resolved", "Resolved"
+
+    title = models.CharField(max_length=255)
+    severity = models.CharField(
+        max_length=20,
+        choices=Severity.choices,
+        default=Severity.MEDIUM,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
+    affected_systems = models.TextField(blank=True)
+    description = models.TextField(blank=True, help_text="Detailed description of the incident")
+    reporter = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reported_incidents"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    #  NEW AUTO-FIELDS & ENHANCEMENTS
+    def __str__(self):
+        return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
+
+    def save(self, *args, **kwargs):
+        """
+        Automatically set or clear resolved_at timestamp based on status.
+        """
+        if self.status == self.Status.RESOLVED and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != self.Status.RESOLVED and self.resolved_at:
+            self.resolved_at = None
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["severity"], name="incident_severity_idx"),
+            models.Index(fields=["status"], name="incident_status_idx"),
+            models.Index(fields=["-created_at"], name="incident_created_idx"),
+        ]
+
+
+class SecurityIncidentHistory(models.Model):
+    incident = models.ForeignKey(SecurityIncident, on_delete=models.CASCADE, related_name="history")
+    field_name = models.CharField(max_length=100)
+    old_value = models.TextField(null=True, blank=True)
+    new_value = models.TextField(null=True, blank=True)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at"]
+        indexes = [
+            models.Index(
+                fields=["incident", "-changed_at"],
+                name="history_incident_changedat_idx",
+            ),
+        ]
