@@ -4,7 +4,7 @@ import re
 import time
 import uuid
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
@@ -22,7 +22,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -1365,6 +1365,34 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
+    # --- Freshness scoring constants ---
+    # Time window weights for recent activity scoring
+    FRESHNESS_WINDOW_WEIGHTS = [
+        (7, Decimal("1.0")),  # 0-7 days: full weight
+        (30, Decimal("0.6")),  # 8-30 days: medium weight
+        (90, Decimal("0.3")),  # 31-90 days: low weight
+    ]
+    # Activity type weights for scoring
+    FRESHNESS_COMMIT_WEIGHT = Decimal("5")  # Each commit is worth 5 points
+    FRESHNESS_PR_WEIGHT = Decimal("3")  # Each pull request is worth 3 points
+    FRESHNESS_ISSUE_WEIGHT = Decimal("2")  # Each issue is worth 2 points
+    FRESHNESS_CONTRIBUTOR_WEIGHT = Decimal("4")  # Each unique contributor is worth 4 points
+    # Normalization soft max for scaling scores
+    FRESHNESS_SOFT_MAX = Decimal("200.0")  # Score is normalized to a max of 200
+    # Blending weight for external activity graph
+    FRESHNESS_GRAPH_BLEND_WEIGHT = Decimal("0.3")  # 30% weight for external graph
+    # Fallback scores for repo recency and forum/GitHub issue activity
+    FRESHNESS_FALLBACK_TOP = Decimal("100.00")  # 0 days
+    FRESHNESS_FALLBACK_HIGH = Decimal("80.00")  # <7 days
+    FRESHNESS_FALLBACK_MED = Decimal("50.00")  # <30 days
+    FRESHNESS_FALLBACK_LOW = Decimal("15.00")  # <90 days
+    FRESHNESS_FALLBACK_NONE = Decimal("0.00")  # >90 days
+    FRESHNESS_FALLBACK_FORUM_TOP = Decimal("50.00")  # 0 days
+    FRESHNESS_FALLBACK_FORUM_HIGH = Decimal("30.00")  # <7 days
+    FRESHNESS_FALLBACK_FORUM_MED = Decimal("10.00")  # <30 days
+    FRESHNESS_FALLBACK_FORUM_LOW = Decimal("2.00")  # <90 days
+    FRESHNESS_FALLBACK_FORUM_NONE = Decimal("0.00")  # >90 days
+
     @staticmethod
     def get_contributors(self_or_url, github_url=None, max_pages=None):
         """
@@ -1373,13 +1401,6 @@ class Project(models.Model):
         Handles pagination, logs errors, and updates stale Contributor data.
         Uses requests.Session, per_page param, max_pages cap, and rate-limit handling.
         """
-        import logging
-        from urllib.parse import urlparse
-
-        import requests
-        from django.apps import apps
-        from django.conf import settings
-
         Contributor = apps.get_model("website", "Contributor")
         logger = logging.getLogger(__name__)
 
@@ -1432,29 +1453,32 @@ class Project(models.Model):
                     if "X-RateLimit-Reset" in resp.headers:
                         logger.error(f"Rate limit resets at: {resp.headers['X-RateLimit-Reset']}")
                     break
+                from django.db import transaction
+
                 data = resp.json()
-                for c in data:
-                    if "id" not in c or "login" not in c:
-                        continue
-                    obj, created = Contributor.objects.get_or_create(
-                        github_id=c["id"],
-                        defaults={
-                            "name": c.get("login", ""),
-                            "github_url": c.get("html_url", ""),
-                            "avatar_url": c.get("avatar_url", ""),
-                            "contributor_type": c.get("type", "User"),
-                            "contributions": c.get("contributions", 0),
-                        },
-                    )
-                    # Always update fields if not created (avoid stale data)
-                    if not created:
-                        obj.avatar_url = c.get("avatar_url", obj.avatar_url)
-                        obj.github_url = c.get("html_url", obj.github_url)
-                        obj.name = c.get("login", obj.name)
-                        obj.contributions = c.get("contributions", obj.contributions)
-                        obj.contributor_type = c.get("type", obj.contributor_type or "User")
-                        obj.save()
-                    contributors.append(obj)
+                with transaction.atomic():
+                    for c in data:
+                        if "id" not in c or "login" not in c:
+                            continue
+                        obj, created = Contributor.objects.get_or_create(
+                            github_id=c["id"],
+                            defaults={
+                                "name": c.get("login", ""),
+                                "github_url": c.get("html_url", ""),
+                                "avatar_url": c.get("avatar_url", ""),
+                                "contributor_type": c.get("type", "User"),
+                                "contributions": c.get("contributions", 0),
+                            },
+                        )
+                        # Always update fields if not created (avoid stale data)
+                        if not created:
+                            obj.avatar_url = c.get("avatar_url", obj.avatar_url)
+                            obj.github_url = c.get("html_url", obj.github_url)
+                            obj.name = c.get("login", obj.name)
+                            obj.contributions = c.get("contributions", obj.contributions)
+                            obj.contributor_type = c.get("type", obj.contributor_type or "User")
+                            obj.save()
+                        contributors.append(obj)
                 # Pagination: look for 'next' in Link header
                 link = resp.headers.get("Link", "")
                 next_url = None
@@ -1491,14 +1515,14 @@ class Project(models.Model):
         - All math uses Decimal for determinism
         - Accepts fast: bool for future fallback logic
         """
-        from decimal import ROUND_HALF_UP, Decimal
-
         now = timezone.now()
-        windows = [
-            (now - timedelta(days=7), now, Decimal("1.0")),
-            (now - timedelta(days=30), now - timedelta(days=7), Decimal("0.6")),
-            (now - timedelta(days=90), now - timedelta(days=30), Decimal("0.3")),
-        ]
+        # Build windows from constants
+        windows = []
+        last_end = now
+        for days, weight in self.FRESHNESS_WINDOW_WEIGHTS:
+            start = now - timedelta(days=days)
+            windows.append((start, last_end, weight))
+            last_end = start
         total_score = Decimal("0")
         any_activity = False
         # Edge case: archived, forked, or inactive projects
@@ -1509,8 +1533,6 @@ class Project(models.Model):
         except Exception:
             Contribution = None
         if Contribution:
-            from django.db.models import Count, Q
-
             for start, end, weight in windows:
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
@@ -1524,10 +1546,10 @@ class Project(models.Model):
                 if agg["commits"] + agg["prs"] + agg["issues"] + agg["contributors"] > 0:
                     any_activity = True
                 window_metric = (
-                    Decimal(agg["commits"] or 0) * Decimal("5")
-                    + Decimal(agg["prs"] or 0) * Decimal("3")
-                    + Decimal(agg["issues"] or 0) * Decimal("2")
-                    + Decimal(agg["contributors"] or 0) * Decimal("4")
+                    Decimal(agg["commits"] or 0) * self.FRESHNESS_COMMIT_WEIGHT
+                    + Decimal(agg["prs"] or 0) * self.FRESHNESS_PR_WEIGHT
+                    + Decimal(agg["issues"] or 0) * self.FRESHNESS_ISSUE_WEIGHT
+                    + Decimal(agg["contributors"] or 0) * self.FRESHNESS_CONTRIBUTOR_WEIGHT
                 )
                 total_score += weight * window_metric
         # Fallback logic: repo last_updated
@@ -1542,15 +1564,15 @@ class Project(models.Model):
                 any_activity = True
                 days = (now - repo_dt).days
                 if days <= 0:
-                    return Decimal("100.00")
+                    return self.FRESHNESS_FALLBACK_TOP
                 elif days < 7:
-                    return Decimal("80.00")
+                    return self.FRESHNESS_FALLBACK_HIGH
                 elif days < 30:
-                    return Decimal("50.00")
+                    return self.FRESHNESS_FALLBACK_MED
                 elif days < 90:
-                    return Decimal("15.00")
+                    return self.FRESHNESS_FALLBACK_LOW
                 else:
-                    return Decimal("0.00")
+                    return self.FRESHNESS_FALLBACK_NONE
         # Tertiary fallback: last activity (ForumPost or GitHubIssue)
         if not any_activity:
             last_dates = []
@@ -1571,24 +1593,24 @@ class Project(models.Model):
             if last_dates:
                 days = (now - max(last_dates)).days
                 if days <= 0:
-                    return Decimal("50.00")
+                    return self.FRESHNESS_FALLBACK_FORUM_TOP
                 elif days < 7:
-                    return Decimal("30.00")
+                    return self.FRESHNESS_FALLBACK_FORUM_HIGH
                 elif days < 30:
-                    return Decimal("10.00")
+                    return self.FRESHNESS_FALLBACK_FORUM_MED
                 elif days < 90:
-                    return Decimal("2.00")
+                    return self.FRESHNESS_FALLBACK_FORUM_LOW
                 else:
-                    return Decimal("0.00")
+                    return self.FRESHNESS_FALLBACK_FORUM_NONE
         # Always normalize and cap at the end
-        soft_max = Decimal("200.0")
-        normalized = min(total_score / soft_max, Decimal("1.0")) * Decimal("100.0")
+        normalized = min(total_score / self.FRESHNESS_SOFT_MAX, Decimal("1.0")) * Decimal("100.0")
         # Clamp and blend activity_graph_score if provided
         if activity_graph_score is not None:
-            graph_weight = Decimal("0.3")
             ags = Decimal(str(activity_graph_score))
             ags = max(Decimal("0.0"), min(ags, Decimal("100.0")))
-            normalized = (Decimal("1.0") - graph_weight) * normalized + graph_weight * ags
+            normalized = (
+                Decimal("1.0") - self.FRESHNESS_GRAPH_BLEND_WEIGHT
+            ) * normalized + self.FRESHNESS_GRAPH_BLEND_WEIGHT * ags
         return Decimal(normalized).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
 
     def freshness_reason(self):
@@ -1616,10 +1638,6 @@ class Project(models.Model):
         )
 
     def get_freshness_breakdown(self):
-        from datetime import timedelta
-
-        from django.utils import timezone
-
         now = timezone.now()
         windows = [
             (now - timedelta(days=7), now, "0-7d", 1.0),
@@ -1632,8 +1650,6 @@ class Project(models.Model):
         except Exception:
             Contribution = None
         if Contribution:
-            from django.db.models import Count, Q
-
             for start, end, label, weight in windows:
                 window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
                 agg = window_qs.aggregate(
