@@ -1,12 +1,11 @@
 import pytest
 from website.models import Project
-from django.utils import timezone
-from datetime import timedelta
+from decimal import Decimal
 
 def make_project(**kwargs):
     defaults = dict(archived=False, forked=False, status="active")
     defaults.update(kwargs)
-    return Project(**defaults)
+    return Project.objects.create(**defaults)
 
 def test_archived_project_zero():
     p = make_project(archived=True)
