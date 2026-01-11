@@ -19,16 +19,6 @@ env_file = os.path.join(BASE_DIR, ".env")
 environ.Env.read_env(env_file)
 
 
-# Normalize DEBUG as a boolean once and use everywhere
-DEBUG = os.environ.get("DEBUG", "false").lower() in ("1", "true", "yes")
-
-# Optionally log .env file read in debug mode (never log DATABASE_URL)
-if DEBUG:
-    import logging
-
-    logger = logging.getLogger("blt.settings")
-    logger.debug(f"Read .env file from {env_file}")
-
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
