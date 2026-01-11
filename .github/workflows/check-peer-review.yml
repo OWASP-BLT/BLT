@@ -176,21 +176,25 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pull_number = pr.number;
-            // Remove opposite label unconditionally
-            try {
-              await github.rest.issues.removeLabel({
-                owner,
-                repo,
-                issue_number: pull_number,
-                name: removeLabel,
-              });
-              core.info(`Removed label ${removeLabel}`);
-            } catch (err) {
-              if ([403, 404, 504].includes(err.status)) {
-                core.warning(`Remove label failed with status ${err.status}: ${err.message}`);
-              } else {
-                throw err;
+            // Remove opposite label only if present
+            if (currentLabels.includes(removeLabel)) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  name: removeLabel,
+                });
+                core.info(`Removed label ${removeLabel}`);
+              } catch (err) {
+                if ([403, 404, 504].includes(err.status)) {
+                  core.warning(`Remove label failed with status ${err.status}: ${err.message}`);
+                } else {
+                  throw err;
+                }
               }
+            } else {
+              core.info(`Label ${removeLabel} not present, skipping removal.`);
             }
             // Ensure the new label exists (create if missing)
             async function ensureLabelExists(labelName, color, desc) {
