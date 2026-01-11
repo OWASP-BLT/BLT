@@ -152,45 +152,43 @@ jobs:
         if: always()
         uses: actions/github-script@v7
         with:
+          retries: 3
+          retry-exempt-status-codes: 403,404
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed('No pull_request found in payload.');
+              return;
+            }
+            // Use labels from payload (no API call)
+            const currentLabels = (pr.labels || []).map(l => l.name);
+            const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
+            const wantLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
+            const removeLabel = hasPeerReview ? 'needs-peer-review' : 'has-peer-review';
+            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';
+            const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const pull_number = context.payload.pull_request.number;
-            
-            // Determine label based on peer review status
-            const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
-            const newLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
-            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';  // Green or Yellow
-            const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
-            
-            // Get current labels on the PR
-            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
-              owner, 
-              repo, 
-              issue_number: pull_number, 
-              per_page: 100 
-            });
-            const currentNames = new Set(current.map(l => l.name));
-            
-            // Remove any existing peer review labels
-            const peerReviewLabels = ['has-peer-review', 'needs-peer-review'];
-            for (const name of peerReviewLabels) {
-              if (currentNames.has(name) && name !== newLabel) {
-                try {
-                  await github.rest.issues.removeLabel({ 
-                    owner, 
-                    repo, 
-                    issue_number: pull_number, 
-                    name 
-                  });
-                  core.info(`Removed label ${name}`);
-                } catch (err) {
-                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+            const pull_number = pr.number;
+            // Remove opposite label if present
+            if (currentLabels.includes(removeLabel)) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  name: removeLabel,
+                });
+                core.info(`Removed label ${removeLabel}`);
+              } catch (err) {
+                if ([403, 404, 504].includes(err.status)) {
+                  core.warning(`Remove label failed with status ${err.status}: ${err.message}`);
+                } else if (err.status !== 404) {
+                  throw err;
                 }
               }
             }
-            
             // Ensure the new label exists (create if missing)
             async function ensureLabelExists(labelName, color, desc) {
               try {
@@ -210,26 +208,24 @@ jobs:
                 }
               }
             }
-            
-            await ensureLabelExists(newLabel, labelColor, description);
-            
-            // Add the label if it isn't already present
-            if (!currentNames.has(newLabel)) {
+            await ensureLabelExists(wantLabel, labelColor, description);
+            // Add label if missing
+            if (!currentLabels.includes(wantLabel)) {
               try {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: pull_number, 
-                  labels: [newLabel] 
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  labels: [wantLabel],
                 });
-                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
-              } catch (error) {
-                if (error.status === 403) {
-                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
+                core.info(`Applied label ${wantLabel} to PR #${pull_number}`);
+              } catch (err) {
+                if ([403, 404, 504].includes(err.status)) {
+                  core.warning(`Add label failed with status ${err.status}: ${err.message}`);
                 } else {
-                  throw error;
+                  throw err;
                 }
               }
             } else {
-              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+              core.info(`Label ${wantLabel} already present on PR #${pull_number}`);
             }
