@@ -59,9 +59,9 @@ jobs:
 
           # Skip Dependabot PRs entirely (defense in depth)
           if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "dependabot-preview[bot]" || "$PR_AUTHOR" == "dependabot" ]]; then
-          echo "Dependabot PR detected. Skipping peer review check."
-          echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
-          exit 0
+            echo "Dependabot PR detected. Skipping peer review check."
+            echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           
           # Get all reviews for the PR
@@ -163,7 +163,12 @@ jobs:
             }
             // Use labels from payload (no API call)
             const currentLabels = (pr.labels || []).map(l => l.name);
-            const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
+            const hasPeerReviewRaw = '${{ steps.check_peer_review.outputs.has_peer_review }}';
+            if (!['true', 'false'].includes(hasPeerReviewRaw)) {
+              core.warning(`Peer review result missing/invalid ("${hasPeerReviewRaw}"); skipping label reconciliation.`);
+              return;
+            }
+            const hasPeerReview = hasPeerReviewRaw === 'true';
             const wantLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
             const removeLabel = hasPeerReview ? 'needs-peer-review' : 'has-peer-review';
             const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';
@@ -171,22 +176,20 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pull_number = pr.number;
-            // Remove opposite label if present
-            if (currentLabels.includes(removeLabel)) {
-              try {
-                await github.rest.issues.removeLabel({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                  name: removeLabel,
-                });
-                core.info(`Removed label ${removeLabel}`);
-              } catch (err) {
-                if ([403, 404, 504].includes(err.status)) {
-                  core.warning(`Remove label failed with status ${err.status}: ${err.message}`);
-                } else if (err.status !== 404) {
-                  throw err;
-                }
+            // Remove opposite label unconditionally
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: pull_number,
+                name: removeLabel,
+              });
+              core.info(`Removed label ${removeLabel}`);
+            } catch (err) {
+              if ([403, 404, 504].includes(err.status)) {
+                core.warning(`Remove label failed with status ${err.status}: ${err.message}`);
+              } else {
+                throw err;
               }
             }
             // Ensure the new label exists (create if missing)
@@ -195,14 +198,22 @@ jobs:
                 await github.rest.issues.getLabel({ owner, repo, name: labelName });
               } catch (e) {
                 if (e.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner,
-                    repo,
-                    name: labelName,
-                    color: color,
-                    description: desc,
-                  });
-                  core.info(`Created label ${labelName}`);
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner,
+                      repo,
+                      name: labelName,
+                      color: color,
+                      description: desc,
+                    });
+                    core.info(`Created label ${labelName}`);
+                  } catch (ce) {
+                    if (ce.status === 422) {
+                      core.info(`Label ${labelName} already exists (422 on create); continuing.`);
+                    } else {
+                      throw ce;
+                    }
+                  }
                 } else {
                   throw e;
                 }
