@@ -1503,7 +1503,16 @@ class Project(models.Model):
         default=Decimal("0.00"),
         db_index=True,
         help_text="0..100 freshness score representing recent project activity",
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
     )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(freshness__gte=0) & models.Q(freshness__lte=100),
+                name="freshness_0_100_range",
+            ),
+        ]
 
     def calculate_freshness(self, activity_graph_score: float | None = None, fast: bool = False) -> Decimal:
         """

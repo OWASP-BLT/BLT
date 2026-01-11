@@ -16,30 +16,33 @@ class Command(BaseCommand):
         batch = options["batch"]
         limit = options["limit"]
 
-        from django.db.models import Prefetch
-
-        from website.models import Contribution, Repo
-
         qs = Project.objects.all().order_by("id")
         if limit and limit > 0:
-            qs = qs[:limit]
-        qs = qs.prefetch_related(
-            Prefetch("repos", queryset=Repo.objects.all()),
-            Prefetch("contribution_set", queryset=Contribution.objects.all()),
-        )
-        total = qs.count()
+            qs = qs.iterator()
+            qs = (p for i, p in enumerate(qs) if i < limit)
+        else:
+            qs = qs.iterator()
+        qs = list(qs)  # Prefetching not needed for freshness
+        total = len(qs)
 
         self.stdout.write(f"[{timezone.now()}] Starting freshness update for {total} projects (batch={batch})")
         processed = 0
         errors = 0
         error_details = []
 
-        start_index = 0
-        while start_index < total:
-            chunk = list(qs[start_index : start_index + batch])
+        from itertools import islice
+
+        def batched(iterable, n):
+            it = iter(iterable)
+            while True:
+                batch = list(islice(it, n))
+                if not batch:
+                    break
+                yield batch
+
+        for chunk in batched(qs, batch):
             for p in chunk:
                 try:
-                    # Per-project transaction for safety on all DBs
                     with transaction.atomic():
                         new_score = p.calculate_freshness()
                         p.freshness = new_score
@@ -50,8 +53,7 @@ class Command(BaseCommand):
                     self.stderr.write(error_msg)
                     error_details.append(error_msg)
                     errors += 1
-            start_index += batch
-            self.stdout.write(f"Processed {min(start_index, total)}/{total}")
+            self.stdout.write(f"Processed {min(processed, total)}/{total}")
 
         self.stdout.write(self.style.SUCCESS(f"Finished. processed={processed} errors={errors}"))
         # Analytics summary: distribution of freshness scores
@@ -62,7 +64,7 @@ class Command(BaseCommand):
         dist = Counter()
         for s in scores:
             for b in bins:
-                if s <= b:
+                if s is not None and s <= b:
                     dist[b] += 1
                     break
         self.stdout.write("Freshness score distribution:")

@@ -5,7 +5,7 @@ from website.models import Project
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    actions = ["recalculate_freshness", "recalculate_freshness_fast"]
+    actions = ["recalculate_freshness"]
     list_display = ("id", "name", "slug", "description", "created", "modified")
     search_fields = ["id", "name", "slug", "description"]
 
@@ -19,17 +19,6 @@ class ProjectAdmin(admin.ModelAdmin):
         self.message_user(request, f"Recalculated freshness for {count} projects. See logs for summary.")
 
     recalculate_freshness.short_description = "Recalculate freshness (full)"
-
-    def recalculate_freshness_fast(self, request, queryset):
-        count = 0
-        for project in queryset:
-            project.freshness = project.calculate_freshness()
-            project.save(update_fields=["freshness"])
-            project.log_freshness_summary()
-            count += 1
-        self.message_user(request, f"Recalculated freshness (fast mode) for {count} projects. See logs for summary.")
-
-    recalculate_freshness_fast.short_description = "Recalculate freshness (fast mode)"
 
 
 from urllib.parse import urlparse

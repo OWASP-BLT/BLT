@@ -735,8 +735,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         from rest_framework.exceptions import ParseError
 
         qs = super().get_queryset()
-        freshness_min = self.request.query_params.get("freshness_min")
-        freshness_max = self.request.query_params.get("freshness_max")
+        # Accept both min_freshness/max_freshness and freshness_min/freshness_max for compatibility
+        freshness_min = self.request.query_params.get("freshness_min") or self.request.query_params.get("min_freshness")
+        freshness_max = self.request.query_params.get("freshness_max") or self.request.query_params.get("max_freshness")
         if freshness_min is not None:
             try:
                 freshness_min = Decimal(freshness_min)
@@ -881,8 +882,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         from decimal import Decimal, InvalidOperation
 
         freshness = request.query_params.get("freshness", None)
-        fmin = request.query_params.get("freshness_min")
-        fmax = request.query_params.get("freshness_max")
+        fmin = request.query_params.get("freshness_min") or request.query_params.get("min_freshness")
+        fmax = request.query_params.get("freshness_max") or request.query_params.get("max_freshness")
         stars = request.query_params.get("stars", None)
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
