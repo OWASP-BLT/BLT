@@ -199,9 +199,6 @@ jobs:
                     description: desc,
                   });
                   core.info(`Created label ${labelName}`);
-                } else if (e.status === 422) {
-                  // Benign race: another run likely created the label
-                  core.info(`Label ${labelName} already exists (422). Likely created by another run.`);
                 } else {
                   throw e;
                 }

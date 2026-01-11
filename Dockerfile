@@ -22,13 +22,9 @@ RUN apt-get update && \
 
 # Install Chromium (works on all architectures)
 # Retry logic with --fix-missing for transient network errors
-
-# Install Chromium for Selenium tests with retry and fix for broken installs
 RUN apt-get update \
-    && apt-get install -y libxcb-dri3-0 \
     && apt-get install -y --fix-missing chromium \
     || (apt-get update && apt-get install -y --fix-missing chromium) \
-    && apt-get install -f -y \
     && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
     && rm -rf /var/lib/apt/lists/*
 
