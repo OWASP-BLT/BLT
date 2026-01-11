@@ -108,6 +108,11 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
+      - name: Configure Poetry to use Python 3.12
+        run: |
+          poetry env use python3.12
+          poetry config virtualenvs.prefer-active-python true
+
       - name: Install dependencies (with retry)
         run: |
           max_retries=3

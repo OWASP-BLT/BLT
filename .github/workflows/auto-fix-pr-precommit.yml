@@ -122,6 +122,12 @@ jobs:
         if: steps.bot_check.outputs.skip == 'false'
         run: pip install poetry
 
+      - name: Configure Poetry to use Python 3.12
+        if: steps.bot_check.outputs.skip == 'false'
+        run: |
+          poetry env use python3.12
+          poetry config virtualenvs.prefer-active-python true
+
       - name: Install dependencies (with retry)
         if: steps.bot_check.outputs.skip == 'false'
         run: |

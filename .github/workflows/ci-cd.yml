@@ -308,6 +308,10 @@ jobs:
           sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
           sudo chown -R $USER:$USER ~/apt-cache
       - run: pip install poetry
+      - name: Configure Poetry to use Python 3.12
+        run: |
+          poetry env use python3.12
+          poetry config virtualenvs.prefer-active-python true
       - run: poetry lock
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
