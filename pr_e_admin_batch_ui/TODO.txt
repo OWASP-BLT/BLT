@@ -1,0 +1,1 @@
+Move admin batch action UI changes from website/admin.py here for PR E (optional).

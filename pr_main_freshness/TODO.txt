@@ -1,0 +1,1 @@
+Keep only core freshness field, hybrid scoring, analytics endpoints, API filtering, batch tooling, scheduler, and core tests here. Remove unrelated changes.
