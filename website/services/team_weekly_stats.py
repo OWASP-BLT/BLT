@@ -68,5 +68,4 @@ def get_weekly_team_stats(start_date: date, end_date: date) -> List[Dict[str, An
                 },
             }
         )
-
     return team_stats
