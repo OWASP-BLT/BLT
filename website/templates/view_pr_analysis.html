@@ -8,10 +8,16 @@
             <div class="bg-white dark:bg-gray-800 p-4 mb-5 border border-gray-300 dark:border-gray-600 rounded">
                 <h3 class="text-lg text-gray-700 dark:text-gray-300 mb-2">PR Analysis</h3>
                 <p>
-                    <strong>PR Link:</strong> <a href="{{ report.pr_link }}" target="_blank" class="text-blue-500">{{ report.pr_link }}</a>
+                    <strong>PR Link:</strong> <a href="{{ report.pr_link }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="text-blue-500">{{ report.pr_link }}</a>
                 </p>
                 <p>
-                    <strong>Issue Link:</strong> <a href="{{ report.issue_link }}" target="_blank" class="text-blue-500">{{ report.issue_link }}</a>
+                    <strong>Issue Link:</strong> <a href="{{ report.issue_link }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="text-blue-500">{{ report.issue_link }}</a>
                 </p>
                 <p>
                     <strong>Priority Alignment Score:</strong> {{ report.priority_alignment_score }}

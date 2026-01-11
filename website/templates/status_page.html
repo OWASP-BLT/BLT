@@ -40,7 +40,8 @@
                                 <p class="mt-2">Block Height: {{ status.bitcoin_block }}</p>
                                 <a class="text-[#e74c3c] hover:text-red-600 mt-2 inline-block"
                                    href="https://mempool.space/block/{{ status.bitcoin_block }}"
-                                   target="_blank">View on Mempool</a>
+                                   target="_blank"
+                                   rel="noopener noreferrer">View on Mempool</a>
                             </div>
                         {% else %}
                             <span class="text-red-600">Not Operational</span>
