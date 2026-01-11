@@ -164,8 +164,7 @@
                         <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                             <div class="flex items-start gap-6">
                                 {% if project.slug %}
-                                    <a href="{% url 'project_detail_by_slug' slug=project.slug %}"
-                                       class="block">
+                                    <a href="{% url 'project_detail' slug=project.slug %}" class="block">
                                         {% if project.logo %}
                                             <img src="{{ project.logo.url }}"
                                                  alt="{{ project.name }}"
@@ -184,7 +183,7 @@
                                     </div>
                                 {% endif %}
                                 <div class="flex-grow">
-                                    <a href="{% if project.slug %}{% url 'project_detail_by_slug' slug=project.slug %}{% else %}#{% endif %}"
+                                    <a href="{% if project.slug %}{% url 'project_detail' slug=project.slug %}{% else %}#{% endif %}"
                                        class="block group">
                                         <h2 class="text-3xl font-bold text-white mb-2 group-hover:underline">{{ project.name }}</h2>
                                         {# Website and Slack badges - compact list view #}

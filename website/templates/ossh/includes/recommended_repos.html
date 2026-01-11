@@ -9,7 +9,7 @@
                         {% if repo.repo.project %}
                             <p class="text-sm text-gray-400 dark:text-gray-600 mt-1">
                                 Part of project:
-                                <a href="{% url 'project_detail_by_slug' repo.repo.project.slug %}"
+                                <a href="{% url 'project_detail' repo.repo.project.slug %}"
                                    class="text-indigo-400 hover:text-indigo-300 hover:underline">
                                     {{ repo.repo.project.name }}
                                 </a>
@@ -61,7 +61,6 @@
                             <span class="mr-3 text-gray-400">🔗 Repository:</span>
                             <a href="{{ repo.repo.repo_url }}"
                                target="_blank"
-                               rel="noopener noreferrer"
                                class="text-blue-400 hover:text-blue-300 hover:underline break-all">
                                 {{ repo.repo.repo_url }}
                             </a>
@@ -71,7 +70,6 @@
                                 <span class="mr-3 text-gray-400">🏠 Homepage:</span>
                                 <a href="{{ repo.repo.homepage_url }}"
                                    target="_blank"
-                                   rel="noopener noreferrer"
                                    class="text-blue-400 hover:text-blue-300 hover:underline break-all">
                                     {{ repo.repo.homepage_url }}
                                 </a>

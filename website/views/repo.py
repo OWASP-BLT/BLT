@@ -326,10 +326,7 @@ class RepoDetailView(DetailView):
         ]
         if repo.project:
             breadcrumbs.append(
-                {
-                    "title": repo.project.name,
-                    "url": reverse("project_detail_by_slug", kwargs={"slug": repo.project.slug}),
-                }
+                {"title": repo.project.name, "url": reverse("project_detail", kwargs={"slug": repo.project.slug})}
             )
         breadcrumbs.append({"title": repo.name})
         context["breadcrumbs"] = breadcrumbs

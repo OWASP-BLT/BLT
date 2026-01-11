@@ -27,11 +27,12 @@ jobs:
   check_peer_review:
     runs-on: ubuntu-latest
     if: >
-     github.event.pull_request.user.login != 'dependabot[bot]'
-     && github.event.pull_request.user.login != 'dependabot-preview[bot]'
-     && github.event.pull_request.user.login != 'dependabot'
-     && github.event.pull_request.user.login != 'DonnieBLT'
-     && !contains(github.event.pull_request.user.login, 'copilot')
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'Copilot'
+      && github.actor != 'copilot-swe-agent[bot]'
     steps:
       - name: Check for Peer Review and Add Label
         id: check_peer_review
@@ -56,13 +57,6 @@ jobs:
           
           PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.user.login')
           echo "PR Author: $PR_AUTHOR"
-
-          # Skip Dependabot PRs entirely (defense in depth)
-          if [[ "$PR_AUTHOR" == "dependabot[bot]" || "$PR_AUTHOR" == "dependabot-preview[bot]" || "$PR_AUTHOR" == "dependabot" ]]; then
-            echo "Dependabot PR detected. Skipping peer review check."
-            echo "has_peer_review=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           
           # Get all reviews for the PR
           REVIEWS_RESPONSE=$(curl -s -X GET \
@@ -152,95 +146,87 @@ jobs:
         if: always()
         uses: actions/github-script@v7
         with:
-          retries: 3
-          # retry-exempt-status-codes removed: actions/github-script@v7 already exempts 403 and 404 by default
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pr = context.payload.pull_request;
-            if (!pr) {
-              core.setFailed('No pull_request found in payload.');
-              return;
-            }
-            // Use labels from payload (no API call)
-            const currentLabels = (pr.labels || []).map(l => l.name);
-            const hasPeerReviewRaw = '${{ steps.check_peer_review.outputs.has_peer_review }}';
-            if (!['true', 'false'].includes(hasPeerReviewRaw)) {
-              core.warning(`Peer review result missing/invalid ("${hasPeerReviewRaw}"); skipping label reconciliation.`);
-              return;
-            }
-            const hasPeerReview = hasPeerReviewRaw === 'true';
-            const wantLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
-            const removeLabel = hasPeerReview ? 'needs-peer-review' : 'has-peer-review';
-            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';
-            const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const pull_number = pr.number;
-            // Remove opposite label only if present
-            if (currentLabels.includes(removeLabel)) {
-              try {
-                await github.rest.issues.removeLabel({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                  name: removeLabel,
-                });
-                core.info(`Removed label ${removeLabel}`);
-              } catch (err) {
-                if ([403, 404, 504].includes(err.status)) {
-                  core.warning(`Remove label failed with status ${err.status}: ${err.message}`);
-                } else {
-                  throw err;
+            const pull_number = context.payload.pull_request.number;
+            
+            // Determine label based on peer review status
+            const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
+            const newLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
+            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';  // Green or Yellow
+            const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
+            
+            // Get current labels on the PR
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: pull_number, 
+              per_page: 100 
+            });
+            const currentNames = new Set(current.map(l => l.name));
+            
+            // Remove any existing peer review labels
+            const peerReviewLabels = ['has-peer-review', 'needs-peer-review'];
+            for (const name of peerReviewLabels) {
+              if (currentNames.has(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({ 
+                    owner, 
+                    repo, 
+                    issue_number: pull_number, 
+                    name 
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
                 }
               }
-            } else {
-              core.info(`Label ${removeLabel} not present, skipping removal.`);
             }
+            
             // Ensure the new label exists (create if missing)
             async function ensureLabelExists(labelName, color, desc) {
               try {
                 await github.rest.issues.getLabel({ owner, repo, name: labelName });
               } catch (e) {
                 if (e.status === 404) {
-                  try {
-                    await github.rest.issues.createLabel({
-                      owner,
-                      repo,
-                      name: labelName,
-                      color: color,
-                      description: desc,
-                    });
-                    core.info(`Created label ${labelName}`);
-                  } catch (ce) {
-                    if (ce.status === 422) {
-                      core.info(`Label ${labelName} already exists (422 on create); continuing.`);
-                    } else {
-                      throw ce;
-                    }
-                  }
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: color,
+                    description: desc,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else if (e.status === 422) {
+                  // Benign race: another run likely created the label
+                  core.info(`Label ${labelName} already exists (422). Likely created by another run.`);
                 } else {
                   throw e;
                 }
               }
             }
-            await ensureLabelExists(wantLabel, labelColor, description);
-            // Add label if missing
-            if (!currentLabels.includes(wantLabel)) {
+            
+            await ensureLabelExists(newLabel, labelColor, description);
+            
+            // Add the label if it isn't already present
+            if (!currentNames.has(newLabel)) {
               try {
-                await github.rest.issues.addLabels({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                  labels: [wantLabel],
+                await github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
                 });
-                core.info(`Applied label ${wantLabel} to PR #${pull_number}`);
-              } catch (err) {
-                if ([403, 404, 504].includes(err.status)) {
-                  core.warning(`Add label failed with status ${err.status}: ${err.message}`);
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
                 } else {
-                  throw err;
+                  throw error;
                 }
               }
             } else {
-              core.info(`Label ${wantLabel} already present on PR #${pull_number}`);
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }

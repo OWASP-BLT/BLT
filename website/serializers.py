@@ -131,6 +131,10 @@ class ProjectSerializer(serializers.ModelSerializer):
     freshness_breakdown = serializers.SerializerMethodField(read_only=True)
     freshness_reason = serializers.SerializerMethodField(read_only=True)
 
+    def get_freshness(self, obj):
+        # This method is needed for test patching compatibility
+        return getattr(obj, "freshness", None)
+
     def get_freshness_breakdown(self, obj):
         if hasattr(obj, "get_freshness_breakdown"):
             return obj.get_freshness_breakdown()

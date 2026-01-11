@@ -1,5 +1,4 @@
 import unittest.mock as mock
-from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -15,15 +14,15 @@ class ProjectAggregationTestCase(TestCase):
     """Tests for stars/forks aggregation in Project API endpoints"""
 
     def setUp(self):
-        # Patch Project.fetch_freshness to return a fixed value for tests
+        # ✅ Patch freshness (already correct)
         self.freshness_patcher = mock.patch(
-            "website.models.Project.fetch_freshness",
-            return_value=Decimal("42.00"),
+            "website.serializers.ProjectSerializer.get_freshness",
+            return_value=None,
         )
         self.freshness_patcher.start()
         self.addCleanup(self.freshness_patcher.stop)
 
-        # Patch prefetch_related to avoid invalid 'contributors'
+        # ✅ Patch prefetch_related to avoid invalid 'contributors'
         self.prefetch_patcher = mock.patch(
             "website.api.views.Project.objects.prefetch_related",
             return_value=Project.objects.all(),

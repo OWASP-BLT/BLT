@@ -18,9 +18,16 @@ env = environ.Env()
 env_file = os.path.join(BASE_DIR, ".env")
 environ.Env.read_env(env_file)
 
-print(f"Reading .env file from {env_file}")
-if env.bool("DEBUG", default=False):
-    print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
+
+# Normalize DEBUG as a boolean once and use everywhere
+DEBUG = os.environ.get("DEBUG", "false").lower() in ("1", "true", "yes")
+
+# Optionally log .env file read in debug mode (never log DATABASE_URL)
+if DEBUG:
+    import logging
+
+    logger = logging.getLogger("blt.settings")
+    logger.debug(f"Read .env file from {env_file}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
@@ -346,24 +353,24 @@ DATABASES = {
     }
 }
 
-
-# Helper to apply in-memory SQLite test DB logic
-def _apply_sqlite_in_memory_test_db():
-    engine = DATABASES["default"].get("ENGINE")
-    if engine == "django.db.backends.sqlite3" and TESTING:
-        DATABASES["default"]["TEST"] = {"NAME": ":memory:"}
-
-
+# Test database optimizations for faster test execution
 if TESTING:
-    _apply_sqlite_in_memory_test_db()
+    DATABASES["default"]["TEST"] = {
+        "NAME": ":memory:",  # Use in-memory database for tests
+    }
 
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
     DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
-    _apply_sqlite_in_memory_test_db()
+    # Apply test optimizations to configured database as well
+    if TESTING:
+        DATABASES["default"]["TEST"] = {
+            "NAME": ":memory:",
+        }
 
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
