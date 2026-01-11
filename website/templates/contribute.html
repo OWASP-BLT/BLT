@@ -545,7 +545,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap md:whitespace-normal text-sm font-medium text-gray-800 dark:text-gray-200">
                                             {{ issue.title }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                             {{ issue.created_at|date:"M d, Y H:i" }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -567,7 +567,7 @@
                                 {% empty %}
                                     <tr>
                                         <td colspan="3"
-                                            class="px-6 py-4 text-center text-sm text-red-600 dark:text-red-400">
+                                            class="px-6 py-4 text-center text-sm text-gray-800 dark:text-gray-200">
                                             No issues found at the moment. Check back soon!
                                         </td>
                                     </tr>
