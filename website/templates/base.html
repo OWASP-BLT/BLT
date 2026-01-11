@@ -126,15 +126,23 @@
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {% include "includes/header.html" %}
+        <!-- Skip to main content link for keyboard users -->
+        <a href="#main-content"
+           class="fixed -top-20 left-1/2 -translate-x-1/2 bg-red-800 text-white px-8 py-4 rounded-lg shadow-2xl z-[99999] focus:top-20 transition-all duration-300 font-bold text-lg border-4 border-white">
+            Skip to main content
+        </a>
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
-        <main class="min-h-screen pb-[70px] mt-[20px]">
+        <div id="main-content"
+             role="main"
+             tabindex="-1"
+             class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
-        </main>
+        </div>
         <div class="pb-[50px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
