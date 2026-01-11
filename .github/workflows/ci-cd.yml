@@ -327,6 +327,9 @@ jobs:
           name: test-output
           path: test-output.txt
           retention-days: 1
+      - name: Print last 50 lines of test output
+        if: steps.run-tests.outputs.exit_code != '0'
+        run: tail -n 50 test-output.txt || true
       - name: Fail the job if tests failed
         if: steps.run-tests.outputs.exit_code != '0'
         run: exit 1
