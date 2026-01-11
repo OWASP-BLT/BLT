@@ -505,6 +505,55 @@ class LeaderboardTests(TestCase):
         # Check that regular users can still appear
         self.assertContains(response, "user1")
 
+    def test_global_leaderboard_excludes_bot_reviewers(self):
+        """Test that bot accounts are excluded from code review leaderboard"""
+        # Create bot contributors
+        bot_reviewer = Contributor.objects.create(
+            name="github-actions[bot]",
+            github_id=9999,
+            github_url="https://github.com/apps/github-actions",
+            avatar_url="https://avatars.githubusercontent.com/in/15368",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        # Create a PR for the bot to review
+        pr_for_bot = GitHubIssue.objects.create(
+            user_profile=self.profile1,
+            contributor=self.contributor1,
+            repo=self.repo,
+            type="pull_request",
+            is_merged=True,
+            merged_at=timezone.now(),
+            title="Test PR for bot review",
+            state="closed",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/OWASP-BLT/BLT/pull/999",
+            issue_id=999,
+        )
+
+        # Create a review from the bot
+        bot_review = GitHubReview.objects.create(
+            reviewer_contributor=bot_reviewer,
+            state="APPROVED",
+            submitted_at=timezone.now(),
+            pull_request=pr_for_bot,
+            review_id=9999,
+            url="https://github.com/OWASP-BLT/BLT/pull/999/reviews/9999",
+        )
+
+        # Get the global leaderboard
+        response = self.client.get("/leaderboard/")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot reviewer is NOT in the code review leaderboard
+        self.assertNotContains(response, "github-actions[bot]")
+
+        # Check that regular reviewers are still present
+        self.assertContains(response, "user1")
+        self.assertContains(response, "user2")
+
 
 class ProjectPageTest(TestCase):
     """Test cases for project page functionality"""

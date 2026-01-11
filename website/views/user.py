@@ -629,6 +629,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Code Review Leaderboard - Use reviewer_contributor
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
         # Filter for reviews on PRs merged in the last 6 months
+        # Create bot exclusion query for reviewers
+        reviewer_bot_exclusions = Q()
+        for bot in bots:
+            reviewer_bot_exclusions |= Q(reviewer_contributor__name__icontains=bot)
+
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer_contributor__isnull=False,
@@ -638,6 +643,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
+            .exclude(reviewer_bot_exclusions)  # Exclude bot reviewers
             .select_related("reviewer_contributor", "reviewer__user")
             .values(
                 "reviewer_contributor__name",
