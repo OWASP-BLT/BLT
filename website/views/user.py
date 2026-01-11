@@ -586,7 +586,14 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Filter for PRs merged in the last 6 months
         from dateutil.relativedelta import relativedelta
 
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
         since_date = timezone.now() - relativedelta(months=6)
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(contributor__name__icontains=bot)
+
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
@@ -598,7 +605,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
-            .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
+            .exclude(bot_exclusions)  # Exclude bot contributors
             .select_related("contributor", "user_profile__user")
             .values(
                 "contributor__name",
