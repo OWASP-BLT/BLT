@@ -1365,6 +1365,11 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
+    contributors = models.ManyToManyField(
+        "Contributor",
+        related_name="projects",
+        blank=True,
+    )
     # --- Freshness scoring constants ---
     # Time window weights for recent activity scoring
     FRESHNESS_WINDOW_WEIGHTS = [
