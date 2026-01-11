@@ -34,6 +34,15 @@ jobs:
       && github.actor != 'Copilot'
       && github.actor != 'copilot-swe-agent[bot]'
     steps:
+      - name: Run Tests
+        id: run-tests
+        run: |
+          # Place your test command here, e.g.:
+          echo "Running tests..."
+          # python manage.py test --exclude-tag=slow --parallel --failfast
+          # Simulate test failure for demonstration
+          exit 1
+        continue-on-error: true
       - name: Check for Peer Review and Add Label
         id: check_peer_review
         env:
