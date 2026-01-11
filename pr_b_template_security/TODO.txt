@@ -1,1 +1,0 @@
-Move all template files with rel="noopener noreferrer" and slug guards from website/templates/ here for PR B.
