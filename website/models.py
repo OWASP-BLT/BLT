@@ -1518,6 +1518,9 @@ class Project(models.Model):
                 name="freshness_0_100_range",
             ),
         ]
+        indexes = [
+            # Add any existing indexes from the previous Meta here, or leave as [] if none
+        ]
 
     def calculate_freshness(self, activity_graph_score: float | None = None, fast: bool = False) -> Decimal:
         """

@@ -34,17 +34,82 @@ class ProjectFreshnessEdgeTests(TestCase):
         self.assertEqual(p.calculate_freshness(), Decimal("0.00"))
 
     def test_outlier_spam(self):
-        # Prepare a project with data that triggers outlier/spam logic if needed
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+
+        from comments.models import Comment
+        from website.models import Domain, Issue, UserProfile
+
+        # Create required related objects
+        user = User.objects.create(username="testuser", email="test@example.com")
+        domain = Domain.objects.create(name="example.com", url="http://example.com")
         p = make_project()
-        p.save()  # Ensure the instance is saved before use in queries
-        # Add logic here to simulate outlier/spam if needed
+        p.save()
+        # Add spammy comments (same author, very old)
+        author_profile = UserProfile.objects.get(user=user)
+        old_time = timezone.now() - timezone.timedelta(days=400)
+        for _ in range(10):
+            issue = Issue.objects.create(
+                user=user,
+                domain=domain,
+                url="http://example.com/issue",
+                description="Spam Issue",
+            )
+            Comment.objects.create(
+                content_object=issue,
+                author="spammer",
+                author_fk=author_profile,
+                author_url="",
+                text="Spam",
+                created_date=old_time,
+            )
+        # Add a normal comment (recent, not spam)
+        issue2 = Issue.objects.create(
+            user=user,
+            domain=domain,
+            url="http://example.com/issue2",
+            description="Normal Issue",
+        )
+        Comment.objects.create(
+            content_object=issue2,
+            author="legituser",
+            author_fk=author_profile,
+            author_url="",
+            text="Legit",
+            created_date=timezone.now(),
+        )
+        # Should exclude spam/outlier comments
         result = p.calculate_freshness()
         self.assertIsInstance(result, Decimal)
 
     def test_fallback_issue_comment(self):
-        # Prepare a project that triggers fallback logic
+        from django.contrib.auth.models import User
+        from django.utils import timezone
+
+        from comments.models import Comment
+        from website.models import Domain, Issue, UserProfile
+
+        user = User.objects.create(username="testuser2", email="test2@example.com")
+        domain = Domain.objects.create(name="example2.com", url="http://example2.com")
         p = make_project()
-        p.save()  # Ensure the instance is saved before use in queries
-        # Add logic here to simulate fallback if needed
+        p.save()
+        author_profile = UserProfile.objects.get(user=user)
+        # No normal activity, only a fallback comment
+        issue = Issue.objects.create(
+            user=user,
+            domain=domain,
+            url="http://example2.com/issue",
+            description="Fallback Issue",
+        )
+        Comment.objects.create(
+            content_object=issue,
+            author="fallbackuser",
+            author_fk=author_profile,
+            author_url="",
+            text="Fallback",
+            created_date=timezone.now() - timezone.timedelta(days=100),
+        )
+        # Remove all contributions/commits/PRs if any
+        # (Assume no Contribution objects exist for this project)
         result = p.calculate_freshness()
         self.assertIsInstance(result, Decimal)

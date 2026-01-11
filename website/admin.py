@@ -601,11 +601,12 @@ class BlockedAdmin(admin.ModelAdmin):
         "modified",
     )
 
-    # Added for autocomplete_fields in ForumPostAdmin
-    # Must include the primary key for admin autocomplete
-    # and any fields referenced in autocomplete_fields
-    # (project, repo, organization)
-    # If project uses 'name' or 'slug' for autocomplete, those are included above
+
+# Added for autocomplete_fields in ForumPostAdmin
+# Must include the primary key for admin autocomplete
+# and any fields referenced in autocomplete_fields
+# (project, repo, organization)
+# If project uses 'name' or 'slug' for autocomplete, those are included above
 
 
 class RepoAdmin(admin.ModelAdmin):
