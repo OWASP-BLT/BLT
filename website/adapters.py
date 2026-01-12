@@ -16,7 +16,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
     def authentication_failed(self, request, **kwargs):
         """
         Show a user-friendly error message when authentication fails.
-        
+
         Security:
             - Does not expose whether username/email exists
             - Provides clear feedback to users
