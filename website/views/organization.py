@@ -2416,10 +2416,7 @@ def delete_room(request, room_id):
         return redirect("rooms_list")
 
     # Anonymous creator check (only if session exists)
-    is_anon_creator = (
-        request.user.is_anonymous
-        and room.session_key == request.session.session_key
-    )
+    is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
 
     if not (is_admin or is_anon_creator):
         messages.error(request, "You don't have permission to delete this room.")
