@@ -2407,9 +2407,19 @@ def join_room(request, room_id):
 def delete_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
 
-    # Check if the user is the admin or the anonymous creator
+    # Admin can always delete
     is_admin = request.user.is_authenticated and room.admin == request.user
-    is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
+
+    # Explicitly handle anonymous users without session
+    if request.user.is_anonymous and not request.session.session_key:
+        messages.error(request, "Your session has expired. You can no longer delete this room.")
+        return redirect("rooms_list")
+
+    # Anonymous creator check (only if session exists)
+    is_anon_creator = (
+        request.user.is_anonymous
+        and room.session_key == request.session.session_key
+    )
 
     if not (is_admin or is_anon_creator):
         messages.error(request, "You don't have permission to delete this room.")
