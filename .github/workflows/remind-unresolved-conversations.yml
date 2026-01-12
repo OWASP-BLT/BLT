@@ -71,10 +71,10 @@ jobs:
               
               // Get unresolved conversations count using GraphQL
               const query = `
-                query($owner: String!, $repo: String!, $pull_number: Int!) {
+                query($owner: String!, $repo: String!, $pull_number: Int!, $after: String) {
                   repository(owner: $owner, name: $repo) {
                     pullRequest(number: $pull_number) {
-                      reviewThreads(first: 100) {
+                      reviewThreads(first: 100, after: $after) {
                         nodes {
                           isResolved
                           isOutdated
@@ -100,13 +100,10 @@ jobs:
                     owner,
                     repo,
                     pull_number,
-                    ...(cursor && { after: cursor })
+                    after: cursor
                   };
                   
-                  const result = await github.graphql(
-                    cursor ? query.replace('first: 100', 'first: 100, after: $after') : query,
-                    variables
-                  );
+                  const result = await github.graphql(query, variables);
                   
                   const threads = result.repository.pullRequest.reviewThreads;
                   allThreads = allThreads.concat(threads.nodes);
