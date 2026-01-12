@@ -2,6 +2,7 @@
 CVE caching utilities for NVD API responses.
 """
 
+import decimal
 import logging
 import re
 import time
@@ -202,8 +203,8 @@ def fetch_cve_score_from_api(cve_id):
             response.raise_for_status()
 
             data = response.json()
-            # Use totalResults instead of resultsPerPage per NVD API spec
-            total_results = data.get("totalResults", 0)
+            # Use totalResults (NVD API 2.0 spec), fallback to resultsPerPage for older API versions
+            total_results = data.get("totalResults", data.get("resultsPerPage", 0))
 
             if total_results == 0:
                 logger.debug("No results found for CVE %s", cve_id)
@@ -236,7 +237,14 @@ def fetch_cve_score_from_api(cve_id):
             base_score = cvss_data[0].get("cvssData", {}).get("baseScore")
 
             if base_score is not None:
-                return Decimal(str(base_score)), False  # Valid response: score found (can cache)
+                try:
+                    # Convert to Decimal - can raise ValueError for invalid formats
+                    score = Decimal(str(base_score))
+                    return score, False  # Valid response: score found (can cache)
+                except (ValueError, TypeError, decimal.InvalidOperation) as e:
+                    # Malformed score value that can't be converted to Decimal
+                    logger.error("Invalid score format for CVE %s: %s", cve_id, e)
+                    return None, True  # Error: malformed data (don't cache)
 
             return None, False  # Valid response: score is None (can cache)
 
@@ -256,9 +264,9 @@ def fetch_cve_score_from_api(cve_id):
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code if e.response else None
             # Retry on 429 (rate limit) and 5xx (server errors) with exponential backoff
-            if status_code is not None and status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
+            if status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
                 wait_seconds = _get_backoff_base() * (2**attempt)
-                if status_code is not None and status_code == 429:
+                if status_code == 429:
                     # Check Retry-After header for rate limits
                     retry_after = e.response.headers.get("Retry-After") if e.response else None
                     if retry_after:
@@ -275,13 +283,13 @@ def fetch_cve_score_from_api(cve_id):
                 time.sleep(wait_seconds)
                 attempt += 1
                 continue
-            if status_code is not None and status_code == 429:
+            if status_code == 429:
                 logger.warning(
                     "Rate limit exceeded when fetching CVE score for %s after %d attempts",
                     cve_id,
                     max_retries,
                 )
-            elif status_code is not None and 500 <= status_code < 600:
+            elif 500 <= status_code < 600:
                 logger.error(
                     "Server error %s fetching CVE score for %s after %d attempts",
                     status_code,
@@ -384,9 +392,6 @@ def _wait_for_cache_fill(cache_key, cve_id):
     """
     wait_timeout = _get_lock_wait_timeout()
     wait_interval = _get_lock_wait_interval()
-    # Ensure wait_interval is positive to prevent ZeroDivisionError
-    if wait_interval <= 0:
-        wait_interval = max(0.01, wait_timeout / 100)  # Default to 1% of timeout or 10ms
     deadline = time.monotonic() + wait_timeout
     iterations = 0
     max_iterations = int(wait_timeout / wait_interval)
