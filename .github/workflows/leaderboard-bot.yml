@@ -47,10 +47,10 @@ jobs:
             // Bot detection helper function
             const isBot = (user) => {
               if (!user || !user.login) return false;
-              const knownBots = ['copilot', 'dependabot', 'github-actions'];
+              const loginLower = user.login.toLowerCase();
+              const botPatterns = ['copilot', '[bot]', 'dependabot', 'github-actions', 'renovate'];
               return user.type === 'Bot' || 
-                     user.login.endsWith('[bot]') || 
-                     knownBots.includes(user.login.toLowerCase());
+                     botPatterns.some(pattern => loginLower.includes(pattern));
             };
             
             // GraphQL query to fetch PRs for the current month (for counting PR creations)
