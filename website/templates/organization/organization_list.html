@@ -10,12 +10,12 @@
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Popular Tags</h2>
                 <div class="flex flex-wrap gap-2">
                     <a href="{% url 'organizations' %}"
-                       class="px-4 py-2 rounded-full text-sm font-medium {% if not selected_tag %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 dark:text-gray-200 hover:bg-gray-200{% endif %} transition-colors">
+                       class="px-4 py-2 rounded-full text-sm font-medium {% if not selected_tag %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600{% endif %} transition-colors">
                         All
                     </a>
                     {% for tag in top_tags %}
                         <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
-                           class="px-4 py-2 rounded-full text-sm font-medium {% if selected_tag.slug == tag.slug %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 dark:text-gray-200 hover:bg-gray-200{% endif %} transition-colors">
+                           class="px-4 py-2 rounded-full text-sm font-medium {% if selected_tag.slug == tag.slug %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600{% endif %} transition-colors">
                             {{ tag.name }} ({{ tag.org_count }})
                         </a>
                     {% endfor %}
@@ -38,7 +38,7 @@
                 {% if organizations %}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {% for org in organizations %}
-                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center">
                                         {% if org.logo %}
@@ -85,7 +85,7 @@
                                         <div class="flex flex-wrap gap-2">
                                             {% for tag in org.tags.all %}
                                                 <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
-                                                   class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-200 transition-colors">
+                                                   class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 transition-colors">
                                                     {{ tag.name }}
                                                 </a>
                                             {% endfor %}
@@ -192,11 +192,11 @@
                                         </a>
                                     {% endif %}
                                     {% if org.twitter %}
-                                        <a href="https://twitter.com/{{ org.twitter }}"
+                                        <a href="https://x.com/{{ org.twitter }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="text-blue-400 hover:text-blue-600">
-                                            <i class="fab fa-twitter mr-2"></i>@{{ org.twitter }}
+                                            <i class="fab fa-x-twitter mr-2"></i>@{{ org.twitter }}
                                         </a>
                                     {% endif %}
                                 </div>
@@ -216,7 +216,7 @@
                             <nav class="inline-flex rounded-md shadow">
                                 {% if page_obj.has_previous %}
                                     <a href="?page={{ page_obj.previous_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
-                                       class="px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
+                                       class="px-3 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Previous
                                     </a>
                                 {% endif %}
@@ -225,7 +225,7 @@
                                 </span>
                                 {% if page_obj.has_next %}
                                     <a href="?page={{ page_obj.next_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
-                                       class="px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50">
+                                       class="px-3 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Next
                                     </a>
                                 {% endif %}
@@ -270,7 +270,7 @@
                                         </div>
                                     {% endif %}
                                     <a href="{% url 'organization_detail' org.slug %}"
-                                       class="text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] font-medium">{{ org.name }}</a>
+                                       class="text-gray-900 dark:text-gray-100 font-medium">{{ org.name }}</a>
                                 </div>
                             {% endfor %}
                         </div>
@@ -299,7 +299,7 @@
                                         </div>
                                     {% endif %}
                                     <a href="{% url 'organization_detail' org.slug %}"
-                                       class="text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] font-medium">{{ org.name }}</a>
+                                       class="text-gray-900 dark:text-gray-100 font-medium">{{ org.name }}</a>
                                 </div>
                             {% endfor %}
                         </div>
