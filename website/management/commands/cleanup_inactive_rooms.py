@@ -49,6 +49,9 @@ class Command(BaseCommand):
 
         total_to_delete = empty_rooms.count() + inactive_rooms.count()
 
+        empty_count = empty_rooms.count()
+        inactive_count = inactive_rooms.count()
+
         if dry_run:
             self.stdout.write(self.style.WARNING(f"DRY RUN: Would delete {total_to_delete} inactive discussion rooms"))
 
@@ -66,8 +69,6 @@ class Command(BaseCommand):
                 self.stdout.write("  ... and more")
 
         else:
-            empty_count = empty_rooms.count()
-            inactive_count = inactive_rooms.count()
             empty_rooms.delete()
             inactive_rooms.delete()
 
