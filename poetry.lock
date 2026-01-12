@@ -4152,4 +4152,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "fb26a2e5f52aaf11f92a0921d5cd7868d4b5af4f177b47a4f77db549843c55de"
+content-hash = "4733dcce9ddd29cfe6df7eef33f88d093794cd79af066fad147e785661a910d7"
