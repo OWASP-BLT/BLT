@@ -48,6 +48,24 @@
             <!-- Right Side (Login Form) d -->
             <div class="p-5 bg-white dark:bg-gray-800 md:flex-1">
                 <h3 class="text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account Login" %}</h3>
+                <!-- Display Django messages (e.g., error messages from adapter) -->
+                {% if messages %}
+                    <div class="mt-4 space-y-2">
+                        {% for message in messages %}
+                            <div class="{% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded relative"
+                                 role="alert">
+                                <span class="block sm:inline">{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <!-- Display form non-field errors -->
+                {% if form.non_field_errors %}
+                    <div class="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+                         role="alert">
+                        {% for error in form.non_field_errors %}<span class="block sm:inline">{{ error }}</span>{% endfor %}
+                    </div>
+                {% endif %}
                 <form class="flex flex-col space-y-4 login"
                       method="post"
                       action="{% url 'account_login' %}?next={{ request.path }}">
@@ -60,7 +78,7 @@
                     <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="id_login"
-                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username</label>
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username or Email</label>
                         <input autofocus
                                id="id_login"
                                name="login"

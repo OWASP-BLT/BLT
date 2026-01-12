@@ -2,8 +2,30 @@
 Custom adapters for django-allauth to improve UX.
 """
 
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.contrib import messages
 from django.shortcuts import resolve_url
+
+
+class CustomAccountAdapter(DefaultAccountAdapter):
+    """
+    Custom account adapter to improve login error messages.
+    """
+
+    def authentication_failed(self, request, **kwargs):
+        """
+        Show a user-friendly error message when authentication fails.
+        
+        Security:
+            - Does not expose whether username/email exists
+            - Provides clear feedback to users
+        """
+        messages.error(
+            request,
+            "The username/email and password you entered did not match our records. "
+            "Please check your credentials and try again.",
+        )
 
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
