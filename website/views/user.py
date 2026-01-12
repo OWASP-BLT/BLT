@@ -2337,7 +2337,9 @@ def request_recommendation(request, username):
                             messages.warning(request, "You already have a pending request with this user.")
                             return redirect("profile", slug=username)
                         elif existing_request.status == "accepted":
-                            messages.info(request, "Your request has been accepted. The user is working on your recommendation.")
+                            messages.info(
+                                request, "Your request has been accepted. The user is working on your recommendation."
+                            )
                             return redirect("profile", slug=username)
                         elif existing_request.status == "completed":
                             messages.info(request, "You have already received a recommendation from this user.")
@@ -2366,7 +2368,9 @@ def request_recommendation(request, username):
                 )
                 return redirect("profile", slug=username)
             except IntegrityError:
-                messages.warning(request, "A request with this user already exists. Please check your pending or completed requests.")
+                messages.warning(
+                    request, "A request with this user already exists. Please check your pending or completed requests."
+                )
                 return redirect("profile", slug=username)
             except Exception:
                 logger.exception("Error creating recommendation request")
