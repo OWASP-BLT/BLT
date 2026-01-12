@@ -1,5 +1,5 @@
 from io import BytesIO
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
@@ -61,7 +61,8 @@ class FileValidationTest(APITestCase):
 
 
 class RebuildSafeUrlTestCase(TestCase):
-    def test_rebuild_safe_url(self):
+    @patch("website.utils.is_dns_safe", return_value=True)
+    def test_rebuild_safe_url(self, mock_is_dns_safe):
         print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
         test_cases = [
             # Test case with credentials and encoded control characters in the path.
