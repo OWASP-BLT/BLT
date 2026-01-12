@@ -25,6 +25,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import strip_tags
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -1822,7 +1823,7 @@ def start_thread(request, user_id):
             }
 
             msg_html = render_to_string("email/new_chat.html", context)
-            msg_plain = render_to_string("email/new_chat.html", context)
+            msg_plain = strip_tags(msg_html)
             send_mail(
                 subject,
                 msg_plain,
