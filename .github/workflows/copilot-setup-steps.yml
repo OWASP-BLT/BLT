@@ -1,0 +1,104 @@
+---
+name: "Copilot Setup Steps"
+
+# Automatically run the setup steps when they are changed to allow for easy validation
+# This workflow prepares the environment for GitHub Copilot coding agent
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    # Set the permissions to the lowest permissions possible
+    # Copilot will be given its own token for its operations
+    permissions:
+      contents: read
+
+    steps:
+      # Copilot will checkout the code automatically if we don't do it here
+      # But we do it explicitly to ensure dependencies are installed correctly
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Python dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Node.js dependencies (if package.json exists)
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci
+          else
+            echo "No package.json found, skipping npm install"
+          fi
+
+      - name: Setup PostgreSQL
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "CREATE USER bltuser WITH PASSWORD 'password';"
+          sudo -u postgres psql -c "CREATE DATABASE bltdb OWNER bltuser;"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE bltdb TO bltuser;"
+
+      - name: Install pre-commit
+        run: |
+          poetry run pip install pre-commit
+          poetry run pre-commit install --install-hooks
+
+      - name: Create .env file
+        run: |
+          if [ ! -f ".env" ]; then
+            cp .env.example .env
+          fi
+
+      - name: Display setup completion
+        run: |
+          echo "✅ Environment setup completed successfully"
+          echo "Python version: $(python --version)"
+          echo "Poetry version: $(poetry --version)"
+          echo "Node version: $(node --version)"
+          echo "Pre-commit installed: $(poetry run pre-commit --version)"
