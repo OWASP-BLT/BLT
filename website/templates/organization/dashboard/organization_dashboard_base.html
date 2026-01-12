@@ -71,7 +71,8 @@
                                 <select id="organization-switcher"
                                         class="block w-full sm:w-64 rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 dark:text-gray-100 dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-[#e74c3c] text-sm">
                                     {% for org in organizations %}
-                                        <option value="{{ org.id }}" {% if org.id == organization %}selected{% endif %}>
+                                        <option value="{{ org.id }}"
+                                                {% if org.id == organization %}selected{% endif %}>
                                             {{ org.name }}
                                         </option>
                                     {% endfor %}
