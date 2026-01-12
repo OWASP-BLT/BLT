@@ -34,7 +34,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -89,6 +89,27 @@ SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
 # ----------------------------------------------------------------------------------
+def get_popular_searches(limit=5, min_users=3):
+    """Returns a list of dicts with query and average result count."""
+
+    popular = (
+        SearchHistory.objects.values("query")
+        .annotate(user_count=Count("user", distinct=True), avg_results=Avg("result_count"))
+        .filter(user_count__gte=min_users, avg_results__gt=0)
+        .order_by("-user_count", "-avg_results")[:limit]
+    )
+
+    suggestions = []
+    for item in popular:
+        suggestions.append(
+            {
+                "query": item["query"],
+                "result_count": int(item["avg_results"]) if item["avg_results"] else 0,
+                "user_count": item["user_count"],
+            }
+        )
+
+    return suggestions
 
 
 def memory_usage_by_module(limit=1000):
@@ -766,6 +787,43 @@ def search(request, template="search.html"):
                 "type": stype,
                 "repos": Repo.objects.filter(primary_language__icontains=query),
             }
+
+        has_results = False
+
+        if stype == "all" or not stype:
+            has_results = bool(
+                context.get("organizations")
+                or context.get("issues")
+                or context.get("domains")
+                or context.get("users")
+                or context.get("projects")
+                or context.get("repos")
+            )
+        elif stype == "tags":
+            has_results = bool(
+                context.get("matching_organizations")
+                or context.get("matching_domains")
+                or context.get("matching_issues")
+                or context.get("matching_user_profiles")
+                or context.get("matching_repos")
+            )
+        else:
+            type_to_key = {
+                "issues": "issues",
+                "domains": "domains",
+                "users": "users",
+                "labels": "issues",
+                "organizations": "organizations",
+                "projects": "projects",
+                "repos": "repos",
+                "languages": "repos",
+            }
+            key = type_to_key.get(stype, stype)
+            has_results = bool(context.get(key))
+        # If no results found, add popular search suggestions
+        if not has_results:
+            context["popular_searches"] = get_popular_searches(limit=5, min_users=3)
+            context["has_no_results"] = True
 
     # Handle authenticated user features
     if request.user.is_authenticated:
