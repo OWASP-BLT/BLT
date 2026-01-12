@@ -3664,6 +3664,8 @@ class SlackPoll(models.Model):
     message_ts = models.CharField(max_length=255, null=True, blank=True)  # Message timestamp for updates
     question = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    allow_multiple_votes = models.BooleanField(default=False)
+    anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)
 
