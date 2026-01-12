@@ -145,7 +145,10 @@ jobs:
                     })
                     .filter(num => num !== null);
 
-                  const maxExisting = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+                  // Use reduce instead of spread operator to avoid stack overflow with many migrations
+                  const maxExisting = existingNumbers.length > 0 
+                    ? existingNumbers.reduce((max, num) => Math.max(max, num), 0) 
+                    : 0;
                   core.info(`${app}: Max existing migration number is ${maxExisting}`);
 
                   // Check for conflicts
@@ -164,7 +167,19 @@ jobs:
                 }
               }
 
-              // If there are conflicts, add a comment to the PR
+              // Fetch PR comments once for both conflict scenarios
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+              });
+
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Migration Number Conflict Detected')
+              );
+
+              // If there are conflicts, add or update a comment to the PR
               if (conflicts.length > 0) {
                 const conflictMessages = conflicts.map(c => 
                   `- \`${c.filename}\` has migration number **${String(c.number).padStart(4, '0')}**, but the latest migration in \`${c.app}/migrations\` is **${String(c.maxExisting).padStart(4, '0')}**`
@@ -185,18 +200,6 @@ Migration files must be numbered sequentially. The migration numbers in this PR 
 3. Run \`python manage.py makemigrations\` again to generate new migration files with correct sequential numbers
 
 This ensures your migrations will be applied in the correct order and won't conflict with existing migrations.`;
-
-                // Check if we've already posted this comment
-                const { data: comments } = await github.rest.issues.listComments({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                });
-
-                const botComment = comments.find(comment => 
-                  comment.user.type === 'Bot' && 
-                  comment.body.includes('Migration Number Conflict Detected')
-                );
 
                 if (botComment) {
                   // Update existing comment
@@ -222,18 +225,7 @@ This ensures your migrations will be applied in the correct order and won't conf
               } else {
                 core.info('✅ All migration numbers are sequential and valid');
                 
-                // Remove any existing conflict comment if migrations are now valid
-                const { data: comments } = await github.rest.issues.listComments({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                });
-
-                const botComment = comments.find(comment => 
-                  comment.user.type === 'Bot' && 
-                  comment.body.includes('Migration Number Conflict Detected')
-                );
-
+                // Remove existing conflict comment if migrations are now valid
                 if (botComment) {
                   await github.rest.issues.deleteComment({
                     owner,
