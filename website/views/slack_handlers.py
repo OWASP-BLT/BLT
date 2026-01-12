@@ -33,6 +33,80 @@ client = WebClient(token=SLACK_TOKEN)
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
+
+def get_slack_username(workspace_client, user_id):
+    """
+    Helper function to fetch username from Slack user ID.
+
+    Priority order for username selection:
+    1. real_name (full name like "John Doe")
+    2. display_name from profile (custom display name)
+    3. name (username like "john.doe")
+    4. user_id as fallback
+
+    Returns None if API call fails.
+    """
+    try:
+        user_info = workspace_client.users_info(user=user_id)
+        if user_info.get("ok") and user_info.get("user"):
+            user = user_info["user"]
+            # Try to get the best available name
+            real_name = user.get("real_name")
+            display_name = user.get("profile", {}).get("display_name")
+            username = user.get("name")
+
+            return real_name or display_name or username or user_id
+    except (SlackApiError, KeyError, AttributeError) as e:
+        logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
+    return None
+
+
+def get_project_with_least_members():
+    """Get the project channel name with the least members (excluding project-blt)."""
+    try:
+        project = (
+            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+            .exclude(slack_channel="project-blt")
+            .order_by("slack_user_count")
+            .first()
+        )
+        return project.slack_channel if project else None
+    except Exception as e:
+        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
+        return None
+
+
+def _build_owasp_welcome_message(user_id):
+    """Build the OWASP Slack welcome message with dynamic project examples."""
+    least_members_channel = get_project_with_least_members()
+    project_examples = "*#project-blt*"
+    if least_members_channel:
+        project_examples += f" or *#{least_members_channel}*"
+
+    return (
+        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+        ":small_blue_diamond: *Get Involved:*\n"
+        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+        f"• Explore project channels like {project_examples} to dive into specific projects.\n"
+        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
+        ":small_blue_diamond: *Stay Updated:*\n"
+        "• Visit *#newsroom* for the latest updates and announcements.\n"
+        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+        ":small_blue_diamond: *Connect and Learn:*\n"
+        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+        "Welcome aboard! :rocket:"
+    )
+
+
 # Replace GSoC cache with hardcoded project data
 GSOC_PROJECTS = [
     {
@@ -223,6 +297,7 @@ def _handle_team_join(user_id, request):
             workspace_id=team_id, activity_type="team_join", user_id=user_id, details={"event_data": event_data}
         )
 
+        workspace_client = None
         try:
             slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
             activity.workspace_name = slack_integration.integration.organization.name
@@ -236,28 +311,7 @@ def _handle_team_join(user_id, request):
                 # If no welcome message but it's OWASP workspace
                 if team_id == "T04T40NHX":
                     workspace_client = WebClient(token=SLACK_TOKEN)
-                    welcome_message = (
-                        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                        ":small_blue_diamond: *Get Involved:*\n"
-                        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                        "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-                        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                        ":small_blue_diamond: *Stay Updated:*\n"
-                        "• Visit *#newsroom* for the latest updates and announcements.\n"
-                        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                        ":small_blue_diamond: *Connect and Learn:*\n"
-                        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                        "Welcome aboard! :rocket:"
-                    )
+                    welcome_message = _build_owasp_welcome_message(user_id)
                 else:
                     workspace_client = WebClient(token=slack_integration.bot_access_token)
                     welcome_message = (
@@ -271,30 +325,16 @@ def _handle_team_join(user_id, request):
             if team_id == "T04T40NHX":
                 workspace_client = WebClient(token=SLACK_TOKEN)
                 # Use the default OWASP welcome message
-                welcome_message = (
-                    f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-                    "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-                    "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-                    ":small_blue_diamond: *Get Involved:*\n"
-                    "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-                    "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-                    "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-                    ":small_blue_diamond: *Stay Updated:*\n"
-                    "• Visit *#newsroom* for the latest updates and announcements.\n"
-                    "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-                    ":small_blue_diamond: *Connect and Learn:*\n"
-                    "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-                    "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-                    "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-                    "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-                    "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-                    "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-                    "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-                    "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-                    "Welcome aboard! :rocket:"
-                )
+                welcome_message = _build_owasp_welcome_message(user_id)
             else:
                 return
+
+        # Fetch and save username if workspace_client was created
+        if workspace_client:
+            username = get_slack_username(workspace_client, user_id)
+            if username:
+                activity.username = username
+                activity.save()
 
         # Add delay to ensure user is fully joined
         time.sleep(2)  # Wait 2 seconds before sending message
@@ -369,6 +409,12 @@ def slack_commands(request):
                         "text": "This workspace is not properly configured. Please contact the workspace admin.",
                     }
                 )
+
+        # Fetch and save username
+        username = get_slack_username(workspace_client, user_id)
+        if username:
+            activity.username = username
+            activity.save()
 
         if command == "/discover":
             search_term = request.POST.get("text", "").strip()

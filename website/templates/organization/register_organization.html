@@ -29,7 +29,8 @@
                     </p>
                     <div class="mt-4 inline-flex items-center px-4 py-2 bg-red-50 text-[#e74c3c] rounded-full text-sm">
                         <i class="fas fa-gift mr-2"></i>
-                        Earn <a href="/bacon" class="font-bold hover:text-red-700 underline mx-1">10 BACON</a> tokens on registration!
+                        Earn <a href="{% url 'bacon' %}"
+    class="font-bold hover:text-red-700 underline mx-1">10 BACON</a> tokens on registration!
                     </div>
                 </div>
                 <!-- Registration Form -->
@@ -114,13 +115,13 @@
                                 </label>
                                 <div class="mt-1 relative border border-gray-200 dark:border-gray-700 rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-600">
-                                        <i class="fab fa-twitter"></i>
+                                        <i class="fab fa-x-twitter"></i>
                                     </div>
                                     <input type="text"
                                            name="twitter_url"
                                            id="twitter_url"
                                            autocomplete="twitter"
-                                           placeholder="{% trans 'https://twitter.com/handle' %}"
+                                           placeholder="{% trans 'https://x.com/handle' %}"
                                            maxlength="250"
                                            class="block w-full pl-10 py-3 border-gray-200 dark:border-gray-700 rounded-md text-gray-900 dark:text-gray-100 placeholder:text-base text-base bg-white dark:bg-gray-900" />
                                 </div>
@@ -219,7 +220,7 @@
                             <div class="absolute hidden group-hover:block -top-12 left-1/2 transform -translate-x-1/2 px-3 py-2 bg-gray-900 dark:bg-gray-50 text-white text-xs rounded">
                                 <div class="flex items-center whitespace-nowrap">
                                     <i class="fas fa-bacon mr-2"></i>
-                                    <a href="/bacon" class="hover:text-red-300">+10 BACON</a>
+                                    <a href="{% url 'bacon' %}" class="hover:text-red-300">+10 BACON</a>
                                 </div>
                                 <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-50 rotate-45">
                                 </div>
