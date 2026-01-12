@@ -1267,8 +1267,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     exc_info=True,
                 )
 
+        # Store created issue data for CVE score fetch outside transaction
+        # Using list as mutable container accessible via closure
+        created_issue_info = [None, None]  # [pk, cve_id]
+
         @atomic
         def create_issue(self, form):
+            nonlocal created_issue_info
             # Validate screenshots first before any database operations
             if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
                 messages.error(self.request, "Screenshot is needed!")
@@ -1549,7 +1554,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 normalized = normalize_cve_id(obj.cve_id)
                 if not normalized:
                     # Invalid CVE ID format
-                    cve_validation_error = f"Invalid CVE ID format: {original_cve_id}. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits) (4-7 digits)"
+                    cve_validation_error = f"Invalid CVE ID format: {original_cve_id}. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits)"
                     obj.cve_id = None  # Clear invalid CVE ID
                 else:
                     obj.cve_id = normalized
@@ -1560,6 +1565,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
+
+            # Store issue data for CVE score fetch outside transaction
+            created_issue_info[0] = obj.pk
+            created_issue_info[1] = obj.cve_id
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
                 Points.objects.create(
@@ -1713,17 +1722,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
         result = create_issue(self, form)
 
         # STEP 2: Fetch CVE score OUTSIDE transaction (no DB lock held during network I/O)
-        # Get the issue instance that was created (stored in form)
-        obj = form.save(commit=False)
-        issue_pk = getattr(obj, "pk", None) or getattr(obj, "id", None)
+        # Get the issue data that was stored by create_issue via closure
+        issue_pk, cve_id = created_issue_info
 
         # Only proceed with CVE score fetch if we have a valid issue PK and CVE ID
-        if issue_pk and obj.cve_id:
+        if issue_pk and cve_id:
             try:
                 # Fetch CVE score outside transaction
                 from website.cache.cve_cache import get_cached_cve_score
 
-                cve_score = get_cached_cve_score(obj.cve_id)
+                cve_score = get_cached_cve_score(cve_id)
                 if cve_score is not None:
                     # Update in a short transaction using the specific primary key
                     from django.db import transaction
@@ -1736,7 +1744,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             issue.save(update_fields=["cve_score"])
                         except Issue.DoesNotExist:
                             logger.error(f"Issue with pk={issue_pk} not found after creation")
-                elif obj.cve_id:
+                else:
                     messages.warning(
                         self.request, "Could not fetch CVE score at this time. Issue was created without it."
                     )
