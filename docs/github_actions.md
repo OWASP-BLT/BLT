@@ -541,13 +541,21 @@ Workflows that keep the repository healthy and up-to-date.
 - Manual dispatch
 
 **Key Features**:
-- Checks all open PRs for unresolved conversations
+- Checks all open PRs for unresolved conversations using GraphQL API
+- **Proper pagination support**: Fetches all review threads across multiple pages (100 per page)
 - Only reminds if PR hasn't been updated in 24 hours
-- Skips bot-created PRs
+- Skips bot-created PRs (detects by user type, `[bot]` suffix, or known bot list)
 - Won't remind more than once per week
 - Posts friendly reminder comment tagging the author
+- **Comprehensive logging**: Tracks pagination progress and thread statistics for debugging
 
-**AI Relevance**: Keeps contributors engaged, even when they're working with AI assistance and may forget about pending discussions.
+**Technical Details**:
+- Uses GraphQL query with proper `$after` parameter for cursor-based pagination
+- Filters out outdated threads that no longer apply to current code
+- Counts resolved, unresolved, and outdated threads separately
+- Logs each page fetch and provides detailed breakdown of thread states
+
+**AI Relevance**: Keeps contributors engaged, even when they're working with AI assistance and may forget about pending discussions. Critical for ensuring AI-generated code receives proper review attention.
 
 #### 6.7 Update All PRs (`update-all-prs.yml`)
 **Purpose**: Batch update and check all open PRs
