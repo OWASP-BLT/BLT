@@ -237,9 +237,9 @@ def bounty_payout(request):
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
+        # --- First transaction: validation and intent marking ---
         try:
             with transaction.atomic():
-                # Lock the row to prevent concurrent modifications
                 github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
 
                 # Check timed bounty expiry
@@ -269,29 +269,54 @@ def bounty_payout(request):
                         status=200,
                     )
 
-                # Process payment via GitHub Sponsors API
-                transaction_id = process_github_sponsors_payment(
-                    username=contributor_username,
-                    amount=bounty_amount,
-                    note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
-                )
-
-                if not transaction_id:
-                    logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
-                    return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
-
-                logger.info(
-                    f"Successfully processed bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
-                    f"for PR #{pr_number} (Issue #{issue_number})"
-                )
-
-                # Save transaction ID
-                github_issue.sponsors_tx_id = transaction_id
-                github_issue.save()
+                # Optionally mark payment as pending (if field exists)
+                if hasattr(github_issue, "payment_pending"):
+                    github_issue.payment_pending = True
+                    github_issue.save(update_fields=["payment_pending"])
 
         except GitHubIssue.DoesNotExist:
             logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+
+        # --- External payment call (outside transaction) ---
+        transaction_id = process_github_sponsors_payment(
+            username=contributor_username,
+            amount=bounty_amount,
+            note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
+        )
+
+        if not transaction_id:
+            logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
+            # Optionally clear payment_pending if set
+            try:
+                with transaction.atomic():
+                    github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                    if hasattr(github_issue, "payment_pending"):
+                        github_issue.payment_pending = False
+                        github_issue.save(update_fields=["payment_pending"])
+            except Exception:
+                logger.exception("Failed to clear payment_pending after payment failure")
+            return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
+
+        logger.info(
+            f"Successfully processed bounty payment: ${bounty_amount / 100:.2f} to {contributor_username} "
+            f"for PR #{pr_number} (Issue #{issue_number})"
+        )
+
+        # --- Second transaction: record payment ---
+        try:
+            with transaction.atomic():
+                github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                github_issue.sponsors_tx_id = transaction_id
+                if hasattr(github_issue, "payment_pending"):
+                    github_issue.payment_pending = False
+                github_issue.save()
+        except GitHubIssue.DoesNotExist:
+            logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name} after payment")
+            return JsonResponse({"status": "error", "message": "Issue not found after payment"}, status=404)
+        except Exception:
+            logger.exception("Failed to record sponsors_tx_id after payment")
+            return JsonResponse({"status": "error", "message": "Failed to record payment"}, status=500)
 
         # Add comment and labels to GitHub issue
         github_token = os.environ.get("GITHUB_TOKEN")
