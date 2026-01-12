@@ -153,44 +153,46 @@
         </div>
         <!-- Include messages JavaScript -->
         <script src="{% static 'js/messages.js' %}"></script>
-        <!-- Organization Switcher JavaScript -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const orgSwitcher = document.getElementById('organization-switcher');
-                if (orgSwitcher) {
-                    orgSwitcher.addEventListener('change', function() {
-                        const selectedOrgId = this.value;
-                        const currentPath = window.location.pathname;
-                        const currentUrlName = '{{ request.resolver_match.url_name }}';
-                        
-                        // Determine the target URL based on the current page
-                        let targetUrl;
-                        if (currentUrlName === 'organization_analytics') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/analytics/`;
-                        } else if (currentUrlName === 'organization_team_overview') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/team-overview/`;
-                        } else if (currentUrlName === 'organization_manage_bugs') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/bugs/`;
-                        } else if (currentUrlName === 'organization_manage_domains') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/domains/`;
-                        } else if (currentUrlName === 'organization_manage_bughunts') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/bughunts/`;
-                        } else if (currentUrlName === 'organization_manage_roles') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/roles/`;
-                        } else if (currentUrlName === 'organization_manage_integrations') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/integrations/`;
-                        } else if (currentUrlName === 'organization_manage_jobs') {
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/jobs/`;
-                        } else {
-                            // Default to analytics page if we don't recognize the current page
-                            targetUrl = `/organization/${selectedOrgId}/dashboard/analytics/`;
-                        }
-                        
-                        window.location.href = targetUrl;
-                    });
-                }
-            });
-        </script>
+        <!-- Organization Switcher JavaScript (only include if user has multiple organizations) -->
+        {% if organizations and organizations|length > 1 %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const orgSwitcher = document.getElementById('organization-switcher');
+                    if (orgSwitcher) {
+                        orgSwitcher.addEventListener('change', function() {
+                            const selectedOrgId = this.value;
+                            const currentPath = window.location.pathname;
+                            const currentUrlName = '{{ request.resolver_match.url_name }}';
+                            
+                            // Determine the target URL based on the current page
+                            let targetUrl;
+                            if (currentUrlName === 'organization_analytics') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/analytics/`;
+                            } else if (currentUrlName === 'organization_team_overview') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/team-overview/`;
+                            } else if (currentUrlName === 'organization_manage_bugs') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/bugs/`;
+                            } else if (currentUrlName === 'organization_manage_domains') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/domains/`;
+                            } else if (currentUrlName === 'organization_manage_bughunts') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/bughunts/`;
+                            } else if (currentUrlName === 'organization_manage_roles') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/roles/`;
+                            } else if (currentUrlName === 'organization_manage_integrations') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/integrations/`;
+                            } else if (currentUrlName === 'organization_manage_jobs') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/jobs/`;
+                            } else {
+                                // Default to analytics page if we don't recognize the current page
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/analytics/`;
+                            }
+                            
+                            window.location.href = targetUrl;
+                        });
+                    }
+                });
+            </script>
+        {% endif %}
         {% block scripts %}
         {% endblock scripts %}
     </body>
