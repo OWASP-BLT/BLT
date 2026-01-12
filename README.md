@@ -75,6 +75,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.11.2+
 - PostgreSQL
 - Docker & Docker Compose (recommended)
@@ -82,6 +83,7 @@
 ### Installation
 
 #### Using Docker (Recommended)
+
 ```bash
 # Clone the repository
 git clone https://github.com/OWASP-BLT/BLT.git
@@ -97,12 +99,23 @@ docker-compose up
 
 Access the application at **http://localhost:8000**
 
-#### Using Poetry
+#### Using uv
+
+> **Note:** The following uses `pip install uv` as a quick-start for users who already have Python and pip installed.
+> For the recommended and most reliable installation (which does not require Python or pip), use the standalone installer as described in our [Contributing Guide](https://github.com/OWASP-BLT/BLT/blob/main/CONTRIBUTING.md#uv-installation).
+
 ```bash
 # Install dependencies
-pip install poetry
-poetry shell
-poetry install
+pip install uv
+uv sync
+
+# Activate the virtual environment
+# On Linux/macOS/Git Bash:
+source .venv/bin/activate
+# On Windows (Command Prompt):
+.venv\Scripts\activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
 
 # Set up database
 python manage.py migrate
