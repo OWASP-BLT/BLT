@@ -129,9 +129,9 @@
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
-            {% block content %}
-            {% endblock content %}
             {% block natural_content %}
+                {% block content %}
+                {% endblock content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
         </main>
