@@ -1244,7 +1244,7 @@ class AddDomainView(View):
             if is_valid_https_url(domain_data["url"]):
                 safe_url = rebuild_safe_url(domain_data["url"])
                 try:
-                    response = requests.get(safe_url, timeout=5, verify=False)
+                    response = requests.get(safe_url, timeout=5, verify=True)
                     if response.status_code != 200:
                         raise Exception
                 except requests.exceptions.RequestException:
@@ -2057,8 +2057,18 @@ class OrganizationDashboardManageRolesView(View):
             else:
                 moderator_count += 1
 
+        # Get organizations for navigation
+        organizations = []
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+
         context = {
             "organization": id,
+            "organizations": organizations,
             "organization_obj": organization_obj,
             "roles": roles_data,
             "domains": list(domains.values("id", "name")),
