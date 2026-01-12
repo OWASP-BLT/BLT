@@ -94,70 +94,60 @@ logger = logging.getLogger(__name__)
 
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
+
+    # Fetch user profile once (NO prefetch)
     userprof = UserProfile.objects.get(user=request.user)
 
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+    # Remove downvote if exists
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+
+    # Toggle upvote
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
-    if issue.user is not None:
-        liked_user = issue.user
-        liker_user = request.user
-        issue_pk = issue.pk
-        msg_plain = render_to_string(
-            "email/issue_liked.html",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
-        msg_html = render_to_string(
-            "email/issue_liked.html",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
 
-        send_mail(
-            "Your issue got an upvote!!",
-            msg_plain,
-            settings.EMAIL_TO_STRING,
-            [liked_user.email],
-            html_message=msg_html,
-        )
+        # Send email only on NEW upvote
+        if issue.user and issue.user.email:
+            msg_context = {
+                "liker_user": request.user.username,
+                "liked_user": issue.user.username,
+                "issue_pk": issue.pk,
+            }
 
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    context["object"] = issue
-    context["likes"] = total_votes
-    context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
+            msg_plain = render_to_string("email/issue_liked.html", msg_context)
+            msg_html = render_to_string("email/issue_liked.html", msg_context)
+
+            send_mail(
+                "Your issue got an upvote!!",
+                msg_plain,
+                settings.EMAIL_TO_STRING,
+                [issue.user.email],
+                html_message=msg_html,
+            )
+
     return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
+
+    # Fetch user profile once
     userprof = UserProfile.objects.get(user=request.user)
 
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+    # Remove upvote if exists
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+
+    # Toggle downvote
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["dislikes"] = total_votes
-    context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
+
     return HttpResponse("Success")
 
 
@@ -2760,39 +2750,49 @@ def refresh_gsoc_project(request):
                 owner, repo_name = repo_full_name.split("/")
                 repo = Repo.objects.filter(name=repo_name).first()
 
-                if repo:
-                    prs_without_profiles = GitHubIssue.objects.filter(
-                        repo=repo,
-                        type="pull_request",
-                        is_merged=True,
-                        merged_at__gte=since_date,
-                        user_profile=None,
-                    )
+                if not repo:
+                    continue
 
-                    batch_size = 50
-                    for i in range(0, prs_without_profiles.count(), batch_size):
-                        batch = prs_without_profiles[i : i + batch_size]
+                prs_without_profiles = GitHubIssue.objects.filter(
+                    repo=repo,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=since_date,
+                    user_profile=None,
+                    contributor__isnull=False,
+                ).select_related("contributor")
 
-                        for pr in batch:
-                            try:
-                                pr_url_parts = pr.url.split("/")
-                                if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                                    github_url = f"https://github.com/{pr_url_parts[3]}"
+                # Collect contributor GitHub URLs
+                github_urls = {
+                    pr.contributor.github_url
+                    for pr in prs_without_profiles
+                    if pr.contributor
+                    and pr.contributor.github_url
+                    and not pr.contributor.github_url.endswith("[bot]")
+                    and "bot" not in pr.contributor.github_url.lower()
+                }
 
-                                    if github_url.endswith("[bot]") or "bot" in github_url.lower():
-                                        continue
+                # Fetch all matching user profiles in one query
+                profiles_map = {p.github_url: p for p in UserProfile.objects.filter(github_url__in=github_urls)}
 
-                                    user_profile = UserProfile.objects.filter(github_url=github_url).first()
+                prs_to_update = []
 
-                                    if user_profile:
-                                        pr.user_profile = user_profile
-                                        pr.save()
+                for pr in prs_without_profiles:
+                    github_url = pr.contributor.github_url if pr.contributor else None
+                    user_profile = profiles_map.get(github_url)
 
-                            except (IndexError, AttributeError):
-                                continue
+                    if user_profile:
+                        pr.user_profile = user_profile
+                        prs_to_update.append(pr)
+
+                if prs_to_update:
+                    GitHubIssue.objects.bulk_update(prs_to_update, ["user_profile"])
 
             except Exception as e:
-                messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
+                messages.warning(
+                    request,
+                    f"Error updating user profiles for {repo_full_name}: {str(e)}",
+                )
 
         messages.success(
             request,
