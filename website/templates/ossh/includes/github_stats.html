@@ -1,22 +1,22 @@
-<div class="bg-gradient-to-b from-blue-900 via-purple-900 to-black p-8 rounded-lg shadow-2xl">
-    <h1 class="text-4xl font-bold text-center text-white mb-6 tracking-wider">What we found</h1>
+<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700">
+    <h1 class="text-4xl font-bold text-center text-gray-900 dark:text-white mb-6 tracking-wider">What we found</h1>
     <div class="flex flex-col items-center space-y-8">
         <div class="relative">
             <img src="{{ user_data.profile.avatar_url }}"
                  alt="Profile Avatar"
                  width="160"
                  height="160"
-                 class="rounded-full border-4 border-indigo-500 shadow-lg object-cover">
+                 class="rounded-full border-4 border-[#e74c3c] shadow-lg object-cover">
         </div>
-        <div class="bg-black bg-opacity-50 p-6 rounded-lg space-y-4 shadow-inner w-full md:w-3/4">
+        <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg space-y-4 shadow-inner w-full md:w-3/4 border border-gray-200 dark:border-gray-700">
             <div class="text-center">
-                <h3 class="text-2xl font-semibold text-indigo-300">{{ user_data.profile.name }}</h3>
-                <p class="text-indigo-500">@{{ user_data.profile.username }}</p>
+                <h3 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ user_data.profile.name }}</h3>
+                <p class="text-[#e74c3c]">@{{ user_data.profile.username }}</p>
             </div>
             {% if user_data.profile.bio %}
-                <p class="text-gray-300 dark:text-gray-700 text-center italic">"{{ user_data.profile.bio }}"</p>
+                <p class="text-gray-700 dark:text-gray-300 text-center italic">"{{ user_data.profile.bio }}"</p>
             {% endif %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300 dark:text-gray-700">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
                 {% if user_data.profile.location %}
                     <p class="flex items-center">
                         <span class="mr-2">📍</span>{{ user_data.profile.location }}
@@ -33,20 +33,23 @@
                         <a href="{{ user_data.profile.blog }}"
                            target="_blank"
                            rel="noopener noreferrer"
-                           class="text-blue-400 hover:underline">{{ user_data.profile.blog }}</a>
+                           class="text-[#e74c3c] hover:text-red-700 dark:hover:text-red-400 hover:underline">{{ user_data.profile.blog }}</a>
                     </p>
                 {% endif %}
                 <p class="flex items-center">
                     <span class="mr-2">👥</span>
-                    <span class="font-semibold text-white">{{ user_data.profile.followers }}</span> Followers
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ user_data.profile.followers }}</span>
+                    <span class="ml-1 text-gray-700 dark:text-gray-300">Followers</span>
                 </p>
                 <p class="flex items-center">
                     <span class="mr-2">🔄</span>
-                    <span class="font-semibold text-white">{{ user_data.profile.following }}</span> Following
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ user_data.profile.following }}</span>
+                    <span class="ml-1 text-gray-700 dark:text-gray-300">Following</span>
                 </p>
                 <p class="flex items-center">
                     <span class="mr-2">📁</span>
-                    <span class="font-semibold text-white">{{ user_data.profile.public_repos }}</span> Public Repositories
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ user_data.profile.public_repos }}</span>
+                    <span class="ml-1 text-gray-700 dark:text-gray-300">Public Repositories</span>
                 </p>
             </div>
         </div>

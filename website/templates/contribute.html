@@ -23,7 +23,7 @@
         <!-- Main Content Section -->
         <div class="w-full mx-auto">
             <section id="contribute-overview"
-                     class="bg-gray-50 dark:bg-gray-900 w-full border border-gray-200 dark:border-gray-700 md:p-8 py-8 px-2 my-8">
+                     class="bg-gray-50 dark:bg-gray-800 w-full border border-gray-200 dark:border-gray-700 md:p-8 py-8 px-2 my-8">
                 <div class="max-w-[1200px] mx-auto text-center">
                     <h2 class="md:text-4xl text-3xl font-extrabold mb-4 text-gray-800 dark:text-gray-200 relative inline-block">
                         Contribute to OWASP BLT
@@ -393,7 +393,7 @@
                         Ready to start contributing? Here are a few steps to get you going:
                     </p>
                 </div>
-                <div class="bg-gray-50 dark:bg-gray-900 p-8 border border-gray-200 dark:border-gray-700">
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 border border-gray-200 dark:border-gray-700">
                     <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-8">
                         <div class="w-full md:w-1/2">
                             <ol class="relative border-l-2 border-[#e74c3c]">
@@ -433,7 +433,7 @@
                                 </li>
                             </ol>
                         </div>
-                        <div class="w-full md:w-1/2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+                        <div class="w-full md:w-1/2 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-md">
                             <h3 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      class="h-7 w-7 mr-2 text-[#e74c3c]"
@@ -448,13 +448,13 @@
                                 You don't have to be a security expert or programmer to contribute! All types of contributions are welcome.
                             </p>
                             <div class="space-y-6">
-                                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                                     <h4 class="text-xl font-medium mb-2 text-gray-800 dark:text-gray-200">Good First Issues</h4>
                                     <p class="text-gray-600 dark:text-gray-400">
                                         New contributors can start with issues tagged as "good first issue" on our GitHub repository. These are specifically selected to help newcomers get started.
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                                     <h4 class="text-xl font-medium mb-2 text-gray-800 dark:text-gray-200">How to Take an Issue</h4>
                                     <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400">
                                         <li>Find an issue you'd like to work on</li>
@@ -462,7 +462,7 @@
                                         <li>Comment "assign to me" or type "/assign" to take ownership of the issue</li>
                                     </ul>
                                 </div>
-                                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                                     <h4 class="text-xl font-medium mb-2 text-gray-800 dark:text-gray-200">Community Support</h4>
                                     <p class="mb-2 text-gray-600 dark:text-gray-400">
                                         Join our community on the OWASP Slack Channel in the #project-blt channel to:
@@ -541,11 +541,11 @@
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {% for issue in good_first_issues %}
-                                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
                                         <td class="px-6 py-4 whitespace-nowrap md:whitespace-normal text-sm font-medium text-gray-800 dark:text-gray-200">
                                             {{ issue.title }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                             {{ issue.created_at|date:"M d, Y H:i" }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -568,7 +568,7 @@
                                 {% empty %}
                                     <tr>
                                         <td colspan="3"
-                                            class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-500">
+                                            class="px-6 py-4 text-center text-sm text-gray-800 dark:text-gray-200">
                                             No issues found at the moment. Check back soon!
                                         </td>
                                     </tr>
@@ -596,7 +596,7 @@
     class="text-[#e74c3c] hover:underline font-medium">black</a> code style for the project. It helps us in keeping the codebase consistent and improves readability for other developers. Use <code class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-800 dark:text-gray-200">pre-commit run</code> command to make sure your changes comply with the standards.
                         </p>
                         <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                            <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
                                 <h4 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          class="h-6 w-6 mr-2 text-[#e74c3c]"
@@ -640,7 +640,7 @@
                                     </li>
                                 </ul>
                             </div>
-                            <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                            <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
                                 <h4 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          class="h-6 w-6 mr-2 text-[#e74c3c]"
@@ -703,7 +703,7 @@
                                 Make sure to run <code class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-gray-800 dark:text-gray-200">pre-commit</code> before committing so it formats the code.
                             </p>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
                                     <h4 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              class="h-6 w-6 mr-2 text-[#e74c3c]"
@@ -724,7 +724,7 @@
                                         Currently, development server can be installed using Docker or Vagrant. You can also use virtualenv or pipenv install, pipenv shell, and then continue with the remaining instructions.
                                     </p>
                                 </div>
-                                <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
                                     <h4 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              class="h-6 w-6 mr-2 text-[#e74c3c]"
