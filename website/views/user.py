@@ -2359,7 +2359,7 @@ def request_recommendation(request, username):
                         user=to_user,
                         message=f"{request.user.username} requested a recommendation from you!",
                         notification_type="general",
-                        link=reverse("profile", kwargs={"slug": to_user.username}),
+                        link=reverse("profile", kwargs={"slug": request.user.username}),
                     )
 
                 messages.success(
