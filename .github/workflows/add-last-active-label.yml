@@ -1,6 +1,7 @@
 name: Add Last Active Label
 
-# Runs daily to add labels based on days since last activity
+# Runs daily to add labels based on days since last human activity (comments)
+# Uses comment timestamps instead of updated_at to avoid label changes resetting the counter
 # Also allows manual triggering for testing
 on:
   schedule:
@@ -72,11 +73,61 @@ jobs:
             for (const item of allItems) {
               const itemNumber = item.number;
               const itemType = item.pull_request ? 'PR' : 'Issue';
-              const lastActivity = new Date(item.updated_at);
-              const daysSinceActivity = Math.floor((now - lastActivity.getTime()) / oneDayMs);
               
-              core.info(`\nProcessing ${itemType} #${itemNumber}: ${item.title}`);
-              core.info(`  Last activity: ${item.updated_at}`);
+              // Get the last comment timestamp to determine true human activity
+              // Using comments instead of updated_at prevents label changes from resetting the counter
+              let lastActivityTimestamp;
+              try {
+                // Fetch regular issue/PR comments
+                const comments = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: itemNumber,
+                  per_page: 1,
+                  sort: 'created',
+                  direction: 'desc'
+                });
+                
+                let lastCommentTime = comments.data.length > 0 ? new Date(comments.data[0].created_at) : null;
+                
+                // For PRs, also check review comments (inline code comments)
+                if (item.pull_request) {
+                  const reviewComments = await github.rest.pulls.listReviewComments({
+                    owner,
+                    repo,
+                    pull_number: itemNumber,
+                    per_page: 1,
+                    sort: 'created',
+                    direction: 'desc'
+                  });
+                  
+                  if (reviewComments.data.length > 0) {
+                    const reviewCommentTime = new Date(reviewComments.data[0].created_at);
+                    // Use the most recent between regular comments and review comments
+                    if (!lastCommentTime || reviewCommentTime > lastCommentTime) {
+                      lastCommentTime = reviewCommentTime;
+                    }
+                  }
+                }
+                
+                if (lastCommentTime) {
+                  lastActivityTimestamp = lastCommentTime.toISOString();
+                  core.info(`\nProcessing ${itemType} #${itemNumber}: ${item.title}`);
+                  core.info(`  Last comment: ${lastActivityTimestamp}`);
+                } else {
+                  // No comments, use the creation date of the issue/PR
+                  lastActivityTimestamp = item.created_at;
+                  core.info(`\nProcessing ${itemType} #${itemNumber}: ${item.title}`);
+                  core.info(`  No comments found, using creation date: ${lastActivityTimestamp}`);
+                }
+              } catch (err) {
+                core.warning(`  Failed to fetch comments for ${itemType} #${itemNumber}: ${err.message}`);
+                // Fallback to creation date if we can't fetch comments
+                lastActivityTimestamp = item.created_at;
+              }
+              
+              const lastActivity = new Date(lastActivityTimestamp);
+              const daysSinceActivity = Math.floor((now - lastActivity.getTime()) / oneDayMs);
               core.info(`  Days since activity: ${daysSinceActivity}`);
               
               // Determine the label based on days since last activity

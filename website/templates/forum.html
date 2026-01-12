@@ -77,6 +77,10 @@
                     <option value="most_votes">Most Votes</option>
                     <option value="most_comments">Most Comments</option>
                 </select>
+                <button onclick="applyFilters()"
+                        class="px-6 py-2 bg-[#e74c3c] text-white rounded-md font-medium hover:bg-[#c0392b] transition-colors duration-200">
+                    Apply
+                </button>
             </div>
             <!-- Posts List -->
             <ul class="space-y-4">
@@ -153,7 +157,7 @@
                                     <i class="fas fa-comments hover:text-gray-900 dark:hover:text-white"></i>
                                     <span class="hover:text-gray-900 dark:hover:text-white">{{ post.comments.count }} Comments</span>
                                 </div>
-                                {% if request.user.is_superuser %}
+                                {% if request.user == post.user or request.user.is_superuser %}
                                     <button type="button"
                                             class="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-[#e74c3c] hover:bg-red-200 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
                                             onclick="deletePost({{ post.id }})"
@@ -219,24 +223,20 @@
                     {% csrf_token %}
                     <div>
                         <label for="title"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
-                            Title
-                        </label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
                         <input type="text"
                                id="title"
                                name="title"
-                               class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white"
+                               class="w-full px-4 py-2 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
                                placeholder="Enter your discussion title"
                                required>
                     </div>
                     <div>
                         <label for="category"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
-                            Category
-                        </label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
                         <select id="category"
                                 name="category"
-                                class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent hover:text-gray-900 dark:hover:text-white"
+                                class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
                                 required>
                             <option value="">Select a category</option>
                             {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
@@ -244,24 +244,24 @@
                     </div>
                     <div>
                         <label for="description"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Description
                         </label>
                         <textarea id="description"
                                   name="description"
                                   rows="4"
-                                  class="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white"
+                                  class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
                                   placeholder="Write your discussion post"
                                   required></textarea>
                     </div>
                     <div>
                         <label for="organization"
-                               class="block text-sm font-medium text-gray-700 mb-2 hover:text-gray-900 dark:hover:text-white">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Organization (Optional)
                         </label>
                         <select id="organization"
                                 name="organization"
-                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent hover:text-gray-900 dark:hover:text-white">
+                                class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">None</option>
                             {% for org in organizations %}
                                 <option value="{{ org.id }}">{{ org.name }}</option>
@@ -270,24 +270,24 @@
                     </div>
                     <div>
                         <label for="project"
-                               class="block text-sm font-medium text-gray-700 mb-2 hover:text-gray-900 dark:hover:text-white">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Project (Optional)
                         </label>
                         <select id="project"
                                 name="project"
-                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent hover:text-gray-900 dark:hover:text-white">
+                                class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">None</option>
                             {% for proj in projects %}<option value="{{ proj.id }}">{{ proj.name }}</option>{% endfor %}
                         </select>
                     </div>
                     <div>
                         <label for="repo"
-                               class="block text-sm font-medium text-gray-700 mb-2 hover:text-gray-900 dark:hover:text-white">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Repository (Optional)
                         </label>
                         <select id="repo"
                                 name="repo"
-                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent hover:text-gray-900 dark:hover:text-white">
+                                class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">None</option>
                             {% for repository in repos %}<option value="{{ repository.id }}">{{ repository.name }}</option>{% endfor %}
                         </select>
@@ -626,24 +626,42 @@
     }
 
     function filterByCategory(categoryId) {
+        updateFilters({ category: categoryId });
+    }
+
+
+    function updateFilters(params) {
         const url = new URL(window.location.href);
-        if (categoryId) {
-            url.searchParams.set('category', categoryId);
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+            url.searchParams.set(key, value);
         } else {
-            url.searchParams.delete('category');
+            url.searchParams.delete(key);
         }
+    });
+
         window.location.href = url.toString();
     }
 
-    // Initialize voting when the page loads
-    document.addEventListener('DOMContentLoaded', initializeVoting);
+    function applyFilters() {
+        const category = document.getElementById("categoryFilter").value;
+        const status = document.getElementById("statusFilter").value;
+        const sort = document.getElementById("sortFilter").value;
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('newSuggestionModal');
-        if (event.target === modal) {
-            closeNewSuggestionModal();
-        }
+        updateFilters({
+            category: category,
+            status: status,
+            sort: sort,
+        });
     }
+
+    window.onclick = function (event) {
+    const modal = document.getElementById("newSuggestionModal");
+    if (event.target === modal) {
+        closeNewSuggestionModal();
+    }
+};
+
     </script>
 {% endblock content %}

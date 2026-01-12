@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "blt"
 version = "0.1.0"
-description = ""
+description = "A gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Helps coders and security researchers discover organizations, repositories, and projects to test and report to. Includes dozens of AI-powered open-source tools for efficient testing and development."
 authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
@@ -16,7 +16,7 @@ django-email-obfuscator = "^0.1.5"
 django-gravatar2 = "^1.4.5"
 django-import-export = "^4.3.14"
 django-annoying = "^0.10.7"
-dj-rest-auth = "^5.0.2"
+dj-rest-auth = "^7.0.2"
 user-agents = "^2.2.0"
 whitenoise = "^6.9.0"
 
@@ -43,7 +43,7 @@ django-environ = "^0.12.0"
 django-simple-captcha = "^0.6.2"
 django-filter = "^25.2"
 pillow = "^10.4.0"
-sentry-sdk = "^2.47.0"
+sentry-sdk = "^2.49.0"
 bitcash = "^1.0.2"
 pydantic = "^2.10.6"
 pydantic_core = "^2.18.4"
@@ -70,12 +70,13 @@ tweepy = "^4.15.0"
 better-profanity = "^0.7.0"
 django-bleach = "^3.1.0"
 pyjwt = {extras = ["crypto"], version = "^2.0.0"}
+tblib = "^3.2.2"
 
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.12.0"
 isort = "^5.13.2"
-ruff = "^0.14.9"
+ruff = "^0.14.11"
 pre-commit = "^4.5.0"
 selenium = "^4.39.0"
 webdriver-manager = "^4.0.2"
