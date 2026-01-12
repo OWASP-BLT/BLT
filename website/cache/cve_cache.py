@@ -68,7 +68,9 @@ def normalize_cve_id(cve_id):
         return ""
     normalized = cve_id.strip().upper()
     if not CVE_ID_PATTERN.match(normalized):
-        logger.warning("Invalid CVE ID format: %s", cve_id)
+        # Log at debug level with sanitized input to prevent log injection
+        # Use repr() to escape newlines and other control characters
+        logger.debug("Invalid CVE ID format: %s", repr(cve_id[:100]))  # Limit length to prevent log flooding
         return ""
     return normalized
 

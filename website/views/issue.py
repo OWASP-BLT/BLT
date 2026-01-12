@@ -1531,17 +1531,23 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
-            # Normalize CVE ID and populate score if available
-            try:
-                normalize_and_populate_cve_score(obj)
-                if obj.cve_id and obj.cve_score is None:
-                    messages.warning(
-                        self.request, "Could not fetch CVE score at this time. Issue will be created without it."
-                    )
-            except ValidationError as e:
-                # Show user-friendly error message for invalid CVE ID
-                messages.error(self.request, str(e))
-                # Re-render form with error
+
+            # STEP 1: Normalize CVE ID (fast, no network) before saving
+            cve_validation_error = None
+            original_cve_id = obj.cve_id
+            if obj.cve_id:
+                from website.cache.cve_cache import normalize_cve_id
+
+                normalized = normalize_cve_id(obj.cve_id)
+                if not normalized:
+                    # Invalid CVE ID format
+                    cve_validation_error = f"Invalid CVE ID format: {original_cve_id}. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits) (4-7 digits)"
+                    obj.cve_id = None  # Clear invalid CVE ID
+                else:
+                    obj.cve_id = normalized
+
+            if cve_validation_error:
+                messages.error(self.request, cve_validation_error)
                 return self.form_invalid(form)
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
@@ -1695,7 +1701,53 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.process_issue(self.request.user, obj, domain_exists, domain)
                 return HttpResponseRedirect("/")
 
-        return create_issue(self, form)
+        # Execute the atomic transaction to create the issue
+        result = create_issue(self, form)
+
+        # STEP 2: Fetch CVE score OUTSIDE transaction (no DB lock held during network I/O)
+        if hasattr(result, "url") and "Location" not in str(result):
+            # If not a redirect, we have an error response
+            return result
+
+        # Try to get the issue ID from the response or form
+        try:
+            # The issue was just created, fetch it by the latest ID for this user
+            obj = form.save(commit=False)
+            if obj.cve_id:
+                # Fetch CVE score outside transaction
+                from website.cache.cve_cache import get_cached_cve_score
+
+                try:
+                    cve_score = get_cached_cve_score(obj.cve_id)
+                    if cve_score is not None:
+                        # Update in a short transaction
+                        from django.db import transaction
+
+                        with transaction.atomic():
+                            # Re-fetch the issue to ensure we have the latest
+                            issue = (
+                                Issue.objects.select_for_update()
+                                .filter(
+                                    user=self.request.user if self.request.user.is_authenticated else None,
+                                    cve_id=obj.cve_id,
+                                )
+                                .order_by("-created")
+                                .first()
+                            )
+                            if issue:
+                                issue.cve_score = cve_score
+                                issue.save(update_fields=["cve_score"])
+                    elif obj.cve_id:
+                        messages.warning(
+                            self.request, "Could not fetch CVE score at this time. Issue was created without it."
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to fetch CVE score after issue creation: {e}")
+                    # Don't fail the request, just log the error
+        except Exception as e:
+            logger.error(f"Error in post-transaction CVE score fetch: {e}")
+
+        return result
 
     def get_context_data(self, **kwargs):
         # if self.request is a get, clear out the form data

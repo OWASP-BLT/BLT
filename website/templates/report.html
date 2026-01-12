@@ -451,6 +451,8 @@
         let debounceTimer = null;
         let selectedIndex = -1;
         let suggestions = [];
+        let lastQuery = '';  // Track the latest query to prevent stale results
+        let requestId = 0;   // Unique ID for each request
 
         function createAutocompleteBox() {
             if (autocompleteBox) return autocompleteBox;
@@ -458,20 +460,33 @@
             autocompleteBox.id = 'cve_autocomplete_box';
             autocompleteBox.className = 'absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto';
             autocompleteBox.style.display = 'none';
+            // Add ARIA attributes for accessibility
+            autocompleteBox.setAttribute('role', 'listbox');
+            autocompleteBox.setAttribute('aria-label', 'CVE ID suggestions');
             cveInput.parentElement.style.position = 'relative';
             cveInput.parentElement.appendChild(autocompleteBox);
+            cveInput.setAttribute('role', 'combobox');
+            cveInput.setAttribute('aria-autocomplete', 'list');
+            cveInput.setAttribute('aria-controls', 'cve_autocomplete_box');
+            cveInput.setAttribute('aria-expanded', 'false');
             return autocompleteBox;
         }
 
         function hideAutocomplete() {
             if (autocompleteBox) {
                 autocompleteBox.style.display = 'none';
+                cveInput.setAttribute('aria-expanded', 'false');
             }
             selectedIndex = -1;
             suggestions = [];
         }
 
-        function showSuggestions(results) {
+        function showSuggestions(results, forQuery) {
+            // Validate that this response matches the current query (prevent race condition)
+            if (forQuery !== lastQuery) {
+                return; // Ignore stale response
+            }
+            
             if (!autocompleteBox) createAutocompleteBox();
             if (results.length === 0) {
                 hideAutocomplete();
@@ -487,6 +502,8 @@
                 const div = document.createElement('div');
                 div.className = `px-4 py-2 cursor-pointer hover:bg-[#e74c3c] hover:text-white dark:hover:bg-[#c0392b] ${index === selectedIndex ? 'bg-[#e74c3c] text-white dark:bg-[#c0392b]' : 'text-gray-900 dark:text-gray-100'}`;
                 div.setAttribute('data-index', index);
+                div.setAttribute('role', 'option'); // Add ARIA role for accessibility
+                div.setAttribute('id', `cve-option-${index}`);
                 div.textContent = item.text; // Use textContent instead of innerHTML to prevent XSS
                 div.addEventListener('click', function() {
                     selectSuggestion(index);
@@ -495,6 +512,7 @@
             });
 
             autocompleteBox.style.display = 'block';
+            cveInput.setAttribute('aria-expanded', 'true');
         }
 
         function selectSuggestion(index) {
@@ -512,14 +530,24 @@
                 return;
             }
 
+            // Track this request to prevent race conditions
+            const currentRequestId = ++requestId;
+            lastQuery = query;
+
             try {
                 const response = await fetch(`/api/v1/cve/autocomplete/?q=${encodeURIComponent(query)}`);
                 if (!response.ok) throw new Error('API request failed');
                 const data = await response.json();
-                showSuggestions(data.results || []);
+                
+                // Only process if this is still the latest request
+                if (currentRequestId === requestId) {
+                    showSuggestions(data.results || [], query);
+                }
             } catch (error) {
                 console.error('Error fetching CVE suggestions:', error);
-                hideAutocomplete();
+                if (currentRequestId === requestId) {
+                    hideAutocomplete();
+                }
             }
         }
 
