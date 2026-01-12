@@ -47,7 +47,7 @@ jobs:
 
       - name: Install Poetry
         run: |
-          pip install poetry
+          python3.12 -m pip install poetry
 
       - name: Configure Poetry to use Python 3.12
         run: |

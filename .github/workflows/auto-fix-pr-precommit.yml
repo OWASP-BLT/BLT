@@ -120,7 +120,7 @@ jobs:
 
       - name: Install Poetry
         if: steps.bot_check.outputs.skip == 'false'
-        run: pip install poetry
+        run: python3.12 -m pip install poetry
 
       - name: Configure Poetry to use Python 3.12
         if: steps.bot_check.outputs.skip == 'false'

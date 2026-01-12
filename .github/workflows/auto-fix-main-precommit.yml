@@ -106,7 +106,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install Poetry
-        run: pip install poetry
+        run: python3.12 -m pip install poetry
 
       - name: Configure Poetry to use Python 3.12
         run: |
