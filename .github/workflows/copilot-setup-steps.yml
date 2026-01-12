@@ -77,23 +77,22 @@ jobs:
             echo "No package.json found, skipping npm install"
           fi
 
-      - name: Setup PostgreSQL
-        run: |
-          sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "CREATE USER bltuser WITH PASSWORD 'password';"
-          sudo -u postgres psql -c "CREATE DATABASE bltdb OWNER bltuser;"
-          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE bltdb TO bltuser;"
-
-      - name: Install pre-commit
-        run: |
-          poetry run pip install pre-commit
-          poetry run pre-commit install --install-hooks
-
       - name: Create .env file
         run: |
           if [ ! -f ".env" ]; then
             cp .env.example .env
           fi
+
+      - name: Setup PostgreSQL
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "CREATE DATABASE example_db OWNER postgres;"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE example_db TO postgres;"
+
+      - name: Install pre-commit
+        run: |
+          poetry run pip install pre-commit
+          poetry run pre-commit install --install-hooks
 
       - name: Display setup completion
         run: |

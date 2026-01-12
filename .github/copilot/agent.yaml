@@ -1,4 +1,3 @@
----
 name: "BLT Coding Agent"
 description: "Specialized GitHub Copilot agent for OWASP BLT Django project with pre-commit validation"
 target: github-copilot

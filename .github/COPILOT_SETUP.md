@@ -55,9 +55,9 @@ The agent runs these checks before completing work:
 2. **Django System Checks**: Validates Django configuration
 3. **Migration Checks**: Ensures no missing database migrations
 
-### 4. `.github/workflows/assign-new-issues-to-copilot.yml`
+### 4. `.github/workflows/assign-new-issues-to-copilot.yml` (Previously Configured)
 
-This workflow automatically assigns newly opened issues to the Copilot agent, allowing it to start working on tasks immediately.
+This workflow was previously configured in the repository and automatically assigns newly opened issues to the Copilot agent, allowing it to start working on tasks immediately.
 
 ## How It Works
 
