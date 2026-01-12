@@ -507,8 +507,8 @@ if DEBUG or TESTING:
     user_throttle = 100000
 
 else:
-    anon_throttle = 5
-    user_throttle = 50
+    anon_throttle = 100
+    user_throttle = 1000
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
