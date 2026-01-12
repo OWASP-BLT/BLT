@@ -16,6 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Count, F, Q, Sum
@@ -2084,9 +2085,29 @@ def add_recommendation(request, username):
                     # Validate before saving (now that both users are set)
                     try:
                         recommendation.full_clean()
+                    except ValidationError as e:
+                        logger.exception("Validation error during recommendation creation")
+                        # Extract user-friendly messages from ValidationError
+                        if hasattr(e, "message_dict"):
+                            error_messages = []
+                            for field, errors in e.message_dict.items():
+                                error_messages.extend(errors)
+                            messages.error(request, " ".join(error_messages))
+                        elif hasattr(e, "messages"):
+                            messages.error(request, " ".join(e.messages))
+                        else:
+                            messages.error(request, "There was a validation error. Please check your input.")
+                        form = RecommendationForm(request.POST)
+                        # Pass skills_by_category to template
+                        form.skills_by_category = build_skills_by_category()
+                        return render(
+                            request,
+                            "recommendation_form.html",
+                            {"form": form, "to_user": to_user},
+                        )
                     except Exception as e:
-                        logger.exception(f"Validation error: {e}")
-                        messages.error(request, f"Validation error: {e}")
+                        logger.exception("Unexpected error during recommendation validation")
+                        messages.error(request, "An unexpected error occurred. Please try again.")
                         form = RecommendationForm(request.POST)
                         # Pass skills_by_category to template
                         form.skills_by_category = build_skills_by_category()
@@ -2305,22 +2326,25 @@ def request_recommendation(request, username):
                         )
                         return redirect("profile", slug=username)
 
-                    # Check for existing pending request
+                    # Check for existing request (any status) due to unique_together constraint
                     existing_request = RecommendationRequest.objects.filter(
-                        from_user=request.user, to_user=to_user, status="pending"
+                        from_user=request.user, to_user=to_user
                     ).first()
 
                     if existing_request:
-                        messages.warning(request, "You already have a pending request with this user.")
-                        return redirect("profile", slug=username)
-
-                    # Check for existing completed request (can't request again if already completed)
-                    existing_completed = RecommendationRequest.objects.filter(
-                        from_user=request.user, to_user=to_user, status="completed"
-                    ).exists()
-                    if existing_completed:
-                        messages.info(request, "You have already received a recommendation from this user.")
-                        return redirect("profile", slug=username)
+                        # Block if pending, accepted, or completed
+                        if existing_request.status == "pending":
+                            messages.warning(request, "You already have a pending request with this user.")
+                            return redirect("profile", slug=username)
+                        elif existing_request.status == "accepted":
+                            messages.info(request, "Your request has been accepted. The user is working on your recommendation.")
+                            return redirect("profile", slug=username)
+                        elif existing_request.status == "completed":
+                            messages.info(request, "You have already received a recommendation from this user.")
+                            return redirect("profile", slug=username)
+                        # Allow creating new request if declined or cancelled - delete old request first
+                        elif existing_request.status in ["declined", "cancelled"]:
+                            existing_request.delete()
 
                     # Create request
                     rec_request = form.save(commit=False)
@@ -2342,10 +2366,10 @@ def request_recommendation(request, username):
                 )
                 return redirect("profile", slug=username)
             except IntegrityError:
-                messages.warning(request, "You already have a pending request with this user.")
+                messages.warning(request, "A request with this user already exists. Please check your pending or completed requests.")
                 return redirect("profile", slug=username)
-            except Exception as e:
-                logger.error(f"Error creating recommendation request: {e}")
+            except Exception:
+                logger.exception("Error creating recommendation request")
                 messages.error(request, "An error occurred while sending the request. Please try again.")
                 return redirect("profile", slug=username)
         else:
@@ -2523,8 +2547,10 @@ def edit_recommendation_blurb(request):
     Edit the recommendation blurb on user's own profile.
     POST /recommendations/blurb/edit/
     """
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
     if request.method == "POST":
-        form = RecommendationBlurbForm(request.POST, instance=request.user.userprofile)
+        form = RecommendationBlurbForm(request.POST, instance=profile)
         if form.is_valid():
             form.save()
             messages.success(request, "Recommendation blurb updated successfully.")
@@ -2532,7 +2558,7 @@ def edit_recommendation_blurb(request):
         else:
             messages.error(request, "Please correct the errors in the form.")
     else:
-        form = RecommendationBlurbForm(instance=request.user.userprofile)
+        form = RecommendationBlurbForm(instance=profile)
 
     return render(
         request,
