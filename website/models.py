@@ -71,11 +71,13 @@ class Tag(models.Model):
     slug = models.SlugField(unique=True)
     created = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super(Tag, self).save(*args, **kwargs)
 
-def save(self, *args, **kwargs):
-    if not self.slug:
-        self.slug = slugify(self.name)
-    super().save(*args, **kwargs)
+    def __str__(self):
+        return self.name
 
 
 class IntegrationServices(Enum):
@@ -901,7 +903,6 @@ class UserProfile(models.Model):
     )
     follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
     user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
-    slug = models.SlugField(unique=True, blank=True, null=True)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     role = models.CharField(max_length=255, blank=True, null=True)
@@ -930,7 +931,6 @@ class UserProfile(models.Model):
     email_spam_report = models.BooleanField(default=False, help_text="Whether the email was marked as spam")
     email_unsubscribed = models.BooleanField(default=False, help_text="Whether the user has unsubscribed")
     email_click_count = models.PositiveIntegerField(default=0, help_text="Number of email link clicks")
-    timezone = models.CharField(max_length=50, default="UTC")
     email_open_count = models.PositiveIntegerField(default=0, help_text="Number of email opens")
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
@@ -957,16 +957,6 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.user.username)
-            original_slug = self.slug
-            counter = 1
-            while UserProfile.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
-                self.slug = f"{original_slug}-{counter}"
-                counter += 1
-        super().save(*args, **kwargs)
 
     def check_team_membership(self):
         return self.team is not None

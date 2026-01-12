@@ -34,8 +34,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -956,80 +955,6 @@ def search(request, template="search.html"):
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
 
     return render(request, template, context)
-
-
-def can_send_chat_request(sender_id, recipient_id):
-    """
-    Redis-based rate limiter: max 3 chat requests per 60-second window
-    per sender & per recipient.
-    """
-    redis_conn = get_redis_connection("default")
-
-    minute = int(timezone.now().timestamp()) // 60
-    sender_key = f"chatreq:sender:{sender_id}:{minute}"
-    recipient_key = f"chatreq:recipient:{recipient_id}:{minute}"
-
-    sender_count = redis_conn.incr(sender_key)
-    recipient_count = redis_conn.incr(recipient_key)
-
-    # Expire keys every minute
-    if sender_count == 1:
-        redis_conn.expire(sender_key, 60)
-    if recipient_count == 1:
-        redis_conn.expire(recipient_key, 60)
-
-    # Allow max 3 requests per minute from or to a single user
-    return sender_count <= 3 and recipient_count <= 3
-
-
-@login_required
-@require_POST
-def send_chat_request(request, receiver_id):
-    receiver = get_object_or_404(User, id=receiver_id)
-
-    if request.user.id == receiver.id:
-        return JsonResponse({"error": "Cannot send chat request to yourself."}, status=400)
-
-    if not can_send_chat_request(request.user.id, receiver.id):
-        logger.warning(f"Rate limit hit: sender={request.user.username}, receiver={receiver.username}")
-        return JsonResponse({"error": "Rate limit exceeded."}, status=429)
-
-    existing_request = ChatRequest.objects.filter(sender=request.user, receiver=receiver).first()
-
-    if existing_request:
-        if not existing_request.is_unlocked:
-            logger.info(f"Duplicate chat request blocked: {request.user.username} → {receiver.username}")
-            return JsonResponse({"error": "Chat request already sent."}, status=400)
-        else:
-            # Chat already unlocked, no need to send another request
-            logger.info(f"Chat already unlocked: {request.user.username} ↔ {receiver.username}")
-            return JsonResponse({"error": "Chat already unlocked with this user."}, status=400)
-
-    ChatRequest.objects.create(sender=request.user, receiver=receiver)
-    logger.info(f"Chat request created: {request.user.username} → {receiver.username}")
-
-    try:
-        from website.utils import send_email
-
-        subject = "New Chat Request on BLT"
-        message = (
-            f"Hi {receiver.username},\n\n"
-            f"You’ve received a new chat request from {request.user.username}.\n"
-            "Log in to your BLT account to accept or decline it."
-        )
-        send_email(
-            subject=subject,
-            message=message,
-            recipient_list=[receiver.email],
-        )
-
-        logger.info(f"Notification email sent to {receiver.username}")
-
-    except Exception as e:
-        logger.error(f"Failed to send chat request email to {receiver.username}: {e}")
-
-    return JsonResponse({"success": True})
-
 
 # @api_view(["POST"])
 # def chatbot_conversation(request):
