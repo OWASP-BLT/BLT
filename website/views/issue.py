@@ -523,10 +523,11 @@ def search_issues(request, template="search.html"):
 
     # Validate query contains only safe characters
     # Allow common search chars: alphanumeric, spaces, hyphens, colons, dots, underscores, slashes, @
-    # This supports domain searches (example.com), usernames (user_name), CVE IDs, URLs, etc.
+    # Plus URL-specific chars: ?, &, =, %, #, + for full URL support
+    # This supports domain searches (example.com), usernames (user_name), CVE IDs, full URLs, etc.
     import re
 
-    if not re.match(r"^[a-zA-Z0-9\s\-\.:_/@]+$", query):
+    if not re.match(r"^[a-zA-Z0-9\s\-\.:_/@\?&=\%\#\+]+$", query):
         if is_api_request:
             return JsonResponse({"error": "Invalid query characters"}, status=400)
         return render(request, template, {"error": "Invalid query characters"})
@@ -1705,47 +1706,36 @@ class IssueCreate(IssueBaseCreate, CreateView):
         result = create_issue(self, form)
 
         # STEP 2: Fetch CVE score OUTSIDE transaction (no DB lock held during network I/O)
-        if hasattr(result, "url") and "Location" not in str(result):
-            # If not a redirect, we have an error response
-            return result
+        # Get the issue instance that was created (stored in form)
+        obj = form.save(commit=False)
+        issue_pk = getattr(obj, "pk", None) or getattr(obj, "id", None)
 
-        # Try to get the issue ID from the response or form
-        try:
-            # The issue was just created, fetch it by the latest ID for this user
-            obj = form.save(commit=False)
-            if obj.cve_id:
+        # Only proceed with CVE score fetch if we have a valid issue PK and CVE ID
+        if issue_pk and obj.cve_id:
+            try:
                 # Fetch CVE score outside transaction
                 from website.cache.cve_cache import get_cached_cve_score
 
-                try:
-                    cve_score = get_cached_cve_score(obj.cve_id)
-                    if cve_score is not None:
-                        # Update in a short transaction
-                        from django.db import transaction
+                cve_score = get_cached_cve_score(obj.cve_id)
+                if cve_score is not None:
+                    # Update in a short transaction using the specific primary key
+                    from django.db import transaction
 
-                        with transaction.atomic():
-                            # Re-fetch the issue to ensure we have the latest
-                            issue = (
-                                Issue.objects.select_for_update()
-                                .filter(
-                                    user=self.request.user if self.request.user.is_authenticated else None,
-                                    cve_id=obj.cve_id,
-                                )
-                                .order_by("-created")
-                                .first()
-                            )
-                            if issue:
-                                issue.cve_score = cve_score
-                                issue.save(update_fields=["cve_score"])
-                    elif obj.cve_id:
-                        messages.warning(
-                            self.request, "Could not fetch CVE score at this time. Issue was created without it."
-                        )
-                except Exception as e:
-                    logger.warning(f"Failed to fetch CVE score after issue creation: {e}")
-                    # Don't fail the request, just log the error
-        except Exception as e:
-            logger.error(f"Error in post-transaction CVE score fetch: {e}")
+                    with transaction.atomic():
+                        # Fetch by primary key to ensure we update the exact issue
+                        try:
+                            issue = Issue.objects.select_for_update().get(pk=issue_pk)
+                            issue.cve_score = cve_score
+                            issue.save(update_fields=["cve_score"])
+                        except Issue.DoesNotExist:
+                            logger.error(f"Issue with pk={issue_pk} not found after creation")
+                elif obj.cve_id:
+                    messages.warning(
+                        self.request, "Could not fetch CVE score at this time. Issue was created without it."
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to fetch CVE score after issue creation: {e}")
+                # Don't fail the request, just log the error
 
         return result
 

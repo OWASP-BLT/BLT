@@ -189,13 +189,23 @@ def fetch_cve_score_from_api(cve_id):
             # URL encode CVE ID to prevent injection attacks
             encoded_cve_id = quote(cve_id, safe="")
             url = f"https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={encoded_cve_id}"
-            response = requests.get(url, timeout=api_timeout)
+
+            # NVD-recommended headers
+            headers = {"User-Agent": "BLT-CVE-Checker/1.0 (https://github.com/OWASP-BLT/BLT; contact@owasp.org)"}
+
+            # Add API key if configured (case-sensitive header per NVD spec)
+            api_key = getattr(settings, "NVD_API_KEY", None)
+            if api_key:
+                headers["apiKey"] = api_key
+
+            response = requests.get(url, headers=headers, timeout=api_timeout)
             response.raise_for_status()
 
             data = response.json()
-            results = data.get("resultsPerPage", 0)
+            # Use totalResults instead of resultsPerPage per NVD API spec
+            total_results = data.get("totalResults", 0)
 
-            if results == 0:
+            if total_results == 0:
                 logger.debug("No results found for CVE %s", cve_id)
                 return None, False  # Valid response: CVE not found (can cache)
 
@@ -287,12 +297,26 @@ def fetch_cve_score_from_api(cve_id):
                 )
             return None, True  # Error: HTTP error (don't cache)
         except requests.exceptions.ConnectionError as e:
+            # Treat ConnectionError as retriable (transient network issues)
+            if attempt < max_retries - 1:
+                wait_seconds = _get_backoff_base() * (2**attempt)
+                logger.warning(
+                    "Connection error fetching CVE score for %s; retrying in %.2fs (attempt %d/%d)",
+                    cve_id,
+                    wait_seconds,
+                    attempt + 1,
+                    max_retries,
+                )
+                time.sleep(wait_seconds)
+                attempt += 1
+                continue
             logger.warning(
-                "Connection error fetching CVE score for %s: %s",
+                "Connection error fetching CVE score for %s after %d attempts: %s",
                 cve_id,
+                max_retries,
                 e,
             )
-            return None, True  # Error: connection failed (don't cache)
+            return None, True  # Error: connection failed after retries (don't cache)
         except requests.exceptions.RequestException as e:
             logger.warning(
                 "Request error fetching CVE score for %s: %s",
