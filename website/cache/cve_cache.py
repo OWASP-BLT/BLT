@@ -291,7 +291,7 @@ def fetch_cve_score_from_api(cve_id):
                     cve_id,
                     max_retries,
                 )
-            elif 500 <= status_code < 600:
+            elif status_code is not None and 500 <= status_code < 600:
                 logger.error(
                     "Server error %s fetching CVE score for %s after %d attempts",
                     status_code,
