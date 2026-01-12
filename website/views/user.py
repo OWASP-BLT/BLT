@@ -1764,13 +1764,18 @@ def start_thread(request, user_id):
 
     current_user = request.user
     other_user = get_object_or_404(User, id=user_id)
+    profile, _ = UserProfile.objects.get_or_create(user=other_user)
 
     # When User is Locked (Needs to Generate Keys)
-    if not getattr(other_user.userprofile, "public_key", None):
-        chat_request, created = ChatRequest.objects.get_or_create(sender=current_user, receiver=other_user)
+    if not profile.public_key:
+        chat_request, created = ChatRequest.objects.get_or_create(
+            sender=current_user,
+            receiver=other_user,
+        )
+
+        email_sent_now = False
 
         if not chat_request.email_sent and other_user.email:
-            # Link to unlock their messages.
             unlock_url = request.build_absolute_uri(reverse("profile_edit"))
             subject = f"Action Required: {current_user.username} wants to message you on OWASP BLT"
 
@@ -1783,7 +1788,8 @@ def start_thread(request, user_id):
             }
 
             msg_html = render_to_string("email/new_chat.html", context)
-            msg_plain = render_to_string("email/new_chat.html", context)
+            msg_plain = strip_tags(msg_html)
+
             send_mail(
                 subject,
                 msg_plain,
@@ -1794,12 +1800,19 @@ def start_thread(request, user_id):
 
             chat_request.email_sent = True
             chat_request.save()
+            email_sent_now = True
+
+        message = (
+            f"{other_user.username} is locked. We sent them an invite to setup encryption."
+            if email_sent_now
+            else f"{other_user.username} is locked. They need to setup encryption before chatting."
+        )
 
         return JsonResponse(
             {
                 "success": False,
                 "locked": True,
-                "message": f"{other_user.username} is locked. We sent them an invite to setup encryption.",
+                "message": message,
             }
         )
 
@@ -1824,6 +1837,7 @@ def start_thread(request, user_id):
 
             msg_html = render_to_string("email/new_chat.html", context)
             msg_plain = strip_tags(msg_html)
+
             send_mail(
                 subject,
                 msg_plain,
