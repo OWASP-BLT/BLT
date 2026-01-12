@@ -149,7 +149,10 @@
                                                     </div>
                                                     <div class="flex items-center mb-4">
                                                         {% if domain.webshot %}
-                                                            <a href="{{ domain.webshot.url }}" target="_blank" class="ml-auto">
+                                                            <a href="{{ domain.webshot.url }}"
+                                                               target="_blank"
+                                                               rel="noopener noreferrer"
+                                                               class="ml-auto">
                                                                 <img src="{{ domain.webshot.url }}"
                                                                      alt="{{ domain.name }} Webshot"
                                                                      class="h-10 w-10 rounded-lg"
@@ -188,6 +191,7 @@
                                                         {% if domain.twitter %}
                                                             <a href="https://x.com/{{ domain.twitter }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-2 rounded-md flex items-center space-x-2">
                                                                 <i class="fab fa-x-twitter"></i>
                                                                 <span>Twitter</span>
@@ -196,6 +200,7 @@
                                                         {% if domain.facebook %}
                                                             <a href="{{ domain.facebook }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-md flex items-center space-x-2">
                                                                 <i class="fab fa-facebook"></i>
                                                                 <span>Facebook</span>
@@ -204,6 +209,7 @@
                                                         {% if domain.github %}
                                                             <a href="{{ domain.github }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-gray-800 dark:bg-gray-100 hover:bg-black px-3 py-2 rounded-md flex items-center space-x-2">
                                                                 <i class="fab fa-github"></i>
                                                                 <span>GitHub</span>
@@ -298,6 +304,7 @@
                                                     {% if user.userprofile.linkedin_url %}
                                                         <a href="{{ user.userprofile.linkedin_url }}"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="text-white bg-blue-700 hover:bg-blue-800 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                             <i class="fab fa-linkedin"></i>
                                                             <span>LinkedIn</span>
@@ -306,6 +313,7 @@
                                                     {% if user.userprofile.github_url %}
                                                         <a href="{{ user.userprofile.github_url }}"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="text-white bg-gray-800 dark:bg-gray-100 hover:bg-gray-900 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                             <i class="fab fa-github"></i>
                                                             <span>GitHub</span>
@@ -314,6 +322,7 @@
                                                     {% if user.userprofile.website_url %}
                                                         <a href="{{ user.userprofile.website_url }}"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="text-white bg-green-500 hover:bg-green-600 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                             <i class="fas fa-globe"></i>
                                                             <span>Website</span>
@@ -400,6 +409,7 @@
                                                         {% if organization.url %}
                                                             <a href="{{ organization.url }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-green-500 hover:bg-green-600 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                                 <i class="fas fa-globe"></i>
                                                                 <span>{{ organization.url }}</span>
@@ -408,6 +418,7 @@
                                                         {% if organization.twitter %}
                                                             <a href="https://x.com/{{ organization.twitter }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-3 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                                 <i class="fab fa-x-twitter"></i>
                                                             </a>
@@ -415,6 +426,7 @@
                                                         {% if organization.facebook %}
                                                             <a href="{{ organization.facebook }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-3 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                                 <i class="fab fa-facebook"></i>
                                                             </a>
@@ -484,6 +496,7 @@
                                                         {% if project.url %}
                                                             <a href="{{ project.url }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-green-500 hover:bg-green-600 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                                 <i class="fas fa-link"></i>
                                                                 <span>{{ project.url }}</span>
@@ -492,6 +505,7 @@
                                                         {% if project.twitter %}
                                                             <a href="https://x.com/{{ project.twitter }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-3 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                                 <i class="fab fa-x-twitter"></i>
                                                             </a>
@@ -499,6 +513,7 @@
                                                         {% if project.facebook %}
                                                             <a href="{{ project.facebook }}"
                                                                target="_blank"
+                                                               rel="noopener noreferrer"
                                                                class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-3 rounded-md shadow-md transition-colors flex items-center space-x-2">
                                                                 <i class="fab fa-facebook"></i>
                                                             </a>
@@ -702,6 +717,7 @@
                                                         <a href="{% url 'repo_detail' repo.slug %}" class="hover:text-[#e74c3c]">{{ repo.name }}</a>
                                                         <a href="{{ repo.repo_url }}"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="text-gray-600 dark:text-gray-400 hover:text-[#e74c3c] text-2xl">
                                                             <i class="fab fa-github"></i>
                                                         </a>

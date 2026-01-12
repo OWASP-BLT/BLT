@@ -72,15 +72,18 @@
                                 {% if current_payment_status == 'paid' %}
                                     <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245+label%3Apaid"
                                        target="_blank"
+                                       rel="noopener noreferrer"
                                        class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">paid</a>
                                 {% else %}
                                     <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245+-label%3Apaid"
                                        target="_blank"
+                                       rel="noopener noreferrer"
                                        class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">unpaid</a>
                                 {% endif %}
                             {% else %}
                                 <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245"
                                    target="_blank"
+                                   rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">(view on GitHub)</a>
                             {% endif %}
                         </span>
@@ -165,6 +168,7 @@
                                                 <div class="text-sm font-medium text-gray-900 dark:text-gray-100 break-words flex items-center">
                                                     <a href="{{ issue.url|escape }}"
                                                        target="_blank"
+                                                       rel="noopener noreferrer"
                                                        class="hover:text-gray-900 dark:hover:text-white">{{ issue.title|escape }}</a>
                                                     {% if request.user.is_superuser %}
                                                         <form method="post"
@@ -190,6 +194,7 @@
                                                     {% if request.user.is_staff %}
                                                         <a href="{% url 'admin:website_githubissue_change' issue.id %}"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="ml-2 text-blue-600 hover:text-gray-900 dark:hover:text-white transition-colors"
                                                            title="Edit in admin">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
@@ -263,6 +268,7 @@
                                                                     </svg>
                                                                     <a href="{{ pr.url }}"
                                                                        target="_blank"
+                                                                       rel="noopener noreferrer"
                                                                        class="text-blue-600 hover:text-gray-900 dark:hover:text-white truncate">
                                                                         #{{ pr.issue_id }}: {{ pr.title|truncatechars:40 }}
                                                                         <span class="text-gray-500 dark:text-gray-500 font-normal hover:text-gray-900 dark:hover:text-white">
@@ -332,6 +338,7 @@
                                                 <div>
                                                     <a href="{{ issue.assignee.github_url }}"
                                                        target="_blank"
+                                                       rel="noopener noreferrer"
                                                        class="font-medium text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">
                                                         {{ issue.assignee.name }}
                                                     </a>
@@ -365,6 +372,7 @@
                                                     <div class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white font-mono break-all mt-1">
                                                         TX: <a href="https://blockchair.com/bitcoin-cash/transaction/{{ issue.bch_tx_id|escape }}"
     target="_blank"
+    rel="noopener noreferrer"
     class="text-blue-600 hover:text-blue-800 hover:text-gray-900 dark:hover:text-white hover:underline">{{ issue.bch_tx_id|escape }}</a>
                                                     </div>
                                                 {% endif %}
@@ -409,6 +417,7 @@
                                                         <a id="explorer_link_{{ issue.id }}"
                                                            href="#"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="text-xs text-blue-600 hover:text-blue-800 hover:text-gray-900 dark:hover:text-white ml-2 hidden">
                                                             View in Explorer
                                                         </a>
@@ -485,6 +494,7 @@
                                                 <p class="mb-1">
                                                     Recent issues like <a href="https://github.com/OWASP-BLT/BLT/issues/2912"
     target="_blank"
+    rel="noopener noreferrer"
     class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">#2912</a> may not appear yet.
                                                 </p>
                                                 <p>They need to be refreshed from GitHub manually by a staff member.</p>

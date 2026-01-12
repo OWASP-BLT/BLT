@@ -60,6 +60,7 @@
                 {% for item in queue_items %}
                     <a href="{{ item.url|default:'#' }}"
                        target="_blank"
+                       rel="noopener noreferrer"
                        class="w-full flex items-start gap-2 border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 transition-colors duration-200 hover:text-black cursor-pointer">
                         <img src="{% static 'img/logo.png' %}"
                              alt="BLT Logo"

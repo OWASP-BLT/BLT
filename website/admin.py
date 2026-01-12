@@ -280,7 +280,9 @@ class OrganizationAdmins(ImportExportModelAdmin):
         if obj.url:
             # just return the domain part of the url
             domain_part = urlparse(obj.url).netloc
-            return mark_safe(f'<a href="{domain_part}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
+            return mark_safe(
+                f'<a href="{domain_part}" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i></a>'
+            )
         return ""
 
     get_url_icon.short_description = " "
@@ -859,7 +861,7 @@ class QueueAdmin(admin.ModelAdmin):
 
     def url_link(self, obj):
         if obj.url:
-            return format_html('<a href="{}" target="_blank">View</a>', obj.url)
+            return format_html('<a href="{}" target="_blank" rel="noopener noreferrer">View</a>', obj.url)
         return "-"
 
     url_link.short_description = "URL"

@@ -10,8 +10,8 @@
     <body>
         {% for image_url in image_urls %}
             <a href="https://console.cloud.google.com/storage/browser/_details/bhfiles/{{ image_url }}"
-               rel="noopener noreferrer"
-               target="_blank">{{ image_url }}</a>
+               target="_blank"
+               rel="noopener noreferrer">{{ image_url }}</a>
             <img src="{{ bucket_url }}{{ image_url }}"
                  height="500"
                  width="500"
