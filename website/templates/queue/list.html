@@ -811,8 +811,7 @@
                                                     </svg>
                                                     <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-100 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">Edit Item</span>
                                                 </button>
-                                                <form method="post"
-                                                      class="inline">
+                                                <form method="post" class="inline">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="action" value="launch">
                                                     <input type="hidden" name="queue_id" value="{{ item.id }}">
