@@ -19,9 +19,22 @@ applyTo:
 
 ### Error Handling
 - **CRITICAL**: Never expose exception details in user-facing messages
-- ❌ BAD: `messages.error(request, f"Error: {str(e)}")`
-- ✅ GOOD: `messages.error(request, "Unable to process request. Please check your input and try again.")`
-- Always log detailed errors for debugging: `logger.error(f"Failed to process: {str(e)}", exc_info=True)`
+- ❌ BAD: 
+  ```python
+  from django.contrib import messages
+  messages.error(request, f"Error: {str(e)}")
+  ```
+- ✅ GOOD:
+  ```python
+  from django.contrib import messages
+  messages.error(request, "Unable to process request. Please check your input and try again.")
+  ```
+- Always log detailed errors for debugging: 
+  ```python
+  import logging
+  logger = logging.getLogger(__name__)
+  logger.error(f"Failed to process: {str(e)}", exc_info=True)
+  ```
 
 ### Models
 - Use Django's ORM efficiently

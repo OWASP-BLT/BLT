@@ -38,7 +38,7 @@ applyTo:
 - Use modern ES6+ syntax where appropriate (arrow functions, const/let, template literals)
 - Remove ALL console statements before committing (console.log, console.error, etc.)
   - CI/CD pipeline automatically checks and will fail on any console statements
-  - For debugging, use comments: `// console.log()`
+  - For debugging during development, comment them out: `// console.log('debug info')`
 - Use clear, descriptive variable and function names
 - Add comments for complex logic
 

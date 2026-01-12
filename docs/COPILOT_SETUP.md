@@ -127,9 +127,9 @@ To update instructions:
 
 ## References
 
-- [Main Copilot Instructions](.github/copilot-instructions.md)
-- [Agent Setup Steps](.github/copilot/agent.yaml)
-- [Path-Specific Instructions](.github/instructions/)
-- [Contributing Guide](CONTRIBUTING.md)
-- [README](README.md)
+- [Main Copilot Instructions](../.github/copilot-instructions.md)
+- [Agent Setup Steps](../.github/copilot/agent.yaml)
+- [Path-Specific Instructions](../.github/instructions/)
+- [Contributing Guide](../CONTRIBUTING.md)
+- [README](../README.md)
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
