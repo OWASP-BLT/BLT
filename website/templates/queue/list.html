@@ -813,8 +813,7 @@
                                                 </button>
                                                 <form method="post"
                                                       class="inline"
-                                                      target="_blank"
-                                                      rel="noopener noreferrer">
+                                                      target="_blank">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="action" value="launch">
                                                     <input type="hidden" name="queue_id" value="{{ item.id }}">
