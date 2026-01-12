@@ -1265,24 +1265,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
             # Validate screenshots first before any database operations
             if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
                 messages.error(self.request, "Screenshot is needed!")
-                return (
-                    render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    ),
-                    None,
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
                 )
 
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
-                return (
-                    render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    ),
-                    None,
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
                 )
 
             # Only validate uploaded screenshots if there are any
@@ -1292,13 +1286,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     img_valid = image_validator(screenshot)
                     if img_valid is not True:
                         messages.error(self.request, img_valid)
-                        return (
-                            render(
-                                self.request,
-                                "report.html",
-                                {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                            ),
-                            None,
+                        return render(
+                            self.request,
+                            "report.html",
+                            {"form": self.get_form(), "captcha_form": CaptchaForm()},
                         )
             tokenauth = False
             obj = form.save(commit=False)
@@ -1317,13 +1308,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
-                return (
-                    render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": captcha_form},
-                    ),
-                    None,
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
                 )
 
             parsed_url = urlparse(obj.url)
@@ -1554,14 +1542,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 normalized = normalize_cve_id(obj.cve_id)
                 if not normalized:
                     # Invalid CVE ID format
-                    cve_validation_error = f"Invalid CVE ID format: {original_cve_id}. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits)"
+                    cve_validation_error = f"Invalid CVE ID format: {original_cve_id}. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits) (4-7 digits)"
                     obj.cve_id = None  # Clear invalid CVE ID
                 else:
                     obj.cve_id = normalized
 
             if cve_validation_error:
                 messages.error(self.request, cve_validation_error)
-                return self.form_invalid(form)
+                return (self.form_invalid(form), None)
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
@@ -1593,13 +1581,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             reopen.close()
                 except FileNotFoundError:
                     messages.error(self.request, "Screenshot file not found. Please try uploading again.")
-                    return (
-                        render(
-                            self.request,
-                            "report.html",
-                            {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                        ),
-                        None,
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
                     )
 
             # Save screenshots
@@ -1708,35 +1693,30 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.session["created"] = domain_exists
                 self.request.session["domain"] = domain.id
                 messages.success(self.request, "Bug added!")
-                return (HttpResponseRedirect("/"), obj.pk)
+                return HttpResponseRedirect("/")
 
             if tokenauth:
                 self.process_issue(User.objects.get(id=token.user_id), obj, domain_exists, domain, True)
-                return (JsonResponse("Created", safe=False), obj.pk)
+                return JsonResponse("Created", safe=False)
             else:
                 self.process_issue(self.request.user, obj, domain_exists, domain)
-                return (HttpResponseRedirect("/"), obj.pk)
+                return HttpResponseRedirect("/")
 
         # Execute the atomic transaction to create the issue
-        result, created_issue_pk = create_issue(self, form)
+        result = create_issue(self, form)
 
         # STEP 2: Fetch CVE score OUTSIDE transaction (no DB lock held during network I/O)
-        # Use the primary key returned from create_issue (not form.save which creates NEW instance)
-        issue_pk = created_issue_pk
+        # Get the issue instance that was created (stored in form)
+        obj = form.save(commit=False)
+        issue_pk = getattr(obj, "pk", None) or getattr(obj, "id", None)
 
-        # Only proceed with CVE score fetch if we have a valid issue PK
-        if issue_pk:
+        # Only proceed with CVE score fetch if we have a valid issue PK and CVE ID
+        if issue_pk and obj.cve_id:
             try:
-                # Fetch the issue to get its CVE ID
-                issue_for_cve = Issue.objects.only("cve_id").get(pk=issue_pk)
-                if not issue_for_cve.cve_id:
-                    # No CVE ID, skip score fetch
-                    return result
-
                 # Fetch CVE score outside transaction
                 from website.cache.cve_cache import get_cached_cve_score
 
-                cve_score = get_cached_cve_score(issue_for_cve.cve_id)
+                cve_score = get_cached_cve_score(obj.cve_id)
                 if cve_score is not None:
                     # Update in a short transaction using the specific primary key
                     from django.db import transaction
@@ -1749,8 +1729,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             issue.save(update_fields=["cve_score"])
                         except Issue.DoesNotExist:
                             logger.error(f"Issue with pk={issue_pk} not found after creation")
-                else:
-                    # cve_score is None but cve_id exists
+                elif obj.cve_id:
                     messages.warning(
                         self.request, "Could not fetch CVE score at this time. Issue was created without it."
                     )
