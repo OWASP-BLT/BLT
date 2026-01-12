@@ -256,9 +256,9 @@ def fetch_cve_score_from_api(cve_id):
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code if e.response else None
             # Retry on 429 (rate limit) and 5xx (server errors) with exponential backoff
-            if status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
+            if status_code is not None and status_code in (429, 500, 502, 503, 504) and attempt < max_retries - 1:
                 wait_seconds = _get_backoff_base() * (2**attempt)
-                if status_code == 429:
+                if status_code is not None and status_code == 429:
                     # Check Retry-After header for rate limits
                     retry_after = e.response.headers.get("Retry-After") if e.response else None
                     if retry_after:
@@ -275,13 +275,13 @@ def fetch_cve_score_from_api(cve_id):
                 time.sleep(wait_seconds)
                 attempt += 1
                 continue
-            if status_code == 429:
+            if status_code is not None and status_code == 429:
                 logger.warning(
                     "Rate limit exceeded when fetching CVE score for %s after %d attempts",
                     cve_id,
                     max_retries,
                 )
-            elif 500 <= status_code < 600:
+            elif status_code is not None and 500 <= status_code < 600:
                 logger.error(
                     "Server error %s fetching CVE score for %s after %d attempts",
                     status_code,
@@ -384,6 +384,9 @@ def _wait_for_cache_fill(cache_key, cve_id):
     """
     wait_timeout = _get_lock_wait_timeout()
     wait_interval = _get_lock_wait_interval()
+    # Ensure wait_interval is positive to prevent ZeroDivisionError
+    if wait_interval <= 0:
+        wait_interval = max(0.01, wait_timeout / 100)  # Default to 1% of timeout or 10ms
     deadline = time.monotonic() + wait_timeout
     iterations = 0
     max_iterations = int(wait_timeout / wait_interval)
