@@ -48,11 +48,12 @@ jobs:
 
             // Check if any migration files are present
             // Migration files are in website/migrations/ or comments/migrations/
-            const migrationPattern = /^(website|comments)\/migrations\/.*\.py$/;
-            const hasMigrations = files.some(file => 
+            const migrationPattern = /^(website|comments)\/migrations\/(\d{4})_.*\.py$/;
+            const migrationFiles = files.filter(file => 
               migrationPattern.test(file.filename) && 
               !file.filename.endsWith('__init__.py')
             );
+            const hasMigrations = migrationFiles.length > 0;
 
             const migrationsLabel = 'migrations';
             const labelColor = 'fbca04'; // Yellow color for visibility
@@ -91,10 +92,7 @@ jobs:
 
             if (hasMigrations) {
               // Log which migration files were found
-              const migrationFiles = files
-                .filter(file => migrationPattern.test(file.filename) && !file.filename.endsWith('__init__.py'))
-                .map(file => file.filename);
-              core.info(`Found migration files: ${migrationFiles.join(', ')}`);
+              core.info(`Found migration files: ${migrationFiles.map(f => f.filename).join(', ')}`);
 
               // Add the label if it isn't already present
               if (!currentNames.has(migrationsLabel)) {
@@ -107,6 +105,135 @@ jobs:
                 core.info(`Applied label ${migrationsLabel} to PR #${pull_number}`);
               } else {
                 core.info(`Label ${migrationsLabel} already present on PR #${pull_number}`);
+              }
+
+              // Check for migration number overlaps
+              // Extract migration numbers from PR files
+              const prMigrations = {};
+              for (const file of migrationFiles) {
+                const match = file.filename.match(migrationPattern);
+                if (match) {
+                  const app = match[1]; // 'website' or 'comments'
+                  const number = parseInt(match[2], 10);
+                  if (!prMigrations[app]) {
+                    prMigrations[app] = [];
+                  }
+                  prMigrations[app].push({ number, filename: file.filename });
+                }
+              }
+
+              // Get existing migrations from base branch
+              const baseBranch = pr.base.ref;
+              const conflicts = [];
+
+              for (const app of Object.keys(prMigrations)) {
+                try {
+                  // Get the migrations directory from base branch
+                  const { data: baseMigrations } = await github.rest.repos.getContent({
+                    owner,
+                    repo,
+                    path: `${app}/migrations`,
+                    ref: baseBranch,
+                  });
+
+                  // Extract existing migration numbers
+                  const existingNumbers = baseMigrations
+                    .filter(file => file.type === 'file' && /^\d{4}_.*\.py$/.test(file.name) && file.name !== '__init__.py')
+                    .map(file => {
+                      const match = file.name.match(/^(\d{4})_/);
+                      return match ? parseInt(match[1], 10) : null;
+                    })
+                    .filter(num => num !== null);
+
+                  // Use reduce instead of spread operator to avoid stack overflow with many migrations
+                  const maxExisting = existingNumbers.length > 0 
+                    ? existingNumbers.reduce((max, num) => Math.max(max, num), 0) 
+                    : 0;
+                  core.info(`${app}: Max existing migration number is ${maxExisting}`);
+
+                  // Check for conflicts
+                  for (const prMigration of prMigrations[app]) {
+                    if (prMigration.number <= maxExisting) {
+                      conflicts.push({
+                        app,
+                        filename: prMigration.filename,
+                        number: prMigration.number,
+                        maxExisting,
+                      });
+                    }
+                  }
+                } catch (error) {
+                  core.warning(`Could not fetch existing migrations for ${app}: ${error.message}`);
+                }
+              }
+
+              // Fetch PR comments once for both conflict scenarios
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+              });
+
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Migration Number Conflict Detected')
+              );
+
+              // If there are conflicts, add or update a comment to the PR
+              if (conflicts.length > 0) {
+                const conflictMessages = conflicts.map(c => 
+                  `- \`${c.filename}\` has migration number **${String(c.number).padStart(4, '0')}**, but the latest migration in \`${c.app}/migrations\` is **${String(c.maxExisting).padStart(4, '0')}**`
+                ).join('\n');
+
+                const commentBody = `## ⚠️ Migration Number Conflict Detected
+
+This PR contains migration files with numbers that overlap with existing migrations in the base branch:
+
+${conflictMessages}
+
+### What this means:
+Migration files must be numbered sequentially. The migration numbers in this PR are lower than or equal to existing migrations, which will cause conflicts.
+
+### How to fix:
+1. Delete the migration files in this PR
+2. Rebase your branch on the latest \`${baseBranch}\` branch
+3. Run \`python manage.py makemigrations\` again to generate new migration files with correct sequential numbers
+
+This ensures your migrations will be applied in the correct order and won't conflict with existing migrations.`;
+
+                if (botComment) {
+                  // Update existing comment
+                  await github.rest.issues.updateComment({
+                    owner,
+                    repo,
+                    comment_id: botComment.id,
+                    body: commentBody,
+                  });
+                  core.info('Updated existing migration conflict comment');
+                } else {
+                  // Create new comment
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    body: commentBody,
+                  });
+                  core.info('Posted new migration conflict comment');
+                }
+
+                core.setFailed(`Migration number conflicts detected. See PR comment for details.`);
+              } else {
+                core.info('✅ All migration numbers are sequential and valid');
+                
+                // Remove existing conflict comment if migrations are now valid
+                if (botComment) {
+                  await github.rest.issues.deleteComment({
+                    owner,
+                    repo,
+                    comment_id: botComment.id,
+                  });
+                  core.info('Deleted resolved migration conflict comment');
+                }
               }
             } else {
               // Remove the label if no migrations are present
