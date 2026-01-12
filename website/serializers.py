@@ -14,8 +14,12 @@ from website.models import (
     Points,
     Project,
     Repo,
+    SearchHistory,
+    SecurityIncident,
     Tag,
     TimeLog,
+    Trademark,
+    TrademarkOwner,
     User,
     UserProfile,
 )
@@ -124,10 +128,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     freshness = serializers.SerializerMethodField()
-    stars = serializers.IntegerField()
-    forks = serializers.IntegerField()
-    external_links = serializers.JSONField()
-    project_visit_count = serializers.IntegerField()
+
+    total_stars = serializers.IntegerField(read_only=True)
+    total_forks = serializers.IntegerField(read_only=True)
+
+    external_links = serializers.JSONField(required=False)
+    project_visit_count = serializers.IntegerField(required=False)
 
     class Meta:
         model = Project
@@ -257,3 +263,62 @@ class JobPublicSerializer(serializers.ModelSerializer):
             "created_at",
             "views_count",
         )
+
+
+class TrademarkOwnerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrademarkOwner
+        fields = [
+            "name",
+            "address1",
+            "address2",
+            "city",
+            "state",
+            "country",
+            "postcode",
+            "owner_label",
+            "legal_entity_type_label",
+        ]
+
+
+class TrademarkSerializer(serializers.ModelSerializer):
+    owners = TrademarkOwnerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Trademark
+        fields = [
+            "keyword",
+            "registration_number",
+            "serial_number",
+            "status_label",
+            "filing_date",
+            "registration_date",
+            "expiration_date",
+            "description",
+            "owners",
+        ]
+
+
+class SearchHistorySerializer(serializers.ModelSerializer):
+    """Serializer for SearchHistory model"""
+
+    class Meta:
+        model = SearchHistory
+        fields = ["id", "query", "search_type", "timestamp", "result_count"]
+        read_only_fields = ["id", "timestamp"]
+
+
+class SecurityIncidentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecurityIncident
+        fields = [
+            "id",
+            "title",
+            "description",
+            "severity",
+            "status",
+            "affected_systems",
+            "created_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "resolved_at"]

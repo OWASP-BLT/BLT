@@ -6,7 +6,7 @@ import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
-from django.test import Client, LiveServerTestCase, TestCase
+from django.test import Client, LiveServerTestCase, TestCase, tag
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -34,9 +34,8 @@ from ..models import (
     UserProfile,
 )
 
-os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
-
+@tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
@@ -71,7 +70,6 @@ class MySeleniumTests(LiveServerTestCase):
         cls.selenium.quit()
         super(MySeleniumTests, cls).tearDownClass()
 
-    @override_settings(DEBUG=True)
     def test_signup(self):
         base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
         self.selenium.get(base_url)
@@ -131,7 +129,6 @@ class MySeleniumTests(LiveServerTestCase):
         # Test passes if we can create and verify the user
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
-    @override_settings(DEBUG=True)
     def test_login(self):
         # Email verification is now handled in setUp
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
@@ -144,53 +141,109 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertIn("@bugbug", body.text)
         self.assertIn("0 Points", body.text)
 
-    @override_settings(DEBUG=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_full_url(self):
-        # Email verification is now handled in setUp
         self.selenium.set_page_load_timeout(70)
-        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+
+        # Log in
+        self.selenium.get(f"{self.live_server_url}/accounts/login/")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
+
+        # Ensure login is complete before proceeding
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        # Add explicit wait for the URL input field
-        url_input = WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.NAME, "url")))
+        WebDriverWait(self.selenium, 30).until(lambda d: "@bugbug" in d.find_element(By.TAG_NAME, "body").text)
+
+        # Now go to report page
+        self.selenium.get(f"{self.live_server_url}/report/")
+        WebDriverWait(self.selenium, 60).until(lambda d: d.execute_script("return document.readyState") == "complete")
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        # Make sure we didn't get bounced back to login or somewhere else
+        WebDriverWait(self.selenium, 10).until(
+            lambda d: "/report" in d.current_url and "/accounts/login" not in d.current_url
+        )
+
+        # Find and fill the form
+        url_input = WebDriverWait(self.selenium, 30).until(EC.visibility_of_element_located((By.NAME, "url")))
         url_input.send_keys("https://blt.owasp.org/report/")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
-        self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
-        self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
-        # pass captacha if in test mode
-        self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
-        self.selenium.find_element("name", "reportbug_button").click()
-        self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
+        self.selenium.find_element(By.ID, "description").send_keys("XSS Attack on Google")
+        self.selenium.find_element(By.ID, "markdownInput").send_keys("Description of bug")
+        image_path = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
+        self.selenium.find_element(By.NAME, "screenshots").send_keys(image_path)
+        self.selenium.find_element(By.NAME, "captcha_1").send_keys("PASSED")
+        self.selenium.find_element(By.NAME, "reportbug_button").click()
+
+        # Verify that the bug report was submitted successfully
+        self.selenium.get(f"{self.live_server_url}/all_activity/")
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
+        body = self.selenium.find_element(By.TAG_NAME, "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    @override_settings(DEBUG=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_domain_url(self):
-        # Email verification is now handled in setUp
         self.selenium.set_page_load_timeout(70)
-        self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
-        self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
+
+        # Log in
+        self.selenium.get(f"{self.live_server_url}/accounts/login/")
+        self.selenium.find_element(By.NAME, "login").send_keys("bugbug")
+        self.selenium.find_element(By.NAME, "password").send_keys("secret")
+        self.selenium.find_element(By.NAME, "login_button").click()
+
+        # Ensure login is complete before proceeding
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        self.selenium.find_element("name", "url").send_keys("https://google.com")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
-        self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
-        self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
-        # pass captacha if in test mode
-        self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
-        self.selenium.find_element("name", "reportbug_button").click()
-        self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
+        WebDriverWait(self.selenium, 30).until(lambda d: "@bugbug" in d.find_element(By.TAG_NAME, "body").text)
+
+        # Now go to report page
+        self.selenium.get(f"{self.live_server_url}/report/")
+        WebDriverWait(self.selenium, 60).until(lambda d: d.execute_script("return document.readyState") == "complete")
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        body = self.selenium.find_element("tag name", "body")
-        self.assertIn("XSS Attack on Google", body.text)
+
+        # Make sure we didn't get bounced back to login or somewhere else
+        WebDriverWait(self.selenium, 10).until(
+            lambda d: "/report" in d.current_url and "/accounts/login" not in d.current_url
+        )
+
+        # Find and fill the form
+        url_input = WebDriverWait(self.selenium, 30).until(EC.visibility_of_element_located((By.NAME, "url")))
+        url_input.send_keys("https://google.com")
+        self.selenium.find_element(By.ID, "description").send_keys("XSS Attack on Google")
+        self.selenium.find_element(By.ID, "markdownInput").send_keys("Description of bug")
+        image_path = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
+        self.selenium.find_element(By.NAME, "screenshots").send_keys(image_path)
+        self.selenium.find_element(By.NAME, "captcha_1").send_keys("PASSED")
+        self.selenium.find_element(By.NAME, "reportbug_button").click()
+
+        # Wait for form submission and page transition
+        WebDriverWait(self.selenium, 30).until(
+            lambda d: (
+                "/report" not in d.current_url
+                and ("error" in d.page_source.lower() or "success" in d.page_source.lower())
+            )
+        )
+
+        # Ensure page has fully loaded before checking content
+        WebDriverWait(self.selenium, 30).until(lambda d: d.execute_script("return document.readyState") == "complete")
+
+        # Verify that the bug report was submitted successfully
+        self.selenium.get(f"{self.live_server_url}/all_activity/")
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        body = self.selenium.find_element(By.TAG_NAME, "body")
+        page_content = body.text
+
+        # Check for server errors
+        self.assertNotIn("500", page_content, "Server error encountered on /all_activity/")
+        self.assertNotIn("TransactionManagementError", page_content, "Transaction error encountered")
+        self.assertNotIn("Server Error", page_content, "Server error encountered")
+
+        # Verify the bug appears in the UI
+        self.assertIn("XSS Attack on Google", page_content, "Bug was not found in activity feed UI")
+
+        # Verify the bug was actually created in the database
+        bug_exists = Issue.objects.filter(user__username="bugbug", description="XSS Attack on Google").exists()
+        self.assertTrue(bug_exists, "Bug report was not found in database after submission")
 
     def setUp(self):
         super().setUp()
@@ -333,6 +386,7 @@ class LeaderboardTests(TestCase):
             repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 1",
             state="closed",
             created_at=timezone.now(),
@@ -346,6 +400,7 @@ class LeaderboardTests(TestCase):
             repo=self.repo,
             type="pull_request",
             is_merged=True,
+            merged_at=timezone.now(),  # Add merged_at for 6-month filter
             title="Test PR 2",
             state="closed",
             created_at=timezone.now(),
@@ -390,12 +445,114 @@ class LeaderboardTests(TestCase):
         self.assertContains(response, "80")
         self.assertContains(response, "40")
 
-        # Check PR leaderboard
+        # Check PR leaderboard - GitHub URLs should appear in href attributes
         self.assertContains(response, "https://github.com/user1")
         self.assertContains(response, "https://github.com/user2")
 
         # Check code review leaderboard
         self.assertContains(response, "Reviews: 1")  # Each user has 1 review
+
+    def test_monthly_leaderboard_excludes_bots(self):
+        """Test that bots are excluded from monthly leaderboard"""
+        from datetime import datetime
+
+        # Create bot users with typical bot naming patterns
+        bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
+        bot2 = User.objects.create_user(username="github-actions[bot]", password="password")
+        bot3 = User.objects.create_user(username="renovate-bot", password="password")
+
+        # Create points for bot users in current month
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        Points.objects.create(user=bot1, score=100)
+        Points.objects.create(user=bot2, score=200)
+        Points.objects.create(user=bot3, score=150)
+
+        # Get the monthly leaderboard URL
+        response = self.client.get(f"/leaderboard/monthly/?month={current_month}&year={current_year}")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot usernames are NOT in the leaderboard
+        self.assertNotContains(response, "dependabot[bot]")
+        self.assertNotContains(response, "github-actions[bot]")
+        self.assertNotContains(response, "renovate-bot")
+
+        # Check that regular users are still in the leaderboard
+        self.assertContains(response, "user1")
+        self.assertContains(response, "user2")
+
+    def test_yearly_leaderboard_excludes_bots(self):
+        """Test that bots are excluded from yearly leaderboard (each month view)"""
+        from datetime import datetime
+
+        # Create bot users
+        bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
+        bot2 = User.objects.create_user(username="copilot-bot", password="password")
+
+        # Create points for bot users in current year
+        current_year = datetime.now().year
+        Points.objects.create(user=bot1, score=500)
+        Points.objects.create(user=bot2, score=600)
+
+        # Get the yearly leaderboard URL
+        response = self.client.get(f"/leaderboard/each-month/?year={current_year}")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot usernames are NOT in the leaderboard
+        self.assertNotContains(response, "dependabot[bot]")
+        self.assertNotContains(response, "copilot-bot")
+
+        # Check that regular users can still appear
+        self.assertContains(response, "user1")
+
+    def test_global_leaderboard_excludes_bot_reviewers(self):
+        """Test that bot accounts are excluded from code review leaderboard"""
+        # Create bot contributors
+        bot_reviewer = Contributor.objects.create(
+            name="github-actions[bot]",
+            github_id=9999,
+            github_url="https://github.com/apps/github-actions",
+            avatar_url="https://avatars.githubusercontent.com/in/15368",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        # Create a PR for the bot to review
+        pr_for_bot = GitHubIssue.objects.create(
+            user_profile=self.profile1,
+            contributor=self.contributor1,
+            repo=self.repo,
+            type="pull_request",
+            is_merged=True,
+            merged_at=timezone.now(),
+            title="Test PR for bot review",
+            state="closed",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/OWASP-BLT/BLT/pull/999",
+            issue_id=999,
+        )
+
+        # Create a review from the bot
+        bot_review = GitHubReview.objects.create(
+            reviewer_contributor=bot_reviewer,
+            state="APPROVED",
+            submitted_at=timezone.now(),
+            pull_request=pr_for_bot,
+            review_id=9999,
+            url="https://github.com/OWASP-BLT/BLT/pull/999/reviews/9999",
+        )
+
+        # Get the global leaderboard
+        response = self.client.get("/leaderboard/")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot reviewer is NOT in the code review leaderboard
+        self.assertNotContains(response, "github-actions[bot]")
+
+        # Check that regular reviewers are still present
+        self.assertContains(response, "user1")
+        self.assertContains(response, "user2")
 
 
 class ProjectPageTest(TestCase):
@@ -431,7 +588,7 @@ class OrganizationTests(TestCase):
             "organization_name": org_name,
             "organization_url": org_url,
             "support_email": "support@test-org.com",
-            "twitter_url": "https://twitter.com/testorg",
+            "twitter_url": "https://x.com/testorg",
             "facebook_url": "https://facebook.com/testorg",
             "email": "manager@test-org.com",
         }
@@ -445,7 +602,7 @@ class OrganizationTests(TestCase):
         self.assertIsNotNone(org)
         self.assertEqual(org.url, org_url)
         self.assertEqual(org.email, "support@test-org.com")
-        self.assertEqual(org.twitter, "https://twitter.com/testorg")
+        self.assertEqual(org.twitter, "https://x.com/testorg")
         self.assertEqual(org.facebook, "https://facebook.com/testorg")
         self.assertEqual(org.admin, self.user)
         self.assertTrue(org.is_active)

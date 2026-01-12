@@ -1,23 +1,27 @@
 import ipaddress
 import json
 import logging
+import os
 import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
-from urllib.parse import urlparse
+from smtplib import SMTPException
+from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -54,8 +58,10 @@ from website.models import (
     Message,
     Organization,
     OrganizationAdmin,
+    Project,
     Repo,
     Room,
+    SlackChannel,
     Subscription,
     Tag,
     TimeLog,
@@ -174,41 +180,122 @@ def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_o
         return redirect("/")
 
 
-def weekly_report(request):
-    domains = Domain.objects.all()
-    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
+@login_required(login_url="/accounts/login")
+def slack_channels_list(request, template="slack_channels.html"):
+    """View to display all Slack channels with ability to link them to projects."""
+    user = request.user
+
+    # Get all slack channels ordered by member count
+    channels = SlackChannel.objects.all().order_by("-num_members")
+
+    # Get unlinked projects for the autocomplete dropdown (superusers only)
+    unlinked_projects = []
+    if user.is_superuser:
+        # Get projects that don't have any slack channel linked to them
+        linked_project_ids = SlackChannel.objects.filter(project__isnull=False).values_list("project_id", flat=True)
+        unlinked_projects = Project.objects.exclude(id__in=linked_project_ids).order_by("name")
+
+    context = {
+        "channels": channels,
+        "unlinked_projects": unlinked_projects,
+        "is_superuser": user.is_superuser,
+    }
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def link_slack_channel_to_project(request):
+    """API endpoint to link a Slack channel to a project (superusers only)."""
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    channel_id = request.POST.get("channel_id")
+    project_id = request.POST.get("project_id")
+
+    if not channel_id or not project_id:
+        return JsonResponse({"error": "Missing channel_id or project_id"}, status=400)
+
     try:
-        for domain in domains:
-            open_issues = domain.open_issues
-            closed_issues = domain.closed_issues
-            total_issues = open_issues.count() + closed_issues.count()
-            issues = Issue.objects.filter(domain=domain)
-            email = domain.email
-            report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
-                f"\n\norganization Name: {domain.name}"
-                f"Open issues: {open_issues.count()}"
-                f"Closed issues: {closed_issues.count()}"
-                f"Total issues: {total_issues}"
-            )
-            for issue in issues:
-                description = issue.description
-                views = issue.views
-                label = issue.get_label_display()
-                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
+        channel = SlackChannel.objects.get(channel_id=channel_id)
+        project = Project.objects.get(id=project_id)
 
-        report_string = "".join(report_data)
-        send_mail(
-            "Weekly Report!!!",
-            report_string,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
+        # Link the channel to the project
+        channel.project = project
+        channel.save(update_fields=["project"])
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Channel #{channel.name} linked to {project.name}",
+                "project_name": project.name,
+            }
         )
-    except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+    except SlackChannel.DoesNotExist:
+        return JsonResponse({"error": "Channel not found"}, status=404)
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found"}, status=404)
 
-    return HttpResponse("Weekly report sent successfully.")
+
+@staff_member_required
+def weekly_report(request):
+    domains = Domain.objects.annotate(
+        open_count=Count("issue", filter=Q(issue__status="open")),
+        closed_count=Count("issue", filter=Q(issue__status="closed")),
+    ).prefetch_related(
+        Prefetch(
+            "issue_set",
+            queryset=Issue.objects.filter(Q(status="open") | Q(status="closed")).only(
+                "description", "views", "label", "status"
+            ),
+            to_attr="filtered_issues",  # Store filtered results here
+        )
+    )
+
+    results = {"success": [], "failed": []}
+
+    for domain in domains:
+        try:
+            if not domain.email:
+                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
+                continue
+
+            issues = domain.filtered_issues
+
+            open_issues_count = domain.open_count
+            closed_issues_count = domain.closed_count
+            total_issues = open_issues_count + closed_issues_count
+
+            report_data = [
+                "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
+                f"Organization Name: {domain.name}\n",
+                f"Open issues: {open_issues_count}\n",
+                f"Closed issues: {closed_issues_count}\n",
+                f"Total issues: {total_issues}\n\n",
+            ]
+
+            for issue in issues:
+                report_data.append(
+                    f"Description: {issue.description}\n"
+                    f"Views: {issue.views}\n"
+                    f"Label: {issue.get_label_display()}\n\n"
+                )
+
+            send_mail(
+                "Weekly Report!!!",
+                "".join(report_data),
+                settings.EMAIL_HOST_USER,
+                [domain.email],
+                fail_silently=False,
+            )
+
+            results["success"].append(domain.name)
+
+        except (BadHeaderError, SMTPException) as e:
+            logger.error(f"Failed to send report to {domain.name}: {e}")
+            results["failed"].append(domain.name)
+
+    return HttpResponse(f"Sent {len(results['success'])} reports. Failed: {len(results['failed'])}")
 
 
 @login_required(login_url="/accounts/login")
@@ -223,13 +310,14 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         context["hunt"] = hunt
         context["issues"] = issues
         if hunt.result_published:
-            context["winner"] = Winner.objects.get(hunt=hunt)
+            context["winner"] = Winner.objects.filter(hunt=hunt).first()
         return render(request, template, context)
     else:
         for issue in issues:
             issue.verified = False
             issue.score = 0
-            issue.save()
+        if issues:
+            Issue.objects.bulk_update(issues, ["verified", "score"])
 
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
@@ -252,32 +340,33 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if request.POST["submit"] == "save":
             pass
         elif request.POST["submit"] == "publish":
-            issue.save()
-            winner = Winner()
-            issue_with_score = (
-                Issue.objects.filter(hunt=hunt, verified=True)
-                .values("user")
-                .order_by("user")
-                .annotate(total_score=Sum("score"))
-            )
+            with transaction.atomic():
+                issue_with_score = (
+                    Issue.objects.filter(hunt=hunt, verified=True)
+                    .values("user")
+                    .annotate(total_score=Sum("score"))
+                    .order_by("-total_score")
+                )
 
-            for index, obj in enumerate(issue_with_score, 1):
-                user = User.objects.get(pk=obj["user"])
-                if index == 1:
-                    winner.winner = user
-                elif index == 2:
-                    winner.runner = user
-                elif index == 3:
-                    winner.second_runner = user
-                elif index == 4:
-                    break
+                top_users = list(issue_with_score[:3])
+                user_map = User.objects.in_bulk([u["user"] for u in top_users])
 
-            winner.prize_distributed = True
-            winner.hunt = hunt
-            winner.save()
-            hunt.result_published = True
-            hunt.save()
-            context["winner"] = winner
+                winner, _ = Winner.objects.get_or_create(hunt=hunt)
+
+                if len(top_users) > 0:
+                    winner.winner = user_map.get(top_users[0]["user"])
+                if len(top_users) > 1:
+                    winner.runner = user_map.get(top_users[1]["user"])
+                if len(top_users) > 2:
+                    winner.second_runner = user_map.get(top_users[2]["user"])
+
+                winner.prize_distributed = True
+                winner.save()
+
+                hunt.result_published = True
+                hunt.save()
+
+                context["winner"] = winner
 
         context["hunt"] = hunt
         context["issues"] = issues
@@ -1053,7 +1142,7 @@ class DomainDetailView(ListView):
             }
 
             # Add Twitter URL
-            context["twitter_url"] = f"https://twitter.com/{domain.get_or_set_x_url(domain.get_name)}"
+            context["twitter_url"] = f"https://x.com/{domain.get_or_set_x_url(domain.get_name)}"
 
             return context
         except Http404:
@@ -1125,7 +1214,9 @@ class HuntCreate(CreateView):
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
         data = request.body
-        for event in json.loads(data):
+        events = json.loads(data)
+
+        for event in events:
             try:
                 # Try to find a matching domain first
                 domain = Domain.objects.filter(email__iexact=event.get("email")).first()
@@ -1163,7 +1254,61 @@ class InboundParseWebhookView(View):
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
                 logger.error(f"Error processing SendGrid webhook event: {str(e)}")
 
+        # Send events to Slack webhook
+        self._send_to_slack(events)
+
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
+
+    def _send_to_slack(self, events):
+        """
+        Send SendGrid webhook events to Slack webhook.
+
+        Args:
+            events: List of SendGrid webhook event dictionaries
+        """
+        try:
+            slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+
+            if not slack_webhook_url:
+                logger.debug("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
+                return
+
+            # Format events for Slack
+            for event in events:
+                event_type = event.get("event", "unknown")
+                email = event.get("email", "unknown")
+                timestamp = event.get("timestamp", "")
+
+                # Create a formatted message for this event
+                event_text = f"*📧 SendGrid Event: {event_type.upper()}*\n"
+                event_text += f"*Email:* {email}\n"
+                event_text += f"*Timestamp:* {timestamp}\n"
+
+                # Add additional details based on event type
+                if event_type == "bounce":
+                    reason = event.get("reason", "Unknown")
+                    event_text += f"*Reason:* {reason}\n"
+                elif event_type == "click":
+                    url = event.get("url", "N/A")
+                    event_text += f"*URL:* {url}\n"
+
+                # Add any other relevant fields
+                if "sg_message_id" in event:
+                    event_text += f"*Message ID:* {event.get('sg_message_id')}\n"
+
+                # Prepare Slack payload
+                payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": event_text}}]}
+
+                # Send to Slack
+                response = requests.post(slack_webhook_url, json=payload, timeout=5)
+                response.raise_for_status()
+
+            logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error sending to Slack: {str(e)}")
 
 
 class CreateHunt(TemplateView):
@@ -2609,11 +2754,17 @@ def update_organization_repos(request, slug):
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error testing token in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
+                        )
+                        yield "data: Error testing GitHub API. Please try again later.\n\n"
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    yield f"data: $ Error testing GitHub API: {str(e)[:50]}\n\n"
+                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2632,18 +2783,21 @@ def update_organization_repos(request, slug):
                     )
 
                     if response.status_code == 404:
-                        yield f"data: $ Error: GitHub organization '{github_org_name}' not found\n\n"
+                        yield f"data: Error: GitHub organization '{github_org_name}' not found\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code == 401:
-                        yield "data: $ Error: GitHub authentication failed\n\n"
+                        yield "data: Error: GitHub authentication failed\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error fetching organization in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
                         )
+                        yield "data: Error: GitHub API returned an error\n\n"
                         yield "data: DONE\n\n"
                         return
 
@@ -2665,9 +2819,10 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            yield f"data: $ Error updating logo: {str(e)[:50]}\n\n"
+                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
-                    yield "data: $ Error: Failed to connect to GitHub\n\n"
+                    yield "data: Error: Failed to connect to GitHub\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2695,21 +2850,19 @@ def update_organization_repos(request, slug):
                         if response.status_code == 403:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             if "rate limit" in response.text.lower():
-                                yield (f"data: $ Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
+                                yield (f"data: Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
                             else:
-                                yield (
-                                    f"data: $ Error: GitHub API access forbidden (403). Response: {response_text}\n\n"
-                                )
+                                yield (f"data: Error: GitHub API access forbidden (403). Response: {response_text}\n\n")
                             break
                         elif response.status_code == 401:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                            yield (f"data: $ Error: GitHub authentication failed (401). Response: {response_text}\n\n")
+                            yield (f"data: Error: GitHub authentication failed (401). Response: {response_text}\n\n")
                             yield "data: DONE\n\n"
                             return
                         elif response.status_code != 200:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             yield (
-                                f"data: $ Error: GitHub API returned {response.status_code}. "
+                                f"data: Error: GitHub API returned {response.status_code}. "
                                 f"Response: {response_text}\n\n"
                             )
                             yield "data: DONE\n\n"
@@ -2762,10 +2915,12 @@ def update_organization_repos(request, slug):
                                         repo.tags.add(tag)
 
                             except Exception as e:
-                                yield f"data: $ Error with {repo_name}: {str(e)[:50]}\n\n"
+                                logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
+                                yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        yield f"data: $ Network error: {str(e)[:50]}\n\n"
+                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
+                        yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
                     page += 1
@@ -2779,12 +2934,14 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
+                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
+        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
 
@@ -2927,9 +3084,9 @@ class BountyPayoutsView(ListView):
             return cached_data
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
-        encoded_label = label.replace("$", "%24")
-        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
-        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+        query_params = f"repo:OWASP-BLT/BLT is:issue state:{issue_state} label:{label}"
+        encoded_query = quote_plus(query_params)
+        url = f"https://api.github.com/search/issues?q={encoded_query}&page={page}&per_page={per_page}"
         headers = {}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"

@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import time
+from urllib.parse import quote_plus
 
 import psutil
 import requests
@@ -30,6 +31,24 @@ class RepoListView(ListView):
     context_object_name = "repos"
     paginate_by = 100
 
+    def _parse_organization_param(self):
+        """
+        Parse and validate the organization parameter from the request.
+
+        Returns:
+            int or None: The organization ID if valid, None otherwise.
+
+        Raises:
+            ValueError: If the organization parameter is invalid (non-integer).
+        """
+        organization = self.request.GET.get("organization")
+        if organization and organization.strip():
+            try:
+                return int(organization)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid organization ID: must be a valid integer.")
+        return None
+
     def get_queryset(self):
         # Start with all repos instead of just OWASP repos
         queryset = Repo.objects.all()
@@ -40,13 +59,9 @@ class RepoListView(ListView):
             queryset = queryset.filter(primary_language=language)
 
         # Handle organization filter
-        organization = self.request.GET.get("organization")
-        if organization:
-            try:
-                organization = int(organization)
-                queryset = queryset.filter(organization__id=organization)
-            except (ValueError, TypeError):
-                raise ValueError("Invalid organization ID: must be a valid integer.")
+        organization_id = self._parse_organization_param()
+        if organization_id:
+            queryset = queryset.filter(organization__id=organization_id)
 
         # Handle search query
         search_query = self.request.GET.get("q")
@@ -98,12 +113,13 @@ class RepoListView(ListView):
         context["organizations"] = organizations
 
         # Get current organization filter
-        context["current_organization"] = self.request.GET.get("organization")
+        organization_id = self._parse_organization_param()
+        context["current_organization"] = organization_id
 
         # Get organization name if filtered by organization
-        if context["current_organization"]:
+        if organization_id:
             try:
-                org = Organization.objects.get(id=context["current_organization"])
+                org = Organization.objects.get(id=organization_id)
                 context["current_organization_name"] = org.name
             except Organization.DoesNotExist:
                 context["current_organization_name"] = None
@@ -112,8 +128,8 @@ class RepoListView(ListView):
         queryset = Repo.objects.all()
 
         # Apply organization filter if selected
-        if context["current_organization"]:
-            queryset = queryset.filter(organization__id=context["current_organization"])
+        if organization_id:
+            queryset = queryset.filter(organization__id=organization_id)
 
         # Apply search filter if present
         search_query = self.request.GET.get("q")
@@ -237,12 +253,11 @@ class RepoDetailView(DetailView):
                             }
                         )
                     except Exception as e:
-                        # Convert the error to a string and return a proper JSON response
-                        error_message = str(e)
+                        logger.error(f"Failed to generate AI summary: {str(e)}", exc_info=True)
                         return JsonResponse(
                             {
                                 "status": "error",
-                                "message": f"Failed to generate AI summary: {error_message}",
+                                "message": "Failed to generate AI summary. Please try again later.",
                             },
                             status=500,
                         )
@@ -255,12 +270,11 @@ class RepoDetailView(DetailView):
                         status=400,
                     )
             except Exception as e:
-                # Convert the error to a string and return a proper JSON response
-                error_message = str(e)
+                logger.error(f"Unexpected error in generate_ai_summary: {str(e)}", exc_info=True)
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": f"An unexpected error occurred: {error_message}",
+                        "message": "An unexpected error occurred. Please try again later.",
                     },
                     status=500,
                 )
@@ -278,11 +292,11 @@ class RepoDetailView(DetailView):
                     }
                 )
             except Exception as e:
-                error_message = str(e)
+                logger.error(f"Error refreshing {section}: {str(e)}", exc_info=True)
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": f"An error occurred while refreshing {section}: {error_message}",
+                        "message": f"An error occurred while refreshing {section}. Please try again later.",
                     },
                     status=500,
                 )
@@ -422,11 +436,26 @@ def add_repo(request):
                 status=403,
             )
         elif response.status_code != 200:
-            error_data = response.json()
-            error_message = error_data.get("message", "Failed to fetch repository data")
-            logger.error(f"GitHub API Error: {error_message}")
+            # Safely parse JSON response - may fail for non-JSON error pages
+            try:
+                error_data = response.json() if response.content else {}
+                error_message = error_data.get("message", "Failed to fetch repository data")
+            except (ValueError, requests.exceptions.JSONDecodeError):
+                # Fallback to truncated text if JSON parsing fails
+                error_message = "Failed to fetch repository data"
+                response_text = response.text[:1000] if response.text else "No response body"
+                logger.error(
+                    f"GitHub API Error - Status: {response.status_code}, URL: {api_url}, "
+                    f"Response (non-JSON): {response_text}"
+                )
+            else:
+                logger.error(
+                    f"GitHub API Error - Status: {response.status_code}, URL: {api_url}, "
+                    f"Response: {response.text[:200] if response.text else 'No response body'}, "
+                    f"Error message: {error_message}"
+                )
             return JsonResponse(
-                {"status": "error", "message": f"GitHub API Error: {error_message}"},
+                {"status": "error", "message": "Failed to fetch repository data from GitHub. Please try again later."},
                 status=response.status_code,
             )
 
@@ -457,15 +486,16 @@ def add_repo(request):
 
         # Get issue counts
         def get_issue_count(full_name, query, headers):
-            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            encoded_query = quote_plus(f"repo:{full_name} {query}")
+            search_url = f"https://api.github.com/search/issues?q={encoded_query}"
             resp = requests.get(search_url, headers=headers)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
             return 0
 
-        open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
-        closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
-        open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+        open_issues = get_issue_count(full_name, "type:issue state:open", headers)
+        closed_issues = get_issue_count(full_name, "type:issue state:closed", headers)
+        open_pull_requests = get_issue_count(full_name, "type:pr state:open", headers)
         total_issues = open_issues + closed_issues
 
         # Get contributors count and commit count
@@ -544,8 +574,9 @@ def add_repo(request):
         )
 
     except Exception as e:
+        logger.error(f"Error adding repository: {str(e)}", exc_info=True)
         return JsonResponse(
-            {"status": "error", "message": f"An error occurred: {str(e)}"},
+            {"status": "error", "message": "An error occurred while adding the repository. Please try again later."},
             status=500,
         )
 
@@ -599,17 +630,12 @@ def refresh_repo_data(request, repo_id):
                 }
             )
         except Exception as cmd_error:
-            logger.error(f"Error running command: {str(cmd_error)}")
-            logger.error(f"Error type: {type(cmd_error).__name__}")
-            import traceback
-
-            logger.error(traceback.format_exc())
+            logger.error(f"Error running command: {str(cmd_error)}", exc_info=True)
 
             return JsonResponse(
                 {
                     "status": "error",
-                    "message": f"Error running update command: {str(cmd_error)}",
-                    "error_type": type(cmd_error).__name__,
+                    "message": "Error running update command. Please try again later.",
                 },
                 status=500,
             )
@@ -618,17 +644,12 @@ def refresh_repo_data(request, repo_id):
         logger.warning(f"Repository with ID {repo_id} not found")
         return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
     except Exception as e:
-        logger.error(f"Error refreshing repository data: {str(e)}")
-        logger.error(f"Error type: {type(e).__name__}")
-        import traceback
-
-        logger.error(traceback.format_exc())
+        logger.error(f"Error refreshing repository data: {str(e)}", exc_info=True)
 
         return JsonResponse(
             {
                 "status": "error",
-                "message": f"An error occurred while refreshing repository data: {str(e)}",
-                "error_type": type(e).__name__,
+                "message": "An error occurred while refreshing repository data. Please try again later.",
             },
             status=500,
         )

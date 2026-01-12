@@ -35,10 +35,35 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 
 ### Testing Requirements
 
-- Run Django tests with: `poetry run python manage.py test --failfast`
+#### Running Tests
+
+Django tests have been optimized for speed with the following improvements:
+- In-memory database for faster I/O
+- Fast password hasher for user creation
+- Parallel test execution support
+- Slow tests (like Selenium) can be excluded
+
+**Quick tests (excludes slow Selenium tests):**
+```bash
+poetry run python manage.py test --exclude-tag=slow --parallel --failfast
+```
+
+**Full test suite (includes all tests):**
+```bash
+poetry run python manage.py test --parallel --failfast
+```
+
+**Single test or test file:**
+```bash
+poetry run python manage.py test website.tests.test_api.APITests.test_specific_method
+```
+
+#### Test Guidelines
 - Add tests for new features or bug fixes when appropriate
 - Ensure existing tests pass before committing
 - Test files are located in `website/tests/`
+- Use `setUpTestData()` instead of `setUp()` when test data doesn't need to be modified
+- Tag slow tests with `@tag("slow")` decorator
 
 ### Dependency Management
 
@@ -137,6 +162,61 @@ python manage.py loaddata website/fixtures/initial_data.json
 # Collect static files (required after CSS/JS changes)
 python manage.py collectstatic --noinput
 ```
+
+### Taking Screenshots with Proper Styling
+
+**CRITICAL**: When taking screenshots of the application, you MUST ensure static files (CSS/JS) are properly loaded. Follow these steps:
+
+#### Using Docker (Recommended for Screenshots)
+
+```bash
+# 1. Copy the environment file
+cp .env.example .env
+
+# 2. Start the application with Docker
+docker-compose up -d
+
+# 3. Wait for the application to be ready (check logs)
+docker-compose logs -f app
+
+# 4. Once you see "Starting the main application http://localhost:8000/", the app is ready
+# Access at http://localhost:8000
+
+# 5. To stop the application after screenshots
+docker-compose down
+```
+
+#### Using Local Development (Alternative)
+
+```bash
+# 1. Set up environment
+cp .env.example .env
+poetry shell
+poetry install
+
+# 2. Set up database and collect static files
+python manage.py migrate
+python manage.py loaddata website/fixtures/initial_data.json
+python manage.py collectstatic --noinput
+
+# 3. Create superuser (if needed)
+python manage.py createsuperuser
+
+# 4. Run the development server
+python manage.py runserver
+
+# Access at http://127.0.0.1:8000
+```
+
+#### Important Notes for Screenshots
+
+- **ALWAYS** run `python manage.py collectstatic --noinput` before taking screenshots
+- Wait for the server to fully start before navigating to pages
+- Ensure the database is migrated and initial data is loaded
+- For Docker: Wait until you see "Starting the main application" in logs
+- For local: Wait until you see "Starting development server at http://127.0.0.1:8000/"
+- CSS files are served from the `/static/` directory after collection
+- If styles don't appear, check that collectstatic was run successfully
 
 ## Debugging Guidelines
 

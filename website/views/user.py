@@ -1,9 +1,13 @@
+import hashlib
+import hmac
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 
 from allauth.account.signals import user_signed_up
+from dateutil import parser as dateutil_parser
+from dateutil.parser import ParserError
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -29,7 +33,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
-from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -49,6 +52,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -433,14 +437,14 @@ class UserProfileDetailView(DetailView):
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:3]
         context["activity_screenshots"] = {}
-        for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
+        screenshots = IssueScreenshot.objects.filter(issue__in=context["activities"]).select_related("issue")
+        context["activity_screenshots"] = {s.issue: s for s in screenshots}
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
@@ -453,25 +457,26 @@ class UserProfileDetailView(DetailView):
             .order_by()
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
+        bug_counts = Issue.objects.filter(user=self.object, hunt=None).values("label").annotate(count=Count("id"))
+        bug_count_map = {item["label"]: item["count"] for item in bug_counts}
+        for i in range(7):
+            context[f"bug_type_{i}_count"] = bug_count_map.get(str(i), 0)
+        bug_qs = Issue.objects.filter(user=self.object, hunt=None)
+        for i in range(7):
+            context[f"bug_type_{i}"] = bug_qs.filter(label=str(i))
 
         arr = []
-        allFollowers = user.userprofile.follower.all()
-        for userprofile in allFollowers:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["followers"] = arr
+        allFollowers = user.userprofile.follower.select_related("user").all()
+        context["followers"] = [up.user for up in allFollowers]
 
         arr = []
-        allFollowing = user.userprofile.follows.all()
-        for userprofile in allFollowing:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["following"] = arr
+        allFollowing = user.userprofile.follows.select_related("user").all()
+        context["following"] = [up.user for up in allFollowing]
 
-        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
+        context["followers_list"] = [up.user.email for up in allFollowers]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         # tags
-        context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
+        context["user_related_tags"] = user.userprofile.tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         # pull request info
         stats = get_github_stats(user.userprofile)
@@ -508,6 +513,14 @@ class LeaderboardBase:
         if year and month:
             data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
 
+        # Bot identifiers to exclude from leaderboard
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(username__icontains=bot)
+
         data = (
             data.annotate(total_score=Sum("points__score"))
             .order_by("-total_score")
@@ -516,6 +529,7 @@ class LeaderboardBase:
                 username__isnull=False,
             )
             .exclude(username="")
+            .exclude(bot_exclusions)  # Exclude bot users
         )
         if api:
             return data.values("id", "username", "total_score")
@@ -572,7 +586,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
@@ -581,7 +595,14 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Filter for PRs merged in the last 6 months
         from dateutil.relativedelta import relativedelta
 
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
         since_date = timezone.now() - relativedelta(months=6)
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(contributor__name__icontains=bot)
+
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
@@ -593,6 +614,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
+            .exclude(bot_exclusions)  # Exclude bot contributors
             .select_related("contributor", "user_profile__user")
             .values(
                 "contributor__name",
@@ -608,6 +630,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Code Review Leaderboard - Use reviewer_contributor
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
         # Filter for reviews on PRs merged in the last 6 months
+        # Create bot exclusion query for reviewers
+        reviewer_bot_exclusions = Q()
+        for bot in bots:
+            reviewer_bot_exclusions |= Q(reviewer_contributor__name__icontains=bot)
+
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer_contributor__isnull=False,
@@ -617,6 +644,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
+            .exclude(reviewer_bot_exclusions)  # Exclude bot reviewers
             .select_related("reviewer_contributor", "reviewer__user")
             .values(
                 "reviewer_contributor__name",
@@ -653,7 +681,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         year = self.request.GET.get("year")
 
@@ -704,7 +732,7 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
@@ -941,42 +969,44 @@ def contributor_stats_view(request):
             )
             .order_by("-total_commits")
         )
+        contributor_ids = [s["contributor"] for s in stats_query]
+
+        contributors = Contributor.objects.in_bulk(contributor_ids)
 
         for stat in stats_query:
-            try:
-                contributor = Contributor.objects.get(id=stat["contributor"])
-
-                # Calculate impact score
-                impact_score = (
-                    stat["total_commits"] * 5
-                    + stat["total_prs"] * 3
-                    + stat["total_issues_opened"] * 2
-                    + stat["total_issues_closed"] * 2
-                    + stat["total_comments"]
-                )
-
-                # Determine impact level
-                if impact_score > 200:
-                    impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
-                elif impact_score > 100:
-                    impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
-                else:
-                    impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
-
-                contributor_stats.append(
-                    {
-                        "contributor": contributor,
-                        "commits": stat["total_commits"] or 0,
-                        "issues_opened": stat["total_issues_opened"] or 0,
-                        "issues_closed": stat["total_issues_closed"] or 0,
-                        "pull_requests": stat["total_prs"] or 0,
-                        "comments": stat["total_comments"] or 0,
-                        "impact_score": impact_score,
-                        "impact_level": impact_level,
-                    }
-                )
-            except Contributor.DoesNotExist:
+            contributor = contributors.get(stat["contributor"])
+            if not contributor:
                 continue
+
+            # Calculate impact score
+            impact_score = (
+                stat["total_commits"] * 5
+                + stat["total_prs"] * 3
+                + stat["total_issues_opened"] * 2
+                + stat["total_issues_closed"] * 2
+                + stat["total_comments"]
+            )
+
+            # Determine impact level
+            if impact_score > 200:
+                impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
+            elif impact_score > 100:
+                impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
+            else:
+                impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+
+            contributor_stats.append(
+                {
+                    "contributor": contributor,
+                    "commits": stat["total_commits"] or 0,
+                    "issues_opened": stat["total_issues_opened"] or 0,
+                    "issues_closed": stat["total_issues_closed"] or 0,
+                    "pull_requests": stat["total_prs"] or 0,
+                    "comments": stat["total_comments"] or 0,
+                    "impact_score": impact_score,
+                    "impact_level": impact_level,
+                }
+            )
     except Exception as e:
         logger.error(f"Error fetching contributor stats: {e}")
 
@@ -991,6 +1021,42 @@ def contributor_stats_view(request):
         paginated_stats = paginator.page(1)
     except EmptyPage:
         paginated_stats = paginator.page(paginator.num_pages)
+
+    # Get weekly leaderboard - top users by points earned in the time period
+    leaderboard = []
+
+    try:
+        leaderboard_query = (
+            Points.objects.filter(created__gte=start_date, created__lte=end_date)
+            .values("user")
+            .annotate(total_points=Sum("score"))
+            .order_by("-total_points")[:10]
+        )
+
+        user_ids = [entry["user"] for entry in leaderboard_query]
+
+        users = User.objects.in_bulk(user_ids)
+        profiles = {p.user_id: p for p in UserProfile.objects.filter(user_id__in=user_ids)}
+
+        for entry in leaderboard_query:
+            user_id = entry["user"]
+
+            user = users.get(user_id)
+            user_profile = profiles.get(user_id)
+
+            if not user or not user_profile:
+                continue
+
+            leaderboard.append(
+                {
+                    "user": user,
+                    "user_profile": user_profile,
+                    "total_points": entry["total_points"],
+                }
+            )
+
+    except Exception as e:
+        logger.error(f"Error fetching leaderboard: {e}")
 
     # Prepare time period options
     time_period_options = [
@@ -1013,15 +1079,21 @@ def contributor_stats_view(request):
         "challenge_highlights": challenge_highlights,
         "total_streak_achievements": len(streak_highlights),
         "total_challenge_completions": len(challenge_highlights),
+        "leaderboard": leaderboard,
     }
 
     return render(request, "weekly_activity.html", context)
 
 
+@login_required
 def create_wallet(request):
-    for user in User.objects.all():
-        Wallet.objects.get_or_create(user=user)
-    return JsonResponse("Created", safe=False)
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+    existing_wallet_user_ids = Wallet.objects.values_list("user_id", flat=True)
+    users_without_wallets = User.objects.exclude(id__in=existing_wallet_user_ids)
+    wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
+    Wallet.objects.bulk_create(wallets_to_create)
+    return JsonResponse(f"Created {len(wallets_to_create)} wallets", safe=False)
 
 
 def create_tokens(request):
@@ -1169,16 +1241,93 @@ def badge_user_list(request, badge_id):
     )
 
 
+def validate_github_signature(payload_body: bytes, signature_header: str | None) -> bool:
+    """
+    Validate GitHub webhook signature using HMAC-SHA256.
+
+    - payload_body: raw request.body (bytes)
+    - signature_header: value of X-Hub-Signature-256 from GitHub
+      e.g. "sha256=abc123..."
+    """
+    if not signature_header:
+        logger.warning("Missing X-Hub-Signature-256 header")
+        return False
+
+    secret = settings.GITHUB_WEBHOOK_SECRET
+    if not secret:
+        logger.warning("GITHUB_WEBHOOK_SECRET is not set")
+        return False
+
+    expected = (
+        "sha256="
+        + hmac.new(
+            secret.encode("utf-8"),
+            payload_body,
+            hashlib.sha256,
+        ).hexdigest()
+    )
+
+    return hmac.compare_digest(expected, signature_header)
+
+
+def safe_parse_github_datetime(value, *, default=None, field_name=""):
+    """
+    Safely parse a GitHub timestamp string into a datetime.
+
+    Returns `default` if the value is empty or malformed, and logs a warning
+    instead of letting ParserError crash the webhook handler.
+    """
+    if not value:
+        return default
+    try:
+        return dateutil_parser.parse(value)
+    except (ParserError, ValueError, TypeError, OverflowError) as exc:
+        logger.warning(
+            "Failed to parse GitHub datetime for %s: %r (%s)",
+            field_name,
+            value,
+            exc,
+        )
+        return default
+
+
 @csrf_exempt
 def github_webhook(request):
-    if request.method == "POST":
-        # Validate GitHub signature
-        # this doesn't seem to work?
-        # signature = request.headers.get("X-Hub-Signature-256")
-        # if not validate_signature(request.body, signature):
-        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+    """
+    Entry point for GitHub webhooks.
 
-        payload = json.loads(request.body)
+    Validates the HMAC signature (X-Hub-Signature-256), parses the JSON payload,
+    routes the event to the appropriate handler based on X-GitHub-Event,
+    and returns a JSON response indicating success or error.
+    """
+    if request.method == "POST":
+        # Fail closed if secret is not configured
+        if not getattr(settings, "GITHUB_WEBHOOK_SECRET", None):
+            logger.error("GITHUB_WEBHOOK_SECRET is not configured; refusing webhook request.")
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Webhook secret not configured",
+                },
+                status=503,
+            )
+
+        signature = request.headers.get("X-Hub-Signature-256")
+
+        if not validate_github_signature(request.body, signature):
+            return JsonResponse(
+                {"status": "error", "message": "Unauthorized request"},
+                status=403,
+            )
+
+        try:
+            payload = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"status": "error", "message": "Invalid JSON payload"},
+                status=400,
+            )
+
         event_type = request.headers.get("X-GitHub-Event", "")
 
         event_handlers = {
@@ -1195,17 +1344,156 @@ def github_webhook(request):
         if handler:
             return handler(payload)
         else:
-            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
+            return JsonResponse(
+                {"status": "error", "message": "Unhandled event type"},
+                status=400,
+            )
     else:
         return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
 
 
 def handle_pull_request_event(payload):
-    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
-        if pr_user_profile:
-            pr_user_instance = pr_user_profile.user
-            assign_github_badge(pr_user_instance, "First PR Merged")
+    """
+    Handle GitHub pull_request events.
+
+    Persists pull request lifecycle data into GitHubIssue for repositories
+    tracked in the BLT database. Supports key actions such as opened, closed,
+    reopened, edited, and synchronize, updating fields like state, merged flag,
+    merged_at/closed_at timestamps, linked repo, user_profile and contributor.
+    Also preserves existing badge assignment behaviour for merged PRs.
+    """
+    action = payload.get("action")
+    pr_data = payload.get("pull_request") or {}
+    repo_data = payload.get("repository") or {}
+
+    logger.debug(f"GitHub pull_request event: {action}")
+
+    # Only care about main lifecycle actions; ignore label/assigned/etc.
+    if action not in {"opened", "closed", "reopened", "edited", "synchronize"}:
+        return JsonResponse({"status": "ignored", "action": action}, status=200)
+
+    # --- PR basic fields ---
+    # Use GitHub's global PR ID for GitHubIssue.issue_id (avoids clash with issues)
+    pr_global_id = pr_data.get("id")  # big integer, globally unique per PR
+    pr_number = pr_data.get("number")  # visible PR number (#123)
+    pr_state = pr_data.get("state") or "open"  # "open" / "closed"
+    pr_html_url = pr_data.get("html_url") or ""
+    pr_title = pr_data.get("title") or ""
+    pr_body = pr_data.get("body") or ""
+    is_merged = bool(pr_data.get("merged", False))
+
+    # --- PR author / user mapping ---
+    pr_user = pr_data.get("user") or {}
+    pr_user_html_url = pr_user.get("html_url")
+    pr_user_profile = None
+    if pr_user_html_url:
+        # Same pattern as other handlers (push, review, status, etc.)
+        pr_user_profile = UserProfile.objects.filter(github_url=pr_user_html_url).first()
+
+    # contributor mapping for PR leaderboard
+    contributor = None
+    gh_login = pr_user.get("login")
+    gh_avatar = pr_user.get("avatar_url")
+    gh_github_url = pr_user_html_url
+    gh_id = pr_user.get("id")  # GitHub user ID (preferred unique key)
+
+    try:
+        if gh_id is not None:
+            # Primary: use github_id as the unique identifier
+            contributor, _ = Contributor.objects.get_or_create(
+                github_id=gh_id,
+                defaults={
+                    "github_url": gh_github_url or "",
+                    "name": gh_login or extract_github_username(gh_github_url) or "",
+                    "avatar_url": gh_avatar or "",
+                    "contributor_type": "User",
+                    "contributions": 0,
+                },
+            )
+        elif gh_github_url:
+            # Fallback: try to find existing contributor by URL, but don't create
+            # without github_id, since it's a required unique field
+            contributor = Contributor.objects.filter(github_url=gh_github_url).first()
+
+    except Exception as e:
+        logger.error(f"Error getting/creating Contributor for PR: {e}")
+        contributor = None
+
+    # --- Timestamps (using same style as handle_issue_event) ---
+    created_at = safe_parse_github_datetime(
+        pr_data.get("created_at"),
+        default=timezone.now(),
+        field_name="pull_request.created_at",
+    )
+    updated_at = safe_parse_github_datetime(
+        pr_data.get("updated_at"),
+        default=timezone.now(),
+        field_name="pull_request.updated_at",
+    )
+    closed_at = safe_parse_github_datetime(
+        pr_data.get("closed_at"),
+        default=None,
+        field_name="pull_request.closed_at",
+    )
+    merged_at = safe_parse_github_datetime(
+        pr_data.get("merged_at"),
+        default=None,
+        field_name="pull_request.merged_at",
+    )
+
+    # --- Repo mapping (same style as handle_issue_event) ---
+    repo_html_url = repo_data.get("html_url")
+    repo_full_name = repo_data.get("full_name")  # "owner/repo" (for logging only)
+
+    if not pr_global_id or not repo_html_url:
+        logger.warning("Pull request event missing required data (id or repo_html_url)")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    repo = None
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT for PR: {repo_html_url}")
+        # Not an error: we only track PRs for repos that exist in our DB
+    except Exception as e:
+        logger.error(f"Error finding repository for PR: {e}")
+
+    if repo:
+        # --- Upsert GitHubIssue row for this PR ---
+        try:
+            github_issue, created = GitHubIssue.objects.update_or_create(
+                issue_id=pr_global_id,  # unique per PR (avoids clash with issues)
+                repo=repo,
+                defaults={
+                    "type": "pull_request",
+                    "title": pr_title,
+                    "body": pr_body,
+                    "state": pr_state,
+                    "url": pr_html_url,
+                    "is_merged": is_merged,
+                    "created_at": created_at,
+                    "updated_at": updated_at,
+                    "closed_at": closed_at,
+                    "merged_at": merged_at if is_merged else None,
+                    "user_profile": pr_user_profile,
+                    "contributor": contributor,
+                    # has_dollar_tag, sponsors_tx_id, p2p_* left untouched
+                },
+            )
+
+            logger.info(
+                f"{'Created' if created else 'Updated'} GitHubIssue PR #{pr_number} "
+                f"(id={pr_global_id}) in repo {repo_full_name} | "
+                f"state={pr_state} merged={is_merged}"
+            )
+        except Exception as e:
+            logger.error(f"Error creating/updating GitHubIssue for PR #{pr_number}: {e}")
+
+    # --- Badge logic (preserve existing behaviour) ---
+    if action == "closed" and is_merged and pr_user_profile:
+        pr_user_instance = pr_user_profile.user
+        assign_github_badge(pr_user_instance, "First PR Merged")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
@@ -1227,12 +1515,70 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    logger.debug("issue closed")
-    if payload["action"] == "closed":
+    """
+    Handle GitHub issue events (opened, closed, etc.)
+    Updates GitHubIssue records in BLT to match GitHub issue state
+    """
+    action = payload.get("action")
+    issue_data = payload.get("issue", {})
+    repo_data = payload.get("repository", {})
+
+    logger.debug(f"GitHub issue event: {action}")
+
+    # Extract issue details
+    issue_id = issue_data.get("number")
+    issue_state = issue_data.get("state")
+    issue_html_url = issue_data.get("html_url")
+
+    # Extract repository details
+    repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
+    repo_html_url = repo_data.get("html_url")
+
+    if not issue_id or not repo_html_url:
+        logger.warning("Issue event missing required data")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    # Find the Repo in BLT database
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT: {repo_html_url}")
+        # Not an error - we only track issues for repos we have in our database
+        # Continue to badge assignment
+    except Exception as e:
+        logger.error(f"Error finding repository: {e}")
+        # Continue to badge assignment
+    else:
+        # Find and update the GitHubIssue record
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
+
+            # Update the issue state
+            github_issue.state = issue_state
+
+            # Update closed_at timestamp if the issue was closed
+            if action == "closed" and issue_data.get("closed_at"):
+                github_issue.closed_at = dateutil_parser.parse(issue_data["closed_at"])
+
+            # Update updated_at timestamp
+            if issue_data.get("updated_at"):
+                github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
+
+            github_issue.save()
+            logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
+        except GitHubIssue.DoesNotExist:
+            logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
+            # Not an error - we may not have all issues in our database
+        except Exception as e:
+            logger.error(f"Error updating GitHubIssue: {e}")
+
+    # Assign badge for first issue closed (existing functionality)
+    if action == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
@@ -1557,7 +1903,7 @@ def mark_as_read(request):
         except Exception as e:
             logger.error(f"Error marking notifications as read: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+                {"status": "error", "message": "An error occurred while marking notifications as read"}, status=400
             )
 
 
@@ -1574,7 +1920,7 @@ def delete_notification(request, notification_id):
         except Exception as e:
             logger.error(f"Error deleting notification: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                {"status": "error", "message": "An error occurred while deleting notification, please try again."},
                 status=400,
             )
     else:
