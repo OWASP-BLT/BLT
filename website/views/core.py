@@ -37,7 +37,7 @@ from django.db import DatabaseError, IntegrityError, connection, models, transac
 from django.db.models import Avg, Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -45,7 +45,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
-from django_redis import get_redis_connection
 
 from website.models import (
     IP,
@@ -955,6 +954,7 @@ def search(request, template="search.html"):
         context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
 
     return render(request, template, context)
+
 
 # @api_view(["POST"])
 # def chatbot_conversation(request):
