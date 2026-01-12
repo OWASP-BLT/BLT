@@ -6,6 +6,7 @@ import decimal
 import logging
 import re
 import time
+import uuid
 from decimal import Decimal
 from urllib.parse import quote
 
@@ -123,7 +124,8 @@ def get_cached_cve_score(cve_id):
         return cached_value
 
     lock_key = f"{cache_key}{CVE_CACHE_LOCK_SUFFIX}"
-    lock_acquired = _acquire_cache_lock(lock_key)
+    lock_token = None  # Track our lock token for safe release
+    lock_acquired, lock_token = _acquire_cache_lock(lock_key)
 
     if not lock_acquired:
         logger.debug("Waiting for existing fetch lock for %s", normalized_id)
@@ -132,7 +134,7 @@ def get_cached_cve_score(cve_id):
             return cached_value
         logger.debug("Cache fill wait timed out for %s, retrying lock acquisition", normalized_id)
         # Try to acquire lock one more time after timeout
-        lock_acquired = _acquire_cache_lock(lock_key)
+        lock_acquired, lock_token = _acquire_cache_lock(lock_key)
         if not lock_acquired:
             # Still can't acquire lock - check cache one final time before proceeding
             cached_value, is_hit = _read_from_cache(cache_key, normalized_id)
@@ -157,10 +159,10 @@ def get_cached_cve_score(cve_id):
             _write_to_cache(cache_key, normalized_id, score)
         return score
     finally:
-        if lock_acquired:
-            # Best-effort lock release - don't let cache backend errors break the request
+        if lock_acquired and lock_token:
+            # Only release the lock if it's still ours (tokenized lock prevents stomping)
             try:
-                cache.delete(lock_key)
+                _release_cache_lock(lock_key, lock_token)
             except Exception as e:  # noqa: BLE001  # pylint: disable=broad-except
                 logger.warning("Error releasing cache lock %s: %s", lock_key, e)
 
@@ -374,12 +376,45 @@ def _write_to_cache(cache_key, cve_id, score):
 
 
 def _acquire_cache_lock(lock_key):
-    """Attempt to acquire cache-backed lock."""
+    """
+    Attempt to acquire cache-backed lock with unique token.
+
+    Returns:
+        tuple: (acquired: bool, token: str or None)
+        - acquired=True means we got the lock
+        - token is our unique identifier for safe release
+    """
     try:
-        return cache.add(lock_key, True, timeout=_get_lock_timeout())
+        # Generate unique token for this lock acquisition
+        lock_token = str(uuid.uuid4())
+        acquired = cache.add(lock_key, lock_token, timeout=_get_lock_timeout())
+        if acquired:
+            return True, lock_token
+        return False, None
     except Exception as e:  # noqa: BLE001  # pylint: disable=broad-except
         logger.warning("Error acquiring cache lock %s: %s", lock_key, e)
-        return False
+        return False, None
+
+
+def _release_cache_lock(lock_key, expected_token):
+    """
+    Release cache-backed lock only if it still contains our token.
+    This prevents releasing another worker's lock if ours expired.
+    """
+    try:
+        current_value = cache.get(lock_key)
+        if current_value == expected_token:
+            cache.delete(lock_key)
+            logger.debug("Successfully released lock %s", lock_key)
+        else:
+            logger.debug(
+                "Lock %s already expired or taken by another worker (our token: %s, current: %s)",
+                lock_key,
+                expected_token,
+                current_value,
+            )
+    except Exception as e:  # noqa: BLE001  # pylint: disable=broad-except
+        logger.warning("Error checking/releasing cache lock %s: %s", lock_key, e)
 
 
 def _wait_for_cache_fill(cache_key, cve_id):
@@ -394,7 +429,8 @@ def _wait_for_cache_fill(cache_key, cve_id):
     wait_interval = _get_lock_wait_interval()
     deadline = time.monotonic() + wait_timeout
     iterations = 0
-    max_iterations = int(wait_timeout / wait_interval)
+    # Ensure at least 1 iteration even if interval > timeout (edge case)
+    max_iterations = max(1, int(wait_timeout / wait_interval))
 
     while iterations < max_iterations:
         cached_value, is_hit = _read_from_cache(cache_key, cve_id)

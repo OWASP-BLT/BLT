@@ -518,6 +518,13 @@ def search_issues(request, template="search.html"):
 
     # Normalize and validate query
     query = query.strip()
+
+    # Short-circuit for empty queries after stripping
+    if query == "":
+        if is_api_request:
+            return JsonResponse({"issues": []})
+        return render(request, template)
+
     if len(query) > MAX_QUERY_LENGTH:
         query = query[:MAX_QUERY_LENGTH]
 
@@ -1549,7 +1556,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             if cve_validation_error:
                 messages.error(self.request, cve_validation_error)
-                return (self.form_invalid(form), None)
+                return self.form_invalid(form)
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
