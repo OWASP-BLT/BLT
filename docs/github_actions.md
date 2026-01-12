@@ -185,7 +185,7 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Makes it easy to see which PRs need author attention vs. maintainer review.
 
 #### 2.4 Add Migrations Label (`add-migrations-label.yml`)
-**Purpose**: Flag PRs containing database migrations
+**Purpose**: Flag PRs containing database migrations and validate migration sequence
 
 **Triggers**:
 - Pull request opened, synchronized, or reopened
@@ -194,8 +194,22 @@ These workflows add intelligent metadata and checks to pull requests.
 - Detects migration files in `website/migrations/` or `comments/migrations/`
 - Adds `migrations` label (yellow) for visibility
 - Removes label if migrations are removed from PR
+- **Validates migration numbers are sequential**:
+  - Extracts migration numbers from PR files (e.g., `0252` from `0252_description.py`)
+  - Fetches existing migrations from base branch via GitHub API
+  - Detects conflicts when PR migration numbers ≤ highest existing migration number
+  - Posts detailed comment with fix instructions when conflicts are found
+  - Fails the workflow check to prevent merge until resolved
+  - Auto-removes conflict comment when migrations are regenerated correctly
 
-**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files.
+**Migration Conflict Detection**:
+When a PR contains migrations with numbers that overlap existing migrations (e.g., PR has `0252_*.py` but base branch already has migrations up to `0263_*.py`), the workflow will:
+1. Post a comment explaining the conflict
+2. Provide step-by-step fix instructions (delete migrations, rebase, regenerate)
+3. Fail the workflow check to prevent accidental merge
+4. Automatically remove the warning when the issue is fixed
+
+**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files. Also prevents migration conflicts that can occur when AI generates migrations on stale branches, which could break the database migration sequence.
 
 #### 2.5 Check PR Conflicts (`check-pr-conflicts.yml`)
 **Purpose**: Detect and notify about merge conflicts
