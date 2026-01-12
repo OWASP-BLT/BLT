@@ -2239,13 +2239,17 @@ def list_recommendations(request, username):
     # Only show approved and visible recommendations to public
     # Profile owner can see pending ones
     if request.user == user:
-        recommendations = Recommendation.objects.filter(to_user=user).select_related(
-            "from_user", "from_user__userprofile"
-        ).prefetch_related("from_user__userprofile__user__socialaccount_set")
+        recommendations = (
+            Recommendation.objects.filter(to_user=user)
+            .select_related("from_user", "from_user__userprofile")
+            .prefetch_related("from_user__userprofile__user__socialaccount_set")
+        )
     else:
-        recommendations = Recommendation.objects.filter(to_user=user, is_approved=True, is_visible=True).select_related(
-            "from_user", "from_user__userprofile"
-        ).prefetch_related("from_user__userprofile__user__socialaccount_set")
+        recommendations = (
+            Recommendation.objects.filter(to_user=user, is_approved=True, is_visible=True)
+            .select_related("from_user", "from_user__userprofile")
+            .prefetch_related("from_user__userprofile__user__socialaccount_set")
+        )
 
     recommendations_data = []
     for rec in recommendations.order_by("-created_at"):
