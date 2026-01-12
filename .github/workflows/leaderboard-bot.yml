@@ -29,6 +29,21 @@ jobs:
             
             core.info(`Processing PR #${pull_number} by @${prAuthor}`);
             
+            // Bot detection helper function (defined early to use for PR author check)
+            const isBot = (user) => {
+              if (!user || !user.login) return false;
+              const loginLower = user.login.toLowerCase();
+              const botPatterns = ['copilot', '[bot]', 'dependabot', 'github-actions', 'renovate'];
+              return user.type === 'Bot' || 
+                     botPatterns.some(pattern => loginLower.includes(pattern));
+            };
+            
+            // Skip leaderboard for bot accounts
+            if (isBot(pr.user)) {
+              core.info(`Skipping leaderboard for bot account: @${prAuthor}`);
+              return;
+            }
+            
             // Get current month date range
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -43,15 +58,6 @@ jobs:
             // Configuration constants
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
-            
-            // Bot detection helper function
-            const isBot = (user) => {
-              if (!user || !user.login) return false;
-              const knownBots = ['copilot', 'dependabot', 'github-actions'];
-              return user.type === 'Bot' || 
-                     user.login.endsWith('[bot]') || 
-                     knownBots.includes(user.login.toLowerCase());
-            };
             
             // GraphQL query to fetch PRs for the current month (for counting PR creations)
             const prQuery = `

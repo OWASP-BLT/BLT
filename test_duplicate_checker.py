@@ -17,12 +17,6 @@ import json
 import os
 import sys
 
-import django
-
-# Setup Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
-django.setup()
-
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
@@ -262,6 +256,12 @@ def run_quick_tests():
 
 
 if __name__ == "__main__":
+    # Setup Django when script is run directly
+    import django
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
+    django.setup()
+
     if len(sys.argv) > 1 and sys.argv[1] == "quick":
         success = run_quick_tests()
         sys.exit(0 if success else 1)

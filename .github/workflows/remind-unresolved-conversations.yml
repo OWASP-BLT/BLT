@@ -71,10 +71,10 @@ jobs:
               
               // Get unresolved conversations count using GraphQL
               const query = `
-                query($owner: String!, $repo: String!, $pull_number: Int!) {
+                query($owner: String!, $repo: String!, $pull_number: Int!, $after: String) {
                   repository(owner: $owner, name: $repo) {
                     pullRequest(number: $pull_number) {
-                      reviewThreads(first: 100) {
+                      reviewThreads(first: 100, after: $after) {
                         nodes {
                           isResolved
                           isOutdated
@@ -93,32 +93,38 @@ jobs:
                 let allThreads = [];
                 let hasNextPage = true;
                 let cursor = null;
+                let pageCount = 0;
                 
                 // Paginate through all review threads
                 while (hasNextPage) {
+                  pageCount++;
                   const variables = {
                     owner,
                     repo,
                     pull_number,
-                    ...(cursor && { after: cursor })
+                    after: cursor
                   };
                   
-                  const result = await github.graphql(
-                    cursor ? query.replace('first: 100', 'first: 100, after: $after') : query,
-                    variables
-                  );
+                  const result = await github.graphql(query, variables);
                   
                   const threads = result.repository.pullRequest.reviewThreads;
+                  const pageThreadCount = threads.nodes.length;
                   allThreads = allThreads.concat(threads.nodes);
                   hasNextPage = threads.pageInfo.hasNextPage;
                   cursor = threads.pageInfo.endCursor;
+                  
+                  core.info(`  Fetched page ${pageCount}: ${pageThreadCount} threads (hasNextPage: ${hasNextPage})`);
                 }
+                
+                core.info(`  Total review threads fetched: ${allThreads.length} across ${pageCount} page(s)`);
                 
                 // Count unresolved conversations (excluding outdated ones)
                 const unresolvedThreads = allThreads.filter(thread => !thread.isResolved && !thread.isOutdated);
+                const outdatedThreads = allThreads.filter(thread => thread.isOutdated);
+                const resolvedThreads = allThreads.filter(thread => thread.isResolved && !thread.isOutdated);
                 const unresolvedCount = unresolvedThreads.length;
                 
-                core.info(`  Unresolved conversations: ${unresolvedCount}`);
+                core.info(`  Thread breakdown: ${resolvedThreads.length} resolved, ${unresolvedCount} unresolved, ${outdatedThreads.length} outdated`);
                 
                 // Skip if no unresolved conversations
                 if (unresolvedCount === 0) {
