@@ -186,20 +186,20 @@ jobs:
                 ).join('\n');
 
                 const commentBody = `## ⚠️ Migration Number Conflict Detected
-
-This PR contains migration files with numbers that overlap with existing migrations in the base branch:
-
-${conflictMessages}
-
-### What this means:
-Migration files must be numbered sequentially. The migration numbers in this PR are lower than or equal to existing migrations, which will cause conflicts.
-
-### How to fix:
-1. Delete the migration files in this PR
-2. Rebase your branch on the latest \`${baseBranch}\` branch
-3. Run \`python manage.py makemigrations\` again to generate new migration files with correct sequential numbers
-
-This ensures your migrations will be applied in the correct order and won't conflict with existing migrations.`;
+                
+                This PR contains migration files with numbers that overlap with existing migrations in the base branch:
+                
+                ${conflictMessages}
+                
+                ### What this means:
+                Migration files must be numbered sequentially. The migration numbers in this PR are lower than or equal to existing migrations, which will cause conflicts.
+                
+                ### How to fix:
+                1. Delete the migration files in this PR
+                2. Rebase your branch on the latest \`${baseBranch}\` branch
+                3. Run \`python manage.py makemigrations\` again to generate new migration files with correct sequential numbers
+                
+                This ensures your migrations will be applied in the correct order and won't conflict with existing migrations.`;
 
                 if (botComment) {
                   // Update existing comment
