@@ -2174,6 +2174,19 @@ def approve_recommendation(request, recommendation_id):
                 request,
                 "Recommendation approved and is now visible on your profile. It has been solidified and cannot be modified.",
             )
+        elif action == "hide":
+            # Hide/unhide the recommendation (only if approved)
+            if recommendation.is_approved:
+                # Toggle visibility
+                recommendation.is_visible = not recommendation.is_visible
+                recommendation.save(update_fields=["is_visible", "updated_at"])
+                if recommendation.is_visible:
+                    messages.success(request, "Recommendation is now visible on your profile.")
+                else:
+                    messages.success(request, "Recommendation has been hidden from your profile.")
+            else:
+                messages.error(request, "Cannot hide a pending recommendation. Please approve or delete it first.")
+                return redirect("profile", slug=request.user.username)
         elif action == "delete":
             # CRITICAL: Can only delete if NOT approved (pending recommendations)
             if recommendation.is_approved:
@@ -2206,11 +2219,6 @@ def delete_recommendation(request, recommendation_id):
         if request.user != recommendation.from_user:
             messages.error(request, "You don't have permission to delete this recommendation.")
             return redirect("profile", slug=request.user.username)
-
-        # Additional safety check: ensure it's not approved
-        if recommendation.is_approved:
-            messages.error(request, "Cannot delete an approved recommendation.")
-            return redirect("profile", slug=recommendation.to_user.username)
 
         # Delete the recommendation
         recommendation.delete()
