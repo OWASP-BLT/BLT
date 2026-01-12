@@ -1927,8 +1927,8 @@ def delete_notification(request, notification_id):
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
-@require_POST
 @login_required
+@require_POST
 def toggle_follow(request, username):
     """Toggle follow/unfollow for a user (HTMX + non-HTMX safe)"""
 
@@ -1953,11 +1953,15 @@ def toggle_follow(request, username):
         action = "followed"
 
         if target_user.email:
+            context = {"follower": request.user, "followed": target_user}
+            msg_plain = render_to_string("email/follow_user.html", context)
+            msg_html = render_to_string("email/follow_user.html", context)
             send_mail(
                 "You got a new follower!!",
-                f"{request.user.username} started following you.",
+                msg_plain,
                 settings.EMAIL_TO_STRING,
                 [target_user.email],
+                html_message=msg_html,
                 fail_silently=True,
             )
 

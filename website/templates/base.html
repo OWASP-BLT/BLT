@@ -54,8 +54,12 @@
                     integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
                     crossorigin="anonymous"></script>
             <!-- HTMX extensions for better UX -->
-            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/loading-states.js"></script>
-            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"></script>
+            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/loading-states.js"
+                    integrity="sha384-v04dReCP6N+wBCc+JjDUHyvkWJPO5jyzXxNdZHF/HZVyMXhh2USfi3UvCfiPwmmB"
+                    crossorigin="anonymous"></script>
+            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"
+                    integrity="sha384-nRnAvEUI7N/XvvowiMiq7oEI04gOXMCqD3Bidvedw+YNbj7zTQACPlRI3Jt3vYM4"
+                    crossorigin="anonymous"></script>
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -113,51 +117,48 @@
         </script>
         <!-- HTMX Global Configuration -->
         <script>
-            // Show toast notifications for HTMX responses
-            document.body.addEventListener('htmx:afterRequest', function(event) {
-                const xhr = event.detail.xhr;
-                
-                // Only parse JSON if response is JSON
-                if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (xhr.status === 200 && response.message) {
-                            if (window.createMessage) {
-                                window.createMessage(response.message, 'success', 3000);
+             document.addEventListener('DOMContentLoaded', function() {
+                // Show toast notifications for HTMX responses
+                document.body.addEventListener('htmx:afterRequest', function(event) {
+                    const xhr = event.detail.xhr;
+                    
+                    // Only parse JSON if response is JSON
+                    if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (xhr.status === 200 && response.message) {
+                                if (window.createMessage) {
+                                    window.createMessage(response.message, 'success', 3000);
+                                }
+                            } else if (xhr.status >= 400) {
+                                if (window.createMessage) {
+                                    window.createMessage(response.error || 'An error occurred', 'error', 5000);
+                                }
                             }
-                        } else if (xhr.status >= 400) {
-                            if (window.createMessage) {
-                                window.createMessage(response.error || 'An error occurred', 'error', 5000);
-                            }
+                        } catch (e) {
+                            console.error('Failed to parse JSON response:', e);
                         }
-                    } catch (e) {
-                        console.error('Failed to parse JSON response:', e);
                     }
-                }
+                });
+                
+                // Show loading indicator during requests
+                document.body.addEventListener('htmx:beforeRequest', function(event) {
+                    const target = event.detail.target;
+                    if (target && target.style) {
+                        target.style.opacity = '0.6';
+                        target.style.pointerEvents = 'none';
+                    }
+                });
+                
+                document.body.addEventListener('htmx:afterRequest', function(event) {
+                    const target = event.detail.target;
+                    if (target && target.style) {
+                        target.style.opacity = '1';
+                        target.style.pointerEvents = 'auto';
+                    }
+                });
             });
-            
-            // Show loading indicator during requests
-            document.body.addEventListener('htmx:beforeRequest', function(event) {
-                const target = event.detail.target;
-                if (target && target.style) {
-                    target.style.opacity = '0.6';
-                    target.style.pointerEvents = 'none';
-                }
-            });
-            
-            document.body.addEventListener('htmx:afterRequest', function(event) {
-                const target = event.detail.target;
-                if (target && target.style) {
-                    target.style.opacity = '1';
-                    target.style.pointerEvents = 'auto';
-                }
-            });
-            
-            // Add afterSettle event to handle DOM updates
-            document.body.addEventListener('htmx:afterSettle', function(event) {
-                // Re-initialize any dynamic elements if needed
-                console.log('HTMX settled for target:', event.detail.target);
-            });
+                
         </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
@@ -176,7 +177,7 @@
         {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300"
-          hx-ext="json-enc, loading-states">
+          hx-ext="loading-states">
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->

@@ -92,7 +92,7 @@
                         <button hx-post="{% url 'toggle_follow' user.username %}"
                                 hx-target="#follow-section-{{ user.id }}"
                                 hx-swap="outerHTML"
-                                hx-ext="json-enc"
+                                hx-ext=""
                                 class="select-none flex-1 px-4 py-2 {% if request.user in followers %}bg-red-400 hover:bg-red-500{% else %}bg-blue-400 hover:bg-blue-500{% endif %} text-white font-medium rounded-lg transition-all duration-200">
                             {% if request.user in followers %}
                                 <i class="fas fa-user-minus mr-2"></i>{% trans "Unfollow" %}

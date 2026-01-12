@@ -96,7 +96,7 @@ logger = logging.getLogger(__name__)
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Remove downvote if exists
     if userprof.issue_downvoted.filter(pk=issue.pk).exists():
@@ -168,7 +168,7 @@ def like_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
-    userprof = UserProfile.objects.get(user=request.user)
+    userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Remove upvote if exists
     if userprof.issue_upvoted.filter(pk=issue.pk).exists():
@@ -217,6 +217,7 @@ def dislike_issue(request, issue_pk):
     )
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def issue_votes(request, issue_pk):
     """Return updated vote counts for HTMX"""
@@ -265,8 +266,6 @@ def issue_votes(request, issue_pk):
         },
         status=200,
     )
-
-    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -1913,15 +1912,18 @@ class IssueView(DetailView):
         context["user_has_saved"] = False
 
         if user.is_authenticated:
-            profile = user.userprofile
+            profile = getattr(user, "userprofile", None)
+            if profile is None:
+                # User lacks profile - leave defaults
+                pass
+            else:
+                if profile.issue_upvoted.filter(pk=issue.pk).exists():
+                    context["user_vote"] = "upvote"
+                elif profile.issue_downvoted.filter(pk=issue.pk).exists():
+                    context["user_vote"] = "downvote"
 
-            if profile.issue_upvoted.filter(pk=issue.pk).exists():
-                context["user_vote"] = "upvote"
-            elif profile.issue_downvoted.filter(pk=issue.pk).exists():
-                context["user_vote"] = "downvote"
-
-            context["user_has_flagged"] = profile.issue_flaged.filter(pk=issue.pk).exists()
-            context["user_has_saved"] = profile.issue_saved.filter(pk=issue.pk).exists()
+                context["user_has_flagged"] = profile.issue_flaged.filter(pk=issue.pk).exists()
+                context["user_has_saved"] = profile.issue_saved.filter(pk=issue.pk).exists()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=issue).select_related("user")
 
         context["flagers"] = UserProfile.objects.filter(issue_flaged=issue).select_related("user")
@@ -2281,7 +2283,6 @@ def flag_issue(request, issue_pk):
         userprof.issue_flaged.add(issue)
         is_flagged = True
 
-    userprof.save()
     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
     total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
