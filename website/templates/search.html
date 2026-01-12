@@ -181,7 +181,10 @@
                                                         </div>
                                                         <div class="flex items-center mb-4">
                                                             {% if domain.webshot %}
-                                                                <a href="{{ domain.webshot.url }}" target="_blank" class="ml-auto">
+                                                                <a href="{{ domain.webshot.url }}"
+                                                                   target="_blank"
+                                                                   rel="noopener noreferrer"
+                                                                   class="ml-auto">
                                                                     <img src="{{ domain.webshot.url }}"
                                                                          alt="{{ domain.name }} Webshot"
                                                                          class="h-10 w-10 rounded-lg"
@@ -220,6 +223,7 @@
                                                             {% if domain.twitter %}
                                                                 <a href="https://x.com/{{ domain.twitter }}"
                                                                    target="_blank"
+                                                                   rel="noopener noreferrer"
                                                                    class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-2 rounded-md flex items-center space-x-2">
                                                                     <i class="fab fa-x-twitter"></i>
                                                                     <span>Twitter</span>
@@ -228,6 +232,7 @@
                                                             {% if domain.facebook %}
                                                                 <a href="{{ domain.facebook }}"
                                                                    target="_blank"
+                                                                   rel="noopener noreferrer"
                                                                    class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-md flex items-center space-x-2">
                                                                     <i class="fab fa-facebook"></i>
                                                                     <span>Facebook</span>
@@ -236,6 +241,7 @@
                                                             {% if domain.github %}
                                                                 <a href="{{ domain.github }}"
                                                                    target="_blank"
+                                                                   rel="noopener noreferrer"
                                                                    class="text-white bg-gray-800 dark:bg-gray-100 hover:bg-black px-3 py-2 rounded-md flex items-center space-x-2">
                                                                     <i class="fab fa-github"></i>
                                                                     <span>GitHub</span>
