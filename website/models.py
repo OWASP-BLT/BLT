@@ -989,7 +989,7 @@ class UserProfile(models.Model):
         # Lock the row to prevent concurrent updates
         with transaction.atomic():
             locked_self = self.__class__.objects.select_for_update().get(pk=self.pk)
-            DailyStatusReport.objects.select_for_update().filter(user=locked_self.user).exists()
+            DailyStatusReport.objects.select_for_update().filter(user=locked_self.user).first()
 
             score, breakdown = LeaderboardScoringService.calculate_for_user(locked_self.user)
 
