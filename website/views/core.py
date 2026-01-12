@@ -1032,42 +1032,63 @@ def add_forum_post(request):
         try:
             data = json.loads(request.body)
             title = data.get("title")
-            category = data.get("category")
             description = data.get("description")
+            category = data.get("category")
             repo_id = data.get("repo")
             project_id = data.get("project")
             organization_id = data.get("organization")
 
-            if not all([title, category, description]):
+            if (
+                not isinstance(title, str)
+                or not title.strip()
+                or not isinstance(description, str)
+                or not description.strip()
+                or category is None
+            ):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            # Explicitly validate category exists before creating post
-            category_obj = ForumCategory.objects.get(pk=category)
+            category = int(category)
+            ForumCategory.objects.get(id=category)
 
-            post_data = {
-                "user": request.user,
-                "title": title,
-                "category_id": category,
-                "description": description,
-            }
-
+            # validate optional foreign keys
             if repo_id:
-                post_data["repo_id"] = repo_id
+                repo_id = int(repo_id)
+                Repo.objects.get(id=repo_id)
+            else:
+                repo_id = None
+
             if project_id:
-                post_data["project_id"] = project_id
+                project_id = int(project_id)
+                Project.objects.get(id=project_id)
+            else:
+                project_id = None
+
             if organization_id:
-                post_data["organization_id"] = organization_id
+                organization_id = int(organization_id)
+                Organization.objects.get(id=organization_id)
+            else:
+                organization_id = None
 
-            post = ForumPost.objects.create(**post_data)
+            post = ForumPost.objects.create(
+                user=request.user,
+                title=title,
+                description=description,
+                category_id=category,
+                repo_id=repo_id,
+                project_id=project_id,
+                organization_id=organization_id,
+            )
 
-            return JsonResponse({"status": "success", "post_id": post.id})
+            return JsonResponse({"success": True, "post_id": post.id})
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
+        except (Repo.DoesNotExist, Project.DoesNotExist, Organization.DoesNotExist):
+            return JsonResponse({"success": False, "error": "Invalid reference ID"}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
         except (ValueError, TypeError):
             logger.exception("Validation error in add_forum_post")
             return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except ForumCategory.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
         except Exception:
             logger.exception("Unexpected error in add_forum_post")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
@@ -1086,10 +1107,10 @@ def add_forum_comment(request):
             if not all([post_id, content]):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            post = ForumPost.objects.get(id=post_id)
+            post = ForumPost.objects.get(id=int(post_id))
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
-            return JsonResponse({"status": "success", "comment_id": comment.id})
+            return JsonResponse({"success": True, "comment_id": comment.id})
         except ForumPost.DoesNotExist:
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
@@ -1107,33 +1128,32 @@ def add_forum_comment(request):
 @login_required
 @require_POST
 def delete_forum_post(request):
-    if not request.user.is_superuser:
-        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-
     try:
         data = json.loads(request.body)
         post_id = data.get("post_id")
 
         if not post_id:
-            return JsonResponse({"status": "error", "message": "Post ID is required"})
+            return JsonResponse({"status": "error", "message": "Post ID is required"}, status=400)
 
-        # Validate post_id is an integer
         try:
             post_id = int(post_id)
         except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"}, status=400)
 
         post = ForumPost.objects.get(id=post_id)
+
+        if request.user != post.user and not request.user.is_superuser:
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
         post.delete()
 
-        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"}, status=200)
     except ForumPost.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Post not found"})
+        return JsonResponse({"status": "error", "message": "Post not found"}, status=404)
     except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
     except Exception as e:
         logging.exception("Unexpected error deleting forum post")
-        return JsonResponse({"status": "error", "message": "Server error occurred"})
+        return JsonResponse({"status": "error", "message": "Server error occurred"}, status=500)
 
 
 @ensure_csrf_cookie
@@ -1141,6 +1161,8 @@ def view_forum(request):
     # Annotate categories with post counts
     categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
+    selected_status = request.GET.get("status")
+    selected_sort = request.GET.get("sort")
 
     # Add is_selected flag to categories for cleaner template logic
     for category in categories:
@@ -1153,12 +1175,24 @@ def view_forum(request):
         ForumPost.objects.select_related("user", "category")
         .prefetch_related("comments")
         .annotate(comment_count=Count("comments"))
-        .order_by("-created")  # Sort by newest first
         .all()
     )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
+
+    if selected_status:
+        posts = posts.filter(status=selected_status)
+
+    # sorting of filters by newest, oldest, most votes, most comments
+    if selected_sort == "oldest":
+        posts = posts.order_by("created")
+    elif selected_sort == "most_votes":
+        posts = posts.order_by("-up_votes")
+    elif selected_sort == "most_comments":
+        posts = posts.order_by("-comment_count")
+    else:
+        posts = posts.order_by("-created")  # newest first (default)
 
     # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
@@ -1181,6 +1215,8 @@ def view_forum(request):
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
+            "selected_status": selected_status,
+            "selected_sort": selected_sort,
             "organizations": organizations,
             "projects": projects,
             "repos": repos,
@@ -1441,7 +1477,14 @@ def view_suggestions(request):
 
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
-    return render(request, "sitemap.html", {"random_domain": random_domain})
+    random_user = User.objects.filter(is_active=True).exclude(is_superuser=True).order_by("?").first()
+
+    # Provide fallback values if no domain or user exists
+    context = {
+        "random_domain": random_domain.name if random_domain else "example.com",
+        "random_username": random_user.username if random_user else "user",
+    }
+    return render(request, "sitemap.html", context)
 
 
 def badge_list(request):
@@ -1536,8 +1579,13 @@ def submit_roadmap_pr(request):
             roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
 
             if "error" in pr_data or "error" in roadmap_data:
+                logger.error(
+                    f"Failed to fetch PR or roadmap data in submit_roadmap_pr: "
+                    f"PR error: {pr_data.get('error')}, Roadmap error: {roadmap_data.get('error')}",
+                    exc_info=True,
+                )
                 return JsonResponse(
-                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    {"error": "Failed to fetch PR or roadmap data. Please check your links and try again."},
                     status=500,
                 )
 
@@ -1546,9 +1594,11 @@ def submit_roadmap_pr(request):
             return JsonResponse({"message": "PR submitted successfully"})
 
         except (IndexError, ValueError) as e:
-            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+            logger.error(f"Invalid URL format in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "Invalid URL format. Please check your PR and issue links."}, status=400)
         except Exception as e:
-            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+            logger.error(f"Unexpected error in submit_roadmap_pr: {str(e)}", exc_info=True)
+            return JsonResponse({"error": "An unexpected error occurred. Please try again later."}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 

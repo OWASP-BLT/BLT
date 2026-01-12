@@ -86,7 +86,10 @@ def batch_send_bacon_tokens_view(request):
             return JsonResponse({"status": "error", "message": response_data.get("error", "Unknown error")})
 
     except requests.RequestException as e:
-        return JsonResponse({"status": "error", "message": str(e)})
+        logger.error(f"Request error in batch_send_bacon_tokens_view: {str(e)}", exc_info=True)
+        return JsonResponse(
+            {"status": "error", "message": "An error occurred while sending tokens. Please try again later."}
+        )
 
 
 def pending_transactions_view(request):

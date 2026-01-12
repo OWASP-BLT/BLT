@@ -185,7 +185,7 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Makes it easy to see which PRs need author attention vs. maintainer review.
 
 #### 2.4 Add Migrations Label (`add-migrations-label.yml`)
-**Purpose**: Flag PRs containing database migrations
+**Purpose**: Flag PRs containing database migrations and validate migration sequence
 
 **Triggers**:
 - Pull request opened, synchronized, or reopened
@@ -194,8 +194,22 @@ These workflows add intelligent metadata and checks to pull requests.
 - Detects migration files in `website/migrations/` or `comments/migrations/`
 - Adds `migrations` label (yellow) for visibility
 - Removes label if migrations are removed from PR
+- **Validates migration numbers are sequential**:
+  - Extracts migration numbers from PR files (e.g., `0252` from `0252_description.py`)
+  - Fetches existing migrations from base branch via GitHub API
+  - Detects conflicts when PR migration numbers ≤ highest existing migration number
+  - Posts detailed comment with fix instructions when conflicts are found
+  - Fails the workflow check to prevent merge until resolved
+  - Auto-removes conflict comment when migrations are regenerated correctly
 
-**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files.
+**Migration Conflict Detection**:
+When a PR contains migrations with numbers that overlap existing migrations (e.g., PR has `0252_*.py` but base branch already has migrations up to `0263_*.py`), the workflow will:
+1. Post a comment explaining the conflict
+2. Provide step-by-step fix instructions (delete migrations, rebase, regenerate)
+3. Fail the workflow check to prevent accidental merge
+4. Automatically remove the warning when the issue is fixed
+
+**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files. Also prevents migration conflicts that can occur when AI generates migrations on stale branches, which could break the database migration sequence.
 
 #### 2.5 Check PR Conflicts (`check-pr-conflicts.yml`)
 **Purpose**: Detect and notify about merge conflicts
@@ -313,7 +327,23 @@ Workflows that build, test, and validate the application.
 
 **AI Relevance**: Migrations are complex. This workflow ensures they're correctly generated even if AI-assisted changes conflict with existing migrations.
 
-#### 3.3 CodeQL Security Analysis (`codeql.yml`)
+#### 3.3 Fix Poetry Lock (`fix-poetry-lock.yml`)
+**Purpose**: Automatically fix poetry.lock conflicts in PRs
+
+**Triggers**:
+- When `fix-poetry-lock` label is added
+- Manual workflow dispatch
+
+**Key Features**:
+- Runs `poetry lock --no-update` to resolve lock file conflicts
+- Does not update dependencies to newer versions
+- Commits updated poetry.lock back to PR branch
+- Comments on PR with status update
+- Automatically removes trigger label after execution
+
+**AI Relevance**: When multiple contributors (or AI tools) modify dependencies, poetry.lock conflicts are common. This workflow resolves them automatically without manual intervention.
+
+#### 3.4 CodeQL Security Analysis (`codeql.yml`)
 **Purpose**: Advanced security scanning for vulnerabilities
 
 **Triggers**:
@@ -380,7 +410,7 @@ Workflows that handle issue lifecycle and assignment.
 **AI Relevance**: Manages contribution flow—important when AI tools make it easy to create many issues quickly.
 
 #### 5.3 Add Last Active Label (`add-last-active-label.yml`)
-**Purpose**: Automatically label issues and PRs based on days since last activity
+**Purpose**: Automatically label issues and PRs based on days since last human activity
 
 **Triggers**:
 - Daily schedule (midnight UTC)
@@ -388,7 +418,8 @@ Workflows that handle issue lifecycle and assignment.
 
 **Key Features**:
 - Adds `last-active: Xd` labels to all open issues and PRs
-- Based on `updated_at` timestamp (last activity), not when created
+- Based on last **comment** timestamp (or creation date if no comments) to track real human activity
+- Ignores non-human updates like label changes to prevent false activity detection
 - Automatically removes outdated last-active labels before adding new ones
 - Creates labels with color-coded severity:
   - 0-2 days: Green (fresh)
@@ -596,5 +627,5 @@ In the age of AI-powered coding, these workflows are essential for maintaining h
 ---
 
 **Last Updated**: December 2024  
-**Total Workflows**: 27  
+**Total Workflows**: 29  
 **Maintained By**: OWASP BLT Team
