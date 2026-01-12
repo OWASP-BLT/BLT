@@ -8,7 +8,7 @@ from django.db.models import Count, FloatField, Q, Value
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render
-
+from django_ratelimit.decorators import ratelimit
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Repo
 from website.utils import fetch_github_user_data
 
@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
 
+def get_cache_key(username):
+    # Sanitize and hash username for safe cache key
+    safe_username = re.sub(r'[^a-zA-Z0-9_-]', '', username)
+    return f"github_data_{safe_username}"
 
 # Helper function to tokenize text
 def tokenize(text):
@@ -65,12 +69,19 @@ def get_github_data(request):
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
 
-            cached_data = cache.get(f"github_data_{github_username}")
+            cached_data = cache.get(get_cache_key(github_username))
             if cached_data:
                 logger.debug("Found cached user data")
                 user_data = cached_data
             else:
                 user_data = fetch_github_user_data(github_username)
+                if not user_data or not isinstance(user_data, dict):
+                    return JsonResponse({"error": "Failed to fetch GitHub data"}, status=500)
+
+                # Validate required keys exist
+                required_keys = ["repositories", "top_languages", "top_topics"]
+                if not all(key in user_data for key in required_keys):
+                    return JsonResponse({"error": "Incomplete GitHub data"}, status=500)
                 user_tags, language_weights = preprocess_user_data(user_data)
                 user_data["user_tags"] = user_tags
                 user_data["language_weights"] = language_weights
@@ -112,11 +123,14 @@ def preprocess_user_data(user_data):
 
     # Extract user's languages with weights
     total_bytes = sum(lang[1] for lang in user_data["top_languages"])
-    language_weights = {
-        lang: (bytes_count / total_bytes * 100)
-        for lang, bytes_count in user_data["top_languages"]
-        if (bytes_count / total_bytes * 100) >= 0.05
-    }
+    if total_bytes == 0:
+        language_weights = {}
+    else:
+        language_weights = {
+            lang: (bytes_count / total_bytes * 100)
+            for lang, bytes_count in user_data["top_languages"]
+            if (bytes_count / total_bytes * 100) >= 0.05
+        }
 
     logger.debug(f"User tags: {user_tags}")
     logger.debug(f"Language weights: {language_weights}")
