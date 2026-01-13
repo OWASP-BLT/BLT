@@ -94,19 +94,21 @@ logger = logging.getLogger(__name__)
 
 def get_issue_vote_context(issue, userprof):
     """Build vote/flag/save context for an issue."""
+    # Single query for all counts
+    counts = UserProfile.objects.aggregate(
+        positive_votes=Count("id", filter=Q(issue_upvoted=issue)),
+        negative_votes=Count("id", filter=Q(issue_downvoted=issue)),
+        flags_count=Count("id", filter=Q(issue_flaged=issue)),
+    )
     if userprof is None:
         return {
-            "positive_votes": UserProfile.objects.filter(issue_upvoted=issue).count(),
-            "negative_votes": UserProfile.objects.filter(issue_downvoted=issue).count(),
-            "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+            **counts,
             "user_vote": None,
             "user_has_flagged": False,
             "user_has_saved": False,
         }
     return {
-        "positive_votes": UserProfile.objects.filter(issue_upvoted=issue).count(),
-        "negative_votes": UserProfile.objects.filter(issue_downvoted=issue).count(),
-        "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+        **counts,
         "user_vote": (
             "upvote"
             if userprof.issue_upvoted.filter(pk=issue.pk).exists()
@@ -225,10 +227,8 @@ def flag_issue(request, issue_pk):
     # Toggle flag
     if userprof.issue_flaged.filter(pk=issue.pk).exists():
         userprof.issue_flaged.remove(issue)
-        is_flagged = False
     else:
         userprof.issue_flaged.add(issue)
-        is_flagged = True
 
     context = get_issue_vote_context(issue, userprof)
     context["object"] = issue
@@ -251,6 +251,7 @@ def flag_issue(request, issue_pk):
             "user_vote": context["user_vote"],
             "user_has_flagged": context["user_has_flagged"],
             "user_has_saved": context["user_has_saved"],
+            "is_flagged": is_flagged,
         }
     )
 
@@ -349,7 +350,7 @@ def resolve(request, id):
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status == "close"
+            issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()

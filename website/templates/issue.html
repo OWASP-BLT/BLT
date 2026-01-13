@@ -230,28 +230,48 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-
-        const bugReportElement = document.getElementById('bug_report');
-
-        if (bugReportElement && window.markdownit) {
-            const md = new window.markdownit();
-            const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
-
-            // First render the markdown
-            let renderedHtml = md.render(markdownContent);
-
-            // Then transform issue references to clickable links
-            renderedHtml = renderedHtml.replace(
-                /#(\d+)/g,
-                '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-            );
-
-            // Update the content
-            bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
-                ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
-                ALLOWED_ATTR: ['href', 'class']
-            });
+    const bugReportElement = document.getElementById('bug_report');
+    
+    if (bugReportElement && window.markdownit) {
+        const md = new window.markdownit();
+        const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+        
+        // First render the markdown
+        let renderedHtml = md.render(markdownContent);
+        
+        // Simple approach: replace #123 but not inside <code> or <pre> tags
+        // We'll temporarily mask code blocks, replace, then unmask
+        const codeBlocks = [];
+        const codePlaceholder = '___CODE_BLOCK___';
+        
+        // Extract and replace all code/pre blocks with placeholders
+        let counter = 0;
+        renderedHtml = renderedHtml.replace(
+            /(<(?:code|pre )[^>]*>)([\s\S]*?)<\/\1>/gi,
+            function(match) {
+                codeBlocks.push(match);
+                return `${codePlaceholder}${counter++}`;
+            }
+        );
+        
+        //  Transform issue references in the remaining text
+        renderedHtml = renderedHtml.replace(
+            /#(\d+)/g,
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        // Restore the code blocks
+        for (let i = 0; i < codeBlocks.length; i++) {
+            renderedHtml = renderedHtml.replace(`${codePlaceholder}${i}`, codeBlocks[i]);
         }
+        
+        // Update the content
+        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
+            ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
+            ALLOWED_ATTR: ['href', 'class']
+        });
+    }
+});
 
         // Also process the issue title/description for issue references
         const issueDescriptionElement = document.querySelector('.issue-description');
@@ -270,11 +290,9 @@
             });
         }
     });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
-            integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
-            crossorigin="anonymous"></script>
-    <script>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js" integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw=" crossorigin="anonymous"></script>
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         var elms = document.getElementsByClassName('splide');
         for (var i = 0; i < elms.length; i++) {
@@ -288,8 +306,8 @@
             }).mount();
         }
     });
-    </script>
-    <!-- <script>
+</script>
+<!-- <script>
     function edit(){
         $(document).on('click', '.edit-issue-status',(e)=>{
             var s = $('.status').text();
@@ -427,11 +445,10 @@
             });
         });
     }
-    </script> -->
-    <script>
-    async function resolveIssue() {
-        var id = {{ object.pk }
-    };
+</script> -->
+<script>
+   async function resolveIssue() {
+    var id = {{ object.pk }};
     try {
         const response = await fetch(`/resolve/${id}/`, {
             method: 'POST',
@@ -461,7 +478,7 @@
             className: "danger"
         });
     }
-}
-    </script>
-    <script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
+   }
+</script>
+<script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
 {% endblock content %}
