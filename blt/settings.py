@@ -206,7 +206,9 @@ AUTHENTICATION_BACKENDS = (
 
 
 REST_AUTH = {"SESSION_LOGIN": False}
-CONN_MAX_AGE = 0
+# Set connection max age to 600 seconds (10 minutes) to enable connection pooling
+# This prevents "no more connections allowed" errors by reusing database connections
+CONN_MAX_AGE = 600
 
 # WSGI_APPLICATION = "blt.wsgi.application"
 
@@ -254,7 +256,9 @@ LANGUAGES = (
 
 MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
-db_from_env = dj_database_url.config(conn_max_age=500)
+# Configure database connection pooling with 600 second max age (10 minutes)
+# This enables connection reuse and prevents connection exhaustion
+db_from_env = dj_database_url.config(conn_max_age=600)
 
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
@@ -355,7 +359,8 @@ if TESTING:
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    # Use connection pooling with 600 second max age to prevent connection exhaustion
+    DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=False)
     # Apply test optimizations to configured database as well
     if TESTING:
         DATABASES["default"]["TEST"] = {
