@@ -44,14 +44,19 @@ def webhook_rate_limit(max_calls=10, period=60):
             cache_key = f"webhook_ratelimit_{func.__name__}_{ip}"
 
             try:
-                current = cache.incr(cache_key)
-            except ValueError:
-                # Key doesn't exist, initialize it atomically
-                if cache.add(cache_key, 1, timeout=period):
-                    current = 1
-                else:
-                    # Another thread initialized; increment
+                try:
                     current = cache.incr(cache_key)
+                except ValueError:
+                    # Key doesn't exist, initialize it atomically
+                    if cache.add(cache_key, 1, timeout=period):
+                        current = 1
+                    else:
+                        # Another thread initialized; increment
+                        current = cache.incr(cache_key)
+            except Exception as e:
+                # Fail open: if cache backend is unavailable, allow the request
+                logger.error(f"Cache error in webhook_rate_limit for {func.__name__} from {ip}: {e}", exc_info=True)
+                return func(request, *args, **kwargs)
 
             if current > max_calls:
                 logger.warning(f"Webhook rate limit exceeded for {func.__name__} from {ip}")
