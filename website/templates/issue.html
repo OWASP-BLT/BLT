@@ -292,7 +292,11 @@
                     link.href = `/issue/${match[1]}`;
                     link.className =
                         'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
-                    // lgtm[js/xss-through-dom] - Safe: textContent with digits-only regex match
+                    /* lgtm[js/xss-through-dom] 
+                    Safe: uses textContent (no HTML interpretation),
+                    regex restricts input to digits only (#123),
+                    no user-controlled HTML injection possible.
+                    */
                     link.textContent = `#${String(match[1])}`;
                     fragment.appendChild(link);
 
