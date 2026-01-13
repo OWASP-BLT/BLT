@@ -203,7 +203,6 @@ from website.views.issue import (
     get_github_issue,
     get_unique_issues,
     issue_count,
-    issue_votes,
     like_issue,
     newhome,
     page_vote,
@@ -215,7 +214,6 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
-    unsave_issue,
     update_content_comment,
     vote_count,
 )
@@ -594,13 +592,7 @@ urlpatterns = [
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
-    re_path(
-        r"^unsave_issue/(?P<issue_pk>\d+)/$",
-        unsave_issue,
-        name="unsave_issue",
-    ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
     # comment on content
@@ -1250,7 +1242,6 @@ urlpatterns = [
     path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
     path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
     path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
-    path("issue_votes/<int:issue_pk>/", issue_votes, name="issue_votes"),
     path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 

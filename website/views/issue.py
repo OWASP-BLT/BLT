@@ -2179,15 +2179,6 @@ def comment_on_content(request, content_pk):
     return render(request, "comments2.html", context)
 
 
-@login_required(login_url="/accounts/login")
-def unsave_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = get_object_or_404(UserProfile, user=request.user)
-    userprof.issue_saved.remove(issue)
-    return HttpResponse("OK")
-
-
 @require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):

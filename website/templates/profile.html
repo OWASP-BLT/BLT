@@ -1532,7 +1532,7 @@
         var el = $(this);
         $.ajax({
             type: 'GET',
-            url: '/unsave_issue/' + issue_pk + '/',
+            url: '/save_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
                 el.parent().remove();
