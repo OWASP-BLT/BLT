@@ -12,7 +12,7 @@ import csv
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
-from django.db.models import Count, Sum
+from django.db.models import Count
 from django.utils import timezone
 
 
@@ -62,7 +62,6 @@ class Command(BaseCommand):
         self.stdout.write("=" * 80 + "\n")
 
         # Import models here to avoid circular imports
-        from website.models import Issue, Points
 
         # Find duplicate non-empty, non-null emails (matching migration logic)
         duplicate_emails = (
@@ -108,15 +107,15 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Total users: {count}")
                 self.stdout.write(f"  Users to DELETE: {count - 1}")
 
-            # Analyze each user for activity
-            for i, user in enumerate(users):
-                # Get user activity metrics
-                issue_count = Issue.objects.filter(user=user).count()
-                points_data = Points.objects.filter(user=user).aggregate(
-                    total_points=Sum("score"), total_entries=Count("id")
-                )
-                total_points = points_data["total_points"] or 0
-                points_entries = points_data["total_entries"] or 0
+            # Analyze each user for activity (optimized with prefetch)
+            users_with_activity = users.prefetch_related("issue_set", "points_set")
+
+            for i, user in enumerate(users_with_activity):
+                # Get user activity metrics (using prefetched data)
+                issue_count = user.issue_set.count()
+                points_queryset = user.points_set.all()
+                total_points = sum(p.score for p in points_queryset) if points_queryset else 0
+                points_entries = len(points_queryset)
 
                 # Check recent login
                 recent_login = False

@@ -1,5 +1,54 @@
 # Safe migration to make email field unique with enhanced safety checks
+"""
+Safe migration to make email field unique with enhanced safety checks.
+
+RUNTIME EXPECTATIONS:
+====================
+- Small datasets (<1000 users): ~5-30 seconds
+- Medium datasets (1000-10000 users): 1-5 minutes  
+- Large datasets (>10000 users): 5-30 minutes
+
+DATABASE LOCKING:
+=================
+PostgreSQL:
+  - Uses standard CREATE UNIQUE INDEX which acquires AccessExclusiveLock
+  - Blocks all reads/writes to auth_user table during index creation
+  - For zero-downtime, use CREATE UNIQUE INDEX CONCURRENTLY (see below)
+  - Lock duration: ~1-10 seconds per 10k rows
+
+MySQL:
+  - CREATE INDEX acquires metadata locks
+  - Blocks writes but allows reads (table-level lock)
+  - Lock duration: ~5-30 seconds per 10k rows
+  - InnoDB uses online DDL by default (less blocking in MySQL 5.6+)
+
+SQLite:
+  - Database-level locking (blocks all operations)
+  - Lock duration: Typically <5 seconds for reasonable datasets
+  - Recommend running during maintenance window
+
+DOWNTIME MITIGATION:
+====================
+For production PostgreSQL with zero-downtime requirements, manually run:
+
+    CREATE UNIQUE INDEX CONCURRENTLY auth_user_email_unique_safe 
+    ON auth_user (email) WHERE email IS NOT NULL AND email != '';
+    
+Then use --fake to skip the index creation step:
+  python manage.py migrate website 0264 --fake
+
+MYSQL LIMITATION:
+=================
+MySQL does not support partial unique indexes with WHERE clauses.
+This migration will NOT create a unique constraint on MySQL databases.
+Multiple users can still have the same non-empty email address on MySQL.
+For full email uniqueness support, use PostgreSQL or SQLite.
+
+ALWAYS BACKUP YOUR DATABASE BEFORE RUNNING THIS MIGRATION!
+"""
+import csv
 import logging
+from datetime import datetime
 
 from django.db import migrations
 from django.db.models import Count, Sum
@@ -142,6 +191,10 @@ def remove_duplicate_users_safely(apps, schema_editor):
     # If we get here, no high activity users were found
     logger.info(f"\n✅ Safety check passed. {total_users_to_delete} low-activity users will be deleted.")
 
+    # Prepare CSV export of deletions
+    deletion_records = []
+    deletion_csv = f"deleted_users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
     # Proceed with deletion
     actual_deleted = 0
     for email in duplicate_emails:
@@ -168,12 +221,48 @@ def remove_duplicate_users_safely(apps, schema_editor):
                 logger.error(f"🚨 SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
                 raise Exception(f"Safety violation: User {user.username} has high activity and should not be deleted")
 
+            # Collect metadata before deletion
+            deletion_records.append(
+                {
+                    "user_id": user.id,
+                    "username": user.username,
+                    "email": email,
+                    "date_joined": user.date_joined,
+                    "last_login": user.last_login,
+                    "issue_count": issue_count,
+                    "total_points": total_points,
+                    "kept_user_id": kept_user.id,
+                    "kept_user_username": kept_user.username,
+                    "deletion_timestamp": datetime.now(),
+                }
+            )
+
             logger.info(f"🗑️  Deleting user: {user.username} (ID: {user.id}, email: '{email}')")
             logger.info(f"   Keeping: {kept_user.username} (ID: {kept_user.id})")
 
             # Delete user (CASCADE will handle related data)
             user.delete(using=db_alias)
             actual_deleted += 1
+
+    # Export deletion records to CSV
+    if deletion_records:
+        with open(deletion_csv, "w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "user_id",
+                "username",
+                "email",
+                "date_joined",
+                "last_login",
+                "issue_count",
+                "total_points",
+                "kept_user_id",
+                "kept_user_username",
+                "deletion_timestamp",
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(deletion_records)
+        logger.info(f"📊 Deletion records exported to: {deletion_csv}")
 
     logger.info(f"\n✅ Successfully deleted {actual_deleted} duplicate users")
     logger.info("✅ Email uniqueness migration completed safely")
@@ -218,19 +307,28 @@ def create_email_unique_index(apps, schema_editor):
             ON auth_user (email) WHERE email IS NOT NULL AND email != '';
         """
     elif vendor == "mysql":
-        # Convert empty emails to NULL first
-        schema_editor.execute("UPDATE auth_user SET email = NULL WHERE email = '';")
-        sql = """
-            CREATE UNIQUE INDEX auth_user_email_unique_safe 
-            ON auth_user (email(254));
-        """
+        # MySQL doesn't support partial indexes with WHERE clause like PostgreSQL/SQLite
+        # We need to handle empty emails differently for MySQL
+        #
+        # Option 1: Don't create unique constraint on MySQL (document this limitation)
+        # Option 2: Create a custom unique constraint that handles empty emails
+        #
+        # For now, we'll skip the unique constraint on MySQL and document this
+        # as a known limitation. This prevents the migration from failing.
+        logger.warning(
+            "MySQL detected: Unique email constraint not created due to MySQL limitations. "
+            "Multiple users can still have the same non-empty email address on MySQL. "
+            "Consider using PostgreSQL or SQLite for full email uniqueness support."
+        )
+        sql = None  # Skip index creation for MySQL
     else:
         sql = """
             CREATE UNIQUE INDEX IF NOT EXISTS auth_user_email_unique_safe 
             ON auth_user (email) WHERE email IS NOT NULL AND email != '';
         """
 
-    schema_editor.execute(sql)
+    if sql:
+        schema_editor.execute(sql)
 
 
 def drop_email_unique_index(apps, schema_editor):
@@ -244,12 +342,9 @@ def drop_email_unique_index(apps, schema_editor):
     elif vendor == "sqlite":
         sql = "DROP INDEX IF EXISTS auth_user_email_unique_safe;"
     elif vendor == "mysql":
-        from django.db.migrations.exceptions import IrreversibleError
-
-        raise IrreversibleError(
-            "Cannot reverse migration on MySQL: empty string emails were converted to NULL "
-            "and cannot be safely restored. Manual rollback required."
-        )
+        # MySQL: No unique constraint was created, so nothing to drop
+        logger.info("MySQL detected: No unique email constraint to drop (none was created)")
+        sql = None
     else:
         sql = None
 

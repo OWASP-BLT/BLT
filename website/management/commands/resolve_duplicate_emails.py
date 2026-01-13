@@ -141,6 +141,7 @@ class Command(BaseCommand):
             return
 
         total_emails_sent = 0
+        failed_emails = []
 
         for dup in duplicate_emails:
             email = dup["email"]
@@ -179,23 +180,57 @@ The Team
                     self.stdout.write(f"      Subject: {subject}")
                     total_emails_sent += 1
                 else:
-                    try:
-                        send_mail(
-                            subject,
-                            message,
-                            settings.DEFAULT_FROM_EMAIL,
-                            [email],
-                            fail_silently=False,
-                        )
-                        self.stdout.write(self.style.SUCCESS(f"   ✅ Email sent to {user.username}"))
-                        total_emails_sent += 1
-                    except Exception as e:
-                        self.stdout.write(self.style.ERROR(f"   ❌ Failed to send email to {user.username}: {e}"))
+                    # Retry logic with exponential backoff
+                    max_retries = 3
+                    retry_count = 0
+                    sent = False
+
+                    while retry_count < max_retries and not sent:
+                        try:
+                            send_mail(
+                                subject,
+                                message,
+                                settings.DEFAULT_FROM_EMAIL,
+                                [email],
+                                fail_silently=False,
+                            )
+                            self.stdout.write(self.style.SUCCESS(f"   ✅ Email sent to {user.username}"))
+                            total_emails_sent += 1
+                            sent = True
+                        except Exception as e:
+                            retry_count += 1
+                            if retry_count >= max_retries:
+                                failed_emails.append(
+                                    {"user": user.username, "email": email, "error": str(e), "attempts": retry_count}
+                                )
+                                self.stdout.write(
+                                    self.style.ERROR(
+                                        f"   ❌ Failed to send email to {user.username} after {max_retries} attempts: {e}"
+                                    )
+                                )
+                            else:
+                                self.stdout.write(
+                                    self.style.WARNING(f"   ⚠️ Retry {retry_count}/{max_retries} for {user.username}")
+                                )
+                                import time
+
+                                time.sleep(2**retry_count)  # Exponential backoff
+
+        # Export failure report if any failures occurred
+        if failed_emails and not dry_run:
+            import json
+
+            from django.utils import timezone
+
+            failure_report = f"email_failures_{timezone.now().strftime('%Y%m%d_%H%M%S')}.json"
+            with open(failure_report, "w") as f:
+                json.dump(failed_emails, f, indent=2, default=str)
+            self.stdout.write(self.style.WARNING(f"\n⚠️ Failed emails logged to: {failure_report}"))
 
         if dry_run:
             self.stdout.write(f"\n📊 Would send {total_emails_sent} emails")
         else:
-            self.stdout.write(f"\n📊 Sent {total_emails_sent} emails")
+            self.stdout.write(f"\n📊 Summary: {total_emails_sent} sent, {len(failed_emails)} failed")
 
     def merge_users(self, from_user_id, to_user_id, dry_run=False):
         """Merge data from one user account to another"""
