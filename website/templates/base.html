@@ -107,8 +107,10 @@
             }
         </script>
         <script>
-    document.body.addEventListener('htmx:configRequest', (event) => {
-        event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
     });
         </script>
         <!-- Apply dark mode immediately to prevent white flash -->

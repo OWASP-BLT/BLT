@@ -1533,6 +1533,9 @@
         $.ajax({
             type: 'POST',
             url: '/save_issue/' + issue_pk + '/',
+             headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('[name=csrfmiddlewaretoken]')?.value
+            },
             data: {},
             success: function (data) {
                 el.parent().remove();
