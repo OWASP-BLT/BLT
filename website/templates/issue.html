@@ -246,8 +246,9 @@
         
         // Extract and replace all code/pre blocks with placeholders
         let counter = 0;
+        // Match code blocks (inline and block)
         renderedHtml = renderedHtml.replace(
-            /(<(?:code|pre )[^>]*>)([\s\S]*?)<\/\1>/gi,
+            /<(code|pre )[^>]*>[\s\S]*?<\/\1>/gi,
             function(match) {
                 codeBlocks.push(match);
                 return `${codePlaceholder}${counter++}`;
@@ -271,7 +272,6 @@
             ALLOWED_ATTR: ['href', 'class']
         });
     }
-});
 
         // Also process the issue title/description for issue references
         const issueDescriptionElement = document.querySelector('.issue-description');
@@ -289,7 +289,7 @@
                 ALLOWED_ATTR: ['href', 'class']
             });
         }
-    });
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js" integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw=" crossorigin="anonymous"></script>
 <script>

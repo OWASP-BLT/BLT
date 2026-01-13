@@ -225,10 +225,13 @@ def flag_issue(request, issue_pk):
     userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Toggle flag
-    if userprof.issue_flaged.filter(pk=issue.pk).exists():
+    is_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
+    if is_flagged:
         userprof.issue_flaged.remove(issue)
+        is_flagged = False
     else:
         userprof.issue_flaged.add(issue)
+        is_flagged = True
 
     context = get_issue_vote_context(issue, userprof)
     context["object"] = issue
