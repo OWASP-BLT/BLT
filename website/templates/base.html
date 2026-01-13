@@ -125,9 +125,24 @@
         <!-- HTMX Global Configuration -->
         <script>
              document.addEventListener('DOMContentLoaded', function() {
+                // Show loading indicator during requests
+    document.body.addEventListener('htmx:beforeRequest', function(event) {
+        const target = event.detail.target;
+        if (target && target.style && document.contains(target)) {
+            target.style.opacity = '0.6';
+            target.style.pointerEvents = 'none';
+        }
+    });
                 // Show toast notifications for HTMX responses
                 document.body.addEventListener('htmx:afterRequest', function(event) {
                     const xhr = event.detail.xhr;
+                    const target = event.detail.target;
+        
+        // Restore loading state
+        if (target && target.style && document.contains(target)) {
+            target.style.opacity = '1';
+            target.style.pointerEvents = 'auto';
+        }
                     
                     // Only parse JSON if response is JSON
                     if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {
@@ -145,23 +160,6 @@
                         } catch (e) {
                             console.error('Failed to parse JSON response:', e);
                         }
-                    }
-                });
-                
-                // Show loading indicator during requests
-                document.body.addEventListener('htmx:beforeRequest', function(event) {
-                    const target = event.detail.target;
-                    if (target && target.style && document.contains(target)) {
-                        target.style.opacity = '0.6';
-                        target.style.pointerEvents = 'none';
-                    }
-                });
-                
-                document.body.addEventListener('htmx:afterRequest', function(event) {
-                    const target = event.detail.target;
-                    if (target && target.style && document.contains(target)) {
-                        target.style.opacity = '1';
-                        target.style.pointerEvents = 'auto';
                     }
                 });
             });

@@ -92,6 +92,24 @@ from .constants import GSOC25_PROJECTS
 logger = logging.getLogger(__name__)
 
 
+def get_issue_vote_context(issue, userprof):
+    """Build vote/flag/save context for an issue."""
+    return {
+        "positive_votes": UserProfile.objects.filter(issue_upvoted=issue).count(),
+        "negative_votes": UserProfile.objects.filter(issue_downvoted=issue).count(),
+        "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+        "user_vote": (
+            "upvote"
+            if userprof.issue_upvoted.filter(pk=issue.pk).exists()
+            else "downvote"
+            if userprof.issue_downvoted.filter(pk=issue.pk).exists()
+            else None
+        ),
+        "user_has_flagged": userprof.issue_flaged.filter(pk=issue.pk).exists(),
+        "user_has_saved": userprof.issue_saved.filter(pk=issue.pk).exists(),
+    }
+
+
 @require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
@@ -129,12 +147,7 @@ def like_issue(request, issue_pk):
                 html_message=msg_html,
             )
 
-    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    total_flags = UserProfile.objects.filter(issue_flaged=issue).count()
-
-    user_has_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
-    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
+    context = get_issue_vote_context(issue, userprof)
 
     # Determine current user vote state
     user_vote = "upvote" if is_liked else None
@@ -142,15 +155,7 @@ def like_issue(request, issue_pk):
     if request.headers.get("HX-Request"):
         html = render_to_string(
             "includes/_like_section.html",
-            {
-                "object": issue,
-                "positive_votes": total_upvotes,
-                "negative_votes": total_downvotes,
-                "flags_count": total_flags,
-                "user_vote": user_vote,
-                "user_has_flagged": user_has_flagged,
-                "user_has_saved": user_has_saved,
-            },
+            context,
             request=request,
         )
         return HttpResponse(html)
@@ -185,28 +190,12 @@ def dislike_issue(request, issue_pk):
         userprof.issue_downvoted.add(issue)
         is_disliked = True
 
-    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    total_flags = UserProfile.objects.filter(issue_flaged=issue).count()
-
-    user_has_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
-    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
-
-    # Determine current user vote state
-    user_vote = "downvote" if is_disliked else None
+    context = get_issue_vote_context(issue, userprof)
 
     if request.headers.get("HX-Request"):
         html = render_to_string(
             "includes/_like_section.html",  # Changed from _like_dislike_share.html
-            {
-                "object": issue,
-                "positive_votes": total_upvotes,
-                "negative_votes": total_downvotes,
-                "flags_count": total_flags,
-                "user_vote": user_vote,
-                "user_has_flagged": user_has_flagged,
-                "user_has_saved": user_has_saved,
-            },
+            context,
             request=request,
         )
         return HttpResponse(html)
@@ -237,31 +226,13 @@ def flag_issue(request, issue_pk):
         userprof.issue_flaged.add(issue)
         is_flagged = True
 
-    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
-    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
-
-    # Derive user vote/save state for consistency with other endpoints
-    user_vote = None
-    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
-        user_vote = "upvote"
-    elif userprof.issue_downvoted.filter(pk=issue.pk).exists():
-        user_vote = "downvote"
-    user_has_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
+    context = get_issue_vote_context(issue, userprof)
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
         html = render_to_string(
             "includes/_like_section.html",  # Changed from _like_dislike_share.html
-            {
-                "object": issue,
-                "positive_votes": total_upvotes,
-                "negative_votes": total_downvotes,
-                "flags_count": total_flag_votes,
-                "user_vote": user_vote,
-                "user_has_flagged": is_flagged,
-                "user_has_saved": user_has_saved,
-            },
+            context,
             request=request,
         )
         return HttpResponse(html)
@@ -370,7 +341,7 @@ def create_github_issue(request, id):
 @require_POST
 @login_required(login_url="/accounts/login")
 def resolve(request, id):
-    issue = Issue.objects.get(id=id)
+    issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
             issue.status = "close"
