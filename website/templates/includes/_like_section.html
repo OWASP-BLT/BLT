@@ -8,7 +8,6 @@
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
             class="flex items-center gap-2 px-4 py-2 rounded-lg border {% if user_vote == 'upvote' %}border-red-500 bg-red-50 dark:bg-red-900/20{% else %}border-gray-300 dark:border-gray-600{% endif %} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="Like this issue">
-        <span class="htmx-indicator" id="like-loading-{{ object.id }}">⏳</span>
         👍 <span class="font-semibold">{{ positive_votes }}</span>
     </button>
     <!-- Dislike -->
@@ -18,7 +17,6 @@
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
             class="flex items-center gap-2 px-4 py-2 rounded-lg border {% if user_vote == 'downvote' %}border-purple-500 bg-purple-50 dark:bg-purple-900/20{% else %}border-gray-300 dark:border-gray-600{% endif %} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="Dislike this issue">
-        <span class="htmx-indicator" id="dislike-loading-{{ object.id }}">⏳</span>
         👎 <span class="font-semibold">{{ negative_votes }}</span>
     </button>
     <!-- Flag -->
@@ -28,7 +26,6 @@
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
             class="flex items-center gap-2 px-4 py-2 rounded-lg border {% if user_has_flagged %}border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20{% else %}border-gray-300 dark:border-gray-600{% endif %} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="Flag this issue">
-        <span class="htmx-indicator" id="flag-loading-{{ object.id }}">⏳</span>
         🚩 <span class="font-semibold">{{ flags_count }}</span>
     </button>
 </div>
