@@ -237,8 +237,8 @@
                 bugReportElement.getAttribute('data-markdown') ||
                 bugReportElement.textContent;
 
-            /* Render markdown and sanitize */
-            const sanitizedHtml = DOMPurify.sanitize(
+            /* Render markdown and sanitize - return DOM fragment instead of HTML string */
+            const sanitizedFragment = DOMPurify.sanitize(
                 md.render(markdownContent),
                 {
                     ALLOWED_TAGS: [
@@ -246,18 +246,15 @@
                         'code', 'pre', 'blockquote', 'br',
                         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'
                     ],
-                    ALLOWED_ATTR: ['href', 'class']
+                    ALLOWED_ATTR: ['href', 'class'],
+                    RETURN_DOM_FRAGMENT: true  // Return DocumentFragment instead of string
                 }
             );
-
-            /* Parse sanitized HTML into DOM */
-            const template = document.createElement('template');
-            template.innerHTML = sanitizedHtml;
 
             /* Convert #123 → links using DOM APIs */
             const issueRegex = /#(\d+)/g;
             const walker = document.createTreeWalker(
-                template.content,
+                sanitizedFragment,  // Use fragment directly
                 NodeFilter.SHOW_TEXT,
                 {
                     acceptNode(node) {
@@ -310,7 +307,7 @@
                 textNode.replaceWith(fragment);
             });
 
-            bugReportElement.replaceChildren(template.content);
+            bugReportElement.replaceChildren(sanitizedFragment);  // Use fragment directly
         }
 
         const issueDescriptionElement =
