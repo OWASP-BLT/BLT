@@ -58,8 +58,7 @@
                                      class="w-4 h-4 rounded-md shadow-sm flex-shrink-0"
                                      width="20"
                                      height="20">
-                                <span class="ml-1.5 font-medium text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{{
-                                object.domain.name }}</span>
+                                <span class="ml-1.5 font-medium text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{{ object.domain.name }}</span>
                             </a>
                             <span class="text-gray-400 dark:text-gray-600 shrink-0">/</span>
                             <span class="font-mono text-gray-600 dark:text-gray-400 text-xs shrink-0">
@@ -227,8 +226,8 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
-    {# djlint:off #}
-<script>
+    {# djlint:on #}
+    <script>
     document.addEventListener('DOMContentLoaded', () => {
         const bugReportElement = document.getElementById('bug_report');
 
@@ -248,7 +247,7 @@
             let counter = 0;
             // Match code blocks (inline and block)
             renderedHtml = renderedHtml.replace(
-                /<(code|pre)[^>]*>[\s\S]*?<\/\1>/gi,
+                /<(code|pre )[^>]*>[\s\S]*?<\/\1>/gi,
                 function (match) {
                     codeBlocks.push(match);
                     return `${codePlaceholder}${counter++}`;
@@ -278,27 +277,40 @@
         if (issueDescriptionElement) {
             const originalText = issueDescriptionElement.textContent;
             const fragment = document.createDocumentFragment();
-            const parts = originalText.split(/(#\d+)/g);
 
-            parts.forEach(part => {
-                const match = part.match(/^#(\d+)$/);
-                if (match) {
-                    const link = document.createElement('a');
-                    link.href = `/issue/${match[1]}`;
-                    link.className = 'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
-                    link.textContent = part;
-                    fragment.appendChild(link);
-                } else if (part) {
-                    fragment.appendChild(document.createTextNode(part));
+            const regex = /#(\d+)/g;
+            let lastIndex = 0;
+            let match;
+
+            while ((match = regex.exec(text)) !== null) {
+                // Add text before match
+                if (match.index > lastIndex) {
+                    fragment.appendChild(
+                        document.createTextNode(text.slice(lastIndex, match.index))
+                    );
                 }
-            });
 
-            issueDescriptionElement.textContent = '';
-            issueDescriptionElement.appendChild(fragment);
+                // Create safe link
+                const link = document.createElement('a');
+                link.href = `/issue/${match[1]}`;
+                link.className = 'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                link.textContent = `#${match[1]}`;
+                fragment.appendChild(link);
+
+                lastIndex = regex.lastIndex;
+            }
+
+            // Add remaining text
+            if (lastIndex < text.length) {
+                fragment.appendChild(
+                    document.createTextNode(text.slice(lastIndex))
+                );
+            }
+
+            issueDescriptionElement.replaceChildren(fragment);
         }
     });
 </script>
-{# djlint:on #}
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js" integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw=" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -454,19 +466,21 @@
         });
     }
 </script> -->
+{# djlint:off #}
 <script>
+    
     async function resolveIssue() {
-        var id = {{ object.pk }
-    };
-    try {
-        const response = await fetch(`/resolve/${id}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        });
+        
+        var id = {{ object.pk }};
+        try {
+            const response = await fetch(`/resolve/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
         if (response.status === 403) {
             $.notify("Permission Denied", {
                 style: "custom",

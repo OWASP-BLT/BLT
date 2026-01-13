@@ -132,6 +132,8 @@
                         target.style.opacity = '1';
                         target.style.pointerEvents = 'auto';
                     }
+                    // Guard against missing xhr (network failures)
+                    if (!xhr) return;
                     
                     // Only parse JSON if response is JSON
                     if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {
