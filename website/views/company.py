@@ -1307,7 +1307,6 @@ class AddDomainView(View):
         return redirect("organization_manage_domains", id=id)
 
 
-
 class AddSlackIntegrationView(View):
     """View for managing Slack integration configuration."""
 
