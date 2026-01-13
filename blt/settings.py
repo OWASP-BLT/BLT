@@ -10,6 +10,7 @@ import sentry_sdk
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
+from pathlib import Path
 
 environ.Env.read_env()
 
@@ -631,3 +632,12 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+os.makedirs(STATIC_ROOT, exist_ok=True)
+COLLECTSTATIC_NO_POST_PROCESS = True

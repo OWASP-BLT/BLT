@@ -102,7 +102,14 @@ jobs:
       - run: pip install poetry
       - run: poetry lock
       - run: poetry install --with dev
-      - run: poetry run python manage.py collectstatic --noinput
+      - name: Prepare static directory
+        run: mkdir -p staticfiles
+
+      - name: Django collectstatic
+        env:
+             CI: true
+        run: poetry run python manage.py collectstatic --noinput
+
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
