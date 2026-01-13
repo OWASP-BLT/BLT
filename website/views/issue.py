@@ -161,6 +161,8 @@ def like_issue(request, issue_pk):
             "dislikes": total_downvotes,
             "flags": total_flags,
             "user_vote": user_vote,
+            "user_has_flagged": user_has_flagged,
+            "user_has_saved": user_has_saved,
         }
     )
 
@@ -215,6 +217,8 @@ def dislike_issue(request, issue_pk):
             "dislikes": total_downvotes,
             "flags": total_flags,
             "user_vote": user_vote,
+            "user_has_flagged": user_has_flagged,
+            "user_has_saved": user_has_saved,
         }
     )
 
@@ -1876,12 +1880,10 @@ class IssueView(DetailView):
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
         context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
         context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
@@ -2214,7 +2216,7 @@ def save_issue(request, issue_pk):
         {
             "success": True,
             "message": message,
-            "isSaved": is_saved,
+            "user_has_saved": is_saved,
         }
     )
 
