@@ -212,7 +212,7 @@ class IssueForm(forms.ModelForm):
 
     class Meta:
         model = Issue
-         fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+        fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
         widgets = {
             "url": forms.URLInput(attrs={
                 "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
