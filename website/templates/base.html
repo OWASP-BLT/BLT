@@ -49,17 +49,6 @@
             <!-- Fullscreen Control CSS -->
             <link rel="stylesheet"
                   href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
-            <!-- HTMX for interactive UI updates -->
-            <script src="https://unpkg.com/htmx.org@1.9.10"
-                    integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
-                    crossorigin="anonymous"></script>
-            <!-- HTMX extensions for better UX -->
-            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/loading-states.js"
-                    integrity="sha384-v04dReCP6N+wBCc+JjDUHyvkWJPO5jyzXxNdZHF/HZVyMXhh2USfi3UvCfiPwmmB"
-                    crossorigin="anonymous"></script>
-            <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"
-                    integrity="sha384-nRnAvEUI7N/XvvowiMiq7oEI04gOXMCqD3Bidvedw+YNbj7zTQACPlRI3Jt3vYM4"
-                    crossorigin="anonymous"></script>
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -274,6 +263,17 @@
         </script>
         {% block extra_js %}
         {% endblock extra_js %}
+        <!-- HTMX for interactive UI updates -->
+        <script src="https://unpkg.com/htmx.org@1.9.10"
+                integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+                crossorigin="anonymous"></script>
+        <!-- HTMX extensions for better UX -->
+        <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/loading-states.js"
+                integrity="sha384-v04dReCP6N+wBCc+JjDUHyvkWJPO5jyzXxNdZHF/HZVyMXhh2USfi3UvCfiPwmmB"
+                crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"
+                integrity="sha384-nRnAvEUI7N/XvvowiMiq7oEI04gOXMCqD3Bidvedw+YNbj7zTQACPlRI3Jt3vYM4"
+                crossorigin="anonymous"></script>
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/ui.js' %}"></script>
         {% block after_js %}
