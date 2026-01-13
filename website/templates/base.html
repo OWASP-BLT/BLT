@@ -110,7 +110,7 @@
     document.body.addEventListener('htmx:configRequest', (event) => {
         event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
     });
-</script>
+        </script>
         <!-- Apply dark mode immediately to prevent white flash -->
         <script>
             (function() {

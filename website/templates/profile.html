@@ -1531,7 +1531,7 @@
         var issue_pk = $(this).attr('name');
         var el = $(this);
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/save_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
