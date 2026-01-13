@@ -496,8 +496,8 @@
                                                 <div class="flex items-center">
                                                     {% if project.logo %}
                                                         <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
-                                                             src="{{ organization.logo.url }}"
-                                                             alt="{{ organization.name }} Logo"
+                                                             src="{{ project.logo.url }}"
+                                                             alt="{{ project.name }} Logo"
                                                              height="96"
                                                              width="96">
                                                     {% else %}
@@ -542,8 +542,8 @@
                                                     {% if project.organization %}
                                                         {% if project.organization.logo %}
                                                             <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
-                                                                 src="{{ organization.logo.url }}"
-                                                                 alt="{{ organization.name }} Logo"
+                                                                 src="{{ project.organization.logo.url }}"
+                                                                 alt="{{ project.organization.name }} Logo"
                                                                  height="96"
                                                                  width="96">
                                                         {% endif %}
@@ -855,4 +855,5 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
         </script>
-    {% endblock content %}
+    {% endif %}
+{% endblock content %}
