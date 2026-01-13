@@ -1833,6 +1833,9 @@ class IssueView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(IssueView, self).get_context_data(**kwargs)
 
+        # ----------------------------------------------------
+        # User agent details
+        # ----------------------------------------------------
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
             context["browser_family"] = user_agent.browser.family
@@ -1840,10 +1843,14 @@ class IssueView(DetailView):
             context["os_family"] = user_agent.os.family
             context["os_version"] = user_agent.os.version_string
 
+        # ----------------------------------------------------
+        # Screenshots
+        # ----------------------------------------------------
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
 
-        # Calculate user's total score
-        # Both total_score and users_score are set for backward compatibility
+        # ----------------------------------------------------
+        # Reporter score (backward compatibility preserved)
+        # ----------------------------------------------------
         if self.object.user:
             total_score = (
                 Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
@@ -1854,68 +1861,68 @@ class IssueView(DetailView):
             context["total_score"] = 0
             context["users_score"] = 0
 
+        # ----------------------------------------------------
+        # Authenticated user data
+        # ----------------------------------------------------
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+
+        # ----------------------------------------------------
+        # Issue-related metadata
+        # ----------------------------------------------------
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
+
+        # ----------------------------------------------------
+        # Raw counts (kept for backward compatibility)
+        # ----------------------------------------------------
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
-
         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
 
-        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
+
+        # ----------------------------------------------------
+        # Content type
+        # ----------------------------------------------------
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
-        # Add email-related data from domain
+        # ----------------------------------------------------
+        # Domain email data
+        # ----------------------------------------------------
         if self.object.domain:
             context["email_clicks"] = self.object.domain.clicks
             context["email_events"] = self.object.domain.email_event
 
-            # Generate GitHub issues URL from the domain's github field
             if self.object.domain.github:
                 github_url = self.object.domain.github.rstrip("/")
                 context["github_issues_url"] = f"{github_url}/issues"
-        # Add CVE severity and suggested tip amount
+
+        # ----------------------------------------------------
+        # CVE data
+        # ----------------------------------------------------
         if self.object.cve_id and self.object.cve_score:
             context["cve_severity"] = self.object.get_cve_severity()
             context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
 
-        # Add user score for the issue reporter
-        if self.object.user:
-            context["users_score"] = (
-                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
-            )
-        issue = self.object
-        user = self.request.user
+        # ----------------------------------------------------
+        # ✅ FIX: Unified vote / flag / save context
+        # ----------------------------------------------------
+        if self.request.user.is_authenticated:
+            userprof = get_object_or_404(UserProfile, user=self.request.user)
+            vote_context = get_issue_vote_context(self.object, userprof)
+        else:
+            vote_context = get_issue_vote_context(self.object, None)
 
-        # Map existing values → canonical names
-        context["positive_votes"] = context.get("likes", 0)
-        context["negative_votes"] = context.get("dislikes", 0)
-        context["flags_count"] = context.get("flags", 0)
+        context.update(vote_context)
 
-        # User-specific state
-        context["user_vote"] = None
-        context["user_has_flagged"] = False
-        context["user_has_saved"] = False
+        # ----------------------------------------------------
+        # Modal data (likers / flagers)
+        # ----------------------------------------------------
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object).select_related("user")
 
-        if user.is_authenticated:
-            profile = getattr(user, "userprofile", None)
-            if profile is None:
-                # User lacks profile - leave defaults
-                pass
-            else:
-                if profile.issue_upvoted.filter(pk=issue.pk).exists():
-                    context["user_vote"] = "upvote"
-                elif profile.issue_downvoted.filter(pk=issue.pk).exists():
-                    context["user_vote"] = "downvote"
-
-                context["user_has_flagged"] = profile.issue_flaged.filter(pk=issue.pk).exists()
-                context["user_has_saved"] = profile.issue_saved.filter(pk=issue.pk).exists()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=issue).select_related("user")
-
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=issue).select_related("user")
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object).select_related("user")
 
         return context
 
