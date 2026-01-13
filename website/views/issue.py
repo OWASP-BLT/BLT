@@ -126,7 +126,7 @@ def get_issue_vote_context(issue, userprof):
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
-    userprof = get_object_or_404(UserProfile, user=request.user)
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
     with transaction.atomic():
         if userprof.issue_downvoted.filter(pk=issue.pk).exists():
@@ -185,7 +185,7 @@ def like_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
-    userprof = get_object_or_404(UserProfile, user=request.user)
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
     with transaction.atomic():
         # Remove upvote if exists
@@ -225,7 +225,7 @@ def dislike_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = get_object_or_404(UserProfile, user=request.user)
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
     # Toggle flag
     was_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
@@ -2139,7 +2139,7 @@ def comment_on_content(request, content_pk):
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = get_object_or_404(UserProfile, user=request.user)
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
     # Toggle save
     already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
