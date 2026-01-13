@@ -226,7 +226,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
-    {# djlint:on #}
+    {# djlint:off #}
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const bugReportElement = document.getElementById('bug_report');
@@ -247,7 +247,7 @@
             let counter = 0;
             // Match code blocks (inline and block)
             renderedHtml = renderedHtml.replace(
-                /<(code|pre )[^>]*>[\s\S]*?<\/\1>/gi,
+                /<(code|pre)[^>]*>[\s\S]*?<\/\1>/gi,
                 function (match) {
                     codeBlocks.push(match);
                     return `${codePlaceholder}${counter++}`;
@@ -282,11 +282,11 @@
             let lastIndex = 0;
             let match;
 
-            while ((match = regex.exec(text)) !== null) {
+            while ((match = regex.exec(originalText)) !== null) {
                 // Add text before match
                 if (match.index > lastIndex) {
                     fragment.appendChild(
-                        document.createTextNode(text.slice(lastIndex, match.index))
+                        document.createTextNode(originalText.slice(lastIndex, match.index))
                     );
                 }
 
@@ -301,9 +301,9 @@
             }
 
             // Add remaining text
-            if (lastIndex < text.length) {
+            if (lastIndex < originalText.length) {
                 fragment.appendChild(
-                    document.createTextNode(text.slice(lastIndex))
+                    document.createTextNode(originalText.slice(lastIndex))
                 );
             }
 
@@ -466,7 +466,7 @@
         });
     }
 </script> -->
-{# djlint:off #}
+{# djlint:on #}
 <script>
     
     async function resolveIssue() {
