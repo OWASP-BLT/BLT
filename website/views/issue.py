@@ -57,7 +57,7 @@ from user_agents import parse
 from blt import settings
 from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
-from website.forms import CaptchaForm, GitHubIssueForm
+from website.forms import CaptchaForm, GitHubIssueForm, IssuePledgeForm
 from website.models import (
     IP,
     Activity,
@@ -90,6 +90,41 @@ from .constants import GSOC25_PROJECTS
 
 logger = logging.getLogger(__name__)
 
+
+@require_POST
+def submit_pledge(request):
+    """
+    Handles AJAX submission of an issue pledge.
+
+    Creates a new IssuePledge linked to the issue and user.
+    Supports anonymous pledges.
+    Returns JSON success or error responses.
+    """
+    issue_id = request.POST.get("issue_id")
+    if not issue_id:
+        return JsonResponse({"error": "Issue ID missing"}, status=400)
+
+    issue = get_object_or_404(Issue, id=issue_id)
+
+    if issue.status == "closed":
+        return JsonResponse({"error": "Cannot pledge on a closed issue"}, status=400)
+
+    form = IssuePledgeForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({"error": form.errors}, status=400)
+
+    pledge = form.save(commit=False)
+    pledge.issue = issue
+
+    anonymous = request.POST.get("anonymous")
+    if request.user.is_authenticated and not anonymous:
+        pledge.user = request.user
+    else:
+        pledge.user = None
+
+    pledge.save()
+    print(f"Pledge saved: ID {pledge.id}, Amount {pledge.amount} BCH, Issue {issue.id}, User {pledge.user}")
+    return JsonResponse({"success": True})
 
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
