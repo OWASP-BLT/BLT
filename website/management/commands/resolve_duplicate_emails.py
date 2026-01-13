@@ -510,6 +510,9 @@ The Team
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(f"   ⚠️ UserProfile merge failed: {e}"))
 
+                # Store username before deletion
+                from_username = from_user.username
+
                 # Delete the from_user (this will cascade to any remaining relationships)
                 from_user.delete()
 
@@ -517,7 +520,7 @@ The Team
                 for field, count in merge_counts.items():
                     if count > 0:
                         self.stdout.write(f"   {field}: {count}")
-                self.stdout.write(f"   User {from_user.username} deleted")
+                self.stdout.write(f"   User {from_username} deleted")
 
     def update_email(self, user_id, new_email, dry_run=False):
         """Update a user's email address"""
