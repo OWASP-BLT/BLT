@@ -127,11 +127,11 @@
                     const xhr = event.detail.xhr;
                     const target = event.detail.target;
         
-        // Restore loading state
-        if (target && target.style && document.contains(target)) {
-            target.style.opacity = '1';
-            target.style.pointerEvents = 'auto';
-        }
+                    // Restore loading state
+                    if (target && target.style && document.contains(target)) {
+                        target.style.opacity = '1';
+                        target.style.pointerEvents = 'auto';
+                    }
                     
                     // Only parse JSON if response is JSON
                     if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {

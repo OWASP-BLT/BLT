@@ -95,12 +95,12 @@ logger = logging.getLogger(__name__)
 
 def get_issue_vote_context(issue, userprof):
     """Build vote/flag/save context for an issue."""
-    # Single query for all counts
-    counts = UserProfile.objects.aggregate(
-        positive_votes=Count("id", distinct=True, filter=Q(issue_upvoted=issue)),
-        negative_votes=Count("id", distinct=True, filter=Q(issue_downvoted=issue)),
-        flags_count=Count("id", distinct=True, filter=Q(issue_flaged=issue)),
-    )
+    # Use reverse relations for more efficient counting
+    counts = {
+        "positive_votes": issue.upvoted.count(),
+        "negative_votes": issue.downvoted.count(),
+        "flags_count": issue.flaged.count(),
+    }
     if userprof is None:
         return {
             **counts,
@@ -228,13 +228,12 @@ def flag_issue(request, issue_pk):
     userprof = get_object_or_404(UserProfile, user=request.user)
 
     # Toggle flag
-    is_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
-    if is_flagged:
+    was_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
+    if was_flagged:
         userprof.issue_flaged.remove(issue)
-        is_flagged = False
     else:
         userprof.issue_flaged.add(issue)
-        is_flagged = True
+    is_flagged = not was_flagged
 
     context = get_issue_vote_context(issue, userprof)
     context["object"] = issue
@@ -1888,9 +1887,9 @@ class IssueView(DetailView):
         context["dislikes"] = context["negative_votes"]
         context["flags"] = context["flags_count"]
 
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object).select_related("user")
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object).select_related("user")[:20]
 
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object).select_related("user")
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object).select_related("user")[:20]
 
         return context
 
