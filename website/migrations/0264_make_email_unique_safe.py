@@ -244,25 +244,30 @@ def remove_duplicate_users_safely(apps, schema_editor):
             user.delete(using=db_alias)
             actual_deleted += 1
 
-    # Export deletion records to CSV
+    # Export deletion records to CSV (non-critical operation)
     if deletion_records:
-        with open(deletion_csv, "w", newline="", encoding="utf-8") as csvfile:
-            fieldnames = [
-                "user_id",
-                "username",
-                "email",
-                "date_joined",
-                "last_login",
-                "issue_count",
-                "total_points",
-                "kept_user_id",
-                "kept_user_username",
-                "deletion_timestamp",
-            ]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(deletion_records)
-        logger.info(f"📊 Deletion records exported to: {deletion_csv}")
+        try:
+            with open(deletion_csv, "w", newline="", encoding="utf-8") as csvfile:
+                fieldnames = [
+                    "user_id",
+                    "username",
+                    "email",
+                    "date_joined",
+                    "last_login",
+                    "issue_count",
+                    "total_points",
+                    "kept_user_id",
+                    "kept_user_username",
+                    "deletion_timestamp",
+                ]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(deletion_records)
+            logger.info(f"📊 Deletion records exported to: {deletion_csv}")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to export deletion records to CSV: {e}")
+            logger.warning("⚠️ Migration will continue - CSV export is non-critical")
+            # Don't re-raise the exception - CSV export failure shouldn't block migration
 
     logger.info(f"\n✅ Successfully deleted {actual_deleted} duplicate users")
     logger.info("✅ Email uniqueness migration completed safely")

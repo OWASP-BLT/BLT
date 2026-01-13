@@ -299,12 +299,52 @@ The Team
                     self.stdout.write(f"   {field}: {count}")
 
             # Check ManyToMany relationships
-            issue_teams = Issue.objects.filter(team_members=from_user).count()
-            org_managers = Organization.objects.filter(managers=from_user).count()
-            if issue_teams > 0:
-                self.stdout.write(f"   issue_team_memberships: {issue_teams}")
-            if org_managers > 0:
-                self.stdout.write(f"   organization_managerships: {org_managers}")
+            m2m_counts = {}
+            m2m_counts["issue_teams"] = Issue.objects.filter(team_members=from_user).count()
+            m2m_counts["org_managers"] = Organization.objects.filter(managers=from_user).count()
+            m2m_counts["activity_likes"] = Activity.objects.filter(likes=from_user).count()
+            m2m_counts["activity_dislikes"] = Activity.objects.filter(dislikes=from_user).count()
+            m2m_counts["profile_subscriptions"] = UserProfile.objects.filter(subscribed_users=from_user).count()
+
+            # Check optional M2M relationships
+            try:
+                from website.models import Domain
+
+                m2m_counts["domain_managers"] = Domain.objects.filter(managers=from_user).count()
+            except ImportError:
+                pass
+
+            try:
+                from website.models import Referral
+
+                m2m_counts["referral_recipients"] = Referral.objects.filter(recipients=from_user).count()
+            except ImportError:
+                pass
+
+            try:
+                from website.models import Challenge
+
+                m2m_counts["challenge_participants"] = Challenge.objects.filter(participants=from_user).count()
+            except ImportError:
+                pass
+
+            try:
+                from website.models import ChatRoom
+
+                m2m_counts["chatroom_users"] = ChatRoom.objects.filter(users=from_user).count()
+            except ImportError:
+                pass
+
+            try:
+                from website.models import Thread
+
+                m2m_counts["thread_participants"] = Thread.objects.filter(participants=from_user).count()
+            except ImportError:
+                pass
+
+            for field, count in m2m_counts.items():
+                if count > 0:
+                    self.stdout.write(f"   {field}: {count}")
 
             self.stdout.write("   User profile data")
             self.stdout.write("\n⚠️  FROM user would be DELETED")
@@ -331,17 +371,113 @@ The Team
                 )
 
                 # Handle ManyToMany relationships
+                m2m_transfers = 0
+
                 # For Issue.team_members - add from_user's memberships to to_user
                 issues_with_from_user = Issue.objects.filter(team_members=from_user)
                 for issue in issues_with_from_user:
                     issue.team_members.add(to_user)
                     issue.team_members.remove(from_user)
+                    m2m_transfers += 1
 
                 # For Organization.managers - add from_user's managerships to to_user
                 orgs_managed_by_from_user = Organization.objects.filter(managers=from_user)
                 for org in orgs_managed_by_from_user:
                     org.managers.add(to_user)
                     org.managers.remove(from_user)
+                    m2m_transfers += 1
+
+                # Transfer Activity likes
+                activities_liked = Activity.objects.filter(likes=from_user)
+                for activity in activities_liked:
+                    if not activity.likes.filter(id=to_user.id).exists():
+                        activity.likes.add(to_user)
+                    activity.likes.remove(from_user)
+                    m2m_transfers += 1
+
+                # Transfer Activity dislikes
+                activities_disliked = Activity.objects.filter(dislikes=from_user)
+                for activity in activities_disliked:
+                    if not activity.dislikes.filter(id=to_user.id).exists():
+                        activity.dislikes.add(to_user)
+                    activity.dislikes.remove(from_user)
+                    m2m_transfers += 1
+
+                # Transfer UserProfile subscriptions
+                profiles_subscribed_to = UserProfile.objects.filter(subscribed_users=from_user)
+                for profile in profiles_subscribed_to:
+                    if not profile.subscribed_users.filter(id=to_user.id).exists():
+                        profile.subscribed_users.add(to_user)
+                    profile.subscribed_users.remove(from_user)
+                    m2m_transfers += 1
+
+                # Transfer Domain managerships
+                try:
+                    from website.models import Domain
+
+                    domains_managed = Domain.objects.filter(managers=from_user)
+                    for domain in domains_managed:
+                        if not domain.managers.filter(id=to_user.id).exists():
+                            domain.managers.add(to_user)
+                        domain.managers.remove(from_user)
+                        m2m_transfers += 1
+                except ImportError:
+                    pass  # Domain model might not exist
+
+                # Transfer Referral recipients
+                try:
+                    from website.models import Referral
+
+                    referrals_received = Referral.objects.filter(recipients=from_user)
+                    for referral in referrals_received:
+                        if not referral.recipients.filter(id=to_user.id).exists():
+                            referral.recipients.add(to_user)
+                        referral.recipients.remove(from_user)
+                        m2m_transfers += 1
+                except ImportError:
+                    pass  # Referral model might not exist
+
+                # Transfer Challenge participations
+                try:
+                    from website.models import Challenge
+
+                    challenges_participated = Challenge.objects.filter(participants=from_user)
+                    for challenge in challenges_participated:
+                        if not challenge.participants.filter(id=to_user.id).exists():
+                            challenge.participants.add(to_user)
+                        challenge.participants.remove(from_user)
+                        m2m_transfers += 1
+                except ImportError:
+                    pass  # Challenge model might not exist
+
+                # Transfer ChatRoom memberships
+                try:
+                    from website.models import ChatRoom
+
+                    chatrooms_joined = ChatRoom.objects.filter(users=from_user)
+                    for chatroom in chatrooms_joined:
+                        if not chatroom.users.filter(id=to_user.id).exists():
+                            chatroom.users.add(to_user)
+                        chatroom.users.remove(from_user)
+                        m2m_transfers += 1
+                except ImportError:
+                    pass  # ChatRoom model might not exist
+
+                # Transfer Thread participations
+                try:
+                    from website.models import Thread
+
+                    threads_participated = Thread.objects.filter(participants=from_user)
+                    for thread in threads_participated:
+                        if not thread.participants.filter(id=to_user.id).exists():
+                            thread.participants.add(to_user)
+                        thread.participants.remove(from_user)
+                        m2m_transfers += 1
+                except ImportError:
+                    pass  # Thread model might not exist
+
+                if m2m_transfers > 0:
+                    self.stdout.write(f"   ✅ Transferred {m2m_transfers} M2M relationships")
 
                 # Merge user profile data with proper error handling
                 try:
@@ -401,21 +537,30 @@ The Team
             self.stdout.write(f"   FROM: {old_email}")
             self.stdout.write(f"   TO: {new_email}")
         else:
-            user.email = new_email
-            user.save()
-
-            self.stdout.write(self.style.SUCCESS(f"✅ Updated email for {user.username}"))
-            self.stdout.write(f"   FROM: {old_email}")
-            self.stdout.write(f"   TO: {new_email}")
-
-            # Also update any email verification records if using django-allauth
             try:
-                from allauth.account.models import EmailAddress
+                with transaction.atomic():
+                    # Update user email
+                    user.email = new_email
+                    user.save()
 
-                email_addresses = EmailAddress.objects.filter(user=user, email=old_email)
-                for email_addr in email_addresses:
-                    email_addr.email = new_email
-                    email_addr.save()
-                    self.stdout.write("   ✅ Updated email verification record")
-            except ImportError:
-                pass  # django-allauth not installed
+                    # Also update any email verification records if using django-allauth
+                    try:
+                        from allauth.account.models import EmailAddress
+
+                        email_addresses = EmailAddress.objects.filter(user=user, email=old_email)
+                        for email_addr in email_addresses:
+                            email_addr.email = new_email
+                            email_addr.save()
+
+                        if email_addresses:
+                            self.stdout.write("   ✅ Updated email verification records")
+                    except ImportError:
+                        pass  # django-allauth not installed
+
+                    self.stdout.write(self.style.SUCCESS(f"✅ Updated email for {user.username}"))
+                    self.stdout.write(f"   FROM: {old_email}")
+                    self.stdout.write(f"   TO: {new_email}")
+
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"❌ Failed to update email for {user.username}: {e}"))
+                raise CommandError(f"Email update failed: {e}")
