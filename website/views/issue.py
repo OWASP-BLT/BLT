@@ -367,8 +367,8 @@ def create_github_issue(request, id):
         )
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:

@@ -429,7 +429,14 @@
 async function resolveIssue() {
     var id = {{ object.pk }};
     try {
-        const response = await fetch(`/resolve/${id}/`);
+        const response = await fetch(`/resolve/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
         if (response.status === 403) {
             if (window.createMessage) {
                 window.createMessage("Permission Denied", "error", 3000);
@@ -438,6 +445,10 @@ async function resolveIssue() {
             }
         } else if (response.ok) {
             window.location.reload();
+        } else {
+            if (window.createMessage) {
+                window.createMessage("Failed to update issue status", "error", 3000);
+            }
         }
     } catch (err) {
         console.error("Failed to resolve issue:", err);
