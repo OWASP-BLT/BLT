@@ -1,8 +1,8 @@
 <h1 align="center"> 🐛 OWASP BLT </h1>
-<h3 align="center">Bug Logging Tool - Democratizing Bug Bounties</h3>
+<h3 align="center">Bug Logging Tool - Gamified Crowd-Sourced QA Testing & Vulnerability Disclosure</h3>
 
 <p align="center">
-  <strong>A community-driven platform for discovering, reporting, and tracking security vulnerabilities</strong>
+  <strong>A gamified platform for discovering and reporting bugs across websites, apps, git repositories, and more</strong>
 </p>
 
 <p align="center">
@@ -57,17 +57,25 @@
 
 ## 🎯 What is OWASP BLT?
 
-**OWASP BLT (Bug Logging Tool)** is an open-source platform that democratizes bug finding and security research. Built by the community for the community, BLT makes it easy for security researchers, developers, and organizations to collaborate on finding and fixing security vulnerabilities.
+**OWASP BLT (Bug Logging Tool)** is a gamified crowd-sourced QA testing and vulnerability disclosure platform that encompasses websites, apps, git repositories, and more. 
+
+The platform helps coders and security researchers discover organizations, repositories, and projects to test and report to, making it easier to find meaningful security work and contribute to the community.
+
+Our team has created dozens of open-source tools to assist in our main vision, including tools specific to the OWASP foundation. We embrace the AI revolution and have developed AI-powered tools and processes for efficient coding in harmony between humans and AI. 
+
+Built by the community for the community, BLT makes it easy for security researchers, developers, and organizations to collaborate on finding and fixing vulnerabilities.
 
 ### ✨ Key Features
 
-- 🔍 **Bug Discovery & Reporting** - Discover and report security vulnerabilities across various applications and websites
-- 🏆 **Rewards & Recognition** - Earn rewards, badges, and recognition for your contributions to web security
-- 👥 **Community Driven** - Join a vibrant community of security researchers and developers
-- 🎮 **Gamification** - Leaderboards, challenges, and competitions to make security research engaging
+- 🔍 **QA Testing & Vulnerability Disclosure** - Discover and report bugs across websites, apps, git repositories, and projects
+- 🗺️ **Discover Testing Opportunities** - Find organizations, repositories, and projects to test and report to
+- 🏆 **Rewards & Recognition** - Earn rewards, badges, and recognition for your contributions to software quality and security
+- 👥 **Crowd-Sourced Testing** - Join a vibrant community of testers, security researchers, and developers
+- 🎮 **Gamification** - Leaderboards, challenges, and competitions to make testing engaging and rewarding
 - 💰 **Staking System** - Innovative blockchain-based reward system for contributors
-- 📊 **Comprehensive Dashboard** - Track your progress, statistics, and impact
-- 🌐 **Open Source** - Built with transparency and collaboration at its core
+- 🤖 **AI-Powered Tools** - Leverage AI for efficient coding, PR reviews, issue generation, and similarity scanning
+- 📊 **Comprehensive Dashboard** - Track your progress, statistics, and impact across all platforms
+- 🌐 **Open Source Ecosystem** - Dozens of open-source tools supporting our mission
 - 🛡️ **OWASP Project** - Part of the Open Worldwide Application Security Project family
 
 ---
