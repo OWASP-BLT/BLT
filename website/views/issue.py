@@ -187,15 +187,16 @@ def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = get_object_or_404(UserProfile, user=request.user)
 
-    # Remove upvote if exists
-    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
-        userprof.issue_upvoted.remove(issue)
+    with transaction.atomic():
+        # Remove upvote if exists
+        if userprof.issue_upvoted.filter(pk=issue.pk).exists():
+            userprof.issue_upvoted.remove(issue)
 
-    # Toggle downvote
-    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
-        userprof.issue_downvoted.remove(issue)
-    else:
-        userprof.issue_downvoted.add(issue)
+        # Toggle downvote
+        if userprof.issue_downvoted.filter(pk=issue.pk).exists():
+            userprof.issue_downvoted.remove(issue)
+        else:
+            userprof.issue_downvoted.add(issue)
 
     context = get_issue_vote_context(issue, userprof)
     context["object"] = issue
@@ -1860,12 +1861,6 @@ class IssueView(DetailView):
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
-
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
