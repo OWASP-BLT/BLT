@@ -73,13 +73,18 @@ class Command(BaseCommand):
             .order_by("-email_count")
         )
 
-        # Check for empty string emails
+        # Check for empty string emails (for reporting only)
         empty_email_count = User.objects.filter(email="").count()
         null_email_count = User.objects.filter(email__isnull=True).count()
 
-        if not duplicate_emails and empty_email_count <= 1 and null_email_count <= 1:
+        if not duplicate_emails:
             self.stdout.write(self.style.SUCCESS("✅ No duplicate emails found!"))
             self.stdout.write("Migration 0264 can be run safely.\n")
+            if empty_email_count > 0 or null_email_count > 0:
+                self.stdout.write(
+                    f"Note: {empty_email_count} users with empty emails and {null_email_count} users with NULL emails exist."
+                )
+                self.stdout.write("This is normal - multiple users can have empty/NULL emails.\n")
             return
 
         total_to_delete = sum(d["email_count"] - 1 for d in duplicate_emails)

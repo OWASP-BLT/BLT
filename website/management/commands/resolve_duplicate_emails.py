@@ -147,27 +147,34 @@ class Command(BaseCommand):
             email = dup["email"]
             users = User.objects.filter(email=email).order_by("-id")
 
-            self.stdout.write(f"\n📧 Processing email: {email}")
+            # Get users that would be deleted (all except the first/newest)
+            users_to_contact = list(users[1:])
+            kept_user = users.first()
 
-            for i, user in enumerate(users):
-                if i == 0:  # Skip the user that would be kept
-                    self.stdout.write(f"   ✅ Skipping {user.username} (would be kept)")
-                    continue
+            if not users_to_contact:
+                continue
 
-                subject = "Action Required: Update Your Email Address"
-                message = f"""
-Dear {user.username},
+            self.stdout.write(f"\n📧 Processing email group: {email}")
+            self.stdout.write(f"   Users affected: {len(users_to_contact)}")
+            self.stdout.write(f"   User to keep: {kept_user.username}")
 
-We've detected that your email address ({email}) is shared with another account on our platform.
+            # Build message with all affected usernames
+            affected_usernames = [user.username for user in users_to_contact]
 
-To ensure you don't lose access to your account, please log in and update your email address to a unique one.
+            subject = "Action Required: Update Your Email Address"
+            message = f"""
+Dear user,
 
-Your account details:
-- Username: {user.username}
-- Account created: {user.date_joined.strftime('%Y-%m-%d')}
-- Last login: {user.last_login.strftime('%Y-%m-%d') if user.last_login else 'Never'}
+We've detected that your email address ({email}) is shared with multiple accounts on our platform.
 
-Please update your email address within 7 days to avoid any service interruption.
+The following accounts are affected:
+{chr(10).join(f'- {username}' for username in affected_usernames)}
+
+To ensure you don't lose access to your account(s), please log in and update your email address to a unique one for each account.
+
+The account "{kept_user.username}" will be preserved, and other accounts with this email will be removed if not updated.
+
+Please update your email addresses within 7 days to avoid any service interruption.
 
 If you believe this is an error or need assistance, please contact our support team.
 
@@ -175,46 +182,51 @@ Best regards,
 The Team
 """
 
-                if dry_run:
-                    self.stdout.write(f"   📧 Would send email to {user.username}")
-                    self.stdout.write(f"      Subject: {subject}")
-                    total_emails_sent += 1
-                else:
-                    # Retry logic with exponential backoff
-                    max_retries = 3
-                    retry_count = 0
-                    sent = False
+            if dry_run:
+                self.stdout.write(f"   📧 Would send email to {email}")
+                self.stdout.write(f"      Subject: {subject}")
+                self.stdout.write(f"      Affected users: {', '.join(affected_usernames)}")
+                total_emails_sent += 1
+            else:
+                # Retry logic with exponential backoff - send once per email group
+                max_retries = 3
+                retry_count = 0
+                sent = False
 
-                    while retry_count < max_retries and not sent:
-                        try:
-                            send_mail(
-                                subject,
-                                message,
-                                settings.DEFAULT_FROM_EMAIL,
-                                [email],
-                                fail_silently=False,
+                while retry_count < max_retries and not sent:
+                    try:
+                        send_mail(
+                            subject,
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [email],
+                            fail_silently=False,
+                        )
+                        self.stdout.write(self.style.SUCCESS(f"   ✅ Email sent to {email}"))
+                        self.stdout.write(f"      Notified users: {', '.join(affected_usernames)}")
+                        total_emails_sent += 1
+                        sent = True
+                    except Exception as e:
+                        retry_count += 1
+                        if retry_count >= max_retries:
+                            failed_emails.append(
+                                {
+                                    "email": email,
+                                    "affected_users": affected_usernames,
+                                    "error": str(e),
+                                    "attempts": retry_count,
+                                }
                             )
-                            self.stdout.write(self.style.SUCCESS(f"   ✅ Email sent to {user.username}"))
-                            total_emails_sent += 1
-                            sent = True
-                        except Exception as e:
-                            retry_count += 1
-                            if retry_count >= max_retries:
-                                failed_emails.append(
-                                    {"user": user.username, "email": email, "error": str(e), "attempts": retry_count}
+                            self.stdout.write(
+                                self.style.ERROR(
+                                    f"   ❌ Failed to send email to {email} after {max_retries} attempts: {e}"
                                 )
-                                self.stdout.write(
-                                    self.style.ERROR(
-                                        f"   ❌ Failed to send email to {user.username} after {max_retries} attempts: {e}"
-                                    )
-                                )
-                            else:
-                                self.stdout.write(
-                                    self.style.WARNING(f"   ⚠️ Retry {retry_count}/{max_retries} for {user.username}")
-                                )
-                                import time
+                            )
+                        else:
+                            self.stdout.write(self.style.WARNING(f"   ⚠️ Retry {retry_count}/{max_retries} for {email}"))
+                            import time
 
-                                time.sleep(2**retry_count)  # Exponential backoff
+                            time.sleep(2**retry_count)  # Exponential backoff
 
         # Export failure report if any failures occurred
         if failed_emails and not dry_run:
@@ -233,7 +245,7 @@ The Team
             self.stdout.write(f"\n📊 Summary: {total_emails_sent} sent, {len(failed_emails)} failed")
 
     def merge_users(self, from_user_id, to_user_id, dry_run=False):
-        """Merge data from one user account to another"""
+        """Merge data from one user account to another with comprehensive FK handling"""
         try:
             from_user = User.objects.get(id=from_user_id)
             to_user = User.objects.get(id=to_user_id)
@@ -243,57 +255,132 @@ The Team
         if from_user.email != to_user.email:
             raise CommandError("Users must have the same email address to merge")
 
+        if from_user.id == to_user.id:
+            raise CommandError("Cannot merge a user with themselves")
+
         self.stdout.write("\n🔄 Merging user data:")
         self.stdout.write(f"   FROM: {from_user.username} (ID: {from_user_id})")
         self.stdout.write(f"   TO: {to_user.username} (ID: {to_user_id})")
 
-        # Import models
-        from website.models import Issue, Points, UserProfile
+        # Import all models that reference User
+        from website.models import (
+            Activity,
+            Bid,
+            ForumPost,
+            ForumPostComment,
+            HuntResult,
+            Issue,
+            Organization,
+            Points,
+            StakingEntry,
+            StakingTransaction,
+            UserProfile,
+        )
 
         if dry_run:
             # Show what would be merged
-            issues_count = Issue.objects.filter(user=from_user).count()
-            points_count = Points.objects.filter(user=from_user).count()
+            merge_counts = {}
+            merge_counts["issues"] = Issue.objects.filter(user=from_user).count()
+            merge_counts["issues_closed_by"] = Issue.objects.filter(closed_by=from_user).count()
+            merge_counts["points"] = Points.objects.filter(user=from_user).count()
+            merge_counts["hunt_results_winner"] = HuntResult.objects.filter(winner=from_user).count()
+            merge_counts["hunt_results_runner"] = HuntResult.objects.filter(runner=from_user).count()
+            merge_counts["hunt_results_second_runner"] = HuntResult.objects.filter(second_runner=from_user).count()
+            merge_counts["bids"] = Bid.objects.filter(user=from_user).count()
+            merge_counts["forum_posts"] = ForumPost.objects.filter(user=from_user).count()
+            merge_counts["forum_comments"] = ForumPostComment.objects.filter(user=from_user).count()
+            merge_counts["activities"] = Activity.objects.filter(user=from_user).count()
+            merge_counts["staking_entries"] = StakingEntry.objects.filter(user=from_user).count()
+            merge_counts["staking_transactions"] = StakingTransaction.objects.filter(user=from_user).count()
 
             self.stdout.write("\n📊 Would merge:")
-            self.stdout.write(f"   Issues: {issues_count}")
-            self.stdout.write(f"   Points entries: {points_count}")
+            for field, count in merge_counts.items():
+                if count > 0:
+                    self.stdout.write(f"   {field}: {count}")
+
+            # Check ManyToMany relationships
+            issue_teams = Issue.objects.filter(team_members=from_user).count()
+            org_managers = Organization.objects.filter(managers=from_user).count()
+            if issue_teams > 0:
+                self.stdout.write(f"   issue_team_memberships: {issue_teams}")
+            if org_managers > 0:
+                self.stdout.write(f"   organization_managerships: {org_managers}")
+
             self.stdout.write("   User profile data")
             self.stdout.write("\n⚠️  FROM user would be DELETED")
         else:
             with transaction.atomic():
-                # Merge issues
-                issues_updated = Issue.objects.filter(user=from_user).update(user=to_user)
+                merge_counts = {}
 
-                # Merge points
-                points_updated = Points.objects.filter(user=from_user).update(user=to_user)
+                # Merge all ForeignKey relationships
+                merge_counts["issues"] = Issue.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["issues_closed_by"] = Issue.objects.filter(closed_by=from_user).update(closed_by=to_user)
+                merge_counts["points"] = Points.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["hunt_results_winner"] = HuntResult.objects.filter(winner=from_user).update(winner=to_user)
+                merge_counts["hunt_results_runner"] = HuntResult.objects.filter(runner=from_user).update(runner=to_user)
+                merge_counts["hunt_results_second_runner"] = HuntResult.objects.filter(second_runner=from_user).update(
+                    second_runner=to_user
+                )
+                merge_counts["bids"] = Bid.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["forum_posts"] = ForumPost.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["forum_comments"] = ForumPostComment.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["activities"] = Activity.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["staking_entries"] = StakingEntry.objects.filter(user=from_user).update(user=to_user)
+                merge_counts["staking_transactions"] = StakingTransaction.objects.filter(user=from_user).update(
+                    user=to_user
+                )
 
-                # Merge user profile data (if needed)
+                # Handle ManyToMany relationships
+                # For Issue.team_members - add from_user's memberships to to_user
+                issues_with_from_user = Issue.objects.filter(team_members=from_user)
+                for issue in issues_with_from_user:
+                    issue.team_members.add(to_user)
+                    issue.team_members.remove(from_user)
+
+                # For Organization.managers - add from_user's managerships to to_user
+                orgs_managed_by_from_user = Organization.objects.filter(managers=from_user)
+                for org in orgs_managed_by_from_user:
+                    org.managers.add(to_user)
+                    org.managers.remove(from_user)
+
+                # Merge user profile data with proper error handling
                 try:
-                    from_profile = from_user.userprofile
-                    to_profile = to_user.userprofile
+                    # Ensure to_user has a profile (create if needed)
+                    to_profile, created = UserProfile.objects.get_or_create(user=to_user)
+                    if created:
+                        self.stdout.write("   ✅ Created UserProfile for target user")
 
-                    # Merge specific fields (customize as needed)
-                    if not to_profile.user_avatar and from_profile.user_avatar:
-                        to_profile.user_avatar = from_profile.user_avatar
+                    # Try to get from_user profile
+                    try:
+                        from_profile = from_user.userprofile
 
-                    if not to_profile.description and from_profile.description:
-                        to_profile.description = from_profile.description
+                        # Merge specific fields (only if target field is empty)
+                        if not to_profile.user_avatar and from_profile.user_avatar:
+                            to_profile.user_avatar = from_profile.user_avatar
 
-                    # Add visit counts
-                    to_profile.visit_count += from_profile.visit_count
-                    to_profile.daily_visit_count += from_profile.daily_visit_count
+                        if not to_profile.description and from_profile.description:
+                            to_profile.description = from_profile.description
 
-                    to_profile.save()
-                except UserProfile.DoesNotExist:
-                    pass
+                        # Add visit counts
+                        to_profile.visit_count += from_profile.visit_count
+                        to_profile.daily_visit_count += from_profile.daily_visit_count
 
-                # Delete the from_user
+                        to_profile.save()
+                        self.stdout.write("   ✅ Merged UserProfile data")
+
+                    except UserProfile.DoesNotExist:
+                        self.stdout.write("   ℹ️ FROM user has no UserProfile to merge")
+
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f"   ⚠️ UserProfile merge failed: {e}"))
+
+                # Delete the from_user (this will cascade to any remaining relationships)
                 from_user.delete()
 
                 self.stdout.write(self.style.SUCCESS("\n✅ Successfully merged:"))
-                self.stdout.write(f"   Issues: {issues_updated}")
-                self.stdout.write(f"   Points entries: {points_updated}")
+                for field, count in merge_counts.items():
+                    if count > 0:
+                        self.stdout.write(f"   {field}: {count}")
                 self.stdout.write(f"   User {from_user.username} deleted")
 
     def update_email(self, user_id, new_email, dry_run=False):
