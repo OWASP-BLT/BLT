@@ -22,6 +22,7 @@ class IssueHTMXTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"like-section", response.content)
         # Verify user profile was updated
+        self.user_profile.refresh_from_db()
         self.assertTrue(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
 
     def test_like_issue_toggle_off(self):
@@ -34,6 +35,7 @@ class IssueHTMXTests(TestCase):
             HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
         self.assertFalse(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
 
     def test_dislike_removes_like(self):
@@ -46,6 +48,7 @@ class IssueHTMXTests(TestCase):
             HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
         self.assertFalse(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
         self.assertTrue(self.user_profile.issue_downvoted.filter(pk=self.issue.pk).exists())
 
@@ -56,6 +59,7 @@ class IssueHTMXTests(TestCase):
             HTTP_HX_REQUEST="true",
         )
         self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
         self.assertTrue(self.user_profile.issue_flaged.filter(pk=self.issue.pk).exists())
 
     def test_save_issue_htmx(self):
@@ -66,6 +70,7 @@ class IssueHTMXTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"bookmark-section", response.content)
+        self.user_profile.refresh_from_db()
         self.assertTrue(self.user_profile.issue_saved.filter(pk=self.issue.pk).exists())
 
     def test_like_requires_login(self):
