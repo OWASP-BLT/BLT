@@ -248,7 +248,7 @@
         let counter = 0;
         // Match code blocks (inline and block)
         renderedHtml = renderedHtml.replace(
-            /<(code|pre )[^>]*>[\s\S]*?<\/\1>/gi,
+            /<(code|pre)[^>]*>[\s\S]*?<\/\1>/gi,
             function(match) {
                 codeBlocks.push(match);
                 return `${codePlaceholder}${counter++}`;
