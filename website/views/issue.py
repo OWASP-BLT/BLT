@@ -94,6 +94,15 @@ logger = logging.getLogger(__name__)
 
 def get_issue_vote_context(issue, userprof):
     """Build vote/flag/save context for an issue."""
+    if userprof is None:
+        return {
+            "positive_votes": UserProfile.objects.filter(issue_upvoted=issue).count(),
+            "negative_votes": UserProfile.objects.filter(issue_downvoted=issue).count(),
+            "flags_count": UserProfile.objects.filter(issue_flaged=issue).count(),
+            "user_vote": None,
+            "user_has_flagged": False,
+            "user_has_saved": False,
+        }
     return {
         "positive_votes": UserProfile.objects.filter(issue_upvoted=issue).count(),
         "negative_votes": UserProfile.objects.filter(issue_downvoted=issue).count(),
@@ -123,10 +132,8 @@ def like_issue(request, issue_pk):
     # Toggle upvote
     if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
-        is_liked = False
     else:
         userprof.issue_upvoted.add(issue)
-        is_liked = True
 
         # Send email ONLY on new upvote
         if issue.user and issue.user.email:
@@ -148,6 +155,7 @@ def like_issue(request, issue_pk):
             )
 
     context = get_issue_vote_context(issue, userprof)
+    context["object"] = issue
 
     if request.headers.get("HX-Request"):
         html = render_to_string(
@@ -182,12 +190,11 @@ def dislike_issue(request, issue_pk):
     # Toggle downvote
     if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
-        is_disliked = False
     else:
         userprof.issue_downvoted.add(issue)
-        is_disliked = True
 
     context = get_issue_vote_context(issue, userprof)
+    context["object"] = issue
 
     if request.headers.get("HX-Request"):
         html = render_to_string(
@@ -224,6 +231,7 @@ def flag_issue(request, issue_pk):
         is_flagged = True
 
     context = get_issue_vote_context(issue, userprof)
+    context["object"] = issue
 
     # Check for HTMX request
     if request.headers.get("HX-Request"):
@@ -341,7 +349,7 @@ def resolve(request, id):
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status = "close"
+            issue.status == "close"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()
