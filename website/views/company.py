@@ -1298,12 +1298,12 @@ class AddDomainView(View):
     @check_organization_or_manager
     def delete(self, request, id, *args, **kwargs):
         domain_id = request.POST.get("domain_id", None)
-        domain = get_object_or_404(Domain, id=domain_id)
-        if domain is None:
-            messages.error(request, "Domain not found.")
-            return redirect("organization_manage_domains", id=id)
-        domain.delete()
-        messages.success(request, "Domain deleted successfully")
+        try:
+            domain = Domain.objects.get(id=domain_id, organization__id=id)
+            domain.delete()
+            messages.success(request, "Domain deleted successfully")
+        except Domain.DoesNotExist:
+            messages.error(request, "Domain not found or you do not have permission to delete it.")
         return redirect("organization_manage_domains", id=id)
 
 
