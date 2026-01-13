@@ -448,7 +448,7 @@ async function resolveIssue() {
         } else {
             if (window.createMessage) {
                 window.createMessage("Failed to update issue status", "error", 3000);
-                } else {
+            } else {
                 alert("Failed to update issue status");
             }
         }
@@ -456,7 +456,7 @@ async function resolveIssue() {
         console.error("Failed to resolve issue:", err);
         if (window.createMessage) {
             window.createMessage("Failed to update issue status", "error", 3000);
-            } else {
+        } else {
                 alert("Failed to update issue status");
         }
     }

@@ -149,9 +149,6 @@ def like_issue(request, issue_pk):
 
     context = get_issue_vote_context(issue, userprof)
 
-    # Determine current user vote state
-    user_vote = "upvote" if is_liked else None
-
     if request.headers.get("HX-Request"):
         html = render_to_string(
             "includes/_like_section.html",
@@ -162,12 +159,12 @@ def like_issue(request, issue_pk):
 
     return JsonResponse(
         {
-            "likes": total_upvotes,
-            "dislikes": total_downvotes,
-            "flags": total_flags,
-            "user_vote": user_vote,
-            "user_has_flagged": user_has_flagged,
-            "user_has_saved": user_has_saved,
+            "likes": context["positive_votes"],
+            "dislikes": context["negative_votes"],
+            "flags": context["flags_count"],
+            "user_vote": context["user_vote"],
+            "user_has_flagged": context["user_has_flagged"],
+            "user_has_saved": context["user_has_saved"],
         }
     )
 
@@ -202,12 +199,12 @@ def dislike_issue(request, issue_pk):
 
     return JsonResponse(
         {
-            "likes": total_upvotes,
-            "dislikes": total_downvotes,
-            "flags": total_flags,
-            "user_vote": user_vote,
-            "user_has_flagged": user_has_flagged,
-            "user_has_saved": user_has_saved,
+            "likes": context["positive_votes"],
+            "dislikes": context["negative_votes"],
+            "flags": context["flags_count"],
+            "user_vote": context["user_vote"],
+            "user_has_flagged": context["user_has_flagged"],
+            "user_has_saved": context["user_has_saved"],
         }
     )
 
@@ -240,12 +237,12 @@ def flag_issue(request, issue_pk):
     # Fallback for non-HTMX POST requests
     return JsonResponse(
         {
-            "likes": total_upvotes,
-            "dislikes": total_downvotes,
-            "flags": total_flag_votes,
-            "user_vote": user_vote,
-            "user_has_flagged": is_flagged,
-            "user_has_saved": user_has_saved,
+            "likes": context["positive_votes"],
+            "dislikes": context["negative_votes"],
+            "flags": context["flags_count"],
+            "user_vote": context["user_vote"],
+            "user_has_flagged": context["user_has_flagged"],
+            "user_has_saved": context["user_has_saved"],
         }
     )
 
