@@ -57,7 +57,7 @@ from user_agents import parse
 from blt import settings
 from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
-from website.forms import CaptchaForm, GitHubIssueForm
+from website.forms import CaptchaForm, GitHubIssueForm, IssueForm
 from website.models import (
     IP,
     Activity,
@@ -840,7 +840,7 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+    form_class = IssueForm
     template_name = "report.html"
 
     # Duplicate detection threshold - can be adjusted without code changes
