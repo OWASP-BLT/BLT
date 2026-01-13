@@ -151,7 +151,7 @@
                 // Show loading indicator during requests
                 document.body.addEventListener('htmx:beforeRequest', function(event) {
                     const target = event.detail.target;
-                    if (target && target.style) {
+                    if (target && target.style  && document.contains(target)) {
                         target.style.opacity = '0.6';
                         target.style.pointerEvents = 'none';
                     }
@@ -159,7 +159,7 @@
                 
                 document.body.addEventListener('htmx:afterRequest', function(event) {
                     const target = event.detail.target;
-                    if (target && target.style) {
+                    if (target && target.style  && document.contains(target)) {
                         target.style.opacity = '1';
                         target.style.pointerEvents = 'auto';
                     }
