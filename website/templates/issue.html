@@ -233,74 +233,116 @@
 
         if (bugReportElement && window.markdownit) {
             const md = new window.markdownit();
-            const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+            const markdownContent =
+                bugReportElement.getAttribute('data-markdown') ||
+                bugReportElement.textContent;
 
-            // First render the markdown
-            let renderedHtml = md.render(markdownContent);
-
-            // Simple approach: replace #123 but not inside <code> or <pre> tags
-            // We'll temporarily mask code blocks, replace, then unmask
-            const codeBlocks = [];
-            const codePlaceholder = `__CODE_BLOCK_${Date.now()}_`;
-
-            // Extract and replace all code/pre blocks with placeholders
-            let counter = 0;
-            // Match code blocks (inline and block)
-            renderedHtml = renderedHtml.replace(
-                /<(code|pre)[^>]*>[\s\S]*?<\/\1>/gi,
-                function (match) {
-                    codeBlocks.push(match);
-                    return `${codePlaceholder}${counter++}`;
+            /* Render markdown and sanitize */
+            const sanitizedHtml = DOMPurify.sanitize(
+                md.render(markdownContent),
+                {
+                    ALLOWED_TAGS: [
+                        'a', 'p', 'strong', 'em', 'ul', 'ol', 'li',
+                        'code', 'pre', 'blockquote', 'br',
+                        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'
+                    ],
+                    ALLOWED_ATTR: ['href', 'class']
                 }
             );
 
-            //  Transform issue references in the remaining text
-            renderedHtml = renderedHtml.replace(
-                /#(\d+)/g,
-                '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+            /* Parse sanitized HTML into DOM */
+            const template = document.createElement('template');
+            template.innerHTML = sanitizedHtml;
+
+            /* Convert #123 → links using DOM APIs */
+            const issueRegex = /#(\d+)/g;
+            const walker = document.createTreeWalker(
+                template.content,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode(node) {
+                        if (node.parentElement?.closest('code, pre')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return issueRegex.test(node.nodeValue)
+                            ? NodeFilter.FILTER_ACCEPT
+                            : NodeFilter.FILTER_REJECT;
+                    }
+                }
             );
 
-            // Restore the code blocks
-            for (let i = 0; i < codeBlocks.length; i++) {
-                renderedHtml = renderedHtml.replace(`${codePlaceholder}${i}`, codeBlocks[i]);
+            const textNodes = [];
+            while (walker.nextNode()) {
+                textNodes.push(walker.currentNode);
             }
 
-            // Update the content
-            bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
-                ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
-                ALLOWED_ATTR: ['href', 'class']
+            textNodes.forEach(textNode => {
+                const text = textNode.nodeValue;
+                const fragment = document.createDocumentFragment();
+
+                let lastIndex = 0;
+                let match;
+                issueRegex.lastIndex = 0;
+
+                while ((match = issueRegex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(
+                            document.createTextNode(text.slice(lastIndex, match.index))
+                        );
+                    }
+
+                    const link = document.createElement('a');
+                    link.href = `/issue/${match[1]}`;
+                    link.className =
+                        'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                    link.textContent = `#${match[1]}`;
+                    fragment.appendChild(link);
+
+                    lastIndex = issueRegex.lastIndex;
+                }
+
+                if (lastIndex < text.length) {
+                    fragment.appendChild(
+                        document.createTextNode(text.slice(lastIndex))
+                    );
+                }
+
+                textNode.replaceWith(fragment);
             });
+
+            bugReportElement.replaceChildren(template.content);
         }
 
-        // Also process the issue title/description for issue references
-        const issueDescriptionElement = document.querySelector('.issue-description');
+        const issueDescriptionElement =
+            document.querySelector('.issue-description');
+
         if (issueDescriptionElement) {
             const originalText = issueDescriptionElement.textContent;
             const fragment = document.createDocumentFragment();
-
             const regex = /#(\d+)/g;
+
             let lastIndex = 0;
             let match;
 
             while ((match = regex.exec(originalText)) !== null) {
-                // Add text before match
                 if (match.index > lastIndex) {
                     fragment.appendChild(
-                        document.createTextNode(originalText.slice(lastIndex, match.index))
+                        document.createTextNode(
+                            originalText.slice(lastIndex, match.index)
+                        )
                     );
                 }
 
-                // Create safe link
                 const link = document.createElement('a');
                 link.href = `/issue/${match[1]}`;
-                link.className = 'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                link.className =
+                    'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
                 link.textContent = `#${match[1]}`;
                 fragment.appendChild(link);
 
                 lastIndex = regex.lastIndex;
             }
 
-            // Add remaining text
             if (lastIndex < originalText.length) {
                 fragment.appendChild(
                     document.createTextNode(originalText.slice(lastIndex))
@@ -466,12 +508,10 @@
         });
     }
 </script> -->
-{# djlint:on #}
-<script>
-    
+    {# djlint:on #}
+    <script>
     async function resolveIssue() {
-        
-        var id = {{ object.pk }};
+        const id = {{ object.pk }};
         try {
             const response = await fetch(`/resolve/${id}/`, {
                 method: 'POST',
@@ -481,26 +521,26 @@
                 },
                 credentials: 'same-origin'
             });
-        if (response.status === 403) {
-            $.notify("Permission Denied", {
-                style: "custom",
-                className: "danger"
-            });
-        } else if (response.ok) {
-            window.location.reload();
-        } else {
+            if (response.status === 403) {
+                $.notify("Permission Denied", {
+                    style: "custom",
+                    className: "danger"
+                });
+            } else if (response.ok) {
+                window.location.reload();
+            } else {
+                $.notify("Failed to update issue status", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        } catch (err) {
+            console.error("Failed to resolve issue:", err);
             $.notify("Failed to update issue status", {
                 style: "custom",
                 className: "danger"
             });
         }
-    } catch (err) {
-        console.error("Failed to resolve issue:", err);
-        $.notify("Failed to update issue status", {
-            style: "custom",
-            className: "danger"
-        });
     }
-   }
-</script>
+    </script>
 {% endblock content %}
