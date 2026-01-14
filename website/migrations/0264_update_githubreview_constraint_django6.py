@@ -1,5 +1,4 @@
 # Generated migration for Django 6.0 compatibility - updating CheckConstraint API
-import django.db.models.deletion
 from django.db import migrations, models
 
 
@@ -18,8 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="githubreview",
             constraint=models.CheckConstraint(
-                condition=models.Q(reviewer__isnull=False)
-                | models.Q(reviewer_contributor__isnull=False),
+                condition=models.Q(reviewer__isnull=False) | models.Q(reviewer_contributor__isnull=False),
                 name="at_least_one_reviewer",
             ),
         ),
