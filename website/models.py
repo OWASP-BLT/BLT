@@ -2064,7 +2064,7 @@ class Room(models.Model):
     ROOM_TYPES = [
         ("project", "Project"),
         ("bug", "Bug"),
-        ("org", "Organization"),
+        ("organization", "Organization"),
         ("custom", "Custom"),
     ]
 
