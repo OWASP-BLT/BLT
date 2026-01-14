@@ -322,3 +322,9 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
             "resolved_at",
         ]
         read_only_fields = ["id", "created_at", "resolved_at"]
+
+    def validate_severity(self, value):
+        return value.lower()
+
+    def validate_status(self, value):
+        return value.lower()
