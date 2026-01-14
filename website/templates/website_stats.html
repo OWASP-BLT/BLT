@@ -92,7 +92,7 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for url in url_info %}
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.path }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_count }}</td>
@@ -139,7 +139,7 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for agent in user_agents %}
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-6 py-4 text-sm">{{ agent.agent }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ agent.total_count }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">{{ agent.last_request|timesince }} ago</td>
@@ -315,7 +315,7 @@ function switchTab(tabId) {
     // Update active tab button
     const activeButton = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
     activeButton.classList.remove('text-gray-500', 'border-transparent');
-    activeButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');
+    activeButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');gi
 }
     </script>
 {% endblock %}
