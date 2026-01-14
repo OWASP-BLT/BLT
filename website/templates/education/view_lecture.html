@@ -75,12 +75,15 @@
                     </iframe>
                 </div>
                 <p class="mt-2 text-blue-600 underline">
-                    <a href="{{ lecture.video_url|escape }}" target="_blank">Watch Separately</a>
+                    <a href="{{ lecture.video_url|escape }}"
+                       target="_blank"
+                       rel="noopener noreferrer">Watch Separately</a>
                 </p>
             {% elif lecture.content_type == "LIVE" %}
                 <p class="text-blue-600 font-semibold">
                     Live Session URL: <a href="{{ lecture.live_url|escape }}"
     target="_blank"
+    rel="noopener noreferrer"
     class="underline">{{ lecture.live_url|escape }}</a>
                 </p>
             {% elif lecture.content_type == "DOCUMENT" %}

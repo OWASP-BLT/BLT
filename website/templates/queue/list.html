@@ -574,6 +574,7 @@
                                                             <div class="mb-2">
                                                                 <a href="{{ item.url }}"
                                                                    target="_blank"
+                                                                   rel="noopener noreferrer"
                                                                    class="text-[#e74c3c] hover:underline">View Tweet</a>
                                                             </div>
                                                         {% endif %}
@@ -739,6 +740,7 @@
                                                 <div>
                                                     <a href="{{ item.url }}"
                                                        target="_blank"
+                                                       rel="noopener noreferrer"
                                                        class="text-[#e74c3c] hover:text-red-700 hover:underline inline-flex items-center">
                                                         <svg class="h-4 w-4 mr-1"
                                                              fill="none"
@@ -809,7 +811,7 @@
                                                     </svg>
                                                     <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-100 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">Edit Item</span>
                                                 </button>
-                                                <form method="post" class="inline" target="_blank">
+                                                <form method="post" class="inline">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="action" value="launch">
                                                     <input type="hidden" name="queue_id" value="{{ item.id }}">

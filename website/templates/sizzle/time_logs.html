@@ -82,6 +82,7 @@
                         </svg>
                         <a href="{{ active_time_log.github_issue_url }}"
                            target="_blank"
+                           rel="noopener noreferrer"
                            class="text-blue-600 hover:text-blue-800 hover:underline">
                             {{ active_time_log.github_issue_url | slice:"19:" | truncatechars:30 }}
                         </a>
@@ -95,6 +96,7 @@
                         </svg>
                         <a href="https://{{ organization_url }}"
                            target="_blank"
+                           rel="noopener noreferrer"
                            class="text-blue-600 hover:text-blue-800 hover:underline">{{ organization_url }}</a>
                     </div>
                     <div class="flex items-center">
@@ -159,6 +161,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
                                         <a href="{{ log.github_issue_url }}"
                                            target="_blank"
+                                           rel="noopener noreferrer"
                                            class="hover:underline">
                                             {{ log.github_issue_url | slice:"19:" | truncatechars:30 }}
                                         </a>
@@ -167,6 +170,7 @@
                                         {% if log.organization %}
                                             <a href="https://{{ log.organization }}"
                                                target="_blank"
+                                               rel="noopener noreferrer"
                                                class="text-blue-600 hover:underline">{{ log.organization }}</a>
                                         {% else %}
                                             <span class="text-gray-400 dark:text-gray-600">-</span>
