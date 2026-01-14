@@ -49,6 +49,9 @@ jobs:
         run: |
           python3.12 -m pip install poetry
 
+      - name: Remove old virtual environment
+        run: rm -rf .venv
+
       - name: Configure Poetry to use Python 3.12
         run: |
           poetry env use python3.12

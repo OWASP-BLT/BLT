@@ -73,10 +73,10 @@ jobs:
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-py3.12-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-poetry-py3.12-v2-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-py3.12-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-py3.12-
+            ${{ runner.os }}-poetry-py3.12-v2-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-poetry-py3.12-v2-
 
       - name: Print memory usage
         run: free -h
@@ -309,6 +309,8 @@ jobs:
           sudo chown -R $USER:$USER ~/apt-cache
       - name: Install Poetry with Python 3.12
         run: python3.12 -m pip install poetry
+      - name: Remove old virtual environment
+        run: rm -rf .venv
       - name: Configure Poetry to use Python 3.12
         run: |
           poetry env use python3.12
