@@ -1109,8 +1109,16 @@ class OwaspComplianceChecker(APIView):
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            # Check for project page link (strict hostname check)
+            owasp_links = []
+            for a in soup.find_all("a"):
+                href = a.get("href")
+                if not href:
+                    continue
+                netloc = urlparse(href).netloc.lower()
+                if netloc.endswith("owasp.org"):
+                    owasp_links.append(a)
+
             has_project_link = len(owasp_links) > 0
 
             # Check for up-to-date info
