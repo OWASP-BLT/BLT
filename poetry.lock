@@ -853,24 +853,6 @@ Django = ">=4.2"
 typing_extensions = ">=3.10.0.0"
 
 [[package]]
-name = "dj-rest-auth"
-version = "7.0.2"
-description = "Authentication and Registration in Django Rest Framework"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-files = [
-    {file = "dj_rest_auth-7.0.2.tar.gz", hash = "sha256:e0ccbca6bcde9dd68fd1d8e868fdfb9d65d60b669f381b74feac2a3e7815466c"},
-]
-
-[package.dependencies]
-Django = ">=4.2,<6.0"
-djangorestframework = ">=3.13.0"
-
-[package.extras]
-with-social = ["django-allauth[socialaccount] (>=64.0.0)"]
-
-[[package]]
 name = "django"
 version = "6.0"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
@@ -4124,4 +4106,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "d990d149a502575d61571afbc15f3ff9099cfc5457d0b2afde9b005c2ff94c5e"
+content-hash = "5c3332bb61a15219f89b754f7d80fcabd9734ca6198c31f425daff26617dadac"
