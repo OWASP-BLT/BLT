@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from itertools import chain
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
@@ -33,8 +34,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
-from itertools import chain
-
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
@@ -57,8 +56,8 @@ from website.models import (
     Points,
     Repo,
     Tag,
-    Thread,
     TeamBadge,
+    Thread,
     User,
     UserBadge,
     UserProfile,
@@ -1309,6 +1308,7 @@ def github_webhook(request):
     """
     if request.method == "POST":
         # Fail closed if secret is not configured
+        
         if not getattr(settings, "GITHUB_WEBHOOK_SECRET", None):
             logger.error("GITHUB_WEBHOOK_SECRET is not configured; refusing webhook request.")
             return JsonResponse(

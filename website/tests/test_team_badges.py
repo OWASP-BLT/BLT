@@ -2,7 +2,9 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import Badge, Team, TeamBadge
+from website.models import Badge
+from website.models import Organization as Team
+from website.models import TeamBadge
 
 
 class TeamBadgeModelTests(TestCase):
@@ -18,13 +20,14 @@ class TeamBadgeModelTests(TestCase):
         self.team = Team.objects.create(
             name="Test Team",
             description="A test team",
-            created_by=self.user
+            created=self.user
         )
 
         self.badge = Badge.objects.create(
             title="Bug Hunter",
             description="Found 10 bugs",
-            type="automatic"
+            type="automatic",
+            scope="team"
         )
 
     def test_team_badge_creation(self):
@@ -57,7 +60,7 @@ class TeamBadgeAssignmentTests(TestCase):
         self.team = Team.objects.create(
             name="Development Team",
             description="Core development team",
-            created_by=self.user
+            created=self.user
         )
 
         self.badge1 = Badge.objects.create(
@@ -69,7 +72,8 @@ class TeamBadgeAssignmentTests(TestCase):
         self.badge2 = Badge.objects.create(
             title="Team Leader",
             description="Team leadership badge",
-            type="manual"
+            type="manual",
+            scope="topuser_team"
         )
 
     def test_assign_multiple_badges_to_team(self):
@@ -95,13 +99,14 @@ class TeamBadgeViewTests(TestCase):
         self.team = Team.objects.create(
             name="Test Team",
             description="Test team description",
-            created_by=self.user
+            created=self.user
         )
 
         self.badge = Badge.objects.create(
             title="Test Badge",
             description="Test badge description",
-            type="automatic"
+            type="automatic",
+            scope="team"
         )
 
         TeamBadge.objects.create(team=self.team, badge=self.badge)

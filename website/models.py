@@ -1707,7 +1707,19 @@ class TeamBadge(models.Model):
     )
     awarded_at = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(blank=True, null=True)
-
+    class Meta:
+        constraints = [
+            # Team badge: only one per team
+            models.UniqueConstraint(
+                fields=["team", "badge"],
+                name="unique_team_badge_per_team",
+            ),
+            # User badge: only one per user per team
+            models.UniqueConstraint(
+                fields=["team", "user", "badge"],
+                name="unique_user_badge_per_team",
+            ),
+        ]
     def __str__(self):
         return f"{self.team} - {self.badge.title}"
 

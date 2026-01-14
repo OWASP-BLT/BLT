@@ -1,29 +1,30 @@
 import logging
 from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from django.utils import timezone
 
 from .models import (
     Activity,
     BaconEarning,
     Badge,
     Bid,
-    Count,
     Contribution,
+    Count,
     ForumPost,
     Hunt,
     IpReport,
     Issue,
     Organization,
     Post,
-    TimeLog,
     TeamBadge,
+    TimeLog,
     UserBadge,
     UserProfile,
 )
-from django.utils import timezone
 from .utils import analyze_contribution
 
 logger = logging.getLogger(__name__)
@@ -316,7 +317,15 @@ def get_team_activity_score(team: Organization):
     """
     Example activity = contributions + issues closed
     """
-    return get_team_contribution_count(team) + get_team_closed_issue_count(team)
+    # Compute activity score using the team's member set once to avoid
+    # re-evaluating membership for each metric (reduces queries).
+    members = get_team_members(team)
+    if not members.exists():
+        return 0
+
+    contributions_count = Contribution.objects.filter(user__in=members).count()
+    closed_count = Issue.objects.filter(closed_by__in=members, status="closed").count()
+    return contributions_count + closed_count
 
 
 def get_first_contributor(team: Organization):
@@ -329,12 +338,17 @@ def get_top_contributor(team: Organization):
     members = get_team_members(team)
     if not members.exists():
         return None
-    ranked = sorted(
-        members,
-        key=lambda u: Contribution.objects.filter(user=u).count(),
-        reverse=True
+    # Aggregate contribution counts for all members in a single query
+    agg = (
+        Contribution.objects.filter(user__in=members)
+        .values("user")
+        .annotate(cnt=Count("id"))
+        .order_by("-cnt")
     )
-    return ranked[0] if ranked else None
+    top = agg.first()
+    if not top:
+        return None
+    return User.objects.filter(id=top["user"]).first()
 
 
 def get_user_team_issue_count(user: User):
@@ -400,10 +414,57 @@ def evaluate_team_badges(team: Organization):
                 award_team_badge(team, badge, reason=f"Team has {count} total issues")
 
         elif metric == "team_top_activity_rank":
-            all_teams = Organization.objects.all()
-            ranked = sorted(all_teams, key=lambda t: get_team_activity_score(t), reverse=True)
-            top_team = ranked[0] if ranked else None
-            if top_team == team:
+            # Compute activity scores for all teams in bulk to avoid N+1 queries.
+            teams = list(Organization.objects.prefetch_related("managers").select_related("admin"))
+            if not teams:
+                revoke_team_badge(team, badge)
+                continue
+
+            # Build mapping team_id -> member user ids (using prefetched related managers)
+            team_member_ids = {}
+            all_user_ids = set()
+            for t in teams:
+                member_ids = {u.id for u in t.managers.all()}
+                if getattr(t, "admin", None):
+                    member_ids.add(t.admin.id)
+                team_member_ids[t.id] = member_ids
+                all_user_ids.update(member_ids)
+
+            if not all_user_ids:
+                revoke_team_badge(team, badge)
+                continue
+
+            # Get contribution counts per user in one query
+            contribs = (
+                Contribution.objects.filter(user__id__in=all_user_ids)
+                .values("user")
+                .annotate(cnt=Count("id"))
+            )
+            contrib_map = {item["user"]: item["cnt"] for item in contribs}
+
+            # Get closed issue counts per user in one query
+            closed = (
+                Issue.objects.filter(closed_by__id__in=all_user_ids, status="closed")
+                .values("closed_by")
+                .annotate(cnt=Count("id"))
+            )
+            closed_map = {item["closed_by"]: item["cnt"] for item in closed}
+
+            # Compute scores per team by summing per-user metrics
+            team_scores = {}
+            for t in teams:
+                member_ids = team_member_ids.get(t.id, set())
+                score = sum(contrib_map.get(uid, 0) + closed_map.get(uid, 0) for uid in member_ids)
+                team_scores[t.id] = score
+
+            # Determine top team
+            if not team_scores:
+                revoke_team_badge(team, badge)
+                continue
+
+            top_team_id = max(team_scores.items(), key=lambda kv: kv[1])[0]
+            top_team = next((t for t in teams if t.id == top_team_id), None)
+            if top_team and top_team.id == team.id:
                 award_team_badge(team, badge, reason="Top activity team")
             else:
                 revoke_team_badge(team, badge)
@@ -414,9 +475,33 @@ def evaluate_user_team_badges(team: Organization):
         return
     badges = Badge.objects.filter(type="automatic", scope="topuser_team")
     members = get_team_members(team)
+    # Precompute member lists and per-user metrics in bulk to avoid per-member queries
+    member_list = list(members)
+    member_ids = {m.id for m in member_list}
+    if member_ids:
+        user_contribs_qs = (
+            Contribution.objects.filter(user__id__in=member_ids)
+            .values("user")
+            .annotate(cnt=Count("id"))
+        )
+        user_contrib_map = {item["user"]: item["cnt"] for item in user_contribs_qs}
+
+        user_closed_qs = (
+            Issue.objects.filter(closed_by__id__in=member_ids, status="closed")
+            .values("closed_by")
+            .annotate(cnt=Count("id"))
+        )
+        user_closed_map = {item["closed_by"]: item["cnt"] for item in user_closed_qs}
+    else:
+        user_contrib_map = {}
+        user_closed_map = {}
     for badge in badges:
         criteria = badge.criteria or {}
         metric = criteria.get("metric")
+        try:
+                    threshold = int(threshold)
+        except (TypeError, ValueError):
+                    continue
         threshold = criteria.get("threshold")
         rank = criteria.get("rank")
 
@@ -431,15 +516,18 @@ def evaluate_user_team_badges(team: Organization):
                 award_team_badge(team, badge, user=first_user, reason="First contributor in team")
 
         elif metric == "user_team_issues":
-            for member in members:
-                count = get_user_team_issue_count(member)
+            # Use precomputed closed-issue counts per user
+            for member in member_list:
+                count = user_closed_map.get(member.id, 0)
+                
                 if count >= threshold:
                     award_team_badge(team, badge, user=member,
                                      reason=f"{member.username} closed {count} issues")
 
         elif metric == "user_team_contributions":
-            for member in members:
-                count = get_user_team_contribution_count(member)
+            # Use precomputed contribution counts per user
+            for member in member_list:
+                count = user_contrib_map.get(member.id, 0)
                 if count >= threshold:
                     award_team_badge(team, badge, user=member,
                                      reason=f"{member.username} contributed {count} times")

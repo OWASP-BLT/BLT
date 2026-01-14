@@ -119,14 +119,12 @@
                           {% if member.badges %}
 <div class="flex flex-wrap gap-2 justify-center mb-3">
     {% for badge in member.badges %}
-        <button
-    class="p-1 rounded-xl bg-gray-100 dark:bg-gray-700 hover:scale-105 transition"
-    onclick="openBadgeModal(
-        `{{ badge.badge.title|escapejs }}`,
-        `{% if badge.badge.icon %}{{ badge.badge.icon.url }}{% endif %}`,
-        `{% if badge.awarded_at %}{{ badge.awarded_at|date:'M d, Y' }}{% endif %}`,
-        `{{ badge.reason|default:''|escapejs }}`
-    )"
+         <button
+    class="p-1 rounded-xl bg-gray-100 dark:bg-gray-700 hover:scale-105 transition badge-modal-trigger"
+    data-title="{{ badge.badge.title }}"
+    data-icon="{% if badge.badge.icon %}{{ badge.badge.icon.url }}{% endif %}"
+    data-date="{% if badge.awarded_at %}{{ badge.awarded_at|date:'M d, Y' }}{% endif %}"
+   data-reason="{{ badge.reason|default:'' }}"
 >
 
             {% if badge.badge.icon %}
@@ -152,10 +150,14 @@
 
   <div class="hidden absolute left-0 mt-1 w-full bg-white dark:bg-gray-800 rounded shadow-lg border border-red-500 z-20">
       {% for badge in available_badges %}
-          <a href="{% url 'assign_team_member_badge' member.id %}?badge={{ badge.id }}"
-             class="block px-3 py-2 text-gray-900 dark:text-white hover:bg-red-50 dark:hover:bg-red-900/30">
-             {{ badge.title }}
-          </a>
+           <form method="post" action="{% url 'assign_team_member_badge' member.id %}" class="inline">
+           {% csrf_token %}
+           <input type="hidden" name="badge" value="{{ badge.id }}">
+           <button type="submit"
+              class="block w-full text-left px-3 py-2 text-gray-900 dark:text-white hover:bg-red-50 dark:hover:bg-red-900/30">
+               {{ badge.title }}
+            </button>
+       </form>
       {% endfor %}
   </div>
 </div>
@@ -689,13 +691,6 @@
         document.getElementById('addMemberModal').style.display = "none";
     }
 
-    // Close the modal when clicking outside of it
-    window.onclick = function (event) {
-        const modal = document.getElementById('addMemberModal');
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    }
 
     // Update the addMemberForm submission handler
     document.getElementById('addMemberForm').onsubmit = function (event) {
@@ -893,6 +888,16 @@
 function closeBadgeModal() {
     document.getElementById("badgeModal").classList.add("hidden");
 }
+document.querySelectorAll('.badge-modal-trigger').forEach(btn => {
+    btn.addEventListener('click', function() {
+        openBadgeModal(
+            this.dataset.title,
+            this.dataset.icon,
+            this.dataset.date,
+            this.dataset.reason
+        );
+    });
+});
 
 </script>
 {% endblock content %}

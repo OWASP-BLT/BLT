@@ -1,8 +1,6 @@
 import json
 import logging
-
 from collections import defaultdict
-
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,16 +9,14 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError
 from django.db.models import Count
 from django.http import JsonResponse
-from django.shortcuts import redirect, render, get_object_or_404
-
-from ..models import Badge, TeamBadge, User
+from django.shortcuts import get_object_or_404, redirect, render
 
 # Create your views here.
 from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile, TeamBadge
+from website.models import Badge, Challenge, JoinRequest, Kudos, Organization, TeamBadge, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -382,7 +378,7 @@ def assign_team_member_badge(request, user_id):
         return redirect("team_overview")
 
     # -------- Handle ?badge= --------
-    badge_id = request.GET.get("badge")
+    badge_id = request.POST.get("badge")
     if not badge_id:
         messages.error(request, "No badge selected.")
         return redirect("team_overview")

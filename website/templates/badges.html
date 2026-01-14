@@ -28,13 +28,14 @@ Discover and earn various badges as you contribute and achieve milestones on the
             class="bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-100 hover:shadow-4xl hover:scale-102 hover:-translate-y-2 relative">
             <a href="{% url 'badge_user_list' badge_id=badge.id %}" class="absolute top-0 left-0 w-full z-10">
                 <div class="absolute top-0 left-0 w-full h-2 bg-purple-600"></div>
-               {% if badge.user_count %}
+                {% if badge.user_count == 0 %}
+                        No users
+                {% elif badge.user_count %}
                 <div
                     class="absolute top-2 p-5 bg-purple-600 text-white text-md font-medium py-1.5 shadow-lg cursor-pointer">
                     <span class="text-white">
-                        {% if badge.user_count == 0 %}
-                        No users
-                        {% elif badge.user_count == 1 %}
+                       
+                        {% if badge.user_count == 1 %}
                         1 user
                         {% else %}
                         {{ badge.user_count }} users
