@@ -169,3 +169,39 @@ class BountyPayoutTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_legacy_org_fallback(self):
+        """Test fallback to organization matching by name when github_org is not set."""
+        # Create legacy organization without github_org
+        legacy_org = Organization.objects.create(name="LegacyOrg", url="https://github.com/LegacyOrg")
+        legacy_repo = Repo.objects.create(
+            name="LegacyRepo", organization=legacy_org, repo_url="https://github.com/LegacyOrg/LegacyRepo"
+        )
+        GitHubIssue.objects.create(
+            issue_id=999,
+            title="Legacy Issue",
+            state="open",
+            url="https://github.com/LegacyOrg/LegacyRepo/issues/999",
+            has_dollar_tag=True,
+            repo=legacy_repo,
+        )
+
+        payload = {
+            "issue_number": 999,
+            "repo": "LegacyRepo",
+            "owner": "LegacyOrg",  # Matches name but github_org is null
+            "contributor_username": "legacyuser",
+            "pr_number": 789,
+            "bounty_amount": 3000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
