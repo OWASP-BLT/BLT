@@ -2,15 +2,17 @@ import json
 import logging
 import re
 from collections import defaultdict
+from functools import wraps
 
 from django.core.cache import cache
 from django.db.models import Count, FloatField, Q, Value
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render
+
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Repo
 from website.utils import fetch_github_user_data
-from functools import wraps
+
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ MIN_LANGUAGE_PERCENTAGE = 0.05
 MAX_REQUEST_SIZE = 1024 * 10  # 10KB
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
 
+
 def _client_ip(request):
     # Trust X-Forwarded-For if you’re behind a proxy/load balancer that sets it
     xff = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -28,12 +31,14 @@ def _client_ip(request):
         return xff.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR", "unknown")
 
+
 def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
     """
     Fixed-window IP+path limiter using Django cache.
     - No external deps, minimal overhead.
     - In production, use a shared cache (Redis/Memcached) so all workers share limits.
     """
+
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped(request, *args, **kwargs):
@@ -75,14 +80,20 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
             except Exception:
                 pass
             return response
+
         return _wrapped
+
     return decorator
+
+
 # --- end limiter ---
+
 
 def get_cache_key(username):
     # Sanitize and hash username for safe cache key
-    safe_username = re.sub(r'[^a-zA-Z0-9_-]', '', username)
+    safe_username = re.sub(r"[^a-zA-Z0-9_-]", "", username)
     return f"github_data_{safe_username}"
+
 
 # Helper function to tokenize text
 def tokenize(text):
@@ -120,13 +131,14 @@ def ossh_results(request):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
+
 @rate_limit(max_requests=10, window_sec=60, methods=("POST",))
 def get_github_data(request):
     if request.method == "POST":
         try:
             if len(request.body) > MAX_REQUEST_SIZE:
                 return JsonResponse({"error": "Request too large"}, status=413)
-            
+
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
@@ -245,6 +257,7 @@ def repo_recommender(user_tags, language_weights):
     recommended_repos.sort(key=lambda x: x["relevance_score"], reverse=True)
     return recommended_repos[:5]
 
+
 @rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_repos(request):
     if request.method == "POST":
@@ -270,7 +283,7 @@ def get_recommended_repos(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_repos: {e}")  
+            logger.error(f"Error in get_recommended_repos: {e}")
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -323,6 +336,7 @@ def community_recommender(user_tags, language_weights):
     recommended_communities.sort(key=lambda x: x["relevance_score"], reverse=True)
     return recommended_communities
 
+
 @rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_communities(request):
     if request.method == "POST":
@@ -367,7 +381,9 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
         tag_score = sum(tag_weight_map.get(tag, 0) for tag in channel_tag_names)
 
         # Calculate language score from channel's metadata (if it has primary_language)
-        primary_language = channel.metadata.get("primary_language", "") if hasattr(channel, "metadata") and channel.metadata else ""
+        primary_language = (
+            channel.metadata.get("primary_language", "") if hasattr(channel, "metadata") and channel.metadata else ""
+        )
         language_score = language_weights.get(primary_language, 0)
 
         relevance_score = tag_score + language_score
@@ -396,6 +412,7 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
 
     recommended_channels.sort(key=lambda x: x["relevance_score"], reverse=True)
     return recommended_channels[:top_n]
+
 
 @rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_discussion_channels(request):
@@ -474,6 +491,7 @@ def article_recommender(user_tags, language_weights, top_n=5):
             )
 
     return sorted(recommended_articles, key=lambda x: x["relevance_score"], reverse=True)[:top_n]
+
 
 @rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_articles(request):
