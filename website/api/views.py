@@ -1092,8 +1092,17 @@ class OwaspComplianceChecker(APIView):
 
     def check_website_compliance(self, url):
         """Check website-related compliance criteria"""
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check for OWASP mention
@@ -1111,14 +1120,14 @@ class OwaspComplianceChecker(APIView):
                 "has_owasp_mention": has_owasp_mention,
                 "has_project_link": has_project_link,
                 "has_dates": has_dates,
-                "details": {"url_checked": url, "recommendations": []},
+                "details": {"url_checked": safe_url, "recommendations": []},
             }
         except Exception as e:
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": url, "error": str(e)},
+                "details": {"url_checked": safe_url, "error": str(e)},
             }
 
     def check_vendor_neutrality(self, url):
