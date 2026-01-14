@@ -1320,6 +1320,13 @@ class SocialLoginView(APIView):
             # Connect this social account to user
             ret = complete_social_login(request, login)
 
+            # If complete_social_login returns an HttpResponse, it's a redirect or error
+            # we should respect (e.g., email verification required)
+            if ret:
+                # For API views, we convert redirects to JSON responses
+                if hasattr(ret, "status_code") and ret.status_code >= 400:
+                    return Response({"error": "Authentication failed"}, status=ret.status_code)
+
             # Get or create auth token for the user
             if login.user:
                 token, created = Token.objects.get_or_create(user=login.user)
@@ -3056,8 +3063,8 @@ class PasswordResetConfirmView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["uidb64"] = kwargs.get("uidb64")
-        context["token"] = kwargs.get("token")
+        context["uidb64"] = self.kwargs.get("uidb64")
+        context["token"] = self.kwargs.get("token")
         return context
 
 
