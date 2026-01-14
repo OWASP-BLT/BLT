@@ -95,31 +95,50 @@ jobs:
           CONTRIBUTOR_USERNAME: ${{ steps.check-issues.outputs.contributor-username }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://blt.owasp.org' }}
         uses: actions/github-script@v6.1.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const response = await fetch(`${process.env.API_BASE_URL}/bounty_payout/`, {
+            const https = require('https');
+            const url = new URL(`${process.env.API_BASE_URL}/bounty_payout/`);
+            
+            const data = JSON.stringify({
+              issue_number: parseInt(process.env.ISSUE_NUMBER),
+              repo: context.repo.repo,
+              owner: context.repo.owner,
+              bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
+              contributor_username: process.env.CONTRIBUTOR_USERNAME,
+              pr_number: parseInt(process.env.PR_NUMBER)
+            });
+
+            const options = {
+              hostname: url.hostname,
+              port: url.port || 443,
+              path: url.pathname,
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                'Content-Length': data.length,
                 'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
-              },
-              body: JSON.stringify({
-                issue_number: parseInt(process.env.ISSUE_NUMBER),
-                repo: context.repo.repo,
-                owner: context.repo.owner,
-                bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
-                contributor_username: process.env.CONTRIBUTOR_USERNAME,
-                pr_number: parseInt(process.env.PR_NUMBER)
-              })
+              }
+            };
+
+            const req = https.request(options, (res) => {
+              let body = '';
+              res.on('data', chunk => body += chunk);
+              res.on('end', () => {
+                console.log(`Status: ${res.statusCode}`);
+                console.log(`Response: ${body}`);
+                if (res.statusCode >= 400) {
+                  throw new Error(`Request failed: ${res.statusCode}`);
+                }
+              });
             });
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Bounty payout request failed: ${response.status} - ${errorText}`);
-            }
+            req.on('error', (e) => {
+              throw new Error(`Request error: ${e.message}`);
+            });
 
-            const result = await response.json();
-            console.log('Bounty payout request successful:', result);
+            req.write(data);
+            req.end();
