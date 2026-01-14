@@ -61,7 +61,8 @@ def bounty_payout(request):
         contributor_username = data["contributor_username"]
 
         # Look up repository and issue
-        repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
+        # Use organization__github_org since webhook provides GitHub org name, not internal name
+        repo = Repo.objects.filter(name=repo_name, organization__github_org=owner_name).first()
         if not repo:
             logger.error(f"Repo not found: {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)

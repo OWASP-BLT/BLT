@@ -119,26 +119,30 @@ jobs:
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': data.length,
+                'Content-Length': Buffer.byteLength(data),
                 'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
               }
             };
 
-            const req = https.request(options, (res) => {
-              let body = '';
-              res.on('data', chunk => body += chunk);
-              res.on('end', () => {
-                console.log(`Status: ${res.statusCode}`);
-                console.log(`Response: ${body}`);
-                if (res.statusCode >= 400) {
-                  throw new Error(`Request failed: ${res.statusCode}`);
-                }
+            await new Promise((resolve, reject) => {
+              const req = https.request(options, (res) => {
+                let body = '';
+                res.on('data', chunk => body += chunk);
+                res.on('end', () => {
+                  console.log(`Status: ${res.statusCode}`);
+                  console.log(`Response: ${body}`);
+                  if (res.statusCode >= 400) {
+                    reject(new Error(`Request failed: ${res.statusCode} - ${body}`));
+                  } else {
+                    resolve(body);
+                  }
+                });
               });
-            });
 
-            req.on('error', (e) => {
-              throw new Error(`Request error: ${e.message}`);
-            });
+              req.on('error', (e) => {
+                reject(new Error(`Request error: ${e.message}`));
+              });
 
-            req.write(data);
-            req.end();
+              req.write(data);
+              req.end();
+            });

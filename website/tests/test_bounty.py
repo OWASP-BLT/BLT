@@ -14,8 +14,10 @@ class BountyPayoutTestCase(TestCase):
         """Set up test data."""
         self.client = Client()
 
-        # Create organization
-        self.org = Organization.objects.create(name="TestOrg", url="https://github.com/TestOrg")
+        # Create organization with github_org set (used for repo lookup)
+        self.org = Organization.objects.create(
+            name="TestOrg", url="https://github.com/TestOrg", github_org="TestOrg"
+        )
 
         # Create repository
         self.repo = Repo.objects.create(
