@@ -8,15 +8,76 @@ from django.db.models import Count, FloatField, Q, Value
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render
-from django_ratelimit.decorators import ratelimit
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Repo
 from website.utils import fetch_github_user_data
-
+from functools import wraps
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
 
 logger = logging.getLogger(__name__)
 
+CACHE_TIMEOUT = 3600  # 1 hour
+MEMBER_COUNT_WEIGHT_DIVISOR = 1000
+MIN_LANGUAGE_PERCENTAGE = 0.05
+MAX_REQUEST_SIZE = 1024 * 10  # 10KB
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
+
+def _client_ip(request):
+    # Trust X-Forwarded-For if you’re behind a proxy/load balancer that sets it
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
+    """
+    Fixed-window IP+path limiter using Django cache.
+    - No external deps, minimal overhead.
+    - In production, use a shared cache (Redis/Memcached) so all workers share limits.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped(request, *args, **kwargs):
+            if methods and request.method not in methods:
+                return view_func(request, *args, **kwargs)
+
+            key = f"rl:{_client_ip(request)}:{request.path}"
+            try:
+                # Create counter with TTL if not present
+                created = cache.add(key, 1, timeout=window_sec)
+                count = 1 if created else cache.incr(key)
+            except Exception:
+                # Fallback if backend doesn’t support incr atomically
+                current = cache.get(key, 0)
+                count = current + 1
+                cache.set(key, count, timeout=window_sec)
+
+            if count > max_requests:
+                resp = JsonResponse({"error": "Too many requests"}, status=429)
+                # Conservative hint; window remaining isn’t tracked precisely without extra keys.
+                resp["Retry-After"] = str(window_sec)
+                resp["X-RateLimit-Limit"] = str(max_requests)
+                resp["X-RateLimit-Remaining"] = "0"
+                return resp
+
+            # Optional informational headers for successful requests
+            remaining = max(0, max_requests - count)
+            try:
+                request_headers = getattr(request, "_headers", None)  # Django <2 compat
+            except Exception:
+                request_headers = None
+            # Set on response instead (safer, shown below) if you prefer.
+
+            response = view_func(request, *args, **kwargs)
+            # Add headers to success responses too (optional)
+            try:
+                response["X-RateLimit-Limit"] = str(max_requests)
+                response["X-RateLimit-Remaining"] = str(remaining)
+            except Exception:
+                pass
+            return response
+        return _wrapped
+    return decorator
+# --- end limiter ---
 
 def get_cache_key(username):
     # Sanitize and hash username for safe cache key
@@ -59,10 +120,13 @@ def ossh_results(request):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
-
+@rate_limit(max_requests=10, window_sec=60, methods=("POST",))
 def get_github_data(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
+            
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
@@ -85,7 +149,7 @@ def get_github_data(request):
                 user_tags, language_weights = preprocess_user_data(user_data)
                 user_data["user_tags"] = user_tags
                 user_data["language_weights"] = language_weights
-                cache.set(f"github_data_{github_username}", user_data, timeout=3600)  # Cache for 1 hour
+                cache.set(f"github_data_{github_username}", user_data, timeout=CACHE_TIMEOUT)  # Cache for 1 hour
 
             return render(request, "ossh/includes/github_stats.html", {"user_data": user_data})
 
@@ -129,7 +193,7 @@ def preprocess_user_data(user_data):
         language_weights = {
             lang: (bytes_count / total_bytes * 100)
             for lang, bytes_count in user_data["top_languages"]
-            if (bytes_count / total_bytes * 100) >= 0.05
+            if (bytes_count / total_bytes * 100) >= MIN_LANGUAGE_PERCENTAGE
         }
 
     logger.debug(f"User tags: {user_tags}")
@@ -181,10 +245,12 @@ def repo_recommender(user_tags, language_weights):
     recommended_repos.sort(key=lambda x: x["relevance_score"], reverse=True)
     return recommended_repos[:5]
 
-
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_repos(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
@@ -204,7 +270,7 @@ def get_recommended_repos(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_repos: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_repos: {e}")  
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -257,10 +323,12 @@ def community_recommender(user_tags, language_weights):
     recommended_communities.sort(key=lambda x: x["relevance_score"], reverse=True)
     return recommended_communities
 
-
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_communities(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
@@ -290,18 +358,19 @@ def get_recommended_communities(request):
 
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
     matching_channels = OsshDiscussionChannel.objects.filter(Q(tags__name__in=[tag[0] for tag in user_tags])).distinct()
-
+    tag_weight_map = dict(user_tags)
     recommended_channels = []
     for channel in matching_channels:
-        tag_matches = sum(1 for tag in user_tags if tag[0] in channel.tags.values_list("name", flat=True))
+        channel_tag_names = {tag.name for tag in channel.tags.all()}
 
-        language_weight = sum(
-            language_weights.get(tag[1], 0)
-            for tag in user_tags
-            if tag[0] in channel.tags.values_list("name", flat=True)
-        )
+        # Calculate weighted tag score based on user's tag weights
+        tag_score = sum(tag_weight_map.get(tag, 0) for tag in channel_tag_names)
 
-        relevance_score = tag_matches + language_weight + (channel.member_count // 1000)
+        # Calculate language score from channel's metadata (if it has primary_language)
+        primary_language = channel.metadata.get("primary_language", "") if hasattr(channel, "metadata") and channel.metadata else ""
+        language_score = language_weights.get(primary_language, 0)
+
+        relevance_score = tag_score + language_score
 
         if relevance_score > 0:
             matching_tags = [tag.name for tag in channel.tags.all() if tag.name in dict(user_tags)]
@@ -328,10 +397,12 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
     recommended_channels.sort(key=lambda x: x["relevance_score"], reverse=True)
     return recommended_channels[:top_n]
 
-
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_discussion_channels(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
@@ -404,10 +475,12 @@ def article_recommender(user_tags, language_weights, top_n=5):
 
     return sorted(recommended_articles, key=lambda x: x["relevance_score"], reverse=True)[:top_n]
 
-
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_articles(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
