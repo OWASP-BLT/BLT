@@ -63,6 +63,94 @@ class DomainViewTests(TestCase):
         self.assertContains(response, self.closed_issue.description)
 
 
+class OrganizationSwitcherTests(TestCase):
+    def setUp(self):
+        # Create test user
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+
+        # Create first organization with user as admin
+        self.org1 = Organization.objects.create(
+            name="Organization 1",
+            description="First org",
+            slug="org-1",
+            url="https://org1.example.com",
+            admin=self.user,
+        )
+
+        # Create second organization with user as manager
+        self.org2 = Organization.objects.create(
+            name="Organization 2",
+            description="Second org",
+            slug="org-2",
+            url="https://org2.example.com",
+        )
+        self.org2.managers.add(self.user)
+
+    def test_organization_switcher_appears_with_multiple_orgs(self):
+        """Test that organization switcher appears when user has multiple organizations"""
+        self.client.login(username="testuser", password="testpass123")
+        url = reverse("organization_analytics", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+
+        # Check that organization switcher is present
+        self.assertContains(response, "organization-switcher")
+        # Check that both organizations are in the dropdown
+        self.assertContains(response, self.org1.name)
+        self.assertContains(response, self.org2.name)
+
+    def test_organization_switcher_not_shown_with_single_org(self):
+        """Test that organization switcher is not shown when user has only one organization"""
+        # Create a new user with only one organization
+        single_org_user = User.objects.create_user(
+            username="singleorguser", password="testpass123", email="single@example.com"
+        )
+        single_org = Organization.objects.create(
+            name="Single Organization",
+            description="Only org",
+            slug="single-org",
+            url="https://single.example.com",
+            admin=single_org_user,
+        )
+
+        self.client.login(username="singleorguser", password="testpass123")
+        url = reverse("organization_analytics", kwargs={"id": single_org.id})
+        response = self.client.get(url)
+
+        # Switcher should not be present
+        self.assertNotContains(response, "organization-switcher")
+        # But organization name should still be shown
+        self.assertContains(response, single_org.name)
+
+    def test_organization_context_in_all_dashboard_views(self):
+        """Test that organizations context is passed to all dashboard views"""
+        self.client.login(username="testuser", password="testpass123")
+
+        # Test analytics view
+        url = reverse("organization_analytics", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("organizations", response.context)
+
+        # Test team overview view
+        url = reverse("organization_team_overview", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("organizations", response.context)
+
+        # Test bugs view
+        url = reverse("organization_manage_bugs", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("organizations", response.context)
+
+        # Test roles view
+        url = reverse("organization_manage_roles", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("organizations", response.context)
+
+
 class BountyPayoutsViewTests(TestCase):
     def setUp(self):
         self.client = Client()
