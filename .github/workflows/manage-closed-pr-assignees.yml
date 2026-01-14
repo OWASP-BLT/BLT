@@ -6,7 +6,7 @@ on:
   pull_request_target:
     types: [closed, opened, reopened]
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */6 * * *'  # Every 6 hours
   workflow_dispatch:
 
 permissions:
@@ -96,10 +96,10 @@ jobs:
                     }
                   }
                 }
-                return { hasOpen: false };
+                return { hasOpen: false, error: false };
               } catch (e) {
                 core.warning(`Failed to check open PRs for issue #${issueNumber}: ${e.message}`);
-                return { hasOpen: false };
+                return { hasOpen: false, error: true };
               }
             }
             
@@ -211,12 +211,20 @@ jobs:
                     continue;
                   }
                   
-                  // Remove label
-                  await github.rest.issues.removeLabel({
-                    owner, repo,
-                    issue_number: issueNumber,
-                    name: LABEL_NAME
-                  });
+                  // Remove label (handle race condition if label already removed)
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner, repo,
+                      issue_number: issueNumber,
+                      name: LABEL_NAME
+                    });
+                  } catch (labelError) {
+                    // Ignore 404 errors (label already removed)
+                    if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                      throw labelError;
+                    }
+                    core.info(`  Label already removed from issue #${issueNumber}`);
+                  }
                   
                   // Find and delete warning comment
                   const comments = await github.rest.issues.listComments({
@@ -277,7 +285,14 @@ jobs:
                   const warningComment = comments.data.find(c => c.body?.includes(COMMENT_MARKER));
                   if (!warningComment) {
                     core.warning(`  No warning comment found, removing label`);
-                    await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                    try {
+                      await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                    } catch (labelError) {
+                      if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                        throw labelError;
+                      }
+                      core.info(`  Label already removed`);
+                    }
                     continue;
                   }
                   
@@ -293,11 +308,24 @@ jobs:
                   }
                   
                   // Check if a new open PR exists
-                  const { hasOpen, prNumber } = await hasOpenPR(issue.number);
+                  const { hasOpen, prNumber, error } = await hasOpenPR(issue.number);
+                  
+                  // If API error occurred, skip this issue to avoid false unassignment
+                  if (error) {
+                    core.warning(`  API error checking for open PRs, skipping to be safe`);
+                    continue;
+                  }
                   
                   if (hasOpen) {
                     core.info(`  Found open PR #${prNumber}, removing label`);
-                    await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                    try {
+                      await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                    } catch (labelError) {
+                      if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                        throw labelError;
+                      }
+                      core.info(`  Label already removed`);
+                    }
                     await github.rest.issues.deleteComment({ owner, repo, comment_id: warningComment.id });
                     await github.rest.issues.createComment({
                       owner, repo,
@@ -322,7 +350,14 @@ jobs:
                   }
                   
                   // Remove label and warning comment
-                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                  try {
+                    await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                  } catch (labelError) {
+                    if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                      throw labelError;
+                    }
+                    core.info(`  Label already removed`);
+                  }
                   await github.rest.issues.deleteComment({ owner, repo, comment_id: warningComment.id });
                   
                   // Post final comment
