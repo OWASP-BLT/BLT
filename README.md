@@ -104,6 +104,27 @@ pip install poetry
 poetry shell
 poetry install
 
+
+#### Beginner-Friendly Non-Docker Setup (Codespaces for Windows Beginners)
+
+Docker/virtualization issues on Windows? Use Poetry + SQLite in GitHub Codespaces (free cloud VS Code—no local compilation/virtualization problems!).
+
+1. Create Codespace on main branch.
+2. `cp .env.example .env`
+3. `poetry install` (add `poetry run pip install psutil` if errors)
+4. Edit `.env`:
+   - `DATABASE_URL=sqlite:///db.sqlite3`
+   - Add `SECRET_KEY=bengaluru2026-sharanyaa-random!@#`
+   - Comment Postgres lines with `#`
+   - Dummy: `OPENAI_API_KEY=dummy`
+   - Keep `DEBUG=True`
+5. `poetry run python manage.py migrate`
+6. `poetry run python manage.py createsuperuser`
+7. Run on free port: `poetry run python manage.py runserver 0.0.0.0:8001`
+8. Open port 8001 in Ports tab.
+
+Tested by complete beginner Sharanyaa from Bengaluru—app running perfectly in Codespaces on January 14, 2026! 🚀
+
 # Set up database
 python manage.py migrate
 python manage.py loaddata website/fixtures/initial_data.json
