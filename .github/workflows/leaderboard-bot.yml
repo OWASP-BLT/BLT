@@ -96,7 +96,7 @@ jobs:
             // GraphQL query to fetch ALL recent PRs with their reviews (for counting reviews on any PR)
             const allPRsQuery = `
               query($owner: String!, $repo: String!, $after: String) {
-                repository(owner: $owner, name: $repo) {
+                repository(owner: $onew, name: $repo) {
                   pullRequests(first: ${PER_PAGE}, orderBy: {field: UPDATED_AT, direction: DESC}, after: $after) {
                     nodes {
                       number
@@ -145,20 +145,19 @@ jobs:
 
                 const prs = result.repository.pullRequests;
 
-                // Filter PRs to only include those created and merged in the current month
+                // Filter PRs to only include those merged in the current month
                 const monthPRs = prs.nodes.filter(pr => {
-                  const createdAt = new Date(pr.createdAt);
                   const mergedAt = pr.mergedAt ? new Date(pr.mergedAt) : null;
-                  return createdAt >= startOfMonth && createdAt <= endOfMonth && mergedAt;
+                  return mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
                 });
 
                 allPRs = allPRs.concat(monthPRs);
 
-                // Stop if we've gone past the start of the month (PRs are ordered DESC by created date)
+                // Stop if we've gone past the start of the month (PRs are ordered DESC by merged date)
                 if (prs.nodes.length > 0) {
                   const oldestPR = prs.nodes[prs.nodes.length - 1];
-                  const oldestDate = new Date(oldestPR.createdAt);
-                  if (oldestDate < startOfMonth) {
+                  const oldestMergedAt = oldestPR.mergedAt ? new Date(oldestPR.mergedAt) : null;
+                  if (oldestMergedAt && oldestMergedAt < startOfMonth) {
                     core.info(`Stopping PR pagination - reached PRs before ${startOfMonth.toISOString()}`);
                     break;
                   }
@@ -268,7 +267,7 @@ jobs:
               }
             }
 
-            core.info(`Found ${allPRs.length} PRs created and merged this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
+            core.info(`Found ${allPRs.length} PRs merged this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
 
             // Calculate scores for each user
             const userStats = {};
@@ -371,7 +370,7 @@ jobs:
               // Show current user
               const currentUser = sortedUsers[authorIndex];
               const currentMedal = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
-              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **@${currentUser.login}** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
+              commentBody += `| ${medal} **#${authorIndex + 1}** | **@${currentUser.login}** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
 
               // Show user below (if exists)
               if (authorIndex < sortedUsers.length - 1) {
