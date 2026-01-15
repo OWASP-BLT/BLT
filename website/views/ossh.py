@@ -54,8 +54,12 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
 
                 data = cache.get(key)
                 now = time.time()
-
-                if data is None:
+                # Type check before using .get()
+                if not isinstance(data, dict):
+                    data = {"count": 1, "window_start": now}
+                    cache.set(key, data, timeout=window_sec)
+                    count = 1
+                elif data is None:
                     # First request: initialize window
                     data = {"count": 1, "window_start": now}
                     cache.set(key, data, timeout=window_sec)
@@ -92,8 +96,12 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
             try:
                 response["X-RateLimit-Limit"] = str(max_requests)
                 response["X-RateLimit-Remaining"] = str(remaining)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug(
+                    "Failed to set rate limit headers on response: %s",
+                    exc,
+                    exc_info=True,
+                )
 
             return response
 
@@ -107,7 +115,7 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
 
 def get_cache_key(username):
     # Sanitize username for safe cache key
-    safe_username = re.sub(r"[^a-zA-Z0-9_-]", "", username)
+    safe_username = re.sub(r"[^a-zA-Z0-9_-]", "", username).lower()
     return f"github_data_{safe_username}"
 
 
@@ -148,6 +156,8 @@ def ossh_results(request):
 
         if not github_username:
             return JsonResponse({"error": "GitHub username is required"}, status=400)
+        if not is_valid_github_username(github_username):
+            return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
         context = {"username": github_username}
         return render(request, template, context)
@@ -316,6 +326,7 @@ def get_recommended_repos(request):
 
 def community_recommender(user_tags, language_weights):
     tag_names = [tag for tag, _ in user_tags]
+    tag_weight_map = dict(user_tags)
     language_list = list(language_weights.keys())
 
     communities = (
@@ -324,20 +335,18 @@ def community_recommender(user_tags, language_weights):
         .prefetch_related("tags")
     )
 
-    communities = communities.annotate(
-        tag_score=Coalesce(Count("tags", filter=Q(tags__name__in=tag_names)), Value(0), output_field=FloatField()),
-        language_score=Value(0, output_field=FloatField()),
-    )
-
     recommended_communities = []
     for community in communities:
-        tag_score = community.tag_score
+        # ✅ FIX: Use weighted sum instead of counting
+        tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in community.tags.all())
+
+        # OsshCommunity DOES have metadata field, so language scoring is valid
         language_score = language_weights.get(community.metadata.get("primary_language", ""), 0)
 
         relevance_score = tag_score + language_score
 
         if relevance_score > 0:
-            matching_tags = [tag.name for tag in community.tags.all() if tag.name in dict(user_tags)]
+            matching_tags = [tag.name for tag in community.tags.all() if tag.name in tag_weight_map]
             matching_languages = (
                 [community.metadata.get("primary_language")]
                 if community.metadata.get("primary_language") in language_weights
@@ -478,36 +487,31 @@ def get_recommended_discussion_channels(request):
 
 
 def article_recommender(user_tags, language_weights, top_n=5):
-    tag_names = [tag for tag, _ in user_tags]
-    tag_weight_map = dict(user_tags)  # Convert to dictionary for fast lookup
-    language_list = list(language_weights.keys())
+    """
+    Recommend articles based on user's tag preferences.
 
-    articles = (
-        OsshArticle.objects.filter(Q(tags__name__in=tag_names))
-        .distinct()
-        .prefetch_related("tags")
-        .annotate(
-            tag_score=Coalesce(Count("tags", filter=Q(tags__name__in=tag_names)), Value(0), output_field=FloatField()),
-            language_score=Value(0, output_field=FloatField()),
-        )
-    )
+    Note: OsshArticle model does not have a metadata field,
+    so language_weights parameter is ignored (kept for API consistency).
+    """
+    tag_names = [tag for tag, _ in user_tags]
+    tag_weight_map = dict(user_tags)
+
+    articles = OsshArticle.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
 
     recommended_articles = []
     for article in articles:
+        # ✅ Weighted tag scoring (already correct in your code)
         tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in article.tags.all())
-        primary_language = article.metadata.get("primary_language", "") if hasattr(article, "metadata") else ""
-        language_score = language_weights.get(primary_language, 0)
 
-        relevance_score = tag_score + language_score
+        # Note: OsshArticle doesn't have metadata, so only score by tags
+        relevance_score = tag_score
+
         if relevance_score > 0:
             matching_tags = [tag.name for tag in article.tags.all() if tag.name in tag_weight_map]
-            matching_languages = [primary_language] if primary_language in language_weights else []
 
             reasoning = []
             if matching_tags:
                 reasoning.append(f"Matching tags: {', '.join(matching_tags)}")
-            if matching_languages:
-                reasoning.append(f"Matching language: {', '.join(matching_languages)}")
 
             recommended_articles.append(
                 {
