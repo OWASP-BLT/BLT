@@ -45,7 +45,7 @@
                 {% endif %}
             </div>
             <!-- Custom Type Field -->
-            <div>
+            <div id="custom_type_container" class="hidden">
                 <label for="{{ form.custom_type.id_for_label }}"
                        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {{ form.custom_type.label }}
@@ -100,4 +100,28 @@
             </div>
         </form>
     </div>
+    <script>
+        // Toggle custom type field visibility
+        function toggleCustomTypeField(selectElement) {
+            const customTypeContainer = document.getElementById('custom_type_container');
+            const customTypeInput = document.getElementById('{{ form.custom_type.id_for_label }}');
+            
+            if (selectElement.value === 'custom') {
+                customTypeContainer.classList.remove('hidden');
+                customTypeInput.setAttribute('required', 'required');
+            } else {
+                customTypeContainer.classList.add('hidden');
+                customTypeInput.removeAttribute('required');
+                customTypeInput.value = '';
+            }
+        }
+        
+        // Initialize custom type field visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.querySelector('select[name="type"]');
+            if (typeSelect) {
+                toggleCustomTypeField(typeSelect);
+            }
+        });
+    </script>
 {% endblock content %}
