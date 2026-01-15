@@ -11,25 +11,16 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Repo
-from website.utils import fetch_github_user_data
+from website.utils import fetch_github_user_data, get_client_ip
 
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
 
 logger = logging.getLogger(__name__)
 
 CACHE_TIMEOUT = 3600  # 1 hour
-MEMBER_COUNT_WEIGHT_DIVISOR = 1000
 MIN_LANGUAGE_PERCENTAGE = 0.05
 MAX_REQUEST_SIZE = 1024 * 10  # 10KB
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
-
-
-def _client_ip(request):
-    # Trust X-Forwarded-For if you’re behind a proxy/load balancer that sets it
-    xff = request.META.get("HTTP_X_FORWARDED_FOR")
-    if xff:
-        return xff.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "unknown")
 
 
 def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
@@ -45,7 +36,7 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
             if methods and request.method not in methods:
                 return view_func(request, *args, **kwargs)
 
-            key = f"rl:{_client_ip(request)}:{request.path}"
+            key = f"rl:{get_client_ip(request)}:{request.path}"
             try:
                 # Create counter with TTL if not present
                 created = cache.add(key, 1, timeout=window_sec)
@@ -66,11 +57,6 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
 
             # Optional informational headers for successful requests
             remaining = max(0, max_requests - count)
-            try:
-                request_headers = getattr(request, "_headers", None)  # Django <2 compat
-            except Exception:
-                request_headers = None
-            # Set on response instead (safer, shown below) if you prefer.
 
             response = view_func(request, *args, **kwargs)
             # Add headers to success responses too (optional)
@@ -78,7 +64,7 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
                 response["X-RateLimit-Limit"] = str(max_requests)
                 response["X-RateLimit-Remaining"] = str(remaining)
             except Exception:
-                pass
+                logger.warning("Failed to set rate limit headers on response.", exc_info=True)
             return response
 
         return _wrapped
@@ -380,27 +366,15 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
         # Calculate weighted tag score based on user's tag weights
         tag_score = sum(tag_weight_map.get(tag, 0) for tag in channel_tag_names)
 
-        # Calculate language score from channel's metadata (if it has primary_language)
-        primary_language = (
-            channel.metadata.get("primary_language", "") if hasattr(channel, "metadata") and channel.metadata else ""
-        )
-        language_score = language_weights.get(primary_language, 0)
-
-        relevance_score = tag_score + language_score
+        # so we only score by tags
+        relevance_score = tag_score
 
         if relevance_score > 0:
-            matching_tags = [tag.name for tag in channel.tags.all() if tag.name in dict(user_tags)]
-            matching_languages = [
-                tag[1]
-                for tag in user_tags
-                if tag[0] in channel.tags.values_list("name", flat=True) and tag[1] in language_weights
-            ]
+            matching_tags = [tag for tag in channel_tag_names if tag in tag_weight_map]
 
             reasoning = []
             if matching_tags:
                 reasoning.append(f"Matching tags: {', '.join(matching_tags)}")
-            if matching_languages:
-                reasoning.append(f"Matching language: {', '.join(matching_languages)}")
 
             recommended_channels.append(
                 {
