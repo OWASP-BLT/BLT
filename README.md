@@ -138,6 +138,28 @@ For detailed setup instructions, see our [Contributing Guide](https://github.com
 
 ---
 
+
+#### Beginner-Friendly Non-Docker Setup (Codespaces for Windows Beginners)
+
+Docker/virtualization issues on Windows? Use Poetry + SQLite in GitHub Codespaces (free cloud—no local problems!).
+
+1. Create Codespace on main branch.
+2. `cp .env.example .env`
+3. `poetry install` (add `poetry run pip install psutil` if "ModuleNotFound" errors)
+4. Edit `.env`:
+   - `DATABASE_URL=sqlite:///db.sqlite3`
+   - Add `SECRET_KEY=your-random-bengaluru2026!@#`
+   - Comment Postgres lines with `#`
+   - Dummy keys: `OPENAI_API_KEY=dummy`
+   - Keep `DEBUG=True`
+5. Optional CSRF fix in `blt/settings.py`: Set `ALLOWED_HOSTS = ['*']` and add:
+   ```python
+   CSRF_TRUSTED_ORIGINS = [
+       'https://*.github.dev',
+       'https://*.app.github.dev',
+       'http://localhost:*',
+   ]
+
 ## 🤝 Contributing
 
 We welcome contributions from everyone! Whether you're fixing bugs, adding features, improving documentation, or spreading the word, your help is appreciated.
