@@ -88,7 +88,7 @@ class DiscussionChannelRecommenderTestCase(TestCase):
         # Channel3 (django, python, security): score = 100 + 1 = 101
         # Channel2 (api): score = 0 (no matches)
 
-        self.assertTrue(len(recommended) >= 2)
+        self.assertGreaterEqual(len(recommended), 2)
 
         # Channel3 should rank first with 101
         self.assertEqual(recommended[0]["channel"].name, "Django Community")
@@ -124,7 +124,7 @@ class DiscussionChannelRecommenderTestCase(TestCase):
 
         recommended = discussion_channel_recommender(user_tags, language_weights, top_n=1)
 
-        self.assertTrue(len(recommended) > 0)
+        self.assertGreater(len(recommended), 0)
 
         reasoning = recommended[0]["reasoning"]
 
@@ -174,7 +174,7 @@ class DiscussionChannelRecommenderTestCase(TestCase):
         recommended = discussion_channel_recommender(user_tags, language_weights)
 
         # Both channel1 and channel3 have 'security' tag
-        self.assertTrue(len(recommended) >= 2)
+        self.assertGreaterEqual(len(recommended), 2)
 
         # Both should have same score (20) since only 'security' matches
         for rec in recommended[:2]:  # Check first 2

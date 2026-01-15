@@ -76,7 +76,7 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
 
 
 def get_cache_key(username):
-    # Sanitize and hash username for safe cache key
+    # Sanitize username for safe cache key
     safe_username = re.sub(r"[^a-zA-Z0-9_-]", "", username)
     return f"github_data_{safe_username}"
 
@@ -255,7 +255,7 @@ def get_recommended_repos(request):
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -334,7 +334,7 @@ def get_recommended_communities(request):
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -413,7 +413,7 @@ def get_recommended_discussion_channels(request):
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -492,7 +492,7 @@ def get_recommended_articles(request):
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
