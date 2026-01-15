@@ -97,8 +97,6 @@ INSTALLED_APPS = (
     "star_ratings",
     "drf_yasg",
     "captcha",
-    "dj_rest_auth",
-    "dj_rest_auth.registration",
     "storages",
     "channels",
 )

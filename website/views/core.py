@@ -1316,7 +1316,7 @@ class SocialLoginView(APIView):
             # Complete the social login
             login = adapter.complete_login(request, app, token, response={})
             login.token = token
-            login.save()
+            login.save(request)
 
             # Connect this social account to user
             ret = complete_social_login(request, login)
