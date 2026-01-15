@@ -33,6 +33,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
+from website.decorators import ratelimit
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -1927,6 +1928,7 @@ def delete_notification(request, notification_id):
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
+@ratelimit(key="user", rate="10/m", method="POST")
 @login_required
 @require_POST
 def toggle_follow(request, username):

@@ -88,3 +88,21 @@ class IssueHTMXTests(TestCase):
             reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
         )
         self.assertEqual(response.status_code, 405)  # Method not allowed
+
+    def test_like_rate_limit(self):
+        """Test that like action is rate limited"""
+        # Make 10 requests (should succeed)
+        for _ in range(10):
+            response = self.client.post(
+                reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+                HTTP_HX_REQUEST="true",
+            )
+            self.assertEqual(response.status_code, 200)
+
+        # 11th request should be rate limited
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 429)
+        self.assertIn(b"Rate limit exceeded", response.content)

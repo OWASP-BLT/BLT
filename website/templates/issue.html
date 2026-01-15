@@ -292,7 +292,7 @@
                     }
 
                     const link = document.createElement('a');
-                    link.href = `/issue/${match[1]}`;
+                    link.href = `/issue/${encodeURIComponent(match[1])}`;
                     link.className =
                         'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
                     /* 
