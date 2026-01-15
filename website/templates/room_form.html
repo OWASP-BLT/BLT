@@ -6,10 +6,93 @@
     {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Create Room</h1>
-        <form method="post">
+        <form method="post" class="space-y-6">
             {% csrf_token %}
-            {{ form.as_p }}
-            <div class="mt-4">
+            <!-- Name Field -->
+            <div>
+                <label for="{{ form.name.id_for_label }}"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ form.name.label }}
+                </label>
+                <input type="text"
+                       name="{{ form.name.name }}"
+                       id="{{ form.name.id_for_label }}"
+                       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                       {% if form.name.value %}value="{{ form.name.value }}"{% endif %}
+                       required>
+                {% if form.name.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <!-- Type Field -->
+            <div>
+                <label for="{{ form.type.id_for_label }}"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ form.type.label }}
+                </label>
+                <select name="{{ form.type.name }}"
+                        id="{{ form.type.id_for_label }}"
+                        onchange="toggleCustomTypeField(this)"
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        required>
+                    {% for value, label in form.type.field.choices %}
+                        <option value="{{ value }}"
+                                {% if form.type.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.type.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.type.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <!-- Custom Type Field -->
+            <div>
+                <label for="{{ form.custom_type.id_for_label }}"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ form.custom_type.label }}
+                </label>
+                <input type="text"
+                       name="{{ form.custom_type.name }}"
+                       id="{{ form.custom_type.id_for_label }}"
+                       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                       {% if form.custom_type.value %}value="{{ form.custom_type.value }}"{% endif %}>
+                {% if form.custom_type.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.custom_type.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <!-- Description Field -->
+            <div>
+                <label for="{{ form.description.id_for_label }}"
+                       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ form.description.label }}
+                </label>
+                <textarea name="{{ form.description.name }}"
+                          id="{{ form.description.id_for_label }}"
+                          rows="4"
+                          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-gray-700 dark:text-white">{% if form.description.value %}{{ form.description.value }}{% endif %}</textarea>
+                {% if form.description.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <!-- Captcha Field (if present) -->
+            {% if form.captcha %}
+                <div>
+                    <label for="{{ form.captcha.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ form.captcha.label }}
+                    </label>
+                    {{ form.captcha }}
+                    {% if form.captcha.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.captcha.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- Form-level errors -->
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    {% for error in form.non_field_errors %}<p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+            <div class="mt-6 flex gap-4">
                 <button type="submit"
                         class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Create</button>
                 <a href="{% url 'rooms_list' %}"
