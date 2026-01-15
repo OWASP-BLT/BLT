@@ -104,7 +104,7 @@ def ratelimit(key="user", rate="10/m", method="POST"):
                         {"error": "Rate limit exceeded. Please try again later."},
                         status=429,
                     )
-                elif request.headers.get("Accept", "").startswith("application/json"):
+                elif "application/json" in request.headers.get("Accept", ""):
                     # API request
                     return JsonResponse(
                         {"error": "Rate limit exceeded. Please try again later."},

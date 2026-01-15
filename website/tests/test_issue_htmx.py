@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -91,6 +92,7 @@ class IssueHTMXTests(TestCase):
 
     def test_like_rate_limit(self):
         """Test that like action is rate limited"""
+        cache.clear()
         # Make 10 requests (should succeed)
         for _ in range(10):
             response = self.client.post(

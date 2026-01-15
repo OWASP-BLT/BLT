@@ -143,20 +143,24 @@ def like_issue(request, issue_pk):
         if created_upvote and issue.user and issue.user.email:
 
             def _send():
-                msg_context = {
-                    "liker_user": request.user.username,
-                    "liked_user": issue.user.username,
-                    "issue_pk": issue.pk,
-                }
-                msg_plain = render_to_string("email/issue_liked.html", msg_context)
-                msg_html = render_to_string("email/issue_liked.html", msg_context)
-                send_mail(
-                    "Your issue got an upvote!!",
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [issue.user.email],
-                    html_message=msg_html,
-                )
+                try:
+                    msg_context = {
+                        "liker_user": request.user.username,
+                        "liked_user": issue.user.username,
+                        "issue_pk": issue.pk,
+                    }
+                    msg_plain = render_to_string("email/issue_liked.html", msg_context)
+                    msg_html = render_to_string("email/issue_liked.html", msg_context)
+                    send_mail(
+                        "Your issue got an upvote!!",
+                        msg_plain,
+                        settings.EMAIL_TO_STRING,
+                        [issue.user.email],
+                        html_message=msg_html,
+                        fail_silently=True,
+                    )
+                except Exception:
+                    logger.exception("Failed to send like notification email for issue %s", issue.pk)
 
             transaction.on_commit(_send)
 
@@ -1891,9 +1895,13 @@ class IssueView(DetailView):
         context["dislikes"] = context["negative_votes"]
         context["flags"] = context["flags_count"]
 
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object).select_related("user")[:20]
+        context["likers"] = (
+            UserProfile.objects.filter(issue_upvoted=self.object).select_related("user").order_by("-id")[:20]
+        )
 
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object).select_related("user")[:20]
+        context["flagers"] = (
+            UserProfile.objects.filter(issue_flaged=self.object).select_related("user").order_by("-id")[:20]
+        )
 
         return context
 
