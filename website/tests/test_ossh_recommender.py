@@ -161,7 +161,9 @@ class RateLimiterTests(TestCase):
     def test_rate_limit_allows_under_limit(self):
         """Test rate limiter allows requests under the limit"""
         request = self.factory.post(
-            "/api/ossh/github/", data=json.dumps({"username": "test"}), content_type="application/json"
+            "/api/ossh/github/",
+            data=json.dumps({"github_username": "validuser123"}),
+            content_type="application/json",
         )
         request.META["REMOTE_ADDR"] = "1.2.3.4"
 
@@ -174,19 +176,19 @@ class RateLimiterTests(TestCase):
     def test_rate_limit_blocks_over_limit(self):
         """Test rate limiter blocks requests over the limit"""
         request = self.factory.post(
-            "/api/ossh/github/", data=json.dumps({"username": "test"}), content_type="application/json"
+            "/api/ossh/github/", data=json.dumps({"github_username": "test"}), content_type="application/json"
         )
         request.META["REMOTE_ADDR"] = "5.6.7.8"
 
-        # Make requests up to and past the limit
-        # Note: The actual limit may vary, but after many requests should return 429
-        response = None
-        for i in range(15):  # Exceed typical limit
+        # Make 15 requests; limit is 10, so requests 11+ should be rate limited
+        got_429 = False
+        for i in range(15):
             response = get_github_data(request)
+            if response.status_code == 429:
+                got_429 = True
+                break
 
-        # At least one should be rate limited
-        # (We can't guarantee exact count due to caching, but excessive requests should be blocked)
-        self.assertIn(response.status_code, [400, 429, 500])  # Either validation error or rate limited
+        self.assertTrue(got_429, "Expected at least one 429 response after exceeding rate limit")
 
     def test_rate_limit_respects_method(self):
         """Test rate limiter only applies to specified methods"""

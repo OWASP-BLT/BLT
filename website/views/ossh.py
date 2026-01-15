@@ -54,13 +54,13 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
 
                 data = cache.get(key)
                 now = time.time()
-                # Type check before using .get()
-                if not isinstance(data, dict):
+                if data is None:
+                    # First request: initialize window
                     data = {"count": 1, "window_start": now}
                     cache.set(key, data, timeout=window_sec)
                     count = 1
-                elif data is None:
-                    # First request: initialize window
+                elif not isinstance(data, dict):
+                    # Happy path left an int; reset to dict metadata
                     data = {"count": 1, "window_start": now}
                     cache.set(key, data, timeout=window_sec)
                     count = 1
@@ -251,7 +251,7 @@ def preprocess_user_data(user_data):
 def repo_recommender(user_tags, language_weights):
     tag_names = [tag for tag, _ in user_tags]
     language_list = list(language_weights.keys())
-
+    tag_weight_map = dict(user_tags)
     repos = (
         Repo.objects.filter(Q(primary_language__in=language_list) | Q(tags__name__in=tag_names))
         .distinct()
@@ -266,7 +266,8 @@ def repo_recommender(user_tags, language_weights):
 
     recommended_repos = []
     for repo in repos:
-        tag_score = repo.tag_score
+        # Weighted sum like other recommenders
+        tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in repo.tags.all())
         language_score = language_weights.get(repo.primary_language, 0)
 
         relevance_score = tag_score + language_score
