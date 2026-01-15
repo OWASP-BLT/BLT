@@ -249,6 +249,7 @@
                         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'
                     ],
                     ALLOWED_ATTR: ['href', 'class'],
+                    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|\/)/i,
                     RETURN_DOM_FRAGMENT: true  // Return DocumentFragment instead of string
                 }
             );
