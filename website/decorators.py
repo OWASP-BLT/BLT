@@ -52,6 +52,13 @@ def ratelimit(key="user", rate="10/m", method="POST"):
         def like_issue(request, issue_pk):
             ...
     """
+    # Parse rate limit once (e.g., '10/m' -> count=10, window=60)
+    try:
+        count, period = rate.split("/")
+        count = int(count)
+        window = {"s": 1, "m": 60, "h": 3600, "d": 86400}[period]
+    except (ValueError, KeyError):
+        raise ValueError(f"Invalid rate format: {rate}. Use format like '10/m'")
 
     def decorator(view_func):
         @wraps(view_func)
@@ -60,14 +67,7 @@ def ratelimit(key="user", rate="10/m", method="POST"):
             if method != "ALL" and request.method != method:
                 return view_func(request, *args, **kwargs)
 
-            # Parse rate limit (e.g., '10/m' -> count=10, window=60)
-            try:
-                count, period = rate.split("/")
-                count = int(count)
-                window = {"s": 1, "m": 60, "h": 3600, "d": 86400}[period]
-            except (ValueError, KeyError):
-                raise ValueError(f"Invalid rate format: {rate}. Use format like '10/m'")
-
+            # `count` / `window` pre-parsed above
             # Generate cache key
             if key == "user":
                 if not request.user.is_authenticated:
@@ -79,7 +79,8 @@ def ratelimit(key="user", rate="10/m", method="POST"):
             else:
                 identifier = f"custom_{key}"
 
-            cache_key = f"ratelimit_{view_func.__name__}_{identifier}"
+            view_id = f"{view_func.__module__}.{view_func.__qualname__}"
+            cache_key = f"ratelimit_{view_id}_{identifier}"
 
             # Atomic rate limit check (same pattern as is_csv_rate_limited)
             added = cache.add(cache_key, 1, window)
@@ -98,9 +99,9 @@ def ratelimit(key="user", rate="10/m", method="POST"):
             if current_count > count:
                 # Return error response based on request type
                 if request.headers.get("HX-Request"):
-                    # HTMX request
-                    return HttpResponse(
-                        "<div class='text-red-500'>Rate limit exceeded. Please try again later.</div>",
+                    # HTMX request - return JSON for automatic error display
+                    return JsonResponse(
+                        {"error": "Rate limit exceeded. Please try again later."},
                         status=429,
                     )
                 elif request.headers.get("Accept", "").startswith("application/json"):

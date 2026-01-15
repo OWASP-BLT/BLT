@@ -261,7 +261,7 @@
                 NodeFilter.SHOW_TEXT,
                 {
                     acceptNode(node) {
-                        if (node.parentElement?.closest('code, pre')) {
+                        if (node.parentElement?.closest('code, pre, a')) {
                             return NodeFilter.FILTER_REJECT;
                         }
                         return issueFilterRegex.test(node.nodeValue)
@@ -292,14 +292,10 @@
                     }
 
                     const link = document.createElement('a');
-                    link.href = `/issue/${encodeURIComponent(match[1])}`;
+                    link.href = `/issue/${match[1]}`;
                     link.className =
                         'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
-                    /* 
-                    Safe: uses textContent (no HTML interpretation),
-                    regex restricts input to digits only (#123),
-                    no user-controlled HTML injection possible.
-                    */
+                    // lgtm[js/xss-through-dom] - Safe: digits-only match + textContent (no HTML interpretation)
                     link.textContent = `#${String(match[1])}`;
                     fragment.appendChild(link);
 
@@ -342,6 +338,7 @@
                 link.href = `/issue/${match[1]}`;
                 link.className =
                     'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                // lgtm[js/xss-through-dom] - Safe: digits-only match + textContent (no HTML interpretation)
                 link.textContent = `#${match[1]}`;
                 fragment.appendChild(link);
 

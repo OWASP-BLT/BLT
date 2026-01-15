@@ -2147,7 +2147,7 @@ def save_issue(request, issue_pk):
     userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
     # Toggle save
-    already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
+    already_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     if already_saved:
         userprof.issue_saved.remove(issue)
