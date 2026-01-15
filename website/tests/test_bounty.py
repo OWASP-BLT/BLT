@@ -182,6 +182,8 @@ class BountyPayoutTestCase(TestCase):
             issue_id=999,
             title="Legacy Issue",
             state="open",
+            created_at="2025-01-01T00:00:00Z",
+            updated_at="2025-01-01T00:00:00Z",
             url="https://github.com/LegacyOrg/LegacyRepo/issues/999",
             has_dollar_tag=True,
             repo=legacy_repo,

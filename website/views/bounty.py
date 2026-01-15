@@ -63,15 +63,11 @@ def bounty_payout(request):
         # Look up repository and issue
         # Prioritize matching github_org, then fallback to name for legacy organizations
         # Use separate queries to ensure deterministic results (github_org match takes precedence)
-        repo = Repo.objects.filter(
-            organization__github_org=owner_name, name=repo_name
-        ).first()
+        repo = Repo.objects.filter(organization__github_org=owner_name, name=repo_name).first()
 
         # Fallback to matching by organization name for legacy organizations without github_org
         if not repo:
-            repo = Repo.objects.filter(
-                organization__name=owner_name, name=repo_name
-            ).first()
+            repo = Repo.objects.filter(organization__name=owner_name, name=repo_name).first()
 
         if not repo:
             logger.error(f"Repo not found: {owner_name}/{repo_name}")
