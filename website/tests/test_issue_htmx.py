@@ -142,3 +142,37 @@ class IssueHTMXTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.user_profile.refresh_from_db()
         self.assertFalse(self.user_profile.issue_flaged.filter(pk=self.issue.pk).exists())
+
+    def test_toggle_follow_htmx(self):
+        """Test HTMX follow request"""
+        other_user = User.objects.create_user(username="otheruser", password="testpass123")
+        response = self.client.post(
+            reverse("toggle_follow", kwargs={"username": "otheruser"}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"follow-section", response.content)
+        # Verify follow relationship created
+        self.assertTrue(self.user_profile.follows.filter(user=other_user).exists())
+
+    def test_toggle_follow_unfollow(self):
+        """Test toggling follow off"""
+        other_user = User.objects.create_user(username="otheruser", password="testpass123")
+        other_profile, _ = UserProfile.objects.get_or_create(user=other_user)
+        self.user_profile.follows.add(other_profile)
+
+        response = self.client.post(
+            reverse("toggle_follow", kwargs={"username": "otheruser"}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.user_profile.follows.filter(user=other_user).exists())
+
+    def test_toggle_follow_self_fails(self):
+        """Test that users cannot follow themselves"""
+        response = self.client.post(
+            reverse("toggle_follow", kwargs={"username": self.user.username}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"cannot follow yourself", response.content.lower())
