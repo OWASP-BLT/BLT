@@ -1268,19 +1268,19 @@ wmi = ["wmi (>=1.5.1)"]
 
 [[package]]
 name = "drf-yasg"
-version = "1.21.10"
+version = "1.21.12"
 description = "Automated generation of real Swagger/OpenAPI 2.0 schemas from Django Rest Framework code."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "drf-yasg-1.21.10.tar.gz", hash = "sha256:f86d50faee3c31fcec4545985a871f832366c7fb5b77b62c48089d56ecf4f8d4"},
-    {file = "drf_yasg-1.21.10-py3-none-any.whl", hash = "sha256:4d832e108dfe38e365101c36123576b498487d33bf27d57d6a37efb4cc773438"},
+    {file = "drf_yasg-1.21.12-py3-none-any.whl", hash = "sha256:4a025595c6b82340d8b8174fcca617da9dc711054a22732e9d83e2e9c5951293"},
+    {file = "drf_yasg-1.21.12.tar.gz", hash = "sha256:da139a7231a9e7c169bc368a433849edfec7eccff9cfa9faba9cac289e534227"},
 ]
 
 [package.dependencies]
-django = ">=2.2.16"
-djangorestframework = ">=3.10.3"
+django = ">=4.0"
+djangorestframework = ">=3.13"
 inflection = ">=0.3.1"
 packaging = ">=21.0"
 pytz = ">=2021.1"
@@ -4127,4 +4127,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "d04afb2a4b4e99b494cda0d211f669bb7ac10a85ce40d60939c18ce2df753922"
+content-hash = "ddaaad4cdfa1ca2b78c493c44c6154385f0b8a1b681c265699e5eb9af915e62e"
