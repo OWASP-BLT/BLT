@@ -14,14 +14,13 @@ import pytz
 import redis
 import requests
 import requests.exceptions
-from allauth.socialaccount.models import SocialAccount
+from allauth.socialaccount.helpers import complete_social_login
+from allauth.socialaccount.models import SocialAccount, SocialToken
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
-from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
-from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -45,6 +44,11 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from website.models import (
     IP,
@@ -1286,13 +1290,112 @@ def view_forum(request):
     )
 
 
+class SocialLoginView(APIView):
+    """Base class for social login views using django-allauth."""
+
+    adapter_class = None
+    client_class = OAuth2Client
+
+    def get_callback_url(self):
+        return self.request.build_absolute_uri(self.callback_url)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the access token from the request
+            access_token = request.data.get("access_token") or request.data.get("code")
+
+            if not access_token:
+                return Response({"error": "access_token or code is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create adapter and login
+            adapter = self.adapter_class(request)
+            app = adapter.get_provider().get_app(request)
+            token = SocialToken(token=access_token)
+            token.app = app
+
+            # Complete the social login
+            login = adapter.complete_login(request, app, token, response={})
+            login.token = token
+            login.save(request)
+
+            # Connect this social account to user
+            ret = complete_social_login(request, login)
+
+            # If complete_social_login returns an HttpResponse, it's a redirect or error
+            # we should respect (e.g., email verification required)
+            if ret:
+                # For API views, we convert redirects to JSON responses
+                if hasattr(ret, "status_code") and ret.status_code >= 400:
+                    return Response({"error": "Authentication failed"}, status=ret.status_code)
+
+            # Get or create auth token for the user
+            if login.user:
+                token, created = Token.objects.get_or_create(user=login.user)
+                return Response(
+                    {
+                        "key": token.key,
+                        "user": {
+                            "id": login.user.id,
+                            "username": login.user.username,
+                            "email": login.user.email,
+                        },
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            return Response({"error": "Authentication failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            logger.error(f"Social login error: {str(e)}")
+            return Response({"error": "Authentication failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SocialConnectView(APIView):
+    """Base class for connecting social accounts to existing users."""
+
+    permission_classes = [IsAuthenticated]
+    adapter_class = None
+    client_class = OAuth2Client
+
+    def get_callback_url(self):
+        return self.request.build_absolute_uri(self.callback_url)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the access token from the request
+            access_token = request.data.get("access_token") or request.data.get("code")
+
+            if not access_token:
+                return Response({"error": "access_token or code is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create adapter and login
+            adapter = self.adapter_class(request)
+            app = adapter.get_provider().get_app(request)
+            token = SocialToken(token=access_token)
+            token.app = app
+
+            # Complete the social login
+            login = adapter.complete_login(request, app, token, response={})
+            login.token = token
+            login.user = request.user  # Connect to current user
+
+            # Save the social account connection
+            login.save(request, connect=True)
+
+            return Response({"detail": "Social account connected successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Social connect error: {str(e)}")
+            return Response({"error": "Failed to connect social account"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
 
     @property
     def callback_url(self):
-        return self.request.build_absolute_uri(reverse("google_callback"))
+        return reverse("google_callback")
 
 
 class GithubLogin(SocialLoginView):
@@ -1301,34 +1404,7 @@ class GithubLogin(SocialLoginView):
 
     @property
     def callback_url(self):
-        return self.request.build_absolute_uri(reverse("github_callback"))
-
-
-class FacebookConnect(SocialConnectView):
-    adapter_class = FacebookOAuth2Adapter
-    client_class = OAuth2Client
-
-    @property
-    def callback_url(self):
-        return self.request.build_absolute_uri(reverse("facebook_callback"))
-
-
-class GithubConnect(SocialConnectView):
-    adapter_class = GitHubOAuth2Adapter
-    client_class = OAuth2Client
-
-    @property
-    def callback_url(self):
-        return self.request.build_absolute_uri(reverse("github_callback"))
-
-
-class GoogleConnect(SocialConnectView):
-    adapter_class = GoogleOAuth2Adapter
-    client_class = OAuth2Client
-
-    @property
-    def callback_url(self):
-        return self.request.build_absolute_uri(reverse("google_callback"))
+        return reverse("github_callback")
 
 
 class FacebookLogin(SocialLoginView):
@@ -1337,7 +1413,34 @@ class FacebookLogin(SocialLoginView):
 
     @property
     def callback_url(self):
-        return self.request.build_absolute_uri(reverse("facebook_callback"))
+        return reverse("facebook_callback")
+
+
+class FacebookConnect(SocialConnectView):
+    adapter_class = FacebookOAuth2Adapter
+    client_class = OAuth2Client
+
+    @property
+    def callback_url(self):
+        return reverse("facebook_callback")
+
+
+class GithubConnect(SocialConnectView):
+    adapter_class = GitHubOAuth2Adapter
+    client_class = OAuth2Client
+
+    @property
+    def callback_url(self):
+        return reverse("github_callback")
+
+
+class GoogleConnect(SocialConnectView):
+    adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
+
+    @property
+    def callback_url(self):
+        return reverse("google_callback")
 
 
 class UploadCreate(View):
@@ -2900,11 +3003,70 @@ def website_stats(request):
     return render(request, "website_stats.html", context)
 
 
-class CustomSocialAccountDisconnectView(BaseSocialAccountDisconnectView):
+class CustomSocialAccountDisconnectView(APIView):
+    """Disconnect a social account from the current user."""
+
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return SocialAccount.objects.none()
-        return super().get_queryset()
+        return SocialAccount.objects.filter(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            account_id = kwargs.get("pk")
+            account = self.get_queryset().filter(pk=account_id).first()
+
+            if not account:
+                return Response({"error": "Social account not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Check if user has other login methods before disconnecting
+            if not request.user.has_usable_password():
+                other_accounts = self.get_queryset().exclude(pk=account_id).exists()
+                if not other_accounts:
+                    return Response(
+                        {"error": "Cannot disconnect the only login method"}, status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            account.delete()
+            return Response({"detail": "Social account disconnected successfully"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Social disconnect error: {str(e)}")
+            return Response({"error": "Failed to disconnect social account"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SocialAccountListView(APIView):
+    """List all social accounts connected to the current user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        accounts = SocialAccount.objects.filter(user=request.user)
+        data = []
+        for account in accounts:
+            data.append(
+                {
+                    "id": account.id,
+                    "provider": account.provider,
+                    "uid": account.uid,
+                    "extra_data": account.extra_data,
+                }
+            )
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(TemplateView):
+    """Password reset confirmation view - delegates to django-allauth."""
+
+    template_name = "account/password_reset_from_key.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["uidb64"] = self.kwargs.get("uidb64")
+        context["token"] = self.kwargs.get("token")
+        return context
 
 
 class MapView(ListView):

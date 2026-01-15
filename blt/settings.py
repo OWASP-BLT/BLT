@@ -97,8 +97,6 @@ INSTALLED_APPS = (
     "star_ratings",
     "drf_yasg",
     "captcha",
-    "dj_rest_auth",
-    "dj_rest_auth.registration",
     "storages",
     "channels",
 )
@@ -204,7 +202,6 @@ AUTHENTICATION_BACKENDS = (
 )
 
 
-REST_AUTH = {"SESSION_LOGIN": False}
 # Set connection max age to 600 seconds (10 minutes) to enable connection pooling
 # This prevents "no more connections allowed" errors by reusing database connections
 CONN_MAX_AGE = 600

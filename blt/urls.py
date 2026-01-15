@@ -3,8 +3,6 @@ from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
 from allauth.socialaccount.providers.google import views as google_views
 from captcha.views import captcha_refresh
-from dj_rest_auth.registration.views import SocialAccountListView
-from dj_rest_auth.views import PasswordResetConfirmView
 from django.conf import settings
 from django.conf.urls import include
 from django.conf.urls.static import static
@@ -108,7 +106,9 @@ from website.views.core import (
     GoogleConnect,
     GoogleLogin,
     MapView,
+    PasswordResetConfirmView,
     RoadmapView,
+    SocialAccountListView,
     StatsDetailView,
     StyleGuideView,
     UploadCreate,
@@ -422,13 +422,11 @@ urlpatterns = [
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
     path("set-theme/", set_theme, name="set_theme"),
-    re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
         "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
         PasswordResetConfirmView.as_view(),
         name="password_reset_confirm",
     ),
-    re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
