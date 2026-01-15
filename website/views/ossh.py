@@ -356,9 +356,17 @@ def get_recommended_communities(request):
 
 
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
+    """
+    Recommend discussion channels based on user's tag preferences.
+
+    Note: OsshDiscussionChannel model does not have a metadata field,
+    so language_weights parameter is ignored (kept for API consistency).
+    """
     tag_names = [tag for tag, _ in user_tags]
     matching_channels = (
-        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
+        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names))
+        .distinct()
+        .prefetch_related("tags")  # Performance optimization
     )
 
     recommended_channels = []
@@ -367,17 +375,15 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
     for channel in matching_channels:
         channel_tag_names = {tag.name for tag in channel.tags.all()}
 
-        # Number of user tags present on this channel
-        tag_matches = sum(1 for tag in channel_tag_names if tag in tag_weight_map)
+        # Weighted tag scoring bug fix (replaces main's counting logic)
+        # Calculate weighted tag score based on user's tag weights
+        tag_score = sum(tag_weight_map.get(tag, 0) for tag in channel_tag_names)
 
-        # Sum weights for languages that appear as tags on this channel
-        language_weight = sum(language_weights.get(tag, 0) for tag in channel_tag_names)
-
-        relevance_score = tag_matches + language_weight
+        # Use tag_score as relevance (channels don't have language metadata)
+        relevance_score = tag_score
 
         if relevance_score > 0:
             matching_tags = [tag for tag in channel_tag_names if tag in tag_weight_map]
-            matching_languages = [lang for lang in channel_tag_names if lang in language_weights]
 
             reasoning = []
             if matching_tags:
