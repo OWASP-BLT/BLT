@@ -93,7 +93,6 @@ class IssueHTMXTests(TestCase):
 
     def test_like_rate_limit(self):
         """Test that like action is rate limited"""
-        cache.clear()
         # Make 10 requests (should succeed)
         for _ in range(10):
             response = self.client.post(
@@ -109,3 +108,37 @@ class IssueHTMXTests(TestCase):
         )
         self.assertEqual(response.status_code, 429)
         self.assertIn(b"Rate limit exceeded", response.content)
+
+    def test_like_nonexistent_issue(self):
+        """Test that liking a non-existent issue returns 404"""
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": 99999}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_save_issue_toggle_off(self):
+        """Test toggling save off (unsave)"""
+        # First save
+        self.user_profile.issue_saved.add(self.issue)
+        # Then unsave
+        response = self.client.post(
+            reverse("save_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertFalse(self.user_profile.issue_saved.filter(pk=self.issue.pk).exists())
+
+    def test_flag_issue_toggle_off(self):
+        """Test toggling flag off (unflag)"""
+        # First flag
+        self.user_profile.issue_flaged.add(self.issue)
+        # Then unflag
+        response = self.client.post(
+            reverse("flag_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertFalse(self.user_profile.issue_flaged.filter(pk=self.issue.pk).exists())
