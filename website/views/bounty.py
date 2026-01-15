@@ -3,7 +3,6 @@ import logging
 import os
 import secrets
 
-from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -62,10 +61,17 @@ def bounty_payout(request):
         contributor_username = data["contributor_username"]
 
         # Look up repository and issue
-        # Prioritize matching github_org, but fallback to name for legacy organizations
+        # Prioritize matching github_org, then fallback to name for legacy organizations
+        # Use separate queries to ensure deterministic results (github_org match takes precedence)
         repo = Repo.objects.filter(
-            Q(organization__github_org=owner_name) | Q(organization__name=owner_name), name=repo_name
+            organization__github_org=owner_name, name=repo_name
         ).first()
+
+        # Fallback to matching by organization name for legacy organizations without github_org
+        if not repo:
+            repo = Repo.objects.filter(
+                organization__name=owner_name, name=repo_name
+            ).first()
 
         if not repo:
             logger.error(f"Repo not found: {owner_name}/{repo_name}")
