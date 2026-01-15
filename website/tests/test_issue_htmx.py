@@ -8,6 +8,7 @@ from website.models import Issue, UserProfile
 
 class IssueHTMXTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = Client()
         self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.user_profile, _ = UserProfile.objects.get_or_create(user=self.user)
