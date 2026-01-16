@@ -11,229 +11,249 @@
 {% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex max-w-7xl mx-auto p-4"
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900"
          data-user-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
         <!-- Category Sidebar -->
-        <div class="w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mr-8 h-fit">
-            <h2 class="text-xl font-semibold mb-4 text-[#e74c3c] hover:text-gray-900 dark:hover:text-white">Categories</h2>
-            <ul class="space-y-2">
-                <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 {% if not selected_category %}bg-[#e74c3c] text-white hover:bg-[#c0392b] hover:text-white{% else %}hover:bg-red-50 hover:text-gray-900 dark:hover:text-white{% endif %}"
-                    onclick="filterByCategory('')">
-                    <span class="hover:text-gray-900 dark:hover:text-white">All Categories</span>
-                    <span class="px-3 py-1 rounded-full text-sm font-medium {% if not selected_category %}bg-white text-[#e74c3c] hover:text-gray-900 dark:hover:text-white{% else %}bg-orange-100 text-[#e74c3c] hover:text-gray-900 dark:hover:text-white{% endif %}">
-                        {{ total_posts_count }}
-                    </span>
-                </li>
-                {% for category in categories %}
-                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 {% if category.is_selected %}bg-[#e74c3c] text-white hover:bg-[#c0392b] hover:text-white{% else %}hover:bg-red-50 hover:text-gray-900 dark:hover:text-white{% endif %}"
-                        onclick="filterByCategory('{{ category.id }}')">
-                        <span class="hover:text-gray-900 dark:hover:text-white">{{ category.name }}</span>
-                        <span class="px-3 py-1 rounded-full text-sm font-medium {% if category.is_selected %}bg-white text-[#e74c3c] hover:text-gray-900 dark:hover:text-white{% else %}bg-orange-100 text-[#e74c3c] hover:text-gray-900 dark:hover:text-white{% endif %}">
-                            {{ category.post_count }}
+        <div class="max-w-7xl mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8">
+            <div class="w-full lg:w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 h-fit border border-gray-100 dark:border-gray-700 flex-shrink-0">
+                <h2 class="text-xl font-bold mb-4 lg:mb-6 text-[#e74c3c] tracking-wide">Categories</h2>
+                <ul class="space-y-2 lg:space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-0">
+                    <li class="flex justify-between items-center p-3.5 rounded-xl cursor-pointer font-medium transition-all {% if not selected_category %} bg-[#e74c3c] text-white {% else %} text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700/50 {% endif %}"
+                        onclick="filterByCategory('')">
+                        <span>All Categories</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {% if not selected_category %} bg-white text-[#e74c3c] {% else %} bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-white {% endif %}">
+                            {{ total_posts_count }}
                         </span>
                     </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <!-- Main Content -->
-        <div class="flex-1">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-8">
-                <h1 class="text-3xl font-bold text-[#e74c3c] hover:text-gray-900 dark:hover:text-white">Discussion Forum</h1>
-                <button class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#c0392b] hover:text-white transition-colors duration-200 flex items-center gap-2"
-                        onclick="openNewSuggestionModal()">
-                    <i class="fas fa-plus hover:text-white"></i> New Discussion
-                </button>
+                    {% for category in categories %}
+                        <li class="flex justify-between items-center p-3.5 rounded-xl cursor-pointer font-medium transition-all {% if category.is_selected %} bg-[#e74c3c] text-white {% else %} text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700/50 {% endif %}"
+                            onclick="filterByCategory('{{ category.id }}')">
+                            <span>{{ category.name }}</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold {% if category.is_selected %} bg-white text-[#e74c3c] {% else %} bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-white {% endif %}">
+                                {{ category.post_count }}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
             </div>
-            <!-- Login Message -->
-            {% if not user.is_authenticated %}
-                <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg hover:text-gray-900 dark:hover:text-white">
-                    <p class="text-blue-800 dark:text-blue-200 flex items-center gap-2 hover:text-gray-900 dark:hover:text-white">
-                        <i class="fas fa-info-circle hover:text-gray-900 dark:hover:text-white"></i>
-                        <span class="hover:text-gray-900 dark:hover:text-white">Please <a href="/accounts/login/?next={{ request.path }}"
-    class="underline font-medium hover:text-blue-600 hover:text-gray-900 dark:hover:text-white">log in</a> to vote, comment, or create discussions.</span>
-                    </p>
+            <!-- Main Content -->
+            <main class="flex-1 min-w-0">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h1 class="text-2xl lg:text-3xl font-bold text-[#e74c3c] hover:text-gray-900 dark:hover:text-white transition-colors">
+                            Discussion Forum
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Join the conversation</p>
+                    </div>
+                    <button onclick="openNewSuggestionModal()"
+                            class="w-full sm:w-auto bg-[#e74c3c] hover:bg-[#c0392b] text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-plus"></i> New Discussion
+                    </button>
                 </div>
-            {% endif %}
-            <!-- Filters -->
-            <div class="flex gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900 hover:text-gray-900 dark:hover:text-white"
-                        id="categoryFilter">
-                    <option value="">All Categories</option>
-                    {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
-                </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900 hover:text-gray-900 dark:hover:text-white"
-                        id="statusFilter">
-                    <option value="">All Status</option>
-                    <option value="open">Open</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="declined">Declined</option>
-                </select>
-                <select class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-white dark:bg-gray-900 hover:text-gray-900 dark:hover:text-white"
-                        id="sortFilter">
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="most_votes">Most Votes</option>
-                    <option value="most_comments">Most Comments</option>
-                </select>
-                <button onclick="applyFilters()"
-                        class="px-6 py-2 bg-[#e74c3c] text-white rounded-md font-medium hover:bg-[#c0392b] transition-colors duration-200">
-                    Apply
-                </button>
-            </div>
-            <!-- Posts List -->
-            <ul class="space-y-4">
-                {% for post in posts %}
-                    <li class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden {% if post.is_pinned %}border-2 border-[#e74c3c]{% endif %} hover:text-gray-900 dark:hover:text-white">
-                        <div class="p-6 border-b border-gray-100 dark:border-gray-800">
-                            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 hover:text-gray-900 dark:hover:text-white">
-                                {{ post.title }}
-                            </h2>
-                            <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-                                <span class="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white">
-                                    <i class="fas fa-user hover:text-gray-900 dark:hover:text-white"></i>
-                                    {% if post.user %}
-                                        {{ post.user }}
-                                    {% else %}
-                                        Anonymous
+                <!-- Filters -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 mb-6 shadow-sm flex flex-col sm:flex-row flex-wrap gap-3">
+                    <div class="relative w-full sm:flex-1 min-w-[200px]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text"
+                               id="search-input"
+                               value="{{ request.GET.search }}"
+                               placeholder="Search..."
+                               class="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent bg-transparent dark:text-white"
+                               onkeyup="if(event.key === 'Enter') applyFilters()">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <select id="sortFilter"
+                                onchange="applyFilters()"
+                                class="w-full sm:w-auto text-sm border border-gray-200 dark:border-gray-600 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-700 dark:text-white py-2 pl-3 pr-8">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="most_votes">Most Votes</option>
+                            <option value="most_comments">Most Comments</option>
+                        </select>
+                        <button onclick="applyFilters()"
+                                class="w-full sm:w-auto px-4 py-2 bg-[#e74c3c] text-white rounded-md text-sm hover:bg-[#c0392b] transition-colors">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+                <!-- Login Message -->
+                {% if not user.is_authenticated %}
+                    <div class="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mb-6 rounded-r-md">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-info-circle text-blue-500"></i>
+                            <p class="text-sm text-blue-800 dark:text-blue-200">
+                                <a href="/accounts/login/?next={{ request.path }}"
+                                   class="font-bold hover:underline">Log in</a> to create posts, vote, or comment.
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Posts List -->
+                <div class="space-y-4">
+                    {% for post in posts %}
+                        <article class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm {% if post.is_pinned %}border-l-4 border-l-[#e74c3c]{% endif %}">
+                            <div class="p-4 lg:p-6">
+                                <div class="flex items-center flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                    <span class="font-medium text-gray-900 dark:text-gray-200 flex items-center gap-1">
+                                        <i class="fas fa-user-circle text-gray-400"></i>
+                                        {% if post.user %}
+                                            {{ post.user }}
+                                        {% else %}
+                                            Anonymous
+                                        {% endif %}
+                                    </span>
+                                    <span>•</span>
+                                    <span>{{ post.created|timesince }} ago</span>
+                                    {% if post.category %}
+                                        <span class="ml-2 px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 font-medium">
+                                            {{ post.category.name }}
+                                        </span>
                                     {% endif %}
-                                </span>
-                                <span class="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white">
-                                    <i class="fas fa-clock hover:text-gray-900 dark:hover:text-white"></i>
-                                    {{ post.created|timesince }} ago
-                                </span>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium hover:text-gray-900 dark:hover:text-white {% if post.status == 'open' %}bg-teal-50 text-teal-600 {% elif post.status == 'in_progress' %}bg-blue-50 text-blue-600 {% elif post.status == 'completed' %}bg-green-50 text-green-600 {% else %}bg-red-50 text-red-600{% endif %}">
-                                    {{ post.get_status_display }}
-                                </span>
-                                {% if post.category %}
-                                    <span class="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white">
-                                        <i class="fas fa-tag hover:text-gray-900 dark:hover:text-white"></i>
-                                        {{ post.category.name }}
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">{{ post.title }}</h3>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-5 leading-relaxed">{{ post.description }}</p>
+                                <div class="mb-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border {% if post.status == 'open' %}bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800{% elif post.status == 'in_progress' %}bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800{% elif post.status == 'completed' %}bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800{% else %}bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600{% endif %}">
+                                        <i class="fas fa-circle text-[6px] mr-1.5 opacity-60"></i> {{ post.get_status_display }}
                                     </span>
-                                {% endif %}
-                                {% if post.organization %}
-                                    <span class="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white">
-                                        <i class="fas fa-building hover:text-gray-900 dark:hover:text-white"></i>
-                                        {{ post.organization.name }}
-                                    </span>
-                                {% endif %}
-                                {% if post.project %}
-                                    <span class="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white">
-                                        <i class="fas fa-project-diagram hover:text-gray-900 dark:hover:text-white"></i>
-                                        {{ post.project.name }}
-                                    </span>
-                                {% endif %}
-                                {% if post.repo %}
-                                    <span class="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white">
-                                        <i class="fas fa-code-branch hover:text-gray-900 dark:hover:text-white"></i>
-                                        {{ post.repo.name }}
-                                    </span>
+                                </div>
+                                {% if post.repo or post.project or post.organization %}
+                                    <div class="flex flex-wrap gap-2 text-xs border-t border-gray-50 dark:border-gray-700/50 pt-3">
+                                        {% if post.repo %}
+                                            <span class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-medium">
+                                                <i class="fab fa-git-alt text-gray-500 dark:text-gray-400"></i>
+                                                {{ post.repo.name }}
+                                            </span>
+                                        {% endif %}
+                                        {% if post.project %}
+                                            <span class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-medium">
+                                                <i class="fas fa-layer-group text-gray-500 dark:text-gray-400"></i>
+                                                {{ post.project.name }}
+                                            </span>
+                                        {% endif %}
+                                        {% if post.organization %}
+                                            <span class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-medium">
+                                                <i class="fas fa-building text-gray-500 dark:text-gray-400"></i>
+                                                {{ post.organization.name }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
                                 {% endif %}
                             </div>
-                        </div>
-                        <div class="p-6 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            <p>{{ post.description }}</p>
-                        </div>
-                        <div class="flex justify-between items-center px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 hover:text-gray-900 dark:hover:text-white">
-                            <div class="flex gap-2">
-                                <button type="button"
-                                        class="flex items-center gap-2 px-4 py-2 rounded-md transition-colors duration-200 {% if post.user_vote and post.user_vote.up_vote %}bg-[#e74c3c] text-white hover:bg-[#c0392b] hover:text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white{% endif %}"
-                                        data-vote-type="up"
-                                        data-suggestion-id="{{ post.id }}">
-                                    <i class="fas fa-arrow-up hover:text-gray-900 dark:hover:text-white"></i>
-                                    <span class="font-medium hover:text-gray-900 dark:hover:text-white">{{ post.up_votes }}</span>
-                                </button>
-                                <button type="button"
-                                        class="flex items-center gap-2 px-4 py-2 rounded-md transition-colors duration-200 {% if post.user_vote and post.user_vote.down_vote %}bg-[#e74c3c] text-white hover:bg-[#c0392b] hover:text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white{% endif %}"
-                                        data-vote-type="down"
-                                        data-suggestion-id="{{ post.id }}">
-                                    <i class="fas fa-arrow-down hover:text-gray-900 dark:hover:text-white"></i>
-                                    <span class="font-medium hover:text-gray-900 dark:hover:text-white">{{ post.down_votes }}</span>
-                                </button>
-                            </div>
-                            <div class="flex items-center gap-4 hover:text-gray-900 dark:hover:text-white">
-                                <div class="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:hover:text-white">
-                                    <i class="fas fa-comments hover:text-gray-900 dark:hover:text-white"></i>
-                                    <span class="hover:text-gray-900 dark:hover:text-white">{{ post.comments.count }} Comments</span>
+                            <div class="bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 px-4 lg:px-5 py-3 flex flex-wrap items-center justify-between gap-3 rounded-b-lg">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 h-8 bg-gray-50 dark:bg-gray-800">
+                                        <button aria-label="Upvote discussion"
+                                                class="px-3 h-full flex items-center border-r border-gray-300 dark:border-gray-600 transition-colors {% if post.user_vote and post.user_vote.up_vote %} bg-[#e74c3c] text-white font-bold {% else %} text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#e74c3c] {% endif %}"
+                                                data-vote-type="up"
+                                                data-suggestion-id="{{ post.id }}">
+                                            <i class="fas fa-arrow-up text-sm"></i>
+                                            <span class="ml-1.5 text-sm font-bold">{{ post.up_votes }}</span>
+                                        </button>
+                                        <button aria-label="Downvote discussion"
+                                                class="px-3 h-full flex items-center border-gray-300 dark:border-gray-600 transition-colors {% if post.user_vote and post.user_vote.down_vote %}                                        bg-[#e74c3c] text-white font-bold {% else %} text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#e74c3c] {% endif %}"
+                                                data-vote-type="down"
+                                                data-suggestion-id="{{ post.id }}">
+                                            <i class="fas fa-arrow-down text-sm"></i>
+                                            <span class="ml-1.5 text-sm font-bold">{{ post.down_votes }}</span>
+                                        </button>
+                                    </div>
+                                    <button class="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
+                                            onclick="document.getElementById('comments-{{ post.id }}').classList.toggle('hidden')">
+                                        <i class="fas fa-comments"></i>
+                                        <span>{{ post.comments.count }} Comments</span>
+                                    </button>
                                 </div>
                                 {% if request.user == post.user or request.user.is_superuser %}
-                                    <button type="button"
-                                            class="flex items-center gap-2 px-4 py-2 rounded-md bg-red-100 text-[#e74c3c] hover:bg-red-200 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
-                                            onclick="deletePost({{ post.id }})"
-                                            aria-label="Delete post: {{ post.title }}"
-                                            title="Delete this post">
-                                        <i class="fas fa-trash hover:text-gray-900 dark:hover:text-white"
-                                           aria-hidden="true"></i>
-                                        <span class="hover:text-gray-900 dark:hover:text-white">Delete</span>
+                                    <button onclick="deletePost({{ post.id }})"
+                                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 transition-colors text-xs font-medium border border-red-100 dark:border-red-900/50"
+                                            title="Delete Post">
+                                        <i class="fas fa-trash-alt"></i>
+                                        <span class="hidden sm:inline">Delete</span>
                                     </button>
                                 {% endif %}
                             </div>
-                        </div>
-                        <div class="border-t border-gray-100 dark:border-gray-800 p-6 hover:text-gray-900 dark:hover:text-white"
-                             id="comments-{{ post.id }}">
-                            {% if user.is_authenticated %}
-                                <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
-                                    {% csrf_token %}
-                                    <textarea class="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white hover:text-gray-900 dark:hover:text-white"
-                                              placeholder="Add a comment..."
-                                              required></textarea>
-                                    <button type="submit"
-                                            class="bg-[#e74c3c] text-white px-6 py-2 rounded-md font-medium hover:bg-[#c0392b] hover:text-white transition-colors duration-200">
-                                        Post Comment
-                                    </button>
-                                </form>
-                            {% endif %}
-                            {% if post.comments.all %}
-                                <ul class="space-y-4">
+                            <div id="comments-{{ post.id }}"
+                                 class="hidden border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 lg:p-5">
+                                {% if user.is_authenticated %}
+                                    <form onsubmit="submitComment(event, {{ post.id }})"
+                                          class="flex flex-col sm:flex-row gap-3 mb-6 items-start">
+                                        <div class="flex-1 w-full">
+                                            <textarea class="w-full px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent dark:bg-gray-700 dark:text-white min-h-[42px] resize-none"
+                                                      placeholder="Write a comment..."
+                                                      rows="1"></textarea>
+                                        </div>
+                                        <button type="submit"
+                                                class="w-full sm:w-auto bg-[#e74c3c] hover:bg-[#c0392b] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm whitespace-nowrap h-full min-h-[42px]">
+                                            Post
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <div class="space-y-4 pl-0 sm:pl-4 border-l-0 sm:border-l-2 border-gray-200 dark:border-gray-700">
                                     {% for comment in post.comments.all %}
-                                        <li class="border-b border-gray-100 dark:border-gray-800 pb-4 last:border-b-0 hover:text-gray-900 dark:hover:text-white">
-                                            <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2 hover:text-gray-900 dark:hover:text-white">
-                                                <span class="font-medium hover:text-gray-900 dark:hover:text-white">{{ comment.user }}</span>
-                                                <span class="hover:text-gray-900 dark:hover:text-white">{{ comment.created|timesince }} ago</span>
+                                        <div class="text-sm">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="font-bold text-gray-900 dark:text-white">{{ comment.user }}</span>
+                                                <span class="text-gray-500 text-xs">{{ comment.created|timesince }} ago</span>
                                             </div>
-                                            <p class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">{{ comment.content }}</p>
-                                        </li>
+                                            <p class="text-gray-700 dark:text-gray-300">{{ comment.content }}</p>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-gray-500 text-sm italic">No comments yet.</p>
                                     {% endfor %}
-                                </ul>
-                            {% else %}
-                                <p class="text-gray-500 dark:text-gray-400 text-center py-4 hover:text-gray-900 dark:hover:text-white">
-                                    No comments yet. Be the first to comment!
-                                </p>
-                            {% endif %}
+                                </div>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
+                            <div class="mx-auto h-12 w-12 text-gray-400">
+                                <i class="fas fa-comments text-4xl"></i>
+                            </div>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No discussions found</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new discussion.</p>
+                            <div class="mt-6">
+                                <button onclick="openNewSuggestionModal()"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-[#c0392b]">
+                                    <i class="fas fa-plus -ml-1 mr-2"></i> New Discussion
+                                </button>
+                            </div>
                         </div>
-                    </li>
-                {% empty %}
-                    <li class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                        <p>No discussions yet. Be the first to start a discussion!</p>
-                    </li>
-                {% endfor %}
-            </ul>
+                    {% endfor %}
+                </div>
+            </main>
         </div>
     </div>
     <!-- New Discussion Modal -->
     <div id="newSuggestionModal"
-         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
-        <div class="bg-white dark:bg-gray-800 max-w-2xl mx-auto mt-16 rounded-lg relative">
+         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-2xl mx-auto sm:mt-16 sm:rounded-lg relative shadow-xl min-h-screen sm:min-h-0">
             <button class="absolute top-4 right-4 text-2xl text-gray-600 dark:text-gray-400 hover:text-gray-800 hover:text-gray-900 dark:hover:text-white"
-                    onclick="closeNewSuggestionModal()">×</button>
-            <div class="p-8">
-                <h2 class="text-2xl font-bold mb-6 hover:text-gray-900 dark:hover:text-white">Start New Discussion</h2>
+                    onclick="closeNewSuggestionModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="p-6 sm:p-8">
+                <h2 class="text-2xl font-bold mb-6 hover:text-gray-900 dark:hover:text-white text-gray-900 dark:text-white">
+                    Start New Discussion
+                </h2>
                 <form id="suggestionForm" class="space-y-6" onsubmit="submitPost(event)">
                     {% csrf_token %}
                     <div>
                         <label for="title"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
+                            Title
+                        </label>
                         <input type="text"
                                id="title"
                                name="title"
-                               class="w-full px-4 py-2 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                               class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
                                placeholder="Enter your discussion title"
                                required>
                     </div>
                     <div>
                         <label for="category"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
+                            Category
+                        </label>
                         <select id="category"
                                 name="category"
                                 class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
@@ -244,7 +264,7 @@
                     </div>
                     <div>
                         <label for="description"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
                             Description
                         </label>
                         <textarea id="description"
@@ -256,21 +276,19 @@
                     </div>
                     <div>
                         <label for="organization"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
                             Organization (Optional)
                         </label>
                         <select id="organization"
                                 name="organization"
                                 class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent">
                             <option value="">None</option>
-                            {% for org in organizations %}
-                                <option value="{{ org.id }}">{{ org.name }}</option>
-                            {% endfor %}
+                            {% for org in organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}
                         </select>
                     </div>
                     <div>
                         <label for="project"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
                             Project (Optional)
                         </label>
                         <select id="project"
@@ -282,7 +300,7 @@
                     </div>
                     <div>
                         <label for="repo"
-                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 hover:text-gray-900 dark:hover:text-white">
                             Repository (Optional)
                         </label>
                         <select id="repo"
@@ -371,23 +389,23 @@
             if (data.success) {
                 upButton.querySelector('span').textContent = data.up_vote;
                 downButton.querySelector('span').textContent = data.down_vote;
-
+                
                 // Update upvote button styling
                 if (upVote) {
-                    upButton.classList.add('bg-[#e74c3c]', 'text-white', 'hover:text-white');
-                    upButton.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                    upButton.classList.add('bg-[#e74c3c]', 'text-white', 'font-bold');
+                    upButton.classList.remove('text-gray-700', 'dark:text-gray-300');
                 } else {
-                    upButton.classList.remove('bg-[#e74c3c]', 'text-white', 'hover:text-white');
-                    upButton.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                    upButton.classList.remove('bg-[#e74c3c]', 'text-white', 'font-bold');
+                    upButton.classList.add('text-gray-700', 'dark:text-gray-300');
                 }
 
                 // Update downvote button styling
                 if (downVote) {
-                    downButton.classList.add('bg-[#e74c3c]', 'text-white', 'hover:text-white');
-                    downButton.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                    downButton.classList.add('bg-[#e74c3c]', 'text-white', 'font-bold');
+                    downButton.classList.remove('text-gray-700', 'dark:text-gray-300');
                 } else {
-                    downButton.classList.remove('bg-[#e74c3c]', 'text-white', 'hover:text-white');
-                    downButton.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+                    downButton.classList.remove('bg-[#e74c3c]', 'text-white', 'font-bold');
+                    downButton.classList.add('text-gray-700', 'dark:text-gray-300');
                 }
             } else {
                 showErrorMessage(data.error || 'Failed to vote. Please try again.');
@@ -441,7 +459,7 @@
             type === 'success' ? 'bg-green-500 text-white' :
             'bg-blue-500 text-white'
         }`;
-        
+
         // Create elements safely to prevent XSS
         const container = document.createElement('div');
         container.className = 'flex items-center gap-3';
@@ -466,7 +484,7 @@
         messageDiv.appendChild(container);
 
         document.body.appendChild(messageDiv);
-
+        
         // Auto-remove after 5 seconds
         setTimeout(() => {
             if (messageDiv.parentElement) {
@@ -477,7 +495,6 @@
     }
 
     function openNewSuggestionModal() {
-        // Check authentication at runtime
         const container = document.querySelector('[data-user-authenticated]');
         const isAuthenticated = container && container.dataset.userAuthenticated === 'true';
         
@@ -489,7 +506,6 @@
             }, 2000);
             return;
         }
-        
         document.getElementById('newSuggestionModal').classList.remove('hidden');
     }
 
@@ -553,6 +569,11 @@
         event.preventDefault();
         const form = event.target;
         const content = form.querySelector('textarea').value;
+        
+        if (!content.trim()) {
+            showErrorMessage("Comment cannot be empty.");
+            return;
+        }
 
         fetch('/forum/comment/', {
             method: 'POST',
@@ -629,39 +650,35 @@
         updateFilters({ category: categoryId });
     }
 
-
     function updateFilters(params) {
         const url = new URL(window.location.href);
-
-    Object.entries(params).forEach(([key, value]) => {
-        if (value) {
-            url.searchParams.set(key, value);
-        } else {
-            url.searchParams.delete(key);
-        }
-    });
-
+        Object.entries(params).forEach(([key, value]) => {
+            if (value) {
+                url.searchParams.set(key, value);
+            } else {
+                url.searchParams.delete(key);
+            }
+        });
         window.location.href = url.toString();
     }
 
     function applyFilters() {
-        const category = document.getElementById("categoryFilter").value;
-        const status = document.getElementById("statusFilter").value;
         const sort = document.getElementById("sortFilter").value;
+        const search = document.getElementById("search-input").value;
 
         updateFilters({
-            category: category,
-            status: status,
             sort: sort,
+            search: search
         });
     }
-
+    // Initialize voting when the page loads
+    document.addEventListener('DOMContentLoaded', initializeVoting);
+    // Close modal when clicking outside
     window.onclick = function (event) {
-    const modal = document.getElementById("newSuggestionModal");
-    if (event.target === modal) {
-        closeNewSuggestionModal();
-    }
-};
-
+        const modal = document.getElementById("newSuggestionModal");
+        if (event.target === modal) {
+            closeNewSuggestionModal();
+        }
+    };
     </script>
 {% endblock content %}
