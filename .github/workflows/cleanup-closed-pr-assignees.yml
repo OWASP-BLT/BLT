@@ -1,7 +1,5 @@
 name: One-Time Cleanup - Closed PR Assignees
 
-# Manual workflow to clean up old closed PRs (run once)
-# This handles PRs that were closed before the automated workflow was implemented
 on:
   workflow_dispatch:
     inputs:
@@ -31,11 +29,10 @@ jobs:
             const repo = context.repo.repo;
             const dryRun = '${{ inputs.dry_run }}' === 'true';
             
-            const GRACE_PERIOD_MS = 6 * 60 * 60 * 1000; // 6 hours
+            const GRACE_PERIOD_MS = 6 * 60 * 60 * 1000;
             
             core.info(`Starting cleanup (dry run: ${dryRun})...\n`);
             
-            // Get all open issues with assignees
             const issues = await github.paginate(github.rest.issues.listForRepo, {
               owner, repo,
               state: 'open',
@@ -55,7 +52,6 @@ jobs:
               try {
                 core.info(`Checking issue #${issue.number}: ${issue.title}`);
                 
-                // Get timeline to find linked PRs
                 const timeline = await github.rest.issues.listEventsForTimeline({
                   owner, repo,
                   issue_number: issue.number,
@@ -98,9 +94,8 @@ jobs:
                   }
                 }
                 
-                // Decision: unassign if closed PR > 6h and no open PR
                 if (closedPRsOlderThan6h.length > 0 && !hasOpenPR) {
-                  core.info(`  ⚠️ Found ${closedPRsOlderThan6h.length} closed PR(s) older than 6 hours:`);
+                  core.info(`  Found ${closedPRsOlderThan6h.length} closed PR(s) older than 6 hours:`);
                   closedPRsOlderThan6h.forEach(pr => {
                     core.info(`    - PR #${pr.number} by @${pr.author} (closed ${pr.hoursAgo}h ago)`);
                   });
@@ -111,14 +106,12 @@ jobs:
                   if (dryRun) {
                     core.info(`  [DRY RUN] Would unassign: ${assignees.join(', ')}`);
                   } else {
-                    // Unassign
                     await github.rest.issues.removeAssignees({
                       owner, repo,
                       issue_number: issue.number,
                       assignees: assignees
                     });
                     
-                    // Post comment
                     const prList = closedPRsOlderThan6h.map(pr => 
                       `- PR #${pr.number} (closed ${pr.hoursAgo}h ago)`
                     ).join('\n');
@@ -126,20 +119,20 @@ jobs:
                     await github.rest.issues.createComment({
                       owner, repo,
                       issue_number: issue.number,
-                      body: `🧹 **Cleanup: Unassigned due to closed PR(s)**\n\n` +
+                      body: `Cleanup: Unassigned due to closed PR(s)\n\n` +
                             `The following PR(s) were closed over 6 hours ago:\n${prList}\n\n` +
-                            `Assignees have been removed. Feel free to comment \`/assign\` to work on this issue! 🙏`
+                            `Assignees have been removed. Feel free to comment /assign to work on this issue.`
                     });
                     
-                    core.info(`  ✓ Unassigned: ${assignees.join(', ')}`);
+                    core.info(`  Unassigned: ${assignees.join(', ')}`);
                     unassignedCount++;
                   }
                 } else if (hasOpenPR) {
-                  core.info(`  ✓ Has open PR, no action needed`);
+                  core.info(`  Has open PR, no action needed`);
                 } else if (closedPRsOlderThan6h.length === 0) {
-                  core.info(`  ✓ No closed PRs older than 6 hours`);
+                  core.info(`  No closed PRs older than 6 hours`);
                 } else {
-                  core.info(`  ✓ No action needed`);
+                  core.info(`  No action needed`);
                 }
                 
                 processedCount++;
@@ -150,11 +143,11 @@ jobs:
             }
             
             core.info(`\n${'='.repeat(60)}`);
-            core.info(`✅ Cleanup complete!`);
+            core.info(`Cleanup complete`);
             core.info(`   Processed: ${processedCount} issues`);
             core.info(`   Unassigned: ${unassignedCount} issues`);
             core.info(`   Dry run: ${dryRun}`);
             
             if (dryRun) {
-              core.info(`\n💡 This was a dry run. Run again with dry_run=false to actually unassign.`);
+              core.info(`\nThis was a dry run. Run again with dry_run=false to actually unassign.`);
             }
