@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -1712,15 +1712,12 @@ class TeamBadge(models.Model):
 
     class Meta:
         constraints = [
-            # Team badge: only one per team
             models.UniqueConstraint(
                 fields=["team", "badge"],
                 name="unique_team_badge_per_team",
             ),
-            # User badge: only one per user per team
             models.UniqueConstraint(
-                fields=["team", "user", "badge"],
-                name="unique_user_badge_per_team",
+                fields=["team", "user", "badge"], name="unique_user_badge_per_team", condition=Q(user__isnull=False)
             ),
         ]
 
