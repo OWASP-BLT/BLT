@@ -6,6 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 
 from website.models import Course, Lecture, Section
+from website.utils import get_client_ip
 
 
 def instructor_required(view_func):
@@ -75,7 +76,7 @@ def ratelimit(key="user", rate="20/m", method="POST"):
                     return view_func(request, *args, **kwargs)
                 identifier = f"user_{request.user.id}"
             elif key == "ip":
-                identifier = f"ip_{request.META.get('REMOTE_ADDR', 'unknown')}"
+                identifier = f"ip_{get_client_ip(request)}"
             else:
                 identifier = f"custom_{key}"
 

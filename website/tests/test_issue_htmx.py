@@ -101,7 +101,7 @@ class IssueHTMXTests(TestCase):
             )
             self.assertEqual(response.status_code, 200)
 
-        # 21th request should be rate limited
+        # 21st request should be rate limited
         response = self.client.post(
             reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
             HTTP_HX_REQUEST="true",
