@@ -35,18 +35,18 @@ def instructor_required(view_func):
     return _wrapped_view
 
 
-def ratelimit(key="user", rate="10/m", method="POST"):
+def ratelimit(key="user", rate="20/m", method="POST"):
     """
     Rate limit decorator using Django's cache framework.
     Follows BLT's existing cache-based rate limiting pattern.
 
     Args:
         key: Rate limit per 'user' or 'ip'
-        rate: Format 'count/period' e.g., '10/m' (10 per minute), '100/h' (100 per hour)
+        rate: Format 'count/period' e.g., '20/m' (20 per minute), '100/h' (100 per hour)
         method: HTTP method to rate limit (default 'POST', use 'ALL' for all methods)
 
     Example:
-        @ratelimit(key='user', rate='10/m', method='POST')
+        @ratelimit(key='user', rate='20/m', method='POST')
         @require_POST
         @login_required
         def like_issue(request, issue_pk):
@@ -58,7 +58,7 @@ def ratelimit(key="user", rate="10/m", method="POST"):
         count = int(count)
         window = {"s": 1, "m": 60, "h": 3600, "d": 86400}[period]
     except (ValueError, KeyError):
-        raise ValueError(f"Invalid rate format: {rate}. Use format like '10/m'")
+        raise ValueError(f"Invalid rate format: {rate}. Use format like '20/m'")
 
     def decorator(view_func):
         @wraps(view_func)

@@ -94,14 +94,14 @@ class IssueHTMXTests(TestCase):
     def test_like_rate_limit(self):
         """Test that like action is rate limited"""
         # Make 10 requests (should succeed)
-        for _ in range(10):
+        for _ in range(20):
             response = self.client.post(
                 reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
                 HTTP_HX_REQUEST="true",
             )
             self.assertEqual(response.status_code, 200)
 
-        # 11th request should be rate limited
+        # 21th request should be rate limited
         response = self.client.post(
             reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
             HTTP_HX_REQUEST="true",

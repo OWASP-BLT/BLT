@@ -123,7 +123,7 @@ def get_issue_vote_context(issue, userprof):
     }
 
 
-@ratelimit(key="user", rate="10/m", method="POST")
+@ratelimit(key="user", rate="20/m", method="POST")
 @require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
@@ -187,7 +187,7 @@ def like_issue(request, issue_pk):
     )
 
 
-@ratelimit(key="user", rate="10/m", method="POST")
+@ratelimit(key="user", rate="20/m", method="POST")
 @require_POST
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
@@ -228,7 +228,7 @@ def dislike_issue(request, issue_pk):
     )
 
 
-@ratelimit(key="user", rate="10/m", method="POST")
+@ratelimit(key="user", rate="20/m", method="POST")
 @require_POST
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
@@ -2147,7 +2147,7 @@ def comment_on_content(request, content_pk):
     return render(request, "comments2.html", context)
 
 
-@ratelimit(key="user", rate="10/m", method="POST")
+@ratelimit(key="user", rate="20/m", method="POST")
 @require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
