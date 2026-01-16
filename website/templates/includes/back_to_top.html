@@ -36,14 +36,26 @@
                     backToTopBtn.classList.add("hidden");
                 }
                 };
+                /* ---------- Optimized Scroll Handler ---------- */
 
-                // Attach listeners
-                if (scrollContainer) {
-                scrollContainer.addEventListener("scroll", toggleButton);
-                } else {
-                window.addEventListener("scroll", toggleButton);
+                let ticking = false;
+
+                const handleScroll = () => {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                    toggleButton();
+                    ticking = false;
+                    });
+                    ticking = true;
                 }
+                };
 
+                // Attach listeners With passive listener
+                if (scrollContainer) {
+                    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+                } else {
+                    window.addEventListener("scroll", handleScroll, { passive: true });
+                }                
                 backToTopBtn.addEventListener("click", scrollToTop);
-            });
+                });
 </script>
