@@ -27,6 +27,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.db.transaction import atomic
 from django.dispatch import receiver
@@ -56,6 +57,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
@@ -92,63 +94,179 @@ from .constants import GSOC25_PROJECTS
 logger = logging.getLogger(__name__)
 
 
+def get_issue_vote_context(issue, userprof):
+    """Build vote/flag/save context for an issue."""
+    # Use reverse relations for more efficient counting
+    counts = {
+        "positive_votes": issue.upvoted.count(),
+        "negative_votes": issue.downvoted.count(),
+        "flags_count": issue.flaged.count(),
+    }
+    if userprof is None:
+        return {
+            **counts,
+            "user_vote": None,
+            "user_has_flagged": False,
+            "user_has_saved": False,
+        }
+    return {
+        **counts,
+        "user_vote": (
+            "upvote"
+            if userprof.issue_upvoted.filter(pk=issue.pk).exists()
+            else "downvote"
+            if userprof.issue_downvoted.filter(pk=issue.pk).exists()
+            else None
+        ),
+        "user_has_flagged": userprof.issue_flaged.filter(pk=issue.pk).exists(),
+        "user_has_saved": userprof.issue_saved.filter(pk=issue.pk).exists(),
+    }
+
+
+@ratelimit(key="user", rate="20/m", method="POST")
+@require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    # Fetch user profile once (NO prefetch)
-    userprof = UserProfile.objects.get(user=request.user)
+    with transaction.atomic():
+        if userprof.issue_downvoted.filter(pk=issue.pk).exists():
+            userprof.issue_downvoted.remove(issue)
 
-    # Remove downvote if exists
-    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
-        userprof.issue_downvoted.remove(issue)
+        created_upvote = not userprof.issue_upvoted.filter(pk=issue.pk).exists()
+        if created_upvote:
+            userprof.issue_upvoted.add(issue)
+        else:
+            userprof.issue_upvoted.remove(issue)
 
-    # Toggle upvote
-    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
-        userprof.issue_upvoted.remove(issue)
-    else:
-        userprof.issue_upvoted.add(issue)
+        if created_upvote and issue.user and issue.user.email:
 
-        # Send email only on NEW upvote
-        if issue.user and issue.user.email:
-            msg_context = {
-                "liker_user": request.user.username,
-                "liked_user": issue.user.username,
-                "issue_pk": issue.pk,
-            }
+            def _send():
+                try:
+                    msg_context = {
+                        "liker_user": request.user.username,
+                        "liked_user": issue.user.username,
+                        "issue_pk": issue.pk,
+                    }
+                    msg_plain = render_to_string("email/issue_liked.html", msg_context)
+                    msg_html = render_to_string("email/issue_liked.html", msg_context)
+                    send_mail(
+                        "Your issue got an upvote!!",
+                        msg_plain,
+                        settings.EMAIL_TO_STRING,
+                        [issue.user.email],
+                        html_message=msg_html,
+                        fail_silently=True,
+                    )
+                except Exception:
+                    logger.exception("Failed to send like notification email for issue %s", issue.pk)
 
-            msg_plain = render_to_string("email/issue_liked.html", msg_context)
-            msg_html = render_to_string("email/issue_liked.html", msg_context)
+            transaction.on_commit(_send)
 
-            send_mail(
-                "Your issue got an upvote!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [issue.user.email],
-                html_message=msg_html,
-            )
+    context = get_issue_vote_context(issue, userprof)
+    context["object"] = issue
 
-    return HttpResponse("Success")
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_like_section.html",
+            context,
+            request=request,
+        )
+        return HttpResponse(html)
+
+    return JsonResponse(
+        {
+            "likes": context["positive_votes"],
+            "dislikes": context["negative_votes"],
+            "flags": context["flags_count"],
+            "user_vote": context["user_vote"],
+            "user_has_flagged": context["user_has_flagged"],
+            "user_has_saved": context["user_has_saved"],
+        }
+    )
 
 
+@ratelimit(key="user", rate="20/m", method="POST")
+@require_POST
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    # Fetch user profile once
-    userprof = UserProfile.objects.get(user=request.user)
+    with transaction.atomic():
+        # Remove upvote if exists
+        if userprof.issue_upvoted.filter(pk=issue.pk).exists():
+            userprof.issue_upvoted.remove(issue)
 
-    # Remove upvote if exists
-    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
-        userprof.issue_upvoted.remove(issue)
+        # Toggle downvote
+        if userprof.issue_downvoted.filter(pk=issue.pk).exists():
+            userprof.issue_downvoted.remove(issue)
+        else:
+            userprof.issue_downvoted.add(issue)
 
-    # Toggle downvote
-    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
-        userprof.issue_downvoted.remove(issue)
+    context = get_issue_vote_context(issue, userprof)
+    context["object"] = issue
+
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_like_section.html",  # Changed from _like_dislike_share.html
+            context,
+            request=request,
+        )
+        return HttpResponse(html)
+
+    return JsonResponse(
+        {
+            "likes": context["positive_votes"],
+            "dislikes": context["negative_votes"],
+            "flags": context["flags_count"],
+            "user_vote": context["user_vote"],
+            "user_has_flagged": context["user_has_flagged"],
+            "user_has_saved": context["user_has_saved"],
+        }
+    )
+
+
+@ratelimit(key="user", rate="20/m", method="POST")
+@require_POST
+@login_required(login_url="/accounts/login")
+def flag_issue(request, issue_pk):
+    issue = get_object_or_404(Issue, pk=issue_pk)
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    # Toggle flag
+    was_flagged = userprof.issue_flaged.filter(pk=issue.pk).exists()
+    if was_flagged:
+        userprof.issue_flaged.remove(issue)
     else:
-        userprof.issue_downvoted.add(issue)
+        userprof.issue_flaged.add(issue)
+    is_flagged = not was_flagged
 
-    return HttpResponse("Success")
+    context = get_issue_vote_context(issue, userprof)
+    context["object"] = issue
+
+    # Check for HTMX request
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_like_section.html",  # Changed from _like_dislike_share.html
+            context,
+            request=request,
+        )
+        return HttpResponse(html)
+
+    # Fallback for non-HTMX POST requests
+    return JsonResponse(
+        {
+            "likes": context["positive_votes"],
+            "dislikes": context["negative_votes"],
+            "flags": context["flags_count"],
+            "user_vote": context["user_vote"],
+            "user_has_flagged": context["user_has_flagged"],
+            "user_has_saved": context["user_has_saved"],
+            "is_flagged": is_flagged,
+        }
+    )
 
 
 @login_required(login_url="/accounts/login")
@@ -239,13 +357,13 @@ def create_github_issue(request, id):
         )
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
-@csrf_exempt
 def resolve(request, id):
-    issue = Issue.objects.get(id=id)
+    issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status = "close"
+            issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()
@@ -1734,8 +1852,6 @@ class IssueView(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
 
-        # Calculate user's total score
-        # Both total_score and users_score are set for backward compatibility
         if self.object.user:
             total_score = (
                 Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score"))["total_score"] or 0
@@ -1748,39 +1864,44 @@ class IssueView(DetailView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
-
-        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
-        # Add email-related data from domain
         if self.object.domain:
             context["email_clicks"] = self.object.domain.clicks
             context["email_events"] = self.object.domain.email_event
 
-            # Generate GitHub issues URL from the domain's github field
             if self.object.domain.github:
                 github_url = self.object.domain.github.rstrip("/")
                 context["github_issues_url"] = f"{github_url}/issues"
-        # Add CVE severity and suggested tip amount
+
         if self.object.cve_id and self.object.cve_score:
             context["cve_severity"] = self.object.get_cve_severity()
             context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
 
-        # Add user score for the issue reporter
-        if self.object.user:
-            context["users_score"] = (
-                list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values())[0] or 0
-            )
+        userprof = None
+        if self.request.user.is_authenticated:
+            userprof = UserProfile.objects.filter(user=self.request.user).first()
+        vote_context = get_issue_vote_context(self.object, userprof)
+
+        context.update(vote_context)
+
+        # Keep legacy keys in sync without extra queries (backward compatibility)
+        context["likes"] = context["positive_votes"]
+        context["dislikes"] = context["negative_votes"]
+        context["flags"] = context["flags_count"]
+
+        context["likers"] = (
+            UserProfile.objects.filter(issue_upvoted=self.object).select_related("user").order_by("-id")[:20]
+        )
+
+        context["flagers"] = (
+            UserProfile.objects.filter(issue_flaged=self.object).select_related("user").order_by("-id")[:20]
+        )
 
         return context
 
@@ -2026,30 +2147,45 @@ def comment_on_content(request, content_pk):
     return render(request, "comments2.html", context)
 
 
-@login_required(login_url="/accounts/login")
-def unsave_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-    userprof.issue_saved.remove(issue)
-    return HttpResponse("OK")
-
-
+@ratelimit(key="user", rate="20/m", method="POST")
+@require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
+    issue = get_object_or_404(Issue, pk=issue_pk)
+    userprof, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
+    # Toggle save
+    already_saved = userprof.issue_saved.filter(pk=issue.pk).exists()
 
     if already_saved:
         userprof.issue_saved.remove(issue)
-        return HttpResponse("REMOVED")
-
+        is_saved = False
+        message = "Bookmark removed"
     else:
         userprof.issue_saved.add(issue)
-        return HttpResponse("OK")
+        is_saved = True
+        message = "Bookmarked successfully"
+
+    # Check for HTMX request
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_bookmark_section.html",
+            {
+                "object": issue,
+                "user_has_saved": is_saved,
+            },
+            request=request,
+        )
+        return HttpResponse(html)
+
+    # Return JSON for API requests
+    return JsonResponse(
+        {
+            "success": True,
+            "message": message,
+            "user_has_saved": is_saved,
+        }
+    )
 
 
 @receiver(user_logged_in)
@@ -2099,25 +2235,6 @@ def IssueEdit(request):
             return HttpResponse("Unauthorised")
     else:
         return HttpResponse("POST ONLY")
-
-
-@login_required(login_url="/accounts/login")
-def flag_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_flaged=issue):
-        userprof.issue_flaged.remove(issue)
-    else:
-        userprof.issue_flaged.add(issue)
-        issue_pk = issue.pk
-
-    userprof.save()
-    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
-    context["object"] = issue
-    context["flags"] = total_flag_votes
-    return render(request, "includes/_flags.html", context)
 
 
 def select_bid(request):
