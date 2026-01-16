@@ -8,14 +8,14 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError
 from django.db.models import Count
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 # Create your views here.
 from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile
+from website.models import Badge, Challenge, JoinRequest, Kudos, Organization, TeamBadge, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +29,21 @@ class TeamOverview(TemplateView):
             user_profile = self.request.user.userprofile
             team_members = []
             team_kudos = []
+            team_badges = []  # for team badges as a whole
             if user_profile.team:
                 user_profile.team.managers.add(user_profile.team.admin)
                 team_members = user_profile.team.managers.annotate(kudos_count=Count("kudos_received"))
                 team_kudos = Kudos.objects.filter(receiver__in=team_members).order_by("-timestamp")
-
+                for member in team_members:  # for badges for indivitual members
+                    member.badges = TeamBadge.objects.filter(user=member)
+            team_badges = TeamBadge.objects.filter(team=self.request.user.userprofile.team, user=None)
+            available_badges = Badge.objects.filter(type="manual")
             received_kudos = self.request.user.kudos_received.all()
             context.update(
                 {
                     "team_members": team_members,
+                    "team_badges": team_badges,
+                    "available_badges": available_badges,
                     "received_kudos": received_kudos,
                     "team_kudos": team_kudos,
                 }
@@ -348,3 +354,47 @@ class TeamLeaderboard(TemplateView):
         }
 
         return render(request, "team_leaderboard.html", context)
+
+
+@login_required
+def assign_team_member_badge(request, user_id):
+    user_profile = request.user.userprofile
+
+    if not user_profile.team:
+        messages.error(request, "You are not in a team.")
+        return redirect("team_overview")
+
+    team = user_profile.team
+    target_user = get_object_or_404(User, id=user_id)
+
+    # Ensure target is in same team
+    if not hasattr(target_user, "userprofile") or target_user.userprofile.team != team:
+        messages.error(request, "This user is not in your team.")
+        return redirect("team_overview")
+
+    # Permissions — only team admin
+    if team.admin != request.user:
+        messages.error(request, "You are not allowed to assign badges in this team.")
+        return redirect("team_overview")
+
+    # -------- Handle ?badge= --------
+    badge_id = request.POST.get("badge")
+    if not badge_id:
+        messages.error(request, "No badge selected.")
+        return redirect("team_overview")
+
+    badge = get_object_or_404(Badge, id=badge_id)
+    existing = TeamBadge.objects.filter(user=target_user, badge=badge, team=team).exists()
+
+    if existing:
+        messages.info(request, f"{target_user.username} already has the '{badge.title}' badge.")
+        return redirect("team_overview")
+
+    # Create the badge assignment
+    TeamBadge.objects.create(
+        user=target_user, badge=badge, team=team, awarded_by=request.user, reason="Awarded by team admin"
+    )
+
+    messages.success(request, f"Badge '{badge.title}' awarded to {target_user.username}!")
+
+    return redirect("team_overview")

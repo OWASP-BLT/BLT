@@ -2,6 +2,7 @@
 Tests for GitHub data fetching management commands.
 Tests focus on key functionality: timeouts, bulk operations, and data integrity.
 """
+
 from datetime import timedelta
 from io import StringIO
 from unittest.mock import Mock, patch

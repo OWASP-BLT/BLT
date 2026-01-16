@@ -1,6 +1,7 @@
 """
 Tests for Slack-related management commands.
 """
+
 from io import StringIO
 from unittest.mock import Mock, patch
 
