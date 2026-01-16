@@ -72,18 +72,20 @@ def bounty_payout(request):
             return JsonResponse({"status": "error", "message": "Bounty amount exceeds maximum"}, status=400)
 
         # Validate string fields (GitHub naming conventions)
-        github_name_pattern = r"^[A-Za-z0-9_.-]+$"
-        github_username_pattern = r"^[A-Za-z0-9_-]+$"
+        # GitHub usernames and org names: alphanumeric + hyphens only
+        # GitHub repo names: alphanumeric + hyphens + underscores + dots
+        github_username_org_pattern = r"^[A-Za-z0-9-]+$"
+        github_repo_pattern = r"^[A-Za-z0-9_.-]+$"
 
-        if not re.match(github_name_pattern, owner_name):
+        if not re.match(github_username_org_pattern, owner_name):
             logger.warning(f"Invalid owner name format: {owner_name}")
             return JsonResponse({"status": "error", "message": "Invalid owner name"}, status=400)
 
-        if not re.match(github_name_pattern, repo_name):
+        if not re.match(github_repo_pattern, repo_name):
             logger.warning(f"Invalid repo name format: {repo_name}")
             return JsonResponse({"status": "error", "message": "Invalid repository name"}, status=400)
 
-        if not re.match(github_username_pattern, contributor_username):
+        if not re.match(github_username_org_pattern, contributor_username):
             logger.warning(f"Invalid username format: {contributor_username}")
             return JsonResponse({"status": "error", "message": "Invalid username"}, status=400)
 
@@ -104,9 +106,7 @@ def bounty_payout(request):
         # This ensures check-then-set is atomic: if two requests arrive simultaneously,
         # only one will succeed in recording the bounty
         with transaction.atomic():
-            github_issue = (
-                GitHubIssue.objects.select_for_update().filter(issue_id=issue_number, repo=repo).first()
-            )
+            github_issue = GitHubIssue.objects.select_for_update().filter(issue_id=issue_number, repo=repo).first()
             if not github_issue:
                 logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
                 return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)

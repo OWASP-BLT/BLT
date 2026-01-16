@@ -303,7 +303,7 @@ class BountyPayoutTestCase(TestCase):
             "issue_number": 123,
             "repo": "TestRepo",
             "owner": "TestOrg",
-            "contributor_username": "user.name.with.dots",  # Dots not allowed in usernames
+            "contributor_username": "user_with_underscores",  # Underscores not allowed in usernames
             "pr_number": 456,
             "bounty_amount": 5000,
         }
@@ -317,4 +317,3 @@ class BountyPayoutTestCase(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid username", response.json()["message"])
-
