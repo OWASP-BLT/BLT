@@ -207,3 +207,114 @@ class BountyPayoutTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "success")
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_negative_amount(self):
+        """Test that negative bounty amounts are rejected."""
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": -5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("positive", response.json()["message"])
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_zero_amount(self):
+        """Test that zero bounty amounts are rejected."""
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 0,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("positive", response.json()["message"])
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_excessive_amount(self):
+        """Test that bounty amounts exceeding $1M are rejected."""
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 100000001,  # Over $1M
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("exceeds maximum", response.json()["message"])
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_invalid_owner(self):
+        """Test that invalid owner names are rejected."""
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "Invalid Owner!@#",  # Invalid characters
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid owner", response.json()["message"])
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_invalid_username(self):
+        """Test that invalid usernames are rejected."""
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "user.name.with.dots",  # Dots not allowed in usernames
+            "pr_number": 456,
+            "bounty_amount": 5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid username", response.json()["message"])
+

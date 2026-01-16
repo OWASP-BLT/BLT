@@ -1,8 +1,10 @@
 import json
 import logging
 import os
+import re
 import secrets
 
+from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -60,6 +62,31 @@ def bounty_payout(request):
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]
 
+        # Validate bounty amount bounds
+        if bounty_amount <= 0:
+            logger.warning(f"Invalid bounty amount: {bounty_amount} (must be positive)")
+            return JsonResponse({"status": "error", "message": "Bounty amount must be positive"}, status=400)
+
+        if bounty_amount > 100000000:  # $1M sanity check (in cents)
+            logger.warning(f"Bounty amount too large: {bounty_amount}")
+            return JsonResponse({"status": "error", "message": "Bounty amount exceeds maximum"}, status=400)
+
+        # Validate string fields (GitHub naming conventions)
+        github_name_pattern = r"^[A-Za-z0-9_.-]+$"
+        github_username_pattern = r"^[A-Za-z0-9_-]+$"
+
+        if not re.match(github_name_pattern, owner_name):
+            logger.warning(f"Invalid owner name format: {owner_name}")
+            return JsonResponse({"status": "error", "message": "Invalid owner name"}, status=400)
+
+        if not re.match(github_name_pattern, repo_name):
+            logger.warning(f"Invalid repo name format: {repo_name}")
+            return JsonResponse({"status": "error", "message": "Invalid repository name"}, status=400)
+
+        if not re.match(github_username_pattern, contributor_username):
+            logger.warning(f"Invalid username format: {contributor_username}")
+            return JsonResponse({"status": "error", "message": "Invalid username"}, status=400)
+
         # Look up repository and issue
         # Prioritize matching github_org, then fallback to name for legacy organizations
         # Use separate queries to ensure deterministic results (github_org match takes precedence)
@@ -73,27 +100,33 @@ def bounty_payout(request):
             logger.error(f"Repo not found: {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
 
-        github_issue = GitHubIssue.objects.filter(issue_id=issue_number, repo=repo).first()
-        if not github_issue:
-            logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
-            return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
-
-        # Check for duplicate payment
-        if github_issue.sponsors_tx_id:
-            logger.info(f"Payment already processed for issue #{issue_number}")
-            return JsonResponse(
-                {
-                    "status": "warning",
-                    "message": "Bounty payment already processed for this issue.",
-                    "transaction_id": github_issue.sponsors_tx_id,
-                },
-                status=200,
+        # Use atomic transaction with row locking to prevent race conditions
+        # This ensures check-then-set is atomic: if two requests arrive simultaneously,
+        # only one will succeed in recording the bounty
+        with transaction.atomic():
+            github_issue = (
+                GitHubIssue.objects.select_for_update().filter(issue_id=issue_number, repo=repo).first()
             )
+            if not github_issue:
+                logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
+                return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        # Record the bounty for manual payment via GitHub Sponsors
-        # Format: BOUNTY:<contributor>:<amount_cents>:<pr>
-        github_issue.sponsors_tx_id = f"BOUNTY:{contributor_username}:{bounty_amount}:{pr_number}"
-        github_issue.save()
+            # Check for duplicate payment (inside transaction for atomicity)
+            if github_issue.sponsors_tx_id:
+                logger.info(f"Payment already processed for issue #{issue_number}")
+                return JsonResponse(
+                    {
+                        "status": "warning",
+                        "message": "Bounty payment already processed for this issue.",
+                        "transaction_id": github_issue.sponsors_tx_id,
+                    },
+                    status=200,
+                )
+
+            # Record the bounty for manual payment via GitHub Sponsors
+            # Format: BOUNTY:<contributor>:<amount_cents>:<pr>
+            github_issue.sponsors_tx_id = f"BOUNTY:{contributor_username}:{bounty_amount}:{pr_number}"
+            github_issue.save()
 
         logger.info(
             f"Recorded bounty: ${bounty_amount / 100:.2f} to {contributor_username} "
