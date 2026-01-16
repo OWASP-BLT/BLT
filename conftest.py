@@ -4,7 +4,6 @@ Pytest configuration for BLT tests.
 This file ensures that Django settings are properly configured for testing.
 """
 import os
-import sys
 
 import django
 from django.conf import settings

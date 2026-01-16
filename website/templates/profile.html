@@ -516,9 +516,7 @@
                                      height="64">
                             {% endif %}
                             <h4 class="font-medium">{{ user_badge.badge.title }}</h4>
-                            {% if user_badge.team %}
-                                <h3 class="font-medium text-start text-red-500"> {{ user_badge.team }}</h3>
-                            {% endif %}
+                            {% if user_badge.team %}<h3 class="font-medium text-start text-red-500">{{ user_badge.team }}</h3>{% endif %}
                             <p class="text-xs text-gray-800 dark:text-gray-800 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
                             {% if user_badge.reason %}
                                 <p class="text-xs text-gray-400 dark:text-gray-600 italic mt-1">Reason: "{{ user_badge.reason }}"</p>

@@ -7,7 +7,7 @@ from django.db import migrations
 
 
 def add_badge_icons(apps, schema_editor):
-    Badge=apps.get_model("website","Badge")
+    Badge = apps.get_model("website", "Badge")
     new_badges = [
         {
             "title": "Weekly Streak",
@@ -49,7 +49,6 @@ def add_badge_icons(apps, schema_editor):
                 "type": "automatic",
             },
         )
-
 
         static_icon_path = os.path.join("website", "static", "img", "badges", badge_data["icon"])
 

@@ -1,6 +1,5 @@
 import json
 import logging
-from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -30,21 +29,21 @@ class TeamOverview(TemplateView):
             user_profile = self.request.user.userprofile
             team_members = []
             team_kudos = []
-            team_badges = [] #for team badges as a whole
+            team_badges = []  # for team badges as a whole
             if user_profile.team:
                 user_profile.team.managers.add(user_profile.team.admin)
                 team_members = user_profile.team.managers.annotate(kudos_count=Count("kudos_received"))
                 team_kudos = Kudos.objects.filter(receiver__in=team_members).order_by("-timestamp")
-                for member in team_members: #for badges for indivitual members
-                   member.badges = TeamBadge.objects.filter(user=member)
+                for member in team_members:  # for badges for indivitual members
+                    member.badges = TeamBadge.objects.filter(user=member)
             team_badges = TeamBadge.objects.filter(team=self.request.user.userprofile.team, user=None)
             available_badges = Badge.objects.filter(type="manual")
             received_kudos = self.request.user.kudos_received.all()
             context.update(
                 {
                     "team_members": team_members,
-                    "team_badges":team_badges,
-                    "available_badges":available_badges,
+                    "team_badges": team_badges,
+                    "available_badges": available_badges,
                     "received_kudos": received_kudos,
                     "team_kudos": team_kudos,
                 }
@@ -356,6 +355,7 @@ class TeamLeaderboard(TemplateView):
 
         return render(request, "team_leaderboard.html", context)
 
+
 @login_required
 def assign_team_member_badge(request, user_id):
     user_profile = request.user.userprofile
@@ -384,18 +384,17 @@ def assign_team_member_badge(request, user_id):
         return redirect("team_overview")
 
     badge = get_object_or_404(Badge, id=badge_id)
-    existing = TeamBadge.objects.filter(user=target_user, badge=badge, team=team ).exists()
+    existing = TeamBadge.objects.filter(user=target_user, badge=badge, team=team).exists()
 
     if existing:
         messages.info(request, f"{target_user.username} already has the '{badge.title}' badge.")
         return redirect("team_overview")
-    
-    # Create the badge assignment
-    TeamBadge.objects.create(user=target_user, badge=badge, team=team, awarded_by=request.user, reason="Awarded by team admin" )
 
-    messages.success(
-        request,
-        f"Badge '{badge.title}' awarded to {target_user.username}!"
+    # Create the badge assignment
+    TeamBadge.objects.create(
+        user=target_user, badge=badge, team=team, awarded_by=request.user, reason="Awarded by team admin"
     )
+
+    messages.success(request, f"Badge '{badge.title}' awarded to {target_user.username}!")
 
     return redirect("team_overview")

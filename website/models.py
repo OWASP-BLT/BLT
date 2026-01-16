@@ -1659,12 +1659,11 @@ class Badge(models.Model):
     BADGE_TYPES = [
         ("automatic", "Automatic"),
         ("manual", "Manual"),
-
     ]
     BADGE_SCOPES = [
-        ("user", "User"),   # Badge meant for individual users
+        ("user", "User"),  # Badge meant for individual users
         ("team", "Team"),  # Badge meant for teams
-        ("topuser_team","Topuser Team") # Badge meant for indivitual users in a team
+        ("topuser_team", "Topuser Team"),  # Badge meant for individual users in a team
     ]
     title = models.CharField(max_length=100)
     description = models.TextField()
@@ -1694,9 +1693,12 @@ class UserBadge(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.badge.title}"
 
+
 class TeamBadge(models.Model):
     team = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    user=models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, default=None)# assign a indivitual user the badge for achivement in a group
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, blank=True, default=None
+    )  # assign a indivitual user the badge for achivement in a group
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
     awarded_by = models.ForeignKey(
         User,
@@ -1707,6 +1709,7 @@ class TeamBadge(models.Model):
     )
     awarded_at = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(blank=True, null=True)
+
     class Meta:
         constraints = [
             # Team badge: only one per team
@@ -1720,8 +1723,10 @@ class TeamBadge(models.Model):
                 name="unique_user_badge_per_team",
             ),
         ]
+
     def __str__(self):
         return f"{self.team} - {self.badge.title}"
+
 
 class Adventure(models.Model):
     """

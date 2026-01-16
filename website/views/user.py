@@ -426,10 +426,10 @@ class UserProfileDetailView(DetailView):
         context["next_milestone"] = next_milestone
         # Fetch badges
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
-        team_badges =TeamBadge.objects.filter(user=user)
-        user_badges = chain(user_badges, team_badges)#combining them
+        team_badges = TeamBadge.objects.filter(user=user)
+        user_badges = chain(user_badges, team_badges)  # combining them
         context["user_badges"] = user_badges  # Add badges to context
-        
+
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
@@ -1258,8 +1258,7 @@ def validate_github_signature(payload_body: bytes, signature_header: str | None)
     if not signature_header:
         logger.warning("Missing X-Hub-Signature-256 header")
         return False
-
-    secret = settings.GITHUB_WEBHOOK_SECRET
+    secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
     if not secret:
         logger.warning("GITHUB_WEBHOOK_SECRET is not set")
         return False
@@ -1308,8 +1307,8 @@ def github_webhook(request):
     """
     if request.method == "POST":
         # Fail closed if secret is not configured
-        
-        if not getattr(settings, "GITHUB_WEBHOOK_SECRET", None):
+
+        if not os.environ.get("GITHUB_WEBHOOK_SECRET", ""):
             logger.error("GITHUB_WEBHOOK_SECRET is not configured; refusing webhook request.")
             return JsonResponse(
                 {
