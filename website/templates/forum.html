@@ -237,7 +237,7 @@
                 <div class="max-w-4xl mx-auto mt-10">
                     <div class="flex justify-center items-center gap-4">
                         {% if posts.has_previous %}
-                            <a href="?page={{ posts.previous_page_number }}&search={{ selected_search }}&sort={{ selected_sort }}&category={{ selected_category }}"
+                            <a href="?page={{ posts.previous_page_number }}&search={{ selected_search|urlencode }}&sort={{ selected_sort|urlencode }}&category={{ selected_category|urlencode }}"
                                class="px-6 py-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-[#e74c3c] hover:text-white transition">
                                 ← Prev
                             </a>
@@ -248,7 +248,7 @@
                             Page {{ posts.number }} of {{ posts.paginator.num_pages }}
                         </span>
                         {% if posts.has_next %}
-                            <a href="?page={{ posts.next_page_number }}&search={{ selected_search }}&sort={{ selected_sort }}&category={{ selected_category }}"
+                            <a href="?page={{ posts.next_page_number }}&search={{ selected_search|urlencode }}&sort={{ selected_sort|urlencode }}&category={{ selected_category|urlencode }}"
                                class="px-6 py-2 rounded-full bg-[#e74c3c] text-white hover:bg-[#c0392b] transition">
                                 Next →
                             </a>

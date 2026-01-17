@@ -1165,8 +1165,10 @@ def add_forum_comment(request):
             post_id = data.get("post_id")
             content = data.get("content")
 
-            if not all([post_id, content]):
+            if not post_id or content is None:
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+            if not isinstance(content, str):
+                return JsonResponse({"success": False, "error": "Invalid comment format"}, status=400)
             if not content.strip():
                 return JsonResponse({"success": False, "error": "Comment cannot be empty"}, status=400)
 
