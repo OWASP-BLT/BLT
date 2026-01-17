@@ -87,7 +87,7 @@
                         <div class="flex items-center gap-3">
                             <i class="fas fa-info-circle text-blue-500"></i>
                             <p class="text-sm text-blue-800 dark:text-blue-200">
-                                <a href="/accounts/login/?next={{ request.path }}"
+                                <a href="/accounts/login/?next={{ request.get_full_path|urlencode }}"
                                    class="font-bold hover:underline">Log in</a> to create posts, vote, or comment.
                             </p>
                         </div>
