@@ -1234,9 +1234,6 @@ def view_forum(request):
         category.is_selected = str(category.id) == selected_category
 
     # Get total posts count before filtering
-    posts = ForumPost.objects.select_related("user", "category").annotate(
-        comment_count=Count("comments", distinct=True)
-    )
     posts = (
         ForumPost.objects.select_related("user", "category")
         .prefetch_related("comments", "comments__user")
