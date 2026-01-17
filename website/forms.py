@@ -96,6 +96,7 @@ class HuntForm(forms.Form):
 
 
 class CaptchaForm(forms.Form):
+    captcha = CaptchaField()
 
 
 class MonitorForm(forms.ModelForm):
