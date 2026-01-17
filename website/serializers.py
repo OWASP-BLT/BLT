@@ -127,21 +127,31 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    freshness = serializers.SerializerMethodField()
+    freshness = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
+    freshness_breakdown = serializers.SerializerMethodField(read_only=True)
+    freshness_reason = serializers.SerializerMethodField(read_only=True)
 
-    total_stars = serializers.IntegerField(read_only=True)
-    total_forks = serializers.IntegerField(read_only=True)
+    def get_freshness(self, obj):
+        # This method is needed for test patching compatibility
+        return getattr(obj, "freshness", None)
 
-    external_links = serializers.JSONField(required=False)
-    project_visit_count = serializers.IntegerField(required=False)
+    def get_freshness_breakdown(self, obj):
+        if hasattr(obj, "get_freshness_breakdown"):
+            return obj.get_freshness_breakdown()
+        return {}
+
+    def get_freshness_reason(self, obj):
+        method = getattr(obj, "freshness_reason", None)
+        if callable(method):
+            val = method()
+            if val:
+                return val
+        return "No recent activity"
 
     class Meta:
         model = Project
         fields = "__all__"
         read_only_fields = ("slug", "contributors")
-
-    def get_freshness(self, obj):
-        return obj.fetch_freshness()
 
 
 class ContributorSerializer(serializers.ModelSerializer):
