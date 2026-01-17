@@ -1237,6 +1237,11 @@ def view_forum(request):
     posts = ForumPost.objects.select_related("user", "category").annotate(
         comment_count=Count("comments", distinct=True)
     )
+    posts = (
+        ForumPost.objects.select_related("user", "category")
+        .prefetch_related("comments", "comments__user")
+        .annotate(comment_count=Count("comments", distinct=True))
+    )
 
     # Apply filters
     if selected_category and selected_category.isdigit():
@@ -1263,7 +1268,7 @@ def view_forum(request):
 
     from django.core.paginator import Paginator
 
-    paginator = Paginator(posts, 5)  # 20 posts per page
+    paginator = Paginator(posts, 5)  # 5 posts per page
     page_number = request.GET.get("page")
     posts = paginator.get_page(page_number)
 
