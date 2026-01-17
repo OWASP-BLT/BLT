@@ -5,7 +5,7 @@
     Sign Up | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
-    Create an account to join the gamified crowd-sourced QA testing community. Sign up to test websites, apps, git repositories, and more.
+    Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.
 {% endblock description %}
 {% block keywords %}
     Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs
@@ -14,7 +14,7 @@
     Sign Up - Join Our Community
 {% endblock og_title %}
 {% block og_description %}
-    Create an account to join the gamified crowd-sourced QA testing community. Sign up to test websites, apps, git repositories, and more.
+    Create an account to join our community. Sign up with your email and username to start discovering and reporting bugs.
 {% endblock og_description %}
 {% load i18n %}
 {% load custom_tags %}
@@ -29,7 +29,7 @@
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
                 <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-                    {% env 'PROJECT_NAME' %} {% trans "is a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more" %}.
+                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Already have an account" %}?</span>

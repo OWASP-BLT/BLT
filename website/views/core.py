@@ -34,7 +34,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -88,27 +88,6 @@ SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
 # ----------------------------------------------------------------------------------
-def get_popular_searches(limit=5, min_users=3):
-    """Returns a list of dicts with query and average result count."""
-
-    popular = (
-        SearchHistory.objects.values("query")
-        .annotate(user_count=Count("user", distinct=True), avg_results=Avg("result_count"))
-        .filter(user_count__gte=min_users, avg_results__gt=0)
-        .order_by("-user_count", "-avg_results")[:limit]
-    )
-
-    suggestions = []
-    for item in popular:
-        suggestions.append(
-            {
-                "query": item["query"],
-                "result_count": int(item["avg_results"]) if item["avg_results"] else 0,
-                "user_count": item["user_count"],
-            }
-        )
-
-    return suggestions
 
 
 def memory_usage_by_module(limit=1000):
@@ -773,43 +752,6 @@ def search(request, template="search.html"):
                 "repos": Repo.objects.filter(primary_language__icontains=query),
             }
 
-        has_results = False
-
-        if stype == "all" or not stype:
-            has_results = bool(
-                context.get("organizations")
-                or context.get("issues")
-                or context.get("domains")
-                or context.get("users")
-                or context.get("projects")
-                or context.get("repos")
-            )
-        elif stype == "tags":
-            has_results = bool(
-                context.get("matching_organizations")
-                or context.get("matching_domains")
-                or context.get("matching_issues")
-                or context.get("matching_user_profiles")
-                or context.get("matching_repos")
-            )
-        else:
-            type_to_key = {
-                "issues": "issues",
-                "domains": "domains",
-                "users": "users",
-                "labels": "issues",
-                "organizations": "organizations",
-                "projects": "projects",
-                "repos": "repos",
-                "languages": "repos",
-            }
-            key = type_to_key.get(stype, stype)
-            has_results = bool(context.get(key))
-        # If no results found, add popular search suggestions
-        if not has_results:
-            context["popular_searches"] = get_popular_searches(limit=5, min_users=3)
-            context["has_no_results"] = True
-
     # Handle authenticated user features
     if request.user.is_authenticated:
         try:
@@ -1093,63 +1035,42 @@ def add_forum_post(request):
         try:
             data = json.loads(request.body)
             title = data.get("title")
-            description = data.get("description")
             category = data.get("category")
+            description = data.get("description")
             repo_id = data.get("repo")
             project_id = data.get("project")
             organization_id = data.get("organization")
 
-            if (
-                not isinstance(title, str)
-                or not title.strip()
-                or not isinstance(description, str)
-                or not description.strip()
-                or category is None
-            ):
+            if not all([title, category, description]):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            category = int(category)
-            ForumCategory.objects.get(id=category)
+            # Explicitly validate category exists before creating post
+            category_obj = ForumCategory.objects.get(pk=category)
 
-            # validate optional foreign keys
+            post_data = {
+                "user": request.user,
+                "title": title,
+                "category_id": category,
+                "description": description,
+            }
+
             if repo_id:
-                repo_id = int(repo_id)
-                Repo.objects.get(id=repo_id)
-            else:
-                repo_id = None
-
+                post_data["repo_id"] = repo_id
             if project_id:
-                project_id = int(project_id)
-                Project.objects.get(id=project_id)
-            else:
-                project_id = None
-
+                post_data["project_id"] = project_id
             if organization_id:
-                organization_id = int(organization_id)
-                Organization.objects.get(id=organization_id)
-            else:
-                organization_id = None
+                post_data["organization_id"] = organization_id
 
-            post = ForumPost.objects.create(
-                user=request.user,
-                title=title,
-                description=description,
-                category_id=category,
-                repo_id=repo_id,
-                project_id=project_id,
-                organization_id=organization_id,
-            )
+            post = ForumPost.objects.create(**post_data)
 
-            return JsonResponse({"success": True, "post_id": post.id})
-        except ForumCategory.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
-        except (Repo.DoesNotExist, Project.DoesNotExist, Organization.DoesNotExist):
-            return JsonResponse({"success": False, "error": "Invalid reference ID"}, status=404)
+            return JsonResponse({"status": "success", "post_id": post.id})
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
         except (ValueError, TypeError):
             logger.exception("Validation error in add_forum_post")
             return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
         except Exception:
             logger.exception("Unexpected error in add_forum_post")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
@@ -1168,10 +1089,10 @@ def add_forum_comment(request):
             if not all([post_id, content]):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            post = ForumPost.objects.get(id=int(post_id))
+            post = ForumPost.objects.get(id=post_id)
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
-            return JsonResponse({"success": True, "comment_id": comment.id})
+            return JsonResponse({"status": "success", "comment_id": comment.id})
         except ForumPost.DoesNotExist:
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
@@ -1189,32 +1110,33 @@ def add_forum_comment(request):
 @login_required
 @require_POST
 def delete_forum_post(request):
+    if not request.user.is_superuser:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+
     try:
         data = json.loads(request.body)
         post_id = data.get("post_id")
 
         if not post_id:
-            return JsonResponse({"status": "error", "message": "Post ID is required"}, status=400)
+            return JsonResponse({"status": "error", "message": "Post ID is required"})
 
+        # Validate post_id is an integer
         try:
             post_id = int(post_id)
         except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Post ID format"}, status=400)
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
 
         post = ForumPost.objects.get(id=post_id)
-
-        if request.user != post.user and not request.user.is_superuser:
-            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
         post.delete()
 
-        return JsonResponse({"status": "success", "message": "Post deleted successfully"}, status=200)
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
     except ForumPost.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Post not found"}, status=404)
+        return JsonResponse({"status": "error", "message": "Post not found"})
     except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
     except Exception as e:
         logging.exception("Unexpected error deleting forum post")
-        return JsonResponse({"status": "error", "message": "Server error occurred"}, status=500)
+        return JsonResponse({"status": "error", "message": "Server error occurred"})
 
 
 @ensure_csrf_cookie
@@ -1222,8 +1144,6 @@ def view_forum(request):
     # Annotate categories with post counts
     categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
-    selected_status = request.GET.get("status")
-    selected_sort = request.GET.get("sort")
 
     # Add is_selected flag to categories for cleaner template logic
     for category in categories:
@@ -1236,24 +1156,12 @@ def view_forum(request):
         ForumPost.objects.select_related("user", "category")
         .prefetch_related("comments")
         .annotate(comment_count=Count("comments"))
+        .order_by("-created")  # Sort by newest first
         .all()
     )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
-
-    if selected_status:
-        posts = posts.filter(status=selected_status)
-
-    # sorting of filters by newest, oldest, most votes, most comments
-    if selected_sort == "oldest":
-        posts = posts.order_by("created")
-    elif selected_sort == "most_votes":
-        posts = posts.order_by("-up_votes")
-    elif selected_sort == "most_comments":
-        posts = posts.order_by("-comment_count")
-    else:
-        posts = posts.order_by("-created")  # newest first (default)
 
     # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
@@ -1276,8 +1184,6 @@ def view_forum(request):
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
-            "selected_status": selected_status,
-            "selected_sort": selected_sort,
             "organizations": organizations,
             "projects": projects,
             "repos": repos,

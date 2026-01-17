@@ -267,36 +267,33 @@ class TeamChallenges(TemplateView):
     """View for displaying all team challenges and their progress."""
 
     def get(self, request):
-        # Prefetch team participants to avoid N+1
-        team_challenges = Challenge.objects.filter(challenge_type="team").prefetch_related("team_participants")
-
-        circumference = 125.6
-
+        # Get all team challenges
+        team_challenges = Challenge.objects.filter(challenge_type="team")
         if request.user.is_authenticated:
             user_profile = request.user.userprofile
-            user_team = user_profile.team if user_profile.team else None
 
-            for challenge in team_challenges:
-                if user_team and user_team in challenge.team_participants.all():
-                    progress = challenge.progress
-                else:
-                    progress = 0
+            # Check if the user belongs to a team
+            if user_profile.team:
+                user_team = user_profile.team
 
-                challenge.progress = progress
-                challenge.stroke_dasharray = circumference
-                challenge.stroke_dashoffset = circumference - (circumference * progress / 100)
+                for challenge in team_challenges:
+                    # Check if the team is a participant in this challenge
+                    if user_team in challenge.team_participants.all():
+                        challenge.progress = challenge.progress
+                    else:
+                        challenge.progress = 0
 
-        else:
-            for challenge in team_challenges:
-                challenge.progress = 0
-                challenge.stroke_dasharray = circumference
-                challenge.stroke_dashoffset = circumference
+                    # Calculate the progress circle offset
+                    circumference = 125.6
+                    challenge.stroke_dasharray = circumference
+                    challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
+            else:
+                for challenge in team_challenges:
+                    challenge.progress = 0
+                    challenge.stroke_dasharray = 125.6
+                    challenge.stroke_dashoffset = 125.6
 
-        return render(
-            request,
-            "team_challenges.html",
-            {"team_challenges": team_challenges},
-        )
+        return render(request, "team_challenges.html", {"team_challenges": team_challenges})
 
 
 class TeamLeaderboard(TemplateView):
