@@ -1224,6 +1224,7 @@ def view_forum(request):
     selected_category = request.GET.get("category")
     selected_status = request.GET.get("status")
     selected_sort = request.GET.get("sort")
+    selected_search = request.GET.get("search", "").strip()
 
     # Add is_selected flag to categories for cleaner template logic
     for category in categories:
@@ -1242,8 +1243,12 @@ def view_forum(request):
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
-    if selected_status:
-        posts = posts.filter(status=selected_status)
+    if selected_search:
+        posts = posts.filter(
+            Q(title__icontains=selected_search)
+            | Q(description__icontains=selected_search)
+            | Q(user__username__icontains=selected_search)
+        )
 
     # sorting of filters by newest, oldest, most votes, most comments
     if selected_sort == "oldest":
@@ -1276,6 +1281,7 @@ def view_forum(request):
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
+            "selected_search": selected_search,
             "selected_status": selected_status,
             "selected_sort": selected_sort,
             "organizations": organizations,
