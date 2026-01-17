@@ -77,7 +77,7 @@ INSTALLED_APPS = (
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "django.contrib.humanize",
-    "website",
+    "website.apps.WebsiteConfig",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
