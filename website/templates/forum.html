@@ -13,9 +13,17 @@
     {% include "includes/sidenav.html" %}
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900"
          data-user-authenticated="{{ user.is_authenticated|yesno:'true,false' }}">
-        <!-- Category Sidebar -->
         <div class="max-w-7xl mx-auto p-4 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8">
-            <div class="w-full lg:w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 h-fit border border-gray-100 dark:border-gray-700 flex-shrink-0">
+            <!-- Mobile Categories Toggle Button -->
+            <div class="lg:hidden">
+                <button onclick="toggleCategories()"
+                        class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-left font-semibold text-[#e74c3c] shadow-sm">
+                    Categories ▾
+                </button>
+            </div>
+            <!-- Category Sidebar -->
+            <div id="categoryPanel"
+                 class="hidden lg:block w-full lg:w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 h-fit border border-gray-100 dark:border-gray-700 flex-shrink-0">
                 <h2 class="text-xl font-bold mb-4 lg:mb-6 text-[#e74c3c] tracking-wide">Categories</h2>
                 <ul class="space-y-2 lg:space-y-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 lg:gap-0">
                     <li class="flex justify-between items-center p-3.5 rounded-xl cursor-pointer font-medium transition-all {% if not selected_category %} bg-[#e74c3c] text-white {% else %} text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700/50 {% endif %}"
@@ -96,7 +104,7 @@
                 <!-- Posts List -->
                 <div class="space-y-4">
                     {% for post in posts %}
-                        <article class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm {% if post.is_pinned %}border-l-4 border-l-[#e74c3c]{% endif %}">
+                        <article class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-lg hover:-translate-y-[1px] transition-transform duration-200 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm {% if post.is_pinned %}border-l-4 border-l-[#e74c3c]{% endif %}">
                             <div class="p-4 lg:p-6">
                                 <div class="flex items-center flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
                                     <span class="font-medium text-gray-900 dark:text-gray-200 flex items-center gap-1">
@@ -156,7 +164,7 @@
                                             <span class="ml-1.5 text-sm font-bold">{{ post.up_votes }}</span>
                                         </button>
                                         <button aria-label="Downvote discussion"
-                                                class="px-3 h-full flex items-center border-gray-300 dark:border-gray-600 transition-colors {% if post.user_vote and post.user_vote.down_vote %}                                        bg-[#e74c3c] text-white font-bold {% else %} text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#e74c3c] {% endif %}"
+                                                class="px-3 h-full flex items-center border-gray-300 dark:border-gray-600 transition-colors {% if post.user_vote and post.user_vote.down_vote %} bg-[#e74c3c] text-white font-bold {% else %} text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#e74c3c] {% endif %}"
                                                 data-vote-type="down"
                                                 data-suggestion-id="{{ post.id }}">
                                             <i class="fas fa-arrow-down text-sm"></i>
@@ -166,7 +174,7 @@
                                     <button class="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                                             onclick="document.getElementById('comments-{{ post.id }}').classList.toggle('hidden')">
                                         <i class="fas fa-comments"></i>
-                                        <span>{{ post.comments.count }} Comments</span>
+                                        <span>{{ post.comment_count }} Comments</span>
                                     </button>
                                 </div>
                                 {% if request.user == post.user or request.user.is_superuser %}
@@ -224,6 +232,30 @@
                             </div>
                         </div>
                     {% endfor %}
+                </div>
+                <!-- Pagination -->
+                <div class="max-w-4xl mx-auto mt-10">
+                    <div class="flex justify-center items-center gap-4">
+                        {% if posts.has_previous %}
+                            <a href="?page={{ posts.previous_page_number }}&search={{ selected_search }}&sort={{ selected_sort }}&category={{ selected_category }}"
+                               class="px-6 py-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-[#e74c3c] hover:text-white transition">
+                                ← Prev
+                            </a>
+                        {% else %}
+                            <span class="px-6 py-2 rounded-full bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed">← Prev</span>
+                        {% endif %}
+                        <span class="px-5 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium border border-gray-200 dark:border-gray-700">
+                            Page {{ posts.number }} of {{ posts.paginator.num_pages }}
+                        </span>
+                        {% if posts.has_next %}
+                            <a href="?page={{ posts.next_page_number }}&search={{ selected_search }}&sort={{ selected_sort }}&category={{ selected_category }}"
+                               class="px-6 py-2 rounded-full bg-[#e74c3c] text-white hover:bg-[#c0392b] transition">
+                                Next →
+                            </a>
+                        {% else %}
+                            <span class="px-6 py-2 rounded-full bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed">Next →</span>
+                        {% endif %}
+                    </div>
                 </div>
             </main>
         </div>
@@ -498,6 +530,11 @@
             }
         }, 5000);
     }
+    function toggleCategories() {
+        const panel = document.getElementById("categoryPanel");
+        panel.classList.toggle("hidden");
+    }
+
 
     function openNewSuggestionModal() {
         const container = document.querySelector('[data-user-authenticated]');
