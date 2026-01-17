@@ -57,7 +57,7 @@ from user_agents import parse
 from blt import settings
 from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
-from website.forms import CaptchaForm, GitHubIssueForm
+from website.forms import CaptchaForm, GitHubIssueForm, IssueForm
 from website.models import (
     IP,
     Activity,
@@ -830,7 +830,7 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+    form_class = IssueForm
     template_name = "report.html"
 
     # Duplicate detection threshold - can be adjusted without code changes
@@ -890,6 +890,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
         request.POST._mutable = True
         request.POST.update(url=url)
         request.POST._mutable = False
+
+        form = self.form_class(request.POST, request.FILES)
+        captcha_form = CaptchaForm(request.POST)
+
+        if not (form.is_valid() and captcha_form.is_valid()):
+            messages.error(request, "Invalid form submission or captcha")
+            return render(request, "report.html", {"form": form, "captcha_form": captcha_form})
 
         if not settings.IS_TEST:
             try:
@@ -1217,7 +1224,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1243,7 +1250,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
