@@ -894,7 +894,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
         form = self.form_class(request.POST, request.FILES)
         captcha_form = CaptchaForm(request.POST)
 
-        if form.is_valid() and captcha_form.is_valid():
+        if not (form.is_valid() and captcha_form.is_valid()):
+            messages.error(request, "Invalid form submission or captcha")
+            return render(request, "report.html", {"form": form, "captcha_form": captcha_form})
 
         if not settings.IS_TEST:
             try:
