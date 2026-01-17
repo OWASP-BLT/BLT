@@ -96,7 +96,6 @@ class HuntForm(forms.Form):
 
 
 class CaptchaForm(forms.Form):
-    captcha = CaptchaField()
 
 
 class MonitorForm(forms.ModelForm):
@@ -154,7 +153,6 @@ class SignupFormWithCaptcha(SignupForm, CaptchaForm):
 
 
 class RoomForm(forms.ModelForm):
-    captcha = CaptchaField(required=False)  # Will be required only for anonymous users
 
     class Meta:
         model = Room
@@ -167,7 +165,6 @@ class RoomForm(forms.ModelForm):
         is_anonymous = kwargs.pop("is_anonymous", False)
         super().__init__(*args, **kwargs)
         if is_anonymous:
-            self.fields["captcha"].required = True
 
 
 class GitHubIssueForm(forms.Form):
@@ -175,11 +172,11 @@ class GitHubIssueForm(forms.Form):
         label="GitHub Issue URL",
         widget=forms.URLInput(
             attrs={
-               "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
-               "placeholder": "https://github.com/owner/repo/issues/123",
-           }
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
+                "placeholder": "https://github.com/owner/repo/issues/123",
+            }
         ),
-        help_text=("Enter the full URL to the GitHub issue with a bounty label " "(containing a $ sign)"),
+        help_text=("Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)"),
     )
 
     def clean_github_url(self):
@@ -207,17 +204,19 @@ class GitHubIssueForm(forms.Form):
 
         return url
 
+
 class IssueForm(forms.ModelForm):
-    captcha = CaptchaField()
 
     class Meta:
         model = Issue
         fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
         widgets = {
-            "url": forms.URLInput(attrs={
-                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
-                "placeholder": "https://example.com/vulnerable-page"
-            }),
+            "url": forms.URLInput(
+                attrs={
+                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
+                    "placeholder": "https://example.com/vulnerable-page",
+                }
+            ),
         }
 
 
@@ -288,7 +287,7 @@ class HackathonForm(forms.ModelForm):
                 attrs={
                     "rows": 4,
                     "class": base_input_class,
-                    "placeholder": ("Provide information about sponsorship opportunities " "for this hackathon"),
+                    "placeholder": ("Provide information about sponsorship opportunities for this hackathon"),
                 }
             ),
             "sponsor_link": forms.URLInput(
@@ -323,7 +322,7 @@ class HackathonForm(forms.ModelForm):
             ),
             "registration_open": forms.CheckboxInput(
                 attrs={
-                    "class": ("h-5 w-5 text-[#e74c3c] focus:ring-[#e74c3c] " "border-gray-300 rounded"),
+                    "class": ("h-5 w-5 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"),
                 }
             ),
         }
@@ -499,7 +498,7 @@ class JobForm(forms.ModelForm):
 
         if not any([application_email, application_url, application_instructions]):
             raise forms.ValidationError(
-                "Please provide at least one way for candidates to apply " "(email, URL, or instructions)."
+                "Please provide at least one way for candidates to apply (email, URL, or instructions)."
             )
 
         return cleaned_data
