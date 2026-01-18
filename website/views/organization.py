@@ -1618,32 +1618,41 @@ def sizzle(request):
 
 
 def trademark_detailview(request, slug):
-    if settings.USPTO_API is None:
-        return HttpResponse("API KEY NOT SETUP")
+    from website.models import Trademark
 
-    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (slug)
-    headers = {
-        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
-        "x-rapidapi-key": settings.USPTO_API,
-    }
-    trademark_available_response = requests.get(trademark_available_url, headers=headers)
-    ta_data = trademark_available_response.json()
+    # Search local trademark database
+    qs = Trademark.objects.filter(keyword__icontains=slug).prefetch_related("owners").order_by("keyword")
 
-    if trademark_available_response.status_code == 429:
-        error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
-        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+    if qs.exists():
+        items = []
+        for t in qs:
+            items.append(
+                {
+                    "keyword": t.keyword,
+                    "serial_number": t.serial_number,
+                    "registration_number": t.registration_number,
+                    "status_label": t.status_label,
+                    "status_code": t.status_code,
+                    "filing_date": t.filing_date,
+                    "registration_date": t.registration_date,
+                    "description": t.description,
+                    "owners": [o.name for o in t.owners.all()],
+                }
+            )
 
-    if not isinstance(ta_data, list) or len(ta_data) == 0:
-        error_message = "Invalid response from USPTO API."
-        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
-
-    if ta_data[0].get("available") == "no":
-        trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
-        trademark_search_response = requests.get(trademark_search_url, headers=headers)
-        ts_data = trademark_search_response.json()
-        context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
+        context = {
+            "available": "no",
+            "count": len(items),
+            "items": items,
+            "query": slug,
+        }
     else:
-        context = {"available": ta_data[0].get("available"), "query": slug}
+        context = {
+            "available": "yes",
+            "count": 0,
+            "items": [],
+            "query": slug,
+        }
 
     return render(request, "trademark_detailview.html", context)
 

@@ -502,14 +502,14 @@ class TrademarkOwner(models.Model):
 
 
 class Trademark(models.Model):
-    keyword = models.CharField(max_length=255)
-    registration_number = models.CharField(max_length=50, blank=True, null=True)
-    serial_number = models.CharField(max_length=50, blank=True, null=True)
+    keyword = models.CharField(max_length=255, db_index=True)
+    registration_number = models.CharField(max_length=50, blank=True, null=True, db_index=True)
+    serial_number = models.CharField(max_length=50, blank=True, null=True, unique=True, db_index=True)
     status_label = models.CharField(max_length=50, blank=True, null=True)
-    status_code = models.CharField(max_length=20, blank=True, null=True)
+    status_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     status_date = models.DateField(blank=True, null=True)
     status_definition = models.CharField(max_length=255, blank=True, null=True)
-    filing_date = models.DateField(blank=True, null=True)
+    filing_date = models.DateField(blank=True, null=True, db_index=True)
     registration_date = models.DateField(blank=True, null=True)
     abandonment_date = models.DateField(blank=True, null=True)
     expiration_date = models.DateField(blank=True, null=True)
