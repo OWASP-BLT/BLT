@@ -9,40 +9,36 @@ BATCH_SIZE = 5000
 
 
 # Helpers
-def derive_status_label(status_code):
+def derive_status_label(code):
     """
-    Derive a human-readable trademark status label from USPTO status code.
+    Map USPTO trademark status codes to the simplified BLT UI labels.
     """
-    if not status_code:
+    if not code:
         return None
 
-    code = status_code.strip()
+    code = code.strip()
 
-    # Live / Registered
-    if code in {"624", "625"}:
+    # **Live / Registered**
+    if code in {"624", "625", "717", "739", "780", "800"} or (700 <= int(code) <= 709):
         return "Live/Registered"
 
-    # Dead / Abandoned
-    if code.startswith("4") or code in {
-        "600",
-        "601",
-        "602",
-        "603",
-        "604",
-        "605",
-        "606",
-        "607",
-        "608",
-        "609",
-        "612",
-        "614",
-        "618",
-        "626",
-    }:
+    # **Dead** (cancelled, expired, abandoned)
+    if (
+        code.startswith("4")  # 400–417 (cancelled/abandoned)
+        or code.startswith("90")  # 900–901 (expired/dead)
+        or code
+        in {"600", "601", "602", "603", "604", "605", "606", "607", "608", "609", "612", "614", "618", "626", "632"}
+    ):
         return "Dead/Abandoned"
 
-    # Live / Pending
-    if code.startswith("6"):
+    # **Live / Pending**
+    if (
+        code.startswith("6")  # 600–699 range (pending)
+        or (410 <= int(code) <= 417)  # IR pending states
+        or (630 <= int(code) <= 693)  # application pipeline
+        or (718 <= int(code) <= 825)  # extension/statement of use pipeline
+        or code in {"969", "973"}  # special pending statuses
+    ):
         return "Live/Pending"
 
     return None
