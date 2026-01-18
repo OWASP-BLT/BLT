@@ -18,8 +18,13 @@ def derive_status_label(code):
 
     code = code.strip()
 
+    try:
+        code_int = int(code)
+    except ValueError:
+        return None  # Non-numeric code, cannot classify
+
     # **Live / Registered**
-    if code in {"624", "625", "717", "739", "780", "800"} or (700 <= int(code) <= 709):
+    if code in {"624", "625", "717", "739", "780", "800"} or (700 <= code_int <= 709):
         return "Live/Registered"
 
     # **Dead** (cancelled, expired, abandoned)
@@ -34,9 +39,9 @@ def derive_status_label(code):
     # **Live / Pending**
     if (
         code.startswith("6")  # 600–699 range (pending)
-        or (410 <= int(code) <= 417)  # IR pending states
-        or (630 <= int(code) <= 693)  # application pipeline
-        or (718 <= int(code) <= 825)  # extension/statement of use pipeline
+        or (410 <= code_int <= 417)  # IR pending states
+        or (630 <= code_int <= 693)  # application pipeline
+        or (718 <= code_int <= 825)  # extension/statement of use pipeline
         or code in {"969", "973"}  # special pending statuses
     ):
         return "Live/Pending"
