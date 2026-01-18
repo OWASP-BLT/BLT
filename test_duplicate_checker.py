@@ -17,12 +17,6 @@ import json
 import os
 import sys
 
-import django
-
-# Setup Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
-django.setup()
-
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
@@ -84,8 +78,10 @@ class DuplicateCheckerIntegrationTests(TestCase):
 
     def setUp(self):
         """Set up test data"""
-        self.user = User.objects.create_user(username="testuser", password="testpass")
-        self.domain, _ = Domain.objects.get_or_create(name="example.com", defaults={"url": "https://example.com"})
+        import secrets
+
+        self.user = User.objects.create_user(username="testuser", password=secrets.token_urlsafe(32))
+        self.domain = Domain.objects.create(name="example.com", url="https://example.com")
         self.issue1 = Issue.objects.create(
             user=self.user,
             domain=self.domain,
@@ -126,9 +122,11 @@ class DuplicateCheckerAPITests(TestCase):
 
     def setUp(self):
         """Set up test client and data"""
+        import secrets
+
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass")
-        self.domain, _ = Domain.objects.get_or_create(name="example.com", defaults={"url": "https://example.com"})
+        self.user = User.objects.create_user(username="testuser", password=secrets.token_urlsafe(32))
+        self.domain = Domain.objects.create(name="example.com", url="https://example.com")
         self.issue = Issue.objects.create(
             user=self.user,
             domain=self.domain,
@@ -258,6 +256,12 @@ def run_quick_tests():
 
 
 if __name__ == "__main__":
+    # Setup Django when script is run directly
+    import django
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
+    django.setup()
+
     if len(sys.argv) > 1 and sys.argv[1] == "quick":
         success = run_quick_tests()
         sys.exit(0 if success else 1)

@@ -23,3 +23,15 @@ def before_dot(value):
 def to_json(value):
     """Convert Python object to JSON string"""
     return mark_safe(json.dumps(value, cls=DjangoJSONEncoder))
+
+
+@register.filter
+def replace(value, arg):
+    """Replace substring. Usage: {{ value|replace:"old|new" }}"""
+    if arg is None:
+        return value
+    old_new = str(arg).split("|", 1)
+    if len(old_new) == 2:
+        old, new = old_new
+        return str(value).replace(old, new)
+    return value

@@ -1,6 +1,6 @@
 name: CI/CD Optimized
 
-# SECURITY NOTE:
+# SECURITY NOTES:
 # - pull_request: Used for test/docker-test jobs that don't need write permissions
 # - pull_request_target: Used for pre-commit job to enable commenting/labeling on forked PRs
 #   When using pull_request_target, we explicitly checkout the PR head to run checks on the actual PR code
@@ -126,7 +126,9 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
-            const message = `## ❌ Pre-commit checks failed
+            const commentMarker = '<!-- pre-commit-check -->';
+            const message = commentMarker + '\n' +
+              `## ❌ Pre-commit checks failed
             
             The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
             
@@ -160,6 +162,45 @@ jobs:
             
             For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
             
+            // Delete old pre-commit failure comments before posting new one
+            try {
+              // Paginate through all comments to find and delete old pre-commit failure comments
+              let allComments = [];
+              let page = 1;
+              let fetched;
+              do {
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  per_page: 100,
+                  page: page,
+                });
+                allComments = allComments.concat(comments);
+                fetched = comments.length;
+                page += 1;
+              } while (fetched === 100);
+              
+              const existingComments = allComments.filter(comment =>
+                comment.body && comment.body.includes(commentMarker)
+              );
+              
+              for (const comment of existingComments) {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: comment.id,
+                  });
+                  core.info(`Deleted old pre-commit failure comment #${comment.id}`);
+                } catch (error) {
+                  core.warning(`Failed to delete old pre-commit failure comment #${comment.id}: ${error.message}`);
+                }
+              }
+            } catch (error) {
+              core.warning(`Could not fetch or delete previous comments: ${error.message}`);
+            }
+            
             try {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -173,6 +214,55 @@ jobs:
               } else {
                 throw error;
               }
+            }
+      - name: Remove pre-commit failure comment if pre-commit passes
+        if: github.event_name == 'pull_request_target' && steps.pre-commit.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commentMarker = '<!-- pre-commit-check -->';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.issue.number;
+            
+            // Delete old pre-commit failure comment when pre-commit passes
+            try {
+              // Paginate through all comments to ensure we find all pre-commit failure comments
+              let comments = [];
+              let page = 1;
+              let fetched;
+              do {
+                const { data } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                  page,
+                });
+                fetched = data.length;
+                comments = comments.concat(data);
+                page += 1;
+              } while (fetched === 100);
+              
+              const existingComments = comments.filter(comment => 
+                comment.body && comment.body.includes(commentMarker)
+              );
+              
+              for (const comment of existingComments) {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner,
+                    repo,
+                    comment_id: comment.id,
+                  });
+                  core.info(`Deleted pre-commit failure comment #${comment.id} since checks now pass`);
+                } catch (error) {
+                  core.warning(`Failed to delete pre-commit failure comment #${comment.id}: ${error.message}`);
+                }
+              }
+            } catch (error) {
+              core.warning(`Could not fetch or delete previous comments: ${error.message}`);
             }
       - name: Add pre-commit status label
         if: github.event_name == 'pull_request_target'
@@ -282,10 +372,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        id: apt-cache
+        with:
+          path: ~/apt-cache
+          key: ${{ runner.os }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-xvfb-chromium-
+            ${{ runner.os }}-apt-
+      - name: Restore apt cache from user directory
+        if: steps.apt-cache.outputs.cache-hit == 'true'
+        run: |
+          sudo cp -r ~/apt-cache/archives/* /var/cache/apt/archives/ 2>/dev/null || true
+          sudo cp -r ~/apt-cache/lists/* /var/lib/apt/lists/ 2>/dev/null || true
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+      - name: Copy apt cache to user directory
+        if: always()
+        run: |
+          mkdir -p ~/apt-cache/archives ~/apt-cache/lists
+          sudo cp -r /var/cache/apt/archives/* ~/apt-cache/archives/ 2>/dev/null || true
+          sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
+          sudo chown -R $USER:$USER ~/apt-cache
       - run: pip install poetry
       - run: poetry lock
       - run: poetry install --with dev
@@ -295,7 +406,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast 2>&1 | tee test-output.txt
+          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
@@ -323,7 +434,7 @@ jobs:
     steps:
       - name: Download test output
         if: needs.test.outputs.test_result != '0'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.3
         with:
           name: test-output
           path: .
@@ -341,6 +452,35 @@ jobs:
               return;
             }
             
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Delete any previous test failure comments
+            const testFailureMarker = '<!-- test-failure-comment -->';
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+                per_page: 100,
+              });
+              
+              const existingComments = comments.filter(comment => 
+                comment.body && comment.body.includes(testFailureMarker)
+              );
+              
+              for (const comment of existingComments) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: comment.id,
+                });
+                core.info(`Deleted previous test failure comment #${comment.id} from PR #${pull_number}`);
+              }
+            } catch (error) {
+              core.warning(`Could not delete previous comments: ${error.message}`);
+            }
+            
             let testOutput = 'Test output not available.';
             try {
               testOutput = fs.readFileSync('test-output.txt', 'utf8');
@@ -353,7 +493,8 @@ jobs:
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
             
-            const message = `## ❌ Tests failed
+            const message = `${testFailureMarker}
+            ## ❌ Tests failed
             
             The Django tests found issues that need to be fixed. Please review the test output below and fix the failing tests.
             
@@ -386,8 +527,8 @@ jobs:
             
             try {
               await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner,
+                repo,
                 issue_number: pull_number,
                 body: message
               });
@@ -398,6 +539,46 @@ jobs:
               } else {
                 throw error;
               }
+            }
+      - name: Remove test failure comment if tests passed
+        if: needs.test.outputs.test_result == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pull_number = context.issue.number;
+            
+            if (!pull_number) {
+              core.warning('No pull request number found in context. Skipping comment removal.');
+              return;
+            }
+            
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            // Delete any previous test failure comments
+            const testFailureMarker = '<!-- test-failure-comment -->';
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+                per_page: 100,
+              });
+              
+              const existingComments = comments.filter(comment => 
+                comment.body && comment.body.includes(testFailureMarker)
+              );
+              
+              for (const comment of existingComments) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: comment.id,
+                });
+                core.info(`Deleted test failure comment #${comment.id} from PR #${pull_number} (tests now passing)`);
+              }
+            } catch (error) {
+              core.warning(`Could not delete previous comments: ${error.message}`);
             }
       - name: Add test status label
         uses: actions/github-script@v7
