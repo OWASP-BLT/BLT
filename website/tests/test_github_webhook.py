@@ -1,12 +1,11 @@
 import hashlib
 import hmac
 import json
-import os
 from datetime import datetime
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -18,12 +17,12 @@ def compute_github_signature(secret: str, body: bytes) -> str:
     return "sha256=" + hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
 
 
+@override_settings(GITHUB_WEBHOOK_SECRET="testsecret")
 class GitHubWebhookIssuesTestCase(TestCase):
     """Test GitHub webhook handling for ISSUE events"""
 
     def setUp(self):
         """Set up test data"""
-        os.environ["GITHUB_WEBHOOK_SECRET"] = "testsecret"
         self.client = Client()
         self.webhook_url = reverse("github-webhook")
         self.secret = "testsecret"
@@ -273,17 +272,13 @@ class GitHubWebhookIssuesTestCase(TestCase):
         self.assertEqual(self.github_issue.closed_at.day, 2)
         self.assertEqual(self.github_issue.closed_at.hour, 14)
 
-    def tearDown(self):
-        if "GITHUB_WEBHOOK_SECRET" in os.environ:
-            del os.environ["GITHUB_WEBHOOK_SECRET"]
 
-
+@override_settings(GITHUB_WEBHOOK_SECRET="testsecret")
 class GitHubWebhookPullRequestTestCase(TestCase):
     """Test GitHub webhook handling for PULL REQUEST events + security."""
 
     def setUp(self):
         """Set up a test client, webhook URL, secret, and a test Repo instance."""
-        os.environ["GITHUB_WEBHOOK_SECRET"] = "testsecret"
         self.client = Client()
         self.webhook_url = reverse("github-webhook")
         self.secret = "testsecret"
@@ -496,16 +491,12 @@ class GitHubWebhookPullRequestTestCase(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
-    def tearDown(self):
-        if "GITHUB_WEBHOOK_SECRET" in os.environ:
-            del os.environ["GITHUB_WEBHOOK_SECRET"]
 
-
+@override_settings(GITHUB_WEBHOOK_SECRET="testsecret")
 class GitHubWebhookPullRequestIdempotentTestCase(TestCase):
     """Verify that repeated PR events don't duplicate GitHubIssue rows."""
 
     def setUp(self):
-        os.environ["GITHUB_WEBHOOK_SECRET"] = "testsecret"
         self.client = Client()
         self.webhook_url = reverse("github-webhook")
         self.secret = "testsecret"
@@ -579,7 +570,3 @@ class GitHubWebhookPullRequestIdempotentTestCase(TestCase):
             GitHubIssue.objects.filter(issue_id=self.pr_global_id, repo=self.repo).count(),
             1,
         )
-
-    def tearDown(self):
-        if "GITHUB_WEBHOOK_SECRET" in os.environ:
-            del os.environ["GITHUB_WEBHOOK_SECRET"]

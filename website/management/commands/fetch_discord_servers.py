@@ -105,11 +105,9 @@ class Command(BaseCommand):
                         "description": server.get("description", ""),
                         "member_count": server.get("approximate_member_count", 0),
                         "id": server_id,
-                        "logo_url": (
-                            f"https://cdn.discordapp.com/icons/{server_id}/{server.get('icon')}.png"
-                            if server.get("icon")
-                            else ""
-                        ),
+                        "logo_url": f"https://cdn.discordapp.com/icons/{server_id}/{server.get('icon')}.png"
+                        if server.get("icon")
+                        else "",
                         "tags": server.get("keywords", []),
                     }
 

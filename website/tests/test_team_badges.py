@@ -13,7 +13,9 @@ class TeamBadgeModelTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", email="testuser@example.com", password="testpass123")
 
-        self.team = Team.objects.create(name="Test Team", description="A test team", created=self.user)
+        self.team = Team.objects.create(
+            name="Test Team", description="A test team", admin=self.user, url="https://test-team.example.com"
+        )
 
         self.badge = Badge.objects.create(
             title="Bug Hunter", description="Found 10 bugs", type="automatic", scope="team"
@@ -39,7 +41,12 @@ class TeamBadgeAssignmentTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="user1", email="user1@example.com", password="testpass123")
 
-        self.team = Team.objects.create(name="Development Team", description="Core development team", created=self.user)
+        self.team = Team.objects.create(
+            name="Development Team",
+            description="Core development team",
+            admin=self.user,
+            url="https://test-team.example.com",
+        )
 
         self.badge1 = Badge.objects.create(title="First Bug Found", description="First bug reported", type="automatic")
 
@@ -61,8 +68,9 @@ class TeamBadgeViewTests(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username="testuser", email="testuser@example.com", password="testpass123")
 
-        self.team = Team.objects.create(name="Test Team", description="Test team description", created=self.user)
-
+        self.team = Team.objects.create(
+            name="Test Team", description="Test team description", admin=self.user, url="https://test-team.example.com"
+        )
         self.badge = Badge.objects.create(
             title="Test Badge", description="Test badge description", type="automatic", scope="team"
         )

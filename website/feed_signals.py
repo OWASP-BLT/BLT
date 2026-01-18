@@ -384,18 +384,30 @@ def evaluate_team_badges(team: Organization):
         threshold = criteria.get("threshold")
         rank = criteria.get("rank")
 
+        # Convert and validate threshold for threshold-based metrics
+        if threshold is not None:
+            try:
+                threshold = int(threshold)
+            except (TypeError, ValueError):
+                threshold = None
         if metric == "team_contributions":
             count = get_team_contribution_count(team)
+            if threshold is None:
+                continue
             if count >= threshold:
                 award_team_badge(team, badge, reason=f"Team reached {count} contributions")
 
         elif metric == "team_issues_closed":
             count = get_team_closed_issue_count(team)
+            if threshold is None:
+                continue
             if count >= threshold:
                 award_team_badge(team, badge, reason=f"Team closed {count} issues")
 
         elif metric == "team_total_issues":
             count = get_team_total_issue_count(team)
+            if threshold is None:
+                continue
             if count >= threshold:
                 award_team_badge(team, badge, reason=f"Team has {count} total issues")
 
