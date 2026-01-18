@@ -1642,7 +1642,18 @@ def trademark_detailview(request, slug):
                     "filing_date": t.filing_date,
                     "registration_date": t.registration_date,
                     "description": t.description,
-                    "owners": [o.name for o in t.owners.all()],
+                    "owners": [
+                        {
+                            "name": o.name,
+                            "address1": o.address1,
+                            "address2": o.address2,
+                            "city": o.city,
+                            "state": o.state,
+                            "country": o.country,
+                            "postcode": o.postcode,
+                        }
+                        for o in t.owners.all()
+                    ],
                 }
             )
 
