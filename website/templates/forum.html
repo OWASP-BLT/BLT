@@ -172,7 +172,7 @@
                                         </button>
                                     </div>
                                     <button class="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
-                                            onclick="document.getElementById('comments-{{ post.id }}').classList.toggle('hidden')">
+                                            onclick="document.getElementById('comments-{{ post.id }}').scrollIntoView({ behavior: 'smooth' })">
                                         <i class="fas fa-comments"></i>
                                         <span>{{ post.comment_count }} Comments</span>
                                     </button>
@@ -187,7 +187,7 @@
                                 {% endif %}
                             </div>
                             <div id="comments-{{ post.id }}"
-                                 class="hidden border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 lg:p-5">
+                                 class="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 lg:p-5">
                                 {% if user.is_authenticated %}
                                     <form onsubmit="submitComment(event, {{ post.id }})"
                                           class="flex flex-col sm:flex-row gap-3 mb-6 items-start">
