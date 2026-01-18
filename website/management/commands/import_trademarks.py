@@ -9,6 +9,45 @@ BATCH_SIZE = 5000
 
 
 # Helpers
+def derive_status_label(status_code):
+    """
+    Derive a human-readable trademark status label from USPTO status code.
+    """
+    if not status_code:
+        return None
+
+    code = status_code.strip()
+
+    # Live / Registered
+    if code in {"624", "625"}:
+        return "Live/Registered"
+
+    # Dead / Abandoned
+    if code.startswith("4") or code in {
+        "600",
+        "601",
+        "602",
+        "603",
+        "604",
+        "605",
+        "606",
+        "607",
+        "608",
+        "609",
+        "612",
+        "614",
+        "618",
+        "626",
+    }:
+        return "Dead/Abandoned"
+
+    # Live / Pending
+    if code.startswith("6"):
+        return "Live/Pending"
+
+    return None
+
+
 def safe_trim(value, max_len):
     if not value:
         return None
@@ -65,6 +104,7 @@ class Command(BaseCommand):
                         registration_number=row.get("registration_no") or None,
                         keyword=row.get("mark_id_char") or serial_no,
                         status_code=row.get("cfh_status_cd"),
+                        status_label=derive_status_label(row.get("cfh_status_cd")),
                         status_date=safe_date(row.get("cfh_status_dt")),
                         filing_date=safe_date(row.get("filing_dt")),
                         registration_date=safe_date(row.get("registration_dt")),
