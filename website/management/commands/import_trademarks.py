@@ -148,7 +148,7 @@ class Command(BaseCommand):
             reader = csv.DictReader(csvfile)
 
             for row in reader:
-                row = {k.strip().lower(): (v.strip() or None) for k, v in row.items()}
+                row = {k.strip().lower(): (v.strip() if v else None) for k, v in row.items()}
 
                 serial = row.get("serial_no")
                 tm_id = serial_map.get(serial)
