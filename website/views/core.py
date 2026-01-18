@@ -1235,11 +1235,9 @@ def view_forum(request):
         category.is_selected = str(category.id) == selected_category
 
     # Get total posts count before filtering
-    posts = (
-        ForumPost.objects.select_related("user", "category")
-        .prefetch_related("comments", "comments__user")
-        .annotate(comment_count=Count("comments", distinct=True))
-    )
+    base_posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments", "comments__user")
+    total_posts_count = base_posts.count()
+    posts = base_posts.annotate(comment_count=Count("comments", distinct=True))
 
     # Apply filters
     if selected_category and selected_category.isdigit():
