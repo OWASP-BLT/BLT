@@ -32,6 +32,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
 from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
@@ -1262,8 +1263,6 @@ def view_forum(request):
         posts = posts.order_by("-comment_count")
     else:
         posts = posts.order_by("-created")  # newest first (default)
-
-    from django.core.paginator import Paginator
 
     paginator = Paginator(posts, 5)  # 5 posts per page
     page_number = request.GET.get("page")
