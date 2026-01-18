@@ -29,7 +29,7 @@ def derive_status_label(code):
 
     # **Dead** (cancelled, expired, abandoned)
     if (
-        code.startswith("4")  # 400–417 (cancelled/abandoned)
+        (code.startswith("4") and not (410 <= code_int <= 417))  # 400–409, 418–499 (cancelled/abandoned)
         or code.startswith("90")  # 900–901 (expired/dead)
         or code
         in {"600", "601", "602", "603", "604", "605", "606", "607", "608", "609", "612", "614", "618", "626", "632"}
@@ -59,7 +59,7 @@ def safe_trim(value, max_len):
 def safe_date(value):
     if not value:
         return None
-    return parse_date(value)
+    return parse_date(value.strip())
 
 
 # Command
