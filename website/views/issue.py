@@ -121,10 +121,9 @@ def submit_pledge(request):
         pledge.user = request.user
     else:
         pledge.user = None
-
+    pledge.full_clean()
     pledge.save()
-    print(f"Pledge saved: ID {pledge.id}, Amount {pledge.amount} BCH, Issue {issue.id}, User {pledge.user}")
-    return JsonResponse({"success": True})
+
 
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
@@ -289,7 +288,7 @@ def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status = "close"
+            issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()

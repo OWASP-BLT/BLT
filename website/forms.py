@@ -98,7 +98,6 @@ class IssuePledgeForm(forms.ModelForm):
         return amt
 
 
-
 class UserDeleteForm(forms.Form):
     delete = forms.BooleanField(
         required=True,

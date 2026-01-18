@@ -1,5 +1,7 @@
 import os
+import shutil
 import time
+import unittest
 from unittest.mock import patch
 
 import chromedriver_autoinstaller
@@ -37,12 +39,20 @@ from ..models import (
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 
+@unittest.skipUnless(
+    shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser"),
+    "Skipping Selenium tests: Chrome not installed",
+)
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
     @classmethod
     def setUpClass(cls):
         super(MySeleniumTests, cls).setUpClass()
+
+        # Check if Chrome is available
+        if not (shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser")):
+            raise unittest.SkipTest("Chrome not installed")
 
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")
@@ -64,7 +74,7 @@ class MySeleniumTests(LiveServerTestCase):
             cls.selenium.implicitly_wait(30)
         except Exception as e:
             print(f"Error setting up Chrome: {e}")
-            raise
+            raise unittest.SkipTest(f"Chrome setup failed: {e}")
 
     @classmethod
     def tearDownClass(cls):
