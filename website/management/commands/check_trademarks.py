@@ -21,13 +21,19 @@ def search_uspto_database(term):
     # Query local database
     trademarks = Trademark.objects.filter(keyword__icontains=term)
 
+    # Apply a hard limit to avoid OOM
+    queryset = trademarks.values(
+        "keyword",
+        "serial_number",
+        "registration_number",
+        "status_label",
+        "filing_date",
+        "registration_date",
+    )[:500]
+
     return {
         "count": trademarks.count(),
-        "items": list(
-            trademarks.values(
-                "keyword", "serial_number", "registration_number", "status_label", "filing_date", "registration_date"
-            )
-        ),
+        "items": list(queryset),
     }
 
 
