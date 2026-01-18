@@ -1620,12 +1620,18 @@ def sizzle(request):
 def trademark_detailview(request, slug):
     from website.models import Trademark
 
+    slug = (slug or "").strip()
+    if not slug:
+        context = {"available": "yes", "count": 0, "items": [], "query": ""}
+        return render(request, "trademark_detailview.html", context)
+
     # Search local trademark database
     qs = Trademark.objects.filter(keyword__icontains=slug).prefetch_related("owners").order_by("keyword")
 
-    if qs.exists():
+    total = qs.count()
+    if total:
         items = []
-        for t in qs:
+        for t in qs[:50]:
             items.append(
                 {
                     "keyword": t.keyword,
@@ -1642,7 +1648,7 @@ def trademark_detailview(request, slug):
 
         context = {
             "available": "no",
-            "count": len(items),
+            "count": total,
             "items": items,
             "query": slug,
         }
