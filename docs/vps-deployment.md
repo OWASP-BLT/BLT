@@ -12,7 +12,7 @@ This guide covers deploying BLT on a VPS using Ansible automation with Django 6.
 - Public IP address and domain name
 
 ### Local Machine Requirements
-- Ansible 2.9 or newer
+- Ansible 2.12 or newer
 - SSH access to the VPS
 - GitHub account with repository access
 
