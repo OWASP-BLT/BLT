@@ -70,7 +70,6 @@ class RebuildSafeUrlTestCase(TestCase):
             (2, 1, 6, "", ("93.184.216.34", 0))  # IPv4 address for example.com
         ]
 
-        print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
         test_cases = [
             # Test case with credentials and encoded control characters in the path.
             (
