@@ -1,18 +1,19 @@
 import csv
 
 from django.core.management.base import BaseCommand
+from django.utils.dateparse import parse_date
 
 from website.models import Trademark, TrademarkOwner
 
 BATCH_SIZE = 5000
 
-from django.utils.dateparse import parse_date
 
-
+# Helpers
 def safe_trim(value, max_len):
     if not value:
         return None
-    return value[:max_len]
+    value = value.strip()
+    return value[:max_len] if value else None
 
 
 def safe_date(value):
@@ -21,6 +22,7 @@ def safe_date(value):
     return parse_date(value)
 
 
+# Command
 class Command(BaseCommand):
     help = "Import USPTO trademark data from case_file.csv + owner.csv"
 
@@ -41,14 +43,11 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"Imported {created_owners} owners and linked {linked} trademark-owner relationships")
         )
-
         self.stdout.write(self.style.SUCCESS("USPTO import completed."))
 
-    # ------------------------------
     # Trademark Import
-    # ------------------------------
     def import_trademarks(self, csv_path):
-        serial_map = {}  # serial_no -> Trademark instance
+        serial_map = {}  # serial_no -> Trademark.pk
         batch = []
         total = 0
 
@@ -60,31 +59,31 @@ class Command(BaseCommand):
                 if not serial_no:
                     continue
 
-                tm = Trademark(
-                    serial_number=serial_no,
-                    registration_number=row.get("registration_no") or None,
-                    keyword=row.get("mark_id_char") or serial_no,
-                    status_code=row.get("cfh_status_cd"),
-                    status_date=safe_date(row.get("cfh_status_dt")),
-                    filing_date=safe_date(row.get("filing_dt")),
-                    registration_date=safe_date(row.get("registration_dt")),
-                    abandonment_date=safe_date(row.get("abandon_dt")),
-                    expiration_date=safe_date(row.get("reg_cancel_dt")),
+                batch.append(
+                    Trademark(
+                        serial_number=serial_no,
+                        registration_number=row.get("registration_no") or None,
+                        keyword=row.get("mark_id_char") or serial_no,
+                        status_code=row.get("cfh_status_cd"),
+                        status_date=safe_date(row.get("cfh_status_dt")),
+                        filing_date=safe_date(row.get("filing_dt")),
+                        registration_date=safe_date(row.get("registration_dt")),
+                        abandonment_date=safe_date(row.get("abandon_dt")),
+                        expiration_date=safe_date(row.get("reg_cancel_dt")),
+                    )
                 )
 
-                batch.append(tm)
-
                 if len(batch) >= BATCH_SIZE:
-                    total += self._flush_tm(batch, serial_map)
+                    total += self._flush_trademarks(batch, serial_map)
                     batch.clear()
 
             if batch:
-                total += self._flush_tm(batch, serial_map)
+                total += self._flush_trademarks(batch, serial_map)
 
         self.stdout.write(self.style.SUCCESS(f"Imported {total} trademarks"))
         return serial_map
 
-    def _flush_tm(self, batch, serial_map):
+    def _flush_trademarks(self, batch, serial_map):
         Trademark.objects.bulk_create(
             batch,
             batch_size=BATCH_SIZE,
@@ -93,15 +92,13 @@ class Command(BaseCommand):
 
         serials = [tm.serial_number for tm in batch]
 
-        # fetch actual Trademark objects
-        for tm in Trademark.objects.filter(serial_number__in=serials):
-            serial_map[tm.serial_number] = tm  # store OBJECT, not PK
+        # Map serial → PK (NOT full object)
+        for serial, pk in Trademark.objects.filter(serial_number__in=serials).values_list("serial_number", "pk"):
+            serial_map[serial] = pk
 
         return len(serials)
 
-    # ------------------------------
     # Owner Import
-    # ------------------------------
     def import_owners(self, csv_path, serial_map):
         created_owners = 0
         linked = 0
@@ -113,15 +110,16 @@ class Command(BaseCommand):
                 row = {k.strip().lower(): (v.strip() or None) for k, v in row.items()}
 
                 serial = row.get("serial_no")
-                if not serial or serial not in serial_map:
+                tm_id = serial_map.get(serial)
+
+                if not tm_id:
                     continue
 
-                tm = serial_map[serial]  # Trademark instance
-
-                name = row.get("own_name") or f"OWNER_{serial}"
+                # REQUIRED fallback (prevents IntegrityError)
+                owner_name = safe_trim(row.get("own_name"), 255) or f"OWNER_{serial}"
 
                 owner, created = TrademarkOwner.objects.get_or_create(
-                    name=safe_trim(row.get("own_name"), 255),
+                    name=owner_name,
                     defaults={
                         "address1": safe_trim(row.get("own_addr_1"), 255),
                         "address2": safe_trim(row.get("own_addr_2"), 255),
@@ -139,7 +137,10 @@ class Command(BaseCommand):
                 if created:
                     created_owners += 1
 
-                tm.owners.add(owner)
+                Trademark.owners.through.objects.get_or_create(
+                    trademark_id=tm_id,
+                    trademarkowner_id=owner.pk,
+                )
                 linked += 1
 
         return created_owners, linked
