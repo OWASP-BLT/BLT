@@ -269,7 +269,7 @@ def repo_recommender(user_tags, language_weights):
         relevance_score = tag_score + language_score
 
         if relevance_score > 0:  # Ensure non-zero relevance
-            matching_tags = [tag.name for tag in repo.tags.all() if tag.name in dict(user_tags)]
+            matching_tags = [tag.name for tag in repo.tags.all() if tag.name in tag_weight_map]
             matching_languages = [repo.primary_language] if repo.primary_language in language_weights else []
 
             reasoning = []

@@ -4,6 +4,7 @@ from unittest.mock import patch
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.test import RequestFactory, TestCase
+from django.utils import timezone
 
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Tag
 from website.views.ossh import rate_limit  # Import the decorator itself
@@ -40,12 +41,11 @@ class OSSHRecommenderTests(TestCase):
             source="GitHub",
             external_id="com_456",
             metadata={"primary_language": "Python"},
+            website="https://example.com/communities/test-community",
         )
         self.community.tags.add(self.tag_python)
 
         # Create article with all required fields
-        from django.utils import timezone
-
         self.article = OsshArticle.objects.create(
             title="Test Article",
             author="Test Author",
