@@ -172,6 +172,8 @@ def get_github_data(request):
                 return JsonResponse({"error": "Request too large"}, status=413)
 
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
@@ -295,6 +297,8 @@ def get_recommended_repos(request):
             if len(request.body) > MAX_REQUEST_SIZE:
                 return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
@@ -373,6 +377,8 @@ def get_recommended_communities(request):
             if len(request.body) > MAX_REQUEST_SIZE:
                 return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
@@ -452,6 +458,8 @@ def get_recommended_discussion_channels(request):
             if len(request.body) > MAX_REQUEST_SIZE:
                 return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
@@ -526,6 +534,8 @@ def get_recommended_articles(request):
             if len(request.body) > MAX_REQUEST_SIZE:
                 return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
