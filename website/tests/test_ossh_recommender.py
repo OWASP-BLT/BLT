@@ -275,19 +275,18 @@ class RateLimiterTests(TestCase):
         # Mock the external API call
         mock_fetch.return_value = {
             "repositories": [],
-            "top_languages": {},
+            "top_languages": [("Python", 1000)],
             "top_topics": [],
         }
 
         request = self.factory.post(
-            "/api/ossh/github/", data=json.dumps({"username": "testuser"}), content_type="application/json"
+            "/api/ossh/github/", data=json.dumps({"github_username": "testuser"}), content_type="application/json"
         )
         request.META["REMOTE_ADDR"] = "192.168.1.1"
 
         # Should succeed without hitting real GitHub API
         response = get_github_data(request)
-        # May return 200 or other status depending on cache/validation
-        self.assertIn(response.status_code, [200, 400, 500])
+        self.assertEqual(response.status_code, 200)
 
         # Verify mock was called (or not, depending on cache)
         # This confirms no real network call was made

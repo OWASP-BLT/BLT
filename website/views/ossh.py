@@ -303,6 +303,8 @@ def get_recommended_repos(request):
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
             user_data = cache.get(get_cache_key(github_username))
             if not user_data:
@@ -383,6 +385,8 @@ def get_recommended_communities(request):
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
             user_data = cache.get(get_cache_key(github_username))
             if not user_data:
@@ -464,6 +468,8 @@ def get_recommended_discussion_channels(request):
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
             user_data = cache.get(get_cache_key(github_username))
             if not user_data:
@@ -540,6 +546,8 @@ def get_recommended_articles(request):
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
             user_data = cache.get(get_cache_key(github_username))
             if not user_data:
