@@ -41,10 +41,6 @@ class Command(BaseCommand):
                 call_command("fetch_gsoc_prs")
             except Exception as e:
                 logger.error("Error fetching GSoC PRs", exc_info=True)
-            try:
-                call_command("cron_send_reminders")
-            except Exception as e:
-                logger.error("Error sending user reminders", exc_info=True)
         except Exception as e:
             logger.error("Error in daily tasks", exc_info=True)
             raise
