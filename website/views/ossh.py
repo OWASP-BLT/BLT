@@ -6,8 +6,7 @@ from collections import defaultdict
 from functools import wraps
 
 from django.core.cache import cache
-from django.db.models import Count, FloatField, Q, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -259,11 +258,6 @@ def repo_recommender(user_tags, language_weights):
         .select_related("project")
     )
 
-    repos = repos.annotate(
-        tag_score=Coalesce(Count("tags", filter=Q(tags__name__in=tag_names)), Value(0), output_field=FloatField()),
-        language_score=Value(0, output_field=FloatField()),
-    )
-
     recommended_repos = []
     for repo in repos:
         # Weighted sum like other recommenders
@@ -399,7 +393,7 @@ def get_recommended_communities(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_communities: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_communities: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -481,7 +475,7 @@ def get_recommended_discussion_channels(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_discussion_channels: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -553,7 +547,7 @@ def get_recommended_articles(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            logger.error(f"Error in get_recommended_articles: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_articles: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
