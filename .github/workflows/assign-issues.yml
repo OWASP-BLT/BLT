@@ -17,7 +17,7 @@ jobs:
       pull-requests: write
     steps:
       - name: OWASP BLT Action
-        uses: Jayant2908/BLT-Action@Fix_assignment_issue
+        uses: OWASP-BLT/BLT-Action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
-            giphy-api-key: 5P3q6QXn0KYKKAYAmJr46BqbFytt4GIC
+            giphy-api-key: ${{ secrets.GIPHY_KEY }}
