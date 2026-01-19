@@ -6,9 +6,9 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = ">=3.11.2,<3.14"
+python = ">=3.12,<3.14"
 python-dotenv = "^1.1.0"
-Django = "^5.2.9"
+Django = "^6.0"
 dj-database-url = "^2.3.0"
 django-allauth = "^65.13.1"
 beautifulsoup4 = "^4.14.3"
@@ -16,7 +16,6 @@ django-email-obfuscator = "^0.1.5"
 django-gravatar2 = "^1.4.5"
 django-import-export = "^4.3.14"
 django-annoying = "^0.10.7"
-dj-rest-auth = "^7.0.2"
 user-agents = "^2.2.0"
 whitenoise = "^6.9.0"
 

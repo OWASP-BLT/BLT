@@ -108,19 +108,29 @@ jobs:
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          key: ${{ runner.os }}-poetry-py3.12-v2-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-poetry-py3.12-v2-
 
       - name: Set up Python
         if: steps.bot_check.outputs.skip == 'false'
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11.2'
+          python-version: '3.12'
 
       - name: Install Poetry
         if: steps.bot_check.outputs.skip == 'false'
-        run: pip install poetry
+        run: python3.12 -m pip install poetry
+
+      - name: Remove old virtual environment
+        if: steps.bot_check.outputs.skip == 'false'
+        run: rm -rf .venv
+
+      - name: Configure Poetry to use Python 3.12
+        if: steps.bot_check.outputs.skip == 'false'
+        run: |
+          poetry env use python3.12
+          poetry config virtualenvs.prefer-active-python true
 
       - name: Install dependencies (with retry)
         if: steps.bot_check.outputs.skip == 'false'

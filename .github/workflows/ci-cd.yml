@@ -60,7 +60,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11.2
+          python-version: 3.12
 
       - name: Get Poetry cache directory
         id: poetry-cache
@@ -73,10 +73,10 @@ jobs:
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-poetry-py3.12-v2-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-poetry-py3.12-v2-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-poetry-py3.12-v2-
 
       - name: Print memory usage
         run: free -h
@@ -102,7 +102,7 @@ jobs:
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11.2
+          python-version: 3.12
       - name: Run pre-commit
         id: pre-commit
         run: |
@@ -371,7 +371,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11.2
+          python-version: 3.12
       - name: Cache apt packages
         uses: actions/cache@v4
         id: apt-cache
@@ -389,7 +389,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver libmemcached-dev zlib1g-dev
       - name: Copy apt cache to user directory
         if: always()
         run: |
@@ -397,7 +397,20 @@ jobs:
           sudo cp -r /var/cache/apt/archives/* ~/apt-cache/archives/ 2>/dev/null || true
           sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
           sudo chown -R $USER:$USER ~/apt-cache
-      - run: pip install poetry
+      - name: Install Poetry with Python 3.12
+        run: python3.12 -m pip install poetry
+      - name: Remove old virtual environment
+        run: rm -rf .venv
+      - name: Configure Poetry to use Python 3.12
+        run: |
+          poetry env use python3.12
+          poetry config virtualenvs.prefer-active-python true
+      - name: Verify Python version
+        run: |
+          python --version
+          python3.12 --version
+          which python
+          which python3.12
       - run: poetry lock
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
