@@ -57,11 +57,6 @@ jobs:
             const threeMonthsAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 3, 1));
             
             core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
-            
-            // Calculate a reasonable lookback period for fetching PRs to check for reviews
-            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-
-            core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
 
             // Configuration constants
             const MAX_PAGES = 10;
