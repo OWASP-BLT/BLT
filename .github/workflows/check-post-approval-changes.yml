@@ -89,6 +89,8 @@ jobs:
               sum + f.additions + f.deletions, 0
             );
             
+            const nonMergeCommits = comparison.commits.filter(c => c.parents.length < 2);
+            
             console.log(`📊 Changes since approval:`);
             console.log(`  - Total commits: ${comparison.commits.length}`);
             console.log(`  - Merge commits: ${comparison.commits.filter(c => c.parents.length > 1).length}`);
@@ -96,7 +98,7 @@ jobs:
             console.log(`  - Lines of code changed: ${totalLinesChanged}`);
             
             // Step 4: Trigger re-review only if conditions met
-            if (totalLinesChanged > 10 && codeFiles.length > 0) {
+            if (totalLinesChanged > 10 && codeFiles.length > 0 && nonMergeCommits.length > 0) {
               const reviewers = [...new Set(approvals.map(r => r.user.login))];
               
               // Build file list (show max 10 files)
@@ -106,7 +108,6 @@ jobs:
               const moreFiles = codeFiles.length > 10 ? `\n- ...and ${codeFiles.length - 10} more` : '';
               
               // Build commit list (show max 5 commits, exclude merges)
-              const nonMergeCommits = comparison.commits.filter(c => c.parents.length < 2);
               const commitList = nonMergeCommits.slice(0, 5).map(c =>
                 `- [\`${c.sha.substring(0, 7)}\`](${c.html_url}): ${c.commit.message.split('\n')[0]}`
               ).join('\n');
@@ -140,6 +141,8 @@ jobs:
                   console.log(`⚠️ Could not request review from @${reviewer}: ${error.message}`);
                 }
               }
+            } else if (totalLinesChanged > 10 && codeFiles.length > 0) {
+              console.log('✅ Only merge commits since approval - no re-review needed');
             } else {
               console.log('✅ Changes below threshold - no re-review needed');
             }
