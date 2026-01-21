@@ -8,7 +8,7 @@ from django.test import TestCase
 class UpdateGsocDataCommandTests(TestCase):
     """Tests for the update_gsoc_data management command"""
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_prs_fetched_before_reviews(self, mock_call_command):
         """Test that update_gsoc_data calls fetch_gsoc_prs before fetch_pr_reviews"""
         out = StringIO()
@@ -30,7 +30,7 @@ class UpdateGsocDataCommandTests(TestCase):
         self.assertIn("Successfully fetched reviews", output)
         self.assertIn("All operations completed successfully", output)
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_skip_prs_flag_skips_pr_fetch(self, mock_call_command):
         """Test --skip-prs flag only runs fetch_pr_reviews"""
         out = StringIO()
@@ -46,7 +46,7 @@ class UpdateGsocDataCommandTests(TestCase):
         output = out.getvalue()
         self.assertIn("Skipping PR fetch", output)
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_skip_reviews_flag_skips_review_fetch(self, mock_call_command):
         """Test --skip-reviews flag only runs fetch_gsoc_prs"""
         out = StringIO()
@@ -62,7 +62,7 @@ class UpdateGsocDataCommandTests(TestCase):
         output = out.getvalue()
         self.assertIn("Skipping review fetch", output)
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_pr_fetch_failure_continues_to_reviews(self, mock_call_command):
         """Test that update_gsoc_data continues to reviews even if PR fetch fails"""
 
@@ -86,7 +86,7 @@ class UpdateGsocDataCommandTests(TestCase):
         self.assertIn("Error fetching PRs", output)
         self.assertIn("Partial success", output)
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_review_fetch_failure_handled_gracefully(self, mock_call_command):
         """Test that update_gsoc_data reports error if review fetch fails"""
 
@@ -111,7 +111,7 @@ class UpdateGsocDataCommandTests(TestCase):
         self.assertIn("Error fetching reviews", output)
         self.assertIn("Partial success", output)
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_both_commands_failure_raises_exception(self, mock_call_command):
         """Test that update_gsoc_data raises exception when both operations fail"""
 
@@ -134,7 +134,7 @@ class UpdateGsocDataCommandTests(TestCase):
         output = out.getvalue()
         self.assertIn("Both operations failed", output)
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_verbose_flag_passed_to_child_commands(self, mock_call_command):
         """Test --verbose flag is passed to child commands"""
         out = StringIO()
@@ -147,7 +147,7 @@ class UpdateGsocDataCommandTests(TestCase):
             call_kwargs = call[1]
             self.assertTrue(call_kwargs.get("verbose"), "verbose flag should be passed to child commands")
 
-    `@patch`("website.management.commands.update_gsoc_data.call_command")
+     @patch("website.management.commands.update_gsoc_data.call_command")
     def test_success_output_includes_both_phases(self, mock_call_command):
         """Test successful execution shows output for both phases"""
         out = StringIO()
