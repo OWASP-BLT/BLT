@@ -47,11 +47,11 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
                     data = {"count": 1, "window_start": now}
                     cache.set(key, data, timeout=window_sec)
                     count = 1
-                elif not isinstance(data, dict):
-                    data = {"count": 1, "window_start": now}
-                    cache.set(key, data, timeout=window_sec)
-                    count = 1
                 else:
+                    if not isinstance(data, dict):
+                        # Normalize int/float values from the atomic path
+                        data = {"count": int(data), "window_start": now}
+
                     # Check if we're still in the same window
                     window_start = data.get("window_start", now)
                     elapsed = now - window_start
