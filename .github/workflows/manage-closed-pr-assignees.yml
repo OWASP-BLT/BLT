@@ -1,0 +1,387 @@
+name: Manage Closed PR Assignees
+
+# Automatically unassign users when their PR is closed (not merged)
+# Gives 6 hours grace period to open a new PR before unassigning
+on:
+  pull_request_target:
+    types: [closed, opened, reopened]
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  manage_assignees:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manage Closed PR Assignees
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            const LABEL_NAME = 'pr-closed-pending-unassign';
+            const LABEL_COLOR = 'ff9800'; // Orange
+            const COMMENT_MARKER = '<!-- closed-pr-warning -->';
+            const GRACE_PERIOD_MS = 6 * 60 * 60 * 1000; // 6 hours
+            
+            // Ensure label exists
+            async function ensureLabel() {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: LABEL_NAME });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner, repo,
+                    name: LABEL_NAME,
+                    color: LABEL_COLOR,
+                    description: 'PR was closed, assignee will be removed after 6 hours'
+                  });
+                  core.info(`Created label: ${LABEL_NAME}`);
+                }
+              }
+            }
+            
+            // Extract issue numbers from PR body
+            function extractLinkedIssues(prBody) {
+              if (!prBody) return [];
+              const regex = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
+              const matches = [...prBody.matchAll(regex)];
+              return [...new Set(matches.map(m => parseInt(m[1])))];
+            }
+            
+            // Find linked issues via timeline API (PRs are also issues in GitHub API)
+            async function findLinkedIssues(prNumber) {
+              try {
+                const timeline = await github.rest.issues.listEventsForTimeline({
+                  owner, repo,
+                  issue_number: prNumber,
+                  per_page: 100
+                });
+                
+                const linked = new Set();
+                for (const event of timeline.data) {
+                  // Look for 'connected' events where this PR was linked to an issue
+                  if (event.event === 'connected' && event.issue && !event.issue.pull_request) {
+                    linked.add(event.issue.number);
+                  }
+                }
+                return Array.from(linked);
+              } catch (e) {
+                core.warning(`Failed to get timeline for PR #${prNumber}: ${e.message}`);
+                return [];
+              }
+            }
+            
+            // Check if issue has any open PRs
+            async function hasOpenPR(issueNumber) {
+              try {
+                const timeline = await github.rest.issues.listEventsForTimeline({
+                  owner, repo,
+                  issue_number: issueNumber,
+                  per_page: 100
+                });
+                
+                for (const event of timeline.data) {
+                  if (event.event === 'connected' && event.source?.issue?.pull_request) {
+                    const prNum = event.source.issue.number;
+                    
+                    // Wrap individual PR fetch in try-catch to continue checking other PRs if one fails
+                    try {
+                      const pr = await github.rest.pulls.get({ owner, repo, pull_number: prNum });
+                      if (pr.data.state === 'open') {
+                        return { hasOpen: true, prNumber: prNum };
+                      }
+                    } catch (prError) {
+                      // Log and continue to next PR if this one fails
+                      core.warning(`Failed to fetch PR #${prNum}: ${prError.message}`);
+                      continue;
+                    }
+                  }
+                }
+                return { hasOpen: false, error: false };
+              } catch (e) {
+                // Only return error flag if the timeline fetch itself fails
+                core.warning(`Failed to check open PRs for issue #${issueNumber}: ${e.message}`);
+                return { hasOpen: false, error: true };
+              }
+            }
+            
+            await ensureLabel();
+            
+            // BRANCH 1: Handle PR closed event
+            if (context.eventName === 'pull_request_target' && context.payload.action === 'closed') {
+              const pr = context.payload.pull_request;
+              
+              // Skip if PR was merged
+              if (pr.merged) {
+                core.info(`PR #${pr.number} was merged - no action needed`);
+                return;
+              }
+              
+              core.info(`PR #${pr.number} was closed (not merged) by @${pr.user.login}`);
+              
+              // Find linked issues
+              const bodyIssues = extractLinkedIssues(pr.body);
+              const timelineIssues = await findLinkedIssues(pr.number);
+              const linkedIssues = [...new Set([...bodyIssues, ...timelineIssues])];
+              
+              if (linkedIssues.length === 0) {
+                core.info('No linked issues found');
+                return;
+              }
+              
+              core.info(`Found linked issues: ${linkedIssues.join(', ')}`);
+              
+              for (const issueNumber of linkedIssues) {
+                try {
+                  const issue = await github.rest.issues.get({ owner, repo, issue_number: issueNumber });
+                  
+                  // Skip if issue is closed
+                  if (issue.data.state !== 'open') {
+                    core.info(`  Issue #${issueNumber}: Issue is closed, skipping`);
+                    continue;
+                  }
+                  
+                  // Check if PR author is assigned
+                  const isAssigned = issue.data.assignees.some(a => a.login === pr.user.login);
+                  if (!isAssigned) {
+                    core.info(`  Issue #${issueNumber}: PR author not assigned, skipping`);
+                    continue;
+                  }
+                  
+                  // Add label
+                  await github.rest.issues.addLabels({
+                    owner, repo,
+                    issue_number: issueNumber,
+                    labels: [LABEL_NAME]
+                  });
+                  
+                  // Post warning comment
+                  const timestamp = new Date().toISOString();
+                  const commentBody = `${COMMENT_MARKER}\n` +
+                    `⚠️ **PR Closed - Unassignment Pending**\n\n` +
+                    `Hi @${pr.user.login}!\n\n` +
+                    `Your PR #${pr.number} linked to this issue was closed.\n\n` +
+                    `You have **6 hours** to open a new PR for this issue, or you'll be automatically unassigned.\n\n` +
+                    `If you're still working on this, simply open a new PR and this warning will be cancelled.\n\n` +
+                    `_Timestamp: ${timestamp}_`;
+                  
+                  await github.rest.issues.createComment({
+                    owner, repo,
+                    issue_number: issueNumber,
+                    body: commentBody
+                  });
+                  
+                  core.info(`  Issue #${issueNumber}: Added label and warning comment`);
+                } catch (e) {
+                  core.warning(`  Failed to process issue #${issueNumber}: ${e.message}`);
+                }
+              }
+            }
+            
+            // BRANCH 2: Handle PR opened/reopened event
+            if (context.eventName === 'pull_request_target' && 
+                (context.payload.action === 'opened' || context.payload.action === 'reopened')) {
+              const pr = context.payload.pull_request;
+              core.info(`PR #${pr.number} was ${context.payload.action} by @${pr.user.login}`);
+              
+              // Find linked issues
+              const bodyIssues = extractLinkedIssues(pr.body);
+              const timelineIssues = await findLinkedIssues(pr.number);
+              const linkedIssues = [...new Set([...bodyIssues, ...timelineIssues])];
+              
+              if (linkedIssues.length === 0) {
+                core.info('No linked issues found');
+                return;
+              }
+              
+              core.info(`Found linked issues: ${linkedIssues.join(', ')}`);
+              
+              for (const issueNumber of linkedIssues) {
+                try {
+                  const issue = await github.rest.issues.get({ owner, repo, issue_number: issueNumber });
+                  
+                  // Skip if issue is closed
+                  if (issue.data.state !== 'open') {
+                    core.info(`  Issue #${issueNumber}: Issue is closed, skipping`);
+                    continue;
+                  }
+                  
+                  // Check if issue has the pending label
+                  const hasLabel = issue.data.labels.some(l => l.name === LABEL_NAME);
+                  if (!hasLabel) {
+                    core.info(`  Issue #${issueNumber}: No pending label, skipping`);
+                    continue;
+                  }
+                  
+                  // Remove label (handle race condition if label already removed)
+                  try {
+                    await github.rest.issues.removeLabel({
+                      owner, repo,
+                      issue_number: issueNumber,
+                      name: LABEL_NAME
+                    });
+                  } catch (labelError) {
+                    // Ignore 404 errors (label already removed)
+                    if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                      throw labelError;
+                    }
+                    core.info(`  Label already removed from issue #${issueNumber}`);
+                  }
+                  
+                  // Find and delete warning comment
+                  const comments = await github.rest.issues.listComments({
+                    owner, repo,
+                    issue_number: issueNumber,
+                    per_page: 100
+                  });
+                  
+                  const warningComment = comments.data.find(c => c.body?.includes(COMMENT_MARKER));
+                  if (warningComment) {
+                    await github.rest.issues.deleteComment({
+                      owner, repo,
+                      comment_id: warningComment.id
+                    });
+                  }
+                  
+                  // Post success comment
+                  await github.rest.issues.createComment({
+                    owner, repo,
+                    issue_number: issueNumber,
+                    body: `✅ New PR #${pr.number} opened! Unassignment cancelled. Good luck! 🚀`
+                  });
+                  
+                  core.info(`  Issue #${issueNumber}: Removed label and warning, posted success comment`);
+                } catch (e) {
+                  core.warning(`  Failed to process issue #${issueNumber}: ${e.message}`);
+                }
+              }
+            }
+            
+            // BRANCH 3: Scheduled enforcement (every 6 hours)
+            if (context.eventName === 'schedule' || context.eventName === 'workflow_dispatch') {
+              core.info('Running scheduled enforcement check...');
+              
+              // Get all issues with the pending label
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo,
+                state: 'open',
+                labels: LABEL_NAME,
+                per_page: 100
+              });
+              
+              core.info(`Found ${issues.length} issues with pending unassignment`);
+              
+              const now = Date.now();
+              
+              for (const issue of issues) {
+                try {
+                  core.info(`\nProcessing issue #${issue.number}: ${issue.title}`);
+                  
+                  // Find warning comment to get timestamp
+                  const comments = await github.rest.issues.listComments({
+                    owner, repo,
+                    issue_number: issue.number,
+                    per_page: 100
+                  });
+                  
+                  const warningComment = comments.data.find(c => c.body?.includes(COMMENT_MARKER));
+                  if (!warningComment) {
+                    core.warning(`  No warning comment found, removing label`);
+                    try {
+                      await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                    } catch (labelError) {
+                      if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                        throw labelError;
+                      }
+                      core.info(`  Label already removed`);
+                    }
+                    continue;
+                  }
+                  
+                  const commentTime = new Date(warningComment.created_at).getTime();
+                  const elapsed = now - commentTime;
+                  const hoursElapsed = (elapsed / (60 * 60 * 1000)).toFixed(1);
+                  
+                  core.info(`  Warning posted ${hoursElapsed} hours ago`);
+                  
+                  if (elapsed < GRACE_PERIOD_MS) {
+                    core.info(`  Grace period not expired yet, skipping`);
+                    continue;
+                  }
+                  
+                  // Check if a new open PR exists
+                  const { hasOpen, prNumber, error } = await hasOpenPR(issue.number);
+                  
+                  // If API error occurred, skip this issue to avoid false unassignment
+                  if (error) {
+                    core.warning(`  API error checking for open PRs, skipping to be safe`);
+                    continue;
+                  }
+                  
+                  if (hasOpen) {
+                    core.info(`  Found open PR #${prNumber}, removing label`);
+                    try {
+                      await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                    } catch (labelError) {
+                      if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                        throw labelError;
+                      }
+                      core.info(`  Label already removed`);
+                    }
+                    await github.rest.issues.deleteComment({ owner, repo, comment_id: warningComment.id });
+                    await github.rest.issues.createComment({
+                      owner, repo,
+                      issue_number: issue.number,
+                      body: `✅ Open PR #${prNumber} found! Unassignment cancelled.`
+                    });
+                    continue;
+                  }
+                  
+                  // No open PR and grace period expired - unassign
+                  core.info(`  Grace period expired and no open PR, unassigning`);
+                  
+                  const assignees = issue.assignees.map(a => a.login);
+                  if (assignees.length > 0) {
+                    await github.rest.issues.removeAssignees({
+                      owner, repo,
+                      issue_number: issue.number,
+                      assignees: assignees
+                    });
+                    
+                    core.info(`  Unassigned: ${assignees.join(', ')}`);
+                  }
+                  
+                  // Remove label and warning comment
+                  try {
+                    await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: LABEL_NAME });
+                  } catch (labelError) {
+                    if (labelError.status !== 404 && labelError.statusCode !== 404) {
+                      throw labelError;
+                    }
+                    core.info(`  Label already removed`);
+                  }
+                  await github.rest.issues.deleteComment({ owner, repo, comment_id: warningComment.id });
+                  
+                  // Post final comment
+                  await github.rest.issues.createComment({
+                    owner, repo,
+                    issue_number: issue.number,
+                    body: `Your PR was closed over 6 hours ago and no new PR was opened. You've been unassigned from this issue.\n\n` +
+                          `Feel free to comment \`/assign\` if you'd like to work on this again! 🙏`
+                  });
+                  
+                  core.info(`  ✓ Unassignment complete`);
+                } catch (e) {
+                  core.warning(`  Failed to process issue #${issue.number}: ${e.message}`);
+                }
+              }
+              
+              core.info(`\n✅ Scheduled enforcement complete`);
+            }

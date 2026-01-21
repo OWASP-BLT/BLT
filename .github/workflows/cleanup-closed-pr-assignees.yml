@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup Old Closed PR Assignees
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -52,7 +52,8 @@ jobs:
               try {
                 core.info(`Checking issue #${issue.number}: ${issue.title}`);
                 
-                const timeline = await github.rest.issues.listEventsForTimeline({
+                // Get timeline to find linked PRs (paginate to get all events)
+                const allTimelineEvents = await github.paginate(github.rest.issues.listEventsForTimeline, {
                   owner, repo,
                   issue_number: issue.number,
                   per_page: 100
@@ -62,7 +63,7 @@ jobs:
                 let closedPRsOlderThan6h = [];
                 const now = Date.now();
                 
-                for (const event of timeline.data) {
+                for (const event of allTimelineEvents) {
                   if (event.event === 'connected' && event.source?.issue?.pull_request) {
                     const prNum = event.source.issue.number;
                     
@@ -100,16 +101,25 @@ jobs:
                     core.info(`    - PR #${pr.number} by @${pr.author} (closed ${pr.hoursAgo}h ago)`);
                   });
                   
-                  const assignees = issue.assignees.map(a => a.login);
-                  core.info(`  Current assignees: ${assignees.join(', ')}`);
+                  // Build filtered removal list: only unassign authors of closed PRs who are still assigned
+                  const closedPRAuthors = closedPRsOlderThan6h.map(pr => pr.author);
+                  const currentAssignees = issue.assignees.map(a => a.login);
+                  const assigneesToRemove = currentAssignees.filter(assignee => closedPRAuthors.includes(assignee));
                   
-                  if (dryRun) {
-                    core.info(`  [DRY RUN] Would unassign: ${assignees.join(', ')}`);
+                  core.info(`  Current assignees: ${currentAssignees.join(', ')}`);
+                  core.info(`  Closed PR authors: ${closedPRAuthors.join(', ')}`);
+                  core.info(`  Will unassign: ${assigneesToRemove.join(', ') || 'none'}`);
+                  
+                  if (assigneesToRemove.length === 0) {
+                    core.info(`  No assignees to remove (closed PR authors not currently assigned)`);
+                  } else if (dryRun) {
+                    core.info(`  [DRY RUN] Would unassign: ${assigneesToRemove.join(', ')}`);
                   } else {
+                    // Unassign only the filtered list
                     await github.rest.issues.removeAssignees({
                       owner, repo,
                       issue_number: issue.number,
-                      assignees: assignees
+                      assignees: assigneesToRemove
                     });
                     
                     const prList = closedPRsOlderThan6h.map(pr => 
@@ -119,12 +129,13 @@ jobs:
                     await github.rest.issues.createComment({
                       owner, repo,
                       issue_number: issue.number,
-                      body: `Cleanup: Unassigned due to closed PR(s)\n\n` +
+                      body: `**Cleanup: Unassigned due to closed PR(s)**\n\n` +
                             `The following PR(s) were closed over 6 hours ago:\n${prList}\n\n` +
-                            `Assignees have been removed. Feel free to comment /assign to work on this issue.`
+                            `Unassigned: ${assigneesToRemove.join(', ')}\n\n` +
+                            `Assignees have been removed. Feel free to comment \`/assign\` to work on this issue!`
                     });
                     
-                    core.info(`  Unassigned: ${assignees.join(', ')}`);
+                    core.info(`  ✓ Unassigned: ${assigneesToRemove.join(', ')}`);
                     unassignedCount++;
                   }
                 } else if (hasOpenPR) {
