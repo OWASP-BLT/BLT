@@ -4,7 +4,7 @@ from django.conf import settings
 from openai import OpenAI
 from pydantic import BaseModel
 
-from website.constants import OPENAI_MODEL_GPT4
+from website.views.constants import OPENAI_MODEL_GPT4
 
 logger = logging.getLogger(__name__)
 
