@@ -4,7 +4,18 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
-from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
+from website.models import (
+    FlaggedContent,
+    GitHubIssue,
+    JoinRequest,
+    Kudos,
+    ModerationAction,
+    Notification,
+    Points,
+    Post,
+    User,
+    UserBadge,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -136,3 +147,57 @@ def notify_on_payment_processed(sender, instance, created, update_fields, **kwar
 
                 Notification.objects.create(user=admin, message=message, notification_type="alert", link=link)
                 logger.info(f"Created payment notification for admin: {admin.username}")
+
+
+@receiver(post_save, sender=FlaggedContent)
+def notify_moderators_on_content_flagged(sender, instance, created, **kwargs):
+    """
+    Signal to notify moderators when content is flagged by AI spam detection.
+    Only sends notifications for newly created flagged content with pending status.
+    """
+    if created and instance.status == "pending":
+        # Get all staff users and superusers who can moderate
+        moderators = User.objects.filter(is_staff=True) | User.objects.filter(is_superuser=True)
+        moderators = moderators.distinct()
+
+        # Get content preview
+        content_preview = instance.get_content_preview()
+        content_type = instance.content_type.model.title()
+
+        # Build admin review link
+        admin_link = f"/admin/website/flaggedcontent/{instance.id}/change/"
+
+        # Create notification message
+        message = (
+            f"🚨 Spam Alert: {content_type} flagged with {instance.spam_score:.0%} confidence. "
+            f"Reason: {instance.get_reason_display()}. "
+            f"Preview: {content_preview[:50]}..."
+        )
+
+        # Create notifications for all moderators
+        notification_count = 0
+        for moderator in moderators:
+            # Don't notify the reporter if they're a moderator
+            if instance.reporter and moderator.id == instance.reporter.id:
+                continue
+
+            Notification.objects.create(
+                user=moderator,
+                message=message,
+                notification_type="alert",
+                link=admin_link,
+            )
+            notification_count += 1
+
+        # Create audit record for the flagging
+        ModerationAction.objects.create(
+            flagged_content=instance,
+            action="flagged",
+            performed_by=instance.reporter,
+            notes=f"Auto-detected by AI with {instance.spam_score:.2%} confidence. Category: {instance.get_reason_display()}",
+        )
+
+        logger.info(
+            f"Spam detection notification: {content_type} #{instance.object_id} flagged. "
+            f"Score: {instance.spam_score:.2%}. Notified {notification_count} moderators."
+        )
