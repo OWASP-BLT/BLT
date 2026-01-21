@@ -32,7 +32,8 @@ from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
-
+from website.services.ai_spam_detection import AISpamDetectionService
+from website.constants import (SPAM_CONFIDENCE_THRESHOLD_USER_PROFILE)
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -154,10 +155,22 @@ def profile_edit(request):
 
     if request.method == "POST":
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        bio_content = form.cleaned_data.get('description', '')
+
 
         if form.is_valid():
             new_email = form.cleaned_data["email"]
-
+            # NEW: Spam detection for profile bio/description
+            spam_detector = AISpamDetectionService()
+        if bio_content:
+            spam_result = spam_detector.detect_spam(bio_content, content_type="user")
+            if spam_result['is_spam'] and spam_result['confidence'] > SPAM_CONFIDENCE_THRESHOLD_USER_PROFILE:
+                messages.error(
+                    request,
+                    f"Profile update flagged: {spam_result['reason']}"
+                )
+                return render(request, "profile_edit.html", {"form": form})
+            
             # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
                 form.add_error("email", "This email is already in use")
