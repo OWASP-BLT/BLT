@@ -1,6 +1,6 @@
 import logging
 
-from django.config import setting
+from django.conf import settings
 from openai import OpenAI
 from pydantic import BaseModel
 

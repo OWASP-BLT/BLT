@@ -3645,3 +3645,163 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+
+class FlaggedContent(models.Model):
+    """
+    Stores content flagged by AI spam detection system for moderator review.
+    Uses GenericForeignKey to support flagging any content type (Issue, Organization, UserProfile, etc.)
+    """
+
+    STATUS_CHOICES = [
+        ("pending", "Pending Review"),
+        ("approved", "Approved - Not Spam"),
+        ("rejected", "Rejected - Is Spam"),
+        ("auto_rejected", "Auto-Rejected - High Confidence Spam"),
+    ]
+
+    REASON_CHOICES = [
+        ("promotional", "Promotional/Advertising Spam"),
+        ("malicious", "Malicious Links/Phishing"),
+        ("low_quality", "Low Quality/Irrelevant"),
+        ("duplicate", "Duplicate/Template Spam"),
+        ("social_engineering", "Social Engineering"),
+        ("other", "Other"),
+    ]
+
+    # Generic relation to any content type
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    # Reporter and detection info
+    reporter = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="flagged_content_reports",
+        help_text="User who reported this (null if auto-detected by AI)",
+    )
+    reason = models.CharField(max_length=50, choices=REASON_CHOICES, default="other")
+    spam_score = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+        help_text="AI confidence score (0.0-1.0)",
+    )
+    spam_categories = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of detected spam categories from AI",
+    )
+    detection_details = models.TextField(
+        blank=True,
+        help_text="Detailed explanation from AI spam detection",
+    )
+
+    # Moderation fields
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    assigned_reviewer = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_flagged_content",
+        help_text="Moderator assigned to review this content",
+    )
+    resolution_notes = models.TextField(
+        blank=True,
+        help_text="Notes from moderator about the resolution",
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Flagged Content"
+        verbose_name_plural = "Flagged Content"
+        indexes = [
+            models.Index(fields=["status", "-created_at"], name="flagged_status_created_idx"),
+            models.Index(fields=["assigned_reviewer"], name="flagged_reviewer_idx"),
+            models.Index(fields=["content_type", "object_id"], name="flagged_content_type_idx"),
+            models.Index(fields=["-spam_score"], name="flagged_spam_score_idx"),
+        ]
+
+    def __str__(self):
+        return f"Flagged {self.content_type.model} #{self.object_id} - {self.get_status_display()}"
+
+    def get_content_preview(self):
+        """Get a preview of the flagged content"""
+        if hasattr(self.content_object, "description"):
+            return (
+                self.content_object.description[:100] + "..."
+                if len(self.content_object.description) > 100
+                else self.content_object.description
+            )
+        elif hasattr(self.content_object, "name"):
+            return self.content_object.name
+        return str(self.content_object)
+
+    def approve(self, moderator, notes=""):
+        """Approve the content as not spam"""
+        self.status = "approved"
+        self.assigned_reviewer = moderator
+        self.resolution_notes = notes
+        self.resolved_at = timezone.now()
+        self.save()
+
+    def reject(self, moderator, notes=""):
+        """Reject the content as spam"""
+        self.status = "rejected"
+        self.assigned_reviewer = moderator
+        self.resolution_notes = notes
+        self.resolved_at = timezone.now()
+        self.save()
+
+
+class ModerationAction(models.Model):
+    """
+    Audit trail for all moderation actions performed on flagged content.
+    Tracks who did what and when for accountability and reporting.
+    """
+
+    ACTION_CHOICES = [
+        ("flagged", "Content Flagged"),
+        ("assigned", "Assigned to Reviewer"),
+        ("approved", "Approved - Not Spam"),
+        ("rejected", "Rejected - Is Spam"),
+        ("note_added", "Note Added"),
+        ("status_changed", "Status Changed"),
+    ]
+
+    flagged_content = models.ForeignKey(
+        FlaggedContent,
+        on_delete=models.CASCADE,
+        related_name="moderation_actions",
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="performed_moderation_actions",
+        help_text="User who performed this action (null if automatic)",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Moderation Action"
+        verbose_name_plural = "Moderation Actions"
+        indexes = [
+            models.Index(fields=["flagged_content", "-created_at"], name="modaction_content_created_idx"),
+            models.Index(fields=["action"], name="modaction_action_idx"),
+        ]
+
+    def __str__(self):
+        performer = self.performed_by.username if self.performed_by else "System"
+        return f"{performer} - {self.get_action_display()} on {self.flagged_content}"
