@@ -1,9 +1,13 @@
-# .github/workflows/check-post-approval-changes.yml
 name: Post-Approval Change Detector
 
 on:
   pull_request:
     types: [synchronize]  # Runs when new commits pushed
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   check-changes:
@@ -39,7 +43,7 @@ jobs:
             // Find the last commit before or at approval time
             let approvedCommitSha = null;
             for (const commit of commits) {
-              const commitDate = new Date(commit.commit.author.date);
+              const commitDate = new Date(commit.commit.committer.date);
               if (commitDate <= lastApprovalDate) {
                 approvedCommitSha = commit.sha;
               } else {
