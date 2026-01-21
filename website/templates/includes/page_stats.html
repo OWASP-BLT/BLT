@@ -5,7 +5,7 @@
 {% get_page_votes current_template as upvotes %}
 {% get_page_votes current_template "downvote" as downvotes %}
 <div id="pageStatsContainer"
-     class="fixed bottom-0 left-4 z-50 transition-all duration-300 transform translate-y-[calc(100%-40px)] hover:translate-y-0 group">
+     class="fixed bottom-0 left-4 z-50 transition-all duration-300 transform translate-y-[calc(100%-40px)] group">
     <!-- Chart Icon and Handle here -->
     <div class="flex justify-center items-center h-10 w-16 mx-auto bg-white dark:bg-gray-800 rounded-t-lg shadow-md cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg"
@@ -249,31 +249,60 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Toggle container on click of the handle
     const handleElement = pageStatsContainer.querySelector('.flex.justify-center');
-    if (handleElement) {
-        handleElement.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (pageStatsContainer.classList.contains('translate-y-0')) {
-                pageStatsContainer.classList.remove('translate-y-0');
-                pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
-            } else {
-                pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
-                pageStatsContainer.classList.add('translate-y-0');
-            }
-        });
+
+    let openMode = null; // 'hover' | 'click' | null
+
+    function openStats(mode) {
+        openMode = mode;
+        pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
+        pageStatsContainer.classList.add('translate-y-0');
     }
-    
-    // Add touch support for mobile devices
-    pageStatsContainer.addEventListener('touchstart', function(e) {
-        // Only handle touch events on the handle element
-        if (e.target.closest('.flex.justify-center')) {
-            e.preventDefault();
-            if (pageStatsContainer.classList.contains('translate-y-0')) {
-                pageStatsContainer.classList.remove('translate-y-0');
-                pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
-            } else {
-                pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
-                pageStatsContainer.classList.add('translate-y-0');
-            }
+
+    function closeStats() {
+        openMode = null;
+        pageStatsContainer.classList.remove('translate-y-0');
+        pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
+    }
+
+    function isOpen() {
+        return openMode !== null;
+    }
+
+    handleElement.addEventListener('mouseenter', () => {
+        if (!isOpen()) {
+            openStats('hover');
+        }
+    });
+
+    handleElement.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // If hover-open, convert to click-open (DO NOT toggle)
+        if (openMode === 'hover') {
+            openStats('click');
+            return;
+        }
+        // Normal toggle for click-open
+        if (openMode === 'click') {
+            closeStats();
+        } else {
+            openStats('click');
+        }
+    });
+
+    pageStatsContainer.addEventListener('mouseleave', () => {
+        if (openMode === 'hover') {
+            closeStats();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (openMode !== 'click') return;
+        if (
+            !pageStatsContainer.contains(e.target) &&
+            !handleElement.contains(e.target)
+        ) {
+            closeStats();
         }
     });
     
