@@ -1012,12 +1012,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             content = f"{form.instance.description} {form.cleaned_data.get('markdown_description', '')}"
             spam_result = spam_detector.detect_spam(content, content_type="issue")
 
-            if spam_result['is_spam'] and spam_result['confidence'] > 0.7:
+            if spam_result["is_spam"] and spam_result["confidence"] > SPAM:
                 logger.warning(f"Spam issue blocked: {spam_result['reason']}")
-                messages.error(
-                    self.request, 
-                    f"This submission was flagged as potential spam: {spam_result['reason']}"
-                )
+                messages.error(self.request, f"This submission was flagged as potential spam: {spam_result['reason']}")
                 return HttpResponseRedirect("/")
             # Prevent  form submission
             messages.error(self.request, "Have a nice day.")

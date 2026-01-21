@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
-from website.services.ai_spam_detection import AISpamDetectionService
+
 from website.models import (
     DailyStatusReport,
     Domain,
@@ -39,8 +39,11 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
+from website.services.ai_spam_detection import AISpamDetectionService
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
-from website.constants import SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE
+
+from .constants import SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE
+
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
 
@@ -201,18 +204,15 @@ class RegisterOrganizationView(View):
             logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
         else:
             logo_path = None
-            
+
         spam_detector = AISpamDetectionService()
         spam_result = spam_detector.detect_spam(content=str(data), content_type="organization")
 
         if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE:
             logger.warning(f"Spam issue detected post-creation: Issue #{instance.id}")
-            messages.error(
-                request,
-                f"Organization registration flagged: {spam_result['reason']}"
-            )
+            messages.error(request, f"Organization registration flagged: {spam_result['reason']}")
             return redirect("register_organization")
-        
+
         try:
             with transaction.atomic():
                 organization = Organization.objects.create(
