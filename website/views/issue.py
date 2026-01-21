@@ -75,6 +75,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
+from website.services.ai_spam_detection import AISpamDetectionService
 from website.utils import (
     admin_required,
     get_client_ip,
@@ -1007,6 +1008,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 count=1,
             )
 
+            spam_detector = AISpamDetectionService()
+            content = f"{form.instance.description} {form.cleaned_data.get('markdown_description', '')}"
+            spam_result = spam_detector.detect_spam(content, content_type="issue")
+
+            if spam_result['is_spam'] and spam_result['confidence'] > 0.7:
+                logger.warning(f"Spam issue blocked: {spam_result['reason']}")
+                messages.error(
+                    self.request, 
+                    f"This submission was flagged as potential spam: {spam_result['reason']}"
+                )
+                return HttpResponseRedirect("/")
             # Prevent  form submission
             messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
