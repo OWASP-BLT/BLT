@@ -34,6 +34,7 @@ from website.models import (
     DailyStatusReport,
     Domain,
     Enrollment,
+    FlaggedContent,
     ForumCategory,
     ForumComment,
     ForumPost,
@@ -58,6 +59,7 @@ from website.models import (
     LectureStatus,
     ManagementCommandLog,
     Message,
+    ModerationAction,
     Monitor,
     Notification,
     Organization,
@@ -1271,3 +1273,255 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+# Spam Detection Admin
+class ModerationActionInline(admin.TabularInline):
+    """Inline display for moderation action audit history"""
+
+    model = ModerationAction
+    extra = 0
+    fields = ("action", "performed_by", "notes", "created_at")
+    readonly_fields = ("action", "performed_by", "notes", "created_at")
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class StatusFilter(SimpleListFilter):
+    """Custom filter for flagged content status"""
+
+    title = "Status"
+    parameter_name = "status"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("pending", "Pending Review"),
+            ("approved", "Approved - Not Spam"),
+            ("rejected", "Rejected - Is Spam"),
+            ("auto_rejected", "Auto-Rejected"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(status=self.value())
+        return queryset
+
+
+@admin.register(FlaggedContent)
+class FlaggedContentAdmin(admin.ModelAdmin):
+    """Admin interface for reviewing and managing flagged content"""
+
+    list_display = (
+        "id",
+        "content_preview",
+        "content_type_display",
+        "spam_score_display",
+        "status_display",
+        "assigned_reviewer",
+        "created_at",
+    )
+    list_filter = (StatusFilter, "reason", "created_at", "assigned_reviewer")
+    search_fields = ("detection_details", "resolution_notes", "object_id")
+    readonly_fields = (
+        "content_type",
+        "object_id",
+        "content_object",
+        "reporter",
+        "spam_score",
+        "spam_categories",
+        "detection_details",
+        "created_at",
+        "updated_at",
+    )
+    inlines = [ModerationActionInline]
+    actions = ["mark_as_approved", "mark_as_rejected", "assign_to_me"]
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        (
+            "Content Information",
+            {
+                "fields": (
+                    "content_type",
+                    "object_id",
+                    "content_object",
+                )
+            },
+        ),
+        (
+            "Detection Information",
+            {
+                "fields": (
+                    "reporter",
+                    "reason",
+                    "spam_score",
+                    "spam_categories",
+                    "detection_details",
+                )
+            },
+        ),
+        (
+            "Moderation",
+            {
+                "fields": (
+                    "status",
+                    "assigned_reviewer",
+                    "resolution_notes",
+                    "resolved_at",
+                )
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
+    )
+
+    def content_preview(self, obj):
+        """Display preview of the flagged content"""
+        preview = obj.get_content_preview()
+        return truncatechars(preview, 60)
+
+    content_preview.short_description = "Content Preview"
+
+    def content_type_display(self, obj):
+        """Display the content type"""
+        return obj.content_type.model.title()
+
+    content_type_display.short_description = "Content Type"
+
+    def spam_score_display(self, obj):
+        """Display spam score with color coding"""
+        score = obj.spam_score
+        if score >= 0.8:
+            color = "red"
+        elif score >= 0.6:
+            color = "orange"
+        else:
+            color = "green"
+        return format_html('<span style="color: {};">{:.2f}</span>', color, score)
+
+    spam_score_display.short_description = "Spam Score"
+    spam_score_display.admin_order_field = "spam_score"
+
+    def status_display(self, obj):
+        """Display status with color coding"""
+        status_colors = {
+            "pending": "orange",
+            "approved": "green",
+            "rejected": "red",
+            "auto_rejected": "darkred",
+        }
+        color = status_colors.get(obj.status, "black")
+        return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, obj.get_status_display())
+
+    status_display.short_description = "Status"
+    status_display.admin_order_field = "status"
+
+    def mark_as_approved(self, request, queryset):
+        """Mark selected content as approved (not spam)"""
+        count = 0
+        for flagged in queryset.filter(status="pending"):
+            flagged.approve(request.user, "Approved by moderator via bulk action")
+            ModerationAction.objects.create(
+                flagged_content=flagged,
+                action="approved",
+                performed_by=request.user,
+                notes="Bulk approved via admin action",
+            )
+            count += 1
+        self.message_user(request, f"{count} items marked as approved.")
+
+    mark_as_approved.short_description = "Mark selected as Approved (Not Spam)"
+
+    def mark_as_rejected(self, request, queryset):
+        """Mark selected content as rejected (is spam)"""
+        count = 0
+        for flagged in queryset.filter(status="pending"):
+            flagged.reject(request.user, "Rejected by moderator via bulk action")
+            ModerationAction.objects.create(
+                flagged_content=flagged,
+                action="rejected",
+                performed_by=request.user,
+                notes="Bulk rejected via admin action",
+            )
+            count += 1
+        self.message_user(request, f"{count} items marked as rejected.")
+
+    mark_as_rejected.short_description = "Mark selected as Rejected (Is Spam)"
+
+    def assign_to_me(self, request, queryset):
+        """Assign selected items to current moderator"""
+        count = 0
+        for flagged in queryset.filter(status="pending"):
+            flagged.assigned_reviewer = request.user
+            flagged.save()
+            ModerationAction.objects.create(
+                flagged_content=flagged,
+                action="assigned",
+                performed_by=request.user,
+                notes=f"Assigned to {request.user.username}",
+            )
+            count += 1
+        self.message_user(request, f"{count} items assigned to you.")
+
+    assign_to_me.short_description = "Assign to Me"
+
+    def get_queryset(self, request):
+        """Optimize queries with select_related"""
+        qs = super().get_queryset(request)
+        return qs.select_related("content_type", "assigned_reviewer", "reporter")
+
+
+@admin.register(ModerationAction)
+class ModerationActionAdmin(admin.ModelAdmin):
+    """Admin interface for viewing moderation action audit trail"""
+
+    list_display = (
+        "id",
+        "flagged_content",
+        "action_display",
+        "performed_by",
+        "created_at",
+    )
+    list_filter = ("action", "created_at", "performed_by")
+    search_fields = ("notes", "flagged_content__object_id")
+    readonly_fields = ("flagged_content", "action", "performed_by", "notes", "created_at")
+    date_hierarchy = "created_at"
+
+    def action_display(self, obj):
+        """Display action with color coding"""
+        action_colors = {
+            "flagged": "orange",
+            "assigned": "blue",
+            "approved": "green",
+            "rejected": "red",
+            "note_added": "gray",
+            "status_changed": "purple",
+        }
+        color = action_colors.get(obj.action, "black")
+        return format_html('<span style="color: {};">{}</span>', color, obj.get_action_display())
+
+    action_display.short_description = "Action"
+    action_display.admin_order_field = "action"
+
+    def has_add_permission(self, request):
+        """Prevent manual creation of audit records"""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of audit records"""
+        return False
+
+    def get_queryset(self, request):
+        """Optimize queries with select_related"""
+        qs = super().get_queryset(request)
+        return qs.select_related("flagged_content", "performed_by")
+
