@@ -17,9 +17,9 @@ from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES
 
 logger = logging.getLogger(__name__)
 
-CACHE_TIMEOUT = 3600  # 1 hour
+CACHE_TIMEOUT = 3600
 MIN_LANGUAGE_PERCENTAGE = 0.05
-MAX_REQUEST_SIZE = 1024 * 10  # 10KB
+MAX_REQUEST_SIZE = 1024 * 10
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
 GITHUB_USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$")
 
@@ -27,14 +27,6 @@ GITHUB_USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9
 def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
     """
     Fixed-window IP+path limiter using Django cache.
-    - No external deps, minimal overhead.
-    - In production, use a shared cache (Redis/Memcached) so all workers share limits.
-
-    Note: The fallback path has a read-modify-write race condition that may
-    undercount requests under high concurrency. This is acceptable because:
-    1. The happy path (cache.incr) is atomic and handles 99.9% of requests
-    2. Fallback only triggers on cache backend errors (rare)
-    3. Undercounting is safer than overcounting (fewer false-positive blocks)
     """
 
     def decorator(view_func):
@@ -45,21 +37,17 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
 
             key = f"rl:{get_client_ip(request)}:{request.path}"
             try:
-                # Create counter with TTL if not present
                 created = cache.add(key, 1, timeout=window_sec)
                 count = 1 if created else cache.incr(key)
             except Exception:
                 # Fallback: Use window metadata to maintain fixed-window semantics
-
                 data = cache.get(key)
                 now = time.time()
                 if data is None:
-                    # First request: initialize window
                     data = {"count": 1, "window_start": now}
                     cache.set(key, data, timeout=window_sec)
                     count = 1
                 elif not isinstance(data, dict):
-                    # Happy path left an int; reset to dict metadata
                     data = {"count": 1, "window_start": now}
                     cache.set(key, data, timeout=window_sec)
                     count = 1
@@ -69,15 +57,12 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
                     elapsed = now - window_start
 
                     if elapsed >= window_sec:
-                        # Window expired, start new window
                         data = {"count": 1, "window_start": now}
                         cache.set(key, data, timeout=window_sec)
                         count = 1
                     else:
-                        # Still in same window, increment count
                         count = data.get("count", 0) + 1
                         data["count"] = count
-                        # Set with remaining window time to avoid resetting
                         remaining_time = max(1, int(window_sec - elapsed))
                         cache.set(key, data, timeout=remaining_time)
 
@@ -88,7 +73,6 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
                 resp["X-RateLimit-Remaining"] = "0"
                 return resp
 
-            # Optional informational headers for successful requests
             remaining = max(0, max_requests - count)
 
             response = view_func(request, *args, **kwargs)
@@ -109,11 +93,8 @@ def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
     return decorator
 
 
-# --- end limiter ---
-
-
 def get_cache_key(username):
-    # Sanitize username for safe cache key
+    """Sanitize username for safe cache key"""
     safe_username = re.sub(r"[^a-zA-Z0-9_-]", "", username).lower()
     return f"github_data_{safe_username}"
 
@@ -125,7 +106,6 @@ def is_valid_github_username(username):
     return bool(GITHUB_USERNAME_PATTERN.match(username))
 
 
-# Helper function to tokenize text
 def tokenize(text):
     """Tokenize text into words, handling camelCase and special characters."""
     if not text:
@@ -136,7 +116,6 @@ def tokenize(text):
     return set(word.lower() for word in text.split())
 
 
-# Helper function to normalize tags
 def normalize_tag(tag):
     """Normalize tag variations."""
     return TAG_NORMALIZATION.get(tag, tag)
@@ -262,13 +241,12 @@ def repo_recommender(user_tags, language_weights):
 
     recommended_repos = []
     for repo in repos:
-        # Weighted sum like other recommenders
         tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in repo.tags.all())
         language_score = language_weights.get(repo.primary_language, 0)
 
         relevance_score = tag_score + language_score
 
-        if relevance_score > 0:  # Ensure non-zero relevance
+        if relevance_score > 0:
             matching_tags = [tag.name for tag in repo.tags.all() if tag.name in tag_weight_map]
             matching_languages = [repo.primary_language] if repo.primary_language in language_weights else []
 
@@ -338,10 +316,7 @@ def community_recommender(user_tags, language_weights):
 
     recommended_communities = []
     for community in communities:
-        # ✅ FIX: Use weighted sum instead of counting
         tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in community.tags.all())
-
-        # OsshCommunity DOES have metadata field, so language scoring is valid
         language_score = language_weights.get(community.metadata.get("primary_language", ""), 0)
 
         relevance_score = tag_score + language_score
@@ -412,15 +387,10 @@ def get_recommended_communities(request):
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
     """
     Recommend discussion channels based on user's tag preferences.
-
-    Note: OsshDiscussionChannel model does not have a metadata field,
-    so language_weights parameter is ignored (kept for API consistency).
     """
     tag_names = [tag for tag, _ in user_tags]
     matching_channels = (
-        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names))
-        .distinct()
-        .prefetch_related("tags")  # Performance optimization
+        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
     )
 
     recommended_channels = []
@@ -429,11 +399,7 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
     for channel in matching_channels:
         channel_tag_names = {tag.name for tag in channel.tags.all()}
 
-        # Weighted tag scoring bug fix (replaces main's counting logic)
-        # Calculate weighted tag score based on user's tag weights
         tag_score = sum(tag_weight_map.get(tag, 0) for tag in channel_tag_names)
-
-        # Use tag_score as relevance (channels don't have language metadata)
         relevance_score = tag_score
 
         if relevance_score > 0:
@@ -498,9 +464,6 @@ def get_recommended_discussion_channels(request):
 def article_recommender(user_tags, language_weights, top_n=5):
     """
     Recommend articles based on user's tag preferences.
-
-    Note: OsshArticle model does not have a metadata field,
-    so language_weights parameter is ignored (kept for API consistency).
     """
     tag_names = [tag for tag, _ in user_tags]
     tag_weight_map = dict(user_tags)
@@ -509,10 +472,8 @@ def article_recommender(user_tags, language_weights, top_n=5):
 
     recommended_articles = []
     for article in articles:
-        # ✅ Weighted tag scoring (already correct in your code)
         tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in article.tags.all())
 
-        # Note: OsshArticle doesn't have metadata, so only score by tags
         relevance_score = tag_score
 
         if relevance_score > 0:
