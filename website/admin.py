@@ -1524,4 +1524,3 @@ class ModerationActionAdmin(admin.ModelAdmin):
         """Optimize queries with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related("flagged_content", "performed_by")
-

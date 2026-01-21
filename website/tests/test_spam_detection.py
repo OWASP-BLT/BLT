@@ -8,20 +8,10 @@ Comprehensive tests for AI spam detection system including:
 
 from unittest.mock import MagicMock, Mock, patch
 
-from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 
-from website.models import (
-    Domain,
-    FlaggedContent,
-    Issue,
-    ModerationAction,
-    Notification,
-    Organization,
-    UserProfile,
-)
+from website.models import FlaggedContent, Issue, ModerationAction, Notification
 from website.services.ai_spam_detection import AISpamDetectionService
 
 
