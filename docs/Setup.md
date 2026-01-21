@@ -435,6 +435,7 @@ Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT
 
 If you're still facing issues or need further assistance, feel free to reach out to the community on the [OWASP Slack channel](https://owasp.org/slack/invite).
 ## Email Verification in Local Development
+This section explains how to bypass email verification locally when no email backend is configured.
 
 When running BLT locally, you may encounter a **“Verify Your Email Address”**
 screen after creating a user or superuser.
