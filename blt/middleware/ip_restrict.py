@@ -173,6 +173,7 @@ class IPRestrictMiddleware:
                     IP.objects.filter(id__in=duplicate_ids).delete()
 
         except TransactionManagementError as e:
+<<<<<<< HEAD
     # In tests, keep logs quiet and just debug-log the skip
     if getattr(settings, "IS_TEST", False) or getattr(settings, "TESTING", False):
         logger.debug("Skipping IP recording for %s - transaction management error: %s", ip, e)
@@ -184,6 +185,32 @@ class IPRestrictMiddleware:
             e,
             exc_info=True,
         )
+=======
+            """
+            Handle transaction management errors during IP recording.
+
+            In test environments (IS_TEST/TESTING), we keep this quiet and only log at
+            debug level to avoid noisy failures during teardown. In non-test
+            environments, we log a warning with full context so that real issues are
+            visible in production logs.
+            """
+            if getattr(settings, "IS_TEST", False) or getattr(settings, "TESTING", False):
+                logger.debug(
+                    "Skipping IP recording for %s - transaction management error: %s",
+                    ip,
+                    e,
+                )
+            else:
+                logger.warning(
+                    "Transaction management error while recording IP %s: %s",
+                    ip,
+                    e,
+                    exc_info=True,
+                )
+        except Exception as e:
+            # Log the error but don't let it break the request
+            logger.error(f"Error recording IP {ip}: {str(e)}", exc_info=True)
+>>>>>>> b2a20247 (Adjust TransactionManagementError logging in IPRestrictMiddleware)
 
     def __call__(self, request):
         return self.process_request_sync(request)
