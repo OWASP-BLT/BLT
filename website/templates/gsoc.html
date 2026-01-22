@@ -67,21 +67,24 @@
                     <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">100+</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="100">0</div>
                             <div class="text-gray-700 font-medium">Countries Participated</div>
                         </div>
                     </div>
                     <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">7</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="7">0</div>
                             <div class="text-gray-700 font-medium">Years with OWASP BLT</div>
                         </div>
                     </div>
                     <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">20+</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="20">0</div>
                             <div class="text-gray-700 font-medium">Successful Projects</div>
                         </div>
                     </div>
@@ -102,8 +105,7 @@
                         </div>
                         <ul class="space-y-4">
                             <li class="flex items-start">
-                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
-                                   aria-hidden="true"></i>
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"></i>
                                 <p class="text-gray-700">Gaining exposure to real-world software development scenarios</p>
                             </li>
                             <li class="flex items-start">
@@ -763,4 +765,53 @@
             </div>
         </div>
     </div>
+    <!-- Animated Stats JS -->
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const counters = document.querySelectorAll('.counter');
+
+  const animateCounter = (counter) => {
+    const target = +counter.getAttribute('data-target');
+    let count = 0;
+    const step = Math.ceil(target / 200); // adjust speed
+
+    const updateCount = () => {
+      count += step;
+      if(count > target) count = target;
+      counter.textContent = count + "+"; // add + sign
+      if(count < target) requestAnimationFrame(updateCount);
+    };
+    updateCount();
+  };
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        animateCounter(entry.target);
+        observer.unobserve(entry.target); // run once
+      }
+    });
+  }, {threshold: 1});
+
+  counters.forEach(counter => observer.observe(counter));
+});
+    </script>
+    <!-- Benefits Toggle JS -->
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('.benefit-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const detail = item.querySelector('p.hidden');
+      if(detail){
+        detail.classList.toggle('hidden');
+        detail.classList.toggle('block');
+      }
+      // small icon bounce
+      const icon = item.querySelector('i');
+      icon.classList.add('animate-bounce');
+      setTimeout(() => icon.classList.remove('animate-bounce'), 500);
+    });
+  });
+});
+    </script>
 {% endblock content %}
