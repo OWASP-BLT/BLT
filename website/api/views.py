@@ -1999,6 +1999,7 @@ class TeamMemberLeaderboardAPIView(generics.ListAPIView):
     def get_queryset(self):
         team = self.request.user.userprofile.team
         if not team:
+            logger.info(f"User {self.request.user.id} has no team; returning empty leaderboard.")
             return UserProfile.objects.none()
 
         return (

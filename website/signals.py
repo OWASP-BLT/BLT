@@ -10,4 +10,4 @@ def update_score_on_checkin(sender, instance, **kwargs):
         profile = instance.user.userprofile
         profile.update_leaderboard_score()
     except UserProfile.DoesNotExist:
-        pass
+        logger.warning(f"Leaderboard update skipped: UserProfile missing for user {instance.user_id}")

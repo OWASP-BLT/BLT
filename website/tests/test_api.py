@@ -293,3 +293,19 @@ class TestPasswordResetUnknownEmail(APITestCase):
         self.assertEqual(len(mail.outbox), 1, "Email should be sent for known accounts")
 
         print("✓ Correct: Email sent for known account")
+
+
+def test_api_requires_auth_and_returns_data(self):
+    """Test API endpoint requires authentication and returns correct structure"""
+    # Unauthenticated
+    response = self.client.get("/api/team-member-leaderboard/")
+    self.assertEqual(response.status_code, 401)
+
+    # Authenticated
+    self.client.force_authenticate(user=self.user)
+    response = self.client.get("/api/team-member-leaderboard/")
+
+    self.assertEqual(response.status_code, 200)
+    self.assertIn("results", response.data)
+    member = response.data["results"][0]
+    self.assertIn("leaderboard_score", member)
