@@ -19,7 +19,8 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.db.models import Coalesce, Count, OuterRef, Subquery, Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
+from django.db.models.functions import Coalesce
 
 
 class Command(BaseCommand):

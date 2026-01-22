@@ -51,7 +51,8 @@ import logging
 from datetime import datetime
 
 from django.db import migrations
-from django.db.models import Coalesce, Count, OuterRef, Subquery, Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)

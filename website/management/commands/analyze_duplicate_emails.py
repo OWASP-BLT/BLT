@@ -13,7 +13,8 @@ import csv
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Coalesce, Count, OuterRef, Subquery, Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 
@@ -313,6 +314,9 @@ class Command(BaseCommand):
                 # Process each email group and stream to CSV
                 for dup in duplicate_emails:
                     email = dup["email"]
+
+                    # Import models here to avoid circular imports
+                    from website.models import Issue, Points
 
                     # Get users with metrics for this email
                     # Create subqueries to avoid row multiplication from joins
