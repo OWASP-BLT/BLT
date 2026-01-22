@@ -13,6 +13,7 @@ from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from website.models import Organization
 from website.utils import rebuild_safe_url, validate_file_type
 
 
@@ -302,7 +303,7 @@ class TeamLeaderboardAPITest(APITestCase):
         )
 
         # Create a team and assign user to it
-        self.team = Team.objects.create(name="Test Team")
+        self.team = Organization.objects.create(name="Test Team")
         self.user.userprofile.team = self.team
         self.user.userprofile.leaderboard_score = 10
         self.user.userprofile.save()

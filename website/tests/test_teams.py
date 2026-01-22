@@ -2,14 +2,14 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import Team
+from website.models import Organization
 
 
 class TeamMemberLeaderboardViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
-        self.team = Team.objects.create(name="Test Team")
+        self.team = Organization.objects.create(name="Test Team")
         self.user.userprofile.team = self.team
         self.user.userprofile.leaderboard_score = 100
         self.user.userprofile.save()
