@@ -1081,6 +1081,8 @@ class UserProfile(models.Model):
                 self.last_check_in = check_in_date
                 self.save()
 
+                self.update_leaderboard_score()
+
                 self.award_streak_badges()
 
         except Exception as e:

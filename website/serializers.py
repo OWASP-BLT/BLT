@@ -322,3 +322,22 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
             "resolved_at",
         ]
         read_only_fields = ["id", "created_at", "resolved_at"]
+
+
+class TeamMemberLeaderboardSerializer(serializers.ModelSerializer):
+    """
+    Serializer for team member leaderboard
+    """
+
+    username = serializers.CharField(source="user.username", read_only=True)
+    user_avatar = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = UserProfile
+        fields = (
+            "id",
+            "username",
+            "user_avatar",
+            "leaderboard_score",
+            "current_streak",
+        )

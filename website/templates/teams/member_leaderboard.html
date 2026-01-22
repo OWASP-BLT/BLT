@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load static %}
 {% block title %}
     Team Member Leaderboard
 {% endblock title %}
@@ -91,7 +90,7 @@
                                         <!-- Rank -->
                                         <td class="py-4 px-6">
                                             <div class="flex items-center gap-3">
-                                                {% with rank=forloop.counter %}
+                                                {% with rank=page_obj.start_index|add:forloop.counter0 %}
                                                     <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg {% if rank == 1 %}bg-[#D4AF37] text-white{% elif rank == 2 %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200{% elif rank == 3 %}bg-[#be7225] text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
                                                         {{ rank }}
                                                     </div>
@@ -167,7 +166,7 @@
                                 <div class="flex items-start justify-between mb-4">
                                     <div class="flex items-start gap-4">
                                         <!-- Rank -->
-                                        {% with rank=forloop.counter %}
+                                        {% with rank=page_obj.start_index|add:forloop.counter0 %}
                                             <div class="flex flex-col items-center">
                                                 <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mb-1 {% if rank == 1 %}bg-[#D4AF37] text-white{% elif rank == 2 %}bg-[#C0C0C0] text-gray-800{% elif rank == 3 %}bg-[#be7225] text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
                                                     {{ rank }}
@@ -221,7 +220,7 @@
                                             <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ member.current_streak }}</div>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">Day{{ member.current_streak|pluralize }}</div>
                                             <div class="flex items-center gap-0.5 mt-1">
-                                                {% for i in "123" %}
+                                                {% for i in "12345" %}
                                                     {% if forloop.counter <= member.current_streak %}
                                                         <i class="fas fa-fire text-[#e74c3c] text-xs"></i>
                                                     {% else %}
@@ -245,7 +244,8 @@
                                         <i class="fas fa-chevron-left mr-1"></i> Prev
                                     </a>
                                 {% else %}
-                                    <span class="px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                    <span class="px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-not-allowed"
+                                          aria-disabled="true">
                                         <i class="fas fa-chevron-left mr-1"></i> Prev
                                     </span>
                                 {% endif %}

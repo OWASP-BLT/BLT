@@ -3,6 +3,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError
@@ -350,7 +351,7 @@ class TeamLeaderboard(TemplateView):
         return render(request, "team_leaderboard.html", context)
 
 
-class TeamMemberLeaderboardView(ListView):
+class TeamMemberLeaderboardView(LoginRequiredMixin, ListView):
     template_name = "teams/member_leaderboard.html"
     context_object_name = "members"
     paginate_by = 20

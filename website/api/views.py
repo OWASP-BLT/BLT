@@ -25,7 +25,7 @@ from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, generics, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
@@ -72,6 +72,7 @@ from website.serializers import (
     SearchHistorySerializer,
     SecurityIncidentSerializer,
     TagSerializer,
+    TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
@@ -1990,11 +1991,10 @@ class DebugClearCacheApiView(APIView):
             )
 
 
-class TeamMemberLeaderboardAPIView(APIView):
-    template_name = "teams/member_leaderboard.html"
+class TeamMemberLeaderboardAPIView(generics.ListAPIView):
+    serializer_class = TeamMemberLeaderboardSerializer
     permission_classes = [IsAuthenticated]
-    context_object_name = "members"
-    paginate_by = 20
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         team = self.request.user.userprofile.team
