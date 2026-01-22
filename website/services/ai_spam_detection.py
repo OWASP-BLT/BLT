@@ -25,9 +25,9 @@ class AISpamDetectionService:
             try:
                 self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
             except Exception as e:
-                logger.error(f"AISpamDetectionService: Failed to create OpenAI client: {e}")
+                logger.error(f"[AISpamDetectionService]: Failed to create OpenAI client: {e}")
         else:
-            logger.warning("AISpamDetectionService: OPENAI_API_KEY not found - spam detection unavailable")
+            logger.warning("[AISpamDetectionService]: OPENAI_API_KEY not found - spam detection unavailable")
 
     def detect_spam(self, content: str, content_type: str = "issue") -> dict:
         """
@@ -48,8 +48,6 @@ class AISpamDetectionService:
 
         # Check if spam detection is enabled
         spam_enabled = getattr(settings, "SPAM_DETECTION_ENABLED", True)
-        logger.info(f"AISpamDetectionService: SPAM_DETECTION_ENABLED = {spam_enabled}")
-
         if not spam_enabled:
             logger.warning("AISpamDetectionService: Spam detection is DISABLED in settings")
             return {"is_spam": False, "confidence": 0.0, "reason": "Spam detection disabled", "category": None}
@@ -91,12 +89,10 @@ class AISpamDetectionService:
                 max_tokens=200,
             )
 
-            # Parse AI response
             result = self._parse_response(response.choices[0].message.content)
             return result
 
         except Exception as e:
-            logger.error(f"AISpamDetectionService: Failed during spam detection: {e}")
             return {"is_spam": False, "confidence": 0.0, "reason": f"Detection error: {str(e)}", "category": None}
 
     def _parse_response(self, ai_response: str) -> dict:

@@ -11,6 +11,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
+
 logger = logging.getLogger(__name__)
 
 from website.models import (
@@ -1408,7 +1409,7 @@ class FlaggedContentAdmin(admin.ModelAdmin):
             color = "orange"
         else:
             color = "green"
-        formatted_score = f'{score:.2f}'
+        formatted_score = f"{score:.2f}"
         return format_html('<span style="color: {};">{}</span>', color, formatted_score)
 
     spam_score_display.short_description = "Spam Score"

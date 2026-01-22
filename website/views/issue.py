@@ -1002,12 +1002,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
         text_to_check = f"{description} {markdown_description}"
 
         # Run AI spam detection
-        logger.info("Starting AI spam detection for issue submission...")
         spam_detector = AISpamDetectionService()
         spam_result = spam_detector.detect_spam(content=text_to_check, content_type="issue")
-        logger.info(
-            f"Spam detection result: is_spam={spam_result['is_spam']}, confidence={spam_result['confidence']}, category={spam_result.get('category')}"
-        )
 
         # Store spam result in form instance for later use
         form.instance._spam_detection_result = spam_result
@@ -1132,13 +1128,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         )
             tokenauth = False
             obj = form.save(commit=False)
-            
+
             # CRITICAL: Transfer spam detection result from form.instance to obj
             # form.save(commit=False) creates a NEW instance, losing the _spam_detection_result
             # that was set on form.instance in form_valid()
-            if hasattr(form.instance, '_spam_detection_result'):
+            if hasattr(form.instance, "_spam_detection_result"):
                 obj._spam_detection_result = form.instance._spam_detection_result
-            
+
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1163,9 +1159,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             clean_domain_no_www = clean_domain.replace("www.", "")
-
-            # Debug logging to help identify the issue
-            logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
 
             # Try multiple domain lookup strategies to match domain creation logic
             domain = None
@@ -1401,7 +1394,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             ):
                 # Mark issue as hidden (pending moderator review)
                 obj.is_hidden = True
-                logger.info(f"[SPAM DETECTED] Setting is_hidden=True for spam issue")
+                logger.info("[SPAM DETECTED] Setting is_hidden=True for spam issue")
 
             # Initial save to get ID
             logger.info(f"[BEFORE SAVE] is_hidden={obj.is_hidden}")
@@ -1503,7 +1496,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             ] + [self.request.user.id]
             team_members_id = [member_id for member_id in team_members_id if member_id is not None]
             obj.team_members.set(team_members_id)
-
 
             # team_members.set() handles saving the through-table, not obj itself
             # but we call save() again to be sure all fields are consistent
