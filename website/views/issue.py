@@ -68,6 +68,7 @@ from website.models import (
     GitHubIssue,
     Hunt,
     Issue,
+    IssuePledge,
     IssueScreenshot,
     Points,
     Repo,
@@ -114,16 +115,18 @@ def submit_pledge(request):
     if not form.is_valid():
         return JsonResponse({"error": form.errors}, status=400)
 
+    if request.user.is_authenticated:
+        if IssuePledge.objects.filter(issue=issue, user=request.user).exists():
+            return JsonResponse({"error": "You have already pledged to this issue"}, status=400)
+
     pledge = form.save(commit=False)
     pledge.issue = issue
 
-    anonymous = request.POST.get("anonymous")
-    if request.user.is_authenticated and not anonymous:
-        pledge.user = request.user
-    else:
-        pledge.user = None
+    pledge.user = request.user if request.user.is_authenticated else None
+
     pledge.full_clean()
     pledge.save()
+    return JsonResponse({"success": True})
 
 
 @login_required(login_url="/accounts/login")

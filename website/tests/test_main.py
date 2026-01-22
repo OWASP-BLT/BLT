@@ -1,7 +1,5 @@
 import os
-import shutil
 import time
-import unittest
 from unittest.mock import patch
 
 import chromedriver_autoinstaller
@@ -45,10 +43,6 @@ class MySeleniumTests(LiveServerTestCase):
     def setUpClass(cls):
         super(MySeleniumTests, cls).setUpClass()
 
-        # Check if Chrome is available
-        if not (shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chromium-browser")):
-            raise unittest.SkipTest("Chrome not installed")
-
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
@@ -69,7 +63,7 @@ class MySeleniumTests(LiveServerTestCase):
             cls.selenium.implicitly_wait(30)
         except Exception as e:
             print(f"Error setting up Chrome: {e}")
-            raise unittest.SkipTest(f"Chrome setup failed: {e}")
+            raise
 
     @classmethod
     def tearDownClass(cls):

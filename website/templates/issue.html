@@ -183,14 +183,14 @@
                                 {% endif %}
                             </button>
                         {% endif %}
-                    </div>
-                {% endif %}
-                {% if object.status != "closed" %}
-                    <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">
-                        <button class="btn btn-primary pledge-button w-full"
-                                data-issue-id="{{ object.id }}">
-                            <i class="fa fa-wallet mr-2"></i>Pledge BCH
-                        </button>
+                        {% if object.status != "closed" %}
+                            <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">
+                                <button class="btn btn-primary pledge-button w-full"
+                                        data-issue-id="{{ object.id }}">
+                                    Pledge BCH<i class="fa fa-wallet mr-2"></i>
+                                </button>
+                            </div>
+                        {% endif %}
                     </div>
                 {% endif %}
                 <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">
@@ -562,7 +562,8 @@
 
         submitBtn.addEventListener('click', function () {
             const formData = new FormData(form);
-
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting';
             fetch("{% url 'submit_pledge' %}", {
                 method: "POST",
                 headers: {
@@ -578,10 +579,14 @@
                         location.reload();
                     } else {
                         alert("❌ Error: " + JSON.stringify(data.error));
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Submit Pledge';
                     }
                 })
                 .catch(() => {
                     alert("❌ Something went wrong");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Submit Pledge';
                 });
         });
 
