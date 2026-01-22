@@ -57,9 +57,16 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    let chartInitAttempts = 0;
+    const MAX_CHART_INIT_ATTEMPTS = 50;
     const initializeChart = function() {
         // Wait for Chart.js to be available
         if (typeof Chart === 'undefined') {
+            chartInitAttempts++;
+
+            if (chartInitAttempts >= MAX_CHART_INIT_ATTEMPTS) {
+                return;
+            }
             setTimeout(initializeChart, 100);
             return;
         }
