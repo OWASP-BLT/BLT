@@ -1,183 +1,3 @@
-import pytz
-from allauth.account.forms import SignupForm
-from captcha.fields import CaptchaField
-from django import forms
-from django.db.models import Q
-from mdeditor.fields import MDTextFormField
-
-from website.models import (
-    Bid,
-    Hackathon,
-    HackathonPrize,
-    HackathonSponsor,
-    IpReport,
-    Issue,
-    Job,
-    Monitor,
-    Organization,
-    ReminderSettings,
-    Repo,
-    Room,
-    UserProfile,
-)
-
-
-class UserProfileForm(forms.ModelForm):
-    email = forms.EmailField(required=True)
-
-    class Meta:
-        model = UserProfile
-        fields = [
-            "user_avatar",
-            "description",
-            "issues_hidden",
-            "btc_address",
-            "bch_address",
-            "eth_address",
-            "tags",
-            "subscribed_domains",
-            "subscribed_users",
-            "linkedin_url",
-            "x_username",
-            "website_url",
-            "discounted_hourly_rate",
-            "github_url",
-            "role",
-        ]
-        widgets = {
-            "tags": forms.CheckboxSelectMultiple(),
-            "subscribed_domains": forms.CheckboxSelectMultiple(),
-            "subscribed_users": forms.CheckboxSelectMultiple(),
-        }
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     print("UserProfileForm __init__")
-    #     print(self.instance)
-    #     print(self.instance.user)
-    #     if self.instance and self.instance.user:
-    #         # Populate email from user model
-    #         self.fields["email"].initial = self.instance.user.email
-
-    # def save(self, commit=True):
-    #     profile = super().save(commit=False)
-    #     if commit:
-    #         # Save email to User model
-    #         if self.instance and self.instance.user:
-    #             self.instance.user.email = self.cleaned_data["email"]
-    #             self.instance.user.save()
-    #         profile.save()
-    #     return profile
-
-
-class UserDeleteForm(forms.Form):
-    delete = forms.BooleanField(
-        required=True,
-        widget=forms.CheckboxInput(
-            attrs={
-                "class": "h-5 w-5 text-[#e74c3c] border-gray-300 rounded focus:ring-[#e74c3c]",
-            }
-        ),
-    )
-
-
-class HuntForm(forms.Form):
-    content = MDTextFormField()
-    start_date = forms.DateTimeField(
-        widget=forms.DateTimeInput(attrs={"class": "col-sm-6", "readonly": True}),
-        label="",
-        required=False,
-    )
-    end_date = forms.DateTimeField(
-        widget=forms.DateTimeInput(attrs={"class": "col-sm-6", "readonly": True}),
-        label="",
-        required=False,
-    )
-
-
-class CaptchaForm(forms.Form):
-    captcha = CaptchaField()
-
-
-class MonitorForm(forms.ModelForm):
-    created = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Created")
-    modified = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Modified")
-
-    class Meta:
-        model = Monitor
-        fields = ["url", "keyword"]
-
-
-class IpReportForm(forms.ModelForm):
-    class Meta:
-        model = IpReport
-        fields = [
-            "ip_address",
-            "ip_type",
-            "description",
-            "activity_title",
-            "activity_type",
-        ]
-
-
-class BidForm(forms.ModelForm):
-    class Meta:
-        model = Bid
-        fields = [
-            "user",
-            "issue_url",
-            "created",
-            "modified",
-            "amount_bch",
-            "status",
-            "pr_link",
-            "bch_address",
-        ]
-
-
-class GitHubURLForm(forms.Form):
-    github_url = forms.URLField(
-        label="GitHub URL",
-        required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
-    )
-
-
-class SignupFormWithCaptcha(SignupForm, CaptchaForm):
-    def clean(self):
-        cleaned_data = super().clean()
-        return cleaned_data
-
-    def save(self, request):
-        user = super().save(request)
-        return user
-
-
-class RoomForm(forms.ModelForm):
-
-    class Meta:
-        model = Room
-        fields = ["name", "type", "custom_type", "description"]
-        widgets = {
-            "type": forms.Select(attrs={"onchange": "toggleCustomTypeField(this)"}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        is_anonymous = kwargs.pop("is_anonymous", False)
-        super().__init__(*args, **kwargs)
-        if is_anonymous:
-
-
-class GitHubIssueForm(forms.Form):
-    github_url = forms.URLField(
-        label="GitHub Issue URL",
-        widget=forms.URLInput(
-            attrs={
-                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
-                "placeholder": "https://github.com/owner/repo/issues/123",
-            }
-        ),
-        help_text=("Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)"),
     )
 
     def clean_github_url(self):
@@ -207,14 +27,13 @@ class GitHubIssueForm(forms.Form):
 
 
 class IssueForm(forms.ModelForm):
-
     class Meta:
         model = Issue
         fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
         widgets = {
             "url": forms.URLInput(
                 attrs={
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 bg-white dark:bg-gray-900",
+                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[`#e74c3c`] focus:ring focus:ring-[`#e74c3c`] focus:ring-opacity-50 bg-white dark:bg-gray-900",
                     "placeholder": "https://example.com/vulnerable-page",
                 }
             ),
@@ -228,8 +47,8 @@ class HackathonForm(forms.ModelForm):
             attrs={
                 "rows": 3,
                 "class": (
-                    "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#e74c3c] "
-                    "focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50"
+                    "w-full rounded-lg border-gray-300 shadow-sm focus:border-[`#e74c3c`] "
+                    "focus:ring focus:ring-[`#e74c3c`] focus:ring-opacity-50"
                 ),
                 "placeholder": "https://github.com/owner/repo1\nhttps://github.com/owner/repo2",
             }
@@ -255,8 +74,8 @@ class HackathonForm(forms.ModelForm):
             "sponsor_link",
         ]
         base_input_class = (
-            "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#e74c3c] "
-            "focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50"
+            "w-full rounded-lg border-gray-300 shadow-sm focus:border-[`#e74c3c`] "
+            "focus:ring focus:ring-[`#e74c3c`] focus:ring-opacity-50"
         )
         widgets = {
             "name": forms.TextInput(
@@ -288,7 +107,7 @@ class HackathonForm(forms.ModelForm):
                 attrs={
                     "rows": 4,
                     "class": base_input_class,
-                    "placeholder": ("Provide information about sponsorship opportunities for this hackathon"),
+                    "placeholder": "Provide information about sponsorship opportunities for this hackathon",
                 }
             ),
             "sponsor_link": forms.URLInput(
@@ -323,7 +142,7 @@ class HackathonForm(forms.ModelForm):
             ),
             "registration_open": forms.CheckboxInput(
                 attrs={
-                    "class": ("h-5 w-5 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"),
+                    "class": "h-5 w-5 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 rounded",
                 }
             ),
         }
@@ -438,7 +257,7 @@ class HackathonPrizeForm(forms.ModelForm):
             "description": forms.Textarea(
                 attrs={
                     "rows": 3,
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[`#e74c3c`] focus:ring focus:ring-[`#e74c3c`] focus:ring-opacity-50",
                 }
             ),
         }
@@ -459,7 +278,7 @@ class ReminderSettingsForm(forms.ModelForm):
         widget=forms.TimeInput(
             attrs={
                 "type": "time",
-                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm",
+                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[`#e74c3c`] focus:ring-[`#e74c3c`] sm:text-sm",
             },
             format="%H:%M",
         ),
@@ -471,7 +290,7 @@ class ReminderSettingsForm(forms.ModelForm):
         choices=[(tz, tz) for tz in pytz.common_timezones],
         widget=forms.Select(
             attrs={
-                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm"
+                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[`#e74c3c`] focus:ring-[`#e74c3c`] sm:text-sm"
             }
         ),
         help_text="Select your timezone",
@@ -482,7 +301,7 @@ class ReminderSettingsForm(forms.ModelForm):
         fields = ["reminder_time", "timezone", "is_active"]
         widgets = {
             "is_active": forms.CheckboxInput(
-                attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
+                attrs={"class": "h-4 w-4 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 rounded"}
             )
         }
 
@@ -523,73 +342,73 @@ class JobForm(forms.ModelForm):
         widgets = {
             "title": forms.TextInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "placeholder": "e.g., Senior Software Engineer",
                 }
             ),
             "description": forms.Textarea(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "rows": 6,
                     "placeholder": "Describe the job role and responsibilities...",
                 }
             ),
             "requirements": forms.Textarea(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "rows": 5,
                     "placeholder": "List required skills, experience, and qualifications...",
                 }
             ),
             "location": forms.TextInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "placeholder": "e.g., Remote, New York, or Hybrid",
                 }
             ),
             "job_type": forms.Select(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent"
                 }
             ),
             "salary_range": forms.TextInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "placeholder": "e.g., $80k-$120k, Competitive",
                 }
             ),
             "application_email": forms.EmailInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "placeholder": "careers@company.com",
                 }
             ),
             "application_url": forms.URLInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "placeholder": "https://company.com/apply",
                 }
             ),
             "application_instructions": forms.Textarea(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "rows": 3,
                     "placeholder": "How should candidates apply? Any special instructions...",
                 }
             ),
             "is_public": forms.CheckboxInput(
                 attrs={
-                    "class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
+                    "class": "h-4 w-4 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
                 }
             ),
             "status": forms.Select(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent"
                 }
             ),
             "expires_at": forms.DateTimeInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
                     "type": "datetime-local",
                     "placeholder": "YYYY-MM-DD HH:MM",
                 }
