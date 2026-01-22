@@ -1504,27 +1504,6 @@ class FlaggedContentAdmin(admin.ModelAdmin):
         """Optimize queries with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related("content_type", "assigned_reviewer", "reporter")
-    
-    def has_delete_permission(self, request, obj=None):
-        """Allow staff users to delete flagged content entries"""
-        return request.user.is_staff or request.user.is_superuser
-    
-    def delete_queryset(self, request, queryset):
-        """Custom bulk delete that handles cascade deletion of moderation actions"""
-        for obj in queryset:
-            # Delete related moderation actions first
-            obj.moderation_actions.all().delete()
-            # Then delete the flagged content
-            obj.delete()
-        self.message_user(request, f"{queryset.count()} flagged content items deleted successfully.", messages.SUCCESS)
-    
-    def delete_model(self, request, obj):
-        """Custom delete that handles cascade deletion of moderation actions"""
-        # Delete related moderation actions first
-        obj.moderation_actions.all().delete()
-        # Then delete the flagged content
-        obj.delete()
-        self.message_user(request, "Flagged content deleted successfully.", messages.SUCCESS)
 
 
 @admin.register(ModerationAction)
@@ -1565,12 +1544,12 @@ class ModerationActionAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         """
-        Prevent manual deletion of audit records from ModerationAction admin.
-        Note: Cascade deletion from FlaggedContent is allowed via FlaggedContentAdmin.delete_model()
+        Allow deletion from FlaggedContent admin via cascade.
+        Prevent manual deletion from ModerationAction admin page.
         """
-        # Don't allow deletion from ModerationAction admin page
-        # But allow programmatic deletion (which is used by FlaggedContent cascade)
-        return False
+        # Allow programmatic deletion (happens during cascade from FlaggedContent)
+        # but not from the ModerationAction admin interface
+        return request.user.is_superuser
 
     def get_queryset(self, request):
         """Optimize queries with select_related"""

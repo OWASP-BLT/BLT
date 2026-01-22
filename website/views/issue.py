@@ -1002,7 +1002,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         text_to_check = f"{description} {markdown_description}"
 
         # Run AI spam detection
-        logger.info("🔍 Starting AI spam detection for issue submission...")
+        logger.info("Starting AI spam detection for issue submission...")
         spam_detector = AISpamDetectionService()
         spam_result = spam_detector.detect_spam(content=text_to_check, content_type="issue")
         logger.info(
@@ -1132,6 +1132,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         )
             tokenauth = False
             obj = form.save(commit=False)
+            
+            # CRITICAL: Transfer spam detection result from form.instance to obj
+            # form.save(commit=False) creates a NEW instance, losing the _spam_detection_result
+            # that was set on form.instance in form_valid()
+            if hasattr(form.instance, '_spam_detection_result'):
+                obj._spam_detection_result = form.instance._spam_detection_result
+            
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1386,6 +1393,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             # Check if this issue was flagged as spam
             spam_result = getattr(obj, "_spam_detection_result", None)
+            logger.info(f"[SPAM CHECK] spam_result on obj: {spam_result}")
             if (
                 spam_result
                 and spam_result["is_spam"]
@@ -1393,11 +1401,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             ):
                 # Mark issue as hidden (pending moderator review)
                 obj.is_hidden = True
-                logger.warning(
-                    f"Issue flagged as spam - Confidence: {spam_result['confidence']:.2f}, Reason: {spam_result['reason']}"
-                )
+                logger.info(f"[SPAM DETECTED] Setting is_hidden=True for spam issue")
 
+            # Initial save to get ID
+            logger.info(f"[BEFORE SAVE] is_hidden={obj.is_hidden}")
             obj.save()
+            logger.info(f"[AFTER SAVE] Issue ID={obj.id}, is_hidden={obj.is_hidden}")
 
             # Create FlaggedContent entry if spam was detected
             if (
@@ -1495,6 +1504,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             team_members_id = [member_id for member_id in team_members_id if member_id is not None]
             obj.team_members.set(team_members_id)
 
+
+            # team_members.set() handles saving the through-table, not obj itself
+            # but we call save() again to be sure all fields are consistent
             obj.save()
 
             if not report_anonymous:
