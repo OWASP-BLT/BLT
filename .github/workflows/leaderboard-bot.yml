@@ -5,7 +5,7 @@ name: Leaderboard Bot
 on:
   pull_request_target:
     types:
-      - closed
+      - opened
 
 permissions:
   contents: read
