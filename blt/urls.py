@@ -45,6 +45,7 @@ from website.api.views import (
     SecurityIncidentViewSet,
     StatsApiViewset,
     TagApiViewset,
+    TeamMemberLeaderboardAPIView,
     TimeLogViewSet,
     UrlCheckApiViewset,
     UserIssueViewSet,
@@ -1253,6 +1254,7 @@ urlpatterns = [
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
     path("teams/member-leaderboard/", TeamMemberLeaderboardView.as_view(), name="team_member_leaderboard"),
+    path("api/v1/team-member-leaderboard/", TeamMemberLeaderboardAPIView.as_view(), name="api_team_member_leaderboard"),
 ]
 
 if settings.DEBUG:
