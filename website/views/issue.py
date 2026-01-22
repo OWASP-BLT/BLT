@@ -88,7 +88,7 @@ from website.utils import (
     validate_screenshot_hash,
 )
 
-from .constants import GSOC25_PROJECTS
+from .constants import GSOC25_PROJECTS, SPAM_CONFIDENCE_THRESHOLD_GENERAL
 
 logger = logging.getLogger(__name__)
 
@@ -999,6 +999,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # Combine fields to check
         text_to_check = f"{description} {markdown_description}"
 
+        # Spam detection
+        spam_detector = AISpamDetectionService()
+        spam_result = spam_detector.detect_spam(content=text_to_check, content_type="issue")
+        if spam_result["is_spam"] and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL:
+            logger.warning(f"Spam issue blocked - Confidence: {spam_result['confidence']:.2f}, Reason: {spam_result['reason']}")
+            messages.error(
+                self.request,
+                f"This submission was flagged as potential spam: {spam_result['reason']}"
+            )
+            return HttpResponseRedirect("/issues")
+
         # Check for profanity
         if profanity.contains_profanity(text_to_check):
             Blocked.objects.create(
@@ -1007,16 +1018,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 user_agent_string=self.request.META.get("HTTP_USER_AGENT", ""),
                 count=1,
             )
-
-            spam_detector = AISpamDetectionService()
-            content = f"{form.instance.description} {form.cleaned_data.get('markdown_description', '')}"
-            spam_result = spam_detector.detect_spam(content, content_type="issue")
-
-            if spam_result["is_spam"] and spam_result["confidence"] > SPAM:
-                logger.warning(f"Spam issue blocked: {spam_result['reason']}")
-                messages.error(self.request, f"This submission was flagged as potential spam: {spam_result['reason']}")
-                return HttpResponseRedirect("/")
-            # Prevent  form submission
+            # Prevent form submission
             messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
 
