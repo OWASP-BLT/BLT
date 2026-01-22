@@ -1,6 +1,7 @@
+import logging
 from urllib.parse import urlparse
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -10,6 +11,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
+logger = logging.getLogger(__name__)
 
 from website.models import (
     IP,
@@ -1406,7 +1408,8 @@ class FlaggedContentAdmin(admin.ModelAdmin):
             color = "orange"
         else:
             color = "green"
-        return format_html('<span style="color: {};">{:.2f}</span>', color, score)
+        formatted_score = f'{score:.2f}'
+        return format_html('<span style="color: {};">{}</span>', color, formatted_score)
 
     spam_score_display.short_description = "Spam Score"
     spam_score_display.admin_order_field = "spam_score"
@@ -1426,36 +1429,59 @@ class FlaggedContentAdmin(admin.ModelAdmin):
     status_display.admin_order_field = "status"
 
     def mark_as_approved(self, request, queryset):
-        """Mark selected content as approved (not spam)"""
+        """Mark selected content as approved (not spam) and unhide the content"""
         count = 0
         for flagged in queryset.filter(status="pending"):
-            flagged.approve(request.user, "Approved by moderator via bulk action")
+            # Unhide the associated content if it's an Issue
+            if flagged.content_type.model == "issue" and flagged.content_object:
+                issue = flagged.content_object
+                issue.is_hidden = False
+                issue.save()
+
+            flagged.approve(request.user, "Approved by moderator - not spam")
             ModerationAction.objects.create(
                 flagged_content=flagged,
                 action="approved",
                 performed_by=request.user,
-                notes="Bulk approved via admin action",
+                notes="Approved via admin action - content made visible",
             )
             count += 1
-        self.message_user(request, f"{count} items marked as approved.")
 
-    mark_as_approved.short_description = "Mark selected as Approved (Not Spam)"
+        self.message_user(request, f"{count} items approved and made visible.", messages.SUCCESS)
+
+    mark_as_approved.short_description = "✅ Approve (Not Spam) - Make Visible"
 
     def mark_as_rejected(self, request, queryset):
-        """Mark selected content as rejected (is spam)"""
+        """Mark selected content as rejected (is spam) and delete the content"""
         count = 0
+        deleted_count = 0
+
         for flagged in queryset.filter(status="pending"):
-            flagged.reject(request.user, "Rejected by moderator via bulk action")
+            # Delete the associated content if it's an Issue
+            content_deleted = False
+            if flagged.content_type.model == "issue" and flagged.content_object:
+                issue = flagged.content_object
+                issue_id = issue.id
+                issue.delete()
+                logger.info(f"🗑️ Issue #{issue_id} deleted after moderator rejection")
+                content_deleted = True
+                deleted_count += 1
+
+            # Mark as rejected and record action
+            flagged.reject(request.user, "Rejected by moderator - confirmed spam")
             ModerationAction.objects.create(
                 flagged_content=flagged,
                 action="rejected",
                 performed_by=request.user,
-                notes="Bulk rejected via admin action",
+                notes=f"Rejected via admin action - content {'deleted' if content_deleted else 'flagged'}",
             )
             count += 1
-        self.message_user(request, f"{count} items marked as rejected.")
 
-    mark_as_rejected.short_description = "Mark selected as Rejected (Is Spam)"
+        self.message_user(
+            request, f"{count} items rejected as spam. {deleted_count} issues permanently deleted.", messages.WARNING
+        )
+
+    mark_as_rejected.short_description = "Reject (Is Spam) - Delete Content"
 
     def assign_to_me(self, request, queryset):
         """Assign selected items to current moderator"""
@@ -1470,7 +1496,7 @@ class FlaggedContentAdmin(admin.ModelAdmin):
                 notes=f"Assigned to {request.user.username}",
             )
             count += 1
-        self.message_user(request, f"{count} items assigned to you.")
+        self.message_user(request, f"{count} items assigned to you.", messages.INFO)
 
     assign_to_me.short_description = "Assign to Me"
 
@@ -1478,6 +1504,27 @@ class FlaggedContentAdmin(admin.ModelAdmin):
         """Optimize queries with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related("content_type", "assigned_reviewer", "reporter")
+    
+    def has_delete_permission(self, request, obj=None):
+        """Allow staff users to delete flagged content entries"""
+        return request.user.is_staff or request.user.is_superuser
+    
+    def delete_queryset(self, request, queryset):
+        """Custom bulk delete that handles cascade deletion of moderation actions"""
+        for obj in queryset:
+            # Delete related moderation actions first
+            obj.moderation_actions.all().delete()
+            # Then delete the flagged content
+            obj.delete()
+        self.message_user(request, f"{queryset.count()} flagged content items deleted successfully.", messages.SUCCESS)
+    
+    def delete_model(self, request, obj):
+        """Custom delete that handles cascade deletion of moderation actions"""
+        # Delete related moderation actions first
+        obj.moderation_actions.all().delete()
+        # Then delete the flagged content
+        obj.delete()
+        self.message_user(request, "Flagged content deleted successfully.", messages.SUCCESS)
 
 
 @admin.register(ModerationAction)
@@ -1517,7 +1564,12 @@ class ModerationActionAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        """Prevent deletion of audit records"""
+        """
+        Prevent manual deletion of audit records from ModerationAction admin.
+        Note: Cascade deletion from FlaggedContent is allowed via FlaggedContentAdmin.delete_model()
+        """
+        # Don't allow deletion from ModerationAction admin page
+        # But allow programmatic deletion (which is used by FlaggedContent cascade)
         return False
 
     def get_queryset(self, request):

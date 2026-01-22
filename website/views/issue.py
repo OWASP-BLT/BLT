@@ -65,10 +65,12 @@ from website.models import (
     Blocked,
     DailyStats,
     Domain,
+    FlaggedContent,
     GitHubIssue,
     Hunt,
     Issue,
     IssueScreenshot,
+    ModerationAction,
     Points,
     Repo,
     User,
@@ -999,15 +1001,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # Combine fields to check
         text_to_check = f"{description} {markdown_description}"
 
-        # Spam detection
+        # Run AI spam detection
+        logger.info("🔍 Starting AI spam detection for issue submission...")
         spam_detector = AISpamDetectionService()
         spam_result = spam_detector.detect_spam(content=text_to_check, content_type="issue")
-        if spam_result["is_spam"] and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL:
-            logger.warning(
-                f"Spam issue blocked - Confidence: {spam_result['confidence']:.2f}, Reason: {spam_result['reason']}"
-            )
-            messages.error(self.request, f"This submission was flagged as potential spam: {spam_result['reason']}")
-            return HttpResponseRedirect("/issues")
+        logger.info(
+            f"Spam detection result: is_spam={spam_result['is_spam']}, confidence={spam_result['confidence']}, category={spam_result.get('category')}"
+        )
+
+        # Store spam result in form instance for later use
+        form.instance._spam_detection_result = spam_result
 
         # Check for profanity
         if profanity.contains_profanity(text_to_check):
@@ -1380,7 +1383,68 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+
+            # Check if this issue was flagged as spam
+            spam_result = getattr(obj, "_spam_detection_result", None)
+            if (
+                spam_result
+                and spam_result["is_spam"]
+                and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL
+            ):
+                # Mark issue as hidden (pending moderator review)
+                obj.is_hidden = True
+                logger.warning(
+                    f"Issue flagged as spam - Confidence: {spam_result['confidence']:.2f}, Reason: {spam_result['reason']}"
+                )
+
             obj.save()
+
+            # Create FlaggedContent entry if spam was detected
+            if (
+                spam_result
+                and spam_result["is_spam"]
+                and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL
+            ):
+                from django.contrib.contenttypes.models import ContentType
+
+                # Map spam category to reason choice
+                category_to_reason = {
+                    "promotional": "promotional",
+                    "malicious": "malicious",
+                    "low_quality": "low_quality",
+                    "duplicate": "duplicate",
+                    "social_engineering": "social_engineering",
+                }
+                reason = category_to_reason.get(spam_result.get("category", "other"), "other")
+
+                # Create flagged content entry
+                flagged = FlaggedContent.objects.create(
+                    content_type=ContentType.objects.get_for_model(Issue),
+                    object_id=obj.id,
+                    reporter=None,  # System-flagged (AI detected)
+                    reason=reason,
+                    spam_score=spam_result["confidence"],
+                    spam_categories=[spam_result.get("category", "unknown")],
+                    detection_details=spam_result.get("reason", "AI detected potential spam"),
+                    status="pending",
+                )
+
+                # Create moderation action audit trail
+                ModerationAction.objects.create(
+                    flagged_content=flagged,
+                    action="flagged",
+                    performed_by=None,  # System action
+                    notes=f"AI spam detection - Confidence: {spam_result['confidence']:.2%}",
+                )
+
+                logger.info(f"✅ Created FlaggedContent entry #{flagged.id} for Issue #{obj.id}")
+
+                # Notify user that issue is pending review
+                messages.warning(
+                    self.request,
+                    f"Your issue has been submitted but flagged for moderator review due to potential spam indicators. "
+                    f"It will be reviewed shortly and made visible if approved. Reason: {spam_result['reason']}",
+                )
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
                 Points.objects.create(
