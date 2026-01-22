@@ -1,3 +1,162 @@
+import pytz
+from allauth.account.forms import SignupForm
+from captcha.fields import CaptchaField
+from django import forms
+from django.db.models import Q
+from mdeditor.fields import MDTextFormField
+
+from website.models import (
+    Bid,
+    Hackathon,
+    HackathonPrize,
+    HackathonSponsor,
+    IpReport,
+    Issue,
+    Job,
+    Monitor,
+    Organization,
+    ReminderSettings,
+    Repo,
+    Room,
+    UserProfile,
+)
+
+
+class UserProfileForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            "user_avatar",
+            "description",
+            "issues_hidden",
+            "btc_address",
+            "bch_address",
+            "eth_address",
+            "tags",
+            "subscribed_domains",
+            "subscribed_users",
+            "linkedin_url",
+            "x_username",
+            "website_url",
+            "discounted_hourly_rate",
+            "github_url",
+            "role",
+        ]
+        widgets = {
+            "tags": forms.CheckboxSelectMultiple(),
+            "subscribed_domains": forms.CheckboxSelectMultiple(),
+            "subscribed_users": forms.CheckboxSelectMultiple(),
+        }
+
+
+class UserDeleteForm(forms.Form):
+    delete = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(
+            attrs={
+                "class": "h-5 w-5 text-[`#e74c3c`] border-gray-300 rounded focus:ring-[`#e74c3c`]",
+            }
+        ),
+    )
+
+
+class HuntForm(forms.Form):
+    content = MDTextFormField()
+    start_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={"class": "col-sm-6", "readonly": True}),
+        label="",
+        required=False,
+    )
+    end_date = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={"class": "col-sm-6", "readonly": True}),
+        label="",
+        required=False,
+    )
+
+
+class CaptchaForm(forms.Form):
+    captcha = CaptchaField()
+
+
+class MonitorForm(forms.ModelForm):
+    created = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Created")
+    modified = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Modified")
+
+    class Meta:
+        model = Monitor
+        fields = ["url", "keyword"]
+
+
+class IpReportForm(forms.ModelForm):
+    class Meta:
+        model = IpReport
+        fields = [
+            "ip_address",
+            "ip_type",
+            "description",
+            "activity_title",
+            "activity_type",
+        ]
+
+
+class BidForm(forms.ModelForm):
+    class Meta:
+        model = Bid
+        fields = [
+            "user",
+            "issue_url",
+            "created",
+            "modified",
+            "amount_bch",
+            "status",
+            "pr_link",
+            "bch_address",
+        ]
+
+
+class GitHubURLForm(forms.Form):
+    github_url = forms.URLField(
+        label="GitHub URL",
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
+    )
+
+
+class SignupFormWithCaptcha(SignupForm, CaptchaForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+    def save(self, request):
+        user = super().save(request)
+        return user
+
+
+class RoomForm(forms.ModelForm):
+    class Meta:
+        model = Room
+        fields = ["name", "type", "custom_type", "description"]
+        widgets = {
+            "type": forms.Select(attrs={"onchange": "toggleCustomTypeField(this)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        is_anonymous = kwargs.pop("is_anonymous", False)
+        super().__init__(*args, **kwargs)
+
+
+class GitHubIssueForm(forms.Form):
+    github_url = forms.URLField(
+        label="GitHub Issue URL",
+        widget=forms.URLInput(
+            attrs={
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[`#e74c3c`] focus:ring focus:ring-[`#e74c3c`] focus:ring-opacity-50 bg-white dark:bg-gray-900",
+                "placeholder": "https://github.com/owner/repo/issues/123",
+            }
+        ),
+        help_text="Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)",
     )
 
     def clean_github_url(self):
@@ -27,9 +186,19 @@
 
 
 class IssueForm(forms.ModelForm):
+    captcha = CaptchaField()
+    markdown_description = MDTextFormField(required=False)
+
     class Meta:
         model = Issue
-        fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+        fields = [
+            "url",
+            "description",
+            "domain",
+            "label",
+            "markdown_description",
+            "cve_id",
+        ]
         widgets = {
             "url": forms.URLInput(
                 attrs={
@@ -107,7 +276,7 @@ class HackathonForm(forms.ModelForm):
                 attrs={
                     "rows": 4,
                     "class": base_input_class,
-                    "placeholder": "Provide information about sponsorship opportunities for this hackathon",
+                    "placeholder": ("Provide information about sponsorship opportunities for this hackathon"),
                 }
             ),
             "sponsor_link": forms.URLInput(
@@ -142,7 +311,7 @@ class HackathonForm(forms.ModelForm):
             ),
             "registration_open": forms.CheckboxInput(
                 attrs={
-                    "class": "h-5 w-5 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 rounded",
+                    "class": ("h-5 w-5 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 rounded"),
                 }
             ),
         }
@@ -389,50 +558,4 @@ class JobForm(forms.ModelForm):
                     "placeholder": "https://company.com/apply",
                 }
             ),
-            "application_instructions": forms.Textarea(
-                attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
-                    "rows": 3,
-                    "placeholder": "How should candidates apply? Any special instructions...",
-                }
-            ),
-            "is_public": forms.CheckboxInput(
-                attrs={
-                    "class": "h-4 w-4 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
-                }
-            ),
-            "status": forms.Select(
-                attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent"
-                }
-            ),
-            "expires_at": forms.DateTimeInput(
-                attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
-                    "type": "datetime-local",
-                    "placeholder": "YYYY-MM-DD HH:MM",
-                }
-            ),
-        }
-        labels = {
-            "title": "Job Title",
-            "description": "Job Description",
-            "requirements": "Requirements",
-            "location": "Location",
-            "job_type": "Job Type",
-            "salary_range": "Salary Range",
-            "is_public": "Make this job posting public",
-            "status": "Job Status",
-            "expires_at": "Expiration Date",
-            "application_email": "Application Email",
-            "application_url": "Application URL",
-            "application_instructions": "Application Instructions",
-        }
-        help_texts = {
-            "is_public": "Public jobs can be seen by anyone, even if your organization is private",
-            "status": "Draft jobs are not visible to anyone. Active jobs can receive applications. Paused jobs are visible but cannot receive applications.",
-            "expires_at": "Optional: Date and time when this job posting will automatically expire",
-            "application_email": "Optional: Email address where applications should be sent",
-            "application_url": "Optional: Link to external application page",
-            "application_instructions": "Optional: Custom instructions for applicants",
-        }
+            "application_instructions": forms.Text
