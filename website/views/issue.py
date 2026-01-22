@@ -1431,7 +1431,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     status="pending",
                 )
 
-                # Create moderation action audit trail
                 ModerationAction.objects.create(
                     flagged_content=flagged,
                     action="flagged",
@@ -1439,9 +1438,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     notes=f"AI spam detection - Confidence: {spam_result['confidence']:.2%}",
                 )
 
-                logger.info(f"✅ Created FlaggedContent entry #{flagged.id} for Issue #{obj.id}")
-
-                # Notify user that issue is pending review
                 messages.warning(
                     self.request,
                     f"Your issue has been submitted but flagged for moderator review due to potential spam indicators. "

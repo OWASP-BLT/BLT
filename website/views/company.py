@@ -23,6 +23,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
+
 from website.models import (
     DailyStatusReport,
     Domain,
@@ -35,6 +36,8 @@ from website.models import (
     IssueScreenshot,
     Organization,
     OrganizationAdmin,
+    FlaggedContent,
+    ModerationAction,
     Points,
     SlackIntegration,
     Winner,
@@ -208,11 +211,6 @@ class RegisterOrganizationView(View):
         spam_detector = AISpamDetectionService()
         spam_result = spam_detector.detect_spam(content=str(data), content_type="organization")
 
-        if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE:
-            logger.warning(f"Spam issue detected post-creation: Issue #{instance.id}")
-            messages.error(request, f"Organization registration flagged: {spam_result['reason']}")
-            return redirect("register_organization")
-
         try:
             with transaction.atomic():
                 organization = Organization.objects.create(
@@ -225,7 +223,6 @@ class RegisterOrganizationView(View):
                     logo=logo_path,
                     is_active=True,
                 )
-
                 manager_emails = data.get("email", "").split(",")
                 managers = User.objects.filter(email__in=manager_emails)
                 organization.managers.set(managers)
@@ -285,7 +282,42 @@ class RegisterOrganizationView(View):
                 else:
                     request.session.pop("org_ref", None)
 
-                messages.success(request, success_message)
+                # Check for spam AFTER organization is created (OUTSIDE referral logic)
+                if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE:
+                    from django.contrib.contenttypes.models import ContentType
+
+                    logger.warning(f"Spam organization detected: OrgID:{organization.id} OrgName:{organization.name}")
+                    
+                    # Set organization as inactive (Organization model doesn't have is_hidden field)
+                    organization.is_active = False
+                    organization.save()
+
+                    # Create FlaggedContent entry using GenericForeignKey
+                    org_content_type = ContentType.objects.get_for_model(Organization)
+                    flagged_content = FlaggedContent.objects.create(
+                        content_type=org_content_type,
+                        object_id=organization.id,
+                        reporter=None,  # Auto-detected by AI
+                        reason=spam_result.get("category", "other"),
+                        spam_score=spam_result["confidence"],
+                        detection_details=spam_result["reason"],
+                        status="pending",
+                    )
+
+                    # Create moderation action audit trail
+                    ModerationAction.objects.create(
+                        flagged_content=flagged_content,
+                        action="flagged",
+                        notes=f"AI spam detection - Confidence: {spam_result['confidence']:.2%}",
+                    )
+
+                    messages.warning(
+                        request,
+                        f"Your organization registration has been submitted but flagged for moderator review. Reason: {spam_result['reason']}",
+                    )
+                    logger.info(f"Created FlaggedContent entry for Organization #{organization.id}")
+                else:
+                    messages.success(request, success_message)
 
         except ValidationError as e:
             # Construct a more specific error message based on validation errors
