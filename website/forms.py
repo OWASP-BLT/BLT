@@ -565,4 +565,66 @@ class JobForm(forms.ModelForm):
             ),
             "salary_range": forms.TextInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:bord
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
+                    "placeholder": "e.g., $80k-$120k, Competitive",
+                }
+            ),
+            "application_email": forms.EmailInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
+                    "placeholder": "careers@company.com",
+                }
+            ),
+            "application_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
+                    "placeholder": "https://company.com/apply",
+                }
+            ),
+            "application_instructions": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
+                    "rows": 3,
+                    "placeholder": "How should candidates apply? Any special instructions...",
+                }
+            ),
+            "is_public": forms.CheckboxInput(
+                attrs={
+                    "class": "h-4 w-4 text-[`#e74c3c`] focus:ring-[`#e74c3c`] border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded"
+                }
+            ),
+            "status": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent"
+                }
+            ),
+            "expires_at": forms.DateTimeInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
+                    "type": "datetime-local",
+                    "placeholder": "YYYY-MM-DD HH:MM",
+                }
+            ),
+        }
+        labels = {
+            "title": "Job Title",
+            "description": "Job Description",
+            "requirements": "Requirements",
+            "location": "Location",
+            "job_type": "Job Type",
+            "salary_range": "Salary Range",
+            "is_public": "Make this job posting public",
+            "status": "Job Status",
+            "expires_at": "Expiration Date",
+            "application_email": "Application Email",
+            "application_url": "Application URL",
+            "application_instructions": "Application Instructions",
+        }
+        help_texts = {
+            "is_public": "Public jobs can be seen by anyone, even if your organization is private",
+            "status": "Draft jobs are not visible to anyone. Active jobs can receive applications. Paused jobs are visible but cannot receive applications.",
+            "expires_at": "Optional: Date and time when this job posting will automatically expire",
+            "application_email": "Optional: Email address where applications should be sent",
+            "application_url": "Optional: Link to external application page",
+            "application_instructions": "Optional: Custom instructions for applicants",
+        }
