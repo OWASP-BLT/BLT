@@ -70,22 +70,38 @@ jobs:
             console.log(`Approved commit: ${approvedCommitSha.substring(0, 7)}`);
             console.log(`Current HEAD: ${headCommitSha.substring(0, 7)}`);
             
-            // Step 3: Use Compare API to get changes
-            const { data: comparison } = await github.rest.repos.compareCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              base: approvedCommitSha,
-              head: headCommitSha
-            });
+            // Step 3: Use Compare API to get changes (with error handling for force pushes)
+            let comparison;
+            try {
+              const response = await github.rest.repos.compareCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                base: approvedCommitSha,
+                head: headCommitSha
+              });
+              comparison = response.data;
+            } catch (error) {
+              console.log(`⚠️ Could not compare commits: ${error.message}`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ **Unable to check post-approval changes**\n\n` +
+                      `The approved commit (${approvedCommitSha.substring(0, 7)}) is no longer in the branch history. ` +
+                      `This typically happens after a force push or rebase.\n\n` +
+                      `Please request re-review manually if significant changes were made.`
+              });
+              return;
+            }
             
-            // Filter to code files only
+            // Filter to code files only (guard against undefined files)
             const codeExtensions = [
               '.py', '.js', '.jsx', '.ts', '.tsx', '.vue',
               '.java', '.go', '.rs', '.cpp', '.c', '.h',
               '.rb', '.php', '.html', '.css', '.scss', '.sql'
             ];
             
-            const codeFiles = comparison.files.filter(file =>
+            const codeFiles = (comparison.files || []).filter(file =>
               codeExtensions.some(ext => file.filename.endsWith(ext))
             );
             
@@ -105,6 +121,12 @@ jobs:
             if (totalLinesChanged > 10 && codeFiles.length > 0 && nonMergeCommits.length > 0) {
               // Filter out deleted users before accessing login
               const reviewers = [...new Set(approvals.filter(r => r.user).map(r => r.user.login))];
+              
+              // Guard against empty reviewers array
+              if (reviewers.length === 0) {
+                console.log('⚠️ No valid reviewers to request re-review from (all approvers have deleted accounts)');
+                return;
+              }
               
               // Build file list (show max 10 files)
               const fileList = codeFiles.slice(0, 10).map(f => 
