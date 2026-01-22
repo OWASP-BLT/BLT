@@ -175,23 +175,13 @@ class IPRestrictMiddleware:
 
         except TransactionManagementError as e:
             # Handle transaction management errors during IP recording.
-            # In test environments (IS_TEST/TESTING), keep logs quiet and only log at
-            # debug level to avoid noisy failures during teardown. In non-test
-            # environments, log a warning with full context so that real issues are
-            # visible in production logs.
-            if getattr(settings, "IS_TEST", False) or getattr(settings, "TESTING", False):
-                logger.debug(
-                    "Skipping IP recording for %s - transaction management error: %s",
-                    ip,
-                    e,
-                )
-            else:
-                logger.warning(
-                    "Transaction management error while recording IP %s: %s",
-                    ip,
-                    e,
-                    exc_info=True,
-                )
+            # Log with full context so that real issues are visible in production logs.
+            logger.warning(
+                "Transaction management error while recording IP %s: %s",
+                ip,
+                e,
+                exc_info=True,
+            )
         except Exception as e:
             # Log the error but don't let it break the request
             logger.error(f"Error recording IP {ip}: {str(e)}", exc_info=True)
