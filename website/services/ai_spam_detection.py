@@ -45,11 +45,11 @@ class AISpamDetectionService:
                 'category': str  # promotional, malicious, low_quality, etc.
             }
         """
-        
+
         # Check if spam detection is enabled
         spam_enabled = getattr(settings, "SPAM_DETECTION_ENABLED", True)
         logger.info(f"AISpamDetectionService: SPAM_DETECTION_ENABLED = {spam_enabled}")
-        
+
         if not spam_enabled:
             logger.warning("AISpamDetectionService: Spam detection is DISABLED in settings")
             return {"is_spam": False, "confidence": 0.0, "reason": "Spam detection disabled", "category": None}

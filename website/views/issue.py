@@ -1003,11 +1003,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         spam_detector = AISpamDetectionService()
         spam_result = spam_detector.detect_spam(content=text_to_check, content_type="issue")
         if spam_result["is_spam"] and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL:
-            logger.warning(f"Spam issue blocked - Confidence: {spam_result['confidence']:.2f}, Reason: {spam_result['reason']}")
-            messages.error(
-                self.request,
-                f"This submission was flagged as potential spam: {spam_result['reason']}"
+            logger.warning(
+                f"Spam issue blocked - Confidence: {spam_result['confidence']:.2f}, Reason: {spam_result['reason']}"
             )
+            messages.error(self.request, f"This submission was flagged as potential spam: {spam_result['reason']}")
             return HttpResponseRedirect("/issues")
 
         # Check for profanity

@@ -61,6 +61,7 @@ from website.models import (
     Wallet,
 )
 from website.services.ai_spam_detection import AISpamDetectionService
+from website.views.constants import SPAM_CONFIDENCE_THRESHOLD_GENERAL
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +165,7 @@ def profile_edit(request):
 
             if bio_content:
                 spam_result = spam_detector.detect_spam(bio_content, content_type="user")
-                if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_USER_PROFILE:
+                if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_GENERAL:
                     messages.error(request, f"Profile update flagged: {spam_result['reason']}")
                     return render(request, "profile_edit.html", {"form": form})
 
