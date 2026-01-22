@@ -54,6 +54,27 @@
                 crossorigin="anonymous"></script>
         <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                 crossorigin="anonymous"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        </script>
+        <script>
+            (function() {
+                const savedTheme = localStorage.getItem("theme");
+                
+                // Use saved user preference if it exists
+                if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark");
+                }
+                // No saved preference, check system preference
+                else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         {% block style %}
         {% endblock style %}
     </head>
