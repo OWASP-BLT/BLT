@@ -961,7 +961,7 @@ class UserProfile(models.Model):
 
     def update_leaderboard_score(self):
         """Simple score: recent check-ins + streak"""
-        cutoff = timezone.now() - timedelta(days=30)
+        cutoff_date = timezone.now().date() - timedelta(days=30)
         recent = DailyStatusReport.objects.filter(user=self.user, date__gte=cutoff_date).count()
         self.leaderboard_score = recent + (self.current_streak * 2)
         self.save(update_fields=["leaderboard_score"])
