@@ -92,7 +92,10 @@ class Command(BaseCommand):
         duplicate_user_emails = [dup["email"] for dup in duplicate_emails]
 
         # Import models here to avoid circular imports
-        from allauth.account.models import EmailAddress
+        try:
+            from allauth.account.models import EmailAddress
+        except ImportError:
+            EmailAddress = None
 
         from website.models import Issue, Points
 
@@ -106,24 +109,37 @@ class Command(BaseCommand):
         points_entries_subquery = Subquery(
             Points.objects.filter(user=OuterRef("pk")).values("user").annotate(count=Count("pk")).values("count")[:1]
         )
-        has_verified_email_subquery = Subquery(
-            EmailAddress.objects.filter(user=OuterRef("pk"), verified=True)
-            .values("user")
-            .annotate(count=Count("pk"))
-            .values("count")[:1]
-        )
 
-        users_with_metrics = (
-            User.objects.filter(email__in=duplicate_user_emails)
-            .select_related()
-            .annotate(
+        # Only create EmailAddress subquery if allauth is available
+        if EmailAddress is not None:
+            has_verified_email_subquery = Subquery(
+                EmailAddress.objects.filter(user=OuterRef("pk"), verified=True)
+                .values("user")
+                .annotate(count=Count("pk"))
+                .values("count")[:1]
+            )
+        else:
+            has_verified_email_subquery = None
+
+        # Build the base queryset
+        users_with_metrics = User.objects.filter(email__in=duplicate_user_emails).select_related()
+
+        # Add annotations conditionally
+        if has_verified_email_subquery is not None:
+            users_with_metrics = users_with_metrics.annotate(
                 issue_count=Coalesce(issue_count_subquery, 0),
                 total_points=Coalesce(total_points_subquery, 0),
                 points_entries=Coalesce(points_entries_subquery, 0),
                 has_verified_email=Coalesce(has_verified_email_subquery, 0),
             )
-            .order_by("email", "-id")
-        )
+        else:
+            users_with_metrics = users_with_metrics.annotate(
+                issue_count=Coalesce(issue_count_subquery, 0),
+                total_points=Coalesce(total_points_subquery, 0),
+                points_entries=Coalesce(points_entries_subquery, 0),
+            )
+
+        users_with_metrics = users_with_metrics.order_by("email", "-id")
 
         # Group users by email
         users_by_email = {}
@@ -142,7 +158,12 @@ class Command(BaseCommand):
             for i, user in enumerate(users):
                 issue_count = user.issue_count or 0
                 total_points = user.total_points or 0
-                has_verified_email = user.has_verified_email > 0
+
+                # Only check email verification if allauth is available
+                if EmailAddress is not None and hasattr(user, "has_verified_email"):
+                    has_verified_email = user.has_verified_email > 0
+                else:
+                    has_verified_email = "N/A (allauth not installed)"
 
                 last_login_str = user.last_login.strftime("%Y-%m-%d") if user.last_login else "Never"
 
