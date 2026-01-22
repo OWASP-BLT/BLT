@@ -50,6 +50,25 @@ class UserProfileForm(forms.ModelForm):
             "subscribed_users": forms.CheckboxSelectMultiple(),
         }
 
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     print("UserProfileForm __init__")
+    #     print(self.instance)
+    #     print(self.instance.user)
+    #     if self.instance and self.instance.user:
+    #         # Populate email from user model
+    #         self.fields["email"].initial = self.instance.user.email
+
+    # def save(self, commit=True):
+    #     profile = super().save(commit=False)
+    #     if commit:
+    #         # Save email to User model
+    #         if self.instance and self.instance.user:
+    #             self.instance.user.email = self.cleaned_data["email"]
+    #             self.instance.user.save()
+    #         profile.save()
+    #     return profile
+
 
 class UserDeleteForm(forms.Form):
     delete = forms.BooleanField(
@@ -135,6 +154,8 @@ class SignupFormWithCaptcha(SignupForm, CaptchaForm):
 
 
 class RoomForm(forms.ModelForm):
+    captcha = CaptchaField(required=False)  # Will be required only for anonymous users
+
     class Meta:
         model = Room
         fields = ["name", "type", "custom_type", "description"]
@@ -145,6 +166,8 @@ class RoomForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         is_anonymous = kwargs.pop("is_anonymous", False)
         super().__init__(*args, **kwargs)
+        if is_anonymous:
+            self.fields["captcha"].required = True
 
 
 class GitHubIssueForm(forms.Form):
@@ -156,7 +179,7 @@ class GitHubIssueForm(forms.Form):
                 "placeholder": "https://github.com/owner/repo/issues/123",
             }
         ),
-        help_text="Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)",
+        help_text=("Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)"),
     )
 
     def clean_github_url(self):
@@ -542,20 +565,4 @@ class JobForm(forms.ModelForm):
             ),
             "salary_range": forms.TextInput(
                 attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
-                    "placeholder": "e.g., $80k-$120k, Competitive",
-                }
-            ),
-            "application_email": forms.EmailInput(
-                attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
-                    "placeholder": "careers@company.com",
-                }
-            ),
-            "application_url": forms.URLInput(
-                attrs={
-                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:border-transparent",
-                    "placeholder": "https://company.com/apply",
-                }
-            ),
-            "application_instructions": forms.Text
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[`#e74c3c`] focus:bord
