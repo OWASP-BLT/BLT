@@ -1,7 +1,7 @@
 name: Manage Closed PR Assignees
 
 # Automatically unassign users when their PR is closed (not merged)
-# Gives 6 hours grace period to open a new PR before unassigning
+# Gives 12 hours grace period to open a new PR before unassigning
 on:
   pull_request_target:
     types: [closed, opened, reopened]
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Manage Closed PR Assignees
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -28,7 +28,7 @@ jobs:
             const LABEL_NAME = 'pr-closed-pending-unassign';
             const LABEL_COLOR = 'ff9800'; // Orange
             const COMMENT_MARKER = '<!-- closed-pr-warning -->';
-            const GRACE_PERIOD_MS = 6 * 60 * 60 * 1000; // 6 hours
+            const GRACE_PERIOD_MS = 12 * 60 * 60 * 1000; // 12 hours
             
             // Ensure label exists
             async function ensureLabel() {
@@ -40,7 +40,7 @@ jobs:
                     owner, repo,
                     name: LABEL_NAME,
                     color: LABEL_COLOR,
-                    description: 'PR was closed, assignee will be removed after 6 hours'
+                    description: 'PR was closed, assignee will be removed after 12 hours'
                   });
                   core.info(`Created label: ${LABEL_NAME}`);
                 }
@@ -58,14 +58,14 @@ jobs:
             // Find linked issues via timeline API (PRs are also issues in GitHub API)
             async function findLinkedIssues(prNumber) {
               try {
-                const timeline = await github.rest.issues.listEventsForTimeline({
+                const allTimelineEvents = await github.paginate(github.rest.issues.listEventsForTimeline, {
                   owner, repo,
                   issue_number: prNumber,
                   per_page: 100
                 });
                 
                 const linked = new Set();
-                for (const event of timeline.data) {
+                for (const event of allTimelineEvents) {
                   // Look for 'connected' events where this PR was linked to an issue
                   if (event.event === 'connected' && event.issue && !event.issue.pull_request) {
                     linked.add(event.issue.number);
@@ -81,13 +81,13 @@ jobs:
             // Check if issue has any open PRs
             async function hasOpenPR(issueNumber) {
               try {
-                const timeline = await github.rest.issues.listEventsForTimeline({
+                const allTimelineEvents = await github.paginate(github.rest.issues.listEventsForTimeline, {
                   owner, repo,
                   issue_number: issueNumber,
                   per_page: 100
                 });
                 
-                for (const event of timeline.data) {
+                for (const event of allTimelineEvents) {
                   if (event.event === 'connected' && event.source?.issue?.pull_request) {
                     const prNum = event.source.issue.number;
                     
@@ -168,7 +168,7 @@ jobs:
                     `⚠️ **PR Closed - Unassignment Pending**\n\n` +
                     `Hi @${pr.user.login}!\n\n` +
                     `Your PR #${pr.number} linked to this issue was closed.\n\n` +
-                    `You have **6 hours** to open a new PR for this issue, or you'll be automatically unassigned.\n\n` +
+                    `You have **12 hours** to open a new PR for this issue, or you'll be automatically unassigned.\n\n` +
                     `If you're still working on this, simply open a new PR and this warning will be cancelled.\n\n` +
                     `_Timestamp: ${timestamp}_`;
                   
@@ -236,13 +236,13 @@ jobs:
                   }
                   
                   // Find and delete warning comment
-                  const comments = await github.rest.issues.listComments({
+                  const allComments = await github.paginate(github.rest.issues.listComments, {
                     owner, repo,
                     issue_number: issueNumber,
                     per_page: 100
                   });
                   
-                  const warningComment = comments.data.find(c => c.body?.includes(COMMENT_MARKER));
+                  const warningComment = allComments.find(c => c.body?.includes(COMMENT_MARKER));
                   if (warningComment) {
                     await github.rest.issues.deleteComment({
                       owner, repo,
@@ -285,13 +285,13 @@ jobs:
                   core.info(`\nProcessing issue #${issue.number}: ${issue.title}`);
                   
                   // Find warning comment to get timestamp
-                  const comments = await github.rest.issues.listComments({
+                  const allComments = await github.paginate(github.rest.issues.listComments, {
                     owner, repo,
                     issue_number: issue.number,
                     per_page: 100
                   });
                   
-                  const warningComment = comments.data.find(c => c.body?.includes(COMMENT_MARKER));
+                  const warningComment = allComments.find(c => c.body?.includes(COMMENT_MARKER));
                   if (!warningComment) {
                     core.warning(`  No warning comment found, removing label`);
                     try {
@@ -347,15 +347,27 @@ jobs:
                   // No open PR and grace period expired - unassign
                   core.info(`  Grace period expired and no open PR, unassigning`);
                   
-                  const assignees = issue.assignees.map(a => a.login);
-                  if (assignees.length > 0) {
+                  // Extract the warned username from the warning comment
+                  const warnedUserMatch = warningComment.body.match(/@(\w+)!/);
+                  const warnedUsername = warnedUserMatch ? warnedUserMatch[1] : null;
+                  
+                  if (!warnedUsername) {
+                    core.warning(`  Could not extract warned username from comment, skipping`);
+                    continue;
+                  }
+                  
+                  // Check if the warned user is still assigned
+                  const isStillAssigned = issue.assignees.some(a => a.login === warnedUsername);
+                  if (!isStillAssigned) {
+                    core.info(`  Warned user @${warnedUsername} is no longer assigned, skipping unassignment`);
+                  } else {
                     await github.rest.issues.removeAssignees({
                       owner, repo,
                       issue_number: issue.number,
-                      assignees: assignees
+                      assignees: [warnedUsername]
                     });
                     
-                    core.info(`  Unassigned: ${assignees.join(', ')}`);
+                    core.info(`  Unassigned: @${warnedUsername}`);
                   }
                   
                   // Remove label and warning comment
@@ -373,7 +385,7 @@ jobs:
                   await github.rest.issues.createComment({
                     owner, repo,
                     issue_number: issue.number,
-                    body: `Your PR was closed over 6 hours ago and no new PR was opened. You've been unassigned from this issue.\n\n` +
+                    body: `Your PR was closed over 12 hours ago and no new PR was opened. You've been unassigned from this issue.\n\n` +
                           `Feel free to comment \`/assign\` if you'd like to work on this again! 🙏`
                   });
                   
