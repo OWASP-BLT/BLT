@@ -476,4 +476,12 @@ jobs:
           echo "## ❌ Pre-commit Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pre-commit checks failed but no auto-fixes could be applied." >> $GITHUB_STEP_SUMMARY
-          echo "Manual intervention is required." >> 
+          echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Syntax errors in Python code" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid Django template syntax" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing required imports" >> $GITHUB_STEP_SUMMARY
+          echo "- Test failures" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
+          exit 1
