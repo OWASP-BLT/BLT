@@ -86,11 +86,10 @@ def remove_duplicate_users_safely(apps, schema_editor):
     logger.info("=" * 80)
     logger.info("STARTING SAFE DUPLICATE EMAIL REMOVAL")
     logger.info("=" * 80)
-    logger.info("⚠️  IMPORTANT: Ensure you have backed up your database before running this migration!")
-    logger.info("⚠️  This migration will DELETE user accounts and all associated data!")
+    logger.info("IMPORTANT: Ensure you have backed up your database before running this migration!")
+    logger.info("This migration will DELETE user accounts and all associated data!")
     logger.info("=" * 80)
 
-    # Find all duplicate emails
     duplicate_emails = list(
         User.objects.using(db_alias)
         .exclude(email="")
@@ -102,35 +101,43 @@ def remove_duplicate_users_safely(apps, schema_editor):
     )
 
     if not duplicate_emails:
-        logger.info("✅ No duplicate emails found. Migration completed safely.")
+        logger.info("No duplicate emails found. Migration completed safely.")
         return
+
+    users_with_metrics = (
+        User.objects.using(db_alias)
+        .filter(email__in=duplicate_emails)
+        .annotate(issue_count=Count("issue", distinct=True), total_points=Sum("points__score"))
+        .order_by("email", "-id")
+    )
+
+    # Group users by email for processing
+    users_by_email = {}
+    for user in users_with_metrics:
+        if user.email not in users_by_email:
+            users_by_email[user.email] = []
+        users_by_email[user.email].append(user)
 
     total_users_to_delete = 0
     high_activity_users = []
 
     for email in duplicate_emails:
-        # Get all users with this email, ordered by ID (newest first)
-        users_with_email = User.objects.using(db_alias).filter(email=email).order_by("-id")
+        users_with_email = users_by_email.get(email, [])
 
-        if not users_with_email.exists():
-            logger.warning(f"⚠️  No users found for email '{email}', skipping")
+        if not users_with_email:
+            logger.warning(f"No users found for email '{email}', skipping")
             continue
 
-        # Keep the newest user (highest ID), delete the rest
-        kept_user = users_with_email.first()
-        users_to_delete = list(users_with_email[1:])
+        kept_user = users_with_email[0]
+        users_to_delete = users_with_email[1:]
 
-        logger.info(f"\n📧 Processing email: {email}")
-        logger.info(f"   Total users: {users_with_email.count()}")
-        logger.info(f"   ✅ KEEPING: {kept_user.username} (ID: {kept_user.id}, joined: {kept_user.date_joined})")
+        logger.info(f"\nProcessing email: {email}")
+        logger.info(f"   Total users: {len(users_with_email)}")
+        logger.info(f"   KEEPING: {kept_user.username} (ID: {kept_user.id}, joined: {kept_user.date_joined})")
 
-        # Check each user to be deleted for high activity
         for user in users_to_delete:
-            # Count user's issues
-            issue_count = Issue.objects.using(db_alias).filter(user=user).count()
-
-            # Sum user's points
-            total_points = Points.objects.using(db_alias).filter(user=user).aggregate(total=Sum("score"))["total"] or 0
+            issue_count = user.issue_count or 0
+            total_points = user.total_points or 0
 
             # Check recent login (last_login can be None)
             recent_login = False
@@ -150,19 +157,18 @@ def remove_duplicate_users_safely(apps, schema_editor):
             )
 
             if is_high_activity:
-                logger.error(f"   🚨 HIGH ACTIVITY USER FLAGGED: {user.username} (ID: {user.id}) - {activity_info}")
+                logger.error(f"   HIGH ACTIVITY USER FLAGGED: {user.username} (ID: {user.id}) - {activity_info}")
                 high_activity_users.append(
                     {"user": user, "email": email, "activity": activity_info, "kept_user": kept_user}
                 )
             else:
-                logger.info(f"   ❌ Will delete: {user.username} (ID: {user.id}) - {activity_info}")
+                logger.info(f"   Will delete: {user.username} (ID: {user.id}) - {activity_info}")
                 total_users_to_delete += 1
 
-    # If high activity users found, halt migration
     if high_activity_users:
-        logger.error("\n" + "🚨" * 40)
+        logger.error("\n" + "!" * 40)
         logger.error("HIGH ACTIVITY USERS DETECTED!")
-        logger.error("🚨" * 40)
+        logger.error("!" * 40)
         logger.error(f"Found {len(high_activity_users)} high-activity users that would be deleted.")
         logger.error("These users should be manually reviewed before deletion:")
         logger.error("")
@@ -170,8 +176,8 @@ def remove_duplicate_users_safely(apps, schema_editor):
         for user_info in high_activity_users:
             user = user_info["user"]
             logger.error(f"Email: {user_info['email']}")
-            logger.error(f"  🚨 HIGH ACTIVITY: {user.username} (ID: {user.id}) - {user_info['activity']}")
-            logger.error(f"  ✅ Would keep: {user_info['kept_user'].username} (ID: {user_info['kept_user'].id})")
+            logger.error(f"  HIGH ACTIVITY: {user.username} (ID: {user.id}) - {user_info['activity']}")
+            logger.error(f"  Would keep: {user_info['kept_user'].username} (ID: {user_info['kept_user'].id})")
             logger.error("")
 
         logger.error("RECOMMENDED ACTIONS:")
@@ -180,7 +186,7 @@ def remove_duplicate_users_safely(apps, schema_editor):
         logger.error("3. Re-run migration after manual cleanup")
         logger.error("")
         logger.error("Migration ABORTED for safety. No users were deleted.")
-        logger.error("🚨" * 40)
+        logger.error("!" * 40)
 
         # Raise exception to halt migration
         raise Exception(
@@ -188,89 +194,94 @@ def remove_duplicate_users_safely(apps, schema_editor):
             "Manual review required before proceeding."
         )
 
-    # If we get here, no high activity users were found
-    logger.info(f"\n✅ Safety check passed. {total_users_to_delete} low-activity users will be deleted.")
+    logger.info(f"\nSafety check passed. {total_users_to_delete} low-activity users will be deleted.")
 
-    # Prepare CSV export of deletions
-    deletion_records = []
     deletion_csv = f"deleted_users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    csv_file = None
+    csv_writer = None
 
-    # Proceed with deletion
+    try:
+        csv_file = open(deletion_csv, "w", newline="", encoding="utf-8")
+        fieldnames = [
+            "user_id",
+            "username",
+            "email",
+            "date_joined",
+            "last_login",
+            "issue_count",
+            "total_points",
+            "kept_user_id",
+            "kept_user_username",
+            "deletion_timestamp",
+        ]
+        csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        csv_writer.writeheader()
+    except Exception as e:
+        logger.warning(f"Failed to create CSV file: {e}")
+        csv_file = None
+        csv_writer = None
+
     actual_deleted = 0
+
     for email in duplicate_emails:
-        users_with_email = User.objects.using(db_alias).filter(email=email).order_by("-id")
-        kept_user = users_with_email.first()
-        users_to_delete = list(users_with_email[1:])
+        users_with_email = users_by_email.get(email, [])
+        if not users_with_email:
+            continue
+
+        kept_user = users_with_email[0]
+        users_to_delete = users_with_email[1:]
 
         for user in users_to_delete:
-            # Double-check activity levels before deletion
-            issue_count = Issue.objects.using(db_alias).filter(user=user).count()
-            total_points = Points.objects.using(db_alias).filter(user=user).aggregate(total=Sum("score"))["total"] or 0
+            issue_count = user.issue_count or 0
+            total_points = user.total_points or 0
 
             recent_login = False
             if user.last_login:
                 days_since_login = (timezone.now() - user.last_login).days
                 recent_login = days_since_login <= HIGH_ACTIVITY_THRESHOLDS["recent_login_days"]
 
-            # Final safety check
             if (
                 issue_count >= HIGH_ACTIVITY_THRESHOLDS["issues_reported"]
                 or total_points >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
                 or recent_login
             ):
-                logger.error(f"🚨 SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
+                logger.error(f"SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
                 raise Exception(f"Safety violation: User {user.username} has high activity and should not be deleted")
 
-            # Collect metadata before deletion
-            deletion_records.append(
-                {
-                    "user_id": user.id,
-                    "username": user.username,
-                    "email": email,
-                    "date_joined": user.date_joined,
-                    "last_login": user.last_login,
-                    "issue_count": issue_count,
-                    "total_points": total_points,
-                    "kept_user_id": kept_user.id,
-                    "kept_user_username": kept_user.username,
-                    "deletion_timestamp": datetime.now(),
-                }
-            )
+            if csv_writer:
+                try:
+                    csv_writer.writerow(
+                        {
+                            "user_id": user.id,
+                            "username": user.username,
+                            "email": email,
+                            "date_joined": user.date_joined,
+                            "last_login": user.last_login,
+                            "issue_count": issue_count,
+                            "total_points": total_points,
+                            "kept_user_id": kept_user.id,
+                            "kept_user_username": kept_user.username,
+                            "deletion_timestamp": datetime.now(),
+                        }
+                    )
+                except Exception as csv_error:
+                    logger.warning(f"Failed to write CSV record for user {user.username}: {csv_error}")
 
-            logger.info(f"🗑️  Deleting user: {user.username} (ID: {user.id}, email: '{email}')")
+            logger.info(f"Deleting user: {user.username} (ID: {user.id}, email: '{email}')")
             logger.info(f"   Keeping: {kept_user.username} (ID: {kept_user.id})")
 
-            # Delete user (CASCADE will handle related data)
             user.delete(using=db_alias)
             actual_deleted += 1
 
-    # Export deletion records to CSV (non-critical operation)
-    if deletion_records:
+    if csv_file:
         try:
-            with open(deletion_csv, "w", newline="", encoding="utf-8") as csvfile:
-                fieldnames = [
-                    "user_id",
-                    "username",
-                    "email",
-                    "date_joined",
-                    "last_login",
-                    "issue_count",
-                    "total_points",
-                    "kept_user_id",
-                    "kept_user_username",
-                    "deletion_timestamp",
-                ]
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
-                writer.writerows(deletion_records)
-            logger.info(f"📊 Deletion records exported to: {deletion_csv}")
+            csv_file.close()
+            logger.info(f"Deletion records exported to: {deletion_csv}")
         except Exception as e:
-            logger.warning(f"⚠️ Failed to export deletion records to CSV: {e}")
-            logger.warning("⚠️ Migration will continue - CSV export is non-critical")
-            # Don't re-raise the exception - CSV export failure shouldn't block migration
+            logger.warning(f"Failed to close CSV file: {e}")
 
-    logger.info(f"\n✅ Successfully deleted {actual_deleted} duplicate users")
-    logger.info("✅ Email uniqueness migration completed safely")
+    logger.info(f"\nSuccessfully deleted {actual_deleted} duplicate users")
+    logger.info("Email uniqueness migration completed safely")
     logger.info("=" * 80)
 
 
@@ -278,9 +289,9 @@ def reverse_migration(apps, schema_editor):
     """
     Reverse migration - cannot restore deleted users.
     """
-    logger.warning("⚠️  Reversing migration 0264_make_email_unique_safe")
-    logger.warning("⚠️  DELETED USERS CANNOT BE RESTORED!")
-    logger.warning("⚠️  This reverse operation only removes the unique constraint.")
+    logger.warning("Reversing migration 0264_make_email_unique_safe")
+    logger.warning("DELETED USERS CANNOT BE RESTORED!")
+    logger.warning("This reverse operation only removes the unique constraint.")
 
 
 def create_email_unique_index(apps, schema_editor):

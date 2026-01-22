@@ -18,7 +18,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Count, Sum
 
 
@@ -70,7 +70,6 @@ class Command(BaseCommand):
 
     def list_duplicates(self):
         """List all duplicate email situations with user details"""
-        from website.models import Issue, Points
 
         self.stdout.write("\n" + "=" * 80)
         self.stdout.write("DUPLICATE EMAIL RESOLUTION TOOL")
@@ -86,23 +85,40 @@ class Command(BaseCommand):
         )
 
         if not duplicate_emails:
-            self.stdout.write(self.style.SUCCESS("✅ No duplicate emails found!"))
+            self.stdout.write(self.style.SUCCESS("No duplicate emails found!"))
             return
+
+        duplicate_user_emails = [dup["email"] for dup in duplicate_emails]
+        users_with_metrics = (
+            User.objects.filter(email__in=duplicate_user_emails)
+            .select_related()
+            .annotate(
+                issue_count=Count("issue", distinct=True),
+                total_points=Sum("points__score"),
+                points_entries=Count("points", distinct=True),
+                has_verified_email=Count("emailaddress", filter=models.Q(emailaddress__verified=True)),
+            )
+            .order_by("email", "-id")
+        )
+
+        # Group users by email
+        users_by_email = {}
+        for user in users_with_metrics:
+            if user.email not in users_by_email:
+                users_by_email[user.email] = []
+            users_by_email[user.email].append(user)
 
         for dup in duplicate_emails:
             email = dup["email"]
-            users = User.objects.filter(email=email).order_by("-id")  # Newest first
+            users = users_by_email.get(email, [])
 
-            self.stdout.write(f"\n📧 Email: {email}")
+            self.stdout.write(f"\nEmail: {email}")
             self.stdout.write(f"   Users: {len(users)}")
 
             for i, user in enumerate(users):
-                # Get activity metrics
-                issue_count = Issue.objects.filter(user=user).count()
-                points_data = Points.objects.filter(user=user).aggregate(
-                    total_points=Sum("score"), total_entries=Count("id")
-                )
-                total_points = points_data["total_points"] or 0
+                issue_count = user.issue_count or 0
+                total_points = user.total_points or 0
+                has_verified_email = user.has_verified_email > 0
 
                 last_login_str = user.last_login.strftime("%Y-%m-%d") if user.last_login else "Never"
 
@@ -113,9 +129,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"     Joined: {user.date_joined.strftime('%Y-%m-%d')}")
                 self.stdout.write(f"     Last login: {last_login_str}")
                 self.stdout.write(f"     Issues: {issue_count}, Points: {total_points}")
-                self.stdout.write(
-                    f"     Email verified: {getattr(user, 'emailaddress_set', None) and user.emailaddress_set.filter(verified=True).exists()}"
-                )
+                self.stdout.write(f"     Email verified: {has_verified_email}")
 
         self.stdout.write("\n" + "=" * 80)
         self.stdout.write("RESOLUTION OPTIONS:")
@@ -137,24 +151,37 @@ class Command(BaseCommand):
         )
 
         if not duplicate_emails:
-            self.stdout.write(self.style.SUCCESS("✅ No duplicate emails found!"))
+            self.stdout.write(self.style.SUCCESS("No duplicate emails found!"))
             return
 
         total_emails_sent = 0
-        failed_emails = []
+        failed_count = 0
+
+        duplicate_user_emails = [dup["email"] for dup in duplicate_emails]
+        users_by_email = {}
+
+        all_duplicate_users = User.objects.filter(email__in=duplicate_user_emails).order_by("email", "-id")
+
+        for user in all_duplicate_users:
+            if user.email not in users_by_email:
+                users_by_email[user.email] = []
+            users_by_email[user.email].append(user)
 
         for dup in duplicate_emails:
             email = dup["email"]
-            users = User.objects.filter(email=email).order_by("-id")
+            users = users_by_email.get(email, [])
+
+            if not users:
+                continue
 
             # Get users that would be deleted (all except the first/newest)
-            users_to_contact = list(users[1:])
-            kept_user = users.first()
+            users_to_contact = users[1:]
+            kept_user = users[0]
 
             if not users_to_contact:
                 continue
 
-            self.stdout.write(f"\n📧 Processing email group: {email}")
+            self.stdout.write(f"\nProcessing email group: {email}")
             self.stdout.write(f"   Users affected: {len(users_to_contact)}")
             self.stdout.write(f"   User to keep: {kept_user.username}")
 
@@ -183,7 +210,7 @@ The Team
 """
 
             if dry_run:
-                self.stdout.write(f"   📧 Would send email to {email}")
+                self.stdout.write(f"   Would send email to {email}")
                 self.stdout.write(f"      Subject: {subject}")
                 self.stdout.write(f"      Affected users: {', '.join(affected_usernames)}")
                 total_emails_sent += 1
@@ -202,47 +229,52 @@ The Team
                             [email],
                             fail_silently=False,
                         )
-                        self.stdout.write(self.style.SUCCESS(f"   ✅ Email sent to {email}"))
+                        self.stdout.write(self.style.SUCCESS(f"   Email sent to {email}"))
                         self.stdout.write(f"      Notified users: {', '.join(affected_usernames)}")
                         total_emails_sent += 1
                         sent = True
                     except Exception as e:
                         retry_count += 1
                         if retry_count >= max_retries:
-                            failed_emails.append(
-                                {
-                                    "email": email,
-                                    "affected_users": affected_usernames,
-                                    "error": str(e),
-                                    "attempts": retry_count,
-                                }
-                            )
+                            failed_count += 1
+                            self._log_email_failure(email, affected_usernames, str(e), retry_count)
                             self.stdout.write(
                                 self.style.ERROR(
-                                    f"   ❌ Failed to send email to {email} after {max_retries} attempts: {e}"
+                                    f"   Failed to send email to {email} after {max_retries} attempts: {e}"
                                 )
                             )
                         else:
-                            self.stdout.write(self.style.WARNING(f"   ⚠️ Retry {retry_count}/{max_retries} for {email}"))
+                            self.stdout.write(self.style.WARNING(f"   Retry {retry_count}/{max_retries} for {email}"))
                             import time
 
-                            time.sleep(2**retry_count)  # Exponential backoff
-
-        # Export failure report if any failures occurred
-        if failed_emails and not dry_run:
-            import json
-
-            from django.utils import timezone
-
-            failure_report = f"email_failures_{timezone.now().strftime('%Y%m%d_%H%M%S')}.json"
-            with open(failure_report, "w") as f:
-                json.dump(failed_emails, f, indent=2, default=str)
-            self.stdout.write(self.style.WARNING(f"\n⚠️ Failed emails logged to: {failure_report}"))
+                            time.sleep(2**retry_count)
 
         if dry_run:
-            self.stdout.write(f"\n📊 Would send {total_emails_sent} emails")
+            self.stdout.write(f"\nWould send {total_emails_sent} emails")
         else:
-            self.stdout.write(f"\n📊 Summary: {total_emails_sent} sent, {len(failed_emails)} failed")
+            self.stdout.write(f"\nSummary: {total_emails_sent} sent, {failed_count} failed")
+
+    def _log_email_failure(self, email, affected_users, error, attempts):
+        """Stream failure logging to avoid memory accumulation"""
+        import json
+
+        from django.utils import timezone
+
+        failure_record = {
+            "email": email,
+            "affected_users": affected_users,
+            "error": error,
+            "attempts": attempts,
+            "timestamp": timezone.now().isoformat(),
+        }
+
+        # Append to failure log file immediately
+        failure_log = f"email_failures_{timezone.now().strftime('%Y%m%d')}.jsonl"
+        try:
+            with open(failure_log, "a") as f:
+                f.write(json.dumps(failure_record) + "\n")
+        except Exception as log_error:
+            self.stdout.write(self.style.WARNING(f"Failed to log email failure: {log_error}"))
 
     def merge_users(self, from_user_id, to_user_id, dry_run=False):
         """Merge data from one user account to another with comprehensive FK handling"""
@@ -258,7 +290,7 @@ The Team
         if from_user.id == to_user.id:
             raise CommandError("Cannot merge a user with themselves")
 
-        self.stdout.write("\n🔄 Merging user data:")
+        self.stdout.write("\nMerging user data:")
         self.stdout.write(f"   FROM: {from_user.username} (ID: {from_user_id})")
         self.stdout.write(f"   TO: {to_user.username} (ID: {to_user_id})")
 
@@ -293,7 +325,7 @@ The Team
             merge_counts["staking_entries"] = StakingEntry.objects.filter(user=from_user).count()
             merge_counts["staking_transactions"] = StakingTransaction.objects.filter(user=from_user).count()
 
-            self.stdout.write("\n📊 Would merge:")
+            self.stdout.write("\nWould merge:")
             for field, count in merge_counts.items():
                 if count > 0:
                     self.stdout.write(f"   {field}: {count}")
@@ -347,7 +379,7 @@ The Team
                     self.stdout.write(f"   {field}: {count}")
 
             self.stdout.write("   User profile data")
-            self.stdout.write("\n⚠️  FROM user would be DELETED")
+            self.stdout.write("\nFROM user would be DELETED")
         else:
             with transaction.atomic():
                 merge_counts = {}
@@ -477,14 +509,14 @@ The Team
                     pass  # Thread model might not exist
 
                 if m2m_transfers > 0:
-                    self.stdout.write(f"   ✅ Transferred {m2m_transfers} M2M relationships")
+                    self.stdout.write(f"   Transferred {m2m_transfers} M2M relationships")
 
                 # Merge user profile data with proper error handling
                 try:
                     # Ensure to_user has a profile (create if needed)
                     to_profile, created = UserProfile.objects.get_or_create(user=to_user)
                     if created:
-                        self.stdout.write("   ✅ Created UserProfile for target user")
+                        self.stdout.write("   Created UserProfile for target user")
 
                     # Try to get from_user profile
                     try:
@@ -502,13 +534,13 @@ The Team
                         to_profile.daily_visit_count += from_profile.daily_visit_count
 
                         to_profile.save()
-                        self.stdout.write("   ✅ Merged UserProfile data")
+                        self.stdout.write("   Merged UserProfile data")
 
                     except UserProfile.DoesNotExist:
-                        self.stdout.write("   ℹ️ FROM user has no UserProfile to merge")
+                        self.stdout.write("   FROM user has no UserProfile to merge")
 
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(f"   ⚠️ UserProfile merge failed: {e}"))
+                    self.stdout.write(self.style.WARNING(f"   UserProfile merge failed: {e}"))
 
                 # Store username before deletion
                 from_username = from_user.username
@@ -516,37 +548,40 @@ The Team
                 # Delete the from_user (this will cascade to any remaining relationships)
                 from_user.delete()
 
-                self.stdout.write(self.style.SUCCESS("\n✅ Successfully merged:"))
+                self.stdout.write(self.style.SUCCESS("\nSuccessfully merged:"))
                 for field, count in merge_counts.items():
                     if count > 0:
                         self.stdout.write(f"   {field}: {count}")
                 self.stdout.write(f"   User {from_username} deleted")
 
     def update_email(self, user_id, new_email, dry_run=False):
-        """Update a user's email address"""
+        """Update a user's email address with race condition protection"""
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             raise CommandError(f"User with ID {user_id} not found")
 
-        # Check if new email is already in use
-        if User.objects.filter(email=new_email).exclude(id=user_id).exists():
-            raise CommandError(f"Email {new_email} is already in use by another user")
-
         old_email = user.email
 
         if dry_run:
-            self.stdout.write(f"📧 Would update email for {user.username} (ID: {user_id})")
+            if User.objects.filter(email=new_email).exclude(id=user_id).exists():
+                self.stdout.write(self.style.ERROR(f"Email {new_email} is already in use by another user"))
+                return
+
+            self.stdout.write(f"Would update email for {user.username} (ID: {user_id})")
             self.stdout.write(f"   FROM: {old_email}")
             self.stdout.write(f"   TO: {new_email}")
         else:
             try:
                 with transaction.atomic():
-                    # Update user email
+                    user = User.objects.select_for_update().get(id=user_id)
+
+                    if User.objects.filter(email=new_email).exclude(id=user_id).exists():
+                        raise CommandError(f"Email {new_email} is already in use by another user")
+
                     user.email = new_email
                     user.save()
 
-                    # Also update any email verification records if using django-allauth
                     try:
                         from allauth.account.models import EmailAddress
 
@@ -556,14 +591,14 @@ The Team
                             email_addr.save()
 
                         if email_addresses:
-                            self.stdout.write("   ✅ Updated email verification records")
+                            self.stdout.write("   Updated email verification records")
                     except ImportError:
-                        pass  # django-allauth not installed
+                        pass
 
-                    self.stdout.write(self.style.SUCCESS(f"✅ Updated email for {user.username}"))
+                    self.stdout.write(self.style.SUCCESS(f"Updated email for {user.username}"))
                     self.stdout.write(f"   FROM: {old_email}")
                     self.stdout.write(f"   TO: {new_email}")
 
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f"❌ Failed to update email for {user.username}: {e}"))
+                self.stdout.write(self.style.ERROR(f"Failed to update email for {user.username}: {e}"))
                 raise CommandError(f"Email update failed: {e}")
