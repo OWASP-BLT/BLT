@@ -103,7 +103,8 @@ jobs:
             
             // Step 4: Trigger re-review only if conditions met
             if (totalLinesChanged > 10 && codeFiles.length > 0 && nonMergeCommits.length > 0) {
-              const reviewers = [...new Set(approvals.map(r => r.user.login))];
+              // Filter out deleted users before accessing login
+              const reviewers = [...new Set(approvals.filter(r => r.user).map(r => r.user.login))];
               
               // Build file list (show max 10 files)
               const fileList = codeFiles.slice(0, 10).map(f => 
