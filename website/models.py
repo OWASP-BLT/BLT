@@ -957,6 +957,14 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    leaderboard_score = models.IntegerField(default=0, db_index=True)
+
+    def update_leaderboard_score(self):
+        """Simple score: recent check-ins + streak"""
+        cutoff = timezone.now() - timedelta(days=30)
+        recent = DailyStatusReport.objects.filter(user=self.user, created__gte=cutoff).count()
+        self.leaderboard_score = recent + (self.current_streak * 2)
+        self.save(update_fields=["leaderboard_score"])
 
     def check_team_membership(self):
         return self.team is not None

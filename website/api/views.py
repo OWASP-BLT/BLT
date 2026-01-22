@@ -1988,3 +1988,21 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class TeamMemberLeaderboardAPIView(APIView):
+    template_name = "teams/member_leaderboard.html"
+    permission_classes = [IsAuthenticated]
+    context_object_name = "members"
+    paginate_by = 20
+
+    def get_queryset(self):
+        team = self.request.user.userprofile.team
+        if not team:
+            return UserProfile.objects.none()
+
+        return (
+            UserProfile.objects.filter(team=team)
+            .select_related("user")
+            .order_by("-leaderboard_score", "-current_streak")
+        )

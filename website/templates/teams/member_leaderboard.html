@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Team Member Leaderboard
+{% endblock title %}
+{% block description %}
+    Check out the top performing team members on the leaderboard. View their scores and streaks.
+{% endblock description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-2xl text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Team Member Leaderboard</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2">Track individual performance and achievements within your team</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{% url 'team_overview' %}"
+                           class="px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                            <i class="fas fa-search mr-2"></i>Join a Team
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% if not members %}
+                <!-- Empty State -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-friends text-2xl text-gray-400 dark:text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">You are not in any team yet</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">Join a team to start competing on the leaderboard</p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <a href="{% url 'team_overview' %}"
+                           class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            <i class="fas fa-search mr-2"></i>Find a Team
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Leaderboard Table -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-trophy text-[#D4AF37] mr-2"></i>
+                            Team Member Rankings
+                        </h2>
+                    </div>
+                    <!-- Desktop Table -->
+                    <div class="hidden lg:block overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                                <tr>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-hashtag text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Rank</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-user text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Member</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-chart-line text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Score</span>
+                                        </div>
+                                    </th>
+                                    <th class="py-4 px-6 text-left">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-fire text-gray-500"></i>
+                                            <span class="font-semibold text-gray-700 dark:text-gray-300">Streak</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in members %}
+                                    <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 {% if member.user == request.user %}bg-[#e74c3c] bg-opacity-5{% endif %}">
+                                        <!-- Rank -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                {% with rank=forloop.counter %}
+                                                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg {% if rank == 1 %}bg-[#D4AF37] text-white{% elif rank == 2 %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200{% elif rank == 3 %}bg-[#be7225] text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+                                                        {{ rank }}
+                                                    </div>
+                                                    {% if rank <= 3 %}
+                                                        <i class="fas fa-trophy {% if rank == 1 %}text-[#D4AF37]{% elif rank == 2 %}text-[#C0C0C0]{% else %}text-[#be7225]{% endif %}"></i>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        </td>
+                                        <!-- Member -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-4">
+                                                {% if member.user_avatar %}
+                                                    <img src="{{ member.user_avatar }}"
+                                                         alt="{{ member.user.username }}"
+                                                         width="48"
+                                                         height="48"
+                                                         class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% elif member.social_avatar %}
+                                                    <img src="{{ member.social_avatar }}"
+                                                         alt="{{ member.user.username }}"
+                                                         width="48"
+                                                         height="48"
+                                                         class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% else %}
+                                                    <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                                                        <i class="fas fa-user text-gray-400 dark:text-gray-500"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <div class="font-semibold text-gray-800 dark:text-gray-200">{{ member.user.username }}</div>
+                                                    {% if member.user == request.user %}
+                                                        <div class="flex items-center gap-1 text-sm text-[#e74c3c] mt-1">
+                                                            <i class="fas fa-user-check"></i>
+                                                            <span>You</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- Score -->
+                                        <td class="py-4 px-6">
+                                            <div class="text-2xl font-bold text-[#e74c3c]">{{ member.leaderboard_score }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">points</div>
+                                        </td>
+                                        <!-- Streak -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ member.current_streak }}</div>
+                                                <div class="flex flex-col">
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">day{{ member.current_streak|pluralize }}</span>
+                                                    <div class="flex items-center gap-1">
+                                                        {% for i in "12345" %}
+                                                            {% if forloop.counter <= member.current_streak %}
+                                                                <i class="fas fa-fire text-[#e74c3c] text-xs"></i>
+                                                            {% else %}
+                                                                <i class="fas fa-fire text-gray-300 dark:text-gray-600 text-xs"></i>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile Cards -->
+                    <div class="lg:hidden p-6">
+                        {% for member in members %}
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 mb-4 {% if member.user == request.user %}border-l-4 border-[#e74c3c]{% endif %}">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex items-start gap-4">
+                                        <!-- Rank -->
+                                        {% with rank=forloop.counter %}
+                                            <div class="flex flex-col items-center">
+                                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mb-1 {% if rank == 1 %}bg-[#D4AF37] text-white{% elif rank == 2 %}bg-[#C0C0C0] text-gray-800{% elif rank == 3 %}bg-[#be7225] text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+                                                    {{ rank }}
+                                                </div>
+                                                {% if rank <= 3 %}
+                                                    <i class="fas fa-trophy text-xs {% if rank == 1 %}text-[#D4AF37]{% elif rank == 2 %}text-[#C0C0C0]{% else %}text-[#be7225]{% endif %}"></i>
+                                                {% endif %}
+                                            </div>
+                                        {% endwith %}
+                                        <!-- User Info -->
+                                        <div>
+                                            <div class="flex items-center gap-3 mb-2">
+                                                {% if member.user_avatar %}
+                                                    <img src="{{ member.user_avatar }}"
+                                                         alt="{{ member.user.username }}"
+                                                         width="48"
+                                                         height="48"
+                                                         class="w-10 h-10 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% elif member.social_avatar %}
+                                                    <img src="{{ member.social_avatar }}"
+                                                         alt="{{ member.user.username }}"
+                                                         width="48"
+                                                         height="48"
+                                                         class="w-10 h-10 rounded-full object-cover border-2 border-[#e74c3c]">
+                                                {% else %}
+                                                    <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-[#e74c3c]">
+                                                        <i class="fas fa-user text-gray-400 dark:text-gray-500 text-sm"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <h3 class="font-bold text-gray-800 dark:text-gray-200">{{ member.user.username }}</h3>
+                                                    {% if member.user == request.user %}
+                                                        <div class="flex items-center gap-1 text-xs text-[#e74c3c] mt-1">
+                                                            <i class="fas fa-user-check"></i>
+                                                            <span>You</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Stats Row -->
+                                <div class="grid grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                    <div class="text-center">
+                                        <div class="text-xl font-bold text-[#e74c3c]">{{ member.leaderboard_score }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">Score</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="flex flex-col items-center">
+                                            <div class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ member.current_streak }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Day{{ member.current_streak|pluralize }}</div>
+                                            <div class="flex items-center gap-0.5 mt-1">
+                                                {% for i in "123" %}
+                                                    {% if forloop.counter <= member.current_streak %}
+                                                        <i class="fas fa-fire text-[#e74c3c] text-xs"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-fire text-gray-300 dark:text-gray-600 text-xs"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Pagination -->
+                    {% if members.has_other_pages %}
+                        <div class="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                            <div class="flex justify-center items-center gap-4">
+                                {% if members.has_previous %}
+                                    <a href="?page={{ members.previous_page_number }}"
+                                       class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
+                                        <i class="fas fa-chevron-left mr-1"></i> Prev
+                                    </a>
+                                {% else %}
+                                    <span class="px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                        <i class="fas fa-chevron-left mr-1"></i> Prev
+                                    </span>
+                                {% endif %}
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Page {{ members.number }} of {{ members.paginator.num_pages }}
+                                </span>
+                                {% if members.has_next %}
+                                    <a href="?page={{ members.next_page_number }}"
+                                       class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
+                                        Next <i class="fas fa-chevron-right ml-1"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-not-allowed">
+                                        Next <i class="fas fa-chevron-right ml-1"></i>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

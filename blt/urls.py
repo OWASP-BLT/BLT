@@ -330,6 +330,7 @@ from website.views.teams import (
     GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
+    TeamMemberLeaderboardView,
     TeamOverview,
     add_member,
     create_team,
@@ -1251,6 +1252,7 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("teams/member-leaderboard/", TeamMemberLeaderboardView.as_view(), name="team_member_leaderboard"),
 ]
 
 if settings.DEBUG:
