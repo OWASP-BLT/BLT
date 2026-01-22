@@ -25,9 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ env.PR_REF }}
-        env:
-          PR_REF: ${{github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -195,7 +193,8 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
         id: detect_conflict
         env:
-          BRANCH_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           MAX_RETRIES: 3
           RETRY_DELAY: 5
         run: |
@@ -205,7 +204,7 @@ jobs:
             echo "Attempt $attempt/$MAX_RETRIES: Checking for conflicting commits..."
             
             # Fetch the latest remote state
-            git fetch origin "$BRANCH_REF" 2>/dev/null
+            git fetch origin "$PR_HEAD_REF" 2>/dev/null
             FETCH_EXIT=$?
             
             if [ $FETCH_EXIT -ne 0 ]; then
@@ -216,7 +215,7 @@ jobs:
             
             # Get current HEAD and remote HEAD
             LOCAL_HEAD=$(git rev-parse HEAD)
-            REMOTE_HEAD=$(git rev-parse origin/"$BRANCH_REF")
+            REMOTE_HEAD=$(git rev-parse "origin/$PR_HEAD_REF")
             
             if [ "$LOCAL_HEAD" = "$REMOTE_HEAD" ]; then
               echo "✅ No conflicting commits detected on attempt $attempt"
@@ -224,6 +223,9 @@ jobs:
               exit 0
             else
               echo "⚠️ Conflicting commits detected on attempt $attempt"
+              echo "Local HEAD: $LOCAL_HEAD"
+              echo "Remote HEAD: $REMOTE_HEAD"
+              echo "Expected SHA: $PR_HEAD_SHA"
               echo "conflict_detected=true" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -237,18 +239,20 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           echo "❌ New commits detected on remote branch since checkout."
           echo "Auto-fix aborted to prevent commit conflicts."
           
-          gh pr comment ${{ github.event.pull_request.number }} \
+          gh pr comment "$PR_NUMBER" \
             --body "⚠️ **Auto-fix Skipped Due to Concurrent Changes**
 
           New commits were pushed to this branch while the auto-fix was running.
           To prevent conflicts, the auto-fix was not applied.
 
           **Next Steps:**
-          1. Pull the latest changes: \`git pull origin ${{ github.event.pull_request.head.ref }}\`
+          1. Pull the latest changes: \`gh pr checkout $PR_NUMBER\` (recommended) or \`git pull origin \"$PR_HEAD_REF\"\`
           2. Run pre-commit locally: \`poetry run pre-commit run --all-files\`
           3. Commit and push any fixes
 
@@ -260,7 +264,8 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'false'
         id: push_fixes
         env:
-          BRANCH_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           MAX_RETRIES: 3
           RETRY_DELAY: 5
         run: |
@@ -291,7 +296,20 @@ jobs:
               continue
             fi
             
-            git push origin "$BRANCH_REF" 2>/dev/null
+            # Validate we're on the expected base commit before pushing
+            CURRENT_BASE=$(git rev-parse HEAD~1)
+            if [ "$CURRENT_BASE" != "$PR_HEAD_SHA" ]; then
+              echo "❌ Base commit mismatch detected!"
+              echo "Expected SHA: $PR_HEAD_SHA"
+              echo "Current base: $CURRENT_BASE"
+              echo "This indicates the branch has diverged."
+              git reset --soft HEAD~1
+              sleep $RETRY_DELAY
+              continue
+            fi
+            
+            # Push using explicit refspec for safety
+            git push origin "HEAD:refs/heads/$PR_HEAD_REF" 2>/dev/null
             PUSH_EXIT=$?
             
             if [ $PUSH_EXIT -eq 0 ]; then
@@ -302,12 +320,12 @@ jobs:
               echo "⚠️ Push attempt $attempt failed. Checking if due to concurrent commits..."
               
               # Check if remote branch moved ahead (concurrent commits)
-              git fetch origin "$BRANCH_REF" 2>/dev/null
+              git fetch origin "$PR_HEAD_REF" 2>/dev/null
               FETCH_EXIT=$?
               
               if [ $FETCH_EXIT -eq 0 ]; then
                 LOCAL_COMMIT=$(git rev-parse HEAD~1)
-                REMOTE_COMMIT=$(git rev-parse origin/"$BRANCH_REF")
+                REMOTE_COMMIT=$(git rev-parse "origin/$PR_HEAD_REF")
                 
                 if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
                   echo "🔄 Concurrent commits detected on remote branch (attempt $attempt)"
@@ -458,12 +476,4 @@ jobs:
           echo "## ❌ Pre-commit Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pre-commit checks failed but no auto-fixes could be applied." >> $GITHUB_STEP_SUMMARY
-          echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Syntax errors in Python code" >> $GITHUB_STEP_SUMMARY
-          echo "- Invalid Django template syntax" >> $GITHUB_STEP_SUMMARY
-          echo "- Missing required imports" >> $GITHUB_STEP_SUMMARY
-          echo "- Test failures" >> $GITHUB_STEP_SUMMARY
-          echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
-          exit 1
+          echo "Manual intervention is required." >> 
