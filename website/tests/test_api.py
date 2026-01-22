@@ -297,7 +297,23 @@ class TestPasswordResetUnknownEmail(APITestCase):
 
 class TeamLeaderboardAPITest(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.user = get_user_model().objects.create_user(
+            username="testuser", email="test@example.com", password="testpass123"
+        )
+
+        # Create a team and assign user to it
+        self.team = Team.objects.create(name="Test Team")
+        self.user.userprofile.team = self.team
+        self.user.userprofile.leaderboard_score = 10
+        self.user.userprofile.save()
+
+        # Create another team member
+        self.user2 = get_user_model().objects.create_user(
+            username="member2", email="m2@example.com", password="pass1234"
+        )
+        self.user2.userprofile.team = self.team
+        self.user2.userprofile.leaderboard_score = 5
+        self.user2.userprofile.save()
 
     def test_api_requires_auth_and_returns_data(self):
         """Test API endpoint requires authentication and returns correct structure"""
