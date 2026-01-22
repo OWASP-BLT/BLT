@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=DailyStatusReport)
-def update_score_on_checkin(sender, instance, **kwargs):
+def update_score_on_checkin(sender, instance, created, **kwargs):
+    if not created:
+        return
     try:
         profile = instance.user.userprofile
         profile.update_leaderboard_score()
