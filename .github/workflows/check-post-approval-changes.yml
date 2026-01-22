@@ -128,6 +128,15 @@ jobs:
                 return;
               }
               
+              // Filter out PR author (cannot request review from self)
+              const prAuthor = context.payload.pull_request.user.login;
+              const eligibleReviewers = reviewers.filter(r => r !== prAuthor);
+              
+              if (eligibleReviewers.length === 0) {
+                console.log('⚠️ No eligible reviewers to request re-review from (all approvers are the PR author)');
+                return;
+              }
+              
               // Build file list (show max 10 files)
               const fileList = codeFiles.slice(0, 10).map(f => 
                 `- \`${f.filename}\` (+${f.additions}/-${f.deletions})`
@@ -151,11 +160,11 @@ jobs:
                       `- ${nonMergeCommits.length} non-merge commit(s) pushed after approval\n\n` +
                       `**Commits:**\n${commitList}${moreCommits}\n\n` +
                       `**Files changed:**\n${fileList}${moreFiles}\n\n` +
-                      `@${reviewers.join(', @')} - Please re-review this PR.`
+                      `@${eligibleReviewers.join(', @')} - Please re-review this PR.`
               });
               
               // Request re-review from previous approvers
-              for (const reviewer of reviewers) {
+              for (const reviewer of eligibleReviewers) {
                 try {
                   await github.rest.pulls.requestReviewers({
                     owner: context.repo.owner,
