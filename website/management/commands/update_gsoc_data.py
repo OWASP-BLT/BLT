@@ -1,80 +1,139 @@
-import logging
+from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
-from django.utils import timezone
+from django.test import TestCase
 
-logger = logging.getLogger(__name__)
+class UpdateGsocDataCommandTests(TestCase):
+    """Tests for the update_gsoc_data management command."""
 
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_prs_fetched_before_reviews(self, mock_call_command):
+        """update_gsoc_data calls fetch_gsoc_prs before fetch_pr_reviews."""
+        out = StringIO()
+        call_command("update_gsoc_data", stdout=out)
 
-class Command(BaseCommand):
-    help = "Refresh GSoC leaderboard data (PRs then reviews) with proper dependency ordering"
+        # Verify two calls and ordering
+        self.assertEqual(mock_call_command.call_count, 2)
+        first_call = mock_call_command.call_args_list[0]
+        second_call = mock_call_command.call_args_list[1]
+        self.assertEqual(first_call[0][0], "fetch_gsoc_prs")
+        self.assertEqual(second_call[0][0], "fetch_pr_reviews")
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--verbose",
-            action="store_true",
-            help="Enable verbose output",
+        # Success messages
+        output = out.getvalue()
+        self.assertIn("Successfully fetched PRs", output)
+        self.assertIn("Successfully fetched reviews", output)
+        self.assertIn("All operations completed successfully", output)
+
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_skip_prs_flag_skips_pr_fetch(self, mock_call_command):
+        """--skip-prs runs only fetch_pr_reviews."""
+        out = StringIO()
+        call_command("update_gsoc_data", "--skip-prs", stdout=out)
+
+        self.assertEqual(mock_call_command.call_count, 1)
+        self.assertEqual(
+            mock_call_command.call_args_list[0][0][0], "fetch_pr_reviews"
         )
-        parser.add_argument(
-            "--skip-prs",
-            action="store_true",
-            help="Skip fetching PRs (only fetch reviews)",
-        )
-        parser.add_argument(
-            "--skip-reviews",
-            action="store_true",
-            help="Skip fetching reviews (only fetch PRs)",
-        )
 
-    def handle(self, *args, **options):
-        verbose = options.get("verbose", False)
-        skip_prs = options.get("skip_prs", False)
-        skip_reviews = options.get("skip_reviews", False)
+        output = out.getvalue()
+        self.assertIn("Skipping PR fetch", output)
 
-        start_time = timezone.now()
-        self.stdout.write(f"Starting GSoC data refresh at {start_time}")
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_skip_reviews_flag_skips_review_fetch(self, mock_call_command):
+        """--skip-reviews runs only fetch_gsoc_prs."""
+        out = StringIO()
+        call_command("update_gsoc_data", "--skip-reviews", stdout=out)
 
-        prs_success = True
-        reviews_success = True
+        self.assertEqual(mock_call_command.call_count, 1)
+        self.assertEqual(mock_call_command.call_args_list[0][0][0], "fetch_gsoc_prs")
 
-        # Step 1: Fetch PRs (must run before reviews)
-        if not skip_prs:
-            try:
-                self.stdout.write("Step 1/2: Fetching GSoC pull requests...")
-                call_command("fetch_gsoc_prs", verbose=verbose)
-                self.stdout.write(self.style.SUCCESS("✓ Successfully fetched PRs"))
-            except Exception as e:
-                prs_success = False
-                logger.error(f"Error fetching GSoC PRs: {str(e)}", exc_info=True)
-                self.stdout.write(self.style.ERROR(f"✗ Error fetching PRs: {str(e)}"))
-        else:
-            self.stdout.write(self.style.WARNING("Skipping PR fetch (--skip-prs)"))
+        output = out.getvalue()
+        self.assertIn("Skipping review fetch", output)
 
-        # Step 2: Fetch PR reviews (depends on PRs existing)
-        if not skip_reviews:
-            try:
-                self.stdout.write("Step 2/2: Fetching PR reviews...")
-                call_command("fetch_pr_reviews", verbose=verbose)
-                self.stdout.write(self.style.SUCCESS("✓ Successfully fetched reviews"))
-            except Exception as e:
-                reviews_success = False
-                logger.error(f"Error fetching PR reviews: {str(e)}", exc_info=True)
-                self.stdout.write(self.style.ERROR(f"✗ Error fetching reviews: {str(e)}"))
-        else:
-            self.stdout.write(self.style.WARNING("Skipping review fetch (--skip-reviews)"))
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_pr_fetch_failure_continues_to_reviews(self, mock_call_command):
+        """If PR fetch fails, continue to reviews and report partial success."""
 
-        # Summary
-        elapsed = (timezone.now() - start_time).total_seconds()
-        self.stdout.write("\n" + "=" * 60)
-        self.stdout.write(f"GSoC data refresh completed in {elapsed:.1f}s")
-        self.stdout.write(f"  PRs: {'✓' if prs_success else '✗'}")
-        self.stdout.write(f"  Reviews: {'✓' if reviews_success else '✗'}")
+        def side_effect(command_name, *args, **kwargs):
+            if command_name == "fetch_gsoc_prs":
+                raise Exception("API rate limit exceeded")
+            return None
 
-        if prs_success and reviews_success:
-            self.stdout.write(self.style.SUCCESS("\n✓ All operations completed successfully"))
-        elif not prs_success and not reviews_success:
-            self.stdout.write(self.style.ERROR("\n✗ Both operations failed"))
-            raise Exception("GSoC data refresh failed for both PRs and reviews")
-        else:
-            self.stdout.write(self.style.WARNING("\n⚠ Partial success (some operations failed)"))
+        mock_call_command.side_effect = side_effect
+
+        out = StringIO()
+        call_command("update_gsoc_data", stdout=out)
+
+        self.assertEqual(mock_call_command.call_count, 2)
+
+        output = out.getvalue()
+        self.assertIn("Error fetching PRs", output)
+        self.assertIn("Partial success", output)
+
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_review_fetch_failure_handled_gracefully(self, mock_call_command):
+        """If review fetch fails, report partial success while PRs succeeded."""
+
+        def side_effect(command_name, *args, **kwargs):
+            if command_name == "fetch_pr_reviews":
+                raise Exception("Network timeout")
+            return None
+
+        mock_call_command.side_effect = side_effect
+
+        out = StringIO()
+        call_command("update_gsoc_data", stdout=out)
+
+        self.assertEqual(mock_call_command.call_count, 2)
+
+        output = out.getvalue()
+        self.assertIn("Successfully fetched PRs", output)
+        self.assertIn("Error fetching reviews", output)
+        self.assertIn("Partial success", output)
+
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_both_commands_failure_raises_exception(self, mock_call_command):
+        """If both steps fail, an exception is raised."""
+
+        def side_effect(command_name, *args, **kwargs):
+            raise Exception(f"{command_name} failed")
+
+        mock_call_command.side_effect = side_effect
+
+        out = StringIO()
+        with self.assertRaises(Exception) as cm:
+            call_command("update_gsoc_data", stdout=out)
+
+        self.assertIn("GSoC data refresh failed", str(cm.exception))
+        self.assertEqual(mock_call_command.call_count, 2)
+
+        output = out.getvalue()
+        self.assertIn("Both operations failed", output)
+
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_verbose_flag_passed_to_child_commands(self, mock_call_command):
+        """--verbose is forwarded to child commands."""
+        out = StringIO()
+        call_command("update_gsoc_data", "--verbose", stdout=out)
+
+        self.assertEqual(mock_call_command.call_count, 2)
+        for _, kwargs in mock_call_command.call_args_list:
+            self.assertTrue(
+                kwargs.get("verbose"),
+                "verbose flag should be passed to child commands",
+            )
+
+    @patch("website.management.commands.update_gsoc_data.call_command")
+    def test_success_output_includes_both_phases(self, mock_call_command):
+        """Successful execution prints both phases and final summary."""
+        out = StringIO()
+        call_command("update_gsoc_data", stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("Step 1/2: Fetching GSoC pull requests", output)
+        self.assertIn("Step 2/2: Fetching PR reviews", output)
+        self.assertIn("GSoC data refresh completed", output)
+        self.assertIn("PRs: ✓", output)
+        self.assertIn("Reviews: ✓", output)
