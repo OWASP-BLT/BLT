@@ -7,7 +7,10 @@
 <div id="pageStatsContainer"
      class="fixed bottom-0 left-4 z-50 transition-all duration-300 transform translate-y-[calc(100%-40px)] group">
     <!-- Chart Icon and Handle here -->
-    <div class="flex justify-center items-center h-10 w-16 mx-auto bg-white dark:bg-gray-800 rounded-t-lg shadow-md cursor-pointer">
+    <button type="button"
+            class="flex justify-center items-center h-10 w-16 mx-auto bg-white dark:bg-gray-800 rounded-t-lg shadow-md cursor-pointer"
+            aria-expanded="false"
+            aria-label="Toggle page statistics">
         <svg xmlns="http://www.w3.org/2000/svg"
              class="h-6 w-6 text-[#e74c3c]"
              fill="none"
@@ -15,7 +18,7 @@
              stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
-    </div>
+    </button>
     <!-- Stats Content -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-3 w-72">
         <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Page Views (Last 30 Days)</div>
@@ -254,12 +257,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openStats(mode) {
         openMode = mode;
+        handleElement.setAttribute('aria-expanded', 'true');
         pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
         pageStatsContainer.classList.add('translate-y-0');
     }
 
     function closeStats() {
         openMode = null;
+        handleElement.setAttribute('aria-expanded', 'false');
         pageStatsContainer.classList.remove('translate-y-0');
         pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
     }
@@ -268,43 +273,46 @@ document.addEventListener('DOMContentLoaded', function() {
         return openMode !== null;
     }
 
-    handleElement.addEventListener('mouseenter', () => {
-        if (!isOpen()) {
-            openStats('hover');
-        }
-    });
+    const canHover = window.matchMedia('(hover: hover)').matches;
 
-    handleElement.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // If hover-open, convert to click-open (DO NOT toggle)
-        if (openMode === 'hover') {
-            openStats('click');
-            return;
-        }
-        // Normal toggle for click-open
-        if (openMode === 'click') {
-            closeStats();
-        } else {
-            openStats('click');
-        }
-    });
+    if(handleElement) {
+        // ✅ Hover preview ONLY on hover-capable devices
+    if (canHover) {
+        handleElement.addEventListener('mouseenter', () => {
+            if (!isOpen()) {
+                openStats('hover');
+            }
+        });
 
-    pageStatsContainer.addEventListener('mouseleave', () => {
-        if (openMode === 'hover') {
-            closeStats();
-        }
-    });
+        pageStatsContainer.addEventListener('mouseleave', () => {
+            if (openMode === 'hover') {
+                closeStats();
+            }
+        });
+    }
 
-    document.addEventListener('click', (e) => {
-        if (openMode !== 'click') return;
-        if (
-            !pageStatsContainer.contains(e.target) &&
-            !handleElement.contains(e.target)
-        ) {
-            closeStats();
-        }
-    });
+        // ✅ Click = mouse + touch + keyboard
+        handleElement.addEventListener('click', (e) => {
+            // Convert hover preview to persistent
+            if (openMode === 'hover') {
+                openStats('click');
+                return;
+            }
+            // Normal toggle for click-open
+            if (openMode === 'click') {
+                closeStats();
+            } else {
+                openStats('click');
+            }
+        });
+        // ✅ Click outside closes only persistent open
+        document.addEventListener('click', (e) => {
+            if (openMode !== 'click') return;
+            if ( !pageStatsContainer.contains(e.target )) {
+                closeStats();
+            }
+        });
+    }
     
     // CSRF token helper
     function getCookie(name) {
