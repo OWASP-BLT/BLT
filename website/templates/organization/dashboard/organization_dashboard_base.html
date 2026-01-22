@@ -48,7 +48,7 @@
                 if (savedTheme === "dark") {
                     document.documentElement.classList.add("dark");
                 } 
-                else if ( !savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                     // No saved preference, check system preference
                     document.documentElement.classList.add("dark");
                 }
