@@ -25,7 +25,9 @@ class AISpamDetectionService:
             try:
                 self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
             except Exception as e:
-                logger.error(f"Failed to create OpenAI client: {e}")
+                logger.error(f"AISpamDetectionService: Failed to create OpenAI client: {e}")
+        else:
+            logger.warning("AISpamDetectionService: OPENAI_API_KEY not found - spam detection unavailable")
 
     def detect_spam(self, content: str, content_type: str = "issue") -> dict:
         """
@@ -43,13 +45,17 @@ class AISpamDetectionService:
                 'category': str  # promotional, malicious, low_quality, etc.
             }
         """
+        
         # Check if spam detection is enabled
-        if not getattr(settings, "SPAM_DETECTION_ENABLED", True):
-            logger.info("Spam detection is disabled in settings")
+        spam_enabled = getattr(settings, "SPAM_DETECTION_ENABLED", True)
+        logger.info(f"AISpamDetectionService: SPAM_DETECTION_ENABLED = {spam_enabled}")
+        
+        if not spam_enabled:
+            logger.warning("AISpamDetectionService: Spam detection is DISABLED in settings")
             return {"is_spam": False, "confidence": 0.0, "reason": "Spam detection disabled", "category": None}
 
         if not self.client:
-            logger.warning("OpenAI client not available, skipping spam detection")
+            logger.warning("AISpamDetectionService: OpenAI client not available, skipping spam detection")
             return {"is_spam": False, "confidence": 0.0, "reason": "AI service unavailable", "category": None}
 
         try:
@@ -87,13 +93,10 @@ class AISpamDetectionService:
 
             # Parse AI response
             result = self._parse_response(response.choices[0].message.content)
-            logger.info(
-                f"Spam detection for {content_type}: is_spam={result['is_spam']}, confidence={result['confidence']}"
-            )
             return result
 
         except Exception as e:
-            logger.error(f"[Service Error]: Failed during spam detection: {e}")
+            logger.error(f"AISpamDetectionService: Failed during spam detection: {e}")
             return {"is_spam": False, "confidence": 0.0, "reason": f"Detection error: {str(e)}", "category": None}
 
     def _parse_response(self, ai_response: str) -> dict:
