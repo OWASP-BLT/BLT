@@ -34,21 +34,24 @@ jobs:
             console.log(`Last approval: ${lastApprovalDate.toISOString()}`);
             
             // Step 2: Determine the approved commit SHA
-            const commits = await github.paginate(github.rest.pulls.listCommits, {
+            const { data: commits } = await github.rest.pulls.listCommits({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number,
-              per_page: 100
+              pull_number: context.issue.number
             });
             
             // Find the last commit before or at approval time
+            // Iterate through ALL commits to handle rebase scenarios
             let approvedCommitSha = null;
+            let approvedCommitDate = null;
             for (const commit of commits) {
               const commitDate = new Date(commit.commit.committer.date);
               if (commitDate <= lastApprovalDate) {
-                approvedCommitSha = commit.sha;
-              } else {
-                break;
+                // Keep track of the most recent commit before approval
+                if (!approvedCommitDate || commitDate > approvedCommitDate) {
+                  approvedCommitSha = commit.sha;
+                  approvedCommitDate = commitDate;
+                }
               }
             }
             
