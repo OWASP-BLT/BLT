@@ -79,6 +79,7 @@ jobs:
                         }
                       }
                       createdAt
+                      updatedAt
                       mergedAt
                       merged
                     }
@@ -151,8 +152,20 @@ jobs:
 
                 allPRs = allPRs.concat(monthPRs);
 
-                prHasNextPage = prs.pageInfo.hasNextPage;
-                prCursor = prs.pageInfo.endCursor;
+                // Early exit: if the oldest PR in this page was updated before startOfMonth,
+                // we can stop paginating because no more PRs merged this month exist
+                if (prs.nodes.length > 0) {
+                  const oldestUpdatedAt = new Date(prs.nodes[prs.nodes.length - 1].updatedAt);
+                  if (oldestUpdatedAt < startOfMonth) {
+                    core.info(`Stopping PR pagination - reached PRs updated before ${startOfMonth.toISOString()}`);
+                    prHasNextPage = false;
+                  }
+                }
+
+                if (prHasNextPage) {
+                  prHasNextPage = prs.pageInfo.hasNextPage;
+                  prCursor = prs.pageInfo.endCursor;
+                }
                 prPageCount++;
               } catch (error) {
                 core.warning(`Error fetching PRs: ${error.message}`);
