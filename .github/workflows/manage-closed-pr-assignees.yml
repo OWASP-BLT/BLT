@@ -348,7 +348,7 @@ jobs:
                   core.info(`  Grace period expired and no open PR, unassigning`);
                   
                   // Extract the warned username from the warning comment
-                  const warnedUserMatch = warningComment.body.match(/@(\w+)!/);
+                  const warnedUserMatch = warningComment.body.match(/@([\w-]+)!/);
                   const warnedUsername = warnedUserMatch ? warnedUserMatch[1] : null;
                   
                   if (!warnedUsername) {
