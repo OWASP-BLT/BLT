@@ -1,7 +1,11 @@
+import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from website.models import DailyStatusReport, UserProfile
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=DailyStatusReport)

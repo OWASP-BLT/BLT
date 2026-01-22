@@ -307,5 +307,6 @@ def test_api_requires_auth_and_returns_data(self):
 
     self.assertEqual(response.status_code, 200)
     self.assertIn("results", response.data)
+    self.assertGreater(len(response.data["results"]), 0)
     member = response.data["results"][0]
     self.assertIn("leaderboard_score", member)
