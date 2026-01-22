@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup Old Closed PR Assignees
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -29,7 +29,7 @@ jobs:
             const repo = context.repo.repo;
             const dryRun = '${{ inputs.dry_run }}' === 'true';
             
-            const GRACE_PERIOD_MS = 6 * 60 * 60 * 1000;
+            const GRACE_PERIOD_MS = 12 * 60 * 60 * 1000;
             
             core.info(`Starting cleanup (dry run: ${dryRun})...\n`);
             
@@ -96,7 +96,7 @@ jobs:
                 }
                 
                 if (closedPRsOlderThan6h.length > 0 && !hasOpenPR) {
-                  core.info(`  Found ${closedPRsOlderThan6h.length} closed PR(s) older than 6 hours:`);
+                  core.info(`  Found ${closedPRsOlderThan6h.length} closed PR(s) older than 12 hours:`);
                   closedPRsOlderThan6h.forEach(pr => {
                     core.info(`    - PR #${pr.number} by @${pr.author} (closed ${pr.hoursAgo}h ago)`);
                   });
@@ -130,7 +130,7 @@ jobs:
                       owner, repo,
                       issue_number: issue.number,
                       body: `**Cleanup: Unassigned due to closed PR(s)**\n\n` +
-                            `The following PR(s) were closed over 6 hours ago:\n${prList}\n\n` +
+                            `The following PR(s) were closed over 12 hours ago:\n${prList}\n\n` +
                             `Unassigned: ${assigneesToRemove.join(', ')}\n\n` +
                             `Assignees have been removed. Feel free to comment \`/assign\` to work on this issue!`
                     });
@@ -141,7 +141,7 @@ jobs:
                 } else if (hasOpenPR) {
                   core.info(`  Has open PR, no action needed`);
                 } else if (closedPRsOlderThan6h.length === 0) {
-                  core.info(`  No closed PRs older than 6 hours`);
+                  core.info(`  No closed PRs older than 12 hours`);
                 } else {
                   core.info(`  No action needed`);
                 }
