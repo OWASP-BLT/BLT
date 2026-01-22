@@ -51,7 +51,7 @@ import logging
 from datetime import datetime
 
 from django.db import migrations
-from django.db.models import Count, Sum
+from django.db.models import Coalesce, Count, OuterRef, Subquery, Sum
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,26 @@ def remove_duplicate_users_safely(apps, schema_editor):
     users_with_metrics = (
         User.objects.using(db_alias)
         .filter(email__in=duplicate_emails)
-        .annotate(issue_count=Count("issue", distinct=True), total_points=Sum("points__score"))
+        .annotate(
+            issue_count=Coalesce(
+                Subquery(
+                    Issue.objects.filter(user=OuterRef("pk"))
+                    .values("user")
+                    .annotate(count=Count("pk"))
+                    .values("count")[:1]
+                ),
+                0,
+            ),
+            total_points=Coalesce(
+                Subquery(
+                    Points.objects.filter(user=OuterRef("pk"))
+                    .values("user")
+                    .annotate(total=Sum("score"))
+                    .values("total")[:1]
+                ),
+                0,
+            ),
+        )
         .order_by("email", "-id")
     )
 

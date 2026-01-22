@@ -18,8 +18,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand, CommandError
-from django.db import models, transaction
-from django.db.models import Count, Sum
+from django.db import transaction
+from django.db.models import Coalesce, Count, OuterRef, Subquery, Sum
 
 
 class Command(BaseCommand):
@@ -89,14 +89,37 @@ class Command(BaseCommand):
             return
 
         duplicate_user_emails = [dup["email"] for dup in duplicate_emails]
+
+        # Import models here to avoid circular imports
+        from allauth.account.models import EmailAddress
+
+        from website.models import Issue, Points
+
+        # Create subqueries to avoid row multiplication from joins
+        issue_count_subquery = Subquery(
+            Issue.objects.filter(user=OuterRef("pk")).values("user").annotate(count=Count("pk")).values("count")[:1]
+        )
+        total_points_subquery = Subquery(
+            Points.objects.filter(user=OuterRef("pk")).values("user").annotate(total=Sum("score")).values("total")[:1]
+        )
+        points_entries_subquery = Subquery(
+            Points.objects.filter(user=OuterRef("pk")).values("user").annotate(count=Count("pk")).values("count")[:1]
+        )
+        has_verified_email_subquery = Subquery(
+            EmailAddress.objects.filter(user=OuterRef("pk"), verified=True)
+            .values("user")
+            .annotate(count=Count("pk"))
+            .values("count")[:1]
+        )
+
         users_with_metrics = (
             User.objects.filter(email__in=duplicate_user_emails)
             .select_related()
             .annotate(
-                issue_count=Count("issue", distinct=True),
-                total_points=Sum("points__score"),
-                points_entries=Count("points", distinct=True),
-                has_verified_email=Count("emailaddress", filter=models.Q(emailaddress__verified=True)),
+                issue_count=Coalesce(issue_count_subquery, 0),
+                total_points=Coalesce(total_points_subquery, 0),
+                points_entries=Coalesce(points_entries_subquery, 0),
+                has_verified_email=Coalesce(has_verified_email_subquery, 0),
             )
             .order_by("email", "-id")
         )

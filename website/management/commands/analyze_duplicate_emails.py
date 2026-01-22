@@ -13,7 +13,7 @@ import csv
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, Sum
+from django.db.models import Coalesce, Count, OuterRef, Subquery, Sum
 from django.utils import timezone
 
 
@@ -104,16 +104,29 @@ class Command(BaseCommand):
         )
 
         # Get all users with duplicate emails with their metrics pre-calculated
+        # Import models here to avoid circular imports
+        from website.models import Issue, Points
+
+        # Create subqueries to avoid row multiplication from joins
+        issue_count_subquery = Subquery(
+            Issue.objects.filter(user=OuterRef("pk")).values("user").annotate(count=Count("pk")).values("count")[:1]
+        )
+        total_points_subquery = Subquery(
+            Points.objects.filter(user=OuterRef("pk")).values("user").annotate(total=Sum("score")).values("total")[:1]
+        )
+        points_entries_subquery = Subquery(
+            Points.objects.filter(user=OuterRef("pk")).values("user").annotate(count=Count("pk")).values("count")[:1]
+        )
+
         duplicate_users_with_metrics = (
             User.objects.filter(email__in=[dup["email"] for dup in duplicate_emails])
             .exclude(email="")
             .exclude(email__isnull=True)
             .select_related()
-            .prefetch_related("issue_set", "points_set")
             .annotate(
-                issue_count=Count("issue", distinct=True),
-                total_points=Sum("points__score"),
-                points_entries=Count("points", distinct=True),
+                issue_count=Coalesce(issue_count_subquery, 0),
+                total_points=Coalesce(total_points_subquery, 0),
+                points_entries=Coalesce(points_entries_subquery, 0),
             )
             .order_by("email", "-id")
         )
@@ -302,12 +315,32 @@ class Command(BaseCommand):
                     email = dup["email"]
 
                     # Get users with metrics for this email
+                    # Create subqueries to avoid row multiplication from joins
+                    issue_count_subquery = Subquery(
+                        Issue.objects.filter(user=OuterRef("pk"))
+                        .values("user")
+                        .annotate(count=Count("pk"))
+                        .values("count")[:1]
+                    )
+                    total_points_subquery = Subquery(
+                        Points.objects.filter(user=OuterRef("pk"))
+                        .values("user")
+                        .annotate(total=Sum("score"))
+                        .values("total")[:1]
+                    )
+                    points_entries_subquery = Subquery(
+                        Points.objects.filter(user=OuterRef("pk"))
+                        .values("user")
+                        .annotate(count=Count("pk"))
+                        .values("count")[:1]
+                    )
+
                     users = (
                         User.objects.filter(email=email)
                         .annotate(
-                            issue_count=Count("issue", distinct=True),
-                            total_points=Sum("points__score"),
-                            points_entries=Count("points", distinct=True),
+                            issue_count=Coalesce(issue_count_subquery, 0),
+                            total_points=Coalesce(total_points_subquery, 0),
+                            points_entries=Coalesce(points_entries_subquery, 0),
                         )
                         .order_by("-id")
                     )
