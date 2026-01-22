@@ -5,7 +5,7 @@ name: Leaderboard Bot
 on:
   pull_request_target:
     types:
-      - opened
+      - closed
 
 permissions:
   contents: read
@@ -62,7 +62,7 @@ jobs:
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
 
-            // GraphQL query to fetch PRs for the current month (for counting PR creations)
+            // GraphQL query to fetch PRs merged in the current month (aligned with website leaderboard)
             const prQuery = `
               query($owner: String!, $repo: String!, $after: String) {
                 repository(owner: $owner, name: $repo) {
@@ -126,7 +126,7 @@ jobs:
               }
             `;
 
-            // Fetch all PRs created in current month
+            // Fetch all PRs merged in current month
             let allPRs = [];
             let prHasNextPage = true;
             let prCursor = null;
@@ -218,6 +218,17 @@ jobs:
                 }
 
                 allRecentPRs = allRecentPRs.concat(recentPRs);
+
+                // Early exit: if the oldest PR on this page is older than three months,
+                // all subsequent pages will also be out of range, so stop paginating.
+                const oldestPr = prs.nodes[prs.nodes.length - 1];
+                if (oldestPr) {
+                  const oldestUpdatedAt = new Date(oldestPr.updatedAt);
+                  if (oldestUpdatedAt < threeMonthsAgo) {
+                    core.info(`Stopping recent PRs pagination - reached PRs updated before ${threeMonthsAgo.toISOString()}`);
+                    break;
+                  }
+                }
 
                 recentPRsHasNextPage = prs.pageInfo.hasNextPage;
                 recentPRsCursor = prs.pageInfo.endCursor;
