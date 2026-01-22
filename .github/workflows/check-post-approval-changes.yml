@@ -33,11 +33,12 @@ jobs:
             const lastApprovalDate = new Date(Math.max(...approvals.map(a => new Date(a.submitted_at))));
             console.log(`Last approval: ${lastApprovalDate.toISOString()}`);
             
-            // Step 2: Determine the approved commit SHA
-            const { data: commits } = await github.rest.pulls.listCommits({
+            // Step 2: Determine the approved commit SHA (with pagination)
+            const commits = await github.paginate(github.rest.pulls.listCommits, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: context.issue.number,
+              per_page: 100
             });
             
             // Find the last commit before or at approval time
