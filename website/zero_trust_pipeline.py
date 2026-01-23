@@ -1,3 +1,18 @@
+"""
+Zero-Trust Vulnerability Reporting Pipeline
+
+SECURITY REQUIREMENTS:
+- This module handles sensitive PoC files and vulnerability details
+- MUST NOT be tracked by analytics (Google Analytics, Mouseflow, etc.)
+- MUST NOT send data to Sentry (filtered in settings.py)
+- MUST NOT log file content or request bodies
+- API-only endpoint (no template rendering with tracking scripts)
+
+If adding a web UI in the future:
+- Exclude zero-trust pages from analytics tracking
+- Use separate base template without analytics scripts
+- Verify Sentry before_send filter is active
+"""
 import hashlib
 import json
 import logging

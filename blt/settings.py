@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 
@@ -258,11 +259,48 @@ db_from_env = dj_database_url.config(conn_max_age=500)
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN:
+
+    def _sentry_before_send(event, hint):
+        """
+        Filter Sentry events to exclude zero-trust endpoint data.
+
+        Zero-trust submissions contain sensitive PoC files and vulnerability details
+        that must NEVER be sent to external services, including Sentry.
+        """
+        # Get request URL from event
+        request_url = event.get("request", {}).get("url", "")
+
+        # Block all zero-trust endpoint data
+        if "/api/zero-trust/issues/" in request_url:
+            # Still send the error but strip sensitive data
+            if "request" in event:
+                event["request"].pop("data", None)  # Remove request body
+                event["request"].pop("cookies", None)  # Remove cookies
+                event["request"].pop("headers", None)  # Remove headers (tokens!)
+
+                # Add sanitized message
+                event["request"]["_sanitized"] = (
+                    "Zero-trust endpoint data redacted. " "See server logs for issue_id reference."
+                )
+
+            # Remove exception context that might contain file data
+            if "exception" in event:
+                for exc in event["exception"].get("values", []):
+                    # Keep the error type and message, but remove local variables
+                    if "stacktrace" in exc:
+                        for frame in exc["stacktrace"].get("frames", []):
+                            frame.pop("vars", None)
+
+            return event
+
+        return event
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        send_default_pii=True,
-        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
+        send_default_pii=False,  # CHANGED: Don't send PII by default
+        before_send=_sentry_before_send,  # NEW: Filter zero-trust data
+        traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
         release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
@@ -395,6 +433,32 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_ON_GET = True
 
+
+class SensitiveDataFilter(logging.Filter):
+    """
+    Prevent accidental logging of sensitive zero-trust data.
+    """
+
+    def filter(self, record):
+        # Redact any log messages that might contain sensitive patterns
+        msg = str(record.getMessage()).lower()
+
+        # Check for patterns that suggest sensitive data
+        sensitive_patterns = [
+            "uploaded_files",
+            "request.files",
+            "poc",
+            "exploit",
+            "payload",
+        ]
+
+        if any(pattern in msg for pattern in sensitive_patterns):
+            record.msg = "[REDACTED: Potential sensitive data in log message]"
+            record.args = ()
+
+        return True
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -407,12 +471,22 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "simple",
-            "stream": "ext://sys.stdout",  # Explicitly use stdout
+            "stream": "ext://sys.stdout",
+            "filters": ["sensitive_data"],  # NEW: Add filter
         },
-        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
+            "filters": ["sensitive_data"],  # NEW: Add filter
+        },
+    },
+    "filters": {  # NEW: Add filters section
+        "sensitive_data": {
+            "()": "blt.settings.SensitiveDataFilter",
+        }
     },
     "root": {
-        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "level": "INFO" if not DEBUG else "DEBUG",  # INFO in production
         "handlers": ["console"],
     },
     "loggers": {
