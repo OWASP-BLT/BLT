@@ -331,7 +331,7 @@ jobs:
             const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
             
             // Format the month/year for display
-            const displayMonth = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const displayMonth = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
             
             // Generate leaderboard comment
             const commentMarker = '<!-- leaderboard-bot -->';
