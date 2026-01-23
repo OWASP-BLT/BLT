@@ -1,5 +1,6 @@
 import logging
 
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -157,7 +158,7 @@ def notify_moderators_on_content_flagged(sender, instance, created, **kwargs):
     """
     if created and instance.status == "pending":
         # Get all staff users and superusers who can moderate
-        moderators = User.objects.filter(is_staff=True) | User.objects.filter(is_superuser=True)
+        moderators = User.objects.filter(Q(is_staff=True) | Q(is_superuser=True)).distinct()
         moderators = moderators.distinct()
 
         # Get content preview
