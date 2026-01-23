@@ -1487,15 +1487,7 @@ class FlaggedContentAdmin(admin.ModelAdmin):
                 logger.info(f"Organization #{org_id} deleted after moderator rejection")
                 content_deleted = True
                 deleted_count += 1
-
-            if flagged.content_type.model == "user" and flagged.content_object:
-                user = flagged.content_object
-                user_id = user.id
-                user.delete()
-                logger.info(f"User #{user_id} deleted after moderator rejection")
-                content_deleted = True
-                deleted_count += 1
-
+                
             # Record the moderation action
             ModerationAction.objects.create(
                 flagged_content=flagged,
