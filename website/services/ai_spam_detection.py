@@ -102,15 +102,23 @@ class AISpamDetectionService:
 
     def _parse_response(self, ai_response: str) -> dict:
         """Parse AI response into structured format"""
+        required_keys = {"is_spam", "confidence", "reason", "category"}
+        
         try:
             # Try to extract JSON from response
             start = ai_response.find("{")
             end = ai_response.rfind("}") + 1
             if start != -1 and end > start:
                 result = json.loads(ai_response[start:end])
-                return result
+                
+                # Validate that all required keys are present
+                if required_keys.issubset(result.keys()):
+                    return result
+                else:
+                    missing_keys = required_keys - result.keys()
+                    logger.warning(f"AI response missing required keys: {missing_keys}")
         except Exception as e:
             logger.warning(f"Failed to parse JSON response: {e}")
 
-        # Fallback parsing
-        return {"is_spam": False, "confidence": 0.5, "reason": "Parsed from text analysis", "category": "unknown"}
+        # Fallback for invalid or incomplete JSON
+        return {"is_spam": False, "confidence": 0.0, "reason": "Invalid AI response format", "category": "unknown"}
