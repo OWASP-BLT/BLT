@@ -3734,11 +3734,12 @@ class FlaggedContent(models.Model):
 
     def get_content_preview(self):
         """Get a preview of the flagged content"""
-        if hasattr(self.content_object, "description"):
+        description = getattr(self.content_object, "description", None)
+        if description is not None:
             return (
-                self.content_object.description[:100] + "..."
-                if len(self.content_object.description) > 100
-                else self.content_object.description
+                description[:100] + "..."
+                if len(description) > 100
+                else description
             )
         elif hasattr(self.content_object, "name"):
             return self.content_object.name

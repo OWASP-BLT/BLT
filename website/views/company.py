@@ -209,7 +209,11 @@ class RegisterOrganizationView(View):
             logo_path = None
 
         spam_detector = AISpamDetectionService()
+        logger.info("=" * 100)
+        logger.info(f"Organization registration data: {str(data)}")
+        logger.info(f"Organization name: {organization_name}, URL: {organization_url}")
         spam_result = spam_detector.detect_spam(content=str(data), content_type="organization")
+        logger.info(f"Spam detection result: {spam_result}")
 
         try:
             with transaction.atomic():
@@ -298,9 +302,9 @@ class RegisterOrganizationView(View):
                         content_type=org_content_type,
                         object_id=organization.id,
                         reporter=None,  # Auto-detected by AI
-                        reason=spam_result.get("category", "other"),
-                        spam_score=spam_result["confidence"],
-                        detection_details=spam_result["reason"],
+                        reason=spam_result.get("category") or "other",
+                        spam_score=float(spam_result.get("confidence", 0.0) or 0.0),
+                        detection_details=str(spam_result.get("reason", "") or ""),
                         status="pending",
                     )
 
@@ -351,6 +355,10 @@ class RegisterOrganizationView(View):
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            logger.error(f"Failed to create organization: {e}\n{error_details}")
+            
             if "value too long" in str(e):
                 messages.error(
                     request,
