@@ -3041,6 +3041,9 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
             try:
                 headers = get_github_headers()
                 if not GITHUB_TOKEN:
+                    activity.success = False
+                    activity.error_message = "GitHub API token not configured"
+                    activity.save()
                     send_dm(
                         workspace_client,
                         user_id,
