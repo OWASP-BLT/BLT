@@ -208,7 +208,13 @@ class RegisterOrganizationView(View):
             logo_path = None
 
         spam_detector = AISpamDetectionService()
-        spam_result = spam_detector.detect_spam(content=str(data), content_type="organization")
+        user_generated_content_parts = [organization_name]
+        for optional_field in ("description", "about", "notes"):
+            if optional_field in data and data.get(optional_field):
+                user_generated_content_parts.append(str(data.get(optional_field, "")))
+        content_for_spam = "\n".join(part for part in user_generated_content_parts if part).strip()
+
+        spam_result = spam_detector.detect_spam(content=content_for_spam, content_type="organization")
 
         try:
             with transaction.atomic():
