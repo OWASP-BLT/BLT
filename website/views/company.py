@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import traceback
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -10,6 +11,7 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
@@ -292,8 +294,6 @@ class RegisterOrganizationView(View):
                     spam_result["is_spam"]
                     and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE
                 ):
-                    from django.contrib.contenttypes.models import ContentType
-
                     logger.warning(f"Spam organization detected: OrgID:{organization.id} OrgName:{organization.name}")
 
                     # Set organization as inactive (Organization model doesn't have is_hidden field)
@@ -359,8 +359,6 @@ class RegisterOrganizationView(View):
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
         except Exception as e:
-            import traceback
-
             error_details = traceback.format_exc()
             logger.error(f"Failed to create organization: {e}\n{error_details}")
 

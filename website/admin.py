@@ -1487,7 +1487,7 @@ class FlaggedContentAdmin(admin.ModelAdmin):
                 logger.info(f"Organization #{org_id} deleted after moderator rejection")
                 content_deleted = True
                 deleted_count += 1
-                
+
             # Record the moderation action
             ModerationAction.objects.create(
                 flagged_content=flagged,

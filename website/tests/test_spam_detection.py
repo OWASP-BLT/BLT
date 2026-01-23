@@ -423,10 +423,10 @@ class NotificationSignalTests(TestCase):
 
         # Assert notification was created
         self.assertTrue(Notification.objects.filter(notification_type="alert").exists())
-        
+
         notification = Notification.objects.filter(notification_type="alert").first()
         self.assertIsNotNone(notification)
-        
+
         # Assert notification contains required information
         self.assertIn("Spam Alert", notification.message)
         self.assertIn("confidence", notification.message.lower())

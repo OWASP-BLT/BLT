@@ -103,14 +103,14 @@ class AISpamDetectionService:
     def _parse_response(self, ai_response: str) -> dict:
         """Parse AI response into structured format"""
         required_keys = {"is_spam", "confidence", "reason", "category"}
-        
+
         try:
             # Try to extract JSON from response
             start = ai_response.find("{")
             end = ai_response.rfind("}") + 1
             if start != -1 and end > start:
                 result = json.loads(ai_response[start:end])
-                
+
                 # Validate that all required keys are present
                 if required_keys.issubset(result.keys()):
                     return result
