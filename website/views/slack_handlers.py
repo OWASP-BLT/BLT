@@ -3268,6 +3268,10 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                             all_contributors[login]["projects"].append(
                                 {"name": repo["name"], "contributions": contributor["contributions"]}
                             )
+                elif contributors_response.status_code == 403:
+                    # Rate limited - break early with partial results
+                    logger.warning("GitHub rate limit hit while fetching contributors")
+                    break
 
                 # Small delay to avoid rate limiting
                 time.sleep(0.1)

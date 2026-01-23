@@ -324,6 +324,10 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {"id": "U123", "name": "testuser", "real_name": "Test User"},
+        }
 
         # Mock GitHub API response for repositories
         mock_repos_response = MagicMock()
@@ -397,6 +401,10 @@ class SlackHandlerTests(TestCase):
         mock_webclient.return_value = mock_client
         mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
         mock_client.chat_postMessage.return_value = {"ok": True}
+        mock_client.users_info.return_value = {
+            "ok": True,
+            "user": {"id": "U123", "name": "testuser", "real_name": "Test User"},
+        }
 
         # Mock GitHub API search response for a specific project
         mock_search_response = MagicMock()
