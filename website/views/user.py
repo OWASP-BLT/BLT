@@ -170,7 +170,9 @@ def profile_edit(request):
             role = form.cleaned_data.get("role", "")
 
             if bio_content:
-                spam_result = spam_detector.detect_spam(f"Bio content: {bio_content}, Role: {role}", content_type="user")
+                spam_result = spam_detector.detect_spam(
+                    f"Bio content: {bio_content}, Role: {role}", content_type="user"
+                )
                 if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_GENERAL:
                     messages.error(request, f"Profile update flagged: {spam_result['reason']}")
                     return render(request, "profile_edit.html", {"form": form})
