@@ -3269,6 +3269,7 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
         sorted_repos = sorted(all_repos, key=lambda x: x.get("stargazers_count", 0), reverse=True)[:10]
 
         start_time = time.time()
+        processed_repos = 0
 
         for repo in sorted_repos:
             if time.time() - start_time > 30:  # 30s timeout
@@ -3298,6 +3299,7 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                             all_contributors[login]["projects"].append(
                                 {"name": repo["name"], "contributions": contributor["contributions"]}
                             )
+                    processed_repos = 0
                 elif contributors_response.status_code == 403:
                     # Rate limited - break early with partial results
                     logger.warning("GitHub rate limit hit while fetching contributors")
@@ -3323,7 +3325,7 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"Aggregated from top {len(sorted_repos)} OWASP projects by stars",
+                        "text": f"Aggregated from top {processed_repos} of {len(sorted_repos)} OWASP projects by stars",
                     }
                 ],
             },
