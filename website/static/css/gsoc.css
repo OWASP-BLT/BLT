@@ -1,4 +1,4 @@
-mentor-description-container {
+.mentor-description-container {
     max-height: 8rem;
     overflow-y: auto;
     scrollbar-width: none;
