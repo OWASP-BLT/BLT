@@ -3109,6 +3109,9 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
         response = requests.get(search_url, headers=headers, params=params, timeout=10)
 
         if response.status_code != 200:
+            activity.success = False
+            activity.error_message = f"GitHub search failed: {response.status_code}"
+            activity.save()
             send_dm(
                 workspace_client,
                 user_id,
@@ -3174,7 +3177,7 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"Total Contributors: {len(human_contributors)} | Repository: <{repo['html_url']}|{repo['full_name']}>",
+                        "text": f"Contributors shown: {len(human_contributors)} (max 100) | Repository: <{repo['html_url']}|{repo['full_name']}>",
                     }
                 ],
             },
@@ -3229,6 +3232,9 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
         all_repos = get_all_owasp_repos()
 
         if not all_repos:
+            activity.success = False
+            activity.error_message = "Failed to fetch OWASP repositories"
+            activity.save()
             send_dm(
                 workspace_client,
                 user_id,

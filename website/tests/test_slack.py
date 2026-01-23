@@ -318,6 +318,7 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     @patch("website.views.slack_handlers.requests.get")
+    @patch("website.views.slack_handlers.threading.Thread")
     def test_slack_command_contributors_all(self, mock_requests_get, mock_webclient, mock_verify):
         # Mock the Slack client
         mock_client = MagicMock()
@@ -355,14 +356,26 @@ class SlackHandlerTests(TestCase):
         ]
 
         # Setup mock to return different responses based on URL
+        empty_repos_response = MagicMock()
+        empty_repos_response.status_code = 200
+        empty_repos_response.json.return_value = []
+
         def mock_get_side_effect(url, **kwargs):
-            if "repos?page=" in url or "repos" in url:
-                return mock_repos_response
+            if "orgs/OWASP/repos" in url:
+                return mock_repos_response if "page=1" in url else empty_repos_response
             elif "contributors" in url:
                 return mock_contributors_response
             return MagicMock(status_code=404)
 
         mock_requests_get.side_effect = mock_get_side_effect
+
+        def thread_factory(*args, **kwargs):
+            target = kwargs.get("target")
+            thread = MagicMock()
+            thread.start.side_effect = target
+            return thread
+
+        mock_thread.side_effect = thread_factory
 
         # Create test request for /contributors (no project specified)
         request = MagicMock()
@@ -395,6 +408,7 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
     @patch("website.views.slack_handlers.requests.get")
+    @patch("website.views.slack_handlers.threading.Thread")
     def test_slack_command_contributors_specific_project(self, mock_requests_get, mock_webclient, mock_verify):
         # Mock the Slack client
         mock_client = MagicMock()
@@ -432,15 +446,31 @@ class SlackHandlerTests(TestCase):
             }
         ]
 
-        # Setup mock to return different responses based on URL
+        # Mock empty second page for search results
+        empty_search_response = MagicMock()
+        empty_search_response.status_code = 200
+        empty_search_response.json.return_value = {"items": []}
+
+        # GitHub repository search (paginated)
         def mock_get_side_effect(url, **kwargs):
             if "search/repositories" in url:
-                return mock_search_response
+                if "page=1" in url:
+                    return mock_search_response  # first page
+                else:
+                    return empty_search_response  # next pages return empty
             elif "contributors" in url:
                 return mock_contributors_response
             return MagicMock(status_code=404)
 
         mock_requests_get.side_effect = mock_get_side_effect
+
+        def thread_factory(*args, **kwargs):
+            target = kwargs.get("target")
+            thread = MagicMock()
+            thread.start.side_effect = target
+            return thread
+
+        mock_thread.side_effect = thread_factory
 
         # Create test request for /contributors amass
         request = MagicMock()
