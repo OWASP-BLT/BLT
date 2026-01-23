@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from collections import defaultdict
 
@@ -12,6 +13,8 @@ from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Re
 from website.utils import fetch_github_user_data
 
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
 
@@ -64,7 +67,7 @@ def get_github_data(request):
 
             cached_data = cache.get(f"github_data_{github_username}")
             if cached_data:
-                print("Found cached user data")
+                logger.debug("Found cached user data")
                 user_data = cached_data
             else:
                 user_data = fetch_github_user_data(github_username)
@@ -80,7 +83,7 @@ def get_github_data(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_github_data: {e}", exc_info=True)
+            logger.error(f"Error in get_github_data: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -88,22 +91,21 @@ def get_github_data(request):
 
 def preprocess_user_data(user_data):
     user_tags = defaultdict(int)
+    ALLOWED_NORMALIZED_TAGS = {normalize_tag(tag) for tag in ALLOWED_TAGS}
 
     for repo in user_data["repositories"]:
         if repo.get("description"):
             words = tokenize(repo["description"])
             for word in words:
                 normalized_word = normalize_tag(word)
-                if normalized_word in TAG_NORMALIZATION.values():
+                if normalized_word in ALLOWED_NORMALIZED_TAGS:
                     user_tags[normalized_word] += 1
 
     if user_data.get("top_topics"):
         for topic in user_data["top_topics"]:
             normalized_topic = normalize_tag(topic)
-            if normalized_topic in TAG_NORMALIZATION.values():
-                user_tags[normalized_topic] = user_tags.get(normalized_topic, 0) + 1
-            else:
-                user_tags[normalized_topic] = 1
+            if normalized_topic in ALLOWED_NORMALIZED_TAGS:
+                user_tags[normalized_topic] += 1
 
     user_tags = sorted(user_tags.items(), key=lambda x: x[1], reverse=True)
 
@@ -115,8 +117,8 @@ def preprocess_user_data(user_data):
         if (bytes_count / total_bytes * 100) >= 0.05
     }
 
-    print(user_tags)
-    print(language_weights)
+    logger.debug(f"User tags: {user_tags}")
+    logger.debug(f"Language weights: {language_weights}")
     return user_tags, language_weights
 
 
@@ -128,6 +130,7 @@ def repo_recommender(user_tags, language_weights):
         Repo.objects.filter(Q(primary_language__in=language_list) | Q(tags__name__in=tag_names))
         .distinct()
         .prefetch_related("tags")
+        .select_related("project")
     )
 
     repos = repos.annotate(
@@ -186,7 +189,7 @@ def get_recommended_repos(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_repos: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_repos: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -264,34 +267,35 @@ def get_recommended_communities(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_communities: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_communities: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
-    matching_channels = OsshDiscussionChannel.objects.filter(Q(tags__name__in=[tag[0] for tag in user_tags])).distinct()
+    tag_names = [tag for tag, _ in user_tags]
+    matching_channels = (
+        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
+    )
 
     recommended_channels = []
+    tag_weight_map = dict(user_tags)
+
     for channel in matching_channels:
-        tag_matches = sum(1 for tag in user_tags if tag[0] in channel.tags.values_list("name", flat=True))
+        channel_tag_names = {tag.name for tag in channel.tags.all()}
 
-        language_weight = sum(
-            language_weights.get(tag[1], 0)
-            for tag in user_tags
-            if tag[0] in channel.tags.values_list("name", flat=True)
-        )
+        # Number of user tags present on this channel
+        tag_matches = sum(1 for tag in channel_tag_names if tag in tag_weight_map)
 
-        relevance_score = tag_matches + language_weight + (channel.member_count // 1000)
+        # Sum weights for languages that appear as tags on this channel
+        language_weight = sum(language_weights.get(tag, 0) for tag in channel_tag_names)
+
+        relevance_score = tag_matches + language_weight
 
         if relevance_score > 0:
-            matching_tags = [tag.name for tag in channel.tags.all() if tag.name in dict(user_tags)]
-            matching_languages = [
-                tag[1]
-                for tag in user_tags
-                if tag[0] in channel.tags.values_list("name", flat=True) and tag[1] in language_weights
-            ]
+            matching_tags = [tag for tag in channel_tag_names if tag in tag_weight_map]
+            matching_languages = [lang for lang in channel_tag_names if lang in language_weights]
 
             reasoning = []
             if matching_tags:
@@ -338,7 +342,7 @@ def get_recommended_discussion_channels(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -412,7 +416,7 @@ def get_recommended_articles(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_articles: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_articles: {e}")  # Print instead of logging
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)

@@ -1,35 +1,70 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-    <div class="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-900 to-black p-6 text-white relative">
+    <div class="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-6 relative">
         {% include "includes/sidenav.html" %}
-        <div class="w-full max-w-lg bg-gray-800 p-10 rounded-lg shadow-lg relative mt-28 border border-gray-700">
-            <div class="absolute -top-10 left-1/2 transform -translate-x-1/2">
-                <i class="fas fa-sparkles text-yellow-300 text-5xl animate-ping"></i>
+        <div class="w-full max-w-2xl mt-20">
+            <!-- Header Section -->
+            <div class="text-center mb-8">
+                <div class="inline-block p-3 bg-gradient-to-br from-[#e74c3c] to-red-700 rounded-full mb-4">
+                    <i class="fas fa-hat-wizard text-white text-4xl"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-3">Open Source Sorting Hat</h1>
+                <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+                    Let our AI-powered sorting hat analyze your GitHub profile and recommend the perfect open source projects, communities, and resources tailored to your interests and expertise.
+                </p>
             </div>
-            <form method="post" class="relative z-10" action="{% url 'ossh_results' %}">
-                {% csrf_token %}
-                <div class="mb-6">
-                    <label for="github-username" class="block text-xl font-semibold">GitHub Username</label>
-                    <div class="relative mt-2">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-4">
-                            <i class="fas fa-hat-wizard text-yellow-300 text-2xl"></i>
-                        </span>
-                        <input type="text"
-                               name="github-username"
-                               id="github-username"
-                               class="pl-14 pr-4 py-4 block w-full text-lg shadow-md bg-gray-700 border border-gray-600 text-white rounded-md focus:ring-yellow-400 focus:border-yellow-400"
-                               placeholder="Enter your GitHub username">
+            <!-- Form Card -->
+            <div class="bg-white dark:bg-gray-800 p-10 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                <form method="post" class="relative z-10" action="{% url 'ossh_results' %}">
+                    {% csrf_token %}
+                    <div class="mb-6">
+                        <label for="github-username"
+                               class="block text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            GitHub Username
+                        </label>
+                        <div class="relative mt-2">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4">
+                                <i class="fab fa-github text-[#e74c3c] text-2xl"></i>
+                            </span>
+                            <input type="text"
+                                   name="github-username"
+                                   id="github-username"
+                                   class="pl-14 pr-4 py-4 block w-full text-lg shadow-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                   placeholder="Enter your GitHub username">
+                        </div>
                     </div>
+                    <div class="mt-8">
+                        <button type="submit"
+                                class="w-full inline-flex items-center justify-center px-6 py-4 border border-transparent text-xl font-bold rounded-md shadow-md text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transform transition-all duration-300 hover:scale-105">
+                            <i class="fas fa-magic mr-3"></i> Find My Projects
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <!-- Info Section -->
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <div class="text-[#e74c3c] text-2xl mb-2">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Smart Matching</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Projects that match your skills</p>
                 </div>
-                <div class="mt-8">
-                    <button type="submit"
-                            class="w-full inline-flex items-center justify-center px-6 py-4 border border-transparent text-xl font-bold rounded-md shadow-md text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transform transition-all duration-300 hover:scale-105">
-                        <i class="fas fa-paper-plane mr-3"></i> Submit
-                    </button>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <div class="text-[#e74c3c] text-2xl mb-2">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Communities</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Connect with like-minded developers</p>
                 </div>
-            </form>
-            <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 opacity-0 hover:opacity-10 transition-opacity duration-500 z-0">
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <div class="text-[#e74c3c] text-2xl mb-2">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-1">Resources</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Curated learning materials</p>
+                </div>
             </div>
         </div>
     </div>

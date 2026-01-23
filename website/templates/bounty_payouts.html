@@ -19,12 +19,16 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="w-full min-h-[100vh] flex flex-col items-center bg-gray-50 pb-12">
+    <div class="w-full min-h-[100vh] flex flex-col items-center bg-gray-50 dark:bg-gray-900 pb-12">
         <div class="w-[98%] lg:w-[98%] xl:w-[96%] mt-8">
             <div class="flex flex-col items-start justify-between mb-8 md:flex-row md:items-center">
                 <div>
-                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Bounty Payouts</h1>
-                    <p class="text-gray-600 text-lg">Manage and track bounty payments for GitHub issues</p>
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 hover:text-gray-900 dark:hover:text-white mb-2">
+                        Bounty Payouts
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-lg">
+                        Manage and track bounty payments for GitHub issues
+                    </p>
                 </div>
                 <div class="mt-4 md:mt-0 space-y-2 md:space-y-0 md:space-x-4 flex flex-col md:flex-row">
                     <!-- Refresh Issues Button - Only visible to staff -->
@@ -33,7 +37,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="refresh_issues">
                             <button type="submit"
-                                    class="px-4 py-2 bg-[#e74c3c] hover:bg-opacity-90 text-white rounded-md shadow-sm transition duration-300 font-medium flex items-center justify-center w-full md:w-auto">
+                                    class="px-4 py-2 bg-[#e74c3c] hover:bg-opacity-90 hover:text-white text-white rounded-md shadow-sm transition duration-300 font-medium flex items-center justify-center w-full md:w-auto">
                                 <svg class="w-5 h-5 mr-2"
                                      fill="none"
                                      stroke="currentColor"
@@ -49,60 +53,60 @@
                 </div>
             </div>
             <!-- Filter Section -->
-            <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm mb-6">
                 <div class="flex flex-col md:flex-row md:items-center gap-4">
                     <div class="flex flex-col">
-                        <span class="text-lg font-semibold text-gray-800">Total Issues: {{ total_count }}</span>
+                        <span class="text-lg font-semibold text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white">Total Issues: {{ total_count }}</span>
                         <div class="flex flex-wrap gap-3 mt-1">
-                            <span class="text-sm text-green-600 font-medium">
+                            <span class="text-sm text-green-600 font-medium hover:text-gray-900 dark:hover:text-white">
                                 <i class="fa fa-check-circle mr-1"></i>Paid: ${{ paid_count|default:0|multiply:5 }}
                             </span>
-                            <span class="text-sm text-red-600 font-medium">
+                            <span class="text-sm text-red-600 font-medium hover:text-gray-900 dark:hover:text-white">
                                 <i class="fa fa-exclamation-circle mr-1"></i>Unpaid: ${{ unpaid_count|default:0|multiply:5 }}
                             </span>
                         </div>
-                        <span class="text-sm text-gray-600 mt-1">
+                        <span class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mt-1">
                             Showing closed issues
                             {% if current_payment_status != 'all' %}
                                 that are
                                 {% if current_payment_status == 'paid' %}
                                     <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245+label%3Apaid"
                                        target="_blank"
-                                       class="text-blue-600 hover:text-[#e74c3c] hover:underline">paid</a>
+                                       class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">paid</a>
                                 {% else %}
                                     <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245+-label%3Apaid"
                                        target="_blank"
-                                       class="text-blue-600 hover:text-[#e74c3c] hover:underline">unpaid</a>
+                                       class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">unpaid</a>
                                 {% endif %}
                             {% else %}
                                 <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245"
                                    target="_blank"
-                                   class="text-blue-600 hover:text-[#e74c3c] hover:underline">(view on GitHub)</a>
+                                   class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">(view on GitHub)</a>
                             {% endif %}
                         </span>
                     </div>
                     <div class="flex flex-wrap gap-2 ml-auto">
-                        <span class="text-gray-600 mr-2 self-center">Payment Status:</span>
+                        <span class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mr-2 self-center">Payment Status:</span>
                         <a href="?payment_status=all"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 {% if current_payment_status == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                             All
                         </a>
                         <a href="?payment_status=paid"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 {% if current_payment_status == 'paid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'paid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                             Paid
                         </a>
                         <a href="?payment_status=unpaid"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 {% if current_payment_status == 'unpaid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'unpaid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                             Unpaid
                         </a>
                     </div>
                 </div>
             </div>
-            <!-- Help Info Section -->
-            <div class="bg-blue-50 p-4 rounded-lg shadow-sm mb-6 border border-blue-100">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+            <!-- Help Info Section - Fixed: Changed from blue-50 to dark:bg-gray-800 -->
+            <div class="bg-blue-50 dark:bg-gray-800 p-4 rounded-lg shadow-sm mb-6 border border-blue-100 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white mb-2 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-5 w-5 mr-2 text-blue-600"
+                         class="h-5 w-5 mr-2 text-blue-600 hover:text-gray-900 dark:hover:text-white"
                          fill="none"
                          viewBox="0 0 24 24"
                          stroke="currentColor">
@@ -110,56 +114,58 @@
                     </svg>
                     Information About Bounty Issues
                 </h3>
-                <div class="text-sm text-gray-700">
+                <div class="text-sm text-gray-700 dark:text-gray-300">
                     <p class="mb-2">
-                        <span class="font-medium">How issues are added:</span> Issues from GitHub with the <code class="bg-gray-100 px-1 py-0.5 rounded">$5</code> label are fetched and displayed here.
+                        <span class="font-medium hover:text-gray-900 dark:hover:text-white">How issues are added:</span> Issues from GitHub with the <code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded hover:text-gray-900 dark:hover:text-white">$5</code> label are fetched and displayed here.
                         The refresh happens when a staff member clicks "Fetch New GitHub Issues with $5 Bounty".
                     </p>
                     <p class="mb-0">
-                        <span class="font-medium">Note:</span> If you see issues locally that aren't on production,
-                        it may be due to <a href="#" class="text-blue-600 hover:text-[#e74c3c] hover:underline">caching</a>,
-                        <a href="#" class="text-blue-600 hover:text-[#e74c3c] hover:underline">GitHub API rate limits</a>, or
+                        <span class="font-medium hover:text-gray-900 dark:hover:text-white">Note:</span> If you see issues locally that aren't on production,
+                        it may be due to <a href="#"
+    class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">caching</a>,
+                        <a href="#"
+                           class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">GitHub API rate limits</a>, or
                         issues needing to be refreshed on production.
                     </p>
                 </div>
             </div>
             <!-- Issues Table - Updated container with better overflow handling -->
-            <div class="w-full bg-white rounded-lg shadow-sm mb-6">
+            <div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
                 <!-- Table wrapper with proper overflow handling -->
                 <div class="overflow-x-auto sm:block min-w-full max-w-full">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-900">
                             <tr>
                                 <th scope="col"
-                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white uppercase tracking-wider whitespace-nowrap">
                                     Issue
                                 </th>
                                 <th scope="col"
-                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white uppercase tracking-wider whitespace-nowrap">
                                     Amount
                                 </th>
                                 <th scope="col"
-                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white uppercase tracking-wider whitespace-nowrap">
                                     Assignee
                                 </th>
                                 <th scope="col"
-                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white uppercase tracking-wider whitespace-nowrap">
                                     Payment Status
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {% for issue in issues %}
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-4 sm:px-6 py-4">
                                         <div class="flex items-start">
                                             <!-- Issue state indicator -->
                                             <span class="flex-shrink-0 w-3 h-3 mt-1.5 rounded-full {% if issue.state == 'open' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
                                             <div class="ml-3">
-                                                <div class="text-sm font-medium text-gray-900 break-words flex items-center">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100 break-words flex items-center">
                                                     <a href="{{ issue.url|escape }}"
                                                        target="_blank"
-                                                       class="hover:text-[#e74c3c]">{{ issue.title|escape }}</a>
+                                                       class="hover:text-gray-900 dark:hover:text-white">{{ issue.title|escape }}</a>
                                                     {% if request.user.is_superuser %}
                                                         <form method="post"
                                                               action=""
@@ -169,7 +175,7 @@
                                                             <input type="hidden" name="action" value="delete_issue">
                                                             <input type="hidden" name="issue_id" value="{{ issue.id }}">
                                                             <button type="submit"
-                                                                    class="text-[#e74c3c] hover:text-opacity-70 transition-colors"
+                                                                    class="text-[#e74c3c] hover:text-opacity-70 hover:text-gray-900 dark:hover:text-white transition-colors"
                                                                     title="Delete this issue">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                      class="h-4 w-4"
@@ -184,7 +190,7 @@
                                                     {% if request.user.is_staff %}
                                                         <a href="{% url 'admin:website_githubissue_change' issue.id %}"
                                                            target="_blank"
-                                                           class="ml-2 text-blue-600 hover:text-[#e74c3c] transition-colors"
+                                                           class="ml-2 text-blue-600 hover:text-gray-900 dark:hover:text-white transition-colors"
                                                            title="Edit in admin">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  class="h-4 w-4"
@@ -199,7 +205,7 @@
                                                             <input type="hidden" name="action" value="refresh_assignee">
                                                             <input type="hidden" name="issue_id" value="{{ issue.id }}">
                                                             <button type="submit"
-                                                                    class="text-blue-600 hover:text-[#e74c3c] transition-colors"
+                                                                    class="text-blue-600 hover:text-gray-900 dark:hover:text-white transition-colors"
                                                                     title="Refresh assignee from GitHub">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                      class="h-4 w-4"
@@ -216,7 +222,7 @@
                                                             <input type="hidden" name="action" value="refresh_pull_requests">
                                                             <input type="hidden" name="issue_id" value="{{ issue.id }}">
                                                             <button type="submit"
-                                                                    class="text-blue-600 hover:text-[#e74c3c] transition-colors"
+                                                                    class="text-blue-600 hover:text-gray-900 dark:hover:text-white transition-colors"
                                                                     title="Refresh linked pull requests from GitHub">
                                                                 <svg xmlns="http://www.w3.org/2000/svg"
                                                                      class="h-4 w-4"
@@ -229,13 +235,15 @@
                                                         </form>
                                                     {% endif %}
                                                 </div>
-                                                <div class="text-xs text-gray-500">{{ issue.repo.name }} • {{ issue.created_at|date:"M d, Y" }}</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                                                    {{ issue.repo.name }} • {{ issue.created_at|date:"M d, Y" }}
+                                                </div>
                                                 <!-- Linked Pull Requests Section -->
                                                 {% if issue.linked_pull_requests.all %}
                                                     <div class="mt-2 text-xs">
-                                                        <div class="text-gray-700 font-medium mb-1">
+                                                        <div class="text-gray-700 dark:text-gray-300 font-medium mb-1 hover:text-gray-900 dark:hover:text-white">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
-                                                                 class="h-3.5 w-3.5 inline-block -mt-0.5 text-[#e74c3c]"
+                                                                 class="h-3.5 w-3.5 inline-block -mt-0.5 text-[#e74c3c] hover:text-gray-900 dark:hover:text-white"
                                                                  fill="none"
                                                                  viewBox="0 0 24 24"
                                                                  stroke="currentColor">
@@ -247,7 +255,7 @@
                                                             {% for pr in issue.linked_pull_requests.all %}
                                                                 <li class="flex items-center">
                                                                     <svg xmlns="http://www.w3.org/2000/svg"
-                                                                         class="h-3 w-3 mr-1 text-purple-600"
+                                                                         class="h-3 w-3 mr-1 text-purple-600 hover:text-gray-900 dark:hover:text-white"
                                                                          fill="none"
                                                                          viewBox="0 0 24 24"
                                                                          stroke="currentColor">
@@ -255,9 +263,9 @@
                                                                     </svg>
                                                                     <a href="{{ pr.url }}"
                                                                        target="_blank"
-                                                                       class="text-blue-600 hover:text-[#e74c3c] truncate">
+                                                                       class="text-blue-600 hover:text-gray-900 dark:hover:text-white truncate">
                                                                         #{{ pr.issue_id }}: {{ pr.title|truncatechars:40 }}
-                                                                        <span class="text-gray-500 font-normal">
+                                                                        <span class="text-gray-500 dark:text-gray-500 font-normal hover:text-gray-900 dark:hover:text-white">
                                                                             by
                                                                             {% if pr.contributor %}
                                                                                 {{ pr.contributor.name }}
@@ -269,11 +277,11 @@
                                                                         </span>
                                                                     </a>
                                                                     {% if pr.is_merged %}
-                                                                        <span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded text-[10px] font-medium">Merged</span>
+                                                                        <span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 hover:text-gray-900 dark:hover:text-white rounded text-[10px] font-medium">Merged</span>
                                                                     {% elif pr.state == 'closed' %}
-                                                                        <span class="ml-1 px-1.5 py-0.5 bg-red-100 text-red-800 rounded text-[10px] font-medium">Closed</span>
+                                                                        <span class="ml-1 px-1.5 py-0.5 bg-red-100 text-red-800 hover:text-gray-900 dark:hover:text-white rounded text-[10px] font-medium">Closed</span>
                                                                     {% else %}
-                                                                        <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-medium">Open</span>
+                                                                        <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 hover:text-gray-900 dark:hover:text-white rounded text-[10px] font-medium">Open</span>
                                                                     {% endif %}
                                                                 </li>
                                                             {% endfor %}
@@ -281,9 +289,9 @@
                                                     </div>
                                                 {% elif issue.type == 'issue' and request.user.is_staff %}
                                                     <div class="mt-2 text-xs">
-                                                        <div class="text-gray-500 italic flex items-center">
+                                                        <div class="text-gray-500 dark:text-gray-500 italic flex items-center hover:text-gray-900 dark:hover:text-white">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
-                                                                 class="h-3.5 w-3.5 mr-1 text-gray-400"
+                                                                 class="h-3.5 w-3.5 mr-1 text-gray-400 dark:text-gray-600 hover:text-gray-900 dark:hover:text-white"
                                                                  fill="none"
                                                                  viewBox="0 0 24 24"
                                                                  stroke="currentColor">
@@ -291,7 +299,7 @@
                                                             </svg>
                                                             No linked pull requests found. Click the
                                                             <svg xmlns="http://www.w3.org/2000/svg"
-                                                                 class="inline-block h-3.5 w-3.5 text-[#e74c3c]"
+                                                                 class="inline-block h-3.5 w-3.5 text-[#e74c3c] hover:text-gray-900 dark:hover:text-white"
                                                                  fill="none"
                                                                  viewBox="0 0 24 24"
                                                                  stroke="currentColor">
@@ -309,7 +317,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                        <div class="text-xl font-bold text-green-600">$5</div>
+                                        <div class="text-xl font-bold text-green-600 hover:text-gray-900 dark:hover:text-white">$5</div>
                                     </td>
                                     <td class="px-4 sm:px-6 py-4">
                                         <div class="flex items-center">
@@ -324,15 +332,15 @@
                                                 <div>
                                                     <a href="{{ issue.assignee.github_url }}"
                                                        target="_blank"
-                                                       class="font-medium text-blue-600 hover:underline">
+                                                       class="font-medium text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">
                                                         {{ issue.assignee.name }}
                                                     </a>
                                                     {% if issue.user_profile and issue.user_profile.bch_address %}
-                                                        <div class="text-xs text-gray-600 mt-1">
+                                                        <div class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mt-1">
                                                             <i class="fa fa-bitcoin" aria-hidden="true"></i>
                                                             <span class="bch-address"
                                                                   title="{{ issue.user_profile.bch_address|escape }}">{{ issue.user_profile.bch_address|slice:":15"|escape }}...</span>
-                                                            <button class="copy-btn text-blue-500 hover:text-blue-700 ml-1"
+                                                            <button class="copy-btn text-blue-500 hover:text-blue-700 hover:text-gray-900 dark:hover:text-white ml-1"
                                                                     onclick="copyBchAddress('{{ issue.user_profile.bch_address|escapejs }}')">
                                                                 <i class="fa fa-copy"></i>
                                                             </button>
@@ -340,31 +348,33 @@
                                                     {% endif %}
                                                 </div>
                                             {% else %}
-                                                <span class="text-gray-500">No assignee</span>
+                                                <span class="text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white">No assignee</span>
                                             {% endif %}
                                         </div>
                                     </td>
                                     <td class="px-4 sm:px-6 py-4">
                                         {% if issue.sponsors_tx_id or issue.bch_tx_id %}
-                                            <div class="text-sm font-medium text-green-600">
+                                            <div class="text-sm font-medium text-green-600 hover:text-gray-900 dark:hover:text-white">
                                                 {% if issue.sponsors_tx_id %}
                                                     Paid with Sponsors
-                                                    <div class="text-xs text-gray-500 font-mono break-all mt-1">TX: {{ issue.sponsors_tx_id|escape }}</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white font-mono break-all mt-1">
+                                                        TX: {{ issue.sponsors_tx_id|escape }}
+                                                    </div>
                                                 {% elif issue.bch_tx_id %}
                                                     Paid with BCH
-                                                    <div class="text-xs text-gray-500 font-mono break-all mt-1">
+                                                    <div class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white font-mono break-all mt-1">
                                                         TX: <a href="https://blockchair.com/bitcoin-cash/transaction/{{ issue.bch_tx_id|escape }}"
     target="_blank"
-    class="text-blue-600 hover:text-blue-800 hover:underline">{{ issue.bch_tx_id|escape }}</a>
+    class="text-blue-600 hover:text-blue-800 hover:text-gray-900 dark:hover:text-white hover:underline">{{ issue.bch_tx_id|escape }}</a>
                                                     </div>
                                                 {% endif %}
                                             </div>
-                                            <div class="text-xs text-gray-500 mt-1">
+                                            <div class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white mt-1">
                                                 {% if issue.p2p_payment_created_at %}Paid on {{ issue.p2p_payment_created_at|date:"M d, Y" }}{% endif %}
                                                 {% if issue.sent_by_user %}by {{ issue.sent_by_user.username|escape }}{% endif %}
                                             </div>
                                         {% else %}
-                                            <div class="text-sm font-medium text-red-600 mb-2">Unpaid</div>
+                                            <div class="text-sm font-medium text-red-600 hover:text-gray-900 dark:hover:text-white mb-2">Unpaid</div>
                                             {% if request.user.is_superuser %}
                                                 <form method="post" action="" class="mt-1 flex flex-col gap-1">
                                                     {% csrf_token %}
@@ -373,7 +383,7 @@
                                                     <div class="relative flex items-center">
                                                         <input type="text"
                                                                name="tx_id"
-                                                               class="w-full py-1.5 px-2 text-xs border border-gray-300 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-mono"
+                                                               class="w-full py-1.5 px-2 text-xs border border-gray-300 dark:border-gray-600 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-mono dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50"
                                                                placeholder="Enter transaction ID"
                                                                required
                                                                pattern="(ch_[a-zA-Z0-9]+|\b[a-fA-F0-9]{64}\b)"
@@ -383,7 +393,7 @@
                                                                id="payment_method_{{ issue.id }}"
                                                                value="">
                                                         <button type="submit"
-                                                                class="ml-1 p-1.5 bg-[#e74c3c] text-white rounded hover:bg-opacity-90">
+                                                                class="ml-1 p-1.5 bg-[#e74c3c] text-white rounded hover:bg-opacity-90 hover:text-white">
                                                             <svg class="w-4 h-4"
                                                                  fill="none"
                                                                  stroke="currentColor"
@@ -394,11 +404,12 @@
                                                         </button>
                                                     </div>
                                                     <div class="flex items-center justify-between">
-                                                        <span class="text-xs text-gray-500 mt-1" id="tx_type_{{ issue.id }}">Enter ch_* for Sponsors or BCH hash</span>
+                                                        <span class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white mt-1"
+                                                              id="tx_type_{{ issue.id }}">Enter ch_* for Sponsors or BCH hash</span>
                                                         <a id="explorer_link_{{ issue.id }}"
                                                            href="#"
                                                            target="_blank"
-                                                           class="text-xs text-blue-600 hover:text-blue-800 ml-2 hidden">
+                                                           class="text-xs text-blue-600 hover:text-blue-800 hover:text-gray-900 dark:hover:text-white ml-2 hidden">
                                                             View in Explorer
                                                         </a>
                                                     </div>
@@ -443,7 +454,7 @@
                                                 </script>
                                             {% else %}
                                                 {% if request.user.is_staff %}
-                                                    <div class="text-xs text-gray-500 mt-1">
+                                                    <div class="text-xs text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white mt-1">
                                                         <i class="fa fa-lock mr-1"></i> Only superusers can record payments
                                                     </div>
                                                 {% endif %}
@@ -453,9 +464,10 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="4" class="px-4 sm:px-6 py-10 text-center text-gray-500">
+                                    <td colspan="4"
+                                        class="px-4 sm:px-6 py-10 text-center text-gray-500 dark:text-gray-500">
                                         <div class="flex flex-col items-center">
-                                            <svg class="w-12 h-12 text-gray-400 mb-4"
+                                            <svg class="w-12 h-12 text-gray-400 dark:text-gray-600 mb-4"
                                                  fill="none"
                                                  stroke="currentColor"
                                                  viewBox="0 0 24 24"
@@ -463,13 +475,17 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                                 </path>
                                             </svg>
-                                            <p class="text-gray-600 font-medium">No bounty issues found</p>
-                                            <p class="text-gray-500 text-sm mt-1">Try changing your filters or click "Fetch New GitHub Issues with $5 Bounty"</p>
-                                            <div class="mt-3 text-sm text-gray-600">
+                                            <p class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium">
+                                                No bounty issues found
+                                            </p>
+                                            <p class="text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white text-sm mt-1">
+                                                Try changing your filters or click "Fetch New GitHub Issues with $5 Bounty"
+                                            </p>
+                                            <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
                                                 <p class="mb-1">
                                                     Recent issues like <a href="https://github.com/OWASP-BLT/BLT/issues/2912"
     target="_blank"
-    class="text-blue-600 hover:text-[#e74c3c] hover:underline">#2912</a> may not appear yet.
+    class="text-blue-600 hover:text-gray-900 dark:hover:text-white hover:underline">#2912</a> may not appear yet.
                                                 </p>
                                                 <p>They need to be refreshed from GitHub manually by a staff member.</p>
                                             </div>
@@ -479,7 +495,7 @@
                                                         {% csrf_token %}
                                                         <input type="hidden" name="action" value="refresh_issues">
                                                         <button type="submit"
-                                                                class="px-4 py-2 bg-[#e74c3c] hover:bg-opacity-90 text-white rounded-md shadow-sm transition duration-300 font-medium flex items-center justify-center">
+                                                                class="px-4 py-2 bg-[#e74c3c] hover:bg-opacity-90 hover:text-white text-white rounded-md shadow-sm transition duration-300 font-medium flex items-center justify-center">
                                                             <svg class="w-5 h-5 mr-2"
                                                                  fill="none"
                                                                  stroke="currentColor"
@@ -503,16 +519,16 @@
             </div>
             <!-- Pagination -->
             {% if is_paginated %}
-                <div class="w-full bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow-sm">
+                <div class="w-full bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6 rounded-lg shadow-sm">
                     <div class="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                         <div class="mb-4 sm:mb-0">
-                            <p class="text-sm text-gray-700">
+                            <p class="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                                 Showing
-                                <span class="font-medium">{{ page_obj.start_index }}</span>
+                                <span class="font-medium hover:text-gray-900 dark:hover:text-white">{{ page_obj.start_index }}</span>
                                 to
-                                <span class="font-medium">{{ page_obj.end_index }}</span>
+                                <span class="font-medium hover:text-gray-900 dark:hover:text-white">{{ page_obj.end_index }}</span>
                                 of
-                                <span class="font-medium">{{ paginator.count }}</span>
+                                <span class="font-medium hover:text-gray-900 dark:hover:text-white">{{ paginator.count }}</span>
                                 results
                             </p>
                         </div>
@@ -521,7 +537,7 @@
                                  aria-label="Pagination">
                                 {% if page_obj.has_previous %}
                                     <a href="?page=1&payment_status={{ current_payment_status }}"
-                                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:hover:text-white">
                                         <span class="sr-only">First</span>
                                         <svg class="h-5 w-5"
                                              xmlns="http://www.w3.org/2000/svg"
@@ -532,7 +548,7 @@
                                         </svg>
                                     </a>
                                     <a href="?page={{ page_obj.previous_page_number }}&payment_status={{ current_payment_status }}"
-                                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:hover:text-white">
                                         <span class="sr-only">Previous</span>
                                         <svg class="h-5 w-5"
                                              xmlns="http://www.w3.org/2000/svg"
@@ -546,19 +562,19 @@
                                 {% for num in paginator.page_range %}
                                     {% if page_obj.number == num %}
                                         <a href="?page={{ num }}&payment_status={{ current_payment_status }}"
-                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-[#e74c3c] text-sm font-medium text-white">
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-[#e74c3c] text-sm font-medium text-white hover:text-white">
                                             {{ num }}
                                         </a>
                                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                         <a href="?page={{ num }}&payment_status={{ current_payment_status }}"
-                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:hover:text-white">
                                             {{ num }}
                                         </a>
                                     {% endif %}
                                 {% endfor %}
                                 {% if page_obj.has_next %}
                                     <a href="?page={{ page_obj.next_page_number }}&payment_status={{ current_payment_status }}"
-                                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:hover:text-white">
                                         <span class="sr-only">Next</span>
                                         <svg class="h-5 w-5"
                                              xmlns="http://www.w3.org/2000/svg"
@@ -569,7 +585,7 @@
                                         </svg>
                                     </a>
                                     <a href="?page={{ paginator.num_pages }}&payment_status={{ current_payment_status }}"
-                                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:hover:text-white">
                                         <span class="sr-only">Last</span>
                                         <svg class="h-5 w-5"
                                              xmlns="http://www.w3.org/2000/svg"

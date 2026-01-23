@@ -15,36 +15,36 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Pool Details -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div class="flex justify-between items-start mb-4">
-                        <h1 class="text-2xl font-bold text-gray-900">{{ pool.name }}</h1>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ pool.name }}</h1>
                         <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
                             {{ pool.get_status_display }}
                         </span>
                     </div>
-                    <p class="text-gray-600 mb-6">{{ pool.description }}</p>
+                    <p class="text-gray-600 dark:text-gray-400 mb-6">{{ pool.description }}</p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <p class="text-2xl font-bold text-orange-600">{{ total_staked|floatformat:0 }}</p>
-                            <p class="text-sm text-gray-600">Total BACON Staked</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Total BACON Staked</p>
                         </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <p class="text-2xl font-bold text-blue-600">{{ participants_count }}</p>
-                            <p class="text-sm text-gray-600">Participants</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Participants</p>
                         </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <p class="text-2xl font-bold text-green-600">{{ pool.get_pool_type_display }}</p>
-                            <p class="text-sm text-gray-600">Pool Type</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Pool Type</p>
                         </div>
-                        <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                             <p class="text-2xl font-bold text-purple-600">{{ completed_challenges }}</p>
-                            <p class="text-sm text-gray-600">Challenges Completed</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Challenges Completed</p>
                         </div>
                     </div>
                     <!-- Join Pool Form -->
                     {% if user.is_authenticated and can_join %}
-                        <div class="border-t border-gray-200 pt-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Join This Pool</h3>
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Join This Pool</h3>
                             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                                 <p class="text-sm text-blue-800">
                                     <strong>Fixed Stake Amount:</strong> {{
@@ -60,7 +60,7 @@
                                   class="space-y-4">
                                 {% csrf_token %}
                                 <div class="flex justify-between items-center text-sm">
-                                    <span class="text-gray-600">Your BACON Balance:</span>
+                                    <span class="text-gray-600 dark:text-gray-400">Your BACON Balance:</span>
                                     <span class="font-medium">{{ user_bacon_balance|floatformat:0 }} BACON</span>
                                 </div>
                                 <button type="submit"
@@ -70,11 +70,11 @@
                             </form>
                         </div>
                     {% elif user.is_authenticated and not can_join %}
-                        <div class="border-t border-gray-200 pt-6">
-                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                <p class="text-sm text-gray-600 text-center">{{ join_message }}</p>
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 text-center">{{ join_message }}</p>
                                 <button disabled
-                                        class="w-full bg-gray-400 text-white py-3 px-4 rounded-lg font-medium mt-3 cursor-not-allowed">
+                                        class="w-full bg-gray-400 dark:bg-gray-500 text-white py-3 px-4 rounded-lg font-medium mt-3 cursor-not-allowed">
                                     {% if user_entry %}
                                         Already Joined
                                     {% else %}
@@ -86,13 +86,13 @@
                     {% endif %}
                 </div>
                 <!-- Associated Challenges -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Associated Challenge</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Associated Challenge</h3>
                     {% if pool.challenge %}
-                        <div class="p-4 border border-gray-200 rounded-lg">
+                        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                             <div>
-                                <h4 class="font-medium text-gray-900 text-lg">{{ pool.challenge.title }}</h4>
-                                <p class="text-sm text-gray-600 mt-2">{{ pool.challenge.description|truncatechars:200 }}</p>
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 text-lg">{{ pool.challenge.title }}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{{ pool.challenge.description|truncatechars:200 }}</p>
                                 <div class="mt-3 flex items-center text-sm">
                                     <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded mr-2">
                                         {{ pool.challenge.points }} pts
@@ -102,9 +102,9 @@
                                     </span>
                                 </div>
                                 <!-- Challenge Actions -->
-                                <div class="mt-4 pt-3 border-t border-gray-100">
+                                <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
                                     <div class="flex items-center justify-between">
-                                        <div class="text-sm text-gray-600">
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">
                                             <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                                             Complete this challenge to win the pool!
                                         </div>
@@ -119,8 +119,8 @@
                         </div>
                     {% else %}
                         <div class="text-center py-6">
-                            <div class="text-gray-400 text-3xl mb-3">❓</div>
-                            <p class="text-gray-600 mb-3">No specific challenge associated with this pool.</p>
+                            <div class="text-gray-400 dark:text-gray-600 text-3xl mb-3">❓</div>
+                            <p class="text-gray-600 dark:text-gray-400 mb-3">No specific challenge associated with this pool.</p>
                             <a href="{% url 'user_challenges' %}"
                                class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 Browse Challenges
@@ -132,43 +132,43 @@
             <!-- Sidebar -->
             <div class="space-y-6">
                 <!-- Pool Info -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Pool Information</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Pool Information</h3>
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Start Date</span>
+                            <span class="text-gray-600 dark:text-gray-400">Start Date</span>
                             <span class="font-medium">{{ pool.start_date|date:"M d, Y" }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">End Date</span>
+                            <span class="text-gray-600 dark:text-gray-400">End Date</span>
                             <span class="font-medium">{{ pool.end_date|date:"M d, Y" }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Stake Amount</span>
+                            <span class="text-gray-600 dark:text-gray-400">Stake Amount</span>
                             <span class="font-medium">{{ pool.stake_amount|floatformat:0 }} BACON</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Max Participants</span>
+                            <span class="text-gray-600 dark:text-gray-400">Max Participants</span>
                             <span class="font-medium">{{ pool.max_participants }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Pool Type</span>
+                            <span class="text-gray-600 dark:text-gray-400">Pool Type</span>
                             <span class="font-medium">{{ pool.get_pool_type_display }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-gray-600">Total Pot</span>
+                            <span class="text-gray-600 dark:text-gray-400">Total Pot</span>
                             <span class="font-medium text-green-600">{{ pool.total_pot|floatformat:0 }} BACON</span>
                         </div>
                     </div>
                 </div>
                 <!-- Your Stake -->
                 {% if user_entry %}
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Your Entry</h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Your Entry</h3>
                         <div class="space-y-3">
                             <div class="text-center p-4 bg-green-50 rounded-lg">
                                 <p class="text-2xl font-bold text-green-600">{{ user_entry.staked_amount|floatformat:0 }}</p>
-                                <p class="text-sm text-gray-600">BACON Staked</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">BACON Staked</p>
                             </div>
                             <div class="text-center p-3 bg-blue-50 rounded-lg">
                                 <p class="text-sm font-medium text-blue-800">
@@ -195,24 +195,24 @@
                                 {% endif %}
                             </div>
                             <div class="text-center">
-                                <p class="text-sm text-gray-600">Joined on {{ user_entry.created_at|date:"M d, Y" }}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Joined on {{ user_entry.created_at|date:"M d, Y" }}</p>
                             </div>
                         </div>
                     </div>
                 {% endif %}
                 <!-- Participants -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                         Participants
                         {% if pool.challenge %}- {{ pool.challenge.title }} Progress{% endif %}
                     </h3>
                     {% if participants %}
                         <div class="space-y-4">
                             {% for entry in participants %}
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                                <div class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
                                     <div class="flex items-center space-x-4">
                                         <!-- Rank Number -->
-                                        <span class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
+                                        <span class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center text-sm font-medium">
                                             {{ forloop.counter }}
                                         </span>
                                         <!-- Progress Circle (same as user_challenges) -->
@@ -231,14 +231,14 @@
                                                     " stroke-width="4" fill="none" stroke-dasharray="{{ entry.stroke_dasharray }}" stroke-dashoffset="{{ entry.stroke_dashoffset }}" stroke-linecap="round" class="transition-all duration-300"></circle>
                                                 </svg>
                                                 <!-- Percentage text -->
-                                                <div class="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
+                                                <div class="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
                                                     {{ entry.challenge_progress|floatformat:0 }}%
                                                 </div>
                                             </div>
                                         {% else %}
                                             <!-- No challenge associated -->
-                                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                                <i class="fas fa-question text-gray-400"></i>
+                                            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-question text-gray-400 dark:text-gray-600"></i>
                                             </div>
                                         {% endif %}
                                         <!-- User Info -->
@@ -256,25 +256,25 @@
                                                 {% endif %}
                                             </div>
                                             {% if pool.challenge %}
-                                                <p class="text-sm text-gray-600">Challenge: {{ pool.challenge.title }}</p>
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">Challenge: {{ pool.challenge.title }}</p>
                                             {% else %}
-                                                <p class="text-sm text-gray-500">No specific challenge linked</p>
+                                                <p class="text-sm text-gray-500 dark:text-gray-500">No specific challenge linked</p>
                                             {% endif %}
                                         </div>
                                     </div>
                                     <!-- Stake Amount -->
                                     <div class="text-right">
                                         <p class="font-medium text-orange-600">{{ entry.staked_amount|floatformat:0 }} BACON</p>
-                                        <p class="text-xs text-gray-500">Staked {{ entry.created_at|timesince }} ago</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-500">Staked {{ entry.created_at|timesince }} ago</p>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
                         {% if pool.challenge %}
                             <!-- Challenge Progress Legend -->
-                            <div class="mt-6 pt-4 border-t border-gray-200">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Progress Legend:</h4>
-                                <div class="flex items-center space-x-6 text-xs text-gray-600">
+                            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Progress Legend:</h4>
+                                <div class="flex items-center space-x-6 text-xs text-gray-600 dark:text-gray-400">
                                     <div class="flex items-center">
                                         <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
                                         <span>In Progress</span>
@@ -284,7 +284,7 @@
                                         <span>Completed</span>
                                     </div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-2">
+                                <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     Progress is tracked automatically based on user activity. First to complete wins the pool!
                                 </p>
@@ -292,9 +292,11 @@
                         {% endif %}
                     {% else %}
                         <div class="text-center py-8">
-                            <div class="text-gray-400 text-4xl mb-4">👥</div>
-                            <p class="text-gray-600">No participants yet. Be the first!</p>
-                            {% if pool.challenge %}<p class="text-sm text-gray-500 mt-2">Challenge: {{ pool.challenge.title }}</p>{% endif %}
+                            <div class="text-gray-400 dark:text-gray-600 text-4xl mb-4">👥</div>
+                            <p class="text-gray-600 dark:text-gray-400">No participants yet. Be the first!</p>
+                            {% if pool.challenge %}
+                                <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Challenge: {{ pool.challenge.title }}</p>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>

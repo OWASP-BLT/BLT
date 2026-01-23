@@ -1,16 +1,15 @@
 name: autoupdate
 on:
-  # This will trigger on all pushes to all branches.
-  push: {}
-  # Alternatively, you can only trigger if commits are pushed to certain branches, e.g.:
-  # push:
-  #   branches:
-  #     - master
-  #     - unstable
+  # This will trigger on pushes to all branches except main.
+  push:
+    branches-ignore:
+      - main
+  # The autoupdate action is designed to update PRs with the latest changes from the base branch.
+  # It doesn't need to run on pushes to main since there are no PRs to update in that case.
 jobs:
   autoupdate:
     name: autoupdate
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         env:

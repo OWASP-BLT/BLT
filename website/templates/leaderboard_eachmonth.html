@@ -15,33 +15,33 @@
 {% endblock og_title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <!-- Header Section -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
                         <i class="fas fa-calendar-star text-2xl text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">Monthly Achievements</h1>
-                        <p class="text-gray-600 mt-2">Track top performers across different months</p>
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Monthly Achievements</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Track top performers across different months</p>
                     </div>
                 </div>
             </div>
             <!-- Monthly Leaderboards Grid -->
             {% if not leaderboard %}
-                <div class="bg-white rounded-xl shadow-sm p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-calendar-times text-gray-400 text-2xl"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-times text-gray-400 dark:text-gray-600 text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
-                    <p class="text-gray-500">There are no records for any month yet.</p>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Data Available</h3>
+                    <p class="text-gray-500 dark:text-gray-500">There are no records for any month yet.</p>
                 </div>
             {% else %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for month in leaderboard %}
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
                             <!-- Month Header -->
                             <div class="bg-gradient-to-r from-[#e74c3c] to-[#c0392b] p-4">
                                 <h2 class="text-xl font-bold text-white flex items-center justify-between">
@@ -49,17 +49,19 @@
                                         <i class="fas fa-calendar-alt mr-2"></i>
                                         {{ month.month }}
                                     </span>
-                                    {% if month.user %}<span class="text-sm bg-white/20 px-3 py-1 rounded-full">#1 Winner</span>{% endif %}
+                                    {% if month.user %}
+                                        <span class="text-sm bg-white/20 dark:bg-gray-800/20 px-3 py-1 rounded-full">#1 Winner</span>
+                                    {% endif %}
                                 </h2>
                             </div>
                             <!-- Month Content -->
                             <div class="p-6">
                                 {% if not month.user %}
                                     <div class="text-center py-6">
-                                        <div class="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-bug text-gray-400"></i>
+                                        <div class="w-12 h-12 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-bug text-gray-400 dark:text-gray-600"></i>
                                         </div>
-                                        <p class="text-gray-500">No bugs found this month</p>
+                                        <p class="text-gray-500 dark:text-gray-500">No bugs found this month</p>
                                     </div>
                                 {% else %}
                                     <div class="flex flex-col items-center">
@@ -92,27 +94,27 @@
                                         <div class="text-center mb-4">
                                             <div class="flex items-center justify-center gap-2 mb-2">
                                                 <a href="{% url 'profile' slug=month.user.username %}"
-                                                   class="text-xl font-bold text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                                   class="text-xl font-bold text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors">
                                                     {{ month.user.username }}
                                                 </a>
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if month.user.userprofile.get_title_display == 'GOLD' %}bg-yellow-100 text-yellow-800{% elif month.user.userprofile.get_title_display == 'SILVER' %}bg-gray-100 text-gray-800{% elif month.user.userprofile.get_title_display == 'BRONZE' %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
                                                     {{ month.user.userprofile.get_title_display }}
                                                 </span>
                                             </div>
-                                            <div class="text-sm text-gray-500">{{ month.user.total_score }} Points</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ month.user.total_score }} Points</div>
                                         </div>
                                         <!-- Stats -->
                                         <div class="w-full grid grid-cols-2 gap-4">
                                             {% if month.user.amount %}
-                                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
                                                     <div class="text-lg font-bold text-[#e74c3c]">${{ month.user.amount|floatformat:2 }}</div>
-                                                    <div class="text-xs text-gray-500">Earned</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-500">Earned</div>
                                                 </div>
                                             {% endif %}
                                             {% if month.user.userprofile.winnings %}
-                                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
                                                     <div class="text-lg font-bold text-green-600">${{ month.user.userprofile.winnings|floatformat:2 }}</div>
-                                                    <div class="text-xs text-gray-500">Total Winnings</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-500">Total Winnings</div>
                                                 </div>
                                             {% endif %}
                                         </div>

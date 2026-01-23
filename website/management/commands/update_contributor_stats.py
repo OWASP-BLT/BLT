@@ -1,7 +1,8 @@
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
@@ -42,10 +43,7 @@ class Command(LoggedBaseCommand):
         today = datetime.now().date()
         current_month_start = today.replace(day=1)  # First day of current month
 
-        # Delete existing daily stats for current month
-        self.delete_existing_daily_stats(repo, current_month_start)
-
-        # Fetch and store daily stats for current month
+        # Fetch and store daily stats for current month (using update_or_create for incremental updates)
         daily_stats = self.fetch_contributor_stats(owner, repo_name, current_month_start, today)
         self.store_daily_stats(repo, daily_stats)
 
@@ -58,11 +56,6 @@ class Command(LoggedBaseCommand):
         # Extract owner and repo name from GitHub URL
         parts = url.split("/")
         return parts[-2], parts[-1]
-
-    def delete_existing_daily_stats(self, repo, current_month_start):
-        """Delete existing daily stats for the current month"""
-        with transaction.atomic():
-            ContributorStats.objects.filter(repo=repo, granularity="day", date__gte=current_month_start).delete()
 
     def fetch_contributor_stats(self, owner, repo_name, start_date, end_date):
         """Fetch contributor statistics using GitHub REST API"""
@@ -189,13 +182,13 @@ class Command(LoggedBaseCommand):
         stats[key][stat_type] += 1
 
     def store_daily_stats(self, repo, stats):
-        """Store daily statistics in the database"""
+        """Store daily statistics in the database using update_or_create for incremental updates"""
         with transaction.atomic():
             for (date, login), day_stats in stats.items():
                 contributor, _ = self.get_or_create_contributor(login)
 
-                ContributorStats.objects.create(
-                    contributor=contributor, repo=repo, date=date, granularity="day", **day_stats
+                ContributorStats.objects.update_or_create(
+                    contributor=contributor, repo=repo, date=date, granularity="day", defaults=day_stats
                 )
 
     def update_monthly_stats(self, repo, start_date):
@@ -379,23 +372,20 @@ class Command(LoggedBaseCommand):
         stats[login][stat_type] += 1
 
     def store_monthly_stats(self, repo, month_start, monthly_stats):
-        """Store monthly statistics in the database"""
+        """Store monthly statistics in the database using update_or_create for incremental updates"""
         with transaction.atomic():
-            # Delete existing monthly stat for this month if exists
-            ContributorStats.objects.filter(repo=repo, granularity="month", date=month_start).delete()
-
-            # Create new monthly stats
+            # Create or update monthly stats
             for login, stats in monthly_stats.items():
                 # First get or create the contributor
                 contributor, _ = self.get_or_create_contributor(login)
 
-                # Create the monthly stat record with the contributor object
-                ContributorStats.objects.create(
+                # Create or update the monthly stat record with the contributor object
+                ContributorStats.objects.update_or_create(
                     contributor=contributor,
                     repo=repo,
                     date=month_start,
                     granularity="month",
-                    **stats,
+                    defaults=stats,
                 )
 
     def get_or_create_contributor(self, login):

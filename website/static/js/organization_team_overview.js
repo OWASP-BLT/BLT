@@ -17,25 +17,15 @@ function toggleRow(row) {
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Team Overview: Initializing...');
-    
     const tableBody = document.getElementById('statusTableBody');
     const tabButtons = document.querySelectorAll('.tab-button');
     const filterPanels = document.querySelectorAll('.filter-panel');
     
     if (!tableBody) {
-        console.error('Status table body not found!');
         return;
     }
     
     const initialReportCount = tableBody.dataset.initialCount || 0;
-    
-    console.log('Found elements:', {
-        tableBody: !!tableBody,
-        tabButtons: tabButtons.length,
-        filterPanels: filterPanels.length,
-        initialReports: initialReportCount
-    });
     
     let currentTab = null;
     let taskSearchTimeout = null;
@@ -43,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentRequestId = 0;
 
     function updateTable(data) {
-        console.log('Updating table with data:', data);
         tableBody.innerHTML = '';
         
         if (!data || data.length === 0) {
@@ -51,13 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center">
-                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-sm font-medium text-gray-900 mb-1">No Reports Found</h3>
-                            <p class="text-sm text-gray-500">No reports found for the selected filter.</p>
+                            <svg class="w-8 h-8 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-1">No Reports Found</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-200">No reports found for the selected filter.</p>
                         </div>
                     </td>
                 </tr>
@@ -66,9 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         data.forEach((report, index) => {
-            console.log(`Adding row ${index}:`, report);
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 transition-colors duration-150 cursor-pointer';
+            row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
             row.onclick = () => toggleRow(row);
             
             const avatarUrl = report.avatar_url || '/static/images/dummy-user.png';
@@ -95,32 +81,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <img src="${escapedAvatarUrl}" alt="${escapedUsername}" class="w-8 h-8 rounded-full mr-3 object-cover">
-                        <span class="text-sm font-medium text-gray-900">${escapedUsername}</span>
+                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${escapedUsername}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="text-sm text-gray-600">${escapedDate}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">${escapedDate}</div>
                 </td>
                 <td class="px-6 py-4 expandable-content max-w-xs">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         <span class="short-text">${escapedPreviousWork.slice(0, 50)}${previousWork.length > 50 ? '...' : ''}</span>
                         <span class="full-text hidden">${escapedPreviousWork}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4 expandable-content max-w-xs">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         <span class="short-text">${escapedNextPlan.slice(0, 50)}${nextPlan.length > 50 ? '...' : ''}</span>
                         <span class="full-text hidden">${escapedNextPlan}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4 expandable-content max-w-xs">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
                         <span class="short-text">${escapedBlockers.slice(0, 50)}${blockers.length > 50 ? '...' : ''}</span>
                         <span class="full-text hidden">${escapedBlockers}</span>
                     </div>
                 </td>
                 <td class="px-6 py-4">
-                    <span class="inline-flex px-3 py-1 text-xs font-medium ${report.goal_accomplished ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'} rounded-full">
+                    <span class="inline-flex px-3 py-1 text-xs font-medium ${report.goal_accomplished ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'} rounded-full">
                         ${report.goal_accomplished ? 'Yes' : 'No'}
                     </span>
                 </td>
@@ -130,7 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             tableBody.appendChild(row);
         });
-        console.log(`Table updated with ${data.length} rows`);
     }
 
     function fetchFilteredData(filterType, filterValue) {
@@ -142,17 +127,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = new URL(window.location.href);
         url.searchParams.set('filter_type', filterType);
         url.searchParams.set('filter_value', filterValue);
-
-        console.log('Fetching data:', { requestId: thisRequestId, filterType, filterValue, url: url.toString() });
         
         // Show loading indicator
         tableBody.innerHTML = `
             <tr>
                 <td colspan="7" class="px-6 py-12 text-center">
-                    <div class="flex flex-col items-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e74c3c] mb-4"></div>
-                        <div class="text-sm text-gray-600">Loading reports...</div>
-                    </div>
+                        <div class="flex flex-col items-center">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e74c3c] mb-4"></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-300">Loading reports...</div>
+                        </div>
                 </td>
             </tr>
         `;
@@ -165,11 +148,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             // Guard against stale responses
             if (thisRequestId !== currentRequestId) {
-                console.log(`Discarding stale response (request ${thisRequestId}, current ${currentRequestId})`);
                 return null;
             }
             
-            console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -178,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             // Guard against stale responses
             if (thisRequestId !== currentRequestId) {
-                console.log(`Discarding stale data (request ${thisRequestId}, current ${currentRequestId})`);
                 return;
             }
             
@@ -187,33 +167,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            console.log('Received data:', data);
             if (data && data.data !== undefined) {
                 updateTable(data.data);
             } else {
-                console.error('Invalid data format:', data);
                 throw new Error('Invalid data format received');
             }
         })
         .catch(error => {
             // Guard against stale error handlers
             if (thisRequestId !== currentRequestId) {
-                console.log(`Discarding stale error (request ${thisRequestId}, current ${currentRequestId})`);
                 return;
             }
             
-            console.error('Error fetching data:', error);
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center">
-                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <div class="text-sm text-red-600 font-medium mb-2">Error loading reports</div>
-                            <div class="text-xs text-gray-500">${error.message || 'Please try refreshing the page.'}</div>
+                            <div class="text-sm text-red-600 dark:text-red-400 font-medium mb-2">Error loading reports</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">${error.message || 'Please try refreshing the page.'}</div>
                         </div>
                     </td>
                 </tr>
@@ -222,8 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function switchTab(tabName) {
-        console.log('Switching to tab:', tabName);
-        
         tabButtons.forEach(button => {
             if (button.dataset.tab === tabName) {
                 button.classList.add('border-[#e74c3c]', 'text-[#e74c3c]', 'bg-[#e74c3c]/5');
@@ -241,8 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const targetPanel = document.getElementById(`${tabName}-panel`);
         if (targetPanel) {
             targetPanel.classList.remove('hidden');
-        } else {
-            console.error(`Panel ${tabName}-panel not found`);
         }
         
         if (currentTab !== tabName) {
@@ -277,7 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (userFilter) {
         userFilter.addEventListener('change', function() {
-            console.log('User filter changed:', this.value);
             if (this.value) {
                 fetchFilteredData('user', this.value);
             } else {
@@ -288,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (dateFilter) {
         dateFilter.addEventListener('change', function() {
-            console.log('Date filter changed:', this.value);
             if (this.value) {
                 fetchFilteredData('date', this.value);
             } else {
@@ -299,7 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (goalFilter) {
         goalFilter.addEventListener('change', function() {
-            console.log('Goal filter changed:', this.value);
             if (this.value) {
                 fetchFilteredData('goal', this.value);
             } else {
@@ -311,7 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (taskFilter) {
         taskFilter.addEventListener('input', function() {
             const searchValue = this.value.trim();
-            console.log('Task filter input:', searchValue);
             
             clearTimeout(taskSearchTimeout);
             taskSearchTimeout = setTimeout(() => {
@@ -325,6 +293,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize by showing user tab
-    console.log('Initializing with user tab');
     switchTab('user');
 });

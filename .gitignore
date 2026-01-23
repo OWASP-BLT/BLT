@@ -1,14 +1,13 @@
 venv
 *.pyc
 staticfiles
-.env
 /env
 /pvenv
 db.sqlite3
 .idea
 /media
 .vagrant
-*.env
+*.env.*
 .vscode
 geckodriver.exe
 geckodriver.log
@@ -21,3 +20,8 @@ requirements.txt
 .vs
 .qodo
 ssl
+ansible/inventory.yml
+google-credentials.json
+
+
+.env

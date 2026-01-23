@@ -1,9 +1,12 @@
+import logging
 from datetime import datetime, timedelta
 
 from slack_bolt import App
 
 from website.management.base import LoggedBaseCommand
 from website.models import SlackIntegration, TimeLog
+
+logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
@@ -25,7 +28,7 @@ class Command(LoggedBaseCommand):
                 # Ensure it's the correct hour
                 and integration.daily_update_time == current_hour_utc
             ):
-                print(f"Processing updates for organization: {current_org.name}")
+                logger.info(f"Processing updates for organization: {current_org.name}")
 
                 last_24_hours = datetime.utcnow() - timedelta(hours=24)
 
@@ -71,6 +74,6 @@ class Command(LoggedBaseCommand):
             app = App(token=bot_token)
             app.client.conversations_join(channel=channel_id)
             response = app.client.chat_postMessage(channel=channel_id, text=message)
-            print(f"Message sent successfully: {response['ts']}")
+            logger.info(f"Message sent successfully: {response['ts']}")
         except Exception as e:
-            print(f"Error sending message: {e}")
+            logger.error(f"Error sending message: {e}")

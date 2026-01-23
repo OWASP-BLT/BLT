@@ -1,23 +1,27 @@
 import ipaddress
 import json
 import logging
+import os
 import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
-from urllib.parse import urlparse
+from smtplib import SMTPException
+from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -54,8 +58,10 @@ from website.models import (
     Message,
     Organization,
     OrganizationAdmin,
+    Project,
     Repo,
     Room,
+    SlackChannel,
     Subscription,
     Tag,
     TimeLog,
@@ -174,41 +180,122 @@ def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_o
         return redirect("/")
 
 
-def weekly_report(request):
-    domains = Domain.objects.all()
-    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
+@login_required(login_url="/accounts/login")
+def slack_channels_list(request, template="slack_channels.html"):
+    """View to display all Slack channels with ability to link them to projects."""
+    user = request.user
+
+    # Get all slack channels ordered by member count
+    channels = SlackChannel.objects.all().order_by("-num_members")
+
+    # Get unlinked projects for the autocomplete dropdown (superusers only)
+    unlinked_projects = []
+    if user.is_superuser:
+        # Get projects that don't have any slack channel linked to them
+        linked_project_ids = SlackChannel.objects.filter(project__isnull=False).values_list("project_id", flat=True)
+        unlinked_projects = Project.objects.exclude(id__in=linked_project_ids).order_by("name")
+
+    context = {
+        "channels": channels,
+        "unlinked_projects": unlinked_projects,
+        "is_superuser": user.is_superuser,
+    }
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def link_slack_channel_to_project(request):
+    """API endpoint to link a Slack channel to a project (superusers only)."""
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    channel_id = request.POST.get("channel_id")
+    project_id = request.POST.get("project_id")
+
+    if not channel_id or not project_id:
+        return JsonResponse({"error": "Missing channel_id or project_id"}, status=400)
+
     try:
-        for domain in domains:
-            open_issues = domain.open_issues
-            closed_issues = domain.closed_issues
-            total_issues = open_issues.count() + closed_issues.count()
-            issues = Issue.objects.filter(domain=domain)
-            email = domain.email
-            report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
-                f"\n\norganization Name: {domain.name}"
-                f"Open issues: {open_issues.count()}"
-                f"Closed issues: {closed_issues.count()}"
-                f"Total issues: {total_issues}"
-            )
-            for issue in issues:
-                description = issue.description
-                views = issue.views
-                label = issue.get_label_display()
-                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
+        channel = SlackChannel.objects.get(channel_id=channel_id)
+        project = Project.objects.get(id=project_id)
 
-        report_string = "".join(report_data)
-        send_mail(
-            "Weekly Report!!!",
-            report_string,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
+        # Link the channel to the project
+        channel.project = project
+        channel.save(update_fields=["project"])
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Channel #{channel.name} linked to {project.name}",
+                "project_name": project.name,
+            }
         )
-    except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+    except SlackChannel.DoesNotExist:
+        return JsonResponse({"error": "Channel not found"}, status=404)
+    except Project.DoesNotExist:
+        return JsonResponse({"error": "Project not found"}, status=404)
 
-    return HttpResponse("Weekly report sent successfully.")
+
+@staff_member_required
+def weekly_report(request):
+    domains = Domain.objects.annotate(
+        open_count=Count("issue", filter=Q(issue__status="open")),
+        closed_count=Count("issue", filter=Q(issue__status="closed")),
+    ).prefetch_related(
+        Prefetch(
+            "issue_set",
+            queryset=Issue.objects.filter(Q(status="open") | Q(status="closed")).only(
+                "description", "views", "label", "status"
+            ),
+            to_attr="filtered_issues",  # Store filtered results here
+        )
+    )
+
+    results = {"success": [], "failed": []}
+
+    for domain in domains:
+        try:
+            if not domain.email:
+                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
+                continue
+
+            issues = domain.filtered_issues
+
+            open_issues_count = domain.open_count
+            closed_issues_count = domain.closed_count
+            total_issues = open_issues_count + closed_issues_count
+
+            report_data = [
+                "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
+                f"Organization Name: {domain.name}\n",
+                f"Open issues: {open_issues_count}\n",
+                f"Closed issues: {closed_issues_count}\n",
+                f"Total issues: {total_issues}\n\n",
+            ]
+
+            for issue in issues:
+                report_data.append(
+                    f"Description: {issue.description}\n"
+                    f"Views: {issue.views}\n"
+                    f"Label: {issue.get_label_display()}\n\n"
+                )
+
+            send_mail(
+                "Weekly Report!!!",
+                "".join(report_data),
+                settings.EMAIL_HOST_USER,
+                [domain.email],
+                fail_silently=False,
+            )
+
+            results["success"].append(domain.name)
+
+        except (BadHeaderError, SMTPException) as e:
+            logger.error(f"Failed to send report to {domain.name}: {e}")
+            results["failed"].append(domain.name)
+
+    return HttpResponse(f"Sent {len(results['success'])} reports. Failed: {len(results['failed'])}")
 
 
 @login_required(login_url="/accounts/login")
@@ -223,13 +310,14 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         context["hunt"] = hunt
         context["issues"] = issues
         if hunt.result_published:
-            context["winner"] = Winner.objects.get(hunt=hunt)
+            context["winner"] = Winner.objects.filter(hunt=hunt).first()
         return render(request, template, context)
     else:
         for issue in issues:
             issue.verified = False
             issue.score = 0
-            issue.save()
+        if issues:
+            Issue.objects.bulk_update(issues, ["verified", "score"])
 
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
@@ -252,32 +340,33 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if request.POST["submit"] == "save":
             pass
         elif request.POST["submit"] == "publish":
-            issue.save()
-            winner = Winner()
-            issue_with_score = (
-                Issue.objects.filter(hunt=hunt, verified=True)
-                .values("user")
-                .order_by("user")
-                .annotate(total_score=Sum("score"))
-            )
+            with transaction.atomic():
+                issue_with_score = (
+                    Issue.objects.filter(hunt=hunt, verified=True)
+                    .values("user")
+                    .annotate(total_score=Sum("score"))
+                    .order_by("-total_score")
+                )
 
-            for index, obj in enumerate(issue_with_score, 1):
-                user = User.objects.get(pk=obj["user"])
-                if index == 1:
-                    winner.winner = user
-                elif index == 2:
-                    winner.runner = user
-                elif index == 3:
-                    winner.second_runner = user
-                elif index == 4:
-                    break
+                top_users = list(issue_with_score[:3])
+                user_map = User.objects.in_bulk([u["user"] for u in top_users])
 
-            winner.prize_distributed = True
-            winner.hunt = hunt
-            winner.save()
-            hunt.result_published = True
-            hunt.save()
-            context["winner"] = winner
+                winner, _ = Winner.objects.get_or_create(hunt=hunt)
+
+                if len(top_users) > 0:
+                    winner.winner = user_map.get(top_users[0]["user"])
+                if len(top_users) > 1:
+                    winner.runner = user_map.get(top_users[1]["user"])
+                if len(top_users) > 2:
+                    winner.second_runner = user_map.get(top_users[2]["user"])
+
+                winner.prize_distributed = True
+                winner.save()
+
+                hunt.result_published = True
+                hunt.save()
+
+                context["winner"] = winner
 
         context["hunt"] = hunt
         context["issues"] = issues
@@ -496,87 +585,251 @@ class Listbounties(TemplateView):
 
         # Fetch GitHub issues with $5 label for first page
         issue_state = request.GET.get("issue_state", "open")
+        per_page = 10  # Number of issues to show per page
 
         try:
-            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
+            github_issues, total_count = self.github_issues_with_bounties(
+                "$5", issue_state=issue_state, per_page=per_page
+            )
+            has_more_pages = total_count > per_page
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
+            total_count = 0
+            has_more_pages = False
+
+        # Calculate bounty statistics
+        BOUNTY_AMOUNT = 5  # Dollar amount per bounty issue
+        # Count open issues with $5 tag
+        dollar5_issues = GitHubIssue.objects.filter(has_dollar_tag=True, state="open")
+        total_issues_count = dollar5_issues.count()
+        # Count paid issues (closed issues with payment info)
+        paid_issues = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed").filter(
+            Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False)
+        )
+        paid_count = paid_issues.count()
+        grand_total_payouts = paid_count * BOUNTY_AMOUNT
+
+        # Build leaderboard of top earners
+        # Group by assignee and count their paid issues
+        top_earners = (
+            paid_issues.filter(assignee__isnull=False)
+            .select_related("assignee")
+            .values("assignee__name", "assignee__github_url", "assignee__avatar_url")
+            .annotate(issues_completed=Count("id"))
+            .order_by("-issues_completed")[:10]  # Top 10 earners
+        )
+
+        # Calculate earnings for each top earner
+        leaderboard = []
+        for earner in top_earners:
+            leaderboard.append(
+                {
+                    "name": earner["assignee__name"],
+                    "github_url": earner["assignee__github_url"],
+                    "avatar_url": earner["assignee__avatar_url"],
+                    "issues_completed": earner["issues_completed"],
+                    "total_earned": earner["issues_completed"] * BOUNTY_AMOUNT,
+                }
+            )
 
         context = {
             "hunts": hunts,
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
+            "total_github_issues": total_count,
+            "has_more_pages": has_more_pages,
             "selected_issue_state": issue_state,
+            "total_issues_count": total_issues_count,
+            "paid_count": paid_count,
+            "grand_total_payouts": grand_total_payouts,
+            "leaderboard": leaderboard,
         }
 
         return render(request, self.template_name, context)
 
     def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
-        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
-        cached_issues = cache.get(cache_key)
+        """
+        Fetch GitHub issues with a specific bounty label directly from GitHub API
+        with enhanced pagination support.
 
-        if cached_issues is not None:
-            return cached_issues
+        Args:
+            label (str): The label to search for (e.g. "$5")
+            issue_state (str): Issue state to filter by ("open", "closed", or "all")
+            page (int): Page number to fetch
+            per_page (int): Number of issues per page (max 100)
 
-        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
+        Returns:
+            tuple: (formatted_issues, total_count)
 
-        headers = {}
-        github_token = getattr(settings, "GITHUB_API_TOKEN", None)
-        if github_token:
-            headers["Authorization"] = f"token {github_token}"
+        Caching:
+            Results are cached based on the input parameters (label, issue_state, page, per_page).
+            Cached results are returned if available to reduce API calls and improve performance.
 
+        Error Handling:
+            If an error occurs during the API request (such as rate limiting, network issues, or API failures),
+            the function returns an empty list and a count of zero. Errors are logged, and error results are not cached.
+        """
+        # Validate inputs
+        if page < 1:
+            page = 1
+        if per_page < 1 or per_page > 100:  # GitHub API limits to 100 per page
+            per_page = 10
+
+        # Generate cache key based on parameters
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}_per_{per_page}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+            return cached_data
+
+        # API request count tracking
+        start_time = time.time()
+
+        # GitHub API endpoint - use search API for better performance and pagination support
         try:
-            response = requests.get(
-                "https://api.github.com/repos/OWASP-BLT/BLT/issues", params=params, headers=headers, timeout=5
+            encoded_label = label.replace("$", "%24")
+            query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
+            url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+
+            headers = {
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)",
+            }
+
+            # Try both token names since the code is using inconsistent environment variable names
+            github_token = getattr(settings, "GITHUB_TOKEN", None)
+            if not github_token:
+                github_token = getattr(settings, "GITHUB_API_TOKEN", None)
+            if github_token:
+                headers["Authorization"] = f"token {github_token}"
+            if getattr(settings, "GITHUB_TOKEN", None) and getattr(settings, "GITHUB_API_TOKEN", None):
+                logger.warning(
+                    "Both GITHUB_TOKEN and GITHUB_API_TOKEN are set in settings. Please consolidate to a single token name to avoid confusion."
+                )
+
+            logger.info(
+                f"Fetching GitHub issues with {label} label, state={issue_state}, page={page}, per_page={per_page}"
             )
+            response = requests.get(url, headers=headers, timeout=10)
 
-            response.raise_for_status()
+            # Handle rate limiting explicitly
+            if (
+                response.status_code == 403
+                and "X-RateLimit-Remaining" in response.headers
+                and int(response.headers["X-RateLimit-Remaining"]) == 0
+            ):
+                reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                current_time = int(time.time())
+                minutes_to_reset = max(1, int((reset_time - current_time) / 60))
 
-            issues = response.json()
-            formatted_issues = []
+                logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
+                # Do not cache empty result for rate limit errors; allow fresh attempts
+                return [], 0
 
-            for issue in issues:
-                related_prs = []
-                if issue.get("pull_request") is None:
-                    formatted_issue = {
-                        "id": issue.get("id"),
-                        "number": issue.get("number"),
-                        "title": issue.get("title"),
-                        "url": issue.get("html_url"),
-                        "repository": "OWASP-BLT/BLT",
-                        "created_at": issue.get("created_at"),
-                        "updated_at": issue.get("updated_at"),
-                        "labels": [label.get("name") for label in issue.get("labels", [])],
-                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
-                        "state": issue.get("state"),
-                        "related_prs": related_prs,
-                        "closed_at": issue.get("closed_at"),
-                    }
+            if response.status_code == 200:
+                data = response.json()
+                issues = data.get("items", [])
+                total_count = data.get("total_count", 0)
 
-                    formatted_issues.append(formatted_issue)
+                formatted_issues = []
 
-            # Cache for 5 minutes
-            cache.set(cache_key, formatted_issues, timeout=300)
-            return formatted_issues
+                for issue in issues:
+                    # Skip pull requests
+                    if issue.get("pull_request") is None:
+                        formatted_issue = {
+                            "id": issue.get("id"),
+                            "number": issue.get("number"),
+                            "title": issue.get("title"),
+                            "url": issue.get("html_url"),
+                            "repository": "OWASP-BLT/BLT",
+                            "created_at": issue.get("created_at"),
+                            "updated_at": issue.get("updated_at"),
+                            "labels": [label.get("name") for label in issue.get("labels", [])],
+                            "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                            "state": issue.get("state"),
+                            "related_prs": [],
+                            "closed_at": issue.get("closed_at"),
+                        }
 
-        except requests.RequestException as e:
-            logger.error(f"GitHub API request failed: {str(e)}")
-            return []
+                        formatted_issues.append(formatted_issue)
+
+                # Cache results - Use longer cache time for older/stable data
+                cache_time = 300  # 5 minutes default
+                if issue_state == "closed":
+                    cache_time = 1800  # 30 minutes for closed issues which change less often
+
+                result = (formatted_issues, total_count)
+                cache.set(cache_key, result, timeout=cache_time)
+
+                # Log performance metrics
+                duration = time.time() - start_time
+                logger.info(
+                    f"Retrieved {len(formatted_issues)} issues (of {total_count} total) "
+                    f"for page {page} in {duration:.2f}s"
+                )
+
+                return result
+            else:
+                # Log the error response from GitHub
+                logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
+                # Return empty result with a short cache time to avoid hammering the API
+                cache.set(cache_key, ([], 0), timeout=60)  # Cache failure for 1 minute
+                return [], 0
+
+        except Exception as e:
+            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            # Don't cache errors - could be a transient failure
+            return [], 0
 
 
 def load_more_issues(request):
+    """
+    AJAX handler for loading more GitHub issues with pagination support
+    """
     page = int(request.GET.get("page", 1))
     state = request.GET.get("state", "open")
+    per_page = int(request.GET.get("per_page", 10))
+
+    # Validate inputs
+    if page < 1:
+        page = 1
+    if per_page < 1 or per_page > 100:
+        per_page = 10
 
     try:
+        # Track the time taken to fetch issues
+        start_time = time.time()
+
         view = Listbounties()
-        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
-        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
+        issues, total_count = view.github_issues_with_bounties("$5", issue_state=state, page=page, per_page=per_page)
+
+        # Calculate if there are more pages
+        has_more = (page * per_page) < total_count if total_count else False
+
+        # Log performance metrics
+        duration = time.time() - start_time
+        logger.info(
+            f"Loaded {len(issues)} issues for page {page} in {duration:.2f}s "
+            f"(total: {total_count}, has_more: {has_more})"
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "issues": issues,
+                "next_page": page + 1 if has_more else None,
+                "total_count": total_count,
+                "current_page": page,
+                "per_page": per_page,
+            }
+        )
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
-        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
+        return JsonResponse(
+            {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
+        )
 
 
 class DraftHunts(TemplateView):
@@ -889,7 +1142,7 @@ class DomainDetailView(ListView):
             }
 
             # Add Twitter URL
-            context["twitter_url"] = f"https://twitter.com/{domain.get_or_set_x_url(domain.get_name)}"
+            context["twitter_url"] = f"https://x.com/{domain.get_or_set_x_url(domain.get_name)}"
 
             return context
         except Http404:
@@ -947,11 +1200,23 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
+    def get_success_url(self):
+        try:
+            if self.object.domain and self.object.domain.organization and self.object.domain.organization.slug:
+                return reverse("organization_detail", kwargs={"slug": self.object.domain.organization.slug})
+        except AttributeError as e:
+            logger.error(
+                "AttributeError in HuntCreate.get_success_url: Unable to access organization details", exc_info=e
+            )
+        return reverse("organizations")
+
 
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
         data = request.body
-        for event in json.loads(data):
+        events = json.loads(data)
+
+        for event in events:
             try:
                 # Try to find a matching domain first
                 domain = Domain.objects.filter(email__iexact=event.get("email")).first()
@@ -989,7 +1254,61 @@ class InboundParseWebhookView(View):
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
                 logger.error(f"Error processing SendGrid webhook event: {str(e)}")
 
+        # Send events to Slack webhook
+        self._send_to_slack(events)
+
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
+
+    def _send_to_slack(self, events):
+        """
+        Send SendGrid webhook events to Slack webhook.
+
+        Args:
+            events: List of SendGrid webhook event dictionaries
+        """
+        try:
+            slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+
+            if not slack_webhook_url:
+                logger.debug("SLACK_WEBHOOK_URL not configured, skipping Slack notification")
+                return
+
+            # Format events for Slack
+            for event in events:
+                event_type = event.get("event", "unknown")
+                email = event.get("email", "unknown")
+                timestamp = event.get("timestamp", "")
+
+                # Create a formatted message for this event
+                event_text = f"*📧 SendGrid Event: {event_type.upper()}*\n"
+                event_text += f"*Email:* {email}\n"
+                event_text += f"*Timestamp:* {timestamp}\n"
+
+                # Add additional details based on event type
+                if event_type == "bounce":
+                    reason = event.get("reason", "Unknown")
+                    event_text += f"*Reason:* {reason}\n"
+                elif event_type == "click":
+                    url = event.get("url", "N/A")
+                    event_text += f"*URL:* {url}\n"
+
+                # Add any other relevant fields
+                if "sg_message_id" in event:
+                    event_text += f"*Message ID:* {event.get('sg_message_id')}\n"
+
+                # Prepare Slack payload
+                payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": event_text}}]}
+
+                # Send to Slack
+                response = requests.post(slack_webhook_url, json=payload, timeout=5)
+                response.raise_for_status()
+
+            logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error sending to Slack: {str(e)}")
 
 
 class CreateHunt(TemplateView):
@@ -1133,7 +1452,9 @@ def sizzle_daily_log(request):
             blockers = request.POST.get("blockers")
             goal_accomplished = request.POST.get("goal_accomplished") == "on"
             current_mood = request.POST.get("feeling")
-            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
+            logger.debug(
+                f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
+            )
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -1713,7 +2034,7 @@ class ReportIpView(FormView):
         if form.is_valid():
             ip_address = form.cleaned_data.get("ip_address")
             ip_type = form.cleaned_data.get("ip_type")
-            print(ip_address + " " + ip_type)
+            logger.debug(f"{ip_address} {ip_type}")
 
             if not self.is_valid_ip(ip_address, ip_type):
                 messages.error(request, f"Invalid {ip_type} address format.")
@@ -1909,6 +2230,19 @@ def approve_activity(request, id):
         return JsonResponse({"success": False, "error": "Not authorized"})
 
 
+@login_required
+@require_POST
+def delete_activity(request, id):
+    """Allow superadmins to delete activities from the feed."""
+    if not request.user.is_superuser:
+        return JsonResponse({"success": False, "error": "Only superadmins can delete activities"}, status=403)
+
+    activity = get_object_or_404(Activity, id=id)
+    activity.delete()
+
+    return JsonResponse({"success": True, "message": "Activity deleted successfully"})
+
+
 def truncate_text(text, length=15):
     return text if len(text) <= length else text[:length] + "..."
 
@@ -1919,13 +2253,18 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch the last check-in (most recent) for the user only if no yesterday report
+    last_checkin = None
+    if not yesterday_report:
+        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+
     # Fetch all check-ins for the user, ordered by date
     all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
 
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
+        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
     )
 
 
@@ -2105,6 +2444,56 @@ class OrganizationDetailView(DetailView):
             )
         )
 
+    def get_leaderboard_data(self, organization):
+        """
+        Get leaderboard data for all organization repositories.
+        Returns top contributors with their PR counts since 2024-11-11.
+        """
+        # Fixed start date: 2024-11-11
+        since_date = timezone.make_aware(datetime(2024, 11, 11))
+
+        # Get all repos for this organization
+        repos = organization.repos.all()
+
+        if not repos.exists():
+            return []
+
+        # Get all contributors who have merged PRs in these repos
+        contributors_with_prs = []
+        processed_contributors = set()
+
+        for repo in repos:
+            # Get contributors for this repo with merged PRs
+            for contributor in repo.contributor.all():
+                # Skip if we've already processed this contributor
+                if contributor.id in processed_contributors:
+                    continue
+
+                # Count PRs for this contributor across all organization repos
+                pr_count = GitHubIssue.objects.filter(
+                    contributor=contributor,
+                    repo__in=repos,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=since_date,
+                ).count()
+
+                if pr_count > 0:
+                    contributors_with_prs.append(
+                        {
+                            "contributor": contributor,
+                            "pr_count": pr_count,
+                            "url": contributor.github_url,
+                            "username": contributor.name,
+                            "avatar_url": contributor.avatar_url,
+                        }
+                    )
+                    processed_contributors.add(contributor.id)
+
+        # Sort by PR count (descending) and return top 10
+        contributors_with_prs.sort(key=lambda x: x["pr_count"], reverse=True)
+        return contributors_with_prs[:10]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         organization = self.object
@@ -2143,6 +2532,9 @@ class OrganizationDetailView(DetailView):
         if organization.source_code and "github.com" in organization.source_code:
             github_url = organization.source_code
 
+        # Get leaderboard data for all organizations
+        leaderboard = self.get_leaderboard_data(organization)
+
         context.update(
             {
                 "total_domains": domains.count(),
@@ -2152,6 +2544,7 @@ class OrganizationDetailView(DetailView):
                 "view_count": view_count,
                 "total_repos": total_repos,
                 "github_url": github_url,
+                "leaderboard": leaderboard,
             }
         )
 
@@ -2361,11 +2754,17 @@ def update_organization_repos(request, slug):
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error testing token in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
+                        )
+                        yield "data: Error testing GitHub API. Please try again later.\n\n"
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    yield f"data: $ Error testing GitHub API: {str(e)[:50]}\n\n"
+                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2384,19 +2783,21 @@ def update_organization_repos(request, slug):
                     )
 
                     if response.status_code == 404:
-                        yield f"data: $ Error: GitHub organization '{github_org_name}' not found\n\n"
+                        yield f"data: Error: GitHub organization '{github_org_name}' not found\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code == 401:
-                        yield "data: $ Error: GitHub authentication failed\n\n"
+                        yield "data: Error: GitHub authentication failed\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. "
-                            f"Response: {response_text}\n\n"
+                        logger.error(
+                            f"GitHub API error fetching organization in event_stream: Status {response.status_code}, "
+                            f"Response: {response_text}",
+                            exc_info=True,
                         )
+                        yield "data: Error: GitHub API returned an error\n\n"
                         yield "data: DONE\n\n"
                         return
 
@@ -2418,9 +2819,10 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            yield f"data: $ Error updating logo: {str(e)[:50]}\n\n"
+                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
-                    yield "data: $ Error: Failed to connect to GitHub\n\n"
+                    yield "data: Error: Failed to connect to GitHub\n\n"
                     yield "data: DONE\n\n"
                     return
 
@@ -2448,26 +2850,19 @@ def update_organization_repos(request, slug):
                         if response.status_code == 403:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             if "rate limit" in response.text.lower():
-                                yield (
-                                    f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n"
-                                )
+                                yield (f"data: Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
                             else:
-                                yield (
-                                    f"data: $ Error: GitHub API access forbidden (403). "
-                                    f"Response: {response_text}\n\n"
-                                )
+                                yield (f"data: Error: GitHub API access forbidden (403). Response: {response_text}\n\n")
                             break
                         elif response.status_code == 401:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                            yield (
-                                f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n"
-                            )
+                            yield (f"data: Error: GitHub authentication failed (401). Response: {response_text}\n\n")
                             yield "data: DONE\n\n"
                             return
                         elif response.status_code != 200:
                             response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             yield (
-                                f"data: $ Error: GitHub API returned {response.status_code}. "
+                                f"data: Error: GitHub API returned {response.status_code}. "
                                 f"Response: {response_text}\n\n"
                             )
                             yield "data: DONE\n\n"
@@ -2520,10 +2915,12 @@ def update_organization_repos(request, slug):
                                         repo.tags.add(tag)
 
                             except Exception as e:
-                                yield f"data: $ Error with {repo_name}: {str(e)[:50]}\n\n"
+                                logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
+                                yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        yield f"data: $ Network error: {str(e)[:50]}\n\n"
+                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
+                        yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
                     page += 1
@@ -2537,12 +2934,14 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
+                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
+        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
 
@@ -2679,15 +3078,15 @@ class BountyPayoutsView(ListView):
         Default to closed issues instead of open, and fetch 100 per page without date limitations
         """
         cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
-        cached_issues = cache.get(cache_key)
+        cached_data = cache.get(cache_key)
 
-        if cached_issues:
-            return cached_issues
+        if cached_data:
+            return cached_data
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
-        encoded_label = label.replace("$", "%24")
-        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
-        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+        query_params = f"repo:OWASP-BLT/BLT is:issue state:{issue_state} label:{label}"
+        encoded_query = quote_plus(query_params)
+        url = f"https://api.github.com/search/issues?q={encoded_query}&page={page}&per_page={per_page}"
         headers = {}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
@@ -2698,10 +3097,11 @@ class BountyPayoutsView(ListView):
                 data = response.json()
                 issues = data.get("items", [])
                 total_count = data.get("total_count", 0)
+                result = (issues, total_count)
                 # Cache the results for 30 minutes
-                cache.set(cache_key, issues, 60 * 30)
+                cache.set(cache_key, result, 60 * 30)
 
-                return issues, total_count
+                return result
             else:
                 # Log the error response from GitHub
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
@@ -3032,6 +3432,10 @@ class BountyPayoutsView(ListView):
                             success_message += ". Labels added on GitHub"
                         if comment_success:
                             success_message += ". Comment added on GitHub"
+
+                        # Note: Notifications to the admin team and users are automatically
+                        # created by the post_save signal on GitHubIssue model
+                        success_message += ". Notifications sent to admin team and issue reporter"
 
                         messages.success(request, success_message)
 
@@ -3492,7 +3896,7 @@ class BountyPayoutsView(ListView):
     def find_prs_mentioning_issue(self, issue, owner, repo_name, issue_number):
         """
         Find pull requests that mention this issue using closing keywords
-        like "Closes #123" or "Fixes #123" in their body.
+        like "Closes #123" or "Fixes #123" in their body text.
         """
         import logging
 
@@ -3637,7 +4041,7 @@ class BountyPayoutsView(ListView):
                 if not comment_body:
                     continue
 
-                logger.info(f"Analyzing comment #{index+1} for issue #{issue_number}: {comment_body[:100]}...")
+                logger.info(f"Analyzing comment #{index + 1} for issue #{issue_number}: {comment_body[:100]}...")
 
                 # Process BCH patterns first if BCH label exists
                 if search_for_bch:

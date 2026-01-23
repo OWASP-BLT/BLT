@@ -11,7 +11,7 @@ class Command(BaseCommand):
             csrf_lab = Labs.objects.get(name="Cross-Site Request Forgery")
         except Labs.DoesNotExist:
             self.stdout.write(
-                self.style.ERROR("Cross-Site Request Forgery lab not found. Please run create_initial_labs first.")
+                self.style.ERROR("Cross-Site Request Forgery lab not found. Please run seed_all_security_lab first.")
             )
             return
 

@@ -14,15 +14,24 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    ActivityLog,
+    Adventure,
+    AdventureTask,
+    BaconEarning,
+    BaconSubmission,
+    BaconToken,
+    Badge,
     BannedApp,
     Bid,
     Blocked,
+    Challenge,
     ChatBotLog,
     Contribution,
     Contributor,
     ContributorStats,
     Course,
     DailyStats,
+    DailyStatusReport,
     Domain,
     Enrollment,
     ForumCategory,
@@ -31,22 +40,31 @@ from website.models import (
     ForumVote,
     GitHubIssue,
     GitHubReview,
+    Hackathon,
+    HackathonPrize,
+    HackathonSponsor,
     Hunt,
     HuntPrize,
     Integration,
     InviteFriend,
+    IpReport,
     Issue,
     IssueScreenshot,
+    Job,
     JoinRequest,
+    Kudos,
     Labs,
     Lecture,
     LectureStatus,
+    ManagementCommandLog,
     Message,
     Monitor,
     Notification,
     Organization,
     OrganizationAdmin,
+    OsshArticle,
     OsshCommunity,
+    OsshDiscussionChannel,
     Payment,
     Points,
     Post,
@@ -54,22 +72,30 @@ from website.models import (
     Project,
     Queue,
     Rating,
+    ReminderSettings,
     Repo,
     Room,
     Section,
     SlackBotActivity,
     SlackIntegration,
+    StakingEntry,
+    StakingPool,
+    StakingTransaction,
     Subscription,
     Tag,
     TaskContent,
     Tasks,
+    Thread,
     TimeLog,
     Trademark,
     TrademarkOwner,
     Transaction,
+    UserAdventureProgress,
+    UserBadge,
     UserLabProgress,
     UserProfile,
     UserTaskProgress,
+    UserTaskSubmission,
     Wallet,
     Winner,
 )
@@ -261,6 +287,39 @@ class OrganizationAdmins(ImportExportModelAdmin):
     get_url_icon.allow_tags = True
 
 
+class JobAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "organization",
+        "location",
+        "job_type",
+        "status",
+        "is_public",
+        "expires_at",
+        "views_count",
+        "created_at",
+    )
+    list_display_links = ("id", "title")
+    list_editable = ("status", "is_public")
+    list_filter = ("job_type", "status", "is_public", "created_at", "organization")
+    search_fields = ("title", "description", "location", "organization__name")
+    readonly_fields = ("views_count", "created_at", "updated_at")
+    ordering = ("-created_at",)
+    date_hierarchy = "created_at"
+
+    fieldsets = (
+        ("Basic Information", {"fields": ("organization", "title", "description", "requirements")}),
+        ("Job Details", {"fields": ("location", "job_type", "salary_range")}),
+        ("Visibility & Status", {"fields": ("is_public", "status", "expires_at")}),
+        (
+            "Application Methods",
+            {"fields": ("application_email", "application_url", "application_instructions"), "classes": ("collapse",)},
+        ),
+        ("Metadata", {"fields": ("posted_by", "views_count", "created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
 class PointsAdmin(admin.ModelAdmin):
     list_display = (
         "user",
@@ -303,6 +362,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "short_description",
         "winnings",
         "issues_hidden",
+        "is_verifier",
         "btc_address",
         "bch_address",
         "eth_address",
@@ -473,9 +533,22 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class ForumPostAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "description", "up_votes", "down_votes", "status", "created")
-    list_filter = ("status", "category")
+    list_display = (
+        "id",
+        "user",
+        "title",
+        "description",
+        "up_votes",
+        "down_votes",
+        "status",
+        "created",
+        "repo",
+        "project",
+        "organization",
+    )
+    list_filter = ("status", "category", "repo", "project", "organization")
     search_fields = ("title", "description", "user__username")
+    autocomplete_fields = ["repo", "project", "organization"]
 
 
 class ForumVoteAdmin(admin.ModelAdmin):
@@ -659,18 +732,92 @@ class ThreadAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+def backfill_slack_usernames(modeladmin, request, queryset):
+    """
+    Admin action to backfill username field for SlackBotActivity records.
+    Fetches usernames from Slack API for records that have user_id but no username.
+    """
+    import logging
+    import os
+
+    from slack_sdk.web import WebClient
+
+    logger = logging.getLogger(__name__)
+
+    # Import here to avoid circular imports
+    from website.views.slack_handlers import get_slack_username
+
+    # Filter to only records that have user_id but no username
+    records_to_update = queryset.filter(user_id__isnull=False).exclude(user_id="").filter(username__isnull=True)
+
+    if not records_to_update.exists():
+        modeladmin.message_user(request, "No records found with user_id but missing username.")
+        return
+
+    updated_count = 0
+    failed_count = 0
+    skipped_count = 0
+
+    # Get Slack tokens
+    SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+
+    for activity in records_to_update:
+        workspace_client = None
+
+        try:
+            # Try to get workspace-specific client
+            slack_integration = SlackIntegration.objects.get(workspace_name=activity.workspace_id)
+            workspace_client = WebClient(token=slack_integration.bot_access_token)
+        except SlackIntegration.DoesNotExist:
+            # Use default OWASP token for OWASP workspace
+            if activity.workspace_id == "T04T40NHX" and SLACK_TOKEN:
+                workspace_client = WebClient(token=SLACK_TOKEN)
+            else:
+                logger.warning(
+                    f"No Slack integration found for workspace {activity.workspace_id} "
+                    f"and not OWASP workspace. Skipping activity {activity.id}"
+                )
+                skipped_count += 1
+                continue
+
+        if workspace_client:
+            try:
+                username = get_slack_username(workspace_client, activity.user_id)
+                if username:
+                    activity.username = username
+                    activity.save(update_fields=["username"])
+                    updated_count += 1
+                else:
+                    logger.warning(f"Could not fetch username for user_id {activity.user_id} in activity {activity.id}")
+                    failed_count += 1
+            except Exception as e:
+                logger.error(
+                    f"Error fetching username for activity {activity.id}, user_id {activity.user_id}: {str(e)}",
+                    exc_info=True,
+                )
+                failed_count += 1
+
+    message = f"Backfill complete: {updated_count} updated, {failed_count} failed, {skipped_count} skipped."
+    modeladmin.message_user(request, message)
+
+
+backfill_slack_usernames.short_description = "Backfill username from Slack API"
+
+
 class SlackBotActivityAdmin(admin.ModelAdmin):
     list_display = (
         "workspace_name",
         "activity_type",
         "user_id",
+        "username",
         "success",
         "created",
     )
     list_filter = ("activity_type", "success", "workspace_name")
-    search_fields = ("workspace_name", "user_id", "error_message")
+    search_fields = ("workspace_name", "user_id", "username", "error_message")
     readonly_fields = ("created",)
     ordering = ("-created",)
+    actions = [backfill_slack_usernames]
 
 
 class RoomAdmin(admin.ModelAdmin):
@@ -807,6 +954,7 @@ admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
 admin.site.register(OrganizationAdmin, OrganizationUserAdmin)
 admin.site.register(Organization, OrganizationAdmins)
+admin.site.register(Job, JobAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
@@ -851,6 +999,180 @@ admin.site.register(JoinRequest, JoinRequestAdmin)
 admin.site.register(Notification)
 
 
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = ("user", "window_title", "url", "recorded_at", "created")
+    list_filter = ("recorded_at", "created")
+    search_fields = ("user__username", "window_title", "url")
+    date_hierarchy = "recorded_at"
+
+
+class BaconEarningAdmin(admin.ModelAdmin):
+    list_display = ("user", "tokens_earned", "timestamp")
+    list_filter = ("timestamp",)
+    search_fields = ("user__username",)
+    date_hierarchy = "timestamp"
+
+
+class BaconSubmissionAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "github_url",
+        "contribution_type",
+        "status",
+        "transaction_status",
+        "bacon_amount",
+        "created_at",
+    )
+    list_filter = ("status", "transaction_status", "contribution_type", "created_at")
+    search_fields = ("user__username", "github_url", "description")
+    date_hierarchy = "created_at"
+
+
+class BaconTokenAdmin(admin.ModelAdmin):
+    list_display = ("user", "amount", "contribution", "token_id", "created")
+    list_filter = ("created",)
+    search_fields = ("user__username", "token_id")
+    date_hierarchy = "created"
+
+
+class BadgeAdmin(admin.ModelAdmin):
+    list_display = ("title", "type", "created_at")
+    list_filter = ("type", "created_at")
+    search_fields = ("title", "description")
+
+
+class ChallengeAdmin(admin.ModelAdmin):
+    list_display = ("title", "challenge_type", "points", "bacon_reward", "progress", "completed", "created_at")
+    list_filter = ("challenge_type", "completed", "created_at")
+    search_fields = ("title", "description")
+
+
+class DailyStatusReportAdmin(admin.ModelAdmin):
+    list_display = ("user", "date", "goal_accomplished", "current_mood", "created")
+    list_filter = ("date", "goal_accomplished", "current_mood")
+    search_fields = ("user__username", "previous_work", "next_plan")
+    date_hierarchy = "date"
+
+
+class HackathonAdmin(admin.ModelAdmin):
+    list_display = ("name", "organization", "start_time", "end_time", "is_active", "registration_open", "created")
+    list_filter = ("is_active", "registration_open", "start_time", "organization")
+    search_fields = ("name", "description", "organization__name")
+    date_hierarchy = "start_time"
+    filter_horizontal = ("repositories",)
+
+
+class HackathonPrizeAdmin(admin.ModelAdmin):
+    list_display = ("hackathon", "position", "title", "value", "sponsor")
+    list_filter = ("position", "hackathon")
+    search_fields = ("title", "description", "hackathon__name")
+
+
+class HackathonSponsorAdmin(admin.ModelAdmin):
+    list_display = ("hackathon", "organization", "sponsor_level", "created")
+    list_filter = ("sponsor_level", "hackathon", "created")
+    search_fields = ("hackathon__name", "organization__name")
+
+
+class IpReportAdmin(admin.ModelAdmin):
+    list_display = ("ip_address", "ip_type", "activity_type", "activity_title", "user", "created")
+    list_filter = ("ip_type", "activity_type", "created")
+    search_fields = ("ip_address", "activity_title", "description", "user__username")
+    date_hierarchy = "created"
+
+
+class KudosAdmin(admin.ModelAdmin):
+    list_display = ("sender", "receiver", "timestamp", "link")
+    list_filter = ("timestamp",)
+    search_fields = ("sender__username", "receiver__username", "comment")
+    date_hierarchy = "timestamp"
+
+
+class ManagementCommandLogAdmin(admin.ModelAdmin):
+    list_display = ("command_name", "last_run", "success", "run_count")
+    list_filter = ("success", "last_run")
+    search_fields = ("command_name", "error_message")
+    date_hierarchy = "last_run"
+
+
+class OsshArticleAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "source", "publication_date", "created_at")
+    list_filter = ("source", "publication_date", "created_at")
+    search_fields = ("title", "author", "description")
+    date_hierarchy = "publication_date"
+    filter_horizontal = ("tags",)
+
+
+class OsshDiscussionChannelAdmin(admin.ModelAdmin):
+    list_display = ("name", "source", "member_count", "created_at")
+    list_filter = ("source", "created_at")
+    search_fields = ("name", "description", "external_id")
+    filter_horizontal = ("tags",)
+
+
+class ReminderSettingsAdmin(admin.ModelAdmin):
+    list_display = ("user", "reminder_time", "timezone", "is_active", "last_reminder_sent")
+    list_filter = ("is_active", "timezone")
+    search_fields = ("user__username",)
+
+
+class StakingEntryAdmin(admin.ModelAdmin):
+    list_display = ("user", "pool", "staked_amount", "actual_reward", "status", "challenge_completed", "created_at")
+    list_filter = ("status", "challenge_completed", "created_at")
+    search_fields = ("user__username", "pool__name")
+    date_hierarchy = "created_at"
+
+
+class StakingPoolAdmin(admin.ModelAdmin):
+    list_display = ("name", "pool_type", "stake_amount", "status", "start_date", "end_date", "winner", "created_by")
+    list_filter = ("pool_type", "status", "start_date")
+    search_fields = ("name", "description", "created_by__username")
+    date_hierarchy = "start_date"
+
+
+class StakingTransactionAdmin(admin.ModelAdmin):
+    list_display = ("user", "pool", "transaction_type", "amount", "created_at")
+    list_filter = ("transaction_type", "created_at")
+    search_fields = ("user__username", "pool__name", "description")
+    date_hierarchy = "created_at"
+
+
+class ThreadAdmin(admin.ModelAdmin):
+    list_display = ("id", "updated_at")
+    list_filter = ("updated_at",)
+    filter_horizontal = ("participants",)
+
+
+class UserBadgeAdmin(admin.ModelAdmin):
+    list_display = ("user", "badge", "awarded_by", "awarded_at")
+    list_filter = ("badge", "awarded_at")
+    search_fields = ("user__username", "badge__title", "reason")
+    date_hierarchy = "awarded_at"
+
+
+admin.site.register(ActivityLog, ActivityLogAdmin)
+admin.site.register(BaconEarning, BaconEarningAdmin)
+admin.site.register(BaconSubmission, BaconSubmissionAdmin)
+admin.site.register(BaconToken, BaconTokenAdmin)
+admin.site.register(Badge, BadgeAdmin)
+admin.site.register(Challenge, ChallengeAdmin)
+admin.site.register(DailyStatusReport, DailyStatusReportAdmin)
+admin.site.register(Hackathon, HackathonAdmin)
+admin.site.register(HackathonPrize, HackathonPrizeAdmin)
+admin.site.register(HackathonSponsor, HackathonSponsorAdmin)
+admin.site.register(IpReport, IpReportAdmin)
+admin.site.register(Kudos, KudosAdmin)
+admin.site.register(ManagementCommandLog, ManagementCommandLogAdmin)
+admin.site.register(OsshArticle, OsshArticleAdmin)
+admin.site.register(OsshDiscussionChannel, OsshDiscussionChannelAdmin)
+admin.site.register(ReminderSettings, ReminderSettingsAdmin)
+admin.site.register(StakingEntry, StakingEntryAdmin)
+admin.site.register(StakingPool, StakingPoolAdmin)
+admin.site.register(StakingTransaction, StakingTransactionAdmin)
+admin.site.register(Thread, ThreadAdmin)
+admin.site.register(UserBadge, UserBadgeAdmin)
+
+
 @admin.register(BannedApp)
 class BannedAppAdmin(admin.ModelAdmin):
     list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
@@ -863,4 +1185,89 @@ class BannedAppAdmin(admin.ModelAdmin):
         ("App Information", {"fields": ("app_name", "app_type")}),
         ("Country Information", {"fields": ("country_name", "country_code")}),
         ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
+    )
+
+
+class AdventureTaskInline(admin.TabularInline):
+    model = AdventureTask
+    extra = 1
+    fields = ("order", "title", "description", "is_required")
+    ordering = ["order"]
+
+
+@admin.register(Adventure)
+class AdventureAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "category",
+        "difficulty",
+        "badge_emoji",
+        "badge_title",
+        "is_active",
+        "total_tasks",
+        "completion_count",
+        "created_at",
+    )
+    list_filter = ("category", "difficulty", "is_active", "created_at")
+    search_fields = ("title", "description", "badge_title")
+    prepopulated_fields = {"slug": ("title",)}
+    inlines = [AdventureTaskInline]
+    fieldsets = (
+        (
+            "Basic Information",
+            {"fields": ("title", "slug", "description", "category", "difficulty", "estimated_time", "is_active")},
+        ),
+        ("Badge Information", {"fields": ("badge", "badge_emoji", "badge_title")}),
+    )
+
+    def total_tasks(self, obj):
+        return obj.total_tasks
+
+    total_tasks.short_description = "Total Tasks"
+
+    def completion_count(self, obj):
+        return obj.completion_count
+
+    completion_count.short_description = "Completions"
+
+
+@admin.register(AdventureTask)
+class AdventureTaskAdmin(admin.ModelAdmin):
+    list_display = ("adventure", "order", "title", "is_required", "created_at")
+    list_filter = ("adventure", "is_required", "created_at")
+    search_fields = ("title", "description", "adventure__title")
+    ordering = ["adventure", "order"]
+
+
+class UserTaskSubmissionInline(admin.TabularInline):
+    model = UserTaskSubmission
+    extra = 0
+    fields = ("task", "status", "proof_url", "submitted_at", "reviewed_by")
+    readonly_fields = ("submitted_at",)
+    can_delete = False
+
+
+@admin.register(UserAdventureProgress)
+class UserAdventureProgressAdmin(admin.ModelAdmin):
+    list_display = ("user", "adventure", "progress_percentage", "completed", "started_at", "completed_at")
+    list_filter = ("completed", "adventure", "started_at", "completed_at")
+    search_fields = ("user__username", "adventure__title")
+    readonly_fields = ("started_at", "completed_at", "progress_percentage")
+    inlines = [UserTaskSubmissionInline]
+
+    def progress_percentage(self, obj):
+        return f"{obj.progress_percentage}%"
+
+    progress_percentage.short_description = "Progress"
+
+
+@admin.register(UserTaskSubmission)
+class UserTaskSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("progress", "task", "status", "submitted_at", "reviewed_by", "reviewed_at")
+    list_filter = ("status", "approved", "submitted_at", "reviewed_at")
+    search_fields = ("progress__user__username", "task__title", "notes", "reviewer_notes")
+    readonly_fields = ("submitted_at",)
+    fieldsets = (
+        ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
+        ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
