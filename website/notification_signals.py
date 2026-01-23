@@ -176,19 +176,22 @@ def notify_moderators_on_content_flagged(sender, instance, created, **kwargs):
         )
 
         # Create notifications for all moderators
-        notification_count = 0
+        notifications_to_create = []
         for moderator in moderators:
             # Don't notify the reporter if they're a moderator
             if instance.reporter and moderator.id == instance.reporter.id:
                 continue
-
-            Notification.objects.create(
-                user=moderator,
-                message=message,
-                notification_type="alert",
-                link=admin_link,
+            notifications_to_create.append(
+                Notification(
+                    user=moderator,
+                    message=message,
+                    notification_type="alert",
+                    link=admin_link,
+                )
             )
-            notification_count += 1
+        if notifications_to_create:
+            Notification.objects.bulk_create(notifications_to_create)
+        notification_count = len(notifications_to_create)
 
         # Create audit record for the flagging
         ModerationAction.objects.create(
