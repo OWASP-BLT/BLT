@@ -144,7 +144,7 @@
                         <div class="p-6 text-center">
                             <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
                                  data-target="100">0</div>
-                            <div class="text-gray-700 font-medium">Countries Participated</div>
+                            <div class="text-gray-700 dark:text-gray-300 font-medium">Countries Participated</div>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden transform">
@@ -1014,7 +1014,7 @@ document.addEventListener("DOMContentLoaded", () => {
         observer.unobserve(entry.target); // run once
       }
     });
-  }, {threshold: 1});
+  }, {threshold: 0.5});
 
   counters.forEach(counter => observer.observe(counter));
 });
