@@ -20,7 +20,12 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-3 w-72">
         <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Page Views (Last 30 Days)</div>
         <!-- Bar Chart -->
-        <div class="mb-3">
+        <div class="mb-3 relative h-[120px]">
+            <!-- Chart status message -->
+            <div id="pageViewsChartStatus"
+                 class="absolute inset-0 flex items-center justify-center text-xs text-[#e74c3c] text-center pointer-events-none">
+                Preparing chart…
+            </div>
             <canvas id="pageViewsChart" height="120"></canvas>
         </div>
         <!-- Vote Buttons -->
@@ -57,14 +62,24 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const chartStatusEl = document.getElementById('pageViewsChartStatus');
+
     let chartInitAttempts = 0;
-    const MAX_CHART_INIT_ATTEMPTS = 50;
+    const MAX_CHART_INIT_ATTEMPTS = 50;  // 50 attempts × 100ms = 5 seconds total
     const initializeChart = function() {
         // Wait for Chart.js to be available
         if (typeof Chart === 'undefined') {
             chartInitAttempts++;
+        // Still retrying → show loading message
+        if (chartStatusEl) {
+            chartStatusEl.textContent = 'Preparing chart…';
+        }
 
             if (chartInitAttempts >= MAX_CHART_INIT_ATTEMPTS) {
+                if (chartStatusEl) {
+                    chartStatusEl.textContent =
+                    'Chart unavailable. Try refreshing the page.';
+                }
                 return;
             }
             setTimeout(initializeChart, 100);
@@ -72,6 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const ctx = document.getElementById('pageViewsChart').getContext('2d');
+        if (chartStatusEl) {
+            chartStatusEl.style.display = 'none';
+        }
         
         // Initialize default empty data structure
         let viewsByDate = {};
