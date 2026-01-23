@@ -3028,17 +3028,6 @@ def handle_committee_pagination(action, body, client):
 def get_contributors_info(workspace_client, user_id, project_name, activity):
     """Handle contributors information command"""
     try:
-        # early token check
-        if not GITHUB_TOKEN:
-            activity.success = False
-            activity.error_message = "GitHub API token not configured"
-            activity.save()
-            return JsonResponse(
-                {
-                    "response_type": "ephemeral",
-                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
-                }
-            )
         # Send immediate response
         response = JsonResponse(
             {
@@ -3051,6 +3040,22 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
         def process_contributors():
             try:
                 headers = get_github_headers()
+                if not GITHUB_TOKEN:
+                    send_dm(
+                        workspace_client,
+                        user_id,
+                        "Error",
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                                },
+                            }
+                        ],
+                    )
+                    return
 
                 if project_name:
                     # Show contributors for a specific project
@@ -3225,6 +3230,18 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
         activity.success = False
         activity.error_message = str(e)
         activity.save()
+        send_dm(
+            workspace_client,
+            user_id,
+            "Error",
+            [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "❌ An unexpected error occurred while fetching contributors."},
+                }
+            ],
+        )
+    return
 
 
 def fetch_all_contributors(workspace_client, user_id, headers, activity):
@@ -3362,3 +3379,15 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
         activity.success = False
         activity.error_message = str(e)
         activity.save()
+        send_dm(
+            workspace_client,
+            user_id,
+            "Error",
+            [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "❌ An unexpected error occurred while fetching contributors."},
+                }
+            ],
+        )
+    return

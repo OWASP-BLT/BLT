@@ -456,10 +456,7 @@ class SlackHandlerTests(TestCase):
         # GitHub repository search (paginated)
         def mock_get_side_effect(url, **kwargs):
             if "search/repositories" in url:
-                if "page=1" in url:
-                    return mock_search_response  # first page
-                else:
-                    return empty_search_response  # next pages return empty
+                return mock_search_response
             elif "contributors" in url:
                 return mock_contributors_response
             return MagicMock(status_code=404)
