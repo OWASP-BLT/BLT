@@ -208,11 +208,7 @@ class RegisterOrganizationView(View):
             logo_path = None
 
         spam_detector = AISpamDetectionService()
-        logger.info("=" * 100)
-        logger.info(f"Organization registration data: {str(data)}")
-        logger.info(f"Organization name: {organization_name}, URL: {organization_url}")
         spam_result = spam_detector.detect_spam(content=str(data), content_type="organization")
-        logger.info(f"Spam detection result: {spam_result}")
 
         try:
             with transaction.atomic():
@@ -964,8 +960,6 @@ class OrganizationDashboardTeamOverviewView(View):
 
                 reports = DailyStatusReport.objects.filter(user__in=team_member_users).order_by("-date")
 
-                logger.info(f"Total reports before filter: {reports.count()}")
-
                 if filter_type == "user" and filter_value:
                     reports = reports.filter(user_id=filter_value)
                 elif filter_type == "date" and filter_value:
@@ -974,8 +968,6 @@ class OrganizationDashboardTeamOverviewView(View):
                     reports = reports.filter(goal_accomplished=filter_value == "true")
                 elif filter_type == "task" and filter_value:
                     reports = reports.filter(previous_work__icontains=filter_value)
-
-                logger.info(f"Reports after filter: {reports.count()}")
 
                 data = []
                 for report in reports:

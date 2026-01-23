@@ -1386,7 +1386,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             # Check if this issue was flagged as spam
             spam_result = getattr(obj, "_spam_detection_result", None)
-            logger.info(f"[SPAM CHECK] spam_result on obj: {spam_result}")
             if (
                 spam_result
                 and spam_result["is_spam"]
@@ -1394,12 +1393,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             ):
                 # Mark issue as hidden (pending moderator review)
                 obj.is_hidden = True
-                logger.info("[SPAM DETECTED] Setting is_hidden=True for spam issue")
 
             # Initial save to get ID
-            logger.info(f"[BEFORE SAVE] is_hidden={obj.is_hidden}")
             obj.save()
-            logger.info(f"[AFTER SAVE] Issue ID={obj.id}, is_hidden={obj.is_hidden}")
 
             # Create FlaggedContent entry if spam was detected
             if (
