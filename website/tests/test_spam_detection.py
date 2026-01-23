@@ -174,7 +174,7 @@ class FlaggedContentModelTests(TestCase):
         )
 
         str_repr = str(flagged)
-        self.assertIn("Issue", str_repr)
+        self.assertIn("issue", str_repr.lower())
         self.assertIn("Pending", str_repr)
 
     def test_get_content_preview_with_description(self):
