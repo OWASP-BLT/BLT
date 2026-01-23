@@ -1466,37 +1466,40 @@ class FlaggedContentAdmin(admin.ModelAdmin):
         count = 0
         deleted_count = 0
 
-        for flagged in queryset.filter(status="pending"):
-            # Mark as rejected first before deleting content
-            flagged.reject(request.user, "Rejected by moderator - confirmed spam")
+        try:
+            logger = logging.getLogger(__name__)
+            for flagged in queryset.filter(status="pending"):
+                # Mark as rejected first before deleting content
+                flagged.reject(request.user, "Rejected by moderator - confirmed spam")
 
-            # Delete the associated content after marking as rejected
-            content_deleted = False
-            if flagged.content_type.model == "issue" and flagged.content_object:
-                issue = flagged.content_object
-                issue_id = issue.id
-                issue.delete()
-                logger.info(f"Issue #{issue_id} deleted after moderator rejection")
-                content_deleted = True
-                deleted_count += 1
+                # Delete the associated content after marking as rejected
+                content_deleted = False
+                if flagged.content_type.model == "issue" and flagged.content_object:
+                    issue = flagged.content_object
+                    issue_id = issue.id
+                    issue.delete()
+                    logger.info(f"Issue #{issue_id} deleted after moderator rejection")
+                    content_deleted = True
+                    deleted_count += 1
 
-            if flagged.content_type.model == "organization" and flagged.content_object:
-                organization = flagged.content_object
-                org_id = organization.id
-                organization.delete()
-                logger.info(f"Organization #{org_id} deleted after moderator rejection")
-                content_deleted = True
-                deleted_count += 1
+                if flagged.content_type.model == "organization" and flagged.content_object:
+                    organization = flagged.content_object
+                    org_id = organization.id
+                    organization.delete()
+                    logger.info(f"Organization #{org_id} deleted after moderator rejection")
+                    content_deleted = True
+                    deleted_count += 1
 
-            # Record the moderation action
-            ModerationAction.objects.create(
-                flagged_content=flagged,
-                action="rejected",
-                performed_by=request.user,
-                notes=f"Rejected via admin action - content {'deleted' if content_deleted else 'flagged'}",
-            )
-            count += 1
-
+                # Record the moderation action
+                ModerationAction.objects.create(
+                    flagged_content=flagged,
+                    action="rejected",
+                    performed_by=request.user,
+                    notes=f"Rejected via admin action - content {'deleted' if content_deleted else 'flagged'}",
+                )
+                count += 1
+        except Exception as e:
+            logger.error(f"Error rejecting flagged content: {e}")
         self.message_user(
             request, f"{count} items rejected as spam. {deleted_count} items permanently deleted.", messages.WARNING
         )
