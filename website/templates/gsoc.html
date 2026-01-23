@@ -58,6 +58,55 @@
             </div>
         </div>
     </div>
+    <!-- GSoC Timeline Section -->
+    <section class="bg-white py-12 border-t border-gray-200">
+        <div class="w-[85%] mx-auto">
+            <h3 class="text-2xl font-bold text-gray-900 text-center mb-2">Google Summer of Code Timeline</h3>
+            <p class="text-center text-gray-600 mb-10">Key phases of the GSoC journey with OWASP</p>
+            <div class="relative">
+                <!-- Vertical line -->
+                <div class="hidden md:block absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-gray-200"></div>
+                <div class="space-y-10">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col md:flex-row items-center md:justify-between">
+                        <div class="md:w-5/12 text-right md:pr-8">
+                            <h4 class="font-semibold text-lg text-gray-900">Organization Applications</h4>
+                            <p class="text-gray-600">Open-source organizations apply to participate in GSoC.</p>
+                        </div>
+                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
+                        <div class="md:w-5/12"></div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col md:flex-row items-center md:justify-between">
+                        <div class="md:w-5/12"></div>
+                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
+                        <div class="md:w-5/12 md:pl-8">
+                            <h4 class="font-semibold text-lg text-gray-900">Student Applications</h4>
+                            <p class="text-gray-600">Students submit proposals and connect with mentors.</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex flex-col md:flex-row items-center md:justify-between">
+                        <div class="md:w-5/12 text-right md:pr-8">
+                            <h4 class="font-semibold text-lg text-gray-900">Community Bonding</h4>
+                            <p class="text-gray-600">Accepted students prepare and plan with their mentors.</p>
+                        </div>
+                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
+                        <div class="md:w-5/12"></div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col md:flex-row items-center md:justify-between">
+                        <div class="md:w-5/12"></div>
+                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
+                        <div class="md:w-5/12 md:pl-8">
+                            <h4 class="font-semibold text-lg text-gray-900">Coding Phase & Evaluations</h4>
+                            <p class="text-gray-600">Students work on projects and undergo evaluations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
     <!-- Main Content -->
     <div class="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div class="w-[85%] mx-auto">
@@ -67,21 +116,24 @@
                     <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">100+</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="100">0</div>
                             <div class="text-gray-700 font-medium">Countries Participated</div>
                         </div>
                     </div>
                     <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">7</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="7">0</div>
                             <div class="text-gray-700 font-medium">Years with OWASP BLT</div>
                         </div>
                     </div>
                     <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">20+</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="20">0</div>
                             <div class="text-gray-700 font-medium">Successful Projects</div>
                         </div>
                     </div>
@@ -763,4 +815,35 @@
             </div>
         </div>
     </div>
+    <!-- Animated Stats JS -->
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const counters = document.querySelectorAll('.counter');
+
+  const animateCounter = (counter) => {
+    const target = +counter.getAttribute('data-target');
+    let count = 0;
+    const step = Math.ceil(target / 200); // adjust speed
+
+    const updateCount = () => {
+      count += step;
+      if(count > target) count = target;
+      counter.textContent = count + "+"; // add + sign
+      if(count < target) requestAnimationFrame(updateCount);
+    };
+    updateCount();
+  };
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        animateCounter(entry.target);
+        observer.unobserve(entry.target); // run once
+      }
+    });
+  }, {threshold: 1});
+
+  counters.forEach(counter => observer.observe(counter));
+});
+    </script>
 {% endblock content %}
