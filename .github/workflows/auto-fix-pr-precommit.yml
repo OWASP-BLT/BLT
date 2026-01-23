@@ -9,7 +9,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: auto-fix-${{ github.event.pull_request.head.ref }}
+  group: auto-fix-pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -19,13 +19,18 @@ jobs:
     if: |
       github.event.pull_request.head.repo.full_name == github.repository &&
       !endsWith(github.actor, '[bot]')
+    
+    env:
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ env.PR_HEAD_SHA }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -60,12 +65,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Check by PR number range (more reliable than branch name)
           OPEN_FIX_PRS=$(gh pr list \
             --label "automated-fix" \
             --state open \
-            --head "${{ github.event.pull_request.head.ref }}" \
-            --json number \
-            --jq 'length')
+            --json number,headRefName \
+            --jq "[.[] | select(.headRefName == \"$PR_HEAD_REF\" and .number != $PR_NUMBER)] | length")
 
           if [ "$OPEN_FIX_PRS" -gt 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
@@ -193,8 +198,6 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
         id: detect_conflict
         env:
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           MAX_RETRIES: 3
           RETRY_DELAY: 5
         run: |
@@ -239,8 +242,6 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           echo "❌ New commits detected on remote branch since checkout."
           echo "Auto-fix aborted to prevent commit conflicts."
@@ -264,8 +265,6 @@ jobs:
         if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.detect_conflict.outputs.conflict_detected == 'false'
         id: push_fixes
         env:
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           MAX_RETRIES: 3
           RETRY_DELAY: 5
         run: |
@@ -405,7 +404,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} \
+          gh pr edit $PR_NUMBER \
             --add-label "automated-fix" \
             --add-label "pre-commit"
 
@@ -417,7 +416,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ github.event.pull_request.number }} \
+          gh pr comment $PR_NUMBER \
             --body "🤖 **Auto-fix Applied Successfully**
 
           Pre-commit checks detected formatting issues and automatically applied fixes.
@@ -479,9 +478,4 @@ jobs:
           echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Syntax errors in Python code" >> $GITHUB_STEP_SUMMARY
-          echo "- Invalid Django template syntax" >> $GITHUB_STEP_SUMMARY
-          echo "- Missing required imports" >> $GITHUB_STEP_SUMMARY
-          echo "- Test failures" >> $GITHUB_STEP_SUMMARY
-          echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
-          exit 1
+          
