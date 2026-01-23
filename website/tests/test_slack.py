@@ -461,4 +461,3 @@ class SlackHandlerTests(TestCase):
         activity = SlackBotActivity.objects.filter(activity_type="command", user_id="U123").last()
         self.assertIsNotNone(activity)
         self.assertEqual(activity.details["command"], "/contributors")
-        self.assertEqual(activity.details["command"], "/installed_apps")
