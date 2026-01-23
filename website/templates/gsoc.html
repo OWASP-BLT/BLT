@@ -17,24 +17,7 @@
     Learn about the Google Summer of Code (GSoC) program, its benefits, and its partnership with OWASP {% env 'PROJECT_NAME' %}.
 {% endblock og_description %}
 {% block extra_head %}
-    <style>
-.mentor-description-container {
-    max-height: 8rem;
-    overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.mentor-description-container::-webkit-scrollbar {
-    display: none;
-}
-.mentor-description-text {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.mentor-description-text::-webkit-scrollbar {
-    display: none;
-}
-    </style>
+    <link rel="stylesheet" href="{% static 'css/gsoc.css' %}">
 {% endblock extra_head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -152,7 +135,7 @@
                         <div class="p-6 text-center">
                             <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
                                  data-target="7">0</div>
-                            <div class="text-gray-700 font-medium">Years with OWASP BLT</div>
+                            <div class="text-gray-700 dark:text-gray-300 font-medium">Years with OWASP BLT</div>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden transform">
@@ -160,7 +143,7 @@
                         <div class="p-6 text-center">
                             <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
                                  data-target="20">0</div>
-                            <div class="text-gray-700 font-medium">Successful Projects</div>
+                            <div class="text-gray-700 dark:text-gray-300 font-medium">Successful Projects</div>
                         </div>
                     </div>
                 </div>

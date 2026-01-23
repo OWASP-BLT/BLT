@@ -1,0 +1,19 @@
+mentor-description-container {
+    max-height: 8rem;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.mentor-description-container::-webkit-scrollbar {
+    display: none;
+}
+
+.mentor-description-text {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.mentor-description-text::-webkit-scrollbar {
+    display: none;
+}
