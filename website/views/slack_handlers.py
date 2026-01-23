@@ -3028,6 +3028,17 @@ def handle_committee_pagination(action, body, client):
 def get_contributors_info(workspace_client, user_id, project_name, activity):
     """Handle contributors information command"""
     try:
+        # early token check
+        if not GITHUB_TOKEN:
+            activity.success = False
+            activity.error_message = "GitHub API token not configured"
+            activity.save()
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                }
+            )
         # Send immediate response
         response = JsonResponse(
             {
@@ -3040,22 +3051,6 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
         def process_contributors():
             try:
                 headers = get_github_headers()
-                if not GITHUB_TOKEN:
-                    send_dm(
-                        workspace_client,
-                        user_id,
-                        "Error",
-                        [
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
-                                },
-                            }
-                        ],
-                    )
-                    return
 
                 if project_name:
                     # Show contributors for a specific project
@@ -3085,6 +3080,7 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
                 )
 
         thread = threading.Thread(target=process_contributors)
+        thread.daemon = True
         thread.start()
 
         return response
@@ -3127,6 +3123,9 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
 
         repos = response.json().get("items", [])
         if not repos:
+            activity.success = False
+            activity.error_message = f"No project found: {project_name}"
+            activity.save()
             send_dm(
                 workspace_client,
                 user_id,
@@ -3149,6 +3148,9 @@ def fetch_project_contributors(workspace_client, user_id, project_name, headers,
         contributors_response = requests.get(contributors_url, headers=headers, params=contributors_params, timeout=10)
 
         if contributors_response.status_code != 200:
+            activity.success = False
+            activity.error_message = f"Failed to fetch contributors for {repo['name']}"
+            activity.save()
             send_dm(
                 workspace_client,
                 user_id,
@@ -3249,7 +3251,12 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
         # Process a sample of repositories to avoid rate limiting (top 10 by stars)
         sorted_repos = sorted(all_repos, key=lambda x: x.get("stargazers_count", 0), reverse=True)[:10]
 
+        start_time = time.time()
+
         for repo in sorted_repos:
+            if time.time() - start_time > 30:  # 30s timeout
+                logger.warning("Timeout fetching contributors")
+                break
             try:
                 contributors_url = f"https://api.github.com/repos/{repo['full_name']}/contributors"
                 contributors_params = {"per_page": 30}  # Get top 30 from each repo

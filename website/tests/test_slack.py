@@ -319,7 +319,7 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.WebClient")
     @patch("website.views.slack_handlers.requests.get")
     @patch("website.views.slack_handlers.threading.Thread")
-    def test_slack_command_contributors_all(self, mock_requests_get, mock_webclient, mock_verify):
+    def test_slack_command_contributors_all(self, mock_thread, mock_requests_get, mock_webclient, mock_verify):
         # Mock the Slack client
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
@@ -409,7 +409,9 @@ class SlackHandlerTests(TestCase):
     @patch("website.views.slack_handlers.WebClient")
     @patch("website.views.slack_handlers.requests.get")
     @patch("website.views.slack_handlers.threading.Thread")
-    def test_slack_command_contributors_specific_project(self, mock_requests_get, mock_webclient, mock_verify):
+    def test_slack_command_contributors_specific_project(
+        self, mock_thread, mock_requests_get, mock_webclient, mock_verify
+    ):
         # Mock the Slack client
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
