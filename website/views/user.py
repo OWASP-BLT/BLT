@@ -148,7 +148,12 @@ def update_bch_address(request):
 def profile_edit(request):
     from allauth.account.models import EmailAddress
 
-    Tag.objects.get_or_create(name="GSOC")
+    # Ensure GSOC tag exists (safely handle if already exists with different case)
+    try:
+        Tag.objects.get_or_create(name="GSOC")
+    except Exception:
+        pass  # Tag already exists, continue
+    
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     # Get the user's current email BEFORE changes
