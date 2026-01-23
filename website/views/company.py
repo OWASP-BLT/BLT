@@ -23,10 +23,10 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
-
 from website.models import (
     DailyStatusReport,
     Domain,
+    FlaggedContent,
     Hunt,
     HuntPrize,
     Integration,
@@ -34,10 +34,9 @@ from website.models import (
     InviteOrganization,
     Issue,
     IssueScreenshot,
+    ModerationAction,
     Organization,
     OrganizationAdmin,
-    FlaggedContent,
-    ModerationAction,
     Points,
     SlackIntegration,
     Winner,
@@ -287,11 +286,14 @@ class RegisterOrganizationView(View):
                     request.session.pop("org_ref", None)
 
                 # Check for spam AFTER organization is created (OUTSIDE referral logic)
-                if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE:
+                if (
+                    spam_result["is_spam"]
+                    and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE
+                ):
                     from django.contrib.contenttypes.models import ContentType
 
                     logger.warning(f"Spam organization detected: OrgID:{organization.id} OrgName:{organization.name}")
-                    
+
                     # Set organization as inactive (Organization model doesn't have is_hidden field)
                     organization.is_active = False
                     organization.save()
@@ -356,9 +358,10 @@ class RegisterOrganizationView(View):
             return render(request, "organization/register_organization.html")
         except Exception as e:
             import traceback
+
             error_details = traceback.format_exc()
             logger.error(f"Failed to create organization: {e}\n{error_details}")
-            
+
             if "value too long" in str(e):
                 messages.error(
                     request,

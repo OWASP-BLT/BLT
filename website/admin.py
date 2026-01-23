@@ -1442,8 +1442,8 @@ class FlaggedContentAdmin(admin.ModelAdmin):
                 organization = flagged.content_object
                 organization.is_active = True
                 organization.save()
-                
-            if flagged.content_type.model == "user" and flagged.content_object: 
+
+            if flagged.content_type.model == "user" and flagged.content_object:
                 user = flagged.content_object
                 user.is_hidden = False
                 user.save()
@@ -1469,17 +1469,17 @@ class FlaggedContentAdmin(admin.ModelAdmin):
         for flagged in queryset.filter(status="pending"):
             # Mark as rejected first before deleting content
             flagged.reject(request.user, "Rejected by moderator - confirmed spam")
-            
+
             # Delete the associated content after marking as rejected
             content_deleted = False
             if flagged.content_type.model == "issue" and flagged.content_object:
-                issue = flagged.content_object  
+                issue = flagged.content_object
                 issue_id = issue.id
                 issue.delete()
                 logger.info(f"Issue #{issue_id} deleted after moderator rejection")
                 content_deleted = True
                 deleted_count += 1
-        
+
             if flagged.content_type.model == "organization" and flagged.content_object:
                 organization = flagged.content_object
                 org_id = organization.id
@@ -1487,7 +1487,7 @@ class FlaggedContentAdmin(admin.ModelAdmin):
                 logger.info(f"Organization #{org_id} deleted after moderator rejection")
                 content_deleted = True
                 deleted_count += 1
-            
+
             if flagged.content_type.model == "user" and flagged.content_object:
                 user = flagged.content_object
                 user_id = user.id

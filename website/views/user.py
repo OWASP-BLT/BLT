@@ -152,8 +152,8 @@ def profile_edit(request):
     try:
         Tag.objects.get_or_create(name="GSOC")
     except Exception:
-        pass  # Tag already exists, continue
-    
+        pass
+
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     # Get the user's current email BEFORE changes
