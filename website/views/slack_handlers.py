@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import hmac
 import json
@@ -3025,6 +3026,11 @@ def handle_committee_pagination(action, body, client):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
 
 
+# Simple per-user rate limit (seconds)
+contributor_rate_limit = {}  # {user_id: last_used_timestamp}
+RATE_LIMIT_SECONDS = 30
+
+
 def get_contributors_info(workspace_client, user_id, project_name, activity):
     """Handle contributors information command"""
     try:
@@ -3035,6 +3041,16 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
                 "text": "🔍 Fetching contributor information... I'll send you the results in a DM shortly!",
             }
         )
+        last_used = contributor_rate_limit.get(user_id, 0)
+        now = time.time()
+
+        if now - last_used < RATE_LIMIT_SECONDS:
+            wait = int(RATE_LIMIT_SECONDS - (now - last_used))
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": f"⏱️ Please wait {wait}s before using /contributors again."}
+            )
+        # Update usage timestamp
+        contributor_rate_limit[user_id] = now
 
         # Process the request in a background thread
         def process_contributors():
@@ -3273,6 +3289,8 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
 
         start_time = time.time()
         processed_repos = 0
+        rate_limit_hit = False
+        rate_limit_reset_time = None
 
         for repo in sorted_repos:
             if time.time() - start_time > 30:  # 30s timeout
@@ -3304,9 +3322,12 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                             )
                     processed_repos += 1
                 elif contributors_response.status_code == 403:
-                    # Rate limited - break early with partial results
+                    rate_limit_hit = True
+                    reset_timestamp = contributors_response.headers.get("X-RateLimit-Reset")
+                    if reset_timestamp:
+                        rate_limit_reset_time = int(reset_timestamp)
                     logger.warning("GitHub rate limit hit while fetching contributors")
-                    break
+                    break  # Stop further processing, send partial results
 
                 # Small delay to avoid rate limiting
                 time.sleep(0.1)
@@ -3359,6 +3380,19 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
                     "alt_text": f"Avatar for {contributor['login']}",
                 }
             blocks.append(block)
+
+        if rate_limit_hit:
+            footer_text = "⚠️ *Partial results:* GitHub API rate limit reached."
+
+            if rate_limit_reset_time:
+                reset_dt = datetime.datetime.fromtimestamp(rate_limit_reset_time)
+                now = datetime.datetime.now()
+                minutes_until = max(1, int((reset_dt - now).total_seconds() / 60))
+                footer_text += f" Full results available in ~{minutes_until} minutes."
+            else:
+                footer_text += " Please try again shortly."
+
+            blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": footer_text}]})
 
         blocks.extend(
             [
