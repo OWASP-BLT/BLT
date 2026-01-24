@@ -73,38 +73,47 @@
             <h3 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">Google Summer of Code Timeline</h3>
             <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-12 rounded-full"></div>
             <!-- Timeline container -->
-            <div class="flex items-center justify-between overflow-x-auto px-4 space-x-8">
+            <div class="flex items-start justify-between overflow-x-auto px-4 space-x-8">
                 <!-- Step 1 -->
-                <div class="relative flex flex-col items-center text-center">
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
+                    <!-- Dot -->
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
-                    <!-- Small line to next step -->
-                    <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
+                    <!-- Title row (fixed height) -->
+                    <div class="relative mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Organization Applications</h4>
+                        <!-- Line aligned with title -->
+                        <div class="absolute left-full -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
                     <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Jan 19 – Feb 3, 2026</p>
-                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Organization Applications</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Open-source organizations apply to participate in GSoC.</p>
                 </div>
                 <!-- Step 2 -->
-                <div class="relative flex flex-col items-center text-center">
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
-                    <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
+                    <div class="relative mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Student Applications</h4>
+                        <div class="absolute left-full -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
                     <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Mar 16 – Mar 31, 2026</p>
-                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Student Applications</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students submit proposals and connect with mentors.</p>
                 </div>
                 <!-- Step 3 -->
-                <div class="relative flex flex-col items-center text-center">
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
-                    <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
+                    <div class="relative mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Community Bonding</h4>
+                        <div class="absolute left-full -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
                     <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 1 – May 24, 2026</p>
-                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Community Bonding</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Accepted students prepare and plan with their mentors.</p>
                 </div>
-                <!-- Step 4 -->
-                <div class="relative flex flex-col items-center text-center">
+                <!-- Step 4 (last – no line) -->
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
-                    <!-- No line after last step -->
+                    <div class="mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Coding Phase & Evaluations</h4>
+                    </div>
                     <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 25, 2026 onwards</p>
-                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Coding Phase & Evaluations</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students work on projects and undergo evaluations.</p>
                 </div>
             </div>
