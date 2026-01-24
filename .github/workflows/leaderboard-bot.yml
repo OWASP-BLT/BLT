@@ -225,10 +225,13 @@ jobs:
                 for (const prNode of prs.nodes) {
                   const nodes = (prNode.reviews && prNode.reviews.nodes) ? prNode.reviews.nodes.filter(r => r.submittedAt) : [];
                   // Only reviews submitted within this month; sort by time asc; take first 2
-                  const inMonth = nodes.filter(r => {
-                    const dt = new Date(r.submittedAt);
-                    return dt >= startOfMonth && dt <= endOfMonth;
-                  }).sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt)).slice(0, 2);
+                  const inMonth = nodes
+                    .filter(r => {
+                      const dt = new Date(r.submittedAt);
+                      return dt >= startOfMonth && dt <= endOfMonth;
+                    })
+                    .sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt))
+                    .slice(0, 2);
 
                   for (const r of inMonth) {
                     firstTwoReviews.push({
@@ -369,7 +372,7 @@ jobs:
               }
             }
 
-            // Coderabbit discussions
+            // Coderabbit discussions (visible/hidden/separate)
             const isCRPing = (body) => {
               if (!body) return false;
               const b = String(body).toLowerCase();
@@ -389,7 +392,6 @@ jobs:
               crTotalByUser[login] = (crTotalByUser[login] || 0) + 1;
             }
 
-            // Apply daily cap and points (visible: show counts; hidden/separate: no column or no scoring)
             for (const [login, perDay] of Object.entries(crCountsByUserByDay)) {
               ensureUser(login);
               // Always show monthly total if visible/separate
@@ -461,4 +463,4 @@ jobs:
               return `| ${cells.join(' | ')} |`;
             };
 
-            i
+            if (authorInd
