@@ -79,7 +79,7 @@
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
                     <!-- Small line to next step -->
                     <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
-                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Jan 15 – Feb 12</p>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Jan 19 – Feb 3, 2026</p>
                     <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Organization Applications</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Open-source organizations apply to participate in GSoC.</p>
                 </div>
@@ -87,7 +87,7 @@
                 <div class="relative flex flex-col items-center text-center">
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
                     <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
-                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Mar 1 – Mar 31</p>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Mar 16 – Mar 31, 2026</p>
                     <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Student Applications</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students submit proposals and connect with mentors.</p>
                 </div>
@@ -95,7 +95,7 @@
                 <div class="relative flex flex-col items-center text-center">
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
                     <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
-                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Apr 1 – Apr 14</p>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">may 1 – may 24, 2026</p>
                     <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Community Bonding</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Accepted students prepare and plan with their mentors.</p>
                 </div>
@@ -103,7 +103,7 @@
                 <div class="relative flex flex-col items-center text-center">
                     <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
                     <!-- No line after last step -->
-                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 1 – Aug 31</p>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 25, 2026 onwards</p>
                     <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Coding Phase & Evaluations</h4>
                     <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students work on projects and undergo evaluations.</p>
                 </div>
@@ -969,31 +969,62 @@
     <script>
 document.addEventListener("DOMContentLoaded", () => {
   const counters = document.querySelectorAll('.counter');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const getTarget = (counter) => {
+    const raw = counter.getAttribute('data-target');
+    const target = Number.parseInt(raw, 10);
+    return Number.isFinite(target) && target > 0 ? target : 0;
+  };
+
+  const setCounterText = (counter, value) => {
+    counter.textContent = value > 0 ? `${value}+` : '0';
+  };
 
   const animateCounter = (counter) => {
-    const target = +counter.getAttribute('data-target');
+    const target = getTarget(counter);
+
+    // Stop animation if target is invalid or prefers reduced motion
+    if (target === 0 || prefersReducedMotion) {
+      setCounterText(counter, target);
+      return;
+    }
+
     let count = 0;
-    const step = Math.ceil(target / 200); // adjust speed
+    const step = Math.max(1, Math.ceil(target / 200));
 
     const updateCount = () => {
       count += step;
-      if(count > target) count = target;
-      counter.textContent = count + "+"; // add + sign
-      if(count < target) requestAnimationFrame(updateCount);
+      if (count > target) count = target;
+      setCounterText(counter, count);
+      if (count < target) requestAnimationFrame(updateCount);
     };
     updateCount();
   };
 
+  // Apply reduced motion fallback immediately
+  if (prefersReducedMotion) {
+    counters.forEach(counter => setCounterText(counter, getTarget(counter)));
+    return;
+  }
+
+  // IntersectionObserver fallback
+  if (!('IntersectionObserver' in window)) {
+    counters.forEach(counter => setCounterText(counter, getTarget(counter)));
+    return;
+  }
+
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if(entry.isIntersecting){
+      if (entry.isIntersecting) {
         animateCounter(entry.target);
         observer.unobserve(entry.target); // run once
       }
     });
-  }, {threshold: 0.5});
+  }, { threshold: 0.5 });
 
   counters.forEach(counter => observer.observe(counter));
 });
+
     </script>
 {% endblock content %}
