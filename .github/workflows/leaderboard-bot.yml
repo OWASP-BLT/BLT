@@ -74,7 +74,7 @@ jobs:
                 ].join('\n');
 
                 // Leave a comment explaining the closure
-                await github.rest.issues.createComment({
+               await github.rest.issues.createComment({
                   owner, repo, issue_number: pull_number, body: msg
                 });
 
@@ -463,4 +463,53 @@ jobs:
               return `| ${cells.join(' | ')} |`;
             };
 
-            if (authorInd
+            if (authorIndex === -1) {
+              for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
+                const u = sortedUsers[i];
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                commentBody += rowFor(`#${i + 1}`, u, false, medal) + '\n';
+              }
+            } else {
+              if (authorIndex > 0) {
+                const ua = sortedUsers[authorIndex - 1];
+                const medalA = authorIndex - 1 === 0 ? '🥇' : authorIndex - 1 === 1 ? '🥈' : authorIndex - 1 === 2 ? '🥉' : '';
+                commentBody += rowFor(`#${authorIndex}`, ua, false, medalA) + '\n';
+              }
+              const uc = sortedUsers[authorIndex];
+              const medalC = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
+              commentBody += rowFor(`#${authorIndex + 1}`, uc, true, medalC) + '\n';
+              if (authorIndex < sortedUsers.length - 1) {
+                const ub = sortedUsers[authorIndex + 1];
+                commentBody += rowFor(`#${authorIndex + 2}`, ub) + '\n';
+              }
+            }
+
+            commentBody += '\n---\n';
+            let crLine = '';
+            if (CR_MODE === 'visible') {
+              crLine = `Coderabbit chats column is visible. Points per chat: ${CR_POINTS}; daily cap per user (UTC): ${CR_DAILY_CAP}.`;
+            } else if (CR_MODE === 'hidden') {
+              crLine = `Coderabbit chat points are hidden-mode; daily cap per user (UTC): ${CR_DAILY_CAP}; points per chat: ${CR_POINTS}.`;
+            } else {
+              crLine = `Coderabbit chats are tracked separately (not scored here).`;
+            }
+            commentBody += `Scoring this month: Open PRs (+1 each), Merged PRs (+10), Closed (not merged) (−2), Reviews (+5; first two per PR in-month), Comments (+2). ${crLine}\n`;
+
+            // Upsert comment on the PR
+            const { data: existingComments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: pull_number, per_page: PER_PAGE
+            });
+
+            const existingLeaderboardComment = existingComments.find(c => c.body && c.body.includes(commentMarker));
+
+            if (existingLeaderboardComment) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existingLeaderboardComment.id, body: commentBody
+              });
+              core.info(`Updated leaderboard comment on PR #${pull_number}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pull_number, body: commentBody
+              });
+              core.info(`Posted leaderboard comment on PR #${pull_number}`);
+            }
