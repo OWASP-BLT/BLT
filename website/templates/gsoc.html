@@ -67,51 +67,45 @@
             </div>
         </div>
     </div>
-    <!-- GSoC Timeline Section -->
-    <section class="bg-white py-12 border-t border-gray-200">
-        <div class="w-[85%] mx-auto">
-            <h3 class="text-2xl font-bold text-gray-900 text-center mb-2">Google Summer of Code Timeline</h3>
-            <p class="text-center text-gray-600 mb-10">Key phases of the GSoC journey with OWASP</p>
-            <div class="relative">
-                <!-- Vertical line -->
-                <div class="hidden md:block absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-gray-200"></div>
-                <div class="space-y-10">
-                    <!-- Step 1 -->
-                    <div class="flex flex-col md:flex-row items-center md:justify-between">
-                        <div class="md:w-5/12 text-right md:pr-8">
-                            <h4 class="font-semibold text-lg text-gray-900">Organization Applications</h4>
-                            <p class="text-gray-600">Open-source organizations apply to participate in GSoC.</p>
-                        </div>
-                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
-                        <div class="md:w-5/12"></div>
-                    </div>
-                    <!-- Step 2 -->
-                    <div class="flex flex-col md:flex-row items-center md:justify-between">
-                        <div class="md:w-5/12"></div>
-                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
-                        <div class="md:w-5/12 md:pl-8">
-                            <h4 class="font-semibold text-lg text-gray-900">Student Applications</h4>
-                            <p class="text-gray-600">Students submit proposals and connect with mentors.</p>
-                        </div>
-                    </div>
-                    <!-- Step 3 -->
-                    <div class="flex flex-col md:flex-row items-center md:justify-between">
-                        <div class="md:w-5/12 text-right md:pr-8">
-                            <h4 class="font-semibold text-lg text-gray-900">Community Bonding</h4>
-                            <p class="text-gray-600">Accepted students prepare and plan with their mentors.</p>
-                        </div>
-                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
-                        <div class="md:w-5/12"></div>
-                    </div>
-                    <!-- Step 4 -->
-                    <div class="flex flex-col md:flex-row items-center md:justify-between">
-                        <div class="md:w-5/12"></div>
-                        <div class="w-4 h-4 bg-red-500 rounded-full z-10"></div>
-                        <div class="md:w-5/12 md:pl-8">
-                            <h4 class="font-semibold text-lg text-gray-900">Coding Phase & Evaluations</h4>
-                            <p class="text-gray-600">Students work on projects and undergo evaluations.</p>
-                        </div>
-                    </div>
+    <!-- Horizontal GSoC Timeline - Single Background -->
+    <section class="py-12 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
+        <div class="w-[90%] mx-auto">
+            <h3 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">Google Summer of Code Timeline</h3>
+            <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-12 rounded-full"></div>
+            <!-- Timeline container -->
+            <div class="flex items-center justify-between overflow-x-auto px-4 space-x-8">
+                <!-- Step 1 -->
+                <div class="relative flex flex-col items-center text-center">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <!-- Small line to next step -->
+                    <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Jan 15 – Feb 12</p>
+                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Organization Applications</h4>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Open-source organizations apply to participate in GSoC.</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="relative flex flex-col items-center text-center">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Mar 1 – Mar 31</p>
+                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Student Applications</h4>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students submit proposals and connect with mentors.</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="relative flex flex-col items-center text-center">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <div class="absolute top-1/2 right-0 w-12 h-1 bg-gray-300 dark:bg-gray-700 z-0"></div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Apr 1 – Apr 14</p>
+                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Community Bonding</h4>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Accepted students prepare and plan with their mentors.</p>
+                </div>
+                <!-- Step 4 -->
+                <div class="relative flex flex-col items-center text-center">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <!-- No line after last step -->
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 1 – Aug 31</p>
+                    <h4 class="mt-1 font-semibold text-gray-900 dark:text-gray-100">Coding Phase & Evaluations</h4>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students work on projects and undergo evaluations.</p>
                 </div>
             </div>
         </div>
