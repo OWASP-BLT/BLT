@@ -7,6 +7,7 @@ import environ
 
 # Initialize Sentry
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -54,7 +55,15 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
+# SECRET_KEY must be set via environment variable for security (CWE-321)
+# Never use hardcoded keys in production as they pose a critical security risk
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        "SECRET_KEY environment variable is not set. "
+        "Please set SECRET_KEY in your .env file or environment variables. "
+        "Never use hardcoded SECRET_KEY values in production as they pose a critical security risk."
+    )
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
