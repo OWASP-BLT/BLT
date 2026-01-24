@@ -419,7 +419,7 @@ class LeaderboardApiViewSet(APIView):
         year = self.request.query_params.get("year")
 
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(year, str) and not year.isdigit():
             return Response(f"Invalid query passed | Year:{year}", status=400)

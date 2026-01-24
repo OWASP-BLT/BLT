@@ -44,14 +44,14 @@ jobs:
               return;
             }
             
-            // Get current month date range (UTC)
+            // Get current month date range
             const now = new Date();
-            const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-            const endOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             
             // Calculate a reasonable lookback period for fetching PRs to check for reviews
             // We look back 3 months to catch reviews on older PRs while avoiding unbounded queries
-            const threeMonthsAgo = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 3, 1));
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
             
             core.info(`Fetching stats for ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
             
@@ -331,7 +331,7 @@ jobs:
             const authorIndex = sortedUsers.findIndex(u => u.login === prAuthor);
             
             // Format the month/year for display
-            const displayMonth = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+            const displayMonth = startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             
             // Generate leaderboard comment
             const commentMarker = '<!-- leaderboard-bot -->';

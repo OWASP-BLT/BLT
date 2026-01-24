@@ -442,14 +442,14 @@ class UserProfileDetailView(DetailView):
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
-        context["current_month"] = datetime.now().month
+        context["current_month"] = timezone.now().month
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
+                created__month__gte=(timezone.now().month - 6),
+                created__month__lte=timezone.now().month,
             )
             .annotate(month=ExtractMonth("created"))
             .values("month")
@@ -539,7 +539,7 @@ class LeaderboardBase:
         """
         leaderboard which includes current month users scores
         """
-        return self.get_leaderboard(month=int(datetime.now().month), year=int(datetime.now().year), api=api)
+        return self.get_leaderboard(month=int(timezone.now().month), year=int(timezone.now().year), api=api)
 
     def monthly_year_leaderboard(self, year, api=False):
         """
@@ -686,7 +686,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         year = self.request.GET.get("year")
 
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(year, str) and not year.isdigit():
             raise Http404(f"Invalid query passed | Year:{year}")
@@ -738,9 +738,9 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         year = self.request.GET.get("year")
 
         if not month:
-            month = datetime.now().month
+            month = timezone.now().month
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(month, str) and not month.isdigit():
             raise Http404(f"Invalid query passed | Month:{month}")
