@@ -338,7 +338,6 @@ def newhome(request, template="bugs_list.html"):
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    current_time = timezone.now()
     leaderboard = (
         User.objects.filter(
             points__created__month=timezone.now().month,

@@ -8,6 +8,7 @@ from datetime import datetime
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -445,10 +446,11 @@ class UserProfileDetailView(DetailView):
         context["current_month"] = timezone.now().month
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
+        six_months_ago = timezone.now() - relativedelta(months=6)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
-                created__month__gte=(timezone.now().month - 6),
+                created__month__gte=six_months_ago,
                 created__month__lte=timezone.now().month,
             )
             .annotate(month=ExtractMonth("created"))
