@@ -56,7 +56,7 @@ jobs:
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
 
-            // GraphQL query to fetch PRs merged in the current month (aligned with website leaderboard)
+            // GraphQL query to fetch all PRs in the current month (both created and merged)
             const prQuery = `
               query($owner: String!, $repo: String!, $after: String) {
                 repository(owner: $owner, name: $repo) {
@@ -120,8 +120,8 @@ jobs:
               }
             `;
 
-            // Fetch all PRs merged in current month
-            let allPRs = [];
+            // Fetch all PRs from current month (for both created and merged counts)
+            let allPRsThisMonth = [];
             let prHasNextPage = true;
             let prCursor = null;
             let prPageCount = 0;
@@ -138,16 +138,22 @@ jobs:
 
                 const prs = result.repository.pullRequests;
 
-                // Filter PRs to only include those merged in the current month
+                // Filter PRs to include those created OR merged in the current month
                 const monthPRs = prs.nodes.filter(pr => {
+                  const createdAt = new Date(pr.createdAt);
                   const mergedAt = pr.mergedAt ? new Date(pr.mergedAt) : null;
-                  return mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
+                  
+                  // Include if created this month OR merged this month
+                  const createdThisMonth = createdAt >= startOfMonth && createdAt <= endOfMonth;
+                  const mergedThisMonth = mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
+                  
+                  return createdThisMonth || mergedThisMonth;
                 });
 
-                allPRs = allPRs.concat(monthPRs);
+                allPRsThisMonth = allPRsThisMonth.concat(monthPRs);
 
                 // Early exit: if the oldest PR in this page was updated before startOfMonth,
-                // we can stop paginating because no more PRs merged this month exist
+                // we can stop paginating
                 if (prs.nodes.length > 0) {
                   const oldestUpdatedAt = new Date(prs.nodes[prs.nodes.length - 1].updatedAt);
                   if (oldestUpdatedAt < startOfMonth) {
@@ -263,22 +269,47 @@ jobs:
               }
             }
 
-            core.info(`Found ${allPRs.length} PRs merged this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
+            // Separate merged and created PRs
+            const mergedPRs = allPRsThisMonth.filter(pr => {
+              const mergedAt = pr.mergedAt ? new Date(pr.mergedAt) : null;
+              return mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
+            });
+
+            const createdPRs = allPRsThisMonth.filter(pr => {
+              const createdAt = new Date(pr.createdAt);
+              return createdAt >= startOfMonth && createdAt <= endOfMonth;
+            });
+
+            core.info(`Found ${createdPRs.length} PRs created this month, ${mergedPRs.length} PRs merged this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
 
             // Calculate scores for each user
             const userStats = {};
 
-            // Count PRs
-            for (const pr of allPRs) {
+            // Count created PRs (Total PRs)
+            for (const pr of createdPRs) {
               if (pr.author && pr.author.login) {
                 // Skip bot accounts
                 if (isBot(pr.author)) continue;
 
                 const login = pr.author.login;
                 if (!userStats[login]) {
-                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
-                userStats[login].prs++;
+                userStats[login].totalPrs++;
+              }
+            }
+
+            // Count merged PRs (PRs merged)
+            for (const pr of mergedPRs) {
+              if (pr.author && pr.author.login) {
+                // Skip bot accounts
+                if (isBot(pr.author)) continue;
+
+                const login = pr.author.login;
+                if (!userStats[login]) {
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].mergedPrs++;
               }
             }
 
@@ -290,7 +321,7 @@ jobs:
 
                 const login = review.user.login;
                 if (!userStats[login]) {
-                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
                 userStats[login].reviews++;
               }
@@ -304,16 +335,16 @@ jobs:
 
                 const login = comment.user.login;
                 if (!userStats[login]) {
-                  userStats[login] = { prs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
                 userStats[login].comments++;
               }
             }
 
             // Calculate total scores with weighted points
-            // PRs: 10 points, Reviews: 4 points, Comments: 2 points
+            // Merged PRs: 10 points, Reviews: 4 points, Comments: 2 points
             for (const login in userStats) {
-              userStats[login].total = (userStats[login].prs * 10) + (userStats[login].reviews * 4) + (userStats[login].comments * 2);
+              userStats[login].total = (userStats[login].mergedPrs * 10) + (userStats[login].reviews * 4) + (userStats[login].comments * 2);
             }
 
             // Sort users by total score
@@ -321,8 +352,8 @@ jobs:
               .map(([login, stats]) => ({ login, ...stats }))
               .sort((a, b) => {
                 if (b.total !== a.total) return b.total - a.total;
-                // Tie-breaker: more PRs is better
-                if (b.prs !== a.prs) return b.prs - a.prs;
+                // Tie-breaker: more merged PRs is better
+                if (b.mergedPrs !== a.mergedPrs) return b.mergedPrs - a.mergedPrs;
                 // Secondary tie-breaker: more reviews is better
                 if (b.reviews !== a.reviews) return b.reviews - a.reviews;
                 // Final tie-breaker: alphabetical (case-insensitive, consistent)
@@ -345,40 +376,40 @@ jobs:
             if (authorIndex === -1) {
               commentBody += '🎉 **Welcome!** This is your first contribution this month.\n\n';
               commentBody += '### Top 3 Contributors\n\n';
-              commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
-              commentBody += '|------|------|-----|---------|----------|-------|\n';
+              commentBody += '| Rank | User | Total PRs | PRs (merged) | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----------|--------------|---------|----------|-------|\n';
 
               for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
                 const user = sortedUsers[i];
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
-                commentBody += `| ${medal} #${i + 1} | \`@${user.login}\` | ${user.prs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
+                commentBody += `| ${medal} #${i + 1} | \`@${user.login}\` | ${user.totalPrs} | ${user.mergedPrs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
               }
             } else {
-              commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
-              commentBody += '|------|------|-----|---------|----------|-------|\n';
+              commentBody += '| Rank | User | Total PRs | PRs (merged) | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----------|--------------|---------|----------|-------|\n';
 
               // Show user above (if exists)
               if (authorIndex > 0) {
                 const userAbove = sortedUsers[authorIndex - 1];
                 const medal = authorIndex - 1 === 0 ? '🥇' : authorIndex - 1 === 1 ? '🥈' : authorIndex - 1 === 2 ? '🥉' : '';
-                commentBody += `| ${medal} #${authorIndex} | \`@${userAbove.login}\` | ${userAbove.prs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
+                commentBody += `| ${medal} #${authorIndex} | \`@${userAbove.login}\` | ${userAbove.totalPrs} | ${userAbove.mergedPrs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
               }
 
               // Show current user
               const currentUser = sortedUsers[authorIndex];
               const currentMedal = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
-              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **\`@${currentUser.login}\`** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
+              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **\`@${currentUser.login}\`** ✨ | **${currentUser.totalPrs}** | **${currentUser.mergedPrs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
 
               // Show user below (if exists)
               if (authorIndex < sortedUsers.length - 1) {
                 const userBelow = sortedUsers[authorIndex + 1];
-                commentBody += `| #${authorIndex + 2} | \`@${userBelow.login}\` | ${userBelow.prs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
+                commentBody += `| #${authorIndex + 2} | \`@${userBelow.login}\` | ${userBelow.totalPrs} | ${userBelow.mergedPrs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
               }
             }
 
             commentBody += '\n';
             commentBody += '---\n';
-            commentBody += `*Leaderboard based on contributions in ${displayMonth}. Keep up the great work! 🚀*\n`;
+            commentBody += `*Leaderboard based on contributions in ${displayMonth}. Scoring: Merged PRs (10 pts), Reviews (4 pts), Comments (2 pts). Keep up the great work! 🚀*\n`;
 
             // Check if we already commented
             const { data: existingComments } = await github.rest.issues.listComments({
