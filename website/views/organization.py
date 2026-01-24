@@ -1113,7 +1113,7 @@ class DomainDetailView(ListView):
                             domain=domain,
                             hunt=None,
                             created__gte=six_months_ago,
-                            created__lte=timezone.now()t a,
+                            created__lte=timezone.now(),
                         ).order_by("created")
                     ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
