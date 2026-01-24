@@ -29,12 +29,6 @@ jobs:
 
             core.info(`Processing PR #${pull_number} by @${prAuthor}`);
 
-            // Skip if PR is not merged
-            if (!pr.merged) {
-              core.info(`Skipping leaderboard for non-merged PR #${pull_number}`);
-              return;
-            }
-
             // Bot detection helper function
             const isBot = (user) => {
               if (!user || !user.login) return false;
@@ -357,7 +351,7 @@ jobs:
               for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
                 const user = sortedUsers[i];
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
-                commentBody += `| ${medal} #${i + 1} | @${user.login} | ${user.prs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
+                commentBody += `| ${medal} #${i + 1} | \`@${user.login}\` | ${user.prs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
               }
             } else {
               commentBody += '| Rank | User | PRs | Reviews | Comments | Total |\n';
@@ -367,18 +361,18 @@ jobs:
               if (authorIndex > 0) {
                 const userAbove = sortedUsers[authorIndex - 1];
                 const medal = authorIndex - 1 === 0 ? '🥇' : authorIndex - 1 === 1 ? '🥈' : authorIndex - 1 === 2 ? '🥉' : '';
-                commentBody += `| ${medal} #${authorIndex} | @${userAbove.login} | ${userAbove.prs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
+                commentBody += `| ${medal} #${authorIndex} | \`@${userAbove.login}\` | ${userAbove.prs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
               }
 
               // Show current user
               const currentUser = sortedUsers[authorIndex];
               const currentMedal = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
-              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **@${currentUser.login}** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
+              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **\`@${currentUser.login}\`** ✨ | **${currentUser.prs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
 
               // Show user below (if exists)
               if (authorIndex < sortedUsers.length - 1) {
                 const userBelow = sortedUsers[authorIndex + 1];
-                commentBody += `| #${authorIndex + 2} | @${userBelow.login} | ${userBelow.prs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
+                commentBody += `| #${authorIndex + 2} | \`@${userBelow.login}\` | ${userBelow.prs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
               }
             }
 
