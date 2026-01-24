@@ -451,7 +451,7 @@ class UserProfileDetailView(DetailView):
             Issue.objects.filter(user=self.object)
             .filter(
                 created__gte=six_months_ago,
-                created__lte=timezone.now().month,
+                created__lte=timezone.now(),
             )
             .annotate(month=ExtractMonth("created"))
             .values("month")
