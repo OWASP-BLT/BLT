@@ -17,12 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Coderabbit discussion encouragement (anti-abuse configurable)
-      # visible | hidden | separate
+      # CR_DISCUSSION_MODE: visible | hidden | separate
       CR_DISCUSSION_MODE: visible
-      # Max discussions counted per user in a month
-      CR_DISCUSSION_LIMIT: '3'
-      # Points per counted discussion (0 by default – visibility first, enable later if desired)
+      # Points per counted discussion (default 0 = visible only, no points unless you enable)
       CR_DISCUSSION_POINTS: '0'
+      # Daily cap for counted discussions per user (UTC day)
+      CR_DISCUSSION_DAILY_CAP: '7'
     steps:
       - name: Post Leaderboard Comment
         uses: actions/github-script@v7
@@ -104,8 +104,8 @@ jobs:
             const PER_PAGE = 100;
 
             const CR_MODE = (process.env.CR_DISCUSSION_MODE || 'visible').toLowerCase();
-            const CR_LIMIT = parseInt(process.env.CR_DISCUSSION_LIMIT || '3', 10);
             const CR_POINTS = parseInt(process.env.CR_DISCUSSION_POINTS || '0', 10);
+            const CR_DAILY_CAP = parseInt(process.env.CR_DISCUSSION_DAILY_CAP || '7', 10);
 
             // GraphQL: PRs updated recently (we filter to created/merged/closed in-month)
             const prQuery = `
@@ -128,7 +128,7 @@ jobs:
               }
             `;
 
-            // GraphQL: PRs with reviews (for approvals)
+            // GraphQL: PRs with reviews (for first-two-reviews logic)
             const reviewsQuery = `
               query($owner: String!, $repo: String!, $after: String) {
                 repository(owner: $owner, name: $repo) {
@@ -139,7 +139,6 @@ jobs:
                       reviews(first: 100) {
                         nodes {
                           submittedAt
-                          state
                           author { login }
                         }
                       }
@@ -212,8 +211,8 @@ jobs:
               }
             }
 
-            // 2) Fetch approvals (only first two APPROVED per PR; must be in-month)
-            let approvals = [];
+            // 2) Fetch reviews and count first two reviews per PR within the month (any state)
+            let firstTwoReviews = [];
             let revHasNextPage = true;
             let revCursor = null;
             let revPageCount = 0;
@@ -224,23 +223,22 @@ jobs:
                 const prs = result.repository.pullRequests;
 
                 for (const prNode of prs.nodes) {
-                  const nodes = (prNode.reviews && prNode.reviews.nodes) ? prNode.reviews.nodes.filter(r => r.submittedAt && r.state) : [];
-                  // Keep only APPROVED, sort by submittedAt asc, take first two
-                  const approvalsAsc = nodes
-                    .filter(r => r.state === 'APPROVED')
-                    .sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt))
-                    .slice(0, 2);
-                  // Month filter
-                  const monthApprovals = approvalsAsc.filter(r => {
+                  const nodes = (prNode.reviews && prNode.reviews.nodes) ? prNode.reviews.nodes.filter(r => r.submittedAt) : [];
+                  // Only reviews submitted within this month; sort by time asc; take first 2
+                  const inMonth = nodes.filter(r => {
                     const dt = new Date(r.submittedAt);
                     return dt >= startOfMonth && dt <= endOfMonth;
-                  });
-                  for (const r of monthApprovals) {
-                    approvals.push({ submitted_at: r.submittedAt, user: { login: r.author ? r.author.login : null } });
+                  }).sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt)).slice(0, 2);
+
+                  for (const r of inMonth) {
+                    firstTwoReviews.push({
+                      submitted_at: r.submittedAt,
+                      user: { login: r.author ? r.author.login : null }
+                    });
                   }
                 }
 
-                // Early exit: ≥ 3 months old pages are irrelevant to month approvals window
+                // Early exit: if oldest PR updatedAt is older than three months, stop paginating
                 const oldestPr = prs.nodes[prs.nodes.length - 1];
                 if (oldestPr) {
                   const oldestUpdatedAt = new Date(oldestPr.updatedAt);
@@ -259,7 +257,7 @@ jobs:
               }
             }
 
-            // 3) Fetch repo comments for this month (for +2/comment and coderabbit discussions)
+            // 3) Fetch all issue comments for the month (repo-wide)
             let allComments = [];
             let commentPage = 1;
             while (commentPage <= MAX_PAGES) {
@@ -324,7 +322,7 @@ jobs:
             const userStats = {};
             const ensureUser = (login) => {
               if (!userStats[login]) {
-                userStats[login] = { openPrs: 0, mergedPrs: 0, closedPrs: 0, approvals: 0, comments: 0, crChats: 0, crBonus: 0, total: 0 };
+                userStats[login] = { openPrs: 0, mergedPrs: 0, closedPrs: 0, reviews: 0, comments: 0, crChats: 0, crBonus: 0, total: 0 };
               }
             };
 
@@ -353,12 +351,12 @@ jobs:
               }
             }
 
-            // +5 per approval (first two approvals per PR, month-scoped)
-            for (const r of approvals) {
+            // +5 per review (first two per PR this month; any state)
+            for (const r of firstTwoReviews) {
               if (r.user && r.user.login) {
                 if (isBot({ login: r.user.login })) continue;
                 ensureUser(r.user.login);
-                userStats[r.user.login].approvals++;
+                userStats[r.user.login].reviews++;
               }
             }
 
@@ -371,55 +369,61 @@ jobs:
               }
             }
 
-            // Coderabbit discussions (encouragement without misuse)
+            // Coderabbit discussions
             const isCRPing = (body) => {
               if (!body) return false;
               const b = String(body).toLowerCase();
               return b.includes('coderabbit') || b.includes('@coderabbitai');
             };
-            const crByUser = {};
+
+            // Track per user per UTC day
+            const crCountsByUserByDay = {};
+            const crTotalByUser = {};
             for (const c of allComments) {
               const login = c.user && c.user.login ? c.user.login : null;
               if (!login || isBot({ login })) continue;
-              if (isCRPing(c.body)) {
-                crByUser[login] = (crByUser[login] || 0) + 1;
-              }
-            }
-            for (const [login, cnt] of Object.entries(crByUser)) {
-              ensureUser(login);
-              if (CR_MODE === 'visible') {
-                const awarded = Math.min(cnt, CR_LIMIT) * CR_POINTS;
-                userStats[login].crChats = cnt;
-                userStats[login].crBonus = awarded;
-              } else if (CR_MODE === 'hidden') {
-                const awarded = (cnt >= CR_LIMIT) ? CR_POINTS : 0;
-                userStats[login].crBonus = awarded;
-              } else {
-                // separate: compute but do not score
-                userStats[login].crChats = cnt;
-              }
+              if (!isCRPing(c.body)) continue;
+              const day = new Date(c.created_at).toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+              crCountsByUserByDay[login] = crCountsByUserByDay[login] || {};
+              crCountsByUserByDay[login][day] = (crCountsByUserByDay[login][day] || 0) + 1;
+              crTotalByUser[login] = (crTotalByUser[login] || 0) + 1;
             }
 
-            // Final scoring
-            // open: +1 each; merged: +10; closed: −2; approvals: +5; comments: +2; CR bonus per mode
+            // Apply daily cap and points (visible: show counts; hidden/separate: no column or no scoring)
+            for (const [login, perDay] of Object.entries(crCountsByUserByDay)) {
+              ensureUser(login);
+              // Always show monthly total if visible/separate
+              userStats[login].crChats = (userStats[login].crChats || 0) + (crTotalByUser[login] || 0);
+
+              // Scoring
+              let daySum = 0;
+              for (const cnt of Object.values(perDay)) {
+                daySum += Math.min(cnt, CR_DAILY_CAP);
+              }
+              const awarded = (CR_MODE === 'separate') ? 0 : (daySum * CR_POINTS);
+              userStats[login].crBonus = (userStats[login].crBonus || 0) + awarded;
+            }
+
+            // Final scoring:
+            // open: +1 each; merged: +10; closed: −2; reviews: +5; comments: +2; CR bonus per mode
             for (const login in userStats) {
               const s = userStats[login];
               s.total =
                 (s.openPrs * 1) +
                 (s.mergedPrs * 10) +
                 (s.closedPrs * -2) +
-                (s.approvals * 5) +
+                (s.reviews * 5) +
                 (s.comments * 2) +
                 (s.crBonus || 0);
             }
 
-            // Sorting: by total, then merged PRs, then approvals, then alpha
+            // Sorting: by total, then merged PRs, then reviews, then alpha
             const sortedUsers = Object.entries(userStats)
               .map(([login, stats]) => ({ login, ...stats }))
               .sort((a, b) => {
                 if (b.total !== a.total) return b.total - a.total;
                 if (b.mergedPrs !== a.mergedPrs) return b.mergedPrs - a.mergedPrs;
-                if (b.approvals !== a.approvals) return b.approvals - a.approvals;
+                if (b.reviews !== a.reviews) return b.reviews - a.reviews;
                 return a.login.localeCompare(b.login, 'en-US', { sensitivity: 'base' });
               });
 
@@ -432,9 +436,9 @@ jobs:
             commentBody += '## 📊 Monthly Leaderboard\n\n';
             commentBody += `Hi @${prAuthor}! Here's how you rank for ${displayMonth}:\n\n`;
 
-            // Construct header based on CR mode/points visibility
+            // Column set (CR chats column shown only if visible mode)
             const showCRCol = (CR_MODE === 'visible');
-            const headerCols = ['Rank', 'User', 'Open PRs', 'PRs (merged)', 'PRs (closed)', 'Approvals', 'Comments'];
+            const headerCols = ['Rank', 'User', 'Open PRs', 'PRs (merged)', 'PRs (closed)', 'Reviews', 'Comments'];
             if (showCRCol) headerCols.push('CR chats');
             headerCols.push('Total');
 
@@ -442,14 +446,14 @@ jobs:
             commentBody += `| ${headerCols.map(() => '---').join(' | ')} |\n`;
 
             const rowFor = (rankLabel, u, bold = false, medal = '') => {
-              const userCell = bold ? `**\\`@${u.login}\\`** ✨` : `\\`@${u.login}\\``;
+              const userCell = bold ? `**\`@${u.login}\`** ✨` : `\`@${u.login}\``;
               const cells = [
                 medal ? `${medal} ${rankLabel}` : `${rankLabel}`,
                 userCell,
                 `${u.openPrs}`,
                 `${u.mergedPrs}`,
                 `${u.closedPrs}`,
-                `${u.approvals}`,
+                `${u.reviews}`,
                 `${u.comments}`
               ];
               if (showCRCol) cells.push(`${u.crChats || 0}`);
@@ -457,9 +461,4 @@ jobs:
               return `| ${cells.join(' | ')} |`;
             };
 
-            if (authorIndex === -1) {
-              // Show top 3
-              for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
-                const u = sortedUsers[i];
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-                commentBody += rowFor(`#${i + 1}`, u, false, 
+            i
