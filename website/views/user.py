@@ -450,8 +450,8 @@ class UserProfileDetailView(DetailView):
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
-                created__month__gte=six_months_ago,
-                created__month__lte=timezone.now().month,
+                created__gte=six_months_ago,
+                created__lte=timezone.now().month,
             )
             .annotate(month=ExtractMonth("created"))
             .values("month")
