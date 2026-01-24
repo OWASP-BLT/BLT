@@ -56,7 +56,7 @@ jobs:
             const MAX_PAGES = 10;
             const PER_PAGE = 100;
 
-            // GraphQL query to fetch all PRs in the current month (both created and merged)
+            // GraphQL query to fetch all PRs in the current month (created, merged, or closed)
             const prQuery = `
               query($owner: String!, $repo: String!, $after: String) {
                 repository(owner: $owner, name: $repo) {
@@ -75,7 +75,9 @@ jobs:
                       createdAt
                       updatedAt
                       mergedAt
+                      closedAt
                       merged
+                      state
                     }
                     pageInfo {
                       hasNextPage
@@ -120,7 +122,7 @@ jobs:
               }
             `;
 
-            // Fetch all PRs from current month (for both created and merged counts)
+            // Fetch all PRs from current month (for all activity: created, merged, closed)
             let allPRsThisMonth = [];
             let prHasNextPage = true;
             let prCursor = null;
@@ -138,16 +140,17 @@ jobs:
 
                 const prs = result.repository.pullRequests;
 
-                // Filter PRs to include those created OR merged in the current month
+                // Filter PRs to include those created, merged, OR closed in the current month
                 const monthPRs = prs.nodes.filter(pr => {
                   const createdAt = new Date(pr.createdAt);
                   const mergedAt = pr.mergedAt ? new Date(pr.mergedAt) : null;
+                  const closedAt = pr.closedAt ? new Date(pr.closedAt) : null;
                   
-                  // Include if created this month OR merged this month
                   const createdThisMonth = createdAt >= startOfMonth && createdAt <= endOfMonth;
                   const mergedThisMonth = mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
+                  const closedThisMonth = closedAt && closedAt >= startOfMonth && closedAt <= endOfMonth;
                   
-                  return createdThisMonth || mergedThisMonth;
+                  return createdThisMonth || mergedThisMonth || closedThisMonth;
                 });
 
                 allPRsThisMonth = allPRsThisMonth.concat(monthPRs);
@@ -269,18 +272,24 @@ jobs:
               }
             }
 
-            // Separate merged and created PRs
-            const mergedPRs = allPRsThisMonth.filter(pr => {
-              const mergedAt = pr.mergedAt ? new Date(pr.mergedAt) : null;
-              return mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
-            });
-
+            // Separate PRs by type
             const createdPRs = allPRsThisMonth.filter(pr => {
               const createdAt = new Date(pr.createdAt);
               return createdAt >= startOfMonth && createdAt <= endOfMonth;
             });
 
-            core.info(`Found ${createdPRs.length} PRs created this month, ${mergedPRs.length} PRs merged this month, ${allRecentPRs.length} recent PRs checked for reviews, ${allReviews.length} reviews, ${allComments.length} comments`);
+            const mergedPRs = allPRsThisMonth.filter(pr => {
+              const mergedAt = pr.mergedAt ? new Date(pr.mergedAt) : null;
+              return mergedAt && mergedAt >= startOfMonth && mergedAt <= endOfMonth;
+            });
+
+            const closedPRs = allPRsThisMonth.filter(pr => {
+              const closedAt = pr.closedAt ? new Date(pr.closedAt) : null;
+              // Closed but NOT merged
+              return closedAt && closedAt >= startOfMonth && closedAt <= endOfMonth && !pr.merged;
+            });
+
+            core.info(`Found ${createdPRs.length} PRs created, ${mergedPRs.length} PRs merged, ${closedPRs.length} PRs closed (not merged), ${allReviews.length} reviews, ${allComments.length} comments this month`);
 
             // Calculate scores for each user
             const userStats = {};
@@ -293,13 +302,13 @@ jobs:
 
                 const login = pr.author.login;
                 if (!userStats[login]) {
-                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, closedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
                 userStats[login].totalPrs++;
               }
             }
 
-            // Count merged PRs (PRs merged)
+            // Count merged PRs
             for (const pr of mergedPRs) {
               if (pr.author && pr.author.login) {
                 // Skip bot accounts
@@ -307,9 +316,23 @@ jobs:
 
                 const login = pr.author.login;
                 if (!userStats[login]) {
-                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, closedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
                 userStats[login].mergedPrs++;
+              }
+            }
+
+            // Count closed (not merged) PRs
+            for (const pr of closedPRs) {
+              if (pr.author && pr.author.login) {
+                // Skip bot accounts
+                if (isBot(pr.author)) continue;
+
+                const login = pr.author.login;
+                if (!userStats[login]) {
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, closedPrs: 0, reviews: 0, comments: 0, total: 0 };
+                }
+                userStats[login].closedPrs++;
               }
             }
 
@@ -321,7 +344,7 @@ jobs:
 
                 const login = review.user.login;
                 if (!userStats[login]) {
-                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, closedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
                 userStats[login].reviews++;
               }
@@ -335,16 +358,21 @@ jobs:
 
                 const login = comment.user.login;
                 if (!userStats[login]) {
-                  userStats[login] = { totalPrs: 0, mergedPrs: 0, reviews: 0, comments: 0, total: 0 };
+                  userStats[login] = { totalPrs: 0, mergedPrs: 0, closedPrs: 0, reviews: 0, comments: 0, total: 0 };
                 }
                 userStats[login].comments++;
               }
             }
 
             // Calculate total scores with weighted points
-            // Merged PRs: 10 points, Reviews: 4 points, Comments: 2 points
+            // Total PRs: 1 point, Merged PRs: 10 points, Closed PRs: -2 points, Reviews: 4 points, Comments: 2 points
             for (const login in userStats) {
-              userStats[login].total = (userStats[login].mergedPrs * 10) + (userStats[login].reviews * 4) + (userStats[login].comments * 2);
+              userStats[login].total = 
+                (userStats[login].totalPrs * 1) + 
+                (userStats[login].mergedPrs * 10) + 
+                (userStats[login].closedPrs * -2) + 
+                (userStats[login].reviews * 4) + 
+                (userStats[login].comments * 2);
             }
 
             // Sort users by total score
@@ -376,40 +404,40 @@ jobs:
             if (authorIndex === -1) {
               commentBody += '🎉 **Welcome!** This is your first contribution this month.\n\n';
               commentBody += '### Top 3 Contributors\n\n';
-              commentBody += '| Rank | User | Total PRs | PRs (merged) | Reviews | Comments | Total |\n';
-              commentBody += '|------|------|-----------|--------------|---------|----------|-------|\n';
+              commentBody += '| Rank | User | Total PRs | PRs (merged) | PRs (closed) | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----------|--------------|--------------|---------|----------|-------|\n';
 
               for (let i = 0; i < Math.min(3, sortedUsers.length); i++) {
                 const user = sortedUsers[i];
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
-                commentBody += `| ${medal} #${i + 1} | \`@${user.login}\` | ${user.totalPrs} | ${user.mergedPrs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
+                commentBody += `| ${medal} #${i + 1} | \`@${user.login}\` | ${user.totalPrs} | ${user.mergedPrs} | ${user.closedPrs} | ${user.reviews} | ${user.comments} | **${user.total}** |\n`;
               }
             } else {
-              commentBody += '| Rank | User | Total PRs | PRs (merged) | Reviews | Comments | Total |\n';
-              commentBody += '|------|------|-----------|--------------|---------|----------|-------|\n';
+              commentBody += '| Rank | User | Total PRs | PRs (merged) | PRs (closed) | Reviews | Comments | Total |\n';
+              commentBody += '|------|------|-----------|--------------|--------------|---------|----------|-------|\n';
 
               // Show user above (if exists)
               if (authorIndex > 0) {
                 const userAbove = sortedUsers[authorIndex - 1];
                 const medal = authorIndex - 1 === 0 ? '🥇' : authorIndex - 1 === 1 ? '🥈' : authorIndex - 1 === 2 ? '🥉' : '';
-                commentBody += `| ${medal} #${authorIndex} | \`@${userAbove.login}\` | ${userAbove.totalPrs} | ${userAbove.mergedPrs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
+                commentBody += `| ${medal} #${authorIndex} | \`@${userAbove.login}\` | ${userAbove.totalPrs} | ${userAbove.mergedPrs} | ${userAbove.closedPrs} | ${userAbove.reviews} | ${userAbove.comments} | **${userAbove.total}** |\n`;
               }
 
               // Show current user
               const currentUser = sortedUsers[authorIndex];
               const currentMedal = authorIndex === 0 ? '🥇' : authorIndex === 1 ? '🥈' : authorIndex === 2 ? '🥉' : '';
-              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **\`@${currentUser.login}\`** ✨ | **${currentUser.totalPrs}** | **${currentUser.mergedPrs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
+              commentBody += `| ${currentMedal} **#${authorIndex + 1}** | **\`@${currentUser.login}\`** ✨ | **${currentUser.totalPrs}** | **${currentUser.mergedPrs}** | **${currentUser.closedPrs}** | **${currentUser.reviews}** | **${currentUser.comments}** | **${currentUser.total}** |\n`;
 
               // Show user below (if exists)
               if (authorIndex < sortedUsers.length - 1) {
                 const userBelow = sortedUsers[authorIndex + 1];
-                commentBody += `| #${authorIndex + 2} | \`@${userBelow.login}\` | ${userBelow.totalPrs} | ${userBelow.mergedPrs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
+                commentBody += `| #${authorIndex + 2} | \`@${userBelow.login}\` | ${userBelow.totalPrs} | ${userBelow.mergedPrs} | ${userBelow.closedPrs} | ${userBelow.reviews} | ${userBelow.comments} | **${userBelow.total}** |\n`;
               }
             }
 
             commentBody += '\n';
             commentBody += '---\n';
-            commentBody += `*Leaderboard based on contributions in ${displayMonth}. Scoring: Merged PRs (10 pts), Reviews (4 pts), Comments (2 pts). Keep up the great work! 🚀*\n`;
+            commentBody += `*Leaderboard based on contributions in ${displayMonth}. **Scoring:** Total PRs (+1 pt), Merged PRs (+10 pts), Closed PRs (-2 pts), Reviews (+4 pts), Comments (+2 pts). Keep up the great work! 🚀*\n`;
 
             // Check if we already commented
             const { data: existingComments } = await github.rest.issues.listComments({
@@ -434,11 +462,4 @@ jobs:
               core.info(`Updated leaderboard comment on PR #${pull_number}`);
             } else {
               // Create new comment
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: pull_number,
-                body: commentBody
-              });
-              core.info(`Posted leaderboard comment on PR #${pull_number}`);
-            }
+              await
