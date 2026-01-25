@@ -2,6 +2,7 @@
 {% load static %}
 {% block title %}Reports for Issue #{{ issue.id }} - Admin{% endblock %}
 {% block content %}
+    {% csrf_token %}
     <div class="container mx-auto px-4 py-8">
         <div class="mb-6">
             <div class="flex items-center gap-4 mb-4">
@@ -42,7 +43,8 @@
         {% if reports %}
             <div class="space-y-4">
                 {% for report in reports %}
-                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border-l-4 {% if report.status == 'pending' %}border-red-500 {% elif report.status == 'reviewed' %}border-blue-500 {% elif report.status == 'resolved' %}border-green-500 {% else %}border-gray-500{% endif %}">
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border-l-4 {% if report.status == 'pending' %}border-red-500 {% elif report.status == 'reviewed' %}border-blue-500 {% elif report.status == 'resolved' %}border-green-500 {% else %}border-gray-500{% endif %}"
+                         data-report-id="{{ report.id }}">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
@@ -57,7 +59,7 @@
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
                                     {{ report.get_reason_display }}
                                 </span>
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full {% if report.status == 'pending' %}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200 {% elif report.status == 'reviewed' %}bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200 {% elif report.status == 'resolved' %}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200 {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200{% endif %}">
+                                <span class="status-badge px-2 py-1 text-xs font-semibold rounded-full {% if report.status == 'pending' %}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200 {% elif report.status == 'reviewed' %}bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200 {% elif report.status == 'resolved' %}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200 {% else %}bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200{% endif %}">
                                     {{ report.get_status_display }}
                                 </span>
                             </div>
@@ -87,6 +89,36 @@
                     </div>
                 {% endfor %}
             </div>
+            <!-- Pagination Controls -->
+            {% if is_paginated %}
+                <div class="flex justify-center mt-6">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1"
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                                First
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}"
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                                Previous
+                            </a>
+                        {% endif %}
+                        <span class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Page {{ page_obj.number }} of {{ paginator.num_pages }}
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}"
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                                Next
+                            </a>
+                            <a href="?page={{ paginator.num_pages }}"
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                                Last
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
         {% else %}
             <div class="text-center py-12">
                 <div class="text-gray-500 dark:text-gray-400 text-lg">No reports found for this issue.</div>
@@ -135,48 +167,5 @@
             </div>
         </div>
     </div>
-    <script>
-let currentReportId = null;
-
-function showReportDetails(reportId, description, adminNotes, status) {
-    currentReportId = reportId;
-    document.getElementById('reportDetailsDescription').textContent = description;
-    document.getElementById('adminNotes').value = adminNotes;
-    document.getElementById('reportStatus').value = status;
-    document.getElementById('reportDetailsModal').classList.remove('hidden');
-}
-
-function closeReportDetailsModal() {
-    document.getElementById('reportDetailsModal').classList.add('hidden');
-    currentReportId = null;
-}
-
-function saveReportUpdate() {
-    if (!currentReportId) return;
-
-    const formData = new FormData();
-    formData.append('status', document.getElementById('reportStatus').value);
-    formData.append('admin_notes', document.getElementById('adminNotes').value);
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-    fetch(`/issue-reports/${currentReportId}/update/`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            closeReportDetailsModal();
-            location.reload();
-        } else {
-            alert(data.message || 'Failed to update report');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to update report. Please try again.');
-    });
-}
-    </script>
+    <script src="{% static 'js/issue_reports.js' %}"></script>
 {% endblock %}
