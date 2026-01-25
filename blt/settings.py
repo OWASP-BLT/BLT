@@ -56,14 +56,18 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
 # SECRET_KEY must be set via environment variable for security (CWE-321)
-# Never use hardcoded keys in production as they pose a critical security risk
+# For CI/testing, we allow a specific test key
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
-    raise ImproperlyConfigured(
-        "SECRET_KEY environment variable is not set. "
-        "Please set SECRET_KEY in your .env file or environment variables. "
-        "Never use hardcoded SECRET_KEY values in production as they pose a critical security risk."
-    )
+    # Only allow fallback in test/CI environments
+    if os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true":
+        SECRET_KEY = "ci-test-secret-key-for-tests-only-not-for-production"
+    else:
+        raise ImproperlyConfigured(
+            "SECRET_KEY environment variable is not set. "
+            "Please set SECRET_KEY in your .env file or environment variables. "
+            "Never use hardcoded SECRET_KEY values in production as they pose a critical security risk."
+        )
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
