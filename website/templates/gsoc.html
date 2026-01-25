@@ -21,8 +21,7 @@
 {% endblock extra_head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <!-- Hero Section -->
-    <div class="mt-[100px] bg-zinc-100 py-16">
+    <div class="mt-[100px] bg-white dark:bg-gray-800 py-16">
         <div class="w-[85%] mx-auto">
             <div class="flex flex-col md:flex-row items-center gap-8">
                 <div class="md:w-1/3 flex justify-center">
@@ -37,13 +36,15 @@
                 </div>
                 <div class="md:w-2/3">
                     <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">Google Summer of Code</h1>
-                    <h2 class="text-xl md:text-2xl font-medium text-red-500 mb-6">
+                    <h2 class="text-xl md:text-2xl font-medium text-red-600 dark:text-red-400 mb-6">
                         with Open Worldwide Application Security Project (OWASP) Foundation
                     </h2>
                     <p class="text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
                         The
                         <a href="https://summerofcode.withgoogle.com/"
-                           class="text-[#e74c3c] hover:text-red-700 hover:underline transition-colors font-medium">Google Summer of Code program</a>
+                           class="text-[#e74c3c] hover:text-red-700 hover:underline transition-colors font-medium">
+                            Google Summer of Code program
+                        </a>
                         (GSoC) is designed to encourage student participation in open source
                         development. Through GSoC, accepted student applicants will be paired
                         with OWASP mentors that will guide them through their coding tasks.
