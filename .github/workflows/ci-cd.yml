@@ -407,20 +407,20 @@ jobs:
           DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
           DEBUG=True
           EOF
-      - name: Run collectstatic
+      - name: Run collectstatic with test credentials
         run: |
-          SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production' \
-          DATABASE_URL='sqlite:///test_ci_db.sqlite3' \
-          DEBUG='True' \
+          export SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production'
+          export DATABASE_URL='sqlite:///test_ci_db.sqlite3'
+          export DEBUG='True'
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
         run: |
           set +e
-          SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production' \
-          DATABASE_URL='sqlite:///test_ci_db.sqlite3' \
-          DEBUG='True' \
+          export SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production'
+          export DATABASE_URL='sqlite:///test_ci_db.sqlite3'
+          export DEBUG='True'
           poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
