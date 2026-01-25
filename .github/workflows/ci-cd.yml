@@ -389,19 +389,42 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y xvfb jq
           # Remove any existing chromium packages to avoid conflicts
           sudo apt-get remove --purge chromium-browser chromium-chromedriver 2>/dev/null || true
           # Install Chromium via snap (required for modern Ubuntu)
           sudo snap install chromium
           sudo ln -sf /snap/bin/chromium /usr/bin/chromium-browser
-          # Install chromedriver
-          CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-          wget -q https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
-          unzip -q chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
+          # Install chromedriver matching snap Chromium version
+          # Detect installed Chromium version
+          CHROMIUM_VERSION=$(/usr/bin/chromium-browser --version | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1)
+          CHROMIUM_MAJOR=$(echo $CHROMIUM_VERSION | cut -d. -f1)
+          echo "Detected Chromium version: $CHROMIUM_VERSION (major: $CHROMIUM_MAJOR)"
+          # Query Chrome for Testing API to find matching chromedriver
+          # Try latest-patch-versions-per-build-with-downloads.json first
+          CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" | jq -r ".builds.\"${CHROMIUM_MAJOR}\".downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
+            # Fallback to known-good-versions-with-downloads.json
+            echo "Trying fallback API endpoint..."
+            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | jq -r "[.versions[] | select(.version | startswith(\"${CHROMIUM_MAJOR}.\"))] | sort_by(.version) | reverse | .[0].downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          fi
+          if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
+            echo "Warning: Could not find matching chromedriver, using latest stable"
+            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" | jq -r ".builds.Stable.downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          fi
+          echo "Downloading chromedriver from: $CHROMEDRIVER_URL"
+          wget -q "$CHROMEDRIVER_URL" -O chromedriver-linux64.zip
+          unzip -q chromedriver-linux64.zip
+          # Handle different archive structures
+          if [ -d "chromedriver-linux64" ]; then
+            sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          else
+            sudo mv chromedriver /usr/local/bin/
+          fi
           sudo chmod +x /usr/local/bin/chromedriver
-          rm chromedriver_linux64.zip
+          rm -f chromedriver-linux64.zip
+          rm -rf chromedriver-linux64
+          chromedriver --version
       - name: Copy apt cache to user directory
         if: always()
         run: |
@@ -421,7 +444,7 @@ jobs:
       - name: Run collectstatic with test credentials
         run: |
           export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
-          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3"
+          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/test_ci_db.sqlite3"
           export DEBUG='True'
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -430,7 +453,7 @@ jobs:
         run: |
           set +e
           export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
-          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3"
+          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/test_ci_db.sqlite3"
           export DEBUG='True'
           poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
@@ -732,12 +755,9 @@ jobs:
         run: |
           docker run -d \
             -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production-must-be-at-least-50-chars' \
-            -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
+            -e DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/test_db.sqlite3" \
             -e DEBUG='True' \
             --name my-container my-app
-
-      - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry install --without dev --no-interaction
 
       - name: Clean up
         run: |

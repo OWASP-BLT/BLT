@@ -65,12 +65,11 @@ if not SECRET_KEY:
         "Please set SECRET_KEY in your .env file or environment variables. "
         "For local development: copy .env.example to .env and generate a unique key. "
         "For CI/testing: set SECRET_KEY in your CI environment variables. "
-        "For production: NEVER use a hardcoded key - always use environment variables. "
         "Generate a secure key with: "
         "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
     )
 
-# Additional security validation
+# Security validation
 SECRET_KEY = SECRET_KEY.strip()
 if len(SECRET_KEY) < 50:
     raise ImproperlyConfigured(
