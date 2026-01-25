@@ -398,7 +398,6 @@ jobs:
           sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
           sudo chown -R $USER:$USER ~/apt-cache
       - run: pip install poetry
-      - run: poetry lock
       - run: poetry install --with dev
       - name: Create .env for CI run
         run: |
@@ -722,7 +721,6 @@ jobs:
           docker run -d --name my-container my-app
 
       - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
       - run: docker exec my-container poetry install --without dev --no-interaction
 
       - name: Clean up
