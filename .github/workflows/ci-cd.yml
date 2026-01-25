@@ -407,14 +407,21 @@ jobs:
           DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
           DEBUG=True
           EOF
-      - run: poetry run python manage.py collectstatic --noinput
+      - name: Run collectstatic
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-test-secret-key-for-tests-not-for-production' }}
+          DATABASE_URL: sqlite:///$(pwd)/ci_db.sqlite3
+          DEBUG: True
+        run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
         env:
           # SECRET_KEY is required for Django to run (CWE-321 security requirement)
           # Using a test-specific key that is safe for CI/CD environments
-          SECRET_KEY: ${{ secrets.SECRET_KEY || 'django-insecure-test-key-for-ci-cd-only-not-for-production' }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-test-secret-key-for-tests-not-for-production' }}
+          DATABASE_URL: sqlite:///$(pwd)/ci_db.sqlite3
+          DEBUG: True
         run: |
           set +e
           poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
