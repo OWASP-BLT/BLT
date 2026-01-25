@@ -414,14 +414,14 @@ jobs:
       - name: Create .env for CI run
         run: |
           cat > .env <<EOF
-          SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production
-          DATABASE_URL=sqlite:///./ci_db.sqlite3
+          SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long
+          DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3
           DEBUG=True
           EOF
       - name: Run collectstatic with test credentials
         run: |
-          export SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production'
-          export DATABASE_URL='sqlite:///test_ci_db.sqlite3'
+          export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
+          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3"
           export DEBUG='True'
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -429,8 +429,8 @@ jobs:
         shell: bash
         run: |
           set +e
-          export SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production'
-          export DATABASE_URL='sqlite:///test_ci_db.sqlite3'
+          export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
+          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3"
           export DEBUG='True'
           poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
@@ -719,8 +719,8 @@ jobs:
       - name: Create .env for CI run
         run: |
           cat > .env <<EOF
-          SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production
-          DATABASE_URL=sqlite:///./ci_db.sqlite3
+          SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long
+          DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3
           DEBUG=True
           EOF
 
@@ -731,7 +731,7 @@ jobs:
       - name: Run Docker container
         run: |
           docker run -d \
-            -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production' \
+            -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production-must-be-at-least-50-chars' \
             -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
             -e DEBUG='True' \
             --name my-container my-app
