@@ -48,13 +48,16 @@ jobs:
               return
             }
 
-            const { data: labels } =
-              await github.rest.issues.listLabelsOnIssue({
+            const labels = await github.paginate(
+              github.rest.issues.listLabelsOnIssue,
+              {
                 owner,
                 repo,
                 issue_number: itemNumber,
                 per_page: 100
-              })
+              }
+            )
+
 
             for (const label of labels) {
               if (
