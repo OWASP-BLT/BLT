@@ -444,7 +444,7 @@ jobs:
       - name: Run collectstatic with test credentials
         run: |
           export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
-          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/test_ci_db.sqlite3"
+          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3"
           export DEBUG='True'
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -453,7 +453,7 @@ jobs:
         run: |
           set +e
           export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
-          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/test_ci_db.sqlite3"
+          export DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3"
           export DEBUG='True'
           poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
@@ -755,7 +755,7 @@ jobs:
         run: |
           docker run -d \
             -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production-must-be-at-least-50-chars' \
-            -e DATABASE_URL="sqlite:///${GITHUB_WORKSPACE}/test_db.sqlite3" \
+            -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
             -e DEBUG='True' \
             --name my-container my-app
 

@@ -69,7 +69,7 @@ if not SECRET_KEY:
         "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
     )
 
-# Security validation
+# Security validation: strip whitespace and enforce minimum length
 SECRET_KEY = SECRET_KEY.strip()
 if len(SECRET_KEY) < 50:
     raise ImproperlyConfigured(
