@@ -400,6 +400,13 @@ jobs:
       - run: pip install poetry
       - run: poetry lock
       - run: poetry install --with dev
+      - name: Create .env for CI run
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-secret-key-for-tests-not-production
+          DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
+          DEBUG=True
+          EOF
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
@@ -694,9 +701,17 @@ jobs:
           # Use Docker Compose v2 (built-in Docker CLI plugin, no manual installation needed)
           docker compose version
 
+      - name: Create .env for CI run
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-secret-key-for-tests-not-production
+          DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
+          DEBUG=True
+          EOF
+
       - name: Build Docker image
         run: |
-          docker build -t my-app .
+          docker build --progress=plain -t my-app .
 
       - name: Run Docker container
         run: |
