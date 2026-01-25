@@ -389,7 +389,19 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+          sudo apt-get install -y xvfb
+          # Remove any existing chromium packages to avoid conflicts
+          sudo apt-get remove --purge chromium-browser chromium-chromedriver 2>/dev/null || true
+          # Install Chromium via snap (required for modern Ubuntu)
+          sudo snap install chromium
+          sudo ln -sf /snap/bin/chromium /usr/bin/chromium-browser
+          # Install chromedriver
+          CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+          wget -q https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip
+          unzip -q chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          rm chromedriver_linux64.zip
       - name: Copy apt cache to user directory
         if: always()
         run: |
