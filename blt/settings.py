@@ -56,18 +56,28 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
 # SECRET_KEY must be set via environment variable for security (CWE-321)
-# For CI/testing, we allow a specific test key
+# See: https://cwe.mitre.org/data/definitions/321.html
 SECRET_KEY = os.environ.get("SECRET_KEY")
+
 if not SECRET_KEY:
-    # Only allow fallback in test/CI environments
-    if os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true":
-        SECRET_KEY = "ci-test-secret-key-for-tests-only-not-for-production"
-    else:
-        raise ImproperlyConfigured(
-            "SECRET_KEY environment variable is not set. "
-            "Please set SECRET_KEY in your .env file or environment variables. "
-            "Never use hardcoded SECRET_KEY values in production as they pose a critical security risk."
-        )
+    raise ImproperlyConfigured(
+        "SECRET_KEY environment variable is not set. "
+        "Please set SECRET_KEY in your .env file or environment variables. "
+        "For local development: copy .env.example to .env and generate a unique key. "
+        "For CI/testing: set SECRET_KEY in your CI environment variables. "
+        "For production: NEVER use a hardcoded key - always use environment variables. "
+        "Generate a secure key with: "
+        "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+    )
+
+# Additional security validation
+SECRET_KEY = SECRET_KEY.strip()
+if len(SECRET_KEY) < 50:
+    raise ImproperlyConfigured(
+        f"SECRET_KEY must be at least 50 characters for security (current: {len(SECRET_KEY)}). "
+        "Generate a secure key with: "
+        "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+    )
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]

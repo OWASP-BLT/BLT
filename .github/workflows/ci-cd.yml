@@ -413,9 +413,9 @@ jobs:
       - run: poetry install --with dev
       - name: Create .env for CI run
         run: |
-          cat > .env <<'EOF'
-          SECRET_KEY=ci-secret-key-for-tests-not-production
-          DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
+          cat > .env <<EOF
+          SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production
+          DATABASE_URL=sqlite:///./ci_db.sqlite3
           DEBUG=True
           EOF
       - name: Run collectstatic with test credentials
@@ -718,9 +718,9 @@ jobs:
 
       - name: Create .env for CI run
         run: |
-          cat > .env <<'EOF'
-          SECRET_KEY=ci-secret-key-for-tests-not-production
-          DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
+          cat > .env <<EOF
+          SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production
+          DATABASE_URL=sqlite:///./ci_db.sqlite3
           DEBUG=True
           EOF
 
@@ -730,7 +730,11 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run -d --name my-container my-app
+          docker run -d \
+            -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production' \
+            -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
+            -e DEBUG='True' \
+            --name my-container my-app
 
       - run: docker exec my-container pip install poetry
       - run: docker exec my-container poetry install --without dev --no-interaction
