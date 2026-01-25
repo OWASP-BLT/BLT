@@ -407,24 +407,20 @@ jobs:
           DATABASE_URL=sqlite:///$(pwd)/ci_db.sqlite3
           DEBUG=True
           EOF
-      - name: Run poetry run python manage.py collectstatic --noinput
-        env:
-          SECRET_KEY: 'ci-test-secret-key-for-tests-only-not-for-production'
-          DATABASE_URL: 'sqlite:///test_ci_db.sqlite3'
-          DEBUG: 'True'
+      - name: Run collectstatic
         run: |
+          SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production' \
+          DATABASE_URL='sqlite:///test_ci_db.sqlite3' \
+          DEBUG='True' \
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
-        env:
-          # SECRET_KEY is required for Django to run (CWE-321 security requirement)
-          # Using a test-specific key that is safe for CI/CD environments
-          SECRET_KEY: 'ci-test-secret-key-for-tests-only-not-for-production'
-          DATABASE_URL: 'sqlite:///test_ci_db.sqlite3'
-          DEBUG: 'True'
         run: |
           set +e
+          SECRET_KEY='ci-test-secret-key-for-tests-only-not-for-production' \
+          DATABASE_URL='sqlite:///test_ci_db.sqlite3' \
+          DEBUG='True' \
           poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
