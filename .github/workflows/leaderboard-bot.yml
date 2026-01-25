@@ -74,7 +74,7 @@ jobs:
                 ].join('\n');
 
                 // Leave a comment explaining the closure
-               await github.rest.issues.createComment({
+                await github.rest.issues.createComment({
                   owner, repo, issue_number: pull_number, body: msg
                 });
 
@@ -106,6 +106,13 @@ jobs:
             const CR_MODE = (process.env.CR_DISCUSSION_MODE || 'visible').toLowerCase();
             const CR_POINTS = parseInt(process.env.CR_DISCUSSION_POINTS || '0', 10);
             const CR_DAILY_CAP = parseInt(process.env.CR_DISCUSSION_DAILY_CAP || '7', 10);
+
+            // Helper: detect coderabbit pings
+            const isCRPing = (body) => {
+              if (!body) return false;
+              const b = String(body).toLowerCase();
+              return b.includes('coderabbit') || b.includes('@coderabbitai');
+            };
 
             // GraphQL: PRs updated recently (we filter to created/merged/closed in-month)
             const prQuery = `
@@ -363,23 +370,17 @@ jobs:
               }
             }
 
-            // +2 per repo comment this month
+            // +2 per repo comment this month (exclude coderabbit mentions to keep columns separated)
             for (const c of allComments) {
               if (c.user && c.user.login) {
                 if (isBot({ login: c.user.login })) continue;
+                if (isCRPing(c.body)) continue; // do not count CR pings as generic comments
                 ensureUser(c.user.login);
                 userStats[c.user.login].comments++;
               }
             }
 
-            // Coderabbit discussions (visible/hidden/separate)
-            const isCRPing = (body) => {
-              if (!body) return false;
-              const b = String(body).toLowerCase();
-              return b.includes('coderabbit') || b.includes('@coderabbitai');
-            };
-
-            // Track per user per UTC day
+            // Coderabbit discussions: track per user per UTC day and apply daily cap for scoring
             const crCountsByUserByDay = {};
             const crTotalByUser = {};
             for (const c of allComments) {
@@ -394,7 +395,7 @@ jobs:
 
             for (const [login, perDay] of Object.entries(crCountsByUserByDay)) {
               ensureUser(login);
-              // Always show monthly total if visible/separate
+              // Show monthly total if visible/separate
               userStats[login].crChats = (userStats[login].crChats || 0) + (crTotalByUser[login] || 0);
 
               // Scoring
@@ -493,7 +494,7 @@ jobs:
             } else {
               crLine = `Coderabbit chats are tracked separately (not scored here).`;
             }
-            commentBody += `Scoring this month: Open PRs (+1 each), Merged PRs (+10), Closed (not merged) (−2), Reviews (+5; first two per PR in-month), Comments (+2). ${crLine}\n`;
+            commentBody += `Scoring this month: Open PRs (+1 each), Merged PRs (+10), Closed (not merged) (−2), Reviews (+5; first two per PR in-month), Comments (+2, excludes CR). ${crLine}\n`;
 
             // Upsert comment on the PR
             const { data: existingComments } = await github.rest.issues.listComments({
