@@ -53,9 +53,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: ${{ runner.os }}-${{ github.repository }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pre-commit-
+            ${{ runner.os }}-${{ github.repository }}-pre-commit-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -73,10 +73,10 @@ jobs:
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-${{ github.repository }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-${{ github.repository }}-poetry-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-${{ github.repository }}-poetry-
 
       - name: Print memory usage
         run: free -h
@@ -377,10 +377,10 @@ jobs:
         id: apt-cache
         with:
           path: ~/apt-cache
-          key: ${{ runner.os }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
+          key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
           restore-keys: |
-            ${{ runner.os }}-apt-xvfb-chromium-
-            ${{ runner.os }}-apt-
+            ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-
+            ${{ runner.os }}-${{ github.repository }}-apt-
       - name: Restore apt cache from user directory
         if: steps.apt-cache.outputs.cache-hit == 'true'
         run: |
