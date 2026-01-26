@@ -190,7 +190,7 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800 hover:text-gray-900 dark:hover:text-white">
+                                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 hover:text-gray-900 dark:hover:text-white">
                                                 {{ earner.issues_completed }}
                                             </span>
                                         </td>
@@ -236,7 +236,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
                         <select id="hunt_type"
                                 name="hunt_type"
-                                class="px-4 py-2 w-full rounded-md bg-gray-100 dark:bg-gray-800 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50">
+                                class="px-4 py-2 w-full rounded-md bg-gray-100 dark:bg-gray-900 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50">
                             <option value="all">All Types</option>
                             <option value="upcomming">Upcoming</option>
                             <option value="ongoing">Ongoing</option>
@@ -244,7 +244,7 @@
                         </select>
                         <select id="domain"
                                 name="domain"
-                                class="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-800 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50">
+                                class="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-900 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50">
                             <option>Select Domain</option>
                             {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                         </select>
