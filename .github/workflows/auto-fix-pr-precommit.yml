@@ -66,11 +66,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Check by PR number range (more reliable than branch name)
+          # Using jq --arg for safe variable passing to prevent injection
           OPEN_FIX_PRS=$(gh pr list \
             --label "automated-fix" \
             --state open \
             --json number,headRefName \
-            --jq "[.[] | select(.headRefName == \"$PR_HEAD_REF\" and .number != $PR_NUMBER)] | length")
+            | jq --arg ref "$PR_HEAD_REF" --arg num "$PR_NUMBER" \
+              '[.[] | select(.headRefName == $ref and .number != ($num | tonumber))] | length')
 
           if [ "$OPEN_FIX_PRS" -gt 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
@@ -478,4 +480,9 @@ jobs:
           echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
-          
+          echo "- Syntax errors in Python code" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid Django template syntax" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing required imports" >> $GITHUB_STEP_SUMMARY
+          echo "- Test failures" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
+          exit 1
