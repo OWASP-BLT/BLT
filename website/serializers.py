@@ -134,6 +134,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     external_links = serializers.JSONField(required=False)
     project_visit_count = serializers.IntegerField(required=False)
+    freshness_history = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Project

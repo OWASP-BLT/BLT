@@ -1397,6 +1397,10 @@ class Project(models.Model):
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
     freshness = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, db_index=True)
+    # Store last 12 freshness scores with timestamps
+    freshness_history = models.JSONField(
+        default=list, blank=True, help_text="Last 12 freshness scores with timestamps for sparkline chart"
+    )  # Format: [{"date": "2026-01-15", "score": 85.5}, {"date": "2026-01-16", "score": 87.2}, ...]
 
     def calculate_freshness(self):
         """

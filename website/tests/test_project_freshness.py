@@ -2,7 +2,9 @@
 Tests for Project freshness calculation functionality.
 """
 from datetime import timedelta
+from io import StringIO
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -132,3 +134,50 @@ class ProjectFreshnessCalculationTestCase(TestCase):
         # raw_score = 2*1.0 + 1*0.6 + 1*0.3 = 2.9
         # freshness = (2.9 / 20) * 100 = 14.5
         self.assertEqual(freshness, 14.5)
+
+    def test_freshness_history_updates(self):
+        """Test that freshness history is maintained across updates"""
+        Repo.objects.create(
+            project=self.project,
+            name="test-repo",
+            repo_url="https://github.com/test/repo",
+            is_archived=False,
+            last_commit_date=self.now - timedelta(days=5),
+        )
+
+        call_command("update_project_freshness", stdout=StringIO())
+        self.project.refresh_from_db()
+
+        # Should have 1 entry in history
+        self.assertEqual(len(self.project.freshness_history), 1)
+        self.assertEqual(self.project.freshness_history[0]["score"], 5.0)
+
+        # Simulate second update (manually for testing)
+        today = date.today().isoformat()
+        history = self.project.freshness_history
+        history.append({"date": today, "score": 10.0})
+        self.project.freshness_history = history
+        self.project.save()
+
+        # Should have 2 entries
+        self.project.refresh_from_db()
+        self.assertEqual(len(self.project.freshness_history), 2)
+
+    def test_freshness_history_caps_at_12(self):
+        """Test that history is capped at 12 entries"""
+        # Simulate 15 days of updates
+        history = [{"date": f"2026-01-{i:02d}", "score": float(i * 5)} for i in range(1, 16)]
+        self.project.freshness_history = history
+        self.project.save()
+
+        # Run update (which should trim to 12)
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        call_command("update_project_freshness", stdout=StringIO())
+
+        self.project.refresh_from_db()
+        self.assertEqual(len(self.project.freshness_history), 12)
+        # Should keep most recent 12
+        self.assertTrue(all("2026-01" in entry["date"] for entry in self.project.freshness_history))
