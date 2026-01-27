@@ -45,6 +45,9 @@ class Command(BaseCommand):
                 call_command("update_project_freshness")
             except Exception as e:
                 logger.error("Error updating project freshness", exc_info=True)
+                call_command("fetch_pr_reviews")
+            except Exception as e:
+                logger.error("Error fetching PR reviews", exc_info=True)
             try:
                 call_command("cron_send_reminders")
             except Exception as e:
