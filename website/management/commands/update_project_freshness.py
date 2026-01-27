@@ -31,7 +31,14 @@ class Command(BaseCommand):
                         project = Project.objects.select_for_update().get(pk=project_id)
 
                         project.freshness = project.calculate_freshness()
-                        project.save(update_fields=["freshness"])
+                        # Update freshness history (ensure list exists)
+                        history = project.freshness_history or []
+                        history.append(project.freshness)
+
+                        # Keep only last 12 entries
+                        project.freshness_history = history[-12:]
+
+                        project.save(update_fields=["freshness", "freshness_history"])
                         processed += 1
 
                 except Exception as e:
