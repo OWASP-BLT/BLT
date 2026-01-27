@@ -4,7 +4,7 @@ import re
 import time
 import uuid
 from datetime import datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
@@ -12,7 +12,6 @@ import pytz
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -22,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F, Q
+from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -1293,12 +1292,12 @@ class ForumCategory(models.Model):
 
 
 class ForumPost(models.Model):
-    STATUS_CHOICES = [
+    STATUS_CHOICES = (
         ("open", "Open"),
         ("in_progress", "In Progress"),
         ("completed", "Completed"),
         ("declined", "Declined"),
-    ]
+    )
 
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
@@ -1365,337 +1364,6 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
-    contributors = models.ManyToManyField(
-        "Contributor",
-        related_name="projects",
-        blank=True,
-    )
-    # --- Freshness scoring constants ---
-    # Time window weights for recent activity scoring
-    FRESHNESS_WINDOW_WEIGHTS = [
-        (7, Decimal("1.0")),  # 0-7 days: full weight
-        (30, Decimal("0.6")),  # 8-30 days: medium weight
-        (90, Decimal("0.3")),  # 31-90 days: low weight
-    ]
-    # Activity type weights for scoring
-    FRESHNESS_COMMIT_WEIGHT = Decimal("5")  # Each commit is worth 5 points
-    FRESHNESS_PR_WEIGHT = Decimal("3")  # Each pull request is worth 3 points
-    FRESHNESS_ISSUE_WEIGHT = Decimal("2")  # Each issue is worth 2 points
-    FRESHNESS_CONTRIBUTOR_WEIGHT = Decimal("4")  # Each unique contributor is worth 4 points
-    # Normalization soft max for scaling scores
-    FRESHNESS_SOFT_MAX = Decimal("200.0")  # Score is normalized to a max of 200
-    # Blending weight for external activity graph
-    FRESHNESS_GRAPH_BLEND_WEIGHT = Decimal("0.3")  # 30% weight for external graph
-    # Fallback scores for repo recency and forum/GitHub issue activity
-    FRESHNESS_FALLBACK_TOP = Decimal("100.00")  # 0 days
-    FRESHNESS_FALLBACK_HIGH = Decimal("80.00")  # <7 days
-    FRESHNESS_FALLBACK_MED = Decimal("50.00")  # <30 days
-    FRESHNESS_FALLBACK_LOW = Decimal("15.00")  # <90 days
-    FRESHNESS_FALLBACK_NONE = Decimal("0.00")  # >90 days
-    FRESHNESS_FALLBACK_FORUM_TOP = Decimal("50.00")  # 0 days
-    FRESHNESS_FALLBACK_FORUM_HIGH = Decimal("30.00")  # <7 days
-    FRESHNESS_FALLBACK_FORUM_MED = Decimal("10.00")  # <30 days
-    FRESHNESS_FALLBACK_FORUM_LOW = Decimal("2.00")  # <90 days
-    FRESHNESS_FALLBACK_FORUM_NONE = Decimal("0.00")  # >90 days
-
-    @staticmethod
-    def get_contributors(self_or_url, github_url=None, max_pages=None):
-        """
-        Fetch contributors from GitHub for the given repo URL and return Contributor objects.
-        Accepts either a Project instance (self) or a github_url string as first arg.
-        Handles pagination, logs errors, and updates stale Contributor data.
-        Uses requests.Session, per_page param, max_pages cap, and rate-limit handling.
-        """
-        Contributor = apps.get_model("website", "Contributor")
-        logger = logging.getLogger(__name__)
-
-        # Allow calling as Project.get_contributors(self, url) or Project.get_contributors(url)
-        if github_url is None and isinstance(self_or_url, str):
-            github_url = self_or_url
-        elif github_url is None and hasattr(self_or_url, "github_url"):
-            github_url = getattr(self_or_url, "github_url", None)
-        elif github_url is None:
-            github_url = None
-        if not github_url:
-            return []
-        # Extract owner/repo from URL
-        try:
-            parsed = urlparse(github_url)
-            path = parsed.path.strip("/")
-            if path.count("/") >= 1:
-                owner, repo = path.split("/")[:2]
-            else:
-                return []
-        except Exception as e:
-            logger.error(f"Failed to parse GitHub URL: {github_url} - {e}", exc_info=True)
-            return []
-        api_url = f"https://api.github.com/repos/{owner}/{repo}/contributors"
-        headers = {
-            "User-Agent": "OWASP-BLT/1.0",
-            "Accept": "application/vnd.github.v3+json",
-        }
-        token = getattr(settings, "GITHUB_TOKEN", None)
-        if token:
-            headers["Authorization"] = f"token {token}"
-        contributors = []
-        url = api_url + "?per_page=100"
-        session = requests.Session()
-        session.headers.update(headers)
-        # Max pages: from settings or argument
-        max_pages_setting = getattr(settings, "GITHUB_CONTRIB_MAX_PAGES", 10)
-        max_pages = max_pages if max_pages is not None else max_pages_setting
-        page_count = 0
-        try:
-            while url and page_count < max_pages:
-                resp = session.get(url, timeout=10)
-                if resp.status_code != 200:
-                    logger.error(f"GitHub API error {resp.status_code} for {url}: {resp.text}")
-                    # Optionally log rate limit headers
-                    if "X-RateLimit-Remaining" in resp.headers and resp.headers["X-RateLimit-Remaining"] == "0":
-                        reset = resp.headers.get("X-RateLimit-Reset")
-                        logger.error(f"GitHub API rate limit exhausted. Resets at: {reset}")
-                        break
-                    if "X-RateLimit-Reset" in resp.headers:
-                        logger.error(f"Rate limit resets at: {resp.headers['X-RateLimit-Reset']}")
-                    break
-                from django.db import transaction
-
-                data = resp.json()
-                with transaction.atomic():
-                    for c in data:
-                        if "id" not in c or "login" not in c:
-                            continue
-                        obj, created = Contributor.objects.get_or_create(
-                            github_id=c["id"],
-                            defaults={
-                                "name": c.get("login", ""),
-                                "github_url": c.get("html_url", ""),
-                                "avatar_url": c.get("avatar_url", ""),
-                                "contributor_type": c.get("type", "User"),
-                                "contributions": c.get("contributions", 0),
-                            },
-                        )
-                        # Always update fields if not created (avoid stale data)
-                        if not created:
-                            obj.avatar_url = c.get("avatar_url", obj.avatar_url)
-                            obj.github_url = c.get("html_url", obj.github_url)
-                            obj.name = c.get("login", obj.name)
-                            obj.contributions = c.get("contributions", obj.contributions)
-                            obj.contributor_type = c.get("type", obj.contributor_type or "User")
-                            obj.save()
-                        contributors.append(obj)
-                # Pagination: look for 'next' in Link header
-                link = resp.headers.get("Link", "")
-                next_url = None
-                if link:
-                    for part in link.split(","):
-                        if 'rel="next"' in part:
-                            next_url = part.split(";")[0].strip().strip("<>")
-                            break
-                url = next_url
-                page_count += 1
-        except Exception as e:
-            logger.error(f"Exception fetching contributors for {github_url}: {e}", exc_info=True)
-            return contributors
-        finally:
-            session.close()
-        return contributors
-
-    # Persisted freshness score (0..100). Use DecimalField for precision; indexed for filtering/sorting.
-    freshness = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=Decimal("0.00"),
-        db_index=True,
-        help_text="0..100 freshness score representing recent project activity",
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-    )
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(freshness__gte=0) & models.Q(freshness__lte=100),
-                name="freshness_0_100_range",
-            ),
-        ]
-        indexes = [
-            # Add any existing indexes from the previous Meta here, or leave as [] if none
-        ]
-
-    def calculate_freshness(self, activity_graph_score: float | None = None, fast: bool = False) -> Decimal:
-        """
-        Optimized deterministic calculation of a 0..100 freshness score.
-        - Bulk aggregates per window (single query per window)
-        - Robust fallback if Contribution model missing
-        - Handles edge cases (archived, forked, inactive)
-        - Optionally blends external activity_graph_score
-        - All math uses Decimal for determinism
-        - Accepts fast: bool for future fallback logic
-        """
-        now = timezone.now()
-        # Build windows from constants
-        windows = []
-        last_end = now
-        for days, weight in self.FRESHNESS_WINDOW_WEIGHTS:
-            start = now - timedelta(days=days)
-            windows.append((start, last_end, weight))
-            last_end = start
-        total_score = Decimal("0")
-        any_activity = False
-        # Edge case: archived, forked, or inactive projects
-        if getattr(self, "archived", False) or getattr(self, "forked", False) or self.status in ["inactive", "lab"]:
-            return Decimal("0.00")
-        try:
-            Contribution = apps.get_model("website", "Contribution")
-        except Exception:
-            Contribution = None
-        if Contribution:
-            for start, end, weight in windows:
-                window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
-                agg = window_qs.aggregate(
-                    commits=Count("id", filter=Q(contribution_type__iexact="commit")),
-                    prs=Count("id", filter=Q(contribution_type__iexact="pull_request")),
-                    issues=Count(
-                        "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
-                    ),
-                    contributors=Count("github_username", filter=Q(~Q(github_username="")), distinct=True),
-                )
-                if agg["commits"] + agg["prs"] + agg["issues"] + agg["contributors"] > 0:
-                    any_activity = True
-                window_metric = (
-                    Decimal(agg["commits"] or 0) * self.FRESHNESS_COMMIT_WEIGHT
-                    + Decimal(agg["prs"] or 0) * self.FRESHNESS_PR_WEIGHT
-                    + Decimal(agg["issues"] or 0) * self.FRESHNESS_ISSUE_WEIGHT
-                    + Decimal(agg["contributors"] or 0) * self.FRESHNESS_CONTRIBUTOR_WEIGHT
-                )
-                total_score += weight * window_metric
-        # Fallback logic: repo last_updated
-        if not any_activity:
-            latest_repo = (
-                self.repos.order_by("-last_updated", "-updated_at").first() if hasattr(self, "repos") else None
-            )
-            repo_dt = None
-            if latest_repo:
-                repo_dt = getattr(latest_repo, "last_updated", None) or getattr(latest_repo, "updated_at", None)
-            if latest_repo and repo_dt:
-                any_activity = True
-                days = (now - repo_dt).days
-                if days <= 0:
-                    return self.FRESHNESS_FALLBACK_TOP
-                elif days < 7:
-                    return self.FRESHNESS_FALLBACK_HIGH
-                elif days < 30:
-                    return self.FRESHNESS_FALLBACK_MED
-                elif days < 90:
-                    return self.FRESHNESS_FALLBACK_LOW
-                else:
-                    return self.FRESHNESS_FALLBACK_NONE
-        # Tertiary fallback: last activity (ForumPost or GitHubIssue)
-        if not any_activity:
-            last_dates = []
-            try:
-                ForumPost = apps.get_model("website", "ForumPost")
-                last_post = ForumPost.objects.filter(project=self).order_by("-created").first()
-                if last_post:
-                    last_dates.append(last_post.created)
-            except Exception:
-                pass
-            try:
-                GitHubIssue = apps.get_model("website", "GitHubIssue")
-                last_gh_issue = GitHubIssue.objects.filter(repo__project=self).order_by("-updated_at").first()
-                if last_gh_issue:
-                    last_dates.append(last_gh_issue.updated_at)
-            except Exception:
-                pass
-            if last_dates:
-                days = (now - max(last_dates)).days
-                if days <= 0:
-                    return self.FRESHNESS_FALLBACK_FORUM_TOP
-                elif days < 7:
-                    return self.FRESHNESS_FALLBACK_FORUM_HIGH
-                elif days < 30:
-                    return self.FRESHNESS_FALLBACK_FORUM_MED
-                elif days < 90:
-                    return self.FRESHNESS_FALLBACK_FORUM_LOW
-                else:
-                    return self.FRESHNESS_FALLBACK_FORUM_NONE
-        # Always normalize and cap at the end
-        normalized = min(total_score / self.FRESHNESS_SOFT_MAX, Decimal("1.0")) * Decimal("100.0")
-        # Clamp and blend activity_graph_score if provided
-        if activity_graph_score is not None:
-            ags = Decimal(str(activity_graph_score))
-            ags = max(Decimal("0.0"), min(ags, Decimal("100.0")))
-            normalized = (
-                Decimal("1.0") - self.FRESHNESS_GRAPH_BLEND_WEIGHT
-            ) * normalized + self.FRESHNESS_GRAPH_BLEND_WEIGHT * ags
-        return Decimal(normalized).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
-
-    def freshness_reason(self):
-        """
-        Returns a string explaining why the project is considered fresh or stale.
-        """
-        score = self.fetch_freshness()
-        if score >= 90:
-            return "Very active: recent commits, PRs, and contributors."
-        elif score >= 60:
-            return "High recent activity"
-        elif score >= 30:
-            return "Some activity: last 3 months."
-        elif score > 0:
-            return "Very low activity"
-        else:
-            return "Inactive or archived."
-
-    def log_freshness_summary(self):
-        """
-        Logs a summary of the project's freshness score and breakdown for monitoring.
-        """
-        logger.info(
-            f"[Freshness] Project {self.pk} ({self.name}): Score={self.fetch_freshness()} Reason={self.freshness_reason()} Breakdown={self.get_freshness_breakdown()}"
-        )
-
-    def get_freshness_breakdown(self):
-        now = timezone.now()
-        windows = [
-            (now - timedelta(days=7), now, "0-7d", 1.0),
-            (now - timedelta(days=30), now - timedelta(days=7), "8-30d", 0.6),
-            (now - timedelta(days=90), now - timedelta(days=30), "31-90d", 0.3),
-        ]
-        breakdown = {}
-        try:
-            Contribution = apps.get_model("website", "Contribution")
-        except Exception:
-            Contribution = None
-        if Contribution:
-            for start, end, label, weight in windows:
-                window_qs = Contribution.objects.filter(repository=self, created__gte=start, created__lt=end)
-                agg = window_qs.aggregate(
-                    commits=Count("id", filter=Q(contribution_type__iexact="commit")),
-                    prs=Count("id", filter=Q(contribution_type__iexact="pull_request")),
-                    issues=Count(
-                        "id", filter=Q(contribution_type__in=["issue_opened", "issue_closed", "issue_assigned"])
-                    ),
-                )
-                # Use same logic as calculate_freshness:
-                contributors = window_qs.aggregate(
-                    contributors=Count("github_username", filter=Q(~Q(github_username="")), distinct=True)
-                )["contributors"]
-                breakdown[label] = {
-                    "commits": agg["commits"],
-                    "prs": agg["prs"],
-                    "issues": agg["issues"],
-                    "contributors": contributors,
-                    "weight": weight,
-                }
-        return breakdown
-
-    def fetch_freshness(self) -> Decimal:
-        """
-        Keep serializer compatibility: serializer expects obj.fetch_freshness()
-        Return the persisted DB value (Decimal).
-        """
-        return self.freshness
-
     STATUS_CHOICES = [
         ("flagship", "Flagship"),
         ("production", "Production"),

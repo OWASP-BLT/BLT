@@ -1,28 +1,6 @@
-from django.contrib import admin
-
-from website.models import Project
-
-
-@admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
-    actions = ["recalculate_freshness"]
-    list_display = ("id", "name", "slug", "description", "created", "modified")
-    search_fields = ["id", "name", "slug", "description"]
-
-    def recalculate_freshness(self, request, queryset):
-        count = 0
-        for project in queryset:
-            project.freshness = project.calculate_freshness()
-            project.save(update_fields=["freshness"])
-            project.log_freshness_summary()
-            count += 1
-        self.message_user(request, f"Recalculated freshness for {count} projects. See logs for summary.")
-
-    recalculate_freshness.short_description = "Recalculate freshness (full)"
-
-
 from urllib.parse import urlparse
 
+from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -602,11 +580,16 @@ class BlockedAdmin(admin.ModelAdmin):
     )
 
 
-# Added for autocomplete_fields in ForumPostAdmin
-# Must include the primary key for admin autocomplete
-# and any fields referenced in autocomplete_fields
-# (project, repo, organization)
-# If project uses 'name' or 'slug' for autocomplete, those are included above
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "slug",
+        "description",
+        "created",
+        "modified",
+    )
+    search_fields = ["name", "description", "slug"]
 
 
 class RepoAdmin(admin.ModelAdmin):
@@ -958,6 +941,7 @@ class UserLabProgressAdmin(admin.ModelAdmin):
 admin.site.register(UserTaskProgress, UserTaskProgressAdmin)
 admin.site.register(UserLabProgress, UserLabProgressAdmin)
 
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
 admin.site.register(ContributorStats, ContributorStatsAdmin)

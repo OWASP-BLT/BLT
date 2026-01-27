@@ -725,44 +725,8 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    filterset_fields = ["status", "organization", "freshness"]
-    ordering_fields = ["freshness", "created", "modified"]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-
-    def get_queryset(self):
-        from decimal import Decimal, InvalidOperation
-
-        from rest_framework.exceptions import ParseError
-
-        qs = super().get_queryset()
-        # Accept both min_freshness/max_freshness and freshness_min/freshness_max for compatibility
-        freshness_min = self.request.query_params.get("freshness_min") or self.request.query_params.get("min_freshness")
-        freshness_max = self.request.query_params.get("freshness_max") or self.request.query_params.get("max_freshness")
-        if freshness_min is not None:
-            try:
-                freshness_min = Decimal(freshness_min)
-            except (InvalidOperation, ValueError, TypeError):
-                raise ParseError("Invalid decimal value for freshness_min")
-            qs = qs.filter(freshness__gte=freshness_min)
-        if freshness_max is not None:
-            try:
-                freshness_max = Decimal(freshness_max)
-            except (InvalidOperation, ValueError, TypeError):
-                raise ParseError("Invalid decimal value for freshness_max")
-            qs = qs.filter(freshness__lte=freshness_max)
-        return qs
-
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticatedOrReadOnly])
-    def freshness_breakdown(self, request, pk=None):
-        project = self.get_object()
-        return Response(project.get_freshness_breakdown())
-
-    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticatedOrReadOnly])
-    def freshness_reason(self, request, pk=None):
-        project = self.get_object()
-        return Response({"reason": project.freshness_reason()})
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ("get", "post")
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -789,8 +753,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        qs = self.filter_queryset(self.get_queryset())
-        projects = qs.annotate(
+        projects = Project.objects.annotate(
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
@@ -879,44 +842,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def filter(self, request, *args, **kwargs):
-        from decimal import Decimal, InvalidOperation
-
         freshness = request.query_params.get("freshness", None)
-        fmin = request.query_params.get("freshness_min") or request.query_params.get("min_freshness")
-        fmax = request.query_params.get("freshness_max") or request.query_params.get("max_freshness")
         stars = request.query_params.get("stars", None)
         forks = request.query_params.get("forks", None)
         tags = request.query_params.get("tags", None)
 
+        # Annotate Project with aggregated stars and forks from related Repos
         projects = Project.objects.annotate(
             total_stars=Coalesce(Sum("repos__stars"), 0),
             total_forks=Coalesce(Sum("repos__forks"), 0),
         )
 
-        # Numeric freshness filters
-        try:
-            if fmin is not None:
-                projects = projects.filter(freshness__gte=Decimal(fmin))
-            if fmax is not None:
-                projects = projects.filter(freshness__lte=Decimal(fmax))
-            if freshness is not None:
-                projects = projects.filter(freshness__gte=Decimal(freshness))
-        except InvalidOperation:
-            return Response(
-                {"error": "freshness_min / freshness_max / freshness must be numeric"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Optionally allow ordering by freshness via ?ordering=freshness or ?ordering=-freshness
-        ordering = request.query_params.get("ordering")
-        allowed_orderings = ["freshness", "-freshness", "created", "-created", "modified", "-modified"]
-        if ordering:
-            if ordering not in allowed_orderings:
-                return Response(
-                    {"error": f"Invalid 'ordering' parameter: must be one of {allowed_orderings}"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            projects = projects.order_by(ordering)
+        # Freshness is NOT a DB field (SerializerMethodField)
+        if freshness:
+            pass  # Safe no-op
 
         # SAFE stars validation
         if stars:
