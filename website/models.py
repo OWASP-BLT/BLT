@@ -1440,7 +1440,7 @@ class Project(models.Model):
         raw_score = counts["active_7"] * 1.0 + counts["active_30"] * 0.6 + counts["active_90"] * 0.3
 
         if raw_score == 0:
-            return 0.0
+            return Decimal("0.00")
 
         MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
         freshness = min((raw_score / MAX_SCORE) * 100, 100)

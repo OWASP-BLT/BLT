@@ -1,7 +1,7 @@
 """
 Tests for Project freshness calculation functionality.
 """
-from datetime import timedelta
+from datetime import date, timedelta
 from io import StringIO
 
 from django.core.management import call_command
@@ -166,7 +166,10 @@ class ProjectFreshnessCalculationTestCase(TestCase):
     def test_freshness_history_caps_at_12(self):
         """Test that history is capped at 12 entries"""
         # Simulate 15 days of updates
-        history = [{"date": f"2026-01-{i:02d}", "score": float(i * 5)} for i in range(1, 16)]
+        base_date = self.now.date().replace(day=1)
+        history = [
+            {"date": (base_date + timedelta(days=i)).isoformat(), "score": float((i + 1) * 5)} for i in range(15)
+        ]
         self.project.freshness_history = history
         self.project.save()
 
@@ -180,4 +183,5 @@ class ProjectFreshnessCalculationTestCase(TestCase):
         self.project.refresh_from_db()
         self.assertEqual(len(self.project.freshness_history), 12)
         # Should keep most recent 12
-        self.assertTrue(all("2026-01" in entry["date"] for entry in self.project.freshness_history))
+        month_prefix = base_date.strftime("%Y-%m")
+        self.assertTrue(all(entry["date"].startswith(month_prefix) for entry in self.project.freshness_history))
