@@ -1,0 +1,1005 @@
+Reading .env file from /Users/piyushrathod/BLT/.env
+DATABASE_URL: postgres://postgres:postgres@localhost:5432/example_db
+DEBUG This service is instrumented using OpenTelemetry. OpenTelemetry or one of its components could not be imported; please add compatible versions of opentelemetry-api and opentelemetry-instrumentation packages in order to get Storage Tracing data.
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/dj_rest_auth/registration/serializers.py:228: UserWarning: app_settings.USERNAME_REQUIRED is deprecated, use: app_settings.SIGNUP_FIELDS['username']['required']
+  required=allauth_account_settings.USERNAME_REQUIRED,
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/dj_rest_auth/registration/serializers.py:230: UserWarning: app_settings.EMAIL_REQUIRED is deprecated, use: app_settings.SIGNUP_FIELDS['email']['required']
+  email = serializers.EmailField(required=allauth_account_settings.EMAIL_REQUIRED)
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/dj_rest_auth/registration/serializers.py:288: UserWarning: app_settings.EMAIL_REQUIRED is deprecated, use: app_settings.SIGNUP_FIELDS['email']['required']
+  email = serializers.EmailField(required=allauth_account_settings.EMAIL_REQUIRED)
+Creating test database for alias 'default'...
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/db/models/fields/__init__.py:1671: RuntimeWarning: DateTimeField Points.created received a naive datetime (2016-12-12 12:12:12) while time zone support is active.
+  warnings.warn(
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/db/models/fields/__init__.py:1671: RuntimeWarning: DateTimeField Points.modified received a naive datetime (2016-12-12 12:12:12) while time zone support is active.
+  warnings.warn(
+Found 310 test(s).
+The 'BLT-Contributors' tag does not exist. No changes made.
+Found image for Weekly Streak at website/static/img/badges/7-day-streak.png
+Found image for 15 Day Streak at website/static/img/badges/15-day-streak.png
+Found image for Monthly Streak at website/static/img/badges/30-day-streak.png
+Found image for 100 Day Streak at website/static/img/badges/100-day-streak.png
+Found image for Six Month Streak at website/static/img/badges/180-day-streak.png
+Found image for Yearly Streak at website/static/img/badges/365-day-streak.png
+Updated challenge 'Report 5 IPs' with 10 bacon reward
+Updated challenge 'Report 5 Issues' with 15 bacon reward
+Updated challenge 'Sign in for 5 Days' with 5 bacon reward
+Updated challenge 'Report 10 IPs' with 20 bacon reward
+Updated challenge 'Report 10 Issues' with 25 bacon reward
+Updated challenge 'All Members Sign in for 5 Days' with 10 bacon reward
+DEBUG Sending a request - url: https://slack.com/api/auth.test, query_params: {}, body_params: {}, files: {}, json_body: None, headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': '(redacted)', 'User-Agent': 'Bolt/1.23.0 Python/3.11.2 slackclient/3.35.0 Darwin/25.1.0'}
+DEBUG Received the following response - status: 200, headers: {'date': 'Mon, 12 Jan 2026 12:45:56 GMT', 'server': 'Apache', 'vary': 'Accept-Encoding', 'x-slack-req-id': '904769038c295a2a7c3eeec872a60547', 'x-content-type-options': 'nosniff', 'x-xss-protection': '0', 'pragma': 'no-cache', 'cache-control': 'private, no-cache, no-store, must-revalidate', 'expires': 'Sat, 26 Jul 1997 05:00:00 GMT', 'content-type': 'application/json; charset=utf-8', 'x-oauth-scopes': 'chat:write,commands,app_mentions:read', 'access-control-expose-headers': 'x-slack-req-id, retry-after', 'access-control-allow-headers': 'slack-route, x-slack-version-ts, x-b3-traceid, x-b3-spanid, x-b3-parentspanid, x-b3-sampled, x-b3-flags', 'strict-transport-security': 'max-age=31536000; includeSubDomains; preload', 'referrer-policy': 'no-referrer', 'x-slack-unique-id': 'aWTtBFrH3ALc6DWcsv1ALgAAACs', 'x-slack-backend': 'r', 'access-control-allow-origin': '*', 'content-length': '181', 'via': '1.1 slack-prod.tinyspeck.com, envoy-www-iad-rxvapsdg,envoy-edge-bom-elyrcyzi', 'x-envoy-attempt-count': '1', 'x-envoy-upstream-service-time': '216', 'x-backend': 'api_normal', 'x-server': 'slack-www-hhvm-api-iad-zb595tohlzcu', 'x-slack-shared-secret-outcome': 'no-match', 'x-edge-backend': 'envoy-www', 'timing-allow-origin': '*', 'alt-svc': 'h3=":443"; ma=2592000, h3-29=":443"; ma=2592000, quic=":443"; ma=2592000', 'x-slack-edge-shared-secret-outcome': 'no-match', 'connection': 'close'}, body: {"ok":true,"url":"https:\/\/codeexorg.slack.com\/","team":"CodeEx","user":"blt","team_id":"T0A3GAJDPFE","user_id":"U0A7LGMDJ0M","bot_id":"B0A82T6FGRF","is_enterprise_install":false}
+DEBUG DjangoListenerStartHandler has been enabled
+DEBUG DjangoListenerCompletionHandler has been enabled
+System check identified some issues:
+
+WARNINGS:
+?: settings.ACCOUNT_EMAIL_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+?: settings.ACCOUNT_USERNAME_REQUIRED is deprecated, use: settings.ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+System check identified 2 issues (0 silenced).
+ERROR Error fetching username for activity 1, user_id U123456: API Error
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/admin.py", line 797, in backfill_slack_usernames
+    username = get_slack_username(workspace_client, activity.user_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+Exception: API Error
+ERROR Error fetching username for activity 1, user_id U123456: API Error
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/admin.py", line 797, in backfill_slack_usernames
+    username = get_slack_username(workspace_client, activity.user_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+Exception: API Error
+.DEBUG Starting new HTTPS connection (1): o0.ingest.sentry.io:443
+WARNING No Slack integration found for workspace T99999999 and not OWASP workspace. Skipping activity 2
+WARNING No Slack integration found for workspace T99999999 and not OWASP workspace. Skipping activity 2
+....INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /adventures/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /adventures/ (exempt path or DRF view)
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /adventures/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /adventures/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /adventures/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /adventures/ (exempt path or DRF view)
+..INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/v1/hunt/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/v1/hunt/ (exempt path or DRF view)
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/db/models/fields/__init__.py:1671: RuntimeWarning: DateTimeField Hunt.end_on received a naive datetime (2026-01-12 12:45:57.585551) while time zone support is active.
+  warnings.warn(
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/db/models/fields/__init__.py:1671: RuntimeWarning: DateTimeField Hunt.starts_on received a naive datetime (2026-01-12 12:45:57.585547) while time zone support is active.
+  warnings.warn(
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/v1/hunt/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/v1/hunt/ (exempt path or DRF view)
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/db/models/fields/__init__.py:1671: RuntimeWarning: DateTimeField Hunt.end_on received a naive datetime (2026-01-12 12:45:57.592271) while time zone support is active.
+  warnings.warn(
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/v1/hunt/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/v1/hunt/ (exempt path or DRF view)
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/db/models/fields/__init__.py:1671: RuntimeWarning: DateTimeField Hunt.starts_on received a naive datetime (2026-01-12 12:45:57.596505) while time zone support is active.
+  warnings.warn(
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/v1/issues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/v1/issues/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/v1/userissues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/v1/userissues/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/login/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/login/ (exempt path or DRF view)
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/dj_rest_auth/serializers.py:62: UserWarning: app_settings.AUTHENTICATION_METHOD is deprecated, use: app_settings.LOGIN_METHODS
+  if allauth_account_settings.AUTHENTICATION_METHOD == allauth_account_settings.AuthenticationMethod.EMAIL:
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/dj_rest_auth/serializers.py:66: UserWarning: app_settings.AUTHENTICATION_METHOD is deprecated, use: app_settings.LOGIN_METHODS
+  if allauth_account_settings.AUTHENTICATION_METHOD == allauth_account_settings.AuthenticationMethod.USERNAME:
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/login/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/login/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/password/reset/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/password/reset/ (exempt path or DRF view)
+/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/dj_rest_auth/forms.py:73: UserWarning: app_settings.AUTHENTICATION_METHOD is deprecated, use: app_settings.LOGIN_METHODS
+  allauth_account_settings.AUTHENTICATION_METHOD
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/password/reset/confirm/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/password/reset/confirm/ (exempt path or DRF view)
+WARNING Bad Request: /auth/password/reset/confirm/
+WARNING Bad Request: /auth/password/reset/confirm/
+.{'to': ['person1@world.com'], 'cc': [], 'bcc': [], 'reply_to': [], 'from_email': 'blt-support@owasp.org', 'subject': '[example.com] Password Reset Email', 'body': "Hello from example.com!\n\nYou're receiving this email because you or someone else has requested a password reset for your user account.\nIt can be safely ignored if you did not request a password reset. Click the link below to reset your password.\n\nhttp://testserver/rest-auth/password/reset/confirm/a/d2am4m-00f66ee35bb9e1f4a451cfacbf91de92\n\nIn case you forgot, your username is person.\n\nThank you for using example.com!\nexample.com", 'attachments': [], 'extra_headers': {}, 'connection': <django.core.mail.backends.locmem.EmailBackend object at 0x142a87f50>, 'alternatives': []}
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/registration/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/registration/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/login/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/login/ (exempt path or DRF view)
+.....=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/password/reset/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/password/reset/ (exempt path or DRF view)
+.
+Test: Password reset for known email
+Response status: 200
+Response data: {'detail': 'Password reset e-mail has been sent.'}
+Emails sent: 1
+✓ Correct: Email sent for known account
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /auth/password/reset/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /auth/password/reset/ (exempt path or DRF view)
+.
+Test: Password reset for unknown email
+Response status: 200
+Response data: {'detail': 'Password reset e-mail has been sent.'}
+Emails sent: 0
+✓ Correct: No email sent for unknown account
+✓ Response still returns 200 OK (doesn't leak account existence)
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /projects/non-existent/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /projects/non-existent/badge/ (exempt path or DRF view)
+WARNING Not Found: /projects/non-existent/badge/
+WARNING Not Found: /projects/non-existent/badge/
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /repos/non-existent/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /repos/non-existent/badge/ (exempt path or DRF view)
+WARNING Not Found: /repos/non-existent/badge/
+WARNING Not Found: /repos/non-existent/badge/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /projects/test-project/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /projects/test-project/badge/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /projects/test-project/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /projects/test-project/badge/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /projects/test-project/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /projects/test-project/badge/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /projects/test-project/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /projects/test-project/badge/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /projects/test-project/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /projects/test-project/badge/ (exempt path or DRF view)
+DEBUG STREAM b'IHDR' 16 13
+DEBUG STREAM b'IDAT' 41 1916
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /repos/test-repo/badge/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /repos/test-repo/badge/ (exempt path or DRF view)
+DEBUG STREAM b'IHDR' 16 13
+DEBUG STREAM b'IDAT' 41 1916
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bidding/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /bidding/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bidding/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /accounts/login/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /accounts/login/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bidding/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /bidding/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bidding/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /bidding/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bidding/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /accounts/login/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /accounts/login/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /bidding/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /bidding/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+ERROR Failed to send Slack message to channel C1234567890: Invalid channel
+The server responded with: {'error': 'channel_not_found'}
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/views/bitcoin.py", line 222, in post
+    client.chat_postMessage(
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+slack_sdk.errors.SlackApiError: Invalid channel
+The server responded with: {'error': 'channel_not_found'}
+ERROR Failed to send Slack message to channel C1234567890: Invalid channel
+The server responded with: {'error': 'channel_not_found'}
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/views/bitcoin.py", line 222, in post
+    client.chat_postMessage(
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+slack_sdk.errors.SlackApiError: Invalid channel
+The server responded with: {'error': 'channel_not_found'}
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+WARNING Slack channel #project-blt-bacon not found and no default channel configured
+WARNING Slack channel #project-blt-bacon not found and no default channel configured
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 3
+INFO Slack notification sent for submission 3
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 4
+INFO Slack notification sent for submission 4
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 5
+INFO Slack notification sent for submission 5
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 6
+INFO Slack notification sent for submission 6
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 7
+INFO Slack notification sent for submission 7
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 8
+INFO Slack notification sent for submission 8
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+INFO Slack notification sent for submission 9
+INFO Slack notification sent for submission 9
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/bacon/submit/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/bacon/submit/ (exempt path or DRF view)
+WARNING Slack integration not configured for OWASP BLT
+WARNING Slack integration not configured for OWASP BLT
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+INFO Payment already processed for issue #123
+INFO Payment already processed for issue #123
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+ERROR Issue #999 not found in repo TestOrg/TestRepo
+ERROR Issue #999 not found in repo TestOrg/TestRepo
+WARNING Not Found: /bounty_payout/
+WARNING Not Found: /bounty_payout/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+WARNING Missing required fields in request: {'issue_number': 123, 'repo': 'TestRepo'}
+WARNING Missing required fields in request: {'issue_number': 123, 'repo': 'TestRepo'}
+WARNING Bad Request: /bounty_payout/
+WARNING Bad Request: /bounty_payout/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+ERROR Failed to process GitHub Sponsors payment for issue #123
+ERROR Failed to process GitHub Sponsors payment for issue #123
+ERROR Internal Server Error: /bounty_payout/
+ERROR Internal Server Error: /bounty_payout/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+ERROR Repo not found: TestOrg/NonExistentRepo
+ERROR Repo not found: TestOrg/NonExistentRepo
+WARNING Not Found: /bounty_payout/
+WARNING Not Found: /bounty_payout/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+INFO Successfully processed bounty payment: $50.00 to testuser for PR #456 (Issue #123)
+INFO Successfully processed bounty payment: $50.00 to testuser for PR #456 (Issue #123)
+DEBUG Starting new HTTPS connection (1): api.github.com:443
+DEBUG https://api.github.com:443 "POST /repos/TestOrg/TestRepo/issues/123/comments HTTP/1.1" 401 None
+ERROR Failed to add comment to GitHub issue: 401 Client Error: Unauthorized for url: https://api.github.com/repos/TestOrg/TestRepo/issues/123/comments
+ERROR Failed to add comment to GitHub issue: 401 Client Error: Unauthorized for url: https://api.github.com/repos/TestOrg/TestRepo/issues/123/comments
+DEBUG Starting new HTTPS connection (1): api.github.com:443
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+DEBUG https://api.github.com:443 "POST /repos/TestOrg/TestRepo/issues/123/labels HTTP/1.1" 401 None
+ERROR Failed to add labels to GitHub issue: 401 Client Error: Unauthorized for url: https://api.github.com/repos/TestOrg/TestRepo/issues/123/labels
+ERROR Failed to add labels to GitHub issue: 401 Client Error: Unauthorized for url: https://api.github.com/repos/TestOrg/TestRepo/issues/123/labels
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /bounty_payout/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /bounty_payout/ (exempt path or DRF view)
+WARNING Invalid or missing API token
+WARNING Invalid or missing API token
+WARNING Forbidden: /bounty_payout/
+WARNING Forbidden: /bounty_payout/
+.DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /issues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /issues/ (exempt path or DRF view)
+.DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: True
+DEBUG Challenge completion status: True
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /issues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /issues/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /issues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /issues/ (exempt path or DRF view)
+.DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /issues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /issues/ (exempt path or DRF view)
+.DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Challenge completion status: False
+DEBUG Challenge completion status: False
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /issues/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /issues/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET / from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET / (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET / from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET / (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /set-theme/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /set-theme/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /set-theme/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /set-theme/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /set-theme/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /set-theme/ (exempt path or DRF view)
+WARNING Bad Request: /set-theme/
+WARNING Bad Request: /set-theme/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/add/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/add/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /forum/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /forum/ (exempt path or DRF view)
+.WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/comment/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/comment/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /forum/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /forum/ (exempt path or DRF view)
+.WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/vote/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/vote/ (exempt path or DRF view)
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/vote/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/vote/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/add/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/add/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/add/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/add/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/add/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/add/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /forum/add/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /forum/add/ (exempt path or DRF view)
+WARNING OpenAI client not available (missing or invalid API key), using default BACON score
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /sitemap/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /sitemap/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /sitemap/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /sitemap/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /sitemap/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /sitemap/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /sitemap/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /sitemap/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /sitemap/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /sitemap/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /sitemap/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /sitemap/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /status_page/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /status_page/ (exempt path or DRF view)
+DEBUG Checking GitHub API...
+DEBUG Checking GitHub API...
+DEBUG Starting new HTTPS connection (1): api.github.com:443
+DEBUG https://api.github.com:443 "GET /user/repos HTTP/1.1" 401 None
+DEBUG Starting new HTTPS connection (1): api.github.com:443
+DEBUG https://api.github.com:443 "GET /rate_limit HTTP/1.1" 401 None
+DEBUG Checking OpenAI API...
+DEBUG Checking OpenAI API...
+DEBUG Starting new HTTPS connection (1): api.openai.com:443
+DEBUG https://api.openai.com:443 "GET /v1/models HTTP/1.1" 401 243
+DEBUG Getting memory usage information...
+DEBUG Getting memory usage information...
+DEBUG Getting database connection count...
+DEBUG Getting database connection count...
+DEBUG Getting Redis stats...
+DEBUG Getting Redis stats...
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /status_page/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /status_page/ (exempt path or DRF view)
+.....INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/cache-info/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/cache-info/ (exempt path or DRF view)
+INFO Cache key listing not supported for backend: LocMemCache
+INFO Cache key listing not supported for backend: LocMemCache
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/clear-cache/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/clear-cache/ (exempt path or DRF view)
+..INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/clear-cache/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/clear-cache/ (exempt path or DRF view)
+ERROR Error clearing cache: Cache clear failed
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/api/views.py", line 2055, in post
+    cache.clear()
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+Exception: Cache clear failed
+ERROR Error clearing cache: Cache clear failed
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/api/views.py", line 2055, in post
+    cache.clear()
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+Exception: Cache clear failed
+ERROR Internal Server Error: /api/debug/clear-cache/
+ERROR Internal Server Error: /api/debug/clear-cache/
+.DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/clear-cache/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/clear-cache/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+WARNING Debug endpoint accessed from non-local environment: 192.168.1.100:8000
+WARNING Debug endpoint accessed from non-local environment: 192.168.1.100:8000
+WARNING Forbidden: /api/debug/system-stats/
+WARNING Forbidden: /api/debug/system-stats/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+WARNING Debug endpoint accessed from non-local environment: example.com
+WARNING Debug endpoint accessed from non-local environment: example.com
+WARNING Forbidden: /api/debug/system-stats/
+WARNING Forbidden: /api/debug/system-stats/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+WARNING Debug endpoint accessed from non-local environment: myapp.herokuapp.com
+WARNING Debug endpoint accessed from non-local environment: myapp.herokuapp.com
+WARNING Forbidden: /api/debug/system-stats/
+WARNING Forbidden: /api/debug/system-stats/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+WARNING Forbidden: /api/debug/system-stats/
+WARNING Forbidden: /api/debug/system-stats/
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/cache-info/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/cache-info/ (exempt path or DRF view)
+WARNING Forbidden: /api/debug/cache-info/
+WARNING Forbidden: /api/debug/cache-info/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/cache-info/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/cache-info/ (exempt path or DRF view)
+INFO Cache key listing not supported for backend: LocMemCache
+INFO Cache key listing not supported for backend: LocMemCache
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /api/debug/system-stats/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /api/debug/system-stats/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/populate-data/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/populate-data/ (exempt path or DRF view)
+ERROR Error populating test data: Fixture load failed
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/api/views.py", line 2033, in post
+    call_command("loaddata", fixture_path, verbosity=0)
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+Exception: Fixture load failed
+ERROR Error populating test data: Fixture load failed
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/api/views.py", line 2033, in post
+    call_command("loaddata", fixture_path, verbosity=0)
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/.pyenv/versions/3.11.2/lib/python3.11/unittest/mock.py", line 1177, in _execute_mock_call
+    raise effect
+Exception: Fixture load failed
+ERROR Internal Server Error: /api/debug/populate-data/
+ERROR Internal Server Error: /api/debug/populate-data/
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/populate-data/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/populate-data/ (exempt path or DRF view)
+WARNING Not Found: /api/debug/populate-data/
+WARNING Not Found: /api/debug/populate-data/
+.DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/populate-data/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/populate-data/ (exempt path or DRF view)
+.INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/clear-cache/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/clear-cache/ (exempt path or DRF view)
+WARNING Forbidden: /api/debug/clear-cache/
+WARNING Forbidden: /api/debug/clear-cache/
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: POST /api/debug/populate-data/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for POST /api/debug/populate-data/ (exempt path or DRF view)
+WARNING Forbidden: /api/debug/populate-data/
+WARNING Forbidden: /api/debug/populate-data/
+......WARNING 403 rate limit for OWASP-BLT/BLT, retry 1/5, waiting 1s
+WARNING 403 rate limit for OWASP-BLT/BLT, retry 1/5, waiting 1s
+......INFO ThrottlingMiddleware initialized with limits: {'GET': 100, 'POST': 50, 'OTHER': 30}
+DEBUG Using REMOTE_ADDR for IP: 127.0.0.1
+DEBUG Processing request: GET /leaderboard/ from IP: 127.0.0.1
+DEBUG Skipping throttling for test mode
+DEBUG Skipping throttling for GET /leaderboard/ (exempt path or DRF view)
+ERROR Internal Server Error: /leaderboard/
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/sentry_sdk/integrations/django/views.py", line 94, in sentry_wrapped_callback
+    return callback(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/list.py", line 178, in get
+    context = self.get_context_data()
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/website/views/user.py", line 628, in get_context_data
+    for bot in bots:
+               ^^^^
+NameError: name 'bots' is not defined
+ERROR Internal Server Error: /leaderboard/
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/sentry_sdk/integrations/django/views.py", line 94, in sentry_wrapped_callback
+    return callback(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/list.py", line 178, in get
+    context = self.get_context_data()
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/website/views/user.py", line 628, in get_context_data
+    for bot in bots:
+               ^^^^
+NameError: name 'bots' is not defined
+E
+======================================================================
+ERROR: test_leaderboard_displays_correctly (website.tests.test_github_commands.GitHubCommandsIntegrationTests.test_leaderboard_displays_correctly)
+Test that leaderboard page loads with GitHub data
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/piyushrathod/BLT/website/tests/test_github_commands.py", line 799, in test_leaderboard_displays_correctly
+    response = self.client.get("/leaderboard/")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/test/client.py", line 1124, in get
+    response = super().get(
+               ^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/test/client.py", line 475, in get
+    return self.generic(
+           ^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/test/client.py", line 671, in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/test/client.py", line 1087, in request
+    self.check_exception(response)
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/test/client.py", line 802, in check_exception
+    raise exc_value
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/sentry_sdk/integrations/django/views.py", line 94, in sentry_wrapped_callback
+    return callback(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/base.py", line 144, in dispatch
+    return handler(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/.venv/lib/python3.11/site-packages/django/views/generic/list.py", line 178, in get
+    context = self.get_context_data()
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/piyushrathod/BLT/website/views/user.py", line 628, in get_context_data
+    for bot in bots:
+               ^^^^
+NameError: name 'bots' is not defined
+
+----------------------------------------------------------------------
+Ran 110 tests in 18.079s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
+Sentry is attempting to send 1 pending events
+Waiting up to 2 seconds
+Press Ctrl-C to quit
+DEBUG https://o0.ingest.sentry.io:443 "POST /api/0/envelope/ HTTP/1.1" 400 0
