@@ -33,7 +33,7 @@ class Command(BaseCommand):
                         project.freshness = project.calculate_freshness()
                         # Update freshness history (ensure list exists)
                         history = project.freshness_history or []
-                        history.append(project.freshness)
+                        history.append({"date": date.today().isoformat(), "score": float(project.freshness)})
 
                         # Keep only last 12 entries
                         project.freshness_history = history[-12:]
