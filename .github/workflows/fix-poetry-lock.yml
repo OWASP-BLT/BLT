@@ -38,6 +38,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # SECURITY: This checkout is protected by:
+      # 1. Label-based approval gate (only maintainers can add the label)
+      # 2. PR verification step below that validates the source
+      # 3. Limited to only running 'poetry lock' which doesn't execute code
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
@@ -55,10 +59,35 @@ jobs:
         run: |
           pip install poetry
 
+      - name: Verify PR is from trusted source
+        id: verify_pr
+        run: |
+          # Only allow PRs from the same repository or verified collaborators
+          PR_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+          BASE_REPO="${{ github.repository }}"
+          
+          # Allow if PR is from the same repo (not a fork)
+          if [ "$PR_REPO" == "$BASE_REPO" ]; then
+            echo "PR is from the same repository - proceeding"
+            exit 0
+          fi
+          
+          # For forks, require the label to be added by a maintainer
+          # The label can only be added by users with write access
+          if [ "${{ github.event_name }}" == "pull_request_target" ] && [ "${{ github.event.label.name }}" == "fix-poetry-lock" ]; then
+            echo "PR is from a fork but has been approved via label by a maintainer"
+            exit 0
+          fi
+          
+          echo "PR verification failed"
+          exit 1
+
       - name: Run poetry lock
         id: poetry_lock
         run: |
           echo "Running poetry lock to fix conflicts..."
+          # Only run poetry lock, which is safe as it doesn't execute arbitrary code
+          # It only reads pyproject.toml and generates poetry.lock
           poetry lock --no-update
           echo "Poetry lock completed successfully"
 

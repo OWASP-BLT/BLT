@@ -266,7 +266,8 @@ def weekly_report(request):
             fail_silently=False,
         )
     except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+        logger.error(f"Error sending weekly report: {str(e)}", exc_info=True)
+        return HttpResponse("An error occurred while sending the weekly report. Please contact support.")
 
     return HttpResponse("Weekly report sent successfully.")
 
