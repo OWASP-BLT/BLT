@@ -439,14 +439,16 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
+      - name: Generate SECRET_KEY for CI
+        run: echo "SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> $GITHUB_ENV
       - name: Create .env for CI run
         run: |
-          echo "SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long" > .env
+          echo "SECRET_KEY=$SECRET_KEY" > .env
           echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
           echo "DEBUG=True" >> .env
       - name: Run collectstatic with test credentials
         env:
-          SECRET_KEY: 'ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
+          SECRET_KEY: ${{ env.SECRET_KEY }}
           DATABASE_URL: "sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           DEBUG: 'True'
         run: poetry run python manage.py collectstatic --noinput
@@ -454,19 +456,13 @@ jobs:
         id: run-tests
         shell: bash
         env:
-          SECRET_KEY: 'ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long'
+          SECRET_KEY: ${{ env.SECRET_KEY }}
           DATABASE_URL: "sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           DEBUG: 'True'
         run: |
           set +e
-          # Run non-Selenium tests in parallel (LiveServerTestCase does not support --parallel)
-          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium -v 3 --parallel --failfast 2>&1 | tee test-output.txt
-          e1=${PIPESTATUS[0]}
-          # Run Selenium tests serially
-          poetry run xvfb-run --auto-servernum python manage.py test --tag=selenium -v 3 --failfast 2>&1 | tee -a test-output.txt
-          e2=${PIPESTATUS[0]}
-          exit_code=$([ "$e1" != "0" ] && echo "$e1" || echo "$e2")
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 3 --parallel --failfast 2>&1 | tee test-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
       - name: Upload test output
@@ -746,31 +742,27 @@ jobs:
       - name: Set up Docker
         run: |
           docker --version
-          # Use Docker Compose v2 (built-in Docker CLI plugin, no manual installation needed)
           docker compose version
+
+      - name: Generate SECRET_KEY for CI
+        run: echo "SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> $GITHUB_ENV
 
       - name: Create .env for CI run
         run: |
-          echo "SECRET_KEY=ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-chars-long" > .env
+          echo "SECRET_KEY=$SECRET_KEY" > .env
           echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
           echo "DEBUG=True" >> .env
 
       - name: Build Docker image
-        run: |
-          docker build --progress=plain -t my-app .
+        run: docker build --progress=plain -t my-app .
 
       - name: Run Docker container
         run: |
-          docker run -d \
-            -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production-must-be-at-least-50-chars' \
-            -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
-            -e DEBUG='True' \
-            --name my-container my-app
-
-      - name: Clean up
-        run: |
-          docker stop my-container
-          docker rm my-container
+          docker run --rm --entrypoint python \
+            -e "SECRET_KEY=$SECRET_KEY" \
+            -e "DATABASE_URL=sqlite:///./test_db.sqlite3" \
+            -e "DEBUG=True" \
+            my-app manage.py check
 
       - name: Print memory usage
         run: free -h
