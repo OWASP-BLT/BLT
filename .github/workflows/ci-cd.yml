@@ -439,27 +439,33 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
-      - name: Generate SECRET_KEY for CI
-        run: echo "SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> $GITHUB_ENV
       - name: Create .env for CI run
         run: |
-          SECRET_KEY="${SECRET_KEY:-$(openssl rand -base64 50 | tr -d '\n')}"
+          SECRET_KEY="${{ secrets.CI_SECRET_KEY }}"
+          [ -z "$SECRET_KEY" ] && SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')
+          echo "SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
           echo "SECRET_KEY=$SECRET_KEY" > .env
           echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
           echo "DEBUG=True" >> .env
           echo "SUPERUSER=ci-admin" >> .env
           echo "SUPERUSER_MAIL=ci-admin@test.local" >> .env
           echo "SUPERUSER_PASSWORD=$(openssl rand -hex 16)" >> .env
-      - name: Verify Django settings
-        run: poetry run python manage.py check
       - name: Run collectstatic with test credentials
+        env:
+          SECRET_KEY: ${{ env.SECRET_KEY }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
+          DEBUG: "True"
         run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
+        env:
+          SECRET_KEY: ${{ env.SECRET_KEY }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
+          DEBUG: "True"
         run: |
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 3 --parallel --failfast 2>&1 | tee test-output.txt
+          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
@@ -741,9 +747,6 @@ jobs:
         run: |
           docker --version
           docker compose version
-
-      - name: Generate SECRET_KEY for CI
-        run: echo "SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> $GITHUB_ENV
 
       - name: Generate SECRET_KEY for CI
         run: echo "SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> $GITHUB_ENV

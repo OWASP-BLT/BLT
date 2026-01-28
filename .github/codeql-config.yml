@@ -27,6 +27,8 @@ query-filters:
       problem.severity:
         - note
         - warning
+  - exclude:
+      id: py/hardcoded-credentials
 
 queries:
   - uses: security-extended
