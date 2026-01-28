@@ -128,8 +128,8 @@ INSTALLED_APPS = (
 if DEBUG:
     INSTALLED_APPS += ("livereload",)
 
-SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
-SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
 
 
 MIDDLEWARE = [
@@ -154,7 +154,7 @@ MIDDLEWARE = [
 if DEBUG:
     MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
 
-BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
+BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
@@ -301,13 +301,13 @@ EMAIL_PORT = 1025
 EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
-REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
+REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "")
 
 if "DYNO" in os.environ:  # for Heroku
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
-    EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
-    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "blank")
+    EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "")
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
@@ -626,8 +626,8 @@ MDEDITOR_CONFIGS = {
 
 # SuperUser Details
 
-SUPERUSER_USERNAME = env("SUPERUSER", default="admin123")
-SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="admin123@gmail.com")
+SUPERUSER_USERNAME = env("SUPERUSER", default="")
+SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="")
 SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="")
 
 
