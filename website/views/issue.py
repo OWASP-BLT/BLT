@@ -8,7 +8,6 @@ import socket
 import uuid
 from datetime import datetime
 from urllib.parse import urlparse
-from django.core.exceptions import ValidationError
 
 import requests
 import six
@@ -22,6 +21,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -115,8 +115,8 @@ def submit_pledge(request):
     form = IssuePledgeForm(request.POST)
     if not form.is_valid():
         return JsonResponse({"error": form.errors}, status=400)
-    
-    anonymous = form.cleaned_data.get("anonymous", False)   
+
+    anonymous = form.cleaned_data.get("anonymous", False)
     if request.user.is_authenticated and not anonymous:
         if IssuePledge.objects.filter(issue=issue, user=request.user).exists():
             return JsonResponse({"error": "You have already pledged to this issue"}, status=400)
@@ -124,14 +124,14 @@ def submit_pledge(request):
     pledge = form.save(commit=False)
     pledge.issue = issue
     pledge.anonymous = anonymous
-    
+
     pledge.user = request.user if request.user.is_authenticated and not anonymous else None
-    
+
     try:
         pledge.full_clean()
     except ValidationError as e:
         return JsonResponse({"error": e.message_dict}, status=400)
-    
+
     pledge.save()
     return JsonResponse({"success": True})
 
