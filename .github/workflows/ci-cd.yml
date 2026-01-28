@@ -459,8 +459,14 @@ jobs:
           DEBUG: 'True'
         run: |
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          # Run non-Selenium tests in parallel (LiveServerTestCase does not support --parallel)
+          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium -v 3 --parallel --failfast 2>&1 | tee test-output.txt
+          e1=${PIPESTATUS[0]}
+          # Run Selenium tests serially
+          poetry run xvfb-run --auto-servernum python manage.py test --tag=selenium -v 3 --failfast 2>&1 | tee -a test-output.txt
+          e2=${PIPESTATUS[0]}
+          exit_code=$([ "$e1" != "0" ] && echo "$e1" || echo "$e2")
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
       - name: Upload test output

@@ -2,13 +2,16 @@
 set -x
 echo "Entrypoint script is running"
 
-# Wait for the database to be ready
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h "db" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
-  >&2 echo "Postgres is unavailable - sleeping"
-  sleep 1
-done
-
->&2 echo "Postgres is up - executing command"
+# Wait for Postgres only when not using SQLite (e.g. CI docker-test uses SQLite)
+if echo "${DATABASE_URL:-}" | grep -q -i sqlite; then
+  echo "Using SQLite - skipping Postgres wait"
+else
+  until PGPASSWORD=$POSTGRES_PASSWORD psql -h "db" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
+    >&2 echo "Postgres is unavailable - sleeping"
+    sleep 1
+  done
+  >&2 echo "Postgres is up - executing command"
+fi
 
 # Function to check if migrations are applied
 check_migrations() {

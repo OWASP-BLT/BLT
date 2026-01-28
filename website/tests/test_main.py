@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 from unittest.mock import patch
 
@@ -57,7 +58,19 @@ class MySeleniumTests(LiveServerTestCase):
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 
         try:
-            service = Service(chromedriver_autoinstaller.install())
+            # Prefer system chromedriver (CI installs to /usr/local/bin to match snap Chromium 115+).
+            # chromedriver_autoinstaller uses the legacy chromedriver.storage.googleapis.com API
+            # and is incompatible with Chrome/Chromium 115+.
+            chromedriver_path = shutil.which("chromedriver")
+            if chromedriver_path:
+                service = Service(executable_path=chromedriver_path)
+                # Use snap/apt Chromium when present (CI: /usr/bin/chromium-browser -> snap)
+                for candidate in ("/usr/bin/chromium-browser", "/usr/bin/chromium", "/snap/bin/chromium"):
+                    if os.path.exists(candidate):
+                        options.binary_location = candidate
+                        break
+            else:
+                service = Service(chromedriver_autoinstaller.install())
             cls.selenium = webdriver.Chrome(service=service, options=options)
             cls.selenium.set_page_load_timeout(30)
             cls.selenium.implicitly_wait(30)
