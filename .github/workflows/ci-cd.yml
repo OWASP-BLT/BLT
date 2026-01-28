@@ -446,19 +446,12 @@ jobs:
           echo "SECRET_KEY=$SECRET_KEY" > .env
           echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
           echo "DEBUG=True" >> .env
+          echo "SUPERUSER_PASSWORD=$(openssl rand -hex 16)" >> .env
       - name: Run collectstatic with test credentials
-        env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DATABASE_URL: "sqlite:///${{ github.workspace }}/ci_db.sqlite3"
-          DEBUG: 'True'
         run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
-        env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DATABASE_URL: "sqlite:///${{ github.workspace }}/ci_db.sqlite3"
-          DEBUG: 'True'
         run: |
           set +e
           poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 3 --parallel --failfast 2>&1 | tee test-output.txt
@@ -752,6 +745,7 @@ jobs:
           echo "SECRET_KEY=$SECRET_KEY" > .env
           echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
           echo "DEBUG=True" >> .env
+          echo "SUPERUSER_PASSWORD=$(openssl rand -hex 16)" >> .env
 
       - name: Build Docker image
         run: docker build --progress=plain -t my-app .
