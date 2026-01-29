@@ -2,6 +2,18 @@
 
 At OWASP BLT, security is in our name. This document outlines our security policy, including how to report vulnerabilities, our responsible disclosure process, and how we handle security issues.
 
+## Supported Versions
+
+We release patches for security vulnerabilities in the following versions:
+
+| Version | Supported          |
+| ------- | ------------------ |
+| main branch | :white_check_mark: |
+| Latest release | :white_check_mark: |
+| Older releases | :x:                |
+
+We recommend always using the latest release or the main branch for the most up-to-date security fixes.
+
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in OWASP BLT, we appreciate your help in disclosing it responsibly and promptly. Here's how you can report it:
