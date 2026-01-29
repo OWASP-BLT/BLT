@@ -1,6 +1,6 @@
 # Security Policy
 
-At OWASP BLT, we take security seriously. This document outlines our security policy, including how to report vulnerabilities, our responsible disclosure process, and how we handle security issues.
+At OWASP BLT, security is in our name. This document outlines our security policy, including how to report vulnerabilities, our responsible disclosure process, and how we handle security issues.
 
 ## Reporting a Vulnerability
 
