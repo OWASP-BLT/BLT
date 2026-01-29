@@ -47,7 +47,9 @@ COPY pyproject.toml poetry.lock* ./
 # Clean any existing httpx installation
 RUN pip uninstall -y httpx || true
 # Install dependencies with Poetry (verbose logging for debugging)
-RUN poetry install --no-root --no-interaction -vvv
+# We don't need dev/test dependencies inside the runtime image, and they can
+# introduce extra build-time failures, so install only the main (default) group.
+RUN poetry install --no-root --without dev --no-interaction -vvv
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
