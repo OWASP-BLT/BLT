@@ -369,6 +369,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -457,7 +458,9 @@ jobs:
         run: |
           set -euo pipefail
           # Ensure SECRET_KEY is present (and persist for later steps)
-          if [ -z "${SECRET_KEY:-}" ]; then
+          SECRET_KEY_STRIPPED="${SECRET_KEY:-}"
+          SECRET_KEY_STRIPPED="${SECRET_KEY_STRIPPED//[[:space:]]/}"
+          if [ -z "${SECRET_KEY_STRIPPED}" ]; then
             SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
             export SECRET_KEY
             echo "SECRET_KEY=${SECRET_KEY}" >> "$GITHUB_ENV"
@@ -468,7 +471,9 @@ jobs:
         id: run-tests
         shell: bash
         run: |
-          if [ -z "${SECRET_KEY:-}" ]; then
+          SECRET_KEY_STRIPPED="${SECRET_KEY:-}"
+          SECRET_KEY_STRIPPED="${SECRET_KEY_STRIPPED//[[:space:]]/}"
+          if [ -z "${SECRET_KEY_STRIPPED}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
@@ -754,6 +759,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
 
       - name: Set up Docker
         run: |
