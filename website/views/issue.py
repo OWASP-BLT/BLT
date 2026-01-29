@@ -9,6 +9,7 @@ import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
+import markdown2
 import requests
 import six
 from allauth.account.models import EmailAddress
@@ -44,6 +45,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
@@ -2436,7 +2438,15 @@ class GitHubIssueDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        issue = self.get_object()
+        # Convert markdown bodies to HTML for display using markdown2 if available
+
+        issue = context.get("object") or []
+        if markdown2:
+            body = issue.body or ""
+            try:
+                issue.body_html = mark_safe(markdown2.markdown(body))
+            except Exception:
+                issue.body_html = body
 
         # Add any additional context needed for the detail view
         context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
