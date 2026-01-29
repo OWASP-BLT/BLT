@@ -16,7 +16,7 @@ Follow the prompts to submit a private security advisory.
 
 - Depending on the nature of the report, we may or may not acknowledge your report and work with you to establish a course of action for addressing the vulnerability.  We do not accept "beg bounties" or "low-quality submissions"  these will immediately score negative on you account and may trigger a ban from the repository.  
 - Once the issue is fixed, we will release a patch.
-- If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.
+- If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.  We will not guarantee the credit however as there are cases where others have found a similar issue or it was fixed in a previous patch before yours.
 
 ## Vulnerability Handling Process
 
