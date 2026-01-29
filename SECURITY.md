@@ -4,7 +4,7 @@ At OWASP BLT, we take security seriously. This document outlines our security po
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in OWASP BLT, we appreciate your help in disclosing it responsibly. Here's how you can report it:
+If you discover a security vulnerability in OWASP BLT, we appreciate your help in disclosing it responsibly and promptly. Here's how you can report it:
 
 ### 1. GitHub Security Advisory
 
