@@ -14,10 +14,17 @@ Follow the prompts to submit a private security advisory.
 
 ### 2. Responsible Disclosure Process
 
-- Depending on the nature of the report, we may or may not acknowledge your report and work with you to establish a course of action for addressing the vulnerability.  We do not accept "beg bounties" or "low-quality submissions"  these will immediately score negative on you account and may trigger a ban from the repository.  
-- Once the issue is fixed, we will release a patch.
-- If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.  We will not guarantee the credit however as there are cases where others have found a similar issue or it was fixed in a previous patch before yours.
+We ask security researchers to:
+- Allow us reasonable time to fix the vulnerability before public disclosure (typically 90 days)
+- Not exploit the vulnerability or demonstrate it on live systems
+- Not disclose the vulnerability to others until we've released a patch
 
+In return, we commit to:
+- We will acknowledge your report and work with you to establish a timeline for addressing the vulnerability.
+- We aim to provide an initial response within 48-72 hours of receiving your report.
+- We will keep you informed of our progress in addressing the issue.
+- Once the issue is fixed, we will release a patch and publicly disclose the vulnerability.
+- If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.
 ## Vulnerability Handling Process - (if a valid security issue is found)
 
 - **Triage**: The Project Leaders will review the report and assess the severity of the vulnerability.
