@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 
@@ -12,6 +13,8 @@ from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
+logger = logging.getLogger(__name__)
+
 # Compute BASE_DIR as the project root (parent of blt/)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 env = environ.Env()
@@ -20,10 +23,14 @@ env = environ.Env()
 env_file = os.path.join(BASE_DIR, ".env")
 if os.path.exists(env_file):
     environ.Env.read_env(env_file)
-    print(f"Loaded .env file from {env_file}")
+    logger.debug("Loaded .env file from %s", env_file)
 else:
-    print("No .env file found, using environment variables only")
-print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
+    logger.debug("No .env file found; using environment variables only")
+
+if os.environ.get("DATABASE_URL"):
+    logger.debug("DATABASE_URL present")
+else:
+    logger.debug("DATABASE_URL not set")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")

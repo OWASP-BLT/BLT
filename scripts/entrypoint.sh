@@ -3,7 +3,7 @@ set -x
 echo "Entrypoint script is running"
 
 # Wait for Postgres only when not using SQLite (e.g. CI docker-test uses SQLite)
-if echo "${DATABASE_URL:-}" | grep -q -i sqlite; then
+if [ -z "${DATABASE_URL:-}" ] || echo "${DATABASE_URL:-}" | grep -q -i sqlite; then
   echo "Using SQLite - skipping Postgres wait"
 else
   until PGPASSWORD=$POSTGRES_PASSWORD psql -h "db" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
