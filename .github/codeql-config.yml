@@ -5,7 +5,6 @@ paths:
   - blt
   - comments
   - BACON
-  - "."  # Include the root directory
 
 paths-ignore:
   - '**/node_modules/**'

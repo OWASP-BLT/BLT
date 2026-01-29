@@ -60,11 +60,7 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
 # SECRET_KEY must be set via environment variable for security (CWE-321)
 # See: https://cwe.mitre.org/data/definitions/321.html
-SECRET_KEY = os.environ.get("SECRET_KEY")
-
-# Strip whitespace before any checks
-if SECRET_KEY:
-    SECRET_KEY = SECRET_KEY.strip()
+SECRET_KEY = (os.environ.get("SECRET_KEY") or "").strip()
 
 # If the stripped value is empty, raise ImproperlyConfigured
 if not SECRET_KEY:

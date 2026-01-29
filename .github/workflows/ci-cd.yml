@@ -443,9 +443,16 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
-      - name: Run collectstatic with test credentials
+      - name: Generate CI SECRET_KEY
+        shell: bash
         run: |
-          export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-characters-long'
+          set -euo pipefail
+          echo "CI_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
+      - name: Run collectstatic with test credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SECRET_KEY="${CI_SECRET_KEY}"
           export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           export DEBUG='True'
           poetry run python manage.py collectstatic --noinput
@@ -453,7 +460,8 @@ jobs:
         id: run-tests
         shell: bash
         run: |
-          export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-characters-long'
+          set -euo pipefail
+          export SECRET_KEY="${CI_SECRET_KEY}"
           export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           export DEBUG='True'
           set +e
