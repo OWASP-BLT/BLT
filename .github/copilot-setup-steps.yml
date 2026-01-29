@@ -1,0 +1,129 @@
+# GitHub Copilot Setup Steps
+# This file configures the development environment for Copilot coding agent
+# These steps run before the agent starts working to ensure dependencies are available
+
+name: Setup OWASP BLT Development Environment
+
+on: [push]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: blt_db
+          POSTGRES_USER: blt_user
+          POSTGRES_PASSWORD: blt_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Set up Python with specific version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.2'
+      
+      # Install Poetry for dependency management
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      # Configure Poetry to create virtual environments in project
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      # Cache Poetry dependencies for faster setup
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      
+      # Install Python dependencies
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+      
+      # Set up environment variables
+      - name: Set up environment variables
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=postgresql://blt_user:blt_password@localhost:5432/blt_db" >> .env
+          echo "REDIS_URL=redis://localhost:6379/0" >> .env
+          echo "SECRET_KEY=test-secret-key-for-ci" >> .env
+          echo "DEBUG=True" >> .env
+      
+      # Run Django migrations
+      - name: Run migrations
+        run: |
+          poetry run python manage.py migrate
+      
+      # Load initial data fixtures
+      - name: Load initial data
+        run: |
+          poetry run python manage.py loaddata website/fixtures/initial_data.json
+        continue-on-error: true
+      
+      # Collect static files
+      - name: Collect static files
+        run: |
+          poetry run python manage.py collectstatic --noinput
+      
+      # Install pre-commit hooks
+      - name: Install pre-commit
+        run: |
+          poetry run pre-commit install
+      
+      # Run pre-commit on all files to ensure everything is formatted
+      - name: Run pre-commit checks
+        run: |
+          poetry run pre-commit run --all-files
+        continue-on-error: true
+      
+      # Run quick tests to verify setup
+      - name: Run quick tests
+        run: |
+          poetry run python manage.py test --exclude-tag=slow --parallel --failfast
+        continue-on-error: true
+      
+      # Display setup summary
+      - name: Setup complete
+        run: |
+          echo "✅ OWASP BLT development environment is ready!"
+          echo "📦 Python version: $(python --version)"
+          echo "📦 Poetry version: $(poetry --version)"
+          echo "📦 Django version: $(poetry run python -c 'import django; print(django.get_version())')"
+          echo "📦 Database: PostgreSQL (ready)"
+          echo "📦 Cache: Redis (ready)"
+          echo ""
+          echo "🚀 You can now start working on the project!"

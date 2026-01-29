@@ -6,12 +6,14 @@ This document provides guidance for GitHub Copilot coding agent when working on 
 
 OWASP BLT is a Django-based web application for bug bounty management and security research. The project uses:
 
-- **Backend**: Django 5.1+ with Python 3.11.2+
+- **Backend**: Django 5.2.9+ with Python 3.11.2+
 - **Database**: PostgreSQL with Redis for caching
 - **Frontend**: Tailwind CSS, vanilla JavaScript (separate files)
 - **Real-time**: Django Channels with WebSocket support
 - **Package Management**: Poetry (NOT pip)
 - **Code Quality**: pre-commit hooks, Black, isort, ruff, djLint
+- **API**: Django REST Framework with drf-yasg for API documentation
+- **External Services**: Slack integration, SendGrid for emails, Sentry for error tracking
 
 ## Development Workflow
 
@@ -20,6 +22,17 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 1. **Understand the Issue**: Read the issue description thoroughly and ask for clarification if anything is unclear
 2. **Explore the Code**: Review related files and understand the existing implementation
 3. **Plan Your Approach**: Make minimal, surgical changes that address the root cause
+4. **Check Dependencies**: Verify that all required dependencies are installed using Poetry
+5. **Review Related Tests**: Look at existing tests to understand expected behavior
+
+### Best Practices for Pull Requests
+
+- Create small, focused pull requests that address a single issue
+- Include comprehensive commit messages describing what and why
+- Add or update tests for new features or bug fixes
+- Update documentation as needed
+- Ensure all pre-commit checks pass before submitting
+- Include screenshots for UI changes (ensure static files are collected first)
 
 ### Required Before Each Commit
 
