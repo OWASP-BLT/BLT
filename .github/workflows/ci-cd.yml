@@ -453,27 +453,25 @@ jobs:
       - name: Run collectstatic with test credentials
         shell: bash
         env:
+          SECRET_KEY: ${{ env.SECRET_KEY }}
           DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
           DEBUG: 'True'
         run: |
           set -euo pipefail
           # Ensure SECRET_KEY is present (and persist for later steps)
-          SECRET_KEY_STRIPPED="${SECRET_KEY:-}"
-          SECRET_KEY_STRIPPED="${SECRET_KEY_STRIPPED//[[:space:]]/}"
-          if [ -z "${SECRET_KEY_STRIPPED}" ]; then
-            SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
-            export SECRET_KEY
-            echo "SECRET_KEY=${SECRET_KEY}" >> "$GITHUB_ENV"
+          if [ -z "${SECRET_KEY:-}" ]; then
+            echo "ERROR: SECRET_KEY is not set"
+            exit 1
           fi
           echo "SECRET_KEY length: ${#SECRET_KEY}"
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
+        env:
+          SECRET_KEY: ${{ env.SECRET_KEY }}
         run: |
-          SECRET_KEY_STRIPPED="${SECRET_KEY:-}"
-          SECRET_KEY_STRIPPED="${SECRET_KEY_STRIPPED//[[:space:]]/}"
-          if [ -z "${SECRET_KEY_STRIPPED}" ]; then
+          if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
