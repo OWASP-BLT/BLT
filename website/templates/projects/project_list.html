@@ -355,31 +355,19 @@
                                                 <input type="text"
                                                        name="name"
                                                        required
-                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                            bg-white dark:bg-gray-700
-                                                            text-gray-900 dark:text-gray-100
-                                                            placeholder-gray-400 dark:placeholder-gray-400
-                                                            rounded-lg focus:ring-2 focus:ring-red-500" />
+                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500" />
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Project URL</label>
                                                 <input type="url"
                                                        name="url"
-                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                            bg-white dark:bg-gray-700
-                                                            text-gray-900 dark:text-gray-100
-                                                            placeholder-gray-400 dark:placeholder-gray-400
-                                                            rounded-lg focus:ring-2 focus:ring-red-500" />
+                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500" />
                                             </div>
                                             {% if user.is_authenticated %}
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organization</label>
                                                     <select name="organization"
-                                                            class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                                bg-white dark:bg-gray-700
-                                                                text-gray-900 dark:text-gray-100
-                                                                placeholder-gray-400 dark:placeholder-gray-400
-                                                                rounded-lg focus:ring-2 focus:ring-red-500">
+                                                            class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500">
                                                         <option value="">No Organization (Independent Project)</option>
                                                         {% for org in user_organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}
                                                     </select>
@@ -399,11 +387,7 @@
                                             <textarea name="description"
                                                       required
                                                       rows="3"
-                                                      class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                            bg-white dark:bg-gray-700
-                                                            text-gray-900 dark:text-gray-100
-                                                            placeholder-gray-400 dark:placeholder-gray-400
-                                                            rounded-lg focus:ring-2 focus:ring-red-500"></textarea>
+                                                      class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500"></textarea>
                                         </div>
                                         <!-- Social Links -->
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -411,33 +395,21 @@
                                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Twitter URL</label>
                                                 <input type="url"
                                                        name="twitter"
-                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                            bg-white dark:bg-gray-700
-                                                            text-gray-900 dark:text-gray-100
-                                                            placeholder-gray-400 dark:placeholder-gray-400
-                                                            rounded-lg focus:ring-2 focus:ring-red-500"
+                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500"
                                                        placeholder="https://x.com/..." />
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Facebook URL</label>
                                                 <input type="url"
                                                        name="facebook"
-                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                            bg-white dark:bg-gray-700
-                                                            text-gray-900 dark:text-gray-100
-                                                            placeholder-gray-400 dark:placeholder-gray-400
-                                                            rounded-lg focus:ring-2 focus:ring-red-500"
+                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500"
                                                        placeholder="https://facebook.com/..." />
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Slack URL</label>
                                                 <input type="url"
                                                        name="slack"
-                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                            bg-white dark:bg-gray-700
-                                                            text-gray-900 dark:text-gray-100
-                                                            placeholder-gray-400 dark:placeholder-gray-400
-                                                            rounded-lg focus:ring-2 focus:ring-red-500"
+                                                       class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500"
                                                        placeholder="https://slack.com/..." />
                                             </div>
                                         </div>
@@ -453,20 +425,12 @@
                                                             <input type="url"
                                                                    name="repo_urls[]"
                                                                    required
-                                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                                        bg-white dark:bg-gray-700
-                                                                        text-gray-900 dark:text-gray-100
-                                                                        placeholder-gray-400 dark:placeholder-gray-400
-                                                                        rounded-lg focus:ring-2 focus:ring-red-500" />
+                                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500" />
                                                         </div>
                                                         <div>
                                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Repository Type</label>
                                                             <select name="repo_types[]"
-                                                                    class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600
-                                                                        bg-white dark:bg-gray-700
-                                                                        text-gray-900 dark:text-gray-100
-                                                                        placeholder-gray-400 dark:placeholder-gray-400
-                                                                        rounded-lg focus:ring-2 focus:ring-red-500">
+                                                                    class="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-red-500">
                                                                 <option value="normal">Normal</option>
                                                                 <option value="main">Main</option>
                                                                 <option value="wiki">Wiki</option>

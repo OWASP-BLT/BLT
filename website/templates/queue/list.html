@@ -22,7 +22,8 @@
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Queue Management</h1>
                             <span class="text-sm text-gray-500 dark:text-gray-500">
-                                {{ queue_items|length }} item{% if queue_items|length != 1 %}s{% endif %}
+                                {{ queue_items|length }} item
+                                {% if queue_items|length != 1 %}s{% endif %}
                                 in queue
                             </span>
                         </div>

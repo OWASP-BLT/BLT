@@ -7,7 +7,8 @@
             <h1 class="text-3xl font-bold text-[#e74c3c]">Template Files</h1>
             <div class="flex items-center gap-4">
                 <span class="text-lg font-medium text-gray-600 dark:text-gray-400">
-                    {{ total_templates }} template{% if total_templates != 1 %}s{% endif %}
+                    {{ total_templates }} template
+                    {% if total_templates != 1 %}s{% endif %}
                 </span>
                 <!-- Search Box -->
                 <form method="get" class="flex items-center gap-2">
