@@ -401,16 +401,20 @@ jobs:
           CHROMIUM_MAJOR=$(echo $CHROMIUM_VERSION | cut -d. -f1)
           echo "Detected Chromium version: $CHROMIUM_VERSION (major: $CHROMIUM_MAJOR)"
           # Query Chrome for Testing API to find matching chromedriver
-          # Try latest-patch-versions-per-build-with-downloads.json first
-          CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" | jq -r ".builds.\"${CHROMIUM_MAJOR}\".downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          # Use known-good-versions-with-downloads.json as primary source (more reliable)
+          CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | jq -r "[.versions[] | select(.version | startswith(\"${CHROMIUM_MAJOR}.\"))] | sort_by(.version) | reverse | .[0].downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
           if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
-            # Fallback to known-good-versions-with-downloads.json
+            # Fallback: try latest-patch-versions-per-build-with-downloads.json
             echo "Trying fallback API endpoint..."
-            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | jq -r "[.versions[] | select(.version | startswith(\"${CHROMIUM_MAJOR}.\"))] | sort_by(.version) | reverse | .[0].downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" | jq -r ".builds.\"${CHROMIUM_MAJOR}\".downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
           fi
           if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
-            echo "Warning: Could not find matching chromedriver, using latest stable"
-            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" | jq -r ".builds.Stable.downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+            echo "Warning: Could not find matching chromedriver for major version ${CHROMIUM_MAJOR}, using latest known-good version"
+            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | jq -r ".versions[-1].downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          fi
+          if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
+            echo "Error: Failed to get chromedriver URL from Chrome for Testing API"
+            exit 1
           fi
           echo "Downloading chromedriver from: $CHROMEDRIVER_URL"
           wget -q "$CHROMEDRIVER_URL" -O chromedriver-linux64.zip
@@ -439,31 +443,19 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
-      - name: Create .env for CI run
-        run: |
-          SECRET_KEY="${{ secrets.CI_SECRET_KEY }}"
-          [ -z "$SECRET_KEY" ] && SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')
-          echo "SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
-          echo "SECRET_KEY=$SECRET_KEY" > .env
-          echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
-          echo "DEBUG=True" >> .env
-          echo "SUPERUSER=ci-admin" >> .env
-          echo "SUPERUSER_MAIL=ci-admin@test.local" >> .env
-          echo "SUPERUSER_PASSWORD=$(openssl rand -hex 16)" >> .env
       - name: Run collectstatic with test credentials
-        env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
-          DEBUG: "True"
-        run: poetry run python manage.py collectstatic --noinput
+        run: |
+          export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-characters-long'
+          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
+          export DEBUG='True'
+          poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
-        env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
-          DEBUG: "True"
         run: |
+          export SECRET_KEY='ci-test-secret-key-for-ci-only-not-for-production-must-be-at-least-50-characters-long'
+          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
+          export DEBUG='True'
           set +e
           poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
@@ -748,26 +740,15 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Generate SECRET_KEY for CI
-        run: echo "SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> $GITHUB_ENV
-      - name: Create .env for CI run
-        run: |
-          echo "SECRET_KEY=$SECRET_KEY" > .env
-          echo "DATABASE_URL=sqlite:///${GITHUB_WORKSPACE}/ci_db.sqlite3" >> .env
-          echo "DEBUG=True" >> .env
-          echo "SUPERUSER=ci-admin" >> .env
-          echo "SUPERUSER_MAIL=ci-admin@test.local" >> .env
-          echo "SUPERUSER_PASSWORD=$(openssl rand -hex 16)" >> .env
-
       - name: Build Docker image
         run: docker build --progress=plain -t my-app .
 
       - name: Run Docker container
         run: |
           docker run --rm --entrypoint python \
-            -e "SECRET_KEY=$SECRET_KEY" \
-            -e "DATABASE_URL=sqlite:///./test_db.sqlite3" \
-            -e "DEBUG=True" \
+            -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production-must-be-at-least-50-characters-long' \
+            -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
+            -e DEBUG='True' \
             my-app manage.py check
 
       - name: Print memory usage

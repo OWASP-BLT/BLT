@@ -12,14 +12,17 @@ from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
-environ.Env.read_env()
-
+# Compute BASE_DIR as the project root (parent of blt/)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 env = environ.Env()
-env_file = os.path.join(BASE_DIR, ".env")
-environ.Env.read_env(env_file)
 
-print(f"Reading .env file from {env_file}")
+# Load .env file if it exists, otherwise use environment variables only
+env_file = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_file):
+    environ.Env.read_env(env_file)
+    print(f"Loaded .env file from {env_file}")
+else:
+    print("No .env file found, using environment variables only")
 print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -59,6 +62,11 @@ ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 # See: https://cwe.mitre.org/data/definitions/321.html
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
+# Strip whitespace before any checks
+if SECRET_KEY:
+    SECRET_KEY = SECRET_KEY.strip()
+
+# If the stripped value is empty, raise ImproperlyConfigured
 if not SECRET_KEY:
     raise ImproperlyConfigured(
         "SECRET_KEY environment variable is not set. "
@@ -69,8 +77,7 @@ if not SECRET_KEY:
         "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
     )
 
-# Security validation: strip whitespace and enforce minimum length
-SECRET_KEY = SECRET_KEY.strip()
+# Enforce minimum length of 50 characters
 if len(SECRET_KEY) < 50:
     raise ImproperlyConfigured(
         f"SECRET_KEY must be at least 50 characters for security (current: {len(SECRET_KEY)}). "

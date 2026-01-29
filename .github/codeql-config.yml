@@ -3,8 +3,6 @@ name: "Custom CodeQL Config"
 paths:
   - website
   - blt
-  - blog
-  - company
   - comments
   - BACON
   - "."  # Include the root directory
