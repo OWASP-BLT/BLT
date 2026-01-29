@@ -456,10 +456,11 @@ jobs:
           DEBUG: 'True'
         run: |
           set -euo pipefail
-          # Confirm SECRET_KEY is present (print length only; do not print the value)
+          # Ensure SECRET_KEY is present (and persist for later steps)
           if [ -z "${SECRET_KEY:-}" ]; then
-            echo "ERROR: SECRET_KEY is not set"
-            exit 1
+            SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
+            export SECRET_KEY
+            echo "SECRET_KEY=${SECRET_KEY}" >> "$GITHUB_ENV"
           fi
           echo "SECRET_KEY length: ${#SECRET_KEY}"
           poetry run python manage.py collectstatic --noinput
@@ -467,6 +468,10 @@ jobs:
         id: run-tests
         shell: bash
         run: |
+          if [ -z "${SECRET_KEY:-}" ]; then
+            echo "ERROR: SECRET_KEY is not set"
+            exit 1
+          fi
           export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           export DEBUG='True'
           set +e
@@ -747,6 +752,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Docker
         run: |
