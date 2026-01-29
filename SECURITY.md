@@ -23,7 +23,7 @@ Follow the prompts to submit a private security advisory.
 - **Triage**: The Project Leaders will review the report and assess the severity of the vulnerability.
 - **Fix Development**: A fix will be developed and tested for the vulnerability.
 - **Release**: A patched version of OWASP BLT will be released.
-- **Disclosure**: The vulnerability will be publicly disclosed with appropriate details.
+- **Disclosure**: The vulnerability may be publicly disclosed with appropriate details.
 
 ## Contacting Maintainers
 
