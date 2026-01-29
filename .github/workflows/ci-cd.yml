@@ -447,20 +447,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "CI_SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
+          # Generate a secure secret and write it directly to the Actions environment so later steps see SECRET_KEY
+          echo "SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
       - name: Run collectstatic with test credentials
         shell: bash
+        env:
+          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
+          DEBUG: 'True'
         run: |
           set -euo pipefail
-          export SECRET_KEY="${CI_SECRET_KEY}"
-          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
-          export DEBUG='True'
+          # Confirm SECRET_KEY is present (print length only; do not print the value)
+          if [ -z "${SECRET_KEY:-}" ]; then
+            echo "ERROR: SECRET_KEY is not set"
+            exit 1
+          fi
+          echo "SECRET_KEY length: ${#SECRET_KEY}"
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
         run: |
-          export SECRET_KEY="${CI_SECRET_KEY}"
           export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           export DEBUG='True'
           set +e
