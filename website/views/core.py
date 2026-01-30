@@ -1233,41 +1233,6 @@ class StatsDetailView(TemplateView):
         return context
 
 
-def view_suggestions(request):
-    category_id = request.GET.get("category")
-    status = request.GET.get("status")
-    sort = request.GET.get("sort", "newest")
-
-    suggestions = ForumPost.objects.all()
-
-    # Apply filters
-    if category_id:
-        suggestions = suggestions.filter(category_id=category_id)
-    if status:
-        suggestions = suggestions.filter(status=status)
-
-    # Apply sorting
-    if sort == "oldest":
-        suggestions = suggestions.order_by("created")
-    elif sort == "most_votes":
-        suggestions = suggestions.order_by("-up_votes")
-    elif sort == "most_comments":
-        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
-    else:  # newest
-        suggestions = suggestions.order_by("-created")
-
-    categories = ForumCategory.objects.all()
-
-    return render(
-        request,
-        "feature_suggestion.html",
-        {
-            "suggestions": suggestions,
-            "categories": categories,
-        },
-    )
-
-
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
     random_user = User.objects.filter(is_active=True).exclude(is_superuser=True).order_by("?").first()
@@ -1405,7 +1370,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1417,9 +1382,6 @@ def home(request):
     # Get latest repositories and total count
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
-
-    # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
 
     # Get recent activities for the feed
     recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
@@ -1588,7 +1550,6 @@ def home(request):
             "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
-            "recent_posts": recent_posts,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
