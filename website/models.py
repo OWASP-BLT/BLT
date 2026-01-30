@@ -2416,6 +2416,22 @@ class GitHubReview(models.Model):
         return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
+class GitHubCommentManager(models.Manager):
+    """Custom manager for GitHubComment with bot filtering."""
+
+    def exclude_bots(self):
+        """Exclude comments from known bot accounts."""
+        from django.conf import settings
+
+        bots = getattr(
+            settings, "GITHUB_BOT_USERNAMES", ["copilot", "dependabot", "github-actions", "renovate", "[bot]"]
+        )
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(commenter_contributor__name__icontains=bot)
+        return self.exclude(bot_exclusions)
+
+
 class GitHubComment(models.Model):
     """
     Model to store comments made by users on GitHub issues and pull requests.
@@ -2446,6 +2462,8 @@ class GitHubComment(models.Model):
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
     url = models.URLField()
+
+    objects = GitHubCommentManager()
 
     class Meta:
         constraints = (

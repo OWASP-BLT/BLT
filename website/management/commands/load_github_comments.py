@@ -1,4 +1,5 @@
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
@@ -27,14 +28,14 @@ class Command(BaseCommand):
         parser.add_argument(
             "--workers",
             type=int,
-            default=30,
-            help="Number of parallel workers (default: 30)",
+            default=None,
+            help="Number of parallel workers (default: from settings or 30)",
         )
         parser.add_argument(
             "--months",
             type=int,
-            default=6,
-            help="Number of months of comments to fetch (default: 6)",
+            default=None,
+            help="Number of months of comments to fetch (default: from settings or 6)",
         )
         parser.add_argument(
             "--repo",
@@ -44,9 +45,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         verbose = options.get("verbose", False)
-        max_workers = options.get("workers", 30)
-        months = options.get("months", 6)
+        max_workers = options.get("workers") or getattr(settings, "GITHUB_API_WORKERS", 30)
+        months = options.get("months") or getattr(settings, "GITHUB_COMMENT_LEADERBOARD_MONTHS", 6)
         repo_url = options.get("repo")
+
+        # Track errors for summary
+        self.errors = []
+        self.verbose = verbose
 
         # Only fetch comments from the last N months
         since_date = timezone.now() - relativedelta(months=months)
@@ -113,6 +118,11 @@ class Command(BaseCommand):
                 try:
                     comments = future.result()
                     if comments:
+                        bots = getattr(
+                            settings,
+                            "GITHUB_BOT_USERNAMES",
+                            ["copilot", "dependabot", "github-actions", "renovate", "[bot]"],
+                        )
                         for comment in comments:
                             if comment.get("user"):
                                 github_id = comment["user"]["id"]
@@ -124,19 +134,18 @@ class Command(BaseCommand):
                                 if commenter_type == "Bot" or commenter_login.endswith("[bot]"):
                                     continue
 
-                                # Filter out other common bots
-                                if any(
-                                    bot in commenter_login.lower()
-                                    for bot in ["copilot", "dependabot", "github-actions", "renovate"]
-                                ):
+                                # Filter out other common bots using settings
+                                if any(bot in commenter_login.lower() for bot in bots):
                                     continue
 
                                 all_comments_data.append((issue_id, comment))
                                 all_github_ids.add(github_id)
                                 all_github_urls.add(github_url)
                 except Exception as e:
+                    error_msg = f"Error fetching comments for issue #{issue_number}: {e}"
+                    self.errors.append(error_msg)
                     if verbose:
-                        logger.error(f"Error fetching comments for issue #{issue_number}: {e}")
+                        logger.error(error_msg)
 
         self.stdout.write(f"Fetched {len(all_comments_data)} comments from {total_issues} issues/PRs")
 
@@ -244,28 +253,42 @@ class Command(BaseCommand):
             comments_to_update = []
             for comment_obj in existing_comments:
                 update_data = comments_to_update_data[comment_obj.comment_id]
-                comment_obj.issue = update_data["issue"]
-                comment_obj.commenter = update_data["commenter"]
-                comment_obj.commenter_contributor = update_data["commenter_contributor"]
+                # Update non-FK fields
                 comment_obj.body = update_data["body"]
                 comment_obj.updated_at = update_data["updated_at"]
                 comment_obj.url = update_data["url"]
                 comments_to_update.append(comment_obj)
 
             if comments_to_update:
+                # First update non-FK fields
                 GitHubComment.objects.bulk_update(
                     comments_to_update,
-                    ["issue", "commenter", "commenter_contributor", "body", "updated_at", "url"],
+                    ["body", "updated_at", "url"],
                 )
+
+                # Then update FK fields individually to avoid bulk_update FK issues
+                for comment_obj in comments_to_update:
+                    update_data = comments_to_update_data[comment_obj.comment_id]
+                    GitHubComment.objects.filter(comment_id=comment_obj.comment_id).update(
+                        issue=update_data["issue"],
+                        commenter=update_data["commenter"],
+                        commenter_contributor=update_data["commenter_contributor"],
+                    )
                 updated_count = len(comments_to_update)
 
         self.stdout.write(
             self.style.SUCCESS(f"Successfully processed {created_count} created, {updated_count} updated comments")
         )
 
+        # Display error summary
+        if self.errors:
+            self.stdout.write(
+                self.style.WARNING(f"\nCompleted with {len(self.errors)} errors. Run with --verbose for details.")
+            )
+
     def fetch_issue_comments(self, issue_id, issue_url, headers, since_date):
         """
-        Fetch comments for a specific issue or pull request.
+        Fetch comments for a specific issue or pull request with rate limit handling.
         """
         # Extract owner and repo from URL
         # URL format: https://github.com/owner/repo/issues/number or https://github.com/owner/repo/pull/number
@@ -286,11 +309,45 @@ class Command(BaseCommand):
         }
 
         all_comments = []
+        max_retries = 3
+        retry_delay = 60  # seconds
 
         try:
             while api_url:
-                response = requests.get(api_url, headers=headers, params=params, timeout=10)
-                response.raise_for_status()
+                # Retry logic for rate limiting
+                for attempt in range(max_retries):
+                    try:
+                        response = requests.get(api_url, headers=headers, params=params, timeout=10)
+
+                        # Check rate limit status
+                        remaining = int(response.headers.get("X-RateLimit-Remaining", 0))
+                        if remaining < 100:
+                            reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                            wait_time = reset_time - time.time()
+                            if wait_time > 0:
+                                self.stdout.write(
+                                    self.style.WARNING(
+                                        f"Approaching rate limit (remaining: {remaining}). "
+                                        f"Waiting {int(wait_time)}s until reset..."
+                                    )
+                                )
+                                time.sleep(wait_time + 5)
+
+                        response.raise_for_status()
+                        break  # Success, exit retry loop
+
+                    except requests.exceptions.HTTPError as e:
+                        if e.response.status_code == 403:  # Rate limited
+                            if attempt < max_retries - 1:
+                                wait = retry_delay * (attempt + 1)
+                                self.stdout.write(
+                                    self.style.WARNING(
+                                        f"Rate limited. Retrying in {wait}s (attempt {attempt + 1}/{max_retries})..."
+                                    )
+                                )
+                                time.sleep(wait)
+                                continue
+                        raise  # Re-raise if not rate limit or max retries exceeded
 
                 comments = response.json()
                 all_comments.extend(comments)

@@ -665,3 +665,8 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# GitHub API and Leaderboard Configuration
+GITHUB_COMMENT_LEADERBOARD_MONTHS = 6  # Number of months for comment leaderboard
+GITHUB_API_WORKERS = 30  # Number of parallel workers for API requests
+GITHUB_BOT_USERNAMES = ["copilot", "dependabot", "github-actions", "renovate", "[bot]"]  # Bot accounts to exclude

@@ -17,6 +17,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -659,34 +660,48 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Comment Leaderboard - Use commenter_contributor
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
-        # Filter for comments created in the last 6 months
-        # Create bot exclusion query for commenters
-        commenter_bot_exclusions = Q()
-        for bot in bots:
-            commenter_bot_exclusions |= Q(commenter_contributor__name__icontains=bot)
-
+        # Filter for comments created in the last N months (configured in settings)
         from website.models import GitHubComment
 
-        comment_leaderboard = (
-            GitHubComment.objects.filter(
-                commenter_contributor__isnull=False,
-                created_at__gte=since_date,
-            )
-            .filter(
-                Q(issue__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
-                | Q(issue__repo__repo_url__startswith="https://github.com/owasp-blt/")
-            )
-            .exclude(commenter_bot_exclusions)  # Exclude bot commenters
-            .select_related("commenter_contributor", "commenter__user")
-            .values(
-                "commenter_contributor__name",
-                "commenter_contributor__github_url",
-                "commenter_contributor__avatar_url",
-                "commenter__user__username",
-            )
-            .annotate(total_comments=Count("id"))
-            .order_by("-total_comments")[:10]
+        # Use settings for configuration
+        leaderboard_months = getattr(settings, "GITHUB_COMMENT_LEADERBOARD_MONTHS", 6)
+        bots = getattr(
+            settings, "GITHUB_BOT_USERNAMES", ["copilot", "dependabot", "github-actions", "renovate", "[bot]"]
         )
+        since_date = timezone.now() - relativedelta(months=leaderboard_months)
+
+        cache_key = f"comment_leaderboard_{leaderboard_months}months"
+        comment_leaderboard = cache.get(cache_key)
+
+        if comment_leaderboard is None:
+            # Create bot exclusion query for commenters
+            commenter_bot_exclusions = Q()
+            for bot in bots:
+                commenter_bot_exclusions |= Q(commenter_contributor__name__icontains=bot)
+
+            comment_leaderboard = (
+                GitHubComment.objects.filter(
+                    commenter_contributor__isnull=False,
+                    created_at__gte=since_date,
+                )
+                .filter(
+                    Q(issue__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                    | Q(issue__repo__repo_url__startswith="https://github.com/owasp-blt/")
+                )
+                .exclude(commenter_bot_exclusions)  # Exclude bot commenters
+                .select_related("commenter_contributor", "commenter__user")
+                .values(
+                    "commenter_contributor__name",
+                    "commenter_contributor__github_url",
+                    "commenter_contributor__avatar_url",
+                    "commenter__user__username",
+                )
+                .annotate(total_comments=Count("id"))
+                .order_by("-total_comments")[:10]
+            )
+            # Cache for 1 hour (3600 seconds)
+            cache.set(cache_key, list(comment_leaderboard), 3600)
+
         context["comment_leaderboard"] = comment_leaderboard
 
         # Top visitors leaderboard
@@ -1616,6 +1631,7 @@ def handle_issue_event(payload):
     return JsonResponse({"status": "success"}, status=200)
 
 
+@transaction.atomic
 def handle_comment_event(payload):
     """
     Handle GitHub issue_comment and pull_request_review_comment events.
@@ -1660,10 +1676,11 @@ def handle_comment_event(payload):
     commenter_github_id = commenter_data.get("id")
 
     # Filter out bot comments
+    bots = getattr(settings, "GITHUB_BOT_USERNAMES", ["copilot", "dependabot", "github-actions", "renovate", "[bot]"])
     if (
         commenter_type == "Bot"
         or commenter_login.endswith("[bot]")
-        or any(bot in commenter_login.lower() for bot in ["copilot", "dependabot", "github-actions", "renovate"])
+        or any(bot in commenter_login.lower() for bot in bots)
     ):
         logger.debug(f"Ignoring bot comment from {commenter_login}")
         return JsonResponse({"status": "ignored", "reason": "bot comment"}, status=200)
@@ -1720,12 +1737,13 @@ def handle_comment_event(payload):
                 },
             )
             if not created:
-                # Update existing contributor data
-                commenter_contributor.name = commenter_login
-                commenter_contributor.github_url = commenter_github_url
-                commenter_contributor.avatar_url = commenter_avatar_url
-                commenter_contributor.contributions += 1
-                commenter_contributor.save()
+                # Update existing contributor data using atomic operations
+                Contributor.objects.filter(id=commenter_contributor.id).update(
+                    name=commenter_login,
+                    github_url=commenter_github_url,
+                    avatar_url=commenter_avatar_url,
+                    contributions=F("contributions") + 1,
+                )
         except Exception as e:
             logger.error(f"Error creating/updating contributor for comment: {e}")
 

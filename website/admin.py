@@ -737,6 +737,8 @@ class GitHubCommentAdmin(admin.ModelAdmin):
         "commenter_contributor__name",
         "body",
     ]
+    readonly_fields = ("comment_id", "created_at", "url")
+    list_select_related = ("commenter__user", "commenter_contributor", "issue__repo")
     date_hierarchy = "created_at"
 
     def commenter_display(self, obj):
