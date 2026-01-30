@@ -34,6 +34,7 @@ from rest_framework.authtoken.models import Token
 
 logger = logging.getLogger(__name__)
 
+print("Hello from MixBanana\n")
 
 # Custom validators for cryptocurrency addresses
 def validate_bch_address(value):
