@@ -1279,9 +1279,6 @@ class SearchHistory(models.Model):
         return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
 
 
-
-
-
 class Contributor(models.Model):
     name = models.CharField(max_length=255)
     github_id = models.IntegerField(unique=True)
