@@ -10,7 +10,6 @@ from .models import (
     BaconEarning,
     Badge,
     Bid,
-    ForumPost,
     Hunt,
     IpReport,
     Issue,
@@ -31,7 +30,6 @@ DEFAULT_BACON_REWARDS = {
     "Hunt": 15,
     "IpReport": 3,
     "Organization": 10,
-    "ForumPost": 2,
     "Bid": 2,
 }
 
@@ -214,11 +212,6 @@ def handle_post_save(sender, instance, created, **kwargs):
                 _safe_assign_badge(user, "First Bug Bounty")
                 _safe_create_activity(instance, "created")
                 _safe_give_bacon(user, instance=instance, action_type="created")
-
-        elif sender == ForumPost and created:  # Track first forum post
-            _safe_assign_badge(instance.user, "First Forum Post")
-            _safe_create_activity(instance, "created")
-            _safe_give_bacon(instance.user, instance=instance, action_type="created")
 
         elif sender == Bid and created:  # Track first bid placed
             _safe_assign_badge(instance.user, "First Bid Placed")
