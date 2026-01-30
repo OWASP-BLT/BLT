@@ -1017,7 +1017,6 @@ def search(request, template="search.html"):
 #         )
 
 
-@login_required
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
