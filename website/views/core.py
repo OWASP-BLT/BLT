@@ -1673,7 +1673,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:

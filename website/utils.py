@@ -1190,7 +1190,9 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
                 {
                     "title": discussion.get("title", "Untitled"),
                     "url": discussion.get("url", ""),
-                    "author": discussion.get("author", {}).get("login", "Anonymous") if discussion.get("author") else "Anonymous",
+                    "author": discussion.get("author", {}).get("login", "Anonymous")
+                    if discussion.get("author")
+                    else "Anonymous",
                     "author_url": discussion.get("author", {}).get("url", "") if discussion.get("author") else "",
                     "created_at": discussion.get("createdAt", ""),
                     "comment_count": discussion.get("comments", {}).get("totalCount", 0),
