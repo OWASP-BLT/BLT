@@ -1,7 +1,7 @@
 # Generated migration for GitHubComment model
 
-from django.db import migrations, models
 import django.db.models.deletion
+from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -74,8 +74,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="githubcomment",
-            index=models.Index(
-                fields=["commenter_contributor"], name="gh_comment_contributor_idx"
-            ),
+            index=models.Index(fields=["commenter_contributor"], name="gh_comment_contributor_idx"),
         ),
     ]

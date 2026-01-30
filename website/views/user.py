@@ -44,7 +44,6 @@ from website.models import (
     Contributor,
     ContributorStats,
     Domain,
-    GitHubComment,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -1629,7 +1628,7 @@ def handle_issue_event(payload):
 def handle_comment_event(payload):
     """
     Handle GitHub issue_comment and pull_request_review_comment events.
-    
+
     Tracks comments made on issues and pull requests for the comment leaderboard.
     Filters out bot comments and stores comment data in GitHubComment model.
     """
@@ -1670,8 +1669,10 @@ def handle_comment_event(payload):
     commenter_github_id = commenter_data.get("id")
 
     # Filter out bot comments
-    if commenter_type == "Bot" or commenter_login.endswith("[bot]") or any(
-        bot in commenter_login.lower() for bot in ["copilot", "dependabot", "github-actions", "renovate"]
+    if (
+        commenter_type == "Bot"
+        or commenter_login.endswith("[bot]")
+        or any(bot in commenter_login.lower() for bot in ["copilot", "dependabot", "github-actions", "renovate"])
     ):
         logger.debug(f"Ignoring bot comment from {commenter_login}")
         return JsonResponse({"status": "ignored", "reason": "bot comment"}, status=200)
