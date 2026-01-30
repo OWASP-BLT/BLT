@@ -25,6 +25,17 @@ In return, we commit to:
 - We will keep you informed of our progress in addressing the issue.
 - Once the issue is fixed, we will release a patch and publicly disclose the vulnerability.
 - If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.
+
+## Bug Bounties
+
+OWASP BLT may offer rewards for valid security vulnerabilities reported through responsible disclosure. Bounty eligibility and amounts are determined on a case-by-case basis depending on:
+
+- **Severity**: Critical vulnerabilities affecting user data, authentication, or system integrity
+- **Impact**: Potential harm to users or the platform
+- **Quality**: Clear reproduction steps and detailed documentation
+
+Not all reports are eligible for bounties. The decision to award a bounty is at the discretion of the project maintainers. To be considered for a bounty, please indicate your interest in your initial report.
+
 ## Vulnerability Handling Process - (if a valid security issue is found)
 
 - **Triage**: The Project Leaders will review the report and assess the severity of the vulnerability.
