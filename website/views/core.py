@@ -1686,8 +1686,10 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
-    # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+    # Get recent GitHub discussions from BLT repository
+    from website.utils import fetch_github_discussions
+
+    recent_discussions = fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5)
 
     # Get recent activities for the feed
     recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
@@ -1856,7 +1858,7 @@ def home(request):
             "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
-            "recent_posts": recent_posts,
+            "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,

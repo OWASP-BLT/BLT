@@ -1129,3 +1129,80 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
+    """
+    Fetch recent discussions from a GitHub repository using GraphQL API.
+    Returns a list of discussion dictionaries with title, url, author, created_at, and comment_count.
+    """
+    github_token = os.environ.get("GITHUB_TOKEN")
+    if not github_token:
+        logging.warning("GITHUB_TOKEN not set, cannot fetch discussions")
+        return []
+
+    query = """
+    query($owner: String!, $name: String!, $limit: Int!) {
+        repository(owner: $owner, name: $name) {
+            discussions(first: $limit, orderBy: {field: CREATED_AT, direction: DESC}) {
+                nodes {
+                    title
+                    url
+                    createdAt
+                    author {
+                        login
+                        url
+                    }
+                    comments {
+                        totalCount
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={"query": query, "variables": {"owner": owner, "name": repo, "limit": limit}},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logging.error(f"GitHub GraphQL error: {data['errors']}")
+            return []
+
+        discussions = data.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
+
+        # Transform the data into a simpler format
+        result = []
+        for discussion in discussions:
+            result.append(
+                {
+                    "title": discussion.get("title", "Untitled"),
+                    "url": discussion.get("url", ""),
+                    "author": discussion.get("author", {}).get("login", "Anonymous") if discussion.get("author") else "Anonymous",
+                    "author_url": discussion.get("author", {}).get("url", "") if discussion.get("author") else "",
+                    "created_at": discussion.get("createdAt", ""),
+                    "comment_count": discussion.get("comments", {}).get("totalCount", 0),
+                }
+            )
+
+        logging.info(f"Fetched {len(result)} discussions from {owner}/{repo}")
+        return result
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch GitHub discussions: {e}")
+        return []
+    except Exception as e:
+        logging.exception("Unexpected error fetching GitHub discussions")
+        return []
