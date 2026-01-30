@@ -19,11 +19,53 @@ logger = logging.getLogger(__name__)
 
 # Common stop words for keyword extraction (module-level constant for performance)
 STOP_WORDS = {
-    "the", "is", "at", "which", "on", "in", "a", "an", "and", "or", "but", "for",
-    "with", "to", "from", "by", "of", "as", "this", "that", "it", "are", "was",
-    "were", "been", "be", "have", "has", "had", "do", "does", "did", "will",
-    "would", "could", "should", "may", "might", "can", "bug", "issue", "error",
-    "problem", "found", "when", "not", "working",
+    "the",
+    "is",
+    "at",
+    "which",
+    "on",
+    "in",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "for",
+    "with",
+    "to",
+    "from",
+    "by",
+    "of",
+    "as",
+    "this",
+    "that",
+    "it",
+    "are",
+    "was",
+    "were",
+    "been",
+    "be",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "will",
+    "would",
+    "could",
+    "should",
+    "may",
+    "might",
+    "can",
+    "bug",
+    "issue",
+    "error",
+    "problem",
+    "found",
+    "when",
+    "not",
+    "working",
 }
 
 
@@ -221,6 +263,7 @@ def get_duplicate_strategy() -> DuplicateDetectionStrategy:
 # Public API Functions (Facades)
 # These maintain backward compatibility with the rest of the app
 # -----------------------------------------------------------------------------
+
 
 def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, limit=10):
     """
