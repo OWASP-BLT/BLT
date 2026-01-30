@@ -1707,12 +1707,22 @@ def handle_comment_event(payload):
         return JsonResponse({"status": "error", "message": "Database error"}, status=500)
 
     # Find the GitHubIssue in BLT database
+    # Try by global ID first, then fall back to issue_number
+    github_issue = None
     try:
         github_issue = GitHubIssue.objects.get(issue_id=issue_global_id, repo=repo)
     except GitHubIssue.DoesNotExist:
-        logger.info(f"GitHub issue/PR {issue_number} not found in BLT for repo {repo_full_name}")
-        # Not an error: we may not have all issues/PRs in our database
-        return JsonResponse({"status": "success", "message": "Issue/PR not tracked"}, status=200)
+        # Fallback: try fetching by issue_number
+        try:
+            github_issue = GitHubIssue.objects.get(issue_number=issue_number, repo=repo)
+            logger.debug(f"Found GitHub issue/PR {issue_number} by issue_number fallback")
+        except GitHubIssue.DoesNotExist:
+            logger.info(f"GitHub issue/PR {issue_number} not found in BLT for repo {repo_full_name}")
+            # Not an error: we may not have all issues/PRs in our database
+            return JsonResponse({"status": "success", "message": "Issue/PR not tracked"}, status=200)
+        except Exception as e:
+            logger.error(f"Error in fallback lookup for GitHub issue: {e}")
+            return JsonResponse({"status": "error", "message": "Database error"}, status=500)
     except Exception as e:
         logger.error(f"Error finding GitHub issue for comment: {e}")
         return JsonResponse({"status": "error", "message": "Database error"}, status=500)
@@ -1746,6 +1756,14 @@ def handle_comment_event(payload):
                 )
         except Exception as e:
             logger.error(f"Error creating/updating contributor for comment: {e}")
+
+    # Validate at least one commenter field is populated (required by CheckConstraint)
+    if not commenter_user_profile and not commenter_contributor:
+        logger.warning(
+            f"Cannot create GitHubComment {comment_id}: both commenter and commenter_contributor are None. "
+            f"Commenter: {commenter_login}, GitHub ID: {commenter_github_id}"
+        )
+        return JsonResponse({"status": "error", "message": "Unable to identify commenter"}, status=400)
 
     # Create or update the GitHubComment record
     try:

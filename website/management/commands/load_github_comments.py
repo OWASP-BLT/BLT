@@ -58,7 +58,8 @@ class Command(BaseCommand):
         self.stdout.write(f"Fetching comments created since {since_date.strftime('%Y-%m-%d')}")
 
         # Build queryset for issues and PRs
-        queryset = GitHubIssue.objects.filter(created_at__gte=since_date)
+        # Use updated_at to include older issues that received recent comments
+        queryset = GitHubIssue.objects.filter(updated_at__gte=since_date)
 
         # Filter by specific repo if provided, otherwise use all OWASP-BLT repos
         if repo_url:
