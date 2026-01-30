@@ -73,8 +73,13 @@ class SequenceMatcherStrategy(DuplicateDetectionStrategy):
         if not url or not isinstance(url, str):
             return ""
         try:
-            if not url.startswith(("http://", "https://")):
+            # Handle protocol-relative URLs (e.g. //example.com)
+            if url.startswith("//"):
+                url = f"https:{url}"
+            # Add scheme if missing entirely (and not just a path)
+            elif not url.startswith(("http://", "https://")) and "." in url:
                 url = f"https://{url}"
+
             parsed = urlparse(url)
             domain = parsed.hostname or parsed.path
             if domain:
@@ -109,11 +114,19 @@ class SequenceMatcherStrategy(DuplicateDetectionStrategy):
             logger.warning("find_similar called with empty description")
             return []
 
-        threshold = max(0.0, min(1.0, float(threshold)))
-        limit = max(1, min(100, int(limit)))
         similar_bugs = []
 
         try:
+            # Guard against invalid inputs for threshold/limit
+            try:
+                threshold = max(0.0, min(1.0, float(threshold)))
+                limit = max(1, min(100, int(limit)))
+            except (ValueError, TypeError):
+                # Fallback to defaults to prevent crash
+                threshold = 0.6
+                limit = 10
+                logger.warning("Invalid threshold or limit provided to duplicate checker. Using defaults.")
+
             target_domain = None
             if url:
                 target_domain = self.extract_domain_from_url(url)
