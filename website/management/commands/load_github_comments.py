@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
 
-from website.models import Contributor, GitHubComment, GitHubIssue, Repo, UserProfile
+from website.models import Contributor, GitHubComment, GitHubIssue, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +67,7 @@ class Command(BaseCommand):
             self.stdout.write("Fetching comments from all OWASP-BLT repositories")
 
         # Get issues and PRs - use values_list for efficiency
-        issues = list(
-            queryset.values_list("id", "issue_id", "url", "repo__name", "type").order_by("-created_at")
-        )
+        issues = list(queryset.values_list("id", "issue_id", "url", "repo__name", "type").order_by("-created_at"))
 
         total_issues = len(issues)
         self.stdout.write(f"Found {total_issues} issues/PRs to process with {max_workers} parallel workers")
@@ -187,7 +185,7 @@ class Command(BaseCommand):
 
         # Bulk create/update comments
         comments_to_create = []
-        comments_to_update = []
+        comments_to_update_data = {}
 
         for issue_id, comment in all_comments_data:
             github_id = comment["user"]["id"]
@@ -205,21 +203,30 @@ class Command(BaseCommand):
             created_at = self.parse_github_datetime(comment.get("created_at"))
             updated_at = self.parse_github_datetime(comment.get("updated_at"))
 
-            comment_obj = GitHubComment(
-                comment_id=comment_id,
-                issue=issue_obj,
-                commenter=user_profile,
-                commenter_contributor=contributor,
-                body=comment.get("body", ""),
-                created_at=created_at,
-                updated_at=updated_at,
-                url=comment["html_url"],
-            )
-
             if comment_id in existing_comment_ids:
-                comments_to_update.append(comment_obj)
+                # Store data for updating existing comments
+                comments_to_update_data[comment_id] = {
+                    "issue": issue_obj,
+                    "commenter": user_profile,
+                    "commenter_contributor": contributor,
+                    "body": comment.get("body", ""),
+                    "updated_at": updated_at,
+                    "url": comment["html_url"],
+                }
             else:
-                comments_to_create.append(comment_obj)
+                # Create new comment object
+                comments_to_create.append(
+                    GitHubComment(
+                        comment_id=comment_id,
+                        issue=issue_obj,
+                        commenter=user_profile,
+                        commenter_contributor=contributor,
+                        body=comment.get("body", ""),
+                        created_at=created_at,
+                        updated_at=updated_at,
+                        url=comment["html_url"],
+                    )
+                )
 
         # Perform bulk operations
         created_count = 0
@@ -230,13 +237,27 @@ class Command(BaseCommand):
             GitHubComment.objects.bulk_create(comments_to_create, ignore_conflicts=True)
             created_count = len(comments_to_create)
 
-        if comments_to_update:
-            self.stdout.write(f"Updating {len(comments_to_update)} existing comments...")
-            GitHubComment.objects.bulk_update(
-                comments_to_update,
-                ["issue", "commenter", "commenter_contributor", "body", "updated_at", "url"],
-            )
-            updated_count = len(comments_to_update)
+        if comments_to_update_data:
+            self.stdout.write(f"Updating {len(comments_to_update_data)} existing comments...")
+            # Fetch existing comments from database with their PKs
+            existing_comments = GitHubComment.objects.filter(comment_id__in=comments_to_update_data.keys())
+            comments_to_update = []
+            for comment_obj in existing_comments:
+                update_data = comments_to_update_data[comment_obj.comment_id]
+                comment_obj.issue = update_data["issue"]
+                comment_obj.commenter = update_data["commenter"]
+                comment_obj.commenter_contributor = update_data["commenter_contributor"]
+                comment_obj.body = update_data["body"]
+                comment_obj.updated_at = update_data["updated_at"]
+                comment_obj.url = update_data["url"]
+                comments_to_update.append(comment_obj)
+
+            if comments_to_update:
+                GitHubComment.objects.bulk_update(
+                    comments_to_update,
+                    ["issue", "commenter", "commenter_contributor", "body", "updated_at", "url"],
+                )
+                updated_count = len(comments_to_update)
 
         self.stdout.write(
             self.style.SUCCESS(f"Successfully processed {created_count} created, {updated_count} updated comments")
