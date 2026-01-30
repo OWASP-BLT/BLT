@@ -74,7 +74,13 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    fetch_github_discussions,
+    rebuild_safe_url,
+    save_analysis_report,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -1687,8 +1693,6 @@ def home(request):
     total_repos = Repo.objects.count()
 
     # Get recent GitHub discussions from BLT repository
-    from website.utils import fetch_github_discussions
-
     recent_discussions = fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5)
 
     # Get recent activities for the feed

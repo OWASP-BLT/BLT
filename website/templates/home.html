@@ -803,7 +803,7 @@
                                             </span>
                                             <span class="flex items-center gap-1">
                                                 <i class="fas fa-clock"></i>
-                                                {{ discussion.created_at|date:"M d, Y" }}
+                                                {{ discussion.created_at|timesince }} ago
                                             </span>
                                             <span class="flex items-center gap-1">
                                                 <i class="fas fa-comments"></i>

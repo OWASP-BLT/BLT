@@ -7,6 +7,7 @@ import re
 import socket
 import time
 from collections import deque
+from datetime import datetime
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
@@ -21,6 +22,7 @@ from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from django.utils import timezone
 from openai import OpenAI
 from PIL import Image
 
@@ -1134,11 +1136,24 @@ def get_default_bacon_score(model_name, is_security=False):
 def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
     """
     Fetch recent discussions from a GitHub repository using GraphQL API.
-    Returns a list of discussion dictionaries with title, url, author, created_at, and comment_count.
+
+    Args:
+        owner: Repository owner (default: "OWASP-BLT")
+        repo: Repository name (default: "BLT")
+        limit: Number of discussions to fetch (default: 5)
+
+    Returns:
+        List of discussion dictionaries with the following keys:
+        - title (str): Discussion title
+        - url (str): URL to the discussion on GitHub
+        - author (str): Username of the discussion author
+        - author_url (str): URL to the author's GitHub profile
+        - created_at (datetime): When the discussion was created (timezone-aware)
+        - comment_count (int): Number of comments on the discussion
     """
-    github_token = os.environ.get("GITHUB_TOKEN")
-    if not github_token:
-        logging.warning("GITHUB_TOKEN not set, cannot fetch discussions")
+    github_token = settings.GITHUB_TOKEN
+    if not github_token or github_token == "abc123":  # abc123 is the placeholder in .env.example
+        logging.warning("GITHUB_TOKEN not set or is placeholder, cannot fetch discussions")
         return []
 
     query = """
@@ -1186,6 +1201,16 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
         # Transform the data into a simpler format
         result = []
         for discussion in discussions:
+            # Parse ISO 8601 date string to datetime object
+            created_at_str = discussion.get("createdAt", "")
+            try:
+                # GitHub returns ISO 8601 format: 2024-01-30T06:51:32Z
+                created_at = datetime.strptime(created_at_str, "%Y-%m-%dT%H:%M:%SZ")
+                # Make it timezone-aware using UTC
+                created_at = timezone.make_aware(created_at, timezone.utc)
+            except (ValueError, AttributeError):
+                created_at = timezone.now()  # Fallback to current time
+
             result.append(
                 {
                     "title": discussion.get("title", "Untitled"),
@@ -1194,7 +1219,7 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
                     if discussion.get("author")
                     else "Anonymous",
                     "author_url": discussion.get("author", {}).get("url", "") if discussion.get("author") else "",
-                    "created_at": discussion.get("createdAt", ""),
+                    "created_at": created_at,
                     "comment_count": discussion.get("comments", {}).get("totalCount", 0),
                 }
             )
