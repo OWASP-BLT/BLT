@@ -185,7 +185,7 @@ class SequenceMatcherStrategy(DuplicateDetectionStrategy):
 
             potential_duplicates = (
                 Issue.objects.filter(query)
-                .exclude(status__in=["closed", "close"])
+                .exclude(status__in=["closed"])
                 .select_related("user", "domain")
                 .order_by("-created")[:100]
             )

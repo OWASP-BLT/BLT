@@ -245,7 +245,7 @@ def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status = "close"
+            issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()

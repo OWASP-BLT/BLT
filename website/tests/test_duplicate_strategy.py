@@ -8,6 +8,7 @@ from website.duplicate_checker import (
     VectorSearchStrategy,
     check_for_duplicates,
     find_similar_bugs,
+    format_similar_bug,
     get_duplicate_strategy,
 )
 from website.models import Issue
@@ -79,3 +80,29 @@ class DuplicateStrategyTest(TestCase):
         # Test check_for_duplicates facade
         result = check_for_duplicates("http://test.com", "desc")
         self.assertTrue(result["is_duplicate"])
+
+    def test_format_similar_bug(self):
+        """Test the boolean and formatting logic of format_similar_bug."""
+        mock_issue = MagicMock(spec=Issue)
+        mock_issue.id = 123
+        mock_issue.url = "http://example.com/bug"
+        mock_issue.description = "A very long description " * 10
+        mock_issue.status = "open"
+        mock_issue.created = "2023-01-01"
+        mock_issue.user.username = "tester"
+        mock_issue.upvoted.count.return_value = 5
+
+        bug_info = {
+            "issue": mock_issue,
+            "similarity": 0.95,
+            "description_similarity": 0.9,
+            "url_similarity": 1.0,
+            "keyword_matches": 3,
+        }
+
+        formatted = format_similar_bug(bug_info, truncate_description=20)
+
+        self.assertEqual(formatted["id"], 123)
+        self.assertEqual(formatted["similarity_percent"], 95)
+        self.assertTrue(len(formatted["description"]) <= 23)  # 20 chars + "..."
+        self.assertTrue(formatted["description"].endswith("..."))
