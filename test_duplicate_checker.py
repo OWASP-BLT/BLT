@@ -6,13 +6,14 @@ IMPORTANT: The form has 3 fields:
   1. URL (name='url') - Domain URL
   2. Bug Title (name='description') - Short title
   3. Bug Description (name='markdown_description') - Detailed description
-  
+
 The duplicate checker uses: Title + Description combined for better matching
 
 Usage:
   In Docker:  docker exec app python test_duplicate_checker.py quick
   With Django: python manage.py test
 """
+
 import json
 import os
 import sys

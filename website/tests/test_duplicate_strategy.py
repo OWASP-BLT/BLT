@@ -1,15 +1,17 @@
-from django.conf import settings
-from django.test import TestCase, override_settings
 from unittest.mock import MagicMock, patch
+
+from django.test import TestCase, override_settings
+
 from website.duplicate_checker import (
     DuplicateDetectionStrategy,
     SequenceMatcherStrategy,
     VectorSearchStrategy,
-    get_duplicate_strategy,
     check_for_duplicates,
     find_similar_bugs,
+    get_duplicate_strategy,
 )
 from website.models import Issue
+
 
 class DuplicateStrategyTest(TestCase):
     def test_strategy_is_abc(self):
@@ -35,7 +37,7 @@ class DuplicateStrategyTest(TestCase):
         strategy = SequenceMatcherStrategy()
         score = strategy.calculate_similarity("bug report", "bug report")
         self.assertEqual(score, 1.0)
-        
+
         score_diff = strategy.calculate_similarity("bug report", "feature request")
         self.assertTrue(score_diff < 0.5)
 
@@ -65,15 +67,15 @@ class DuplicateStrategyTest(TestCase):
                 "similarity": 0.85,
                 "description_similarity": 0.85,
                 "url_similarity": 0.0,
-                "keyword_matches": 0
+                "keyword_matches": 0,
             }
         ]
-        
+
         # Test find_similar_bugs facade
         results = find_similar_bugs("http://test.com", "desc")
         self.assertEqual(len(results), 1)
         mock_find_similar.assert_called_once()
-        
+
         # Test check_for_duplicates facade
         result = check_for_duplicates("http://test.com", "desc")
         self.assertTrue(result["is_duplicate"])

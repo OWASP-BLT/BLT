@@ -257,12 +257,12 @@ def get_duplicate_strategy() -> DuplicateDetectionStrategy:
     Defaults to 'sequence_matcher' if not specified.
     """
     from django.conf import settings
-    
+
     strategy_name = getattr(settings, "DUPLICATE_DETECTION_STRATEGY", "sequence_matcher")
-    
+
     if strategy_name == "vector_search":
         return VectorSearchStrategy()
-    
+
     # Default to legacy sequence matcher
     return SequenceMatcherStrategy()
 
