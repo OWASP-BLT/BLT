@@ -4,11 +4,13 @@ echo "Entrypoint script is running"
 
 # Wait for the database to be ready
 if [ -n "$POSTGRES_DB" ] && [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ]; then
+    set +x
     until PGPASSWORD=$POSTGRES_PASSWORD psql -h "db" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
       >&2 echo "Postgres is unavailable - sleeping"
       sleep 1
     done
     >&2 echo "Postgres is up - executing command"
+    set -x
 else
     echo "Postgres configuration not found, skipping wait for DB."
 fi
