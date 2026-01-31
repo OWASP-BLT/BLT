@@ -232,7 +232,7 @@ class SequenceMatcherStrategy(DuplicateDetectionStrategy):
             return similar_bugs[:limit]
 
         except Exception as e:
-            logger.error("Error in find_similar_bugs (Strategy): %s", e, exc_info=True)
+            logger.error("Error in SequenceMatcherStrategy.find_similar: %s", e, exc_info=True)
             return []
 
 
@@ -243,19 +243,27 @@ class VectorSearchStrategy(DuplicateDetectionStrategy):
     """
 
     def find_similar(self, url, description, domain=None, threshold=0.6, limit=10):
-        # Future implementation note:
-        # This will communicate with the vector store service
-        logger.info("Vector search not yet implemented. Falling back to empty list.")
-        return []
+        # Prevent silent failure/confusion if accidentally enabled before implementation
+        raise NotImplementedError(
+            "VectorSearchStrategy is not yet implemented. "
+            "Use SequenceMatcherStrategy or contribute to implement this feature."
+        )
 
 
 def get_duplicate_strategy() -> DuplicateDetectionStrategy:
     """
     Factory method to get the active strategy.
-    Can be expanded to switch based on feature flags or settings.
+    Switches based on DUPLICATE_DETECTION_STRATEGY setting.
+    Defaults to 'sequence_matcher' if not specified.
     """
-    # For now, default to the legacy sequence matcher
-    # Future: if settings.USE_VECTOR_SEARCH: return VectorSearchStrategy()
+    from django.conf import settings
+    
+    strategy_name = getattr(settings, "DUPLICATE_DETECTION_STRATEGY", "sequence_matcher")
+    
+    if strategy_name == "vector_search":
+        return VectorSearchStrategy()
+    
+    # Default to legacy sequence matcher
     return SequenceMatcherStrategy()
 
 
