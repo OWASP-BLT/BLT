@@ -1,12 +1,12 @@
-
 import os
-from pathlib import Path
+
 from django.conf import settings
 
 from website.management.base import LoggedBaseCommand
+
 # Safe import attempt from bot
 try:
-    from website.bot import embed_documents_and_save, is_api_key_valid, load_document, split_document, AI_AVAILABLE
+    from website.bot import embed_documents_and_save, load_document, split_document, AI_AVAILABLE
 except ImportError:
     AI_AVAILABLE = False
 
@@ -24,7 +24,7 @@ class Command(LoggedBaseCommand):
         if not api_key:
             self.stdout.write(self.style.ERROR("OPENAI_API_KEY not found in environment."))
             return None
-        
+
         # Optional: Validate API Key (can be slow, maybe skip for CLI speed)
         # check_api = is_api_key_valid(api_key)
         # if not check_api:
@@ -33,7 +33,7 @@ class Command(LoggedBaseCommand):
 
         # Calculate the base directory
         base_dir = settings.BASE_DIR
-        
+
         # Set the paths to the website directory, documents, and faiss_index directories
         # Assuming layout: /gsoc_BLT/website/
         website_dir = base_dir / "website"
@@ -67,23 +67,25 @@ class Command(LoggedBaseCommand):
             return None
 
         all_split_docs = []
+        successfully_processed = []
         for doc_file in new_documents:
             try:
                 document = load_document(doc_file)
                 split_docs = split_document(1000, 100, document)
                 all_split_docs.extend(split_docs)
+                successfully_processed.append(doc_file)
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Failed to process {doc_file.name}: {e}"))
 
         # Embed the new documents
         if all_split_docs:
             embed_documents_and_save(all_split_docs)
-            
-            # Update the list of processed files
+
+            # Update the list of processed files only after successful embedding
             with processed_files_path.open("a") as f:
-                for doc_file in new_documents:
+                for doc_file in successfully_processed:
                     f.write(f"{doc_file.name}\n")
 
             self.stdout.write(self.style.SUCCESS(f"Successfully embedded {len(new_documents)} documents."))
         else:
-             self.stdout.write(self.style.WARNING("No valid content found in new documents."))
+            self.stdout.write(self.style.WARNING("No valid content found in new documents."))

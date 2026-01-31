@@ -1,7 +1,7 @@
 import logging
+import os
 import tempfile
 from pathlib import Path
-import os
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -10,12 +10,11 @@ from dotenv import find_dotenv, load_dotenv
 # Configure logging
 logger = logging.getLogger(__name__)
 
-load_dotenv(find_dotenv(), override=True)
+load_dotenv(find_dotenv())
 
 # Safe imports for AI dependencies to prevent startup crashes if missing
 try:
     import openai
-    from openai import OpenAI
     from langchain.chains import ConversationalRetrievalChain
     from langchain.memory import ConversationSummaryMemory
     from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -23,6 +22,8 @@ try:
     from langchain_community.vectorstores import FAISS
     from langchain_core.prompts import ChatPromptTemplate
     from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+    from openai import OpenAI
+
     AI_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"AI dependencies not found: {e}. AI features will be disabled.")
@@ -30,18 +31,17 @@ except ImportError as e:
 
 
 def log_chat(message):
-    # Placeholder for chat log database logic.
-    # Replace this with actual database logging in your Django model.
-    print(f"LOG: {message}")
+    """Log chat-related events."""
+    logger.info(f"CHAT: {message}")
 
 
 def is_api_key_valid(api_key):
     if not AI_AVAILABLE:
         return False
-        
+
     client = OpenAI(api_key=api_key)
     try:
-        client.completions.create(prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1)
+        client.models.list()
         return True
     except openai.APIConnectionError as e:
         log_chat(f"Failed to connect to OpenAI API: {e}")
@@ -87,7 +87,7 @@ def load_directory(dir_path):
 def split_document(chunk_size, chunk_overlap, document):
     if not AI_AVAILABLE:
         return []
-        
+
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -124,27 +124,29 @@ def embed_documents_and_save(embed_docs):
 
     try:
         # Check if the folder exists in the storage system and download files
-        if default_storage.exists(db_folder_str) and default_storage.listdir(db_folder_str):
-            log_chat(f"Downloading FAISS index from storage: {db_folder_str}")
-            # Download all files from the storage folder to the temp directory
-            # Note: default_storage.listdir returns (directories, files)
-            files = default_storage.listdir(db_folder_str)[1]
-            if not files:
-                 log_chat("No files found in storage directory.")
-                 
-            for file_name in files:
-                with default_storage.open(db_folder_path / file_name, "rb") as f:
-                    content = f.read()
-                with open(temp_db_path / file_name, "wb") as temp_file:
-                    temp_file.write(content)
-                log_chat(f"Downloaded file {file_name} to {temp_db_path}")
+        # Check if the folder exists in the storage system and download files
+        if default_storage.exists(db_folder_str):
+            dirs, files = default_storage.listdir(db_folder_str)
+            if files:
+                log_chat(f"Downloading FAISS index from storage: {db_folder_str}")
+                for file_name in files:
+                    with default_storage.open(db_folder_path / file_name, "rb") as f:
+                        content = f.read()
+                    with open(temp_db_path / file_name, "wb") as temp_file:
+                        temp_file.write(content)
+                    log_chat(f"Downloaded file {file_name} to {temp_db_path}")
 
-            # Load the FAISS index from the temp directory
-            db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
-            log_chat(f"Loaded FAISS index from {temp_db_path}")
-            # Add new documents to the index
-            db.add_documents(embed_docs)
-            log_chat("Added new documents to the FAISS index")
+                # Load the FAISS index from the temp directory
+                # Security: allow_dangerous_deserialization is set to False to prevent RCE.
+                # If you have legacy trusted indexes, you might need to rebuild them.
+                db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=False)
+                log_chat(f"Loaded FAISS index from {temp_db_path}")
+                # Add new documents to the index
+                db.add_documents(embed_docs)
+                log_chat("Added new documents to the FAISS index")
+            else:
+                log_chat("No files found in storage directory; creating new index")
+                db = FAISS.from_documents(embed_docs, embeddings)
         else:
             log_chat("No existing FAISS index found; creating new index")
             # Create a new FAISS index if it doesn't exist
@@ -181,7 +183,7 @@ def embed_documents_and_save(embed_docs):
 def load_vector_store():
     if not AI_AVAILABLE:
         return None
-        
+
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_folder_path = Path("faiss_index/")
 
@@ -206,7 +208,7 @@ def load_vector_store():
                 temp_file.write(content)
 
         # Load the FAISS index from the temp directory
-        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=False)
     except Exception as e:
         log_chat(f"Error loading vector store: {e}")
         return None
@@ -219,7 +221,7 @@ def load_vector_store():
 def conversation_chain(vector_store):
     if not AI_AVAILABLE:
         return None, None
-        
+
     retrieval_search_results = 5
     summary_max_memory_token_limit = 1500
     prompt = ChatPromptTemplate.from_messages(
