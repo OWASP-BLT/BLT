@@ -2492,7 +2492,7 @@ def run_management_command(request):
                 log_entry.success = False
                 log_entry.save()
 
-                error_msg = f"Error executing command '{command}': {str(e)}"
+                error_msg = f"Error executing command '{command}': Something went wrong."
                 logging.error(error_msg)
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
