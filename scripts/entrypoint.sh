@@ -10,7 +10,7 @@ if [ -n "$POSTGRES_DB" ] && [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD"
     done
     >&2 echo "Postgres is up - executing command"
 else
-    echo "Postgers configuration not found, skipping wait for DB."
+    echo "Postgres configuration not found, skipping wait for DB."
 fi
 
 # Function to check if migrations are applied
