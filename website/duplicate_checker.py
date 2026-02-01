@@ -339,4 +339,5 @@ def format_similar_bug(bug_info, truncate_description=200):
         "user": issue.user.username if issue.user else "Anonymous",
         "label": issue.get_label_display() if hasattr(issue, "get_label_display") else "",
         "verified": getattr(issue, "verified", False),
+        "upvotes": issue.upvoted.count() if hasattr(issue, "upvoted") else 0,
     }
