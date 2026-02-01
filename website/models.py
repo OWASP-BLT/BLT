@@ -30,7 +30,6 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
-from website.utils import gravatar_url
 
 logger = logging.getLogger(__name__)
 
@@ -969,6 +968,8 @@ class UserProfile(models.Model):
     last_check_in = models.DateField(null=True, blank=True)
 
     def avatar(self, size=36):
+        from website.utils import gravatar_url
+        
         if self.user_avatar:
             return self.user_avatar.url
 
@@ -977,7 +978,8 @@ class UserProfile(models.Model):
             if avatar_url:
                 return avatar_url
 
-        return gravatar_url(self.user.email)
+         return gravatar_url(self.user.email)
+    
     def __unicode__(self):
         return self.user.email
 
