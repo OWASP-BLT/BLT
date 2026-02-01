@@ -779,21 +779,11 @@
                             class="relative flex items-center gap-2 md:gap-3 px-1.5 md:px-2 py-1 md:py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 group"
                             type="button">
                         <div class="relative">
-                            {% if request.user.userprofile.avatar %}
-                                <img src="{{ request.user.userprofile.avatar }}"
-                                     class="size-8 md:size-10 rounded-lg object-cover ring-2 ring-white"
-                                     alt="User Avatar"
-                                     width="40"
-                                     height="40">
-                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                     class="size-8 md:size-10 rounded-lg object-cover ring-2 ring-white"
-                                     alt="User Avatar"
-                                     width="40"
-                                     height="40">
-                            {% else %}
-                                {% gravatar request.user.email 40 '' 'gravatar rounded-lg size-8 md:size-10 object-cover ring-2 ring-white' %}
-                            {% endif %}
+                           <img src="{{ request.user.userprofile.avatar }}"
+                                 class="size-s md:size-10 rounded-lg object-cover ring-2 ring-white"
+                                 alt="User Avatar"
+                                 width="40"
+                                 hright="40">
                             <div class="absolute -bottom-1 -right-1 size-3 md:size-4 bg-green-500 rounded-md border-2 border-white"></div>
                         </div>
                         <div class="hidden sm:flex flex-col items-start">
