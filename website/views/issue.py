@@ -16,6 +16,7 @@ from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
+from bleach import clean
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -2337,14 +2338,10 @@ class GitHubIssuesView(ListView):
         for issue in context.get("object_list", []):
             body = issue.body or ""
             try:
+                html = markdown.markdown(issue.body)
                 issue.body_html = mark_safe(
                     markdown.markdown(
-                        body,
-                        extensions=[
-                            "markdown.extensions.fenced_code",
-                            "markdown.extensions.tables",
-                            "markdown.extensions.nl2br",
-                        ],
+                        clean(html, tags=["a", "b", "i", "em", "strong", "p", "br", "code", "pre"], strip=True)
                     )
                 )
             except Exception:
