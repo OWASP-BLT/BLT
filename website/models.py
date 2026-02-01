@@ -977,8 +977,7 @@ class UserProfile(models.Model):
             if avatar_url:
                 return avatar_url
 
-    return gravatar_url(self.user.email)
-    
+        return gravatar_url(self.user.email)
     def __unicode__(self):
         return self.user.email
 
