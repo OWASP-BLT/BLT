@@ -816,13 +816,14 @@ class LoadGitHubCommentsTests(TestCase):
         )
 
         self.issue = GitHubIssue.objects.create(
-            issue_id=123456,
-            issue_number=100,
+            issue_id=100,
             title="Test Issue",
             repo=self.repo,
             state="open",
-            issue_type="issue",
+            type="issue",
             created_at=timezone.now(),
+            updated_at=timezone.now(),  # Required for command's date filter
+            url="https://github.com/OWASP-BLT/BLT/issues/100",
         )
 
     def make_comment(self, comment_id, issue_number, body="Test comment", login="testuser", user_id=12345):
@@ -893,6 +894,9 @@ class LoadGitHubCommentsTests(TestCase):
             github_id=12345,
             name="testuser",
             github_url="https://github.com/testuser",
+            avatar_url="https://github.com/testuser.png",
+            contributor_type="User",
+            contributions=10,
         )
 
         GitHubComment.objects.create(
@@ -957,13 +961,14 @@ class LoadGitHubCommentsTests(TestCase):
         )
 
         other_issue = GitHubIssue.objects.create(
-            issue_id=789012,
-            issue_number=200,
+            issue_id=200,
             title="Other Issue",
             repo=other_repo,
             state="open",
-            issue_type="issue",
+            type="issue",
             created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/OWASP-BLT/OtherRepo/issues/200",
         )
 
         # Mock API response
