@@ -2338,12 +2338,9 @@ class GitHubIssuesView(ListView):
         for issue in context.get("object_list", []):
             body = issue.body or ""
             try:
-                html = markdown.markdown(issue.body)
-                issue.body_html = mark_safe(
-                    markdown.markdown(
-                        clean(html, tags=["a", "b", "i", "em", "strong", "p", "br", "code", "pre"], strip=True)
-                    )
-                )
+                html = markdown.markdown(body)
+                issue.body_html = mark_safe(clean(html, tags=["a", "b", "i", "em", "strong", "p", "br", "code", "pre"], strip=True) )
+                
             except Exception:
                 issue.body_html = escape(body)
 
