@@ -665,15 +665,16 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Use settings for configuration
         leaderboard_months = getattr(settings, "GITHUB_COMMENT_LEADERBOARD_MONTHS", 6)
-        bots = getattr(
-            settings, "GITHUB_BOT_USERNAMES", ["copilot", "dependabot", "github-actions", "renovate", "[bot]"]
-        )
         since_date = timezone.now() - relativedelta(months=leaderboard_months)
 
         cache_key = f"comment_leaderboard_{leaderboard_months}months"
         comment_leaderboard = cache.get(cache_key)
 
         if comment_leaderboard is None:
+            # Build bot exclusion query only when cache miss occurs
+            bots = getattr(
+                settings, "GITHUB_BOT_USERNAMES", ["copilot", "dependabot", "github-actions", "renovate", "[bot]"]
+            )
             # Create bot exclusion query for commenters
             commenter_bot_exclusions = Q()
             for bot in bots:
@@ -1747,13 +1748,22 @@ def handle_comment_event(payload):
                 },
             )
             if not created:
-                # Update existing contributor data using atomic operations
-                Contributor.objects.filter(id=commenter_contributor.id).update(
-                    name=commenter_login,
-                    github_url=commenter_github_url,
-                    avatar_url=commenter_avatar_url,
-                    contributions=F("contributions") + 1,
-                )
+                # Conditionally update contributor data to avoid overwriting manual corrections
+                # Only update fields that are empty or match current GitHub data
+                update_fields = {
+                    "contributions": F("contributions") + 1,
+                }
+
+                # Only update metadata if it hasn't been manually corrected
+                # (i.e., if current value matches what we'd expect from GitHub or is empty)
+                if not commenter_contributor.name or commenter_contributor.name == commenter_login:
+                    update_fields["name"] = commenter_login
+                if not commenter_contributor.github_url or commenter_contributor.github_url == commenter_github_url:
+                    update_fields["github_url"] = commenter_github_url
+                if not commenter_contributor.avatar_url or commenter_contributor.avatar_url == commenter_avatar_url:
+                    update_fields["avatar_url"] = commenter_avatar_url
+
+                Contributor.objects.filter(id=commenter_contributor.id).update(**update_fields)
         except Exception as e:
             logger.error(f"Error creating/updating contributor for comment: {e}")
 

@@ -254,27 +254,21 @@ class Command(BaseCommand):
             comments_to_update = []
             for comment_obj in existing_comments:
                 update_data = comments_to_update_data[comment_obj.comment_id]
-                # Update non-FK fields
+                # Assign FK objects directly for bulk update
+                comment_obj.issue = update_data["issue"]
+                comment_obj.commenter = update_data["commenter"]
+                comment_obj.commenter_contributor = update_data["commenter_contributor"]
                 comment_obj.body = update_data["body"]
                 comment_obj.updated_at = update_data["updated_at"]
                 comment_obj.url = update_data["url"]
                 comments_to_update.append(comment_obj)
 
             if comments_to_update:
-                # First update non-FK fields
+                # Single bulk_update for ALL fields including FKs
                 GitHubComment.objects.bulk_update(
                     comments_to_update,
-                    ["body", "updated_at", "url"],
+                    ["issue", "commenter", "commenter_contributor", "body", "updated_at", "url"],
                 )
-
-                # Then update FK fields individually to avoid bulk_update FK issues
-                for comment_obj in comments_to_update:
-                    update_data = comments_to_update_data[comment_obj.comment_id]
-                    GitHubComment.objects.filter(comment_id=comment_obj.comment_id).update(
-                        issue=update_data["issue"],
-                        commenter=update_data["commenter"],
-                        commenter_contributor=update_data["commenter_contributor"],
-                    )
                 updated_count = len(comments_to_update)
 
         self.stdout.write(

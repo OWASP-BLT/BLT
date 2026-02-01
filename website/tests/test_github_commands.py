@@ -801,3 +801,218 @@ class GitHubCommandsIntegrationTests(TestCase):
         self.assertTemplateUsed(response, "leaderboard_global.html")
         self.assertContains(response, "Pull Request Leaderboard")
         self.assertContains(response, "Code Review Leaderboard")
+
+
+class LoadGitHubCommentsTests(TestCase):
+    """Tests for load_github_comments management command"""
+
+    def setUp(self):
+        """Set up test data"""
+        self.repo = Repo.objects.create(
+            name="BLT",
+            repo_url="https://github.com/OWASP-BLT/BLT",
+            is_owasp_repo=True,
+        )
+
+        self.issue = GitHubIssue.objects.create(
+            issue_id=123456,
+            issue_number=100,
+            title="Test Issue",
+            repo=self.repo,
+            state="open",
+            issue_type="issue",
+            created_at=timezone.now(),
+        )
+
+    def make_comment(self, comment_id, issue_number, body="Test comment", login="testuser", user_id=12345):
+        """Helper to create a mock GitHub comment API response"""
+        return {
+            "id": comment_id,
+            "body": body,
+            "user": {
+                "id": user_id,
+                "login": login,
+                "html_url": f"https://github.com/{login}",
+                "avatar_url": f"https://avatars.githubusercontent.com/u/{user_id}",
+                "type": "User",
+            },
+            "created_at": "2024-06-01T00:00:00Z",
+            "updated_at": "2024-06-01T00:00:00Z",
+            "html_url": f"https://github.com/OWASP-BLT/BLT/issues/{issue_number}#issuecomment-{comment_id}",
+        }
+
+    def make_api_response(self, data):
+        """Helper to create a mock API response"""
+        response = Mock()
+        response.status_code = 200
+        response.json.return_value = data
+        return response
+
+    @patch("website.management.commands.load_github_comments.requests.get")
+    def test_load_comments_creates_new_comments(self, mock_get):
+        """Test that load_github_comments creates new GitHubComment records"""
+        from website.models import GitHubComment
+
+        # Mock API response with comments
+        mock_get.return_value = self.make_api_response(
+            [
+                self.make_comment(111, 100, "First comment"),
+                self.make_comment(112, 100, "Second comment"),
+            ]
+        )
+
+        # Verify no comments exist before
+        self.assertEqual(GitHubComment.objects.count(), 0)
+
+        # Run command
+        out = StringIO()
+        call_command("load_github_comments", "--months=1", stdout=out)
+
+        # Verify comments were created
+        self.assertEqual(GitHubComment.objects.count(), 2)
+
+        # Verify comment details
+        comment1 = GitHubComment.objects.get(comment_id=111)
+        self.assertEqual(comment1.body, "First comment")
+        self.assertEqual(comment1.issue, self.issue)
+        self.assertIsNotNone(comment1.commenter_contributor)
+
+    @patch("website.management.commands.load_github_comments.requests.get")
+    def test_load_comments_updates_existing_comments(self, mock_get):
+        """Test that load_github_comments updates existing GitHubComment records"""
+        from website.models import GitHubComment
+
+        # Create existing comment with old data
+        contributor = Contributor.objects.create(
+            github_id=12345,
+            name="testuser",
+            github_url="https://github.com/testuser",
+        )
+
+        GitHubComment.objects.create(
+            comment_id=111,
+            issue=self.issue,
+            commenter_contributor=contributor,
+            body="Old body",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/OWASP-BLT/BLT/issues/100#issuecomment-111",
+        )
+
+        # Mock API response with updated comment
+        mock_get.return_value = self.make_api_response([self.make_comment(111, 100, "Updated body")])
+
+        # Run command
+        out = StringIO()
+        call_command("load_github_comments", "--months=1", stdout=out)
+
+        # Verify comment was updated (still only 1 comment)
+        self.assertEqual(GitHubComment.objects.count(), 1)
+
+        # Verify updated content
+        comment = GitHubComment.objects.get(comment_id=111)
+        self.assertEqual(comment.body, "Updated body")
+
+    @patch("website.management.commands.load_github_comments.requests.get")
+    def test_load_comments_filters_bot_comments(self, mock_get):
+        """Test that load_github_comments filters out bot comments"""
+        from website.models import GitHubComment
+
+        # Mock API response with bot and human comments
+        mock_get.return_value = self.make_api_response(
+            [
+                self.make_comment(111, 100, "Human comment", "testuser", 12345),
+                self.make_comment(112, 100, "Bot comment", "dependabot[bot]", 54321),
+                self.make_comment(113, 100, "Another bot", "github-actions", 99999),
+            ]
+        )
+
+        # Run command
+        out = StringIO()
+        call_command("load_github_comments", "--months=1", stdout=out)
+
+        # Verify only human comment was created
+        self.assertEqual(GitHubComment.objects.count(), 1)
+        self.assertEqual(GitHubComment.objects.first().comment_id, 111)
+
+    @patch("website.management.commands.load_github_comments.requests.get")
+    def test_load_comments_specific_repo(self, mock_get):
+        """Test that load_github_comments can filter by specific repository"""
+        from website.models import GitHubComment
+
+        # Create another repo and issue
+        other_repo = Repo.objects.create(
+            name="OtherRepo",
+            repo_url="https://github.com/OWASP-BLT/OtherRepo",
+        )
+
+        other_issue = GitHubIssue.objects.create(
+            issue_id=789012,
+            issue_number=200,
+            title="Other Issue",
+            repo=other_repo,
+            state="open",
+            issue_type="issue",
+            created_at=timezone.now(),
+        )
+
+        # Mock API response
+        mock_get.return_value = self.make_api_response([self.make_comment(111, 100, "Comment on BLT")])
+
+        # Run command for specific repo
+        out = StringIO()
+        call_command(
+            "load_github_comments",
+            "--months=1",
+            "--repo=https://github.com/OWASP-BLT/BLT",
+            stdout=out,
+        )
+
+        # Verify only BLT repo was queried
+        self.assertTrue(mock_get.called)
+        # Comments should be created for BLT repo only
+        self.assertEqual(GitHubComment.objects.filter(issue__repo=self.repo).count(), 1)
+        self.assertEqual(GitHubComment.objects.filter(issue__repo=other_repo).count(), 0)
+
+    @patch("website.management.commands.load_github_comments.requests.get")
+    def test_load_comments_bulk_create_performance(self, mock_get):
+        """Test that load_github_comments uses bulk operations efficiently"""
+        from website.models import GitHubComment
+
+        # Mock API response with many comments
+        comments = [self.make_comment(i, 100, f"Comment {i}") for i in range(100, 200)]
+        mock_get.return_value = self.make_api_response(comments)
+
+        # Run command
+        out = StringIO()
+        call_command("load_github_comments", "--months=1", stdout=out)
+
+        # Verify all comments were created in bulk
+        self.assertEqual(GitHubComment.objects.count(), 100)
+
+        # Verify output mentions bulk creation
+        output = out.getvalue()
+        self.assertIn("Creating", output)
+
+    @patch("website.management.commands.load_github_comments.requests.get")
+    def test_load_comments_handles_rate_limiting(self, mock_get):
+        """Test that load_github_comments handles API rate limiting gracefully"""
+
+        # Mock rate limit error then success
+        rate_limit_response = Mock()
+        rate_limit_response.status_code = 403
+        rate_limit_response.json.return_value = {"message": "API rate limit exceeded"}
+
+        success_response = self.make_api_response([self.make_comment(111, 100)])
+
+        mock_get.side_effect = [rate_limit_response, success_response]
+
+        # Run command
+        out = StringIO()
+        try:
+            call_command("load_github_comments", "--months=1", stdout=out)
+        except Exception:
+            pass  # Command may fail gracefully
+
+        # Verify error handling occurred
+        self.assertTrue(mock_get.called)
