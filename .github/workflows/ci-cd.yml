@@ -605,7 +605,8 @@ jobs:
             let testCount = null;
             try {
               const testOutput = fs.readFileSync('test-output.txt', 'utf8');
-              // Match "Ran X tests" pattern from Django test runner
+              // Match "Ran X test(s)" pattern from Django test runner
+              // Django outputs "Ran 1 test in" (singular) or "Ran N tests in" (plural)
               const match = testOutput.match(/Ran (\d+) tests? in/);
               if (match && match[1]) {
                 testCount = match[1];
