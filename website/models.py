@@ -30,6 +30,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+from website.utils import gravatar_url
 
 logger = logging.getLogger(__name__)
 
@@ -971,12 +972,13 @@ class UserProfile(models.Model):
         if self.user_avatar:
             return self.user_avatar.url
 
-        for account in self.user.socialaccount_set.all():
-            if "avatar_url" in account.extra_data:
-                return account.extra_data["avatar_url"]
-            elif "picture" in account.extra_data:
-                return account.extra_data["picture"]
+        for account in self.user.socialaccount_set.all().order_by('id'):
+            avatar_url = account.get_avatar_url()
+            if avatar_url:
+                return avatar_url
 
+    return gravatar_url(self.user.email)
+    
     def __unicode__(self):
         return self.user.email
 
