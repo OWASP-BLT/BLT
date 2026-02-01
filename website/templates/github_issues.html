@@ -201,8 +201,8 @@
                                         </span>
                                     {% endif %}
                                 </div>
-                                {% if issue.body_html %}
-                                    <p class="text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{{ issue.body_html|safe }}</p>
+                                {% if issue.body %}
+                                    <p class="text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{{ issue.body_html | truncatewords_html:30 }}</p>
                                 {% endif %}
                                 <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
                                     <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>

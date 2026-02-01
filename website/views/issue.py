@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
-import markdown2
+import markdown
 import requests
 import six
 from allauth.account.models import EmailAddress
@@ -2334,6 +2334,21 @@ class GitHubIssuesView(ListView):
 
         # Add the form for adding GitHub issues
         context["form"] = GitHubIssueForm()
+        for issue in context.get("object_list", []):
+            body = issue.body or ""
+            try:
+                issue.body_html = mark_safe(
+                    markdown.markdown(
+                        body,
+                        extensions=[
+                            "markdown.extensions.fenced_code",
+                            "markdown.extensions.tables",
+                            "markdown.extensions.nl2br",
+                        ],
+                    )
+                )
+            except Exception:
+                issue.body_html = escape(body)
 
         return context
 
@@ -2438,18 +2453,25 @@ class GitHubIssueDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Convert markdown bodies to HTML for display using markdown2 if available
+        # Convert markdown bodies to HTML for display using markdown
 
-        issue = context.get("object") or []
-        if markdown2:
-            body = issue.body or ""
-            try:
-                issue.body_html = mark_safe(markdown2.markdown(body))
-            except Exception:
-                issue.body_html = body
-
+        issue = context.get("object")
+        body = issue.body or ""
         # Add any additional context needed for the detail view
-        context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
+        context["comment_list"] = issue.get_comments()
+        try:
+            issue.body_html = mark_safe(
+                markdown.markdown(
+                    body,
+                    extensions=[
+                        "markdown.extensions.fenced_code",
+                        "markdown.extensions.tables",
+                        "markdown.extensions.nl2br",
+                    ],
+                )
+            )
+        except Exception:
+            issue.body_html = escape(issue.body or "")
 
         return context
 
