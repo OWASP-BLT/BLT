@@ -6,6 +6,7 @@ from datetime import timedelta
 from io import StringIO
 from unittest.mock import Mock, patch
 
+import requests
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
@@ -846,6 +847,7 @@ class LoadGitHubCommentsTests(TestCase):
         response = Mock()
         response.status_code = 200
         response.json.return_value = data
+        response.headers = {}  # Default empty headers dict
         return response
 
     @patch("website.management.commands.load_github_comments.requests.get")
@@ -853,13 +855,16 @@ class LoadGitHubCommentsTests(TestCase):
         """Test that load_github_comments creates new GitHubComment records"""
         from website.models import GitHubComment
 
-        # Mock API response with comments
-        mock_get.return_value = self.make_api_response(
+        # Mock API response with comments and pagination headers
+        response = self.make_api_response(
             [
                 self.make_comment(111, 100, "First comment"),
                 self.make_comment(112, 100, "Second comment"),
             ]
         )
+        # Add headers to indicate no more pages
+        response.headers = {"X-RateLimit-Remaining": "5000", "Link": ""}
+        mock_get.return_value = response
 
         # Verify no comments exist before
         self.assertEqual(GitHubComment.objects.count(), 0)
@@ -900,7 +905,9 @@ class LoadGitHubCommentsTests(TestCase):
         )
 
         # Mock API response with updated comment
-        mock_get.return_value = self.make_api_response([self.make_comment(111, 100, "Updated body")])
+        response = self.make_api_response([self.make_comment(111, 100, "Updated body")])
+        response.headers = {"X-RateLimit-Remaining": "5000", "Link": ""}
+        mock_get.return_value = response
 
         # Run command
         out = StringIO()
@@ -919,13 +926,15 @@ class LoadGitHubCommentsTests(TestCase):
         from website.models import GitHubComment
 
         # Mock API response with bot and human comments
-        mock_get.return_value = self.make_api_response(
+        response = self.make_api_response(
             [
                 self.make_comment(111, 100, "Human comment", "testuser", 12345),
                 self.make_comment(112, 100, "Bot comment", "dependabot[bot]", 54321),
                 self.make_comment(113, 100, "Another bot", "github-actions", 99999),
             ]
         )
+        response.headers = {"X-RateLimit-Remaining": "5000", "Link": ""}
+        mock_get.return_value = response
 
         # Run command
         out = StringIO()
@@ -957,7 +966,9 @@ class LoadGitHubCommentsTests(TestCase):
         )
 
         # Mock API response
-        mock_get.return_value = self.make_api_response([self.make_comment(111, 100, "Comment on BLT")])
+        response = self.make_api_response([self.make_comment(111, 100, "Comment on BLT")])
+        response.headers = {"X-RateLimit-Remaining": "5000", "Link": ""}
+        mock_get.return_value = response
 
         # Run command for specific repo
         out = StringIO()
@@ -981,7 +992,9 @@ class LoadGitHubCommentsTests(TestCase):
 
         # Mock API response with many comments
         comments = [self.make_comment(i, 100, f"Comment {i}") for i in range(100, 200)]
-        mock_get.return_value = self.make_api_response(comments)
+        response = self.make_api_response(comments)
+        response.headers = {"X-RateLimit-Remaining": "5000", "Link": ""}
+        mock_get.return_value = response
 
         # Run command
         out = StringIO()
@@ -1002,8 +1015,10 @@ class LoadGitHubCommentsTests(TestCase):
         rate_limit_response = Mock()
         rate_limit_response.status_code = 403
         rate_limit_response.json.return_value = {"message": "API rate limit exceeded"}
+        rate_limit_response.raise_for_status.side_effect = requests.exceptions.HTTPError(response=rate_limit_response)
 
         success_response = self.make_api_response([self.make_comment(111, 100)])
+        success_response.headers = {"X-RateLimit-Remaining": "5000", "Link": ""}
 
         mock_get.side_effect = [rate_limit_response, success_response]
 
