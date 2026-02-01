@@ -726,7 +726,7 @@ def ai_summary(text):
         summary = response.choices[0].message.content.strip()
         return summary
     except Exception as e:
-        return f"Error generating summary: {str(e)}"
+        return "Error generating summary: Something went wrong."
 
 
 def gravatar_url(email, size=80):
@@ -818,7 +818,7 @@ class twitter:
 
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
-            logging.error(f"Error sending tweet: {str(e)}")
+            logging.error("Error sending tweet: Something went wrong.")
             return {"success": False, "url": None, "txid": None, "error": str(e)}
 
     @staticmethod
@@ -868,7 +868,7 @@ class twitter:
             response.raise_for_status()
             return True
         except Exception as e:
-            logging.error(f"Error sending to Discord: {str(e)}")
+            logging.error("Error sending to Discord: Something went wrong.")
             return False
 
     @staticmethod
@@ -918,7 +918,7 @@ class twitter:
                                 channel_id = channel.get("id")
                                 break
                 except Exception as e:
-                    logging.error(f"Error finding #project-blt channel: {str(e)}")
+                    logging.error("Error finding #project-blt channel: Something went wrong.")
                     return False
 
             if not channel_id:
@@ -962,7 +962,7 @@ class twitter:
                     if not upload_response.json().get("ok"):
                         logging.warning(f"Error uploading image to Slack: {upload_response.json().get('error')}")
                 except Exception as e:
-                    logging.error(f"Error uploading image to Slack: {str(e)}")
+                    logging.error("Error uploading image to Slack: Something went wrong.")
 
             # Send the message
             response = requests.post("https://slack.com/api/chat.postMessage", headers=headers, json=payload)
@@ -975,7 +975,7 @@ class twitter:
 
             return True
         except Exception as e:
-            logging.error(f"Error sending to Slack: {str(e)}")
+            logging.error("Error sending to Slack: Something went wrong.")
             return False
 
 
@@ -1104,7 +1104,7 @@ def analyze_contribution(instance, action_type):
             return get_default_bacon_score(model_name, is_security)
 
     except Exception as e:
-        logging.error(f"Error analyzing contribution for BACON score: {str(e)}")
+        logging.error("Error analyzing contribution for BACON score: Something went wrong.")
         return get_default_bacon_score(model_name, is_security)
 
 

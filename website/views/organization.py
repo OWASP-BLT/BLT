@@ -593,7 +593,7 @@ class Listbounties(TemplateView):
             )
             has_more_pages = total_count > per_page
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             github_issues = []
             total_count = 0
             has_more_pages = False
@@ -779,7 +779,7 @@ class Listbounties(TemplateView):
                 return [], 0
 
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             # Don't cache errors - could be a transient failure
             return [], 0
 
@@ -826,7 +826,7 @@ def load_more_issues(request):
             }
         )
     except Exception as e:
-        logger.error(f"Error loading more issues: {str(e)}")
+        logger.error("Error loading more issues: Something went wrong.")
         return JsonResponse(
             {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
         )
@@ -1023,7 +1023,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            logger.error(f"Error parsing domain slug '{slug}': Something went wrong.")
             raise Http404("Invalid domain format")
 
     def get_queryset(self):
@@ -1150,7 +1150,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error in DomainDetailView: {str(e)}")
+            logger.error("Error in DomainDetailView: Something went wrong.")
             raise Http404("Domain not found")
 
 
@@ -1252,7 +1252,7 @@ class InboundParseWebhookView(View):
                     profile.save()
 
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
-                logger.error(f"Error processing SendGrid webhook event: {str(e)}")
+                logger.error("Error processing SendGrid webhook event: Something went wrong.")
 
         # Send events to Slack webhook
         self._send_to_slack(events)
@@ -1306,9 +1306,9 @@ class InboundParseWebhookView(View):
             logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+            logger.error("Failed to send SendGrid events to Slack: Something went wrong.")
         except Exception as e:
-            logger.error(f"Unexpected error sending to Slack: {str(e)}")
+            logger.error("Unexpected error sending to Slack: Something went wrong.")
 
 
 class CreateHunt(TemplateView):
@@ -1763,7 +1763,7 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
         return redirect("/")
 
     except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist) as e:
-        logger.error(f"Error in organization_dashboard_domain_detail: {str(e)}")
+        logger.error("Error in organization_dashboard_domain_detail: Something went wrong.")
         return redirect("/")
 
 
@@ -1859,7 +1859,7 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error updating organization: {str(e)}")
+            logger.error("Error updating organization: Something went wrong.")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -1897,7 +1897,7 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error adding role: {str(e)}")
+            logger.error("Error adding role: Something went wrong.")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -2763,7 +2763,7 @@ def update_organization_repos(request, slug):
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    logger.error("Error testing GitHub API in event_stream: Something went wrong.", exc_info=True)
                     yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
@@ -2819,7 +2819,7 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            logger.error("Error updating logo in event_stream: Something went wrong.", exc_info=True)
                             yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
                     yield "data: Error: Failed to connect to GitHub\n\n"
@@ -2915,11 +2915,11 @@ def update_organization_repos(request, slug):
                                         repo.tags.add(tag)
 
                             except Exception as e:
-                                logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
+                                logger.error(f"Error processing repo {repo_name}: Something went wrong.", exc_info=True)
                                 yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
+                        logger.error("Network error in event_stream: Something went wrong.", exc_info=True)
                         yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
@@ -2934,13 +2934,13 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                logger.error("Unexpected error in event_stream: Something went wrong.", exc_info=True)
                 yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
+        logger.error("Error in update_organization_repos: Something went wrong.", exc_info=True)
         messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
@@ -3107,7 +3107,7 @@ class BountyPayoutsView(ListView):
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
                 return [], 0
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             return [], 0
 
     def post(self, request, *args, **kwargs):
@@ -3249,9 +3249,11 @@ class BountyPayoutsView(ListView):
                                         )
                                 except Exception as e:
                                     error_msg = "Error fetching GitHub user data"
-                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                                    logger.error(f"{error_msg} for {assignee_username}: Something went wrong.")
                         except Exception as e:
-                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            logger.error(
+                                f"Error creating contributor for assignee {assignee_username}: Something went wrong."
+                            )
                             assignee_contributor = None
 
                     # Try to find a matching user profile for the GitHub username
@@ -3374,7 +3376,7 @@ class BountyPayoutsView(ListView):
                 messages.success(request, msg)
             except Exception as e:
                 error_message = "Error fetching issues from GitHub"
-                messages.error(request, f"{error_message}: {str(e)}")
+                messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "pay_bounty":
             # Record bounty payment (superusers only)
@@ -3449,7 +3451,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error recording payment"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "delete_issue":
             # Delete an issue (superusers only)
@@ -3472,7 +3474,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error deleting issue"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "refresh_assignee":
             # Refresh assignee for an issue (staff only)
@@ -3594,7 +3596,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error refreshing issue data"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "refresh_pull_requests":
             # Refresh pull requests for an issue (staff only)
@@ -3680,7 +3682,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error refreshing linked pull requests"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         return redirect("bounty_payouts")
 
@@ -3768,7 +3770,7 @@ class BountyPayoutsView(ListView):
                                 },
                             )
                         except Exception as e:
-                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            logger.error(f"Error creating repository for {pr_repo_url}: Something went wrong.")
                             continue
 
                         # Check if we already have this PR in our database
@@ -3798,7 +3800,7 @@ class BountyPayoutsView(ListView):
                                         f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
                                     )
                             except Exception as e:
-                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
+                                logger.error(f"Error updating PR state for {pr_url}: Something went wrong.")
 
                             logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
                         else:
@@ -3847,7 +3849,9 @@ class BountyPayoutsView(ListView):
                                                 name=github_username, defaults={"name": github_username}
                                             )
                                         except Exception as e:
-                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
+                                            logger.error(
+                                                f"Error creating contributor for {github_username}: Something went wrong."
+                                            )
                                             contributor = None
 
                                 # Check if PR is merged
@@ -3878,18 +3882,18 @@ class BountyPayoutsView(ListView):
                                     issue.linked_pull_requests.add(new_pr)
                                     logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
                                 except Exception as e:
-                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
+                                    logger.error(f"Error saving PR {pr_url}: Something went wrong.")
                                     continue
 
                             except requests.exceptions.RequestException as e:
-                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
+                                logger.error(f"Error fetching PR details for {pr_url}: Something went wrong.")
                                 continue
 
             # As a fallback, also check for PRs that mention this issue in their body with closing keywords
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            logger.error(f"Error fetching timeline for issue #{issue_number}: Something went wrong.")
             # Fall back to regex-based search for PRs mentioning this issue
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
@@ -3926,7 +3930,7 @@ class BountyPayoutsView(ListView):
                     logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
 
         except Exception as e:
-            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+            logger.error(f"Error finding PRs mentioning issue #{issue_number}: Something went wrong.")
 
     def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
         """
@@ -4144,5 +4148,7 @@ class BountyPayoutsView(ListView):
             return False
 
         except Exception as e:
-            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            logger.error(
+                f"Error extracting payment info from comments for issue #{issue_number}: Something went wrong."
+            )
             return False
