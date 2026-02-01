@@ -21,10 +21,7 @@ import sys
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from website.duplicate_checker import (
-    SequenceMatcherStrategy,
-    check_for_duplicates,
-)
+from website.duplicate_checker import SequenceMatcherStrategy, check_for_duplicates
 from website.models import Domain, Issue
 
 

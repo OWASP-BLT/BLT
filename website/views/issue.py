@@ -2210,8 +2210,7 @@ def generate_github_issue(description):
             messages=[
                 {
                     "role": "system",
-                    "content": """You are a helpful assistant that analyzes bug reports. 
-                    Always respond with a valid JSON object in this exact format:
+                    "content": """You are a helpful assistant that analyzes bug reports.                    Always respond with a valid JSON object in this exact format:
                     {
                         "title": "Brief bug title",
                         "description": "Detailed bug description",
