@@ -90,7 +90,11 @@ class Command(BaseCommand):
 
                 response = requests.get(url, headers=headers, params=params)
                 response.raise_for_status()
-                servers = response.json().get("hits", [])
+                data = response.json()
+                if not isinstance(data, dict):
+                    logger.warning(f"Unexpected response type for Discord servers: {type(data)}")
+                    continue
+                servers = data.get("hits", [])
 
                 for server in servers:
                     server_id = server.get("id")

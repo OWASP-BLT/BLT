@@ -56,7 +56,11 @@ class Command(BaseCommand):
                 )
                 return False
 
-            files = [file["path"] for file in response.json().get("tree", [])]
+            data = response.json()
+            if not isinstance(data, dict):
+                logger.warning(f"{COLOR_YELLOW}Unexpected response type for file tree: {type(data)}{COLOR_RESET}")
+                return False
+            files = [file["path"] for file in data.get("tree", [])]
             code_extensions = {".py", ".js", ".java", ".cpp", ".c", ".ts", ".rb", ".go", ".rs", ".swift"}
             return any(file.endswith(tuple(code_extensions)) for file in files)
 
@@ -195,7 +199,11 @@ class Command(BaseCommand):
                     logger.error(f"{COLOR_RED}Error fetching repositories: {response.status_code}{COLOR_RESET}")
                     break
 
-                repos = response.json().get("items", [])
+                data = response.json()
+                if not isinstance(data, dict):
+                    logger.error(f"{COLOR_RED}Unexpected response type for repositories: {type(data)}{COLOR_RESET}")
+                    break
+                repos = data.get("items", [])
                 if not repos:
                     logger.info(f"{COLOR_BLUE}No more repositories found. Exiting loop.{COLOR_RESET}")
                     break

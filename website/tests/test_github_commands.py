@@ -848,6 +848,7 @@ class LoadGitHubCommentsTests(TestCase):
         response.status_code = 200
         response.json.return_value = data
         response.headers = {}  # Default empty headers dict
+        response.links = {}  # Default empty links dict for pagination
         return response
 
     @patch("website.management.commands.load_github_comments.requests.get")

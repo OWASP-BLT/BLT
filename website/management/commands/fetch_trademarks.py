@@ -50,7 +50,11 @@ class Command(LoggedBaseCommand):
                 }
                 response = requests.post(url, data=pagination_payload, headers=headers)
                 response.raise_for_status()
-                results = response.json().get("results")
+                data = response.json()
+                if not isinstance(data, dict):
+                    logger.warning(f"Unexpected response type for trademarks: {type(data)}")
+                    continue
+                results = data.get("results")
 
                 # Store trademark data in the database
                 if results:
