@@ -696,10 +696,10 @@ jobs:
 
       - name: Run Docker container
         run: |
-          # Use --entrypoint to bypass the DB check in entrypoint.sh for this sanity test
-          docker run -d --name my-container --entrypoint /bin/sh my-app -c "tail -f /dev/null"
+          docker run -d --name my-container my-app
 
       - run: docker exec my-container pip install poetry
+      - run: docker exec my-container poetry lock
       - run: docker exec my-container poetry install --without dev --no-interaction
 
       - name: Clean up
