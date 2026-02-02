@@ -1,3 +1,5 @@
+import json
+import logging
 import time
 
 import requests
@@ -6,6 +8,8 @@ from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import Organization, Trademark, TrademarkOwner
+
+logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
@@ -50,9 +54,15 @@ class Command(LoggedBaseCommand):
                 }
                 response = requests.post(url, data=pagination_payload, headers=headers)
                 response.raise_for_status()
-                data = response.json()
+                try:
+                    data = response.json()
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Invalid JSON response for trademarks: {e}")
+                    retries -= 1
+                    continue
                 if not isinstance(data, dict):
                     logger.warning(f"Unexpected response type for trademarks: {type(data)}")
+                    retries -= 1
                     continue
                 results = data.get("results")
 
