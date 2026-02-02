@@ -154,11 +154,11 @@ The leaderboard awards points based on these contribution types:
 
 | Activity | Points | Notes |
 |----------|--------|-------|
-| **Open PR** | +1 per PR | All currently open PRs (repo-wide, no cap) |
+| **Open PR** | +1 per PR | All currently open PRs (repo-wide, no scoring cap; new PRs blocked if 50+ open) |
 | **Merged PR** | +10 per PR | PRs merged during the current month |
 | **Closed PR (not merged)** | -2 per PR | PRs closed without merging during the current month |
-| **Code Review** | +5 per review | First two reviews per PR submitted during the current month |
-| **Comments** | +2 per comment | Issue/PR comments during the current month (excludes CodeRabbit mentions) |
+| **Code Review** | +5 per review | First two reviews per PR, where the review was submitted during the current month |
+| **Comments** | +2 per comment | Issue/PR comments during the current month (excludes comments that mention @coderabbitai) |
 | **CodeRabbit Discussions** | Configurable | See below for details |
 
 **Total Score Formula:**
