@@ -1,6 +1,6 @@
 # Ansible Deployment
 
-Minimal Ansible playbook to deploy the BLT Django project.
+Minimal Ansible playbook to deploy the BLT Django project.  This needs updating and testing.
 
 ## Files
 - `inventory.yml` - Define your server host/IP and variables (create from `inventory-sample.yml`).
