@@ -135,6 +135,109 @@ We welcome contributions from everyone! Whether you're fixing bugs, adding featu
 - 🎨 Follow our coding standards (Black, isort, ruff)
 - ✅ Run `pre-commit` before submitting changes
 
+### 📊 GitHub Action Leaderboard
+
+Our repository uses an automated leaderboard bot to recognize and gamify contributions. When you open a pull request, a leaderboard comment is automatically posted showing your monthly ranking compared to other contributors.
+
+#### How It Works
+
+The leaderboard bot runs automatically on every new pull request using GitHub Actions. It:
+
+1. **Collects Monthly Statistics** - Aggregates contribution data for the current month (UTC timezone)
+2. **Calculates Points** - Awards points based on various contribution types
+3. **Ranks Contributors** - Sorts users by total points, with tiebreakers
+4. **Posts Leaderboard** - Comments on the PR showing the contributor's rank and nearby competitors
+
+#### Scoring System
+
+The leaderboard awards points based on these contribution types:
+
+| Activity | Points | Notes |
+|----------|--------|-------|
+| **Open PR** | +1 per PR | All currently open PRs (repo-wide, no cap) |
+| **Merged PR** | +10 per PR | PRs merged during the current month |
+| **Closed PR (not merged)** | -2 per PR | PRs closed without merging during the current month |
+| **Code Review** | +5 per review | First two reviews per PR submitted during the current month |
+| **Comments** | +2 per comment | Issue/PR comments during the current month (excludes CodeRabbit mentions) |
+| **CodeRabbit Discussions** | Configurable | See below for details |
+
+**Total Score Formula:**
+```
+Total = (Open PRs × 1) + (Merged PRs × 10) + (Closed PRs × -2) + (Reviews × 5) + (Comments × 2) + CodeRabbit Bonus
+```
+
+#### Ranking Logic
+
+Contributors are sorted by:
+1. **Total points** (highest first)
+2. **Number of merged PRs** (tiebreaker)
+3. **Number of reviews** (second tiebreaker)
+4. **Alphabetical order** (final tiebreaker, case-insensitive)
+
+Top 3 contributors receive medal emojis: 🥇 🥈 🥉
+
+#### CodeRabbit Discussion Tracking
+
+The bot tracks discussions with CodeRabbit AI to encourage thoughtful code review engagement. This feature is configurable:
+
+**Environment Variables:**
+
+- `CR_DISCUSSION_MODE`: How to handle CodeRabbit discussions
+  - `visible` (default): Shows discussion count in leaderboard table
+  - `hidden`: Counts toward points but hidden from table
+  - `separate`: Tracked separately, not scored
+
+- `CR_DISCUSSION_POINTS`: Points per counted discussion
+  - Default: `0` (visible tracking only, no points)
+  - Set to positive integer to award points
+
+- `CR_DISCUSSION_DAILY_CAP`: Maximum discussions counted per user per UTC day
+  - Default: `7`
+  - Prevents gaming the system through spam
+
+**Anti-Abuse Protection:** Daily cap per user ensures quality over quantity in AI discussions.
+
+#### Anti-Abuse Features
+
+The leaderboard includes several safeguards:
+
+1. **Bot Detection** - Automatically excludes bot accounts (GitHub Apps, Dependabot, Copilot, etc.)
+2. **Open PR Limit** - Auto-closes new PRs if a user has 50+ open PRs (prevents PR spam)
+3. **Daily Caps** - Limits on CodeRabbit discussions prevent point farming
+4. **Review Limits** - Only first two reviews per PR count (encourages reviewing different PRs)
+
+#### Technical Details
+
+- **Workflow File**: `.github/workflows/leaderboard-bot.yml`
+- **Trigger**: Runs on `pull_request_target` when a PR is opened
+- **Security**: Uses base repo permissions; does not check out or execute PR code
+- **Permissions**: `contents: read`, `pull-requests: write`, `issues: write`
+- **Data Source**: GitHub GraphQL API and REST API
+- **Timezone**: All dates use UTC for consistency
+
+#### Configuring the Leaderboard
+
+To modify leaderboard behavior, edit environment variables in `.github/workflows/leaderboard-bot.yml`:
+
+```yaml
+env:
+  CR_DISCUSSION_MODE: visible    # visible | hidden | separate
+  CR_DISCUSSION_POINTS: '0'      # Points per discussion
+  CR_DISCUSSION_DAILY_CAP: '7'   # Daily limit per user
+```
+
+#### Viewing Your Stats
+
+Your leaderboard stats are automatically posted when you open a PR. The comment shows:
+
+- Your current rank for the month
+- The user directly above you (if not #1)
+- The user directly below you (if not last)
+- Medal emoji if you're in the top 3
+- Detailed breakdown of your points by category
+
+The leaderboard updates monthly, with rankings reset at the start of each month (UTC).
+
 ---
 
 ## 💬 Community & Support
