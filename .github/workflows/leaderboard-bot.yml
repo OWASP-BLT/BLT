@@ -53,7 +53,7 @@ jobs:
             }
 
             // POLICY: auto-close new PRs if author already has >= 10 open PRs
-            const MAX_OPEN_PRS_PER_AUTHOR = 10;
+            const MAX_OPEN_PRS_PER_AUTHOR = 50;
             try {
               const searchRes = await github.rest.search.issuesAndPullRequests({
                 q: `repo:${owner}/${repo} is:pr is:open author:${prAuthor}`,
