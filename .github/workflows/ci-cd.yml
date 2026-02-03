@@ -444,35 +444,34 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
+      - name: Set CI environment variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=sqlite:///${{ github.workspace }}/ci_db.sqlite3" >> "$GITHUB_ENV"
+          echo "DEBUG=True" >> "$GITHUB_ENV"
       - name: Run collectstatic with test credentials
         shell: bash
         run: |
           set -euo pipefail
-          # Generate and export in the same step so poetry subprocess can see them
-          export SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
-          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
-          export DEBUG="True"
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
           echo "SECRET_KEY length: ${#SECRET_KEY}"
-          poetry run python manage.py collectstatic --noinput
+          # Pass env explicitly to poetry subprocess (GITHUB_ENV is set in previous step)
+          env SECRET_KEY="$SECRET_KEY" DATABASE_URL="$DATABASE_URL" DEBUG="$DEBUG" poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
         run: |
-          # Generate and export in the same step so poetry subprocess can see them
-          export SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
-          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
-          export DEBUG="True"
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
-          # PIPESTATUS[0] = test process exit code (we want that, not tee's)
+          env SECRET_KEY="$SECRET_KEY" DATABASE_URL="$DATABASE_URL" DEBUG="$DEBUG" poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
@@ -758,9 +757,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install poetry
-      - run: poetry lock
-        # Regenerate lock so libipld resolves to >=3.3.2 (3.3.1 is yanked on PyPI)
-
+      - name: Regenerate lock (libipld 3.3.1 yanked on PyPI; pyproject has >=3.3.2)
+        run: poetry lock
       - name: Set up Docker
         run: |
           docker --version
