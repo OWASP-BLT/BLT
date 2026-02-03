@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 
@@ -7,19 +8,29 @@ import environ
 
 # Initialize Sentry
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
-environ.Env.read_env()
+logger = logging.getLogger(__name__)
 
+# Compute BASE_DIR as the project root (parent of blt/)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 env = environ.Env()
-env_file = os.path.join(BASE_DIR, ".env")
-environ.Env.read_env(env_file)
 
-print(f"Reading .env file from {env_file}")
-print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
+# Load .env file if it exists, otherwise use environment variables only
+env_file = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_file):
+    environ.Env.read_env(env_file)
+    logger.debug("Loaded .env file from %s", env_file)
+else:
+    logger.debug("No .env file found; using environment variables only")
+
+if os.environ.get("DATABASE_URL"):
+    logger.debug("DATABASE_URL present")
+else:
+    logger.debug("DATABASE_URL not set")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
@@ -54,7 +65,28 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
+# SECRET_KEY must be set via environment variable for security (CWE-321)
+# See: https://cwe.mitre.org/data/definitions/321.html
+SECRET_KEY = (os.environ.get("SECRET_KEY") or "").strip()
+
+# If the stripped value is empty, raise ImproperlyConfigured
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        "SECRET_KEY environment variable is not set. "
+        "Please set SECRET_KEY in your .env file or environment variables. "
+        "For local development: copy .env.example to .env and generate a unique key. "
+        "For CI/testing: set SECRET_KEY in your CI environment variables. "
+        "Generate a secure key with: "
+        "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+    )
+
+# Enforce minimum length of 50 characters
+if len(SECRET_KEY) < 50:
+    raise ImproperlyConfigured(
+        f"SECRET_KEY must be at least 50 characters for security (current: {len(SECRET_KEY)}). "
+        "Generate a secure key with: "
+        "python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+    )
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
@@ -106,8 +138,8 @@ INSTALLED_APPS = (
 if DEBUG:
     INSTALLED_APPS += ("livereload",)
 
-SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
-SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
 
 
 MIDDLEWARE = [
@@ -132,8 +164,8 @@ MIDDLEWARE = [
 if DEBUG:
     MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
 
-BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
-BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
+BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="")
+BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
@@ -279,13 +311,13 @@ EMAIL_PORT = 1025
 EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
-REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
+REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "")
 
 if "DYNO" in os.environ:  # for Heroku
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
-    EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
-    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "blank")
+    EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "")
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
@@ -604,9 +636,9 @@ MDEDITOR_CONFIGS = {
 
 # SuperUser Details
 
-SUPERUSER_USERNAME = env("SUPERUSER", default="admin123")
-SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="admin123@gmail.com")
-SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
+SUPERUSER_USERNAME = env("SUPERUSER", default="")
+SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="")
+SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="")
 
 
 SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
@@ -628,8 +660,8 @@ ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 USPTO_API = os.environ.get("USPTO_API")
 
 
-BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
-BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
+BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "")
+BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 

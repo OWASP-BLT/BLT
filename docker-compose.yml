@@ -24,6 +24,8 @@ services:
         condition: service_healthy
     container_name: app
     restart: on-failure
+    # Load environment variables from .env file (including SECRET_KEY)
+    # SECRET_KEY must be set in .env file - see .env.example for details
     env_file:
       - .env
     volumes:
@@ -42,6 +44,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Load environment variables from .env file (including SECRET_KEY)
+    # SECRET_KEY must be set in .env file - see .env.example for details
     env_file:
       - .env
     volumes:

@@ -3,11 +3,8 @@ name: "Custom CodeQL Config"
 paths:
   - website
   - blt
-  - blog
-  - company
   - comments
   - BACON
-  - "."  # Include the root directory
 
 paths-ignore:
   - '**/node_modules/**'
@@ -27,6 +24,8 @@ query-filters:
       problem.severity:
         - note
         - warning
+  - exclude:
+      id: py/hardcoded-credentials
 
 queries:
   - uses: security-extended

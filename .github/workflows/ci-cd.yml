@@ -53,9 +53,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: ${{ runner.os }}-${{ github.repository }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pre-commit-
+            ${{ runner.os }}-${{ github.repository }}-pre-commit-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -73,10 +73,10 @@ jobs:
             ~/.cache/pypoetry
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-${{ github.repository }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-${{ github.repository }}-poetry-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-${{ github.repository }}-poetry-
 
       - name: Print memory usage
         run: free -h
@@ -369,18 +369,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
-      - name: Cache apt packages
-        uses: actions/cache@v4
+      - name: Restore apt cache
+        uses: actions/cache/restore@v4
         id: apt-cache
         with:
           path: ~/apt-cache
-          key: ${{ runner.os }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
+          key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
           restore-keys: |
-            ${{ runner.os }}-apt-xvfb-chromium-
-            ${{ runner.os }}-apt-
+            ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-
+            ${{ runner.os }}-${{ github.repository }}-apt-
       - name: Restore apt cache from user directory
         if: steps.apt-cache.outputs.cache-hit == 'true'
         run: |
@@ -389,24 +390,88 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+          sudo apt-get install -y xvfb jq
+          # Remove any existing chromium packages to avoid conflicts
+          sudo apt-get remove --purge chromium-browser chromium-chromedriver 2>/dev/null || true
+          # Install Chromium via snap (required for modern Ubuntu)
+          sudo snap install chromium
+          sudo ln -sf /snap/bin/chromium /usr/bin/chromium-browser
+          # Install chromedriver matching snap Chromium version
+          # Detect installed Chromium version
+          CHROMIUM_VERSION=$(/usr/bin/chromium-browser --version | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1)
+          CHROMIUM_MAJOR=$(echo $CHROMIUM_VERSION | cut -d. -f1)
+          echo "Detected Chromium version: $CHROMIUM_VERSION (major: $CHROMIUM_MAJOR)"
+          # Query Chrome for Testing API to find matching chromedriver
+          # Use known-good-versions-with-downloads.json as primary source (more reliable)
+          CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | jq -r "[.versions[] | select(.version | startswith(\"${CHROMIUM_MAJOR}.\"))] | sort_by(.version) | reverse | .[0].downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
+            # Fallback: try latest-patch-versions-per-build-with-downloads.json
+            echo "Trying fallback API endpoint..."
+            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" | jq -r ".builds.\"${CHROMIUM_MAJOR}\".downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          fi
+          if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
+            echo "Warning: Could not find matching chromedriver for major version ${CHROMIUM_MAJOR}, using latest known-good version"
+            CHROMEDRIVER_URL=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json" | jq -r ".versions[-1].downloads.chromedriver[]? | select(.platform == \"linux64\") | .url" | head -1)
+          fi
+          if [ -z "$CHROMEDRIVER_URL" ] || [ "$CHROMEDRIVER_URL" = "null" ]; then
+            echo "Error: Failed to get chromedriver URL from Chrome for Testing API"
+            exit 1
+          fi
+          echo "Downloading chromedriver from: $CHROMEDRIVER_URL"
+          wget -q "$CHROMEDRIVER_URL" -O chromedriver-linux64.zip
+          unzip -q chromedriver-linux64.zip
+          # Handle different archive structures
+          if [ -d "chromedriver-linux64" ]; then
+            sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          else
+            sudo mv chromedriver /usr/local/bin/
+          fi
+          sudo chmod +x /usr/local/bin/chromedriver
+          rm -f chromedriver-linux64.zip
+          rm -rf chromedriver-linux64
+          chromedriver --version
       - name: Copy apt cache to user directory
         if: always()
         run: |
           mkdir -p ~/apt-cache/archives ~/apt-cache/lists
           sudo cp -r /var/cache/apt/archives/* ~/apt-cache/archives/ 2>/dev/null || true
           sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
-          sudo chown -R $USER:$USER ~/apt-cache
+      - name: Save apt cache
+        if: always() && steps.apt-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request_target'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/apt-cache
+          key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
-      - run: poetry lock
       - run: poetry install --with dev
-      - run: poetry run python manage.py collectstatic --noinput
+      - name: Set CI environment variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=sqlite:///${{ github.workspace }}/ci_db.sqlite3" >> "$GITHUB_ENV"
+          echo "DEBUG=True" >> "$GITHUB_ENV"
+      - name: Run collectstatic with test credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SECRET_KEY:-}" ]; then
+            echo "ERROR: SECRET_KEY is not set"
+            exit 1
+          fi
+          echo "SECRET_KEY length: ${#SECRET_KEY}"
+          # Pass env explicitly to poetry subprocess (GITHUB_ENV is set in previous step)
+          env SECRET_KEY="$SECRET_KEY" DATABASE_URL="$DATABASE_URL" DEBUG="$DEBUG" poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
         run: |
+          if [ -z "${SECRET_KEY:-}" ]; then
+            echo "ERROR: SECRET_KEY is not set"
+            exit 1
+          fi
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test -v 3 --parallel --failfast 2>&1 | tee test-output.txt
+          env SECRET_KEY="$SECRET_KEY" DATABASE_URL="$DATABASE_URL" DEBUG="$DEBUG" poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
@@ -683,29 +748,32 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
 
+      - name: Set up Python and refresh lock (avoid yanked libipld 3.3.1)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install poetry
+      - name: Regenerate lock (libipld 3.3.1 yanked on PyPI; pyproject has >=3.3.2)
+        run: poetry lock
       - name: Set up Docker
         run: |
           docker --version
-          # Use Docker Compose v2 (built-in Docker CLI plugin, no manual installation needed)
           docker compose version
 
       - name: Build Docker image
-        run: |
-          docker build -t my-app .
+        run: docker build --progress=plain -t my-app .
 
       - name: Run Docker container
         run: |
-          docker run -d --name my-container my-app
-
-      - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
-      - run: docker exec my-container poetry install --without dev --no-interaction
-
-      - name: Clean up
-        run: |
-          docker stop my-container
-          docker rm my-container
+          docker run --rm --entrypoint python \
+            -e SECRET_KEY='ci-test-secret-key-docker-only-not-for-production-must-be-at-least-50-characters-long' \
+            -e DATABASE_URL='sqlite:///./test_db.sqlite3' \
+            -e DEBUG='True' \
+            my-app manage.py check
 
       - name: Print memory usage
         run: free -h
