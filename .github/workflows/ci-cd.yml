@@ -444,18 +444,16 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
-      - name: Generate CI SECRET_KEY
+      - name: Set CI environment variables
         shell: bash
         run: |
           set -euo pipefail
-          # Generate a secure secret and write it directly to the Actions environment so later steps see SECRET_KEY
+          # Write all CI env vars to GITHUB_ENV so every later step (and poetry subprocesses) see them
           echo "SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=sqlite:///${{ github.workspace }}/ci_db.sqlite3" >> "$GITHUB_ENV"
+          echo "DEBUG=True" >> "$GITHUB_ENV"
       - name: Run collectstatic with test credentials
         shell: bash
-        env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
-          DEBUG: 'True'
         run: |
           set -euo pipefail
           if [ -z "${SECRET_KEY:-}" ]; then
@@ -463,25 +461,17 @@ jobs:
             exit 1
           fi
           echo "SECRET_KEY length: ${#SECRET_KEY}"
-          # Pass env inline so poetry/Django subprocess always receives them
-          export SECRET_KEY DATABASE_URL DEBUG
-          SECRET_KEY="${SECRET_KEY}" DATABASE_URL="${DATABASE_URL}" DEBUG="${DEBUG}" poetry run python manage.py collectstatic --noinput
+          poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
-        env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
-          DEBUG: 'True'
         run: |
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
-          # Pass env inline so poetry/Django subprocess always receives them (piped subshells may not inherit step env)
-          export SECRET_KEY DATABASE_URL DEBUG
           set +e
-          SECRET_KEY="${SECRET_KEY}" DATABASE_URL="${DATABASE_URL}" DEBUG="${DEBUG}" poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
+          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
@@ -761,6 +751,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
+
+      - name: Set up Python and refresh lock (avoid yanked libipld 3.3.1)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install poetry
+      - run: poetry lock
+        # Regenerate lock so libipld resolves to >=3.3.2 (3.3.1 is yanked on PyPI)
 
       - name: Set up Docker
         run: |
