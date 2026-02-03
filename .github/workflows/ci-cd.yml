@@ -444,20 +444,14 @@ jobs:
           key: ${{ runner.os }}-${{ github.repository }}-apt-xvfb-chromium-${{ hashFiles('.github/workflows/ci-cd.yml') }}
       - run: pip install poetry
       - run: poetry install --with dev
-      - name: Set CI environment variables
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Write all CI env vars to GITHUB_ENV so every later step (and poetry subprocesses) see them
-          echo "SECRET_KEY=$(openssl rand -base64 60 | tr -d '\n')" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=sqlite:///${{ github.workspace }}/ci_db.sqlite3" >> "$GITHUB_ENV"
-          echo "DEBUG=True" >> "$GITHUB_ENV"
       - name: Run collectstatic with test credentials
         shell: bash
         run: |
           set -euo pipefail
-          # Re-export so poetry subprocess definitely sees them (GITHUB_ENV is for subsequent steps)
-          export SECRET_KEY DATABASE_URL DEBUG
+          # Generate and export in the same step so poetry subprocess can see them
+          export SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
+          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
+          export DEBUG="True"
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
@@ -468,8 +462,10 @@ jobs:
         id: run-tests
         shell: bash
         run: |
-          # Re-export so poetry subprocess definitely sees them
-          export SECRET_KEY DATABASE_URL DEBUG
+          # Generate and export in the same step so poetry subprocess can see them
+          export SECRET_KEY="$(openssl rand -base64 60 | tr -d '\n')"
+          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
+          export DEBUG="True"
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
