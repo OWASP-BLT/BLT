@@ -456,6 +456,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Re-export so poetry subprocess definitely sees them (GITHUB_ENV is for subsequent steps)
+          export SECRET_KEY DATABASE_URL DEBUG
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
@@ -466,13 +468,16 @@ jobs:
         id: run-tests
         shell: bash
         run: |
+          # Re-export so poetry subprocess definitely sees them
+          export SECRET_KEY DATABASE_URL DEBUG
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
           set +e
           poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
-          echo "exit_code=${PIPESTATUS}" >> $GITHUB_OUTPUT
+          # PIPESTATUS[0] = test process exit code (we want that, not tee's)
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
       - name: Upload test output
