@@ -458,11 +458,14 @@ jobs:
           DEBUG: 'True'
         run: |
           set -euo pipefail
-          # Ensure SECRET_KEY is present (and persist for later steps)
+          # Ensure SECRET_KEY is present and export so env propagates to poetry subprocess
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
+          export SECRET_KEY="${SECRET_KEY}"
+          export DATABASE_URL="${DATABASE_URL}"
+          export DEBUG="${DEBUG}"
           echo "SECRET_KEY length: ${#SECRET_KEY}"
           poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -475,6 +478,8 @@ jobs:
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
+          # Explicit export so env propagates to poetry subprocess (piped subshells may not inherit step env)
+          export SECRET_KEY="${SECRET_KEY}"
           export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
           export DEBUG='True'
           set +e
