@@ -458,32 +458,30 @@ jobs:
           DEBUG: 'True'
         run: |
           set -euo pipefail
-          # Ensure SECRET_KEY is present and export so env propagates to poetry subprocess
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
-          export SECRET_KEY="${SECRET_KEY}"
-          export DATABASE_URL="${DATABASE_URL}"
-          export DEBUG="${DEBUG}"
           echo "SECRET_KEY length: ${#SECRET_KEY}"
-          poetry run python manage.py collectstatic --noinput
+          # Pass env inline so poetry/Django subprocess always receives them
+          export SECRET_KEY DATABASE_URL DEBUG
+          SECRET_KEY="${SECRET_KEY}" DATABASE_URL="${DATABASE_URL}" DEBUG="${DEBUG}" poetry run python manage.py collectstatic --noinput
       - name: Run tests
         id: run-tests
         shell: bash
         env:
           SECRET_KEY: ${{ env.SECRET_KEY }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/ci_db.sqlite3
+          DEBUG: 'True'
         run: |
           if [ -z "${SECRET_KEY:-}" ]; then
             echo "ERROR: SECRET_KEY is not set"
             exit 1
           fi
-          # Explicit export so env propagates to poetry subprocess (piped subshells may not inherit step env)
-          export SECRET_KEY="${SECRET_KEY}"
-          export DATABASE_URL="sqlite:///${{ github.workspace }}/ci_db.sqlite3"
-          export DEBUG='True'
+          # Pass env inline so poetry/Django subprocess always receives them (piped subshells may not inherit step env)
+          export SECRET_KEY DATABASE_URL DEBUG
           set +e
-          poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
+          SECRET_KEY="${SECRET_KEY}" DATABASE_URL="${DATABASE_URL}" DEBUG="${DEBUG}" poetry run xvfb-run --auto-servernum python manage.py test --exclude-tag=selenium --exclude-tag=slow -v 2 --failfast 2>&1 | tee test-output.txt
           echo "exit_code=${PIPESTATUS}" >> $GITHUB_OUTPUT
           exit 0
         continue-on-error: true
