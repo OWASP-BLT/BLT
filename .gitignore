@@ -25,3 +25,23 @@ google-credentials.json
 
 
 .env
+.venv/
+
+# Local virtualenv
+
+# Keep these files unchanged from main branch (project freshness feature)
+website/models.py
+website/api/views.py
+website/serializers.py
+website/admin.py
+website/management/commands/update_project_freshness.py
+website/management/commands/run_daily.py
+website/migrations/0264_project_freshness.py
+website/migrations/0265_project_contributors_alter_project_freshness.py
+website/migrations/0266_project_freshness_checkconstraint.py
+website/migrations/0267_remove_project_freshness_0_100_range.py
+website/tests/test_hybrid_spec_verification.py
+website/tests/test_project_freshness_edge.py
+website/tests/test_project_freshness_fuzz.py
+website/tests/test_project_freshness_property.py
+website/tests/test_project_freshness_combined.py

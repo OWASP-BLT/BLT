@@ -437,14 +437,14 @@ class UserProfileDetailView(DetailView):
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:3]
         context["activity_screenshots"] = {}
-        screenshots = IssueScreenshot.objects.filter(issue__in=context["activities"]).select_related("issue")
-        context["activity_screenshots"] = {s.issue: s for s in screenshots}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
@@ -457,26 +457,25 @@ class UserProfileDetailView(DetailView):
             .order_by()
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
-        bug_counts = Issue.objects.filter(user=self.object, hunt=None).values("label").annotate(count=Count("id"))
-        bug_count_map = {item["label"]: item["count"] for item in bug_counts}
-        for i in range(7):
-            context[f"bug_type_{i}_count"] = bug_count_map.get(str(i), 0)
-        bug_qs = Issue.objects.filter(user=self.object, hunt=None)
-        for i in range(7):
-            context[f"bug_type_{i}"] = bug_qs.filter(label=str(i))
+        for i in range(0, 7):
+            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
 
         arr = []
-        allFollowers = user.userprofile.follower.select_related("user").all()
-        context["followers"] = [up.user for up in allFollowers]
+        allFollowers = user.userprofile.follower.all()
+        for userprofile in allFollowers:
+            arr.append(User.objects.get(username=str(userprofile.user)))
+        context["followers"] = arr
 
         arr = []
-        allFollowing = user.userprofile.follows.select_related("user").all()
-        context["following"] = [up.user for up in allFollowing]
+        allFollowing = user.userprofile.follows.all()
+        for userprofile in allFollowing:
+            arr.append(User.objects.get(username=str(userprofile.user)))
+        context["following"] = arr
 
-        context["followers_list"] = [up.user.email for up in allFollowers]
+        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         # tags
-        context["user_related_tags"] = user.userprofile.tags.all()
+        context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         # pull request info
         stats = get_github_stats(user.userprofile)
@@ -513,14 +512,6 @@ class LeaderboardBase:
         if year and month:
             data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
 
-        # Bot identifiers to exclude from leaderboard
-        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
-
-        # Create dynamic bot exclusion query
-        bot_exclusions = Q()
-        for bot in bots:
-            bot_exclusions |= Q(username__icontains=bot)
-
         data = (
             data.annotate(total_score=Sum("points__score"))
             .order_by("-total_score")
@@ -529,7 +520,6 @@ class LeaderboardBase:
                 username__isnull=False,
             )
             .exclude(username="")
-            .exclude(bot_exclusions)  # Exclude bot users
         )
         if api:
             return data.values("id", "username", "total_score")
@@ -586,7 +576,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
@@ -595,14 +585,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Filter for PRs merged in the last 6 months
         from dateutil.relativedelta import relativedelta
 
-        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
         since_date = timezone.now() - relativedelta(months=6)
-
-        # Create dynamic bot exclusion query
-        bot_exclusions = Q()
-        for bot in bots:
-            bot_exclusions |= Q(contributor__name__icontains=bot)
-
         pr_leaderboard = (
             GitHubIssue.objects.filter(
                 type="pull_request",
@@ -614,7 +597,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
-            .exclude(bot_exclusions)  # Exclude bot contributors
+            .exclude(contributor__name__icontains="copilot")  # Exclude copilot contributors
             .select_related("contributor", "user_profile__user")
             .values(
                 "contributor__name",
@@ -630,11 +613,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Code Review Leaderboard - Use reviewer_contributor
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
         # Filter for reviews on PRs merged in the last 6 months
-        # Create bot exclusion query for reviewers
-        reviewer_bot_exclusions = Q()
-        for bot in bots:
-            reviewer_bot_exclusions |= Q(reviewer_contributor__name__icontains=bot)
-
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer_contributor__isnull=False,
@@ -644,7 +622,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
-            .exclude(reviewer_bot_exclusions)  # Exclude bot reviewers
             .select_related("reviewer_contributor", "reviewer__user")
             .values(
                 "reviewer_contributor__name",
@@ -681,7 +658,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         year = self.request.GET.get("year")
 
@@ -732,7 +709,7 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
@@ -969,44 +946,42 @@ def contributor_stats_view(request):
             )
             .order_by("-total_commits")
         )
-        contributor_ids = [s["contributor"] for s in stats_query]
-
-        contributors = Contributor.objects.in_bulk(contributor_ids)
 
         for stat in stats_query:
-            contributor = contributors.get(stat["contributor"])
-            if not contributor:
+            try:
+                contributor = Contributor.objects.get(id=stat["contributor"])
+
+                # Calculate impact score
+                impact_score = (
+                    stat["total_commits"] * 5
+                    + stat["total_prs"] * 3
+                    + stat["total_issues_opened"] * 2
+                    + stat["total_issues_closed"] * 2
+                    + stat["total_comments"]
+                )
+
+                # Determine impact level
+                if impact_score > 200:
+                    impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
+                elif impact_score > 100:
+                    impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
+                else:
+                    impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+
+                contributor_stats.append(
+                    {
+                        "contributor": contributor,
+                        "commits": stat["total_commits"] or 0,
+                        "issues_opened": stat["total_issues_opened"] or 0,
+                        "issues_closed": stat["total_issues_closed"] or 0,
+                        "pull_requests": stat["total_prs"] or 0,
+                        "comments": stat["total_comments"] or 0,
+                        "impact_score": impact_score,
+                        "impact_level": impact_level,
+                    }
+                )
+            except Contributor.DoesNotExist:
                 continue
-
-            # Calculate impact score
-            impact_score = (
-                stat["total_commits"] * 5
-                + stat["total_prs"] * 3
-                + stat["total_issues_opened"] * 2
-                + stat["total_issues_closed"] * 2
-                + stat["total_comments"]
-            )
-
-            # Determine impact level
-            if impact_score > 200:
-                impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
-            elif impact_score > 100:
-                impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
-            else:
-                impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
-
-            contributor_stats.append(
-                {
-                    "contributor": contributor,
-                    "commits": stat["total_commits"] or 0,
-                    "issues_opened": stat["total_issues_opened"] or 0,
-                    "issues_closed": stat["total_issues_closed"] or 0,
-                    "pull_requests": stat["total_prs"] or 0,
-                    "comments": stat["total_comments"] or 0,
-                    "impact_score": impact_score,
-                    "impact_level": impact_level,
-                }
-            )
     except Exception as e:
         logger.error(f"Error fetching contributor stats: {e}")
 
@@ -1024,37 +999,27 @@ def contributor_stats_view(request):
 
     # Get weekly leaderboard - top users by points earned in the time period
     leaderboard = []
-
     try:
         leaderboard_query = (
             Points.objects.filter(created__gte=start_date, created__lte=end_date)
             .values("user")
             .annotate(total_points=Sum("score"))
-            .order_by("-total_points")[:10]
+            .order_by("-total_points")[:10]  # Top 10 contributors
         )
 
-        user_ids = [entry["user"] for entry in leaderboard_query]
-
-        users = User.objects.in_bulk(user_ids)
-        profiles = {p.user_id: p for p in UserProfile.objects.filter(user_id__in=user_ids)}
-
         for entry in leaderboard_query:
-            user_id = entry["user"]
-
-            user = users.get(user_id)
-            user_profile = profiles.get(user_id)
-
-            if not user or not user_profile:
+            try:
+                user = User.objects.get(id=entry["user"])
+                user_profile = UserProfile.objects.get(user=user)
+                leaderboard.append(
+                    {
+                        "user": user,
+                        "user_profile": user_profile,
+                        "total_points": entry["total_points"],
+                    }
+                )
+            except (User.DoesNotExist, UserProfile.DoesNotExist):
                 continue
-
-            leaderboard.append(
-                {
-                    "user": user,
-                    "user_profile": user_profile,
-                    "total_points": entry["total_points"],
-                }
-            )
-
     except Exception as e:
         logger.error(f"Error fetching leaderboard: {e}")
 
@@ -1085,15 +1050,10 @@ def contributor_stats_view(request):
     return render(request, "weekly_activity.html", context)
 
 
-@login_required
 def create_wallet(request):
-    if not request.user.is_staff:
-        return JsonResponse({"error": "Unauthorized"}, status=403)
-    existing_wallet_user_ids = Wallet.objects.values_list("user_id", flat=True)
-    users_without_wallets = User.objects.exclude(id__in=existing_wallet_user_ids)
-    wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
-    Wallet.objects.bulk_create(wallets_to_create)
-    return JsonResponse(f"Created {len(wallets_to_create)} wallets", safe=False)
+    for user in User.objects.all():
+        Wallet.objects.get_or_create(user=user)
+    return JsonResponse("Created", safe=False)
 
 
 def create_tokens(request):

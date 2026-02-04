@@ -2,16 +2,16 @@
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
-{% block title %}Home - Gamified Crowd-Sourced QA Testing{% endblock %}
+{% block title %}Home - Bug Logging Tool{% endblock %}
 {% block description %}
-    Welcome to OWASP {% env 'PROJECT_NAME' %}, a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Earn rewards through AI-powered testing tools.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
 {% endblock %}
 {% block keywords %}
-    QA Testing, Bug Logging Tool, OWASP, security, vulnerability disclosure, gamified testing, rewards, open source, community, AI tools, git repositories
+    Bug Logging Tool, OWASP, security, bug reporting, rewards, open source, community, web security, contributions
 {% endblock %}
-{% block og_title %}Home - Gamified Crowd-Sourced QA Testing{% endblock %}
+{% block og_title %}Home - Bug Logging Tool{% endblock %}
 {% block og_description %}
-    Welcome to OWASP {% env 'PROJECT_NAME' %}, a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Earn rewards through AI-powered testing tools.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
 {% endblock %}
 {% block content %}
     <!-- Include Sidebar -->
@@ -1279,12 +1279,6 @@
                     <a href="https://x.com/OWASP_BLT" target="_blank"><i class="fab fa-x-twitter fa-2x"></i></a>
                     <a href="https://github.com/OWASP-BLT" target="_blank"><i class="fab fa-github fa-2x"></i></a>
                 </div>
-                <!-- Email Support -->
-                <p class="mt-4 text-sm">
-                    Need help? Email us at
-                    <a href="mailto:blt-support@owasp.org"
-                       class="text-red-500 hover:underline">blt-support@owasp.org</a>
-                </p>
                 <p class="mt-4">© {{ current_year }} OWASP BLT. All rights reserved.</p>
                 <p>Last commit: {{ last_commit }}</p>
             </div>

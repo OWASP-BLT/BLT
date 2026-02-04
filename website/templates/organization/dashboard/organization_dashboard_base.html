@@ -62,29 +62,6 @@
         {% if request.resolver_match.kwargs.id %}
             <div class="w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
                 <div class="w-full px-4 sm:px-6 lg:px-8">
-                    <!-- Organization Switcher and Navigation Container -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-3">
-                        <!-- Organization Switcher (only show if user has multiple organizations) -->
-                        {% if organizations and organizations|length > 1 %}
-                            <div class="flex-shrink-0">
-                                <label for="organization-switcher" class="sr-only">Switch Organization</label>
-                                <select id="organization-switcher"
-                                        class="block w-full sm:w-64 rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 dark:text-gray-100 dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-[#e74c3c] text-sm">
-                                    {% for org in organizations %}
-                                        <option value="{{ org.id }}"
-                                                {% if org.id == organization %}selected{% endif %}>
-                                            {{ org.name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        {% elif organization_obj %}
-                            <!-- Show org name when user only has one organization -->
-                            <div class="flex-shrink-0">
-                                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ organization_obj.name }}</h2>
-                            </div>
-                        {% endif %}
-                    </div>
                     <nav class="flex overflow-x-auto scrollbar-none -mb-px"
                          aria-label="Dashboard navigation">
                         <a href="{% url 'organization_analytics' request.resolver_match.kwargs.id %}"

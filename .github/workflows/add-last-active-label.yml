@@ -79,16 +79,25 @@ jobs:
               let lastActivityTimestamp;
               try {
                 // Fetch regular issue/PR comments
-                const comments = await github.rest.issues.listComments({
-                  owner,
-                  repo,
-                  issue_number: itemNumber,
-                  per_page: 1,
-                  sort: 'created',
-                  direction: 'desc'
-                });
-                
-                let lastCommentTime = comments.data.length > 0 ? new Date(comments.data[0].created_at) : null;
+                // Paginate all comments and pick the latest by created_at
+                const allComments = await github.paginate(
+                  github.rest.issues.listComments,
+                  {
+                    owner,
+                    repo,
+                    issue_number: itemNumber,
+                    per_page: 100
+                  }
+                );
+                let lastCommentTime = null;
+                if (allComments.length > 0) {
+                  // Find the comment with the latest created_at (or highest id as fallback)
+                  lastCommentTime = new Date(
+                    allComments.reduce((a, b) =>
+                      new Date(a.created_at) > new Date(b.created_at) ? a : b
+                    ).created_at
+                  );
+                }
                 
                 // For PRs, also check review comments (inline code comments)
                 if (item.pull_request) {
