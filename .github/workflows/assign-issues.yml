@@ -6,7 +6,7 @@ on:
   pull_request_review_comment:
     types: [created]
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       pull-requests: write
     steps:
       - name: OWASP BLT Action
-        uses: OWASP-BLT/BLT-Action@main
+        uses: OWASP-BLT/BLT-Action@73d3989a927a58ac1c4d7d5557e75e1f943908a8
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
             giphy-api-key: ${{ secrets.GIPHY_KEY }}
