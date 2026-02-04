@@ -1,0 +1,8 @@
+{
+  "action": "opened",
+  "pull_request": {
+    "head": {
+      "ref": "test\"; echo 'PoC: Command Injection Detected' #"
+    }
+  }
+}

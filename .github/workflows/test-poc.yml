@@ -1,0 +1,12 @@
+name: Test PoC
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print ref
+        run: echo "Branch ref: ${{ github.event.pull_request.head.ref }}"
+
+
+
