@@ -130,6 +130,7 @@ class Command(LoggedBaseCommand):
             Domain.objects.exclude(id__in=preserved_domains).delete()
             UserBadge.objects.exclude(user__in=preserved_users).delete()
             Organization.objects.exclude(id__in=preserved_orgs).delete()
+            User.objects.exclude(id__in=preserve_user_ids).delete()
             return
 
         # First delete models that depend on other models
@@ -360,7 +361,10 @@ class Command(LoggedBaseCommand):
     def create_badges(self, count=10):
         badges = []
         for i in range(count):
-            badge = Badge.objects.create(title=f"Badge {i+1}", description=random_sentence(), type="automatic")
+            badge, _ = Badge.objects.get_or_create(
+                title=f"Badge {i+1}",
+                defaults={"description": random_sentence(), "type": "automatic"},
+            )
             badges.append(badge)
         return badges
 
@@ -378,7 +382,7 @@ class Command(LoggedBaseCommand):
     def create_tags(self, count=20):
         tags = []
         for i in range(count):
-            tag = Tag.objects.create(name=f"tag_{i+1}")
+            tag, _ = Tag.objects.get_or_create(name=f"tag_{i+1}")
             tags.append(tag)
         return tags
 
