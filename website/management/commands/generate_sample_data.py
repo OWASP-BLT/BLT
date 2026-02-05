@@ -100,14 +100,14 @@ class Command(LoggedBaseCommand):
         Badge.objects.all().delete()
         Tag.objects.all().delete()
 
+        # Delete organizations before users to avoid redundant cascades
+        Organization.objects.all().delete()
+
         # Delete users (cascades to profiles), but preserve selected users
         if preserve_user_ids:
             User.objects.exclude(id__in=preserve_user_ids).delete()
         else:
             User.objects.all().delete()
-
-        # Finally delete organizations
-        Organization.objects.all().delete()
 
     def create_users(self, count):
         users = []
@@ -336,19 +336,8 @@ class Command(LoggedBaseCommand):
             tags.append(tag)
         return tags
 
-    def create_repos(self, organizations, count=30):
+    def create_repos(self, projects, count=30):
         repos = []
-        projects = []
-
-        # First create projects
-        for i in range(count // 2):  # Create half as many projects as repos
-            project = Project.objects.create(
-                name=f"Project {i+1}",
-                description=random_sentence(),
-                organization=random.choice(organizations),
-                url=f"https://project-{i+1}.example.com",
-            )
-            projects.append(project)
 
         # Then create repos
         for i in range(count):
@@ -402,7 +391,7 @@ class Command(LoggedBaseCommand):
         self.create_hunts(users, 10)
 
         self.stdout.write("Creating projects...")
-        self.create_projects(organizations, 15)
+        projects = self.create_projects(organizations, 15)
 
         self.stdout.write("Creating points...")
         self.create_points(users, 100)
@@ -420,7 +409,7 @@ class Command(LoggedBaseCommand):
         self.create_tags(20)
 
         self.stdout.write("Creating repos...")
-        repos = self.create_repos(organizations, 30)
+        repos = self.create_repos(projects, 30)
 
         self.stdout.write("Creating PRs...")
         pull_requests = self.create_pull_requests(users, repos, 30)
