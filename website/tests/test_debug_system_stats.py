@@ -103,7 +103,6 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["success"])
 
     @override_settings(DEBUG=True)
-    @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")
     def test_populate_data_calls_generate_sample_data(self, mock_call_command):
         """Test populate data triggers generate_sample_data command"""
