@@ -1950,11 +1950,15 @@ class DebugPopulateDataApiView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             preserve_user_ids = [request.user.id] if request.user and request.user.is_authenticated else []
+            command_args = []
+            if preserve_user_ids:
+                for user_id in preserve_user_ids:
+                    command_args.extend(["--preserve-user-id", str(user_id)])
+            command_args.append("--preserve-superusers")
             call_command(
                 "generate_sample_data",
+                *command_args,
                 verbosity=0,
-                preserve_superusers=True,
-                preserve_user_id=preserve_user_ids,
             )
 
             return Response({"success": True, "message": "Sample data populated successfully"})

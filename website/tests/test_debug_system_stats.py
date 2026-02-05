@@ -103,17 +103,19 @@ class DebugPanelAPITest(TestCase):
         self.assertTrue(data["success"])
 
     @override_settings(DEBUG=True)
-    def test_populate_data_missing_fixture_returns_404(self):
-        """Test that missing fixture file returns 404 and error payload"""
+    @override_settings(DEBUG=True)
+    @patch("website.api.views.call_command")
+    def test_populate_data_calls_generate_sample_data(self, mock_call_command):
+        """Test populate data triggers generate_sample_data command"""
         self.reload_urls()
         self.client.force_authenticate(self.user)
 
-        with patch("website.api.views.os.path.exists", return_value=False):
-            response = self.client.post(reverse("api_debug_populate_data"))
+        response = self.client.post(reverse("api_debug_populate_data"))
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        data = response.json()
-        self.assertFalse(data["success"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_call_command.assert_called()
+        args, kwargs = mock_call_command.call_args
+        self.assertIn("generate_sample_data", args)
 
     @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")

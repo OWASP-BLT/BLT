@@ -74,16 +74,17 @@ class Command(LoggedBaseCommand):
             "--preserve-user-id",
             action="append",
             type=int,
-            default=[],
+            default=None,
             help="User ID to preserve (can be provided multiple times).",
         )
 
-    def clear_existing_data(self, preserve_user_ids=None):
+    def clear_existing_data(self, preserve_user_ids=None, preserve_superusers=False):
         """Clear all existing data from the models we're generating"""
         self.stdout.write("Clearing existing data...")
 
         preserve_user_ids = {user_id for user_id in (preserve_user_ids or []) if user_id}
-        preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
+        if preserve_superusers:
+            preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
 
         # First delete models that depend on other models
         Activity.objects.all().delete()
@@ -377,10 +378,13 @@ class Command(LoggedBaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Generating sample data...")
 
-        preserve_user_ids = {user_id for user_id in options.get("preserve_user_id", []) if user_id}
-        preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
+        preserve_user_ids = {user_id for user_id in (options.get("preserve_user_id") or []) if user_id}
+        preserve_superusers = bool(options.get("preserve_superusers"))
 
-        self.clear_existing_data(preserve_user_ids=preserve_user_ids)
+        self.clear_existing_data(
+            preserve_user_ids=preserve_user_ids,
+            preserve_superusers=preserve_superusers,
+        )
 
         self.stdout.write("Creating sample users...")
         users = self.create_users(10)
