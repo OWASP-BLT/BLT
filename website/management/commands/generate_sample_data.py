@@ -64,9 +64,26 @@ def random_sentence(word_count=6):
 class Command(LoggedBaseCommand):
     help = "Generate sample data for testing"
 
-    def clear_existing_data(self):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--preserve-superusers",
+            action="store_true",
+            help="Preserve existing superuser accounts.",
+        )
+        parser.add_argument(
+            "--preserve-user-id",
+            action="append",
+            type=int,
+            default=[],
+            help="User ID to preserve (can be provided multiple times).",
+        )
+
+    def clear_existing_data(self, preserve_user_ids=None):
         """Clear all existing data from the models we're generating"""
         self.stdout.write("Clearing existing data...")
+
+        preserve_user_ids = {user_id for user_id in (preserve_user_ids or []) if user_id}
+        preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
 
         # First delete models that depend on other models
         Activity.objects.all().delete()
@@ -82,8 +99,11 @@ class Command(LoggedBaseCommand):
         Badge.objects.all().delete()
         Tag.objects.all().delete()
 
-        # Delete users (cascades to profiles)
-        User.objects.all().delete()
+        # Delete users (cascades to profiles), but preserve selected users
+        if preserve_user_ids:
+            User.objects.exclude(id__in=preserve_user_ids).delete()
+        else:
+            User.objects.all().delete()
 
         # Finally delete organizations
         Organization.objects.all().delete()
@@ -357,7 +377,10 @@ class Command(LoggedBaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Generating sample data...")
 
-        self.clear_existing_data()
+        preserve_user_ids = {user_id for user_id in options.get("preserve_user_id", []) if user_id}
+        preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
+
+        self.clear_existing_data(preserve_user_ids=preserve_user_ids)
 
         self.stdout.write("Creating sample users...")
         users = self.create_users(10)
