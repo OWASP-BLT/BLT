@@ -1949,12 +1949,11 @@ class DebugPopulateDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            preserve_user_ids = [request.user.id] if request.user and request.user.is_authenticated else []
-            command_args = []
-            if preserve_user_ids:
-                for user_id in preserve_user_ids:
-                    command_args.extend(["--preserve-user-id", str(user_id)])
-            command_args.append("--preserve-superusers")
+            command_args = [
+                "--preserve-user-id",
+                str(request.user.id),
+                "--preserve-superusers",
+            ]
             call_command(
                 "generate_sample_data",
                 *command_args,
@@ -1963,7 +1962,7 @@ class DebugPopulateDataApiView(APIView):
 
             return Response({"success": True, "message": "Sample data populated successfully"})
         except Exception as e:
-            logger.error("Error populating test data: %s", e, exc_info=True)
+            logger.error("Error populating sample data: %s", e, exc_info=True)
             return Response(
                 {"success": False, "error": "Failed to populate sample data. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

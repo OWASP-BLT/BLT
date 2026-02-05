@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
@@ -21,6 +22,7 @@ from website.models import (
     Repo,
     Tag,
     UserBadge,
+    UserProfile,
 )
 
 
@@ -85,6 +87,50 @@ class Command(LoggedBaseCommand):
         preserve_user_ids = {user_id for user_id in (preserve_user_ids or []) if user_id}
         if preserve_superusers:
             preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
+
+        if preserve_user_ids:
+            preserved_users = User.objects.filter(id__in=preserve_user_ids)
+            preserved_profiles = UserProfile.objects.filter(user__in=preserved_users)
+            preserved_orgs = Organization.objects.filter(
+                models.Q(admin__in=preserved_users) | models.Q(managers__in=preserved_users)
+            ).distinct()
+            preserved_domains = Domain.objects.filter(
+                models.Q(organization__in=preserved_orgs) | models.Q(managers__in=preserved_users)
+            ).distinct()
+            preserved_hunts = Hunt.objects.filter(domain__in=preserved_domains)
+            preserved_projects = Project.objects.filter(organization__in=preserved_orgs)
+            preserved_repos = Repo.objects.filter(
+                models.Q(organization__in=preserved_orgs) | models.Q(project__in=preserved_projects)
+            ).distinct()
+            preserved_issues = Issue.objects.filter(
+                models.Q(user__in=preserved_users)
+                | models.Q(team_members__in=preserved_users)
+                | models.Q(domain__in=preserved_domains)
+                | models.Q(hunt__in=preserved_hunts)
+            ).distinct()
+            preserved_gh_issues = GitHubIssue.objects.filter(
+                models.Q(user_profile__in=preserved_profiles) | models.Q(repo__in=preserved_repos)
+            ).distinct()
+            preserved_reviews = GitHubReview.objects.filter(
+                models.Q(reviewer__in=preserved_profiles) | models.Q(pull_request__in=preserved_gh_issues)
+            ).distinct()
+
+            Activity.objects.exclude(user__in=preserved_users).delete()
+            Points.objects.exclude(
+                models.Q(user__in=preserved_users)
+                | models.Q(issue__in=preserved_issues)
+                | models.Q(domain__in=preserved_domains)
+            ).delete()
+            Issue.objects.exclude(id__in=preserved_issues).delete()
+            Hunt.objects.exclude(id__in=preserved_hunts).delete()
+            Repo.objects.exclude(id__in=preserved_repos).delete()
+            Project.objects.exclude(id__in=preserved_projects).delete()
+            GitHubIssue.objects.exclude(id__in=preserved_gh_issues).delete()
+            GitHubReview.objects.exclude(id__in=preserved_reviews).delete()
+            Domain.objects.exclude(id__in=preserved_domains).delete()
+            UserBadge.objects.exclude(user__in=preserved_users).delete()
+            Organization.objects.exclude(id__in=preserved_orgs).delete()
+            return
 
         # First delete models that depend on other models
         Activity.objects.all().delete()
@@ -377,6 +423,9 @@ class Command(LoggedBaseCommand):
 
         self.stdout.write("Creating sample users...")
         users = self.create_users(10)
+        if preserve_user_ids:
+            preserved_users = list(User.objects.filter(id__in=preserve_user_ids))
+            users.extend([user for user in preserved_users if user not in users])
 
         self.stdout.write("Creating organizations...")
         organizations = self.create_organizations(5)
