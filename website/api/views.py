@@ -724,7 +724,25 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    http_method_names = ("get", "post")
+    http_method_names = ("get", "head")
+
+    def _serialize_projects(self, projects):
+        """Return consistent contributor-enriched project data."""
+        output = []
+        for project in projects:
+            contributors_qs = getattr(project, "contributors", None)
+
+            if contributors_qs:
+                contributors_data = ContributorSerializer(contributors_qs.all(), many=True).data
+                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+            else:
+                contributors_data = []
+
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
+            output.append(project_info)
+
+        return output
 
     def list(self, request, *args, **kwargs):
         """List projects with optional filtering by freshness, stars, and forks."""
@@ -732,6 +750,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
+        if hasattr(Project, "contributors"):
+            projects = projects.prefetch_related("contributors")
 
         # Freshness filtering
         freshness = request.query_params.get("freshness")
@@ -787,41 +807,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # Apply pagination
         page = self.paginate_queryset(projects)
         if page is not None:
-            # Serialize paginated projects
-            project_data = []
-            for project in page:
-                contributors_data = []
-                contributors_manager = getattr(project, "contributors", None)
-                if contributors_manager:
-                    for contributor in contributors_manager.all():
-                        contributor_info = ContributorSerializer(contributor)
-                        contributors_data.append(contributor_info.data)
-
-                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-
-                project_info = ProjectSerializer(project).data
-                project_info["contributors"] = contributors_data
-                project_data.append(project_info)
-
-            # Return paginated response
+            # Use helper method instead of manual loop
+            project_data = self._serialize_projects(page)
             return self.get_paginated_response(project_data)
 
         # Fallback if pagination is disabled (shouldn't happen with current config)
-        project_data = []
-        for project in projects:
-            contributors_data = []
-            contributors_manager = getattr(project, "contributors", None)
-            if contributors_manager:
-                for contributor in contributors_manager.all():
-                    contributor_info = ContributorSerializer(contributor)
-                    contributors_data.append(contributor_info.data)
-
-            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
+        # Use helper method instead of manual loop
+        project_data = self._serialize_projects(projects)
         return Response({"count": len(project_data), "projects": project_data})
 
     @action(detail=False, methods=["get"])
@@ -830,9 +822,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
 
         projects_qs = Project.objects.annotate(
-            total_stars=Coalesce(Sum("repos__stars"), 0),
-            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
+        if hasattr(Project, "contributors"):
+            projects = projects.prefetch_related("contributors")
 
         projects = projects_qs.filter(
             Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
@@ -841,37 +835,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # Apply pagination
         page = self.paginate_queryset(projects)
         if page is not None:
-            # Serialize paginated projects
-            project_data = []
-            for project in page:
-                contributors_data = []
-                for contributor in project.contributors.all():
-                    contributor_info = ContributorSerializer(contributor)
-                    contributors_data.append(contributor_info.data)
-
-                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-
-                project_info = ProjectSerializer(project).data
-                project_info["contributors"] = contributors_data
-                project_data.append(project_info)
-
-            # Return paginated response
+            # Use helper method instead of manual loop
+            project_data = self._serialize_projects(page)
             return self.get_paginated_response(project_data)
 
         # Fallback if pagination is disabled
-        project_data = []
-        for project in projects:
-            contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-
-            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
+        # Use helper method instead of manual loop
+        project_data = self._serialize_projects(projects)
         return Response(
             {"count": len(project_data), "projects": project_data},
             status=200,
