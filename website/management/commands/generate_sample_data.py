@@ -122,12 +122,12 @@ class Command(LoggedBaseCommand):
                     | models.Q(issue__in=preserved_issues)
                     | models.Q(domain__in=preserved_domains)
                 ).delete()
+                GitHubReview.objects.exclude(id__in=preserved_reviews).delete()
+                GitHubIssue.objects.exclude(id__in=preserved_gh_issues).delete()
                 Issue.objects.exclude(id__in=preserved_issues).delete()
                 Hunt.objects.exclude(id__in=preserved_hunts).delete()
                 Repo.objects.exclude(id__in=preserved_repos).delete()
                 Project.objects.exclude(id__in=preserved_projects).delete()
-                GitHubIssue.objects.exclude(id__in=preserved_gh_issues).delete()
-                GitHubReview.objects.exclude(id__in=preserved_reviews).delete()
                 Domain.objects.exclude(id__in=preserved_domains).delete()
                 UserBadge.objects.exclude(user__in=preserved_users).delete()
                 Organization.objects.exclude(id__in=preserved_orgs).delete()
@@ -151,11 +151,8 @@ class Command(LoggedBaseCommand):
             # Delete organizations before users to avoid redundant cascades
             Organization.objects.all().delete()
 
-            # Delete users (cascades to profiles), but preserve selected users
-            if preserve_user_ids:
-                User.objects.exclude(id__in=preserve_user_ids).delete()
-            else:
-                User.objects.all().delete()
+            # Delete all users (cascades to profiles). Preservation handled in the branch above.
+            User.objects.all().delete()
 
     def create_users(self, count):
         users = []

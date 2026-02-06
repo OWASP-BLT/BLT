@@ -115,9 +115,8 @@ class DebugPanelAPITest(TestCase):
         mock_call_command.assert_called()
         args, kwargs = mock_call_command.call_args
         self.assertIn("generate_sample_data", args)
-        self.assertIn("--preserve-user-id", args)
-        self.assertIn("--preserve-superusers", args)
-        self.assertIn(str(self.user.id), args)
+        self.assertEqual(kwargs.get("preserve_user_id"), [self.user.id])
+        self.assertTrue(kwargs.get("preserve_superusers"))
 
     @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")
