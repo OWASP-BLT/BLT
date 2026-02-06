@@ -925,7 +925,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             self.perform_create(serializer)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while starting the time log."},
@@ -948,7 +948,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             timelog.save()
             return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while stopping the time log."},
@@ -1064,7 +1064,7 @@ class OwaspComplianceChecker(APIView):
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": url, "error": str(e)},
+                "details": {"url_checked": url, "error": "Unable to check website compliance"},
             }
 
     def check_vendor_neutrality(self, url):
