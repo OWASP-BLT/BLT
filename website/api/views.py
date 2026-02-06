@@ -24,7 +24,6 @@ from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
@@ -725,40 +724,17 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ("get", "post")
 
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
-
-        name = data.get("name", "")
-        slug = slugify(name)
-
-        contributors = Project.get_contributors(self, data["github_url"])  # get contributors
-
-        serializer = ProjectSerializer(data=data)
-
-        if serializer.is_valid():
-            project_instance = serializer.save()
-            project_instance.__setattr__("slug", slug)
-
-            # Set contributors
-            if contributors:
-                project_instance.contributors.set(contributors)
-
-            serializer = ProjectSerializer(project_instance)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def list(self, request, *args, **kwargs):
+        """List projects with optional filtering by freshness, stars, and forks."""
         projects = Project.objects.annotate(
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
-        freshness = request.query_params.get("freshness")
 
+        # Freshness filtering
+        freshness = request.query_params.get("freshness")
         if freshness is not None:
             try:
                 freshness_val = float(freshness)
@@ -774,9 +750,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # Stars filtering
         stars = request.query_params.get("stars")
-        forks = request.query_params.get("forks")
-
         if stars is not None:
             try:
                 stars_int = int(stars)
@@ -792,6 +767,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # Forks filtering
+        forks = request.query_params.get("forks")
         if forks is not None:
             try:
                 forks_int = int(forks)
@@ -807,10 +784,32 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # Apply pagination
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            # Serialize paginated projects
+            project_data = []
+            for project in page:
+                contributors_data = []
+                contributors_manager = getattr(project, "contributors", None)
+                if contributors_manager:
+                    for contributor in contributors_manager.all():
+                        contributor_info = ContributorSerializer(contributor)
+                        contributors_data.append(contributor_info.data)
+
+                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+
+                project_info = ProjectSerializer(project).data
+                project_info["contributors"] = contributors_data
+                project_data.append(project_info)
+
+            # Return paginated response
+            return self.get_paginated_response(project_data)
+
+        # Fallback if pagination is disabled (shouldn't happen with current config)
         project_data = []
         for project in projects:
             contributors_data = []
-
             contributors_manager = getattr(project, "contributors", None)
             if contributors_manager:
                 for contributor in contributors_manager.all():
@@ -823,10 +822,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
 
-        return Response({"results": project_data}, status=status.HTTP_200_OK)
+        return Response({"count": len(project_data), "projects": project_data})
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
+        """Search projects by name, description, or tags."""
         query = request.query_params.get("q", "")
 
         projects_qs = Project.objects.annotate(
@@ -838,6 +838,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
             Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
         ).distinct()
 
+        # Apply pagination
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            # Serialize paginated projects
+            project_data = []
+            for project in page:
+                contributors_data = []
+                for contributor in project.contributors.all():
+                    contributor_info = ContributorSerializer(contributor)
+                    contributors_data.append(contributor_info.data)
+
+                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+
+                project_info = ProjectSerializer(project).data
+                project_info["contributors"] = contributors_data
+                project_data.append(project_info)
+
+            # Return paginated response
+            return self.get_paginated_response(project_data)
+
+        # Fallback if pagination is disabled
         project_data = []
         for project in projects:
             contributors_data = []
@@ -845,7 +866,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
 
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
 
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
