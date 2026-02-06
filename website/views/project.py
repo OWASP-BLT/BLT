@@ -2043,7 +2043,7 @@ class RepoDetailView(DetailView):
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": f"An unexpected error occurred: {str(e)}",
+                        "message": "An unexpected error occurred.",
                     },
                     status=500,
                 )

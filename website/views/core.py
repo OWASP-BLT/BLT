@@ -74,7 +74,13 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    fetch_github_discussions,
+    rebuild_safe_url,
+    save_analysis_report,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -1673,7 +1679,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1686,8 +1692,8 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
-    # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+    # Get recent GitHub discussions from BLT repository
+    recent_discussions = fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5)
 
     # Get recent activities for the feed
     recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
@@ -1856,7 +1862,7 @@ def home(request):
             "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
-            "recent_posts": recent_posts,
+            "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
@@ -2492,7 +2498,7 @@ def run_management_command(request):
                 log_entry.success = False
                 log_entry.save()
 
-                error_msg = f"Error executing command '{command}': {str(e)}"
+                error_msg = f"Error executing command '{command}': Something went wrong."
                 logging.error(error_msg)
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
