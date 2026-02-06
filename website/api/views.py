@@ -746,12 +746,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """List projects with optional filtering by freshness, stars, and forks."""
-        projects = Project.objects.annotate(
+        projects = self.get_queryset().annotate(
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
-        if hasattr(Project, "contributors"):
-            projects = projects.prefetch_related("contributors")
+        projects = projects.prefetch_related("contributors")
+        projects = self.filter_queryset(projects)
 
         # Freshness filtering
         freshness = request.query_params.get("freshness")
