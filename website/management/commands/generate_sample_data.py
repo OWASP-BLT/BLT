@@ -280,7 +280,7 @@ class Command(LoggedBaseCommand):
             reviews.append(review)
         return reviews
 
-    def create_hunts(self, users, count=10):
+    def create_hunts(self, domains, count=10):
         hunts = []
         for i in range(count):
             created_date = timezone.now() - timedelta(days=random.randint(1, 90))
@@ -294,7 +294,7 @@ class Command(LoggedBaseCommand):
                 starts_on=starts_on,
                 end_on=end_on,
                 url=f"https://hunt-{i+1}.example.com",
-                domain=random.choice(Domain.objects.all()),
+                domain=random.choice(domains),
                 plan="free",
                 is_published=True,
             )
@@ -413,59 +413,60 @@ class Command(LoggedBaseCommand):
         return repos
 
     def handle(self, *args, **options):
-        self.stdout.write("Generating sample data...")
+        with transaction.atomic():
+            self.stdout.write("Generating sample data...")
 
-        preserve_user_ids = {user_id for user_id in (options.get("preserve_user_id") or []) if user_id}
-        preserve_superusers = bool(options.get("preserve_superusers"))
+            preserve_user_ids = {user_id for user_id in (options.get("preserve_user_id") or []) if user_id}
+            preserve_superusers = bool(options.get("preserve_superusers"))
 
-        self.clear_existing_data(
-            preserve_user_ids=preserve_user_ids,
-            preserve_superusers=preserve_superusers,
-        )
+            self.clear_existing_data(
+                preserve_user_ids=preserve_user_ids,
+                preserve_superusers=preserve_superusers,
+            )
 
-        self.stdout.write("Creating sample users...")
-        users = self.create_users(10)
-        if preserve_user_ids:
-            preserved_users = list(User.objects.filter(id__in=preserve_user_ids))
-            users.extend([user for user in preserved_users if user not in users])
+            self.stdout.write("Creating sample users...")
+            users = self.create_users(10)
+            if preserve_user_ids:
+                preserved_users = list(User.objects.filter(id__in=preserve_user_ids))
+                users.extend([user for user in preserved_users if user not in users])
 
-        self.stdout.write("Creating organizations...")
-        organizations = self.create_organizations(5)
+            self.stdout.write("Creating organizations...")
+            organizations = self.create_organizations(5)
 
-        self.stdout.write("Creating domains...")
-        domains = self.create_domains(organizations, 20)
+            self.stdout.write("Creating domains...")
+            domains = self.create_domains(organizations, 20)
 
-        self.stdout.write("Creating issues...")
-        self.create_issues(users, domains, 50)
+            self.stdout.write("Creating issues...")
+            self.create_issues(users, domains, 50)
 
-        self.stdout.write("Creating hunts...")
-        self.create_hunts(users, 10)
+            self.stdout.write("Creating hunts...")
+            self.create_hunts(domains, 10)
 
-        self.stdout.write("Creating projects...")
-        projects = self.create_projects(organizations, 15)
+            self.stdout.write("Creating projects...")
+            projects = self.create_projects(organizations, 15)
 
-        self.stdout.write("Creating points...")
-        self.create_points(users, 100)
+            self.stdout.write("Creating points...")
+            self.create_points(users, 100)
 
-        self.stdout.write("Creating activities...")
-        self.create_activities(users, 200)
+            self.stdout.write("Creating activities...")
+            self.create_activities(users, 200)
 
-        self.stdout.write("Creating badges...")
-        badges = self.create_badges(10)
+            self.stdout.write("Creating badges...")
+            badges = self.create_badges(10)
 
-        self.stdout.write("Assigning badges to users...")
-        self.assign_badges(users, badges)
+            self.stdout.write("Assigning badges to users...")
+            self.assign_badges(users, badges)
 
-        self.stdout.write("Creating tags...")
-        self.create_tags(20)
+            self.stdout.write("Creating tags...")
+            self.create_tags(20)
 
-        self.stdout.write("Creating repos...")
-        repos = self.create_repos(projects, 30)
+            self.stdout.write("Creating repos...")
+            repos = self.create_repos(projects, 30)
 
-        self.stdout.write("Creating PRs...")
-        pull_requests = self.create_pull_requests(users, repos, 30)
+            self.stdout.write("Creating PRs...")
+            pull_requests = self.create_pull_requests(users, repos, 30)
 
-        self.stdout.write("Creating Reviews...")
-        self.create_reviews(users, pull_requests, 90)
+            self.stdout.write("Creating Reviews...")
+            self.create_reviews(users, pull_requests, 90)
 
-        self.stdout.write(self.style.SUCCESS("Done!"))
+            self.stdout.write(self.style.SUCCESS("Done!"))
