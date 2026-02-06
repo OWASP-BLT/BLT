@@ -751,7 +751,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
         if hasattr(Project, "contributors"):
-            projects = projects.prefetch_related("contributors")
+            projects_qs = projects_qs.prefetch_related("contributors")
 
         # Freshness filtering
         freshness = request.query_params.get("freshness")
@@ -826,7 +826,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
         if hasattr(Project, "contributors"):
-            projects = projects.prefetch_related("contributors")
+            projects_qs = projects_qs.prefetch_related("contributors")
 
         projects = projects_qs.filter(
             Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
