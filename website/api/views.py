@@ -750,7 +750,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
-        projects = projects.prefetch_related("contributors")
         projects = self.filter_queryset(projects)
 
         # Freshness filtering
