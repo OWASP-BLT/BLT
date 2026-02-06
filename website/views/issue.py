@@ -2338,9 +2338,48 @@ class GitHubIssuesView(ListView):
         for issue in context.get("object_list", []):
             body = issue.body or ""
             try:
-                html = markdown.markdown(body)
-                issue.body_html = mark_safe(clean(html, tags=["a", "b", "i", "em", "strong", "p", "br", "code", "pre"], strip=True) )
-                
+                html = markdown.markdown(
+                    body,
+                    extensions=[
+                        "markdown.extensions.fenced_code",
+                        "markdown.extensions.tables",
+                        "markdown.extensions.nl2br",
+                    ],
+                )
+                issue.body_html = mark_safe(
+                    clean(
+                        html,
+                        tags=[
+                            "a",
+                            "b",
+                            "i",
+                            "em",
+                            "strong",
+                            "p",
+                            "br",
+                            "code",
+                            "pre",
+                            "ul",
+                            "ol",
+                            "li",
+                            "h1",
+                            "h2",
+                            "h3",
+                            "h4",
+                            "h5",
+                            "h6",
+                            "blockquote",
+                            "table",
+                            "thead",
+                            "tbody",
+                            "tr",
+                            "th",
+                            "td",
+                        ],
+                        strip=True,
+                    )
+                )
+
             except Exception:
                 issue.body_html = escape(body)
 
@@ -2453,15 +2492,40 @@ class GitHubIssueDetailView(DetailView):
         body = issue.body or ""
         # Add any additional context needed for the detail view
         context["comment_list"] = issue.get_comments()
+        md_extensions = ["markdown.extensions.fenced_code", "markdown.extensions.tables", "markdown.extensions.nl2br"]
+        allowed_tags = [
+            "a",
+            "b",
+            "i",
+            "em",
+            "strong",
+            "p",
+            "br",
+            "code",
+            "pre",
+            "ul",
+            "ol",
+            "li",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "table",
+            "thead",
+            "tbody",
+            "tr",
+            "th",
+            "td",
+        ]
         try:
             issue.body_html = mark_safe(
-                markdown.markdown(
-                    body,
-                    extensions=[
-                        "markdown.extensions.fenced_code",
-                        "markdown.extensions.tables",
-                        "markdown.extensions.nl2br",
-                    ],
+                clean(
+                    markdown.markdown(body, extensions=md_extensions),
+                    tags=allowed_tags,
+                    strip=True,
                 )
             )
         except Exception:
