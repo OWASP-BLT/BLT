@@ -1949,14 +1949,10 @@ class DebugPopulateDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            command_args = [
-                "--preserve-user-id",
-                str(request.user.id),
-                "--preserve-superusers",
-            ]
             call_command(
                 "generate_sample_data",
-                *command_args,
+                preserve_user_id=[request.user.id],
+                preserve_superusers=True,
                 verbosity=0,
             )
 

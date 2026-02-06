@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
@@ -82,79 +82,80 @@ class Command(LoggedBaseCommand):
 
     def clear_existing_data(self, preserve_user_ids=None, preserve_superusers=False):
         """Clear all existing data from the models we're generating"""
-        self.stdout.write("Clearing existing data...")
+        with transaction.atomic():
+            self.stdout.write("Clearing existing data...")
 
-        preserve_user_ids = {user_id for user_id in (preserve_user_ids or []) if user_id}
-        if preserve_superusers:
-            preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
+            preserve_user_ids = {user_id for user_id in (preserve_user_ids or []) if user_id}
+            if preserve_superusers:
+                preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
 
-        if preserve_user_ids:
-            preserved_users = User.objects.filter(id__in=preserve_user_ids)
-            preserved_profiles = UserProfile.objects.filter(user__in=preserved_users)
-            preserved_orgs = Organization.objects.filter(
-                models.Q(admin__in=preserved_users) | models.Q(managers__in=preserved_users)
-            ).distinct()
-            preserved_domains = Domain.objects.filter(
-                models.Q(organization__in=preserved_orgs) | models.Q(managers__in=preserved_users)
-            ).distinct()
-            preserved_hunts = Hunt.objects.filter(domain__in=preserved_domains)
-            preserved_projects = Project.objects.filter(organization__in=preserved_orgs)
-            preserved_repos = Repo.objects.filter(
-                models.Q(organization__in=preserved_orgs) | models.Q(project__in=preserved_projects)
-            ).distinct()
-            preserved_issues = Issue.objects.filter(
-                models.Q(user__in=preserved_users)
-                | models.Q(team_members__in=preserved_users)
-                | models.Q(domain__in=preserved_domains)
-                | models.Q(hunt__in=preserved_hunts)
-            ).distinct()
-            preserved_gh_issues = GitHubIssue.objects.filter(
-                models.Q(user_profile__in=preserved_profiles) | models.Q(repo__in=preserved_repos)
-            ).distinct()
-            preserved_reviews = GitHubReview.objects.filter(
-                models.Q(reviewer__in=preserved_profiles) | models.Q(pull_request__in=preserved_gh_issues)
-            ).distinct()
+            if preserve_user_ids:
+                preserved_users = User.objects.filter(id__in=preserve_user_ids)
+                preserved_profiles = UserProfile.objects.filter(user__in=preserved_users)
+                preserved_orgs = Organization.objects.filter(
+                    models.Q(admin__in=preserved_users) | models.Q(managers__in=preserved_users)
+                ).distinct()
+                preserved_domains = Domain.objects.filter(
+                    models.Q(organization__in=preserved_orgs) | models.Q(managers__in=preserved_users)
+                ).distinct()
+                preserved_hunts = Hunt.objects.filter(domain__in=preserved_domains)
+                preserved_projects = Project.objects.filter(organization__in=preserved_orgs)
+                preserved_repos = Repo.objects.filter(
+                    models.Q(organization__in=preserved_orgs) | models.Q(project__in=preserved_projects)
+                ).distinct()
+                preserved_issues = Issue.objects.filter(
+                    models.Q(user__in=preserved_users)
+                    | models.Q(team_members__in=preserved_users)
+                    | models.Q(domain__in=preserved_domains)
+                    | models.Q(hunt__in=preserved_hunts)
+                ).distinct()
+                preserved_gh_issues = GitHubIssue.objects.filter(
+                    models.Q(user_profile__in=preserved_profiles) | models.Q(repo__in=preserved_repos)
+                ).distinct()
+                preserved_reviews = GitHubReview.objects.filter(
+                    models.Q(reviewer__in=preserved_profiles) | models.Q(pull_request__in=preserved_gh_issues)
+                ).distinct()
 
-            Activity.objects.exclude(user__in=preserved_users).delete()
-            Points.objects.exclude(
-                models.Q(user__in=preserved_users)
-                | models.Q(issue__in=preserved_issues)
-                | models.Q(domain__in=preserved_domains)
-            ).delete()
-            Issue.objects.exclude(id__in=preserved_issues).delete()
-            Hunt.objects.exclude(id__in=preserved_hunts).delete()
-            Repo.objects.exclude(id__in=preserved_repos).delete()
-            Project.objects.exclude(id__in=preserved_projects).delete()
-            GitHubIssue.objects.exclude(id__in=preserved_gh_issues).delete()
-            GitHubReview.objects.exclude(id__in=preserved_reviews).delete()
-            Domain.objects.exclude(id__in=preserved_domains).delete()
-            UserBadge.objects.exclude(user__in=preserved_users).delete()
-            Organization.objects.exclude(id__in=preserved_orgs).delete()
-            User.objects.exclude(id__in=preserve_user_ids).delete()
-            return
+                Activity.objects.exclude(user__in=preserved_users).delete()
+                Points.objects.exclude(
+                    models.Q(user__in=preserved_users)
+                    | models.Q(issue__in=preserved_issues)
+                    | models.Q(domain__in=preserved_domains)
+                ).delete()
+                Issue.objects.exclude(id__in=preserved_issues).delete()
+                Hunt.objects.exclude(id__in=preserved_hunts).delete()
+                Repo.objects.exclude(id__in=preserved_repos).delete()
+                Project.objects.exclude(id__in=preserved_projects).delete()
+                GitHubIssue.objects.exclude(id__in=preserved_gh_issues).delete()
+                GitHubReview.objects.exclude(id__in=preserved_reviews).delete()
+                Domain.objects.exclude(id__in=preserved_domains).delete()
+                UserBadge.objects.exclude(user__in=preserved_users).delete()
+                Organization.objects.exclude(id__in=preserved_orgs).delete()
+                User.objects.exclude(id__in=preserve_user_ids).delete()
+                return
 
-        # First delete models that depend on other models
-        Activity.objects.all().delete()
-        Points.objects.all().delete()
-        Issue.objects.all().delete()
-        Hunt.objects.all().delete()
-        Repo.objects.all().delete()
-        Project.objects.all().delete()
-        GitHubIssue.objects.all().delete()
-        GitHubReview.objects.all().delete()
-        Domain.objects.all().delete()
-        UserBadge.objects.all().delete()
-        Badge.objects.all().delete()
-        Tag.objects.all().delete()
+            # First delete models that depend on other models
+            Activity.objects.all().delete()
+            Points.objects.all().delete()
+            Issue.objects.all().delete()
+            Hunt.objects.all().delete()
+            Repo.objects.all().delete()
+            Project.objects.all().delete()
+            GitHubIssue.objects.all().delete()
+            GitHubReview.objects.all().delete()
+            Domain.objects.all().delete()
+            UserBadge.objects.all().delete()
+            Badge.objects.all().delete()
+            Tag.objects.all().delete()
 
-        # Delete organizations before users to avoid redundant cascades
-        Organization.objects.all().delete()
+            # Delete organizations before users to avoid redundant cascades
+            Organization.objects.all().delete()
 
-        # Delete users (cascades to profiles), but preserve selected users
-        if preserve_user_ids:
-            User.objects.exclude(id__in=preserve_user_ids).delete()
-        else:
-            User.objects.all().delete()
+            # Delete users (cascades to profiles), but preserve selected users
+            if preserve_user_ids:
+                User.objects.exclude(id__in=preserve_user_ids).delete()
+            else:
+                User.objects.all().delete()
 
     def create_users(self, count):
         users = []
