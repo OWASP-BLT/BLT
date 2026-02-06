@@ -636,6 +636,9 @@ BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 # OpenAI API Configuration
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# Spam Detection Configuration
+SPAM_DETECTION_ENABLED = os.environ.get("SPAM_DETECTION_ENABLED", "True").lower() == "true"
+
 ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
