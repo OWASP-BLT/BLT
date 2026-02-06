@@ -397,6 +397,9 @@ class Command(BaseCommand):
             )
             if response.status_code == 200:
                 data = response.json()
+                if not isinstance(data, dict):
+                    logger.error(f"Unexpected type for rate limit response: {type(data)}, data={data}")
+                    return
                 core = data.get("resources", {}).get("core", {})
                 remaining = core.get("remaining", 0)
                 limit = core.get("limit", 5000)

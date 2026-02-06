@@ -20,7 +20,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -2412,6 +2412,76 @@ class GitHubReview(models.Model):
         elif self.reviewer_contributor:
             reviewer_name = self.reviewer_contributor.name
         return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
+
+
+class GitHubCommentManager(models.Manager):
+    """Custom manager for GitHubComment with bot filtering."""
+
+    def exclude_bots(self):
+        """Exclude comments from known bot accounts."""
+        from django.conf import settings
+
+        bots = getattr(
+            settings, "GITHUB_BOT_USERNAMES", ["copilot", "dependabot", "github-actions", "renovate", "[bot]"]
+        )
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(commenter_contributor__name__icontains=bot)
+        return self.exclude(bot_exclusions)
+
+
+class GitHubComment(models.Model):
+    """
+    Model to store comments made by users on GitHub issues and pull requests.
+    Tracks engagement for the comment leaderboard.
+    """
+
+    comment_id = models.BigIntegerField(unique=True)
+    issue = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="tracked_comments",
+    )
+    commenter = models.ForeignKey(
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_user",
+    )
+    commenter_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_contributor",
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    url = models.URLField()
+
+    objects = GitHubCommentManager()
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(commenter__isnull=False) | models.Q(commenter_contributor__isnull=False),
+                name="at_least_one_commenter",
+            ),
+        )
+        indexes = [
+            models.Index(fields=["created_at"], name="gh_comment_created_idx"),
+            models.Index(fields=["commenter_contributor"], name="gh_comment_contributor_idx"),
+        ]
+
+    def __str__(self):
+        commenter_name = "Unknown"
+        if self.commenter:
+            commenter_name = self.commenter.user.username
+        elif self.commenter_contributor:
+            commenter_name = self.commenter_contributor.name
+        return f"Comment #{self.comment_id} by {commenter_name} on {self.issue.type} #{self.issue.issue_id}"
 
 
 class Kudos(models.Model):

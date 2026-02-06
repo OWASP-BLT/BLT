@@ -1,9 +1,13 @@
+import logging
+
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 
 from website.models import OsshDiscussionChannel, Tag
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -90,7 +94,11 @@ class Command(BaseCommand):
 
                 response = requests.get(url, headers=headers, params=params)
                 response.raise_for_status()
-                servers = response.json().get("hits", [])
+                data = response.json()
+                if not isinstance(data, dict):
+                    logger.warning(f"Unexpected response type for Discord servers: {type(data)}")
+                    continue
+                servers = data.get("hits", [])
 
                 for server in servers:
                     server_id = server.get("id")
