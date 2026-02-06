@@ -803,6 +803,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        tags = request.query_params.get("tags")
+        if tags:
+            # Support comma-separated tags: ?tags=security,web
+            tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+            if tag_list:
+                projects = projects.filter(tags__name__in=tag_list).distinct()
+
         # Apply pagination
         page = self.paginate_queryset(projects)
         if page is not None:
