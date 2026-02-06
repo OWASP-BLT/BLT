@@ -753,12 +753,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.annotate(
-            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
-            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        projects = (
+            Project.objects.annotate(
+                total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+                total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+            ).prefetch_related("contributors")  # prevent N + 1
         )
-        freshness = request.query_params.get("freshness")
 
+        # --- freshness filter ---
+        freshness = request.query_params.get("freshness")
         if freshness is not None:
             try:
                 freshness_val = float(freshness)
@@ -774,9 +777,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # --- stars filter ---
         stars = request.query_params.get("stars")
-        forks = request.query_params.get("forks")
-
         if stars is not None:
             try:
                 stars_int = int(stars)
@@ -792,6 +794,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # --- forks filter ---
+        forks = request.query_params.get("forks")
         if forks is not None:
             try:
                 forks_int = int(forks)
@@ -807,23 +811,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        project_data = []
-        for project in projects:
-            contributors_data = []
+        # --- pagination ---
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            serializer = ProjectSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-            contributors_manager = getattr(project, "contributors", None)
-            if contributors_manager:
-                for contributor in contributors_manager.all():
-                    contributor_info = ContributorSerializer(contributor)
-                    contributors_data.append(contributor_info.data)
-
-            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
-        return Response({"results": project_data}, status=status.HTTP_200_OK)
+        # fallback
+        serializer = ProjectSerializer(projects, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
