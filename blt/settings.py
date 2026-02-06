@@ -102,9 +102,8 @@ INSTALLED_APPS = (
     "storages",
     "channels",
 )
-
-if DEBUG:
-    INSTALLED_APPS += ("livereload",)
+if DEBUG and not TESTING:
+    INSTALLED_APPS += ("debug_toolbar", "livereload", "silk")
 
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
@@ -129,12 +128,14 @@ MIDDLEWARE = [
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
 ]
 
-if DEBUG:
-    MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
+
+if DEBUG and not TESTING:
+    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript", "debug_toolbar.middleware.DebugToolbarMiddleware"]
+    INTERNAL_IPS = ["127.0.0.1"]
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
-TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
     DEBUG_TOOLBAR_PANELS = [
@@ -157,46 +158,52 @@ if DEBUG and not TESTING:
         "SHOW_TOOLBAR_CALLBACK": lambda request: True,
     }
 
-    INSTALLED_APPS += ("debug_toolbar",)
-
-    MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)
-
 ROOT_URLCONF = "blt.urls"
 
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "website", "templates")],
-        "APP_DIRS": False,
-        "OPTIONS": {
-            "debug": DEBUG,
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.template.context_processors.media",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "django.template.context_processors.i18n",
-            ],
-            "loaders": (
-                [
-                    "django.template.loaders.filesystem.Loader",
-                    "django.template.loaders.app_directories.Loader",
-                ]
-                if DEBUG
-                else [
+COMMON_CONTEXT_PROCESSORS = [
+    "django.template.context_processors.debug",
+    "django.template.context_processors.request",
+    "django.template.context_processors.media",
+    "django.contrib.auth.context_processors.auth",
+    "django.contrib.messages.context_processors.messages",
+    "django.template.context_processors.i18n",
+    "django.template.context_processors.csrf",
+]
+
+if DEBUG:
+    TEMPLATES = [
+        {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [os.path.join(BASE_DIR, "website", "templates")],
+            "APP_DIRS": True,
+            "OPTIONS": {
+                "debug": True,
+                "context_processors": COMMON_CONTEXT_PROCESSORS,
+            },
+        }
+    ]
+else:
+    TEMPLATES = [
+        {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [os.path.join(BASE_DIR, "website", "templates")],
+            "APP_DIRS": False,
+            "OPTIONS": {
+                "debug": False,
+                "loaders": [
                     (
                         "django.template.loaders.cached.Loader",
                         [
                             "django.template.loaders.filesystem.Loader",
                             "django.template.loaders.app_directories.Loader",
                         ],
-                    ),
-                ]
-            ),
-        },
-    },
-]
+                    )
+                ],
+                "context_processors": COMMON_CONTEXT_PROCESSORS,
+            },
+        }
+    ]
+
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
@@ -313,7 +320,7 @@ if "DYNO" in os.environ:  # for Heroku
             },
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
 
@@ -328,7 +335,7 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
     # Removed DEBUG override - DEBUG should be controlled by environment variable
