@@ -32,6 +32,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.paginator import Paginator
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
 from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
@@ -1171,8 +1172,12 @@ def add_forum_comment(request):
             post_id = data.get("post_id")
             content = data.get("content")
 
-            if not all([post_id, content]):
+            if not post_id or content is None:
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+            if not isinstance(content, str):
+                return JsonResponse({"success": False, "error": "Invalid comment format"}, status=400)
+            if not content.strip():
+                return JsonResponse({"success": False, "error": "Comment cannot be empty"}, status=400)
 
             post = ForumPost.objects.get(id=int(post_id))
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
@@ -1228,28 +1233,30 @@ def view_forum(request):
     # Annotate categories with post counts
     categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
-    selected_status = request.GET.get("status")
     selected_sort = request.GET.get("sort")
+    selected_search = request.GET.get("search", "").strip()
 
     # Add is_selected flag to categories for cleaner template logic
     for category in categories:
         category.is_selected = str(category.id) == selected_category
 
     # Get total posts count before filtering
-    total_posts_count = ForumPost.objects.count()
+    base_posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments", "comments__user")
+    total_posts_count = base_posts.count()
+    posts = base_posts.annotate(comment_count=Count("comments", distinct=True))
 
-    posts = (
-        ForumPost.objects.select_related("user", "category")
-        .prefetch_related("comments")
-        .annotate(comment_count=Count("comments"))
-        .all()
-    )
+    # Apply filters
+    if selected_category and selected_category.isdigit():
+        posts = posts.filter(category_id=int(selected_category))
 
-    if selected_category:
-        posts = posts.filter(category_id=selected_category)
+    if selected_search:
+        posts = posts.filter(
+            Q(title__icontains=selected_search)
+            | Q(description__icontains=selected_search)
+            | Q(user__username__icontains=selected_search)
+        )
 
-    if selected_status:
-        posts = posts.filter(status=selected_status)
+    total_posts_count = posts.count()
 
     # sorting of filters by newest, oldest, most votes, most comments
     if selected_sort == "oldest":
@@ -1260,6 +1267,10 @@ def view_forum(request):
         posts = posts.order_by("-comment_count")
     else:
         posts = posts.order_by("-created")  # newest first (default)
+
+    paginator = Paginator(posts, 5)  # 5 posts per page
+    page_number = request.GET.get("page")
+    posts = paginator.get_page(page_number)
 
     # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
@@ -1282,7 +1293,7 @@ def view_forum(request):
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
-            "selected_status": selected_status,
+            "selected_search": selected_search,
             "selected_sort": selected_sort,
             "organizations": organizations,
             "projects": projects,
