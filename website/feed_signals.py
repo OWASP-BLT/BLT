@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Count
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
@@ -10,12 +11,14 @@ from .models import (
     BaconEarning,
     Badge,
     Bid,
+    Contribution,
     ForumPost,
     Hunt,
     IpReport,
     Issue,
     Organization,
     Post,
+    TeamBadge,
     TimeLog,
     UserBadge,
     UserProfile,
@@ -267,13 +270,286 @@ def update_user_streak(sender, instance, created, **kwargs):
             )
 
 
-@receiver(post_save, sender=Organization)
-def handle_organization_creation(sender, instance, created, **kwargs):
-    """Give bacon to user when they create an organization"""
-    if created and instance.admin:
-        # Create an activity first so it's included in the AI analysis
-        _safe_create_activity(instance, "created")
-        # Give bacon tokens using AI analysis or fallback to default (10)
-        _safe_give_bacon(instance.admin, instance=instance, action_type="created")
-        # Give first organization badge
-        _safe_assign_badge(instance.admin, "First Organization Created")
+logger = logging.getLogger(__name__)
+
+
+# TEAM HELPERS
+def get_user_team(user: User):
+    if not user:
+        return None
+    # Admin of team
+    team = Organization.objects.filter(admin=user).first()
+    if team:
+        return team
+    # Member of team
+    return Organization.objects.filter(managers=user).first()
+
+
+def get_team_members(team: Organization):
+    if not team:
+        return User.objects.none()
+    members = team.managers.all()
+    if team.admin:
+        members = members | User.objects.filter(id=team.admin.id)
+    return members.distinct()
+
+
+# METRICS
+def get_team_contribution_count(team: Organization):
+    members = get_team_members(team)
+    return Contribution.objects.filter(user__in=members).count()
+
+
+def get_team_closed_issue_count(team: Organization):
+    members = get_team_members(team)
+    return Issue.objects.filter(closed_by__in=members, status="closed").count()
+
+
+def get_team_total_issue_count(team: Organization):
+    members = get_team_members(team)
+    return Issue.objects.filter(user__in=members).count()
+
+
+def get_team_activity_score(team: Organization):
+    """
+    Example activity = contributions + issues closed
+    """
+    # Compute activity score using the team's member set once to avoid
+    # re-evaluating membership for each metric (reduces queries).
+    members = get_team_members(team)
+    if not members.exists():
+        return 0
+
+    contributions_count = Contribution.objects.filter(user__in=members).count()
+    closed_count = Issue.objects.filter(closed_by__in=members, status="closed").count()
+    return contributions_count + closed_count
+
+
+def get_first_contributor(team: Organization):
+    members = get_team_members(team)
+    contrib = Contribution.objects.filter(user__in=members).order_by("created").first()
+    return contrib.user if contrib else None
+
+
+def get_top_contributor(team: Organization):
+    members = get_team_members(team)
+    if not members.exists():
+        return None
+    # Aggregate contribution counts for all members in a single query
+    agg = Contribution.objects.filter(user__in=members).values("user").annotate(cnt=Count("id")).order_by("-cnt")
+    top = agg.first()
+    if not top:
+        return None
+    return User.objects.filter(id=top["user"]).first()
+
+
+def get_user_team_issue_count(user: User):
+    team = get_user_team(user)
+    if not team:
+        return 0
+    return Issue.objects.filter(closed_by=user, status="closed").count()
+
+
+def get_user_team_contribution_count(user: User):
+    team = get_user_team(user)
+    if not team:
+        return 0
+    return Contribution.objects.filter(user=user).count()
+
+
+# BADGE HELPERS
+def award_team_badge(team, badge, user=None, reason=None):
+    if not team or not badge:
+        return
+    exists = TeamBadge.objects.filter(team=team, badge=badge, user=user).exists()
+    if exists:
+        return
+    TeamBadge.objects.create(team=team, badge=badge, user=user, reason=reason or badge.description)
+    logger.info(f"Awarded badge '{badge.title}' to team {team} (user={user})")
+
+
+def revoke_team_badge(team, badge, user=None):
+    TeamBadge.objects.filter(team=team, badge=badge, user=user).delete()
+    logger.info(f"Revoked badge '{badge.title}' from team {team} (user={user})")
+
+
+# EVALUATORS
+def evaluate_team_badges(team: Organization):
+    if not team:
+        return
+    badges = Badge.objects.filter(type="automatic", scope="team")
+    for badge in badges:
+        criteria = badge.criteria or {}
+        metric = criteria.get("metric")
+        threshold = criteria.get("threshold")
+        rank = criteria.get("rank")
+
+        # Convert and validate threshold for threshold-based metrics
+        if threshold is not None:
+            try:
+                threshold = int(threshold)
+            except (TypeError, ValueError):
+                threshold = None
+        if metric == "team_contributions":
+            count = get_team_contribution_count(team)
+            if threshold is None:
+                continue
+            if count >= threshold:
+                award_team_badge(team, badge, reason=f"Team reached {count} contributions")
+
+        elif metric == "team_issues_closed":
+            count = get_team_closed_issue_count(team)
+            if threshold is None:
+                continue
+            if count >= threshold:
+                award_team_badge(team, badge, reason=f"Team closed {count} issues")
+
+        elif metric == "team_total_issues":
+            count = get_team_total_issue_count(team)
+            if threshold is None:
+                continue
+            if count >= threshold:
+                award_team_badge(team, badge, reason=f"Team has {count} total issues")
+
+        elif metric == "team_top_activity_rank":
+            # Compute activity scores for all teams in bulk to avoid N+1 queries.
+            teams = list(Organization.objects.prefetch_related("managers").select_related("admin"))
+            if not teams:
+                revoke_team_badge(team, badge)
+                continue
+
+            # Build mapping team_id -> member user ids (using prefetched related managers)
+            team_member_ids = {}
+            all_user_ids = set()
+            for t in teams:
+                member_ids = {u.id for u in t.managers.all()}
+                if getattr(t, "admin", None):
+                    member_ids.add(t.admin.id)
+                team_member_ids[t.id] = member_ids
+                all_user_ids.update(member_ids)
+
+            if not all_user_ids:
+                revoke_team_badge(team, badge)
+                continue
+
+            # Get contribution counts per user in one query
+            contribs = Contribution.objects.filter(user__id__in=all_user_ids).values("user").annotate(cnt=Count("id"))
+            contrib_map = {item["user"]: item["cnt"] for item in contribs}
+
+            # Get closed issue counts per user in one query
+            closed = (
+                Issue.objects.filter(closed_by__id__in=all_user_ids, status="closed")
+                .values("closed_by")
+                .annotate(cnt=Count("id"))
+            )
+            closed_map = {item["closed_by"]: item["cnt"] for item in closed}
+
+            # Compute scores per team by summing per-user metrics
+            team_scores = {}
+            for t in teams:
+                member_ids = team_member_ids.get(t.id, set())
+                score = sum(contrib_map.get(uid, 0) + closed_map.get(uid, 0) for uid in member_ids)
+                team_scores[t.id] = score
+
+            # Determine top team
+            if not team_scores:
+                revoke_team_badge(team, badge)
+                continue
+
+            top_team_id = max(team_scores.items(), key=lambda kv: kv[1])[0]
+            top_team = next((t for t in teams if t.id == top_team_id), None)
+            if top_team and top_team.id == team.id:
+                award_team_badge(team, badge, reason="Top activity team")
+            else:
+                revoke_team_badge(team, badge)
+
+
+# USER_TEAM BADGES
+def evaluate_user_team_badges(team: Organization):
+    if not team:
+        return
+    badges = Badge.objects.filter(type="automatic", scope="topuser_team")
+    members = get_team_members(team)
+    # Precompute member lists and per-user metrics in bulk to avoid per-member queries
+    member_list = list(members)
+    member_ids = {m.id for m in member_list}
+    if member_ids:
+        user_contribs_qs = Contribution.objects.filter(user__id__in=member_ids).values("user").annotate(cnt=Count("id"))
+        user_contrib_map = {item["user"]: item["cnt"] for item in user_contribs_qs}
+
+        user_closed_qs = (
+            Issue.objects.filter(closed_by__id__in=member_ids, status="closed")
+            .values("closed_by")
+            .annotate(cnt=Count("id"))
+        )
+        user_closed_map = {item["closed_by"]: item["cnt"] for item in user_closed_qs}
+    else:
+        user_contrib_map = {}
+        user_closed_map = {}
+    for badge in badges:
+        criteria = badge.criteria or {}
+        metric = criteria.get("metric")
+        threshold = criteria.get("threshold")
+        rank = criteria.get("rank")
+
+        # Skip badges without valid threshold for threshold-based metrics
+        if threshold is not None:
+            try:
+                threshold = int(threshold)
+            except (TypeError, ValueError):
+                threshold = None
+
+        if metric == "top_contributor_team_rank":
+            top_user = get_top_contributor(team)
+            if top_user:
+                award_team_badge(team, badge, user=top_user, reason="Top contributor in team")
+
+        elif metric == "first_contributor_team":
+            first_user = get_first_contributor(team)
+            if first_user:
+                award_team_badge(team, badge, user=first_user, reason="First contributor in team")
+
+        elif metric == "user_team_issues":
+            # Use precomputed closed-issue counts per user
+            if threshold is None:
+                continue
+            for member in member_list:
+                count = user_closed_map.get(member.id, 0)
+                if count >= threshold:
+                    award_team_badge(team, badge, user=member, reason=f"{member.username} closed {count} issues")
+
+        elif metric == "user_team_contributions":
+            # Use precomputed contribution counts per user
+            if threshold is None:
+                continue
+            for member in member_list:
+                count = user_contrib_map.get(member.id, 0)
+                if count >= threshold:
+                    award_team_badge(team, badge, user=member, reason=f"{member.username} contributed {count} times")
+
+
+# SIGNALS
+@receiver(post_save, sender=Contribution)
+def contribution_created(sender, instance, created, **kwargs):
+    if not created or not instance.user:
+        return
+    team = get_user_team(instance.user)
+    evaluate_team_badges(team)
+    evaluate_user_team_badges(team)
+
+
+@receiver(post_save, sender=Issue)
+def issue_updated(sender, instance, **kwargs):
+    teams_to_evaluate = set()
+    if instance.user:
+        user_team = get_user_team(instance.user)
+        if user_team:
+            teams_to_evaluate.add(user_team.id)
+    if instance.status == "closed" and instance.closed_by:
+        closer_team = get_user_team(instance.closed_by)
+        if closer_team:
+            teams_to_evaluate.add(closer_team.id)
+    for team_id in teams_to_evaluate:
+        team = Organization.objects.get(id=team_id)
+        evaluate_team_badges(team)
+        evaluate_user_team_badges(team)

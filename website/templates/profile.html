@@ -495,7 +495,7 @@
             </div>
             <div class="flex flex-col gap-3 b">
                 <h1 class="text-xl font-semibold text-black/90 dark:text-white/90 flex items-center gap-4 justify-between">
-                    <span>{% trans "Badges" %} <a href="{% url 'badges' %}"
+                    <span>{% trans "Badges" %} <a href="{% url 'user_badges' %}"
     title="View Badges"
     class="hover:text-red-600 text-black/80 dark:text-white/80"><i class="fas fa-info-circle"></i></a></span>
                     {% if is_mentor %}
@@ -516,7 +516,8 @@
                                      height="64">
                             {% endif %}
                             <h4 class="font-medium">{{ user_badge.badge.title }}</h4>
-                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
+                            {% if user_badge.team %}<h3 class="font-medium text-start text-red-500">{{ user_badge.team }}</h3>{% endif %}
+                            <p class="text-xs text-gray-800 dark:text-gray-800 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
                             {% if user_badge.reason %}
                                 <p class="text-xs text-gray-400 dark:text-gray-600 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
                             {% endif %}
@@ -947,7 +948,7 @@
                 </div>
             </div>
             <div class="font-bold mb-3 mt-4 flex justify-between items-center">
-                <span>Badges <a href="{% url 'badges' %}" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
+                <span>Badges <a href="{% url 'user_badges' %}" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
                 {% if is_mentor %}
                     <button id="add-badge-button" class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
                         Assign a Badge

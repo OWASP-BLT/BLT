@@ -294,9 +294,9 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'badges' %}"
-                                           class="flex items-center transition-colors {% if request.resolver_match.url_name == 'badges' %} text-[#e74c3c] bg-[#feeae9] dark:bg-red-900/30 hover:bg-[#feeae9] dark:hover:bg-red-900/30 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
-                                            <i class="fas fa-certificate w-5 mr-2 {% if request.resolver_match.url_name == 'badges' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>
+                                        <a href="{% url 'user_badges' %}"
+                                           class="flex items-center transition-colors {% if request.resolver_match.url_name == 'user_badges' %} text-[#e74c3c] bg-[#feeae9] dark:bg-red-900/30 hover:bg-[#feeae9] dark:hover:bg-red-900/30 hover:text-[#e74c3c] cursor-default {% else %} text-gray-700 dark:text-gray-200 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] hover:bg-gray-100 dark:hover:bg-gray-800 {% endif %} ">
+                                            <i class="fas fa-certificate w-5 mr-2 {% if request.resolver_match.url_name == 'user_badges' %} text-[#e74c3c] {% else %} text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] {% endif %} "></i>
                                             Badges
                                         </a>
                                     </li>
@@ -328,7 +328,7 @@
                                         {% get_available_languages as LANGUAGES %}
                                         {% for lang_code, lang_name in LANGUAGES %}
                                             <option value="{{ lang_code }}"
-                                                    {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
+                                                    {% if lang_code  ==  LANGUAGE_CODE %}selected="selected"{% endif %}>
                                                 {{ lang_name }}
                                             </option>
                                         {% endfor %}
@@ -653,7 +653,8 @@
                                 <div id="recent-searches-dropdown"
                                      class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
                                     <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Searches</span>
+                                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent
+                                        Searches</span>
                                         <button type="button"
                                                 id="clear-search-history-header"
                                                 class="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
@@ -924,19 +925,19 @@
 </nav>
 <!-- Sidebar Script -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const hamburgerButton = document.getElementById('hamburger-button');
         const sidebar = document.querySelector('.sidebar');
-        
+
         if (hamburgerButton && sidebar) {
-            hamburgerButton.addEventListener('click', function(e) {
+            hamburgerButton.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 sidebar.classList.toggle('-translate-x-full');
             });
-            
+
             // Close sidebar when clicking outside
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 if (!hamburgerButton.contains(e.target) && !sidebar.contains(e.target)) {
                     sidebar.classList.add('-translate-x-full');
                 }
@@ -964,7 +965,8 @@
                          xmlns="http://www.w3.org/2000/svg"
                          fill="none"
                          viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
@@ -1014,290 +1016,290 @@
 </div>
 <!-- Scripts -->
 <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const organizationsBtn = document.getElementById('organizations-btn');
-            const organizationsDropdown = document.getElementById('organizations-dropdown');
-            const queryInput = document.getElementById('query-input');
-    
-            // Function to get URL parameters
-            function getUrlParameter(name) {
-                const params = new URLSearchParams(window.location.search);
-                return params.get(name);
+    document.addEventListener('DOMContentLoaded', function () {
+        const organizationsBtn = document.getElementById('organizations-btn');
+        const organizationsDropdown = document.getElementById('organizations-dropdown');
+        const queryInput = document.getElementById('query-input');
+
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        // Set initial values from URL parameters if they exist
+        const savedQuery = getUrlParameter('query');
+        const savedType = getUrlParameter('type');
+
+        if (queryInput && savedQuery) {
+            queryInput.value = savedQuery;
+        }
+
+        if (savedType) {
+            // Find the matching filter option
+            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
+            if (matchingOption) {
+                const iconElement = matchingOption.querySelector('i');
+                const textContent = matchingOption.textContent.trim();
+
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+                const filterType = document.getElementById('filter-type');
+
+                // Update the button display if elements exist
+                if (selectedIcon && selectedFilter && filterType) {
+                    selectedIcon.className = iconElement.className + ' mr-2';
+                    selectedFilter.textContent = textContent;
+                    filterType.value = savedType;
+                }
             }
-    
-            // Set initial values from URL parameters if they exist
-            const savedQuery = getUrlParameter('query');
-            const savedType = getUrlParameter('type');
-    
-            if (queryInput && savedQuery) {
-                queryInput.value = savedQuery;
-            }
-    
-            if (savedType) {
-                // Find the matching filter option
-                const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
-                if (matchingOption) {
-                    const iconElement = matchingOption.querySelector('i');
-                    const textContent = matchingOption.textContent.trim();
-                    
+        }
+
+        if (organizationsBtn && organizationsDropdown) {
+            organizationsBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isHidden = organizationsDropdown.classList.toggle('hidden');
+
+                if (!isHidden) {
+                    const btnRect = organizationsBtn.getBoundingClientRect();
+                    Object.assign(organizationsDropdown.style, {
+                        position: 'fixed',
+                        top: `${btnRect.bottom}px`,
+                        left: `${btnRect.left}px`,
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
+                    });
+                } else {
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+                    organizationsDropdown.classList.add('hidden');
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // Only add event listeners to filter options if they exist
+        const filterOptions = document.querySelectorAll('.filter-option');
+        if (filterOptions.length > 0) {
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const iconElement = this.querySelector('i');
+                    const textContent = this.textContent.trim();
+                    const filterValue = this.getAttribute('data-value');
+
                     const selectedIcon = document.getElementById('selected-icon');
                     const selectedFilter = document.getElementById('selected-filter');
                     const filterType = document.getElementById('filter-type');
-                    
-                    // Update the button display if elements exist
+
                     if (selectedIcon && selectedFilter && filterType) {
                         selectedIcon.className = iconElement.className + ' mr-2';
                         selectedFilter.textContent = textContent;
-                        filterType.value = savedType;
+                        filterType.value = filterValue;
                     }
-                }
-            }
-    
-            if (organizationsBtn && organizationsDropdown) {
-                organizationsBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-    
-                    const isHidden = organizationsDropdown.classList.toggle('hidden');
-    
-                    if (!isHidden) {
-                        const btnRect = organizationsBtn.getBoundingClientRect();
-                        Object.assign(organizationsDropdown.style, {
-                            position: 'fixed',
-                            top: `${btnRect.bottom}px`,
-                            left: `${btnRect.left}px`,
-                            minWidth: `${btnRect.width}px`,
-                            display: 'block',
-                        });
-                    } else {
-                        organizationsDropdown.style.display = 'none';
-                    }
-                });
-    
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function (e) {
-                    if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+
+                    if (organizationsDropdown) {
                         organizationsDropdown.classList.add('hidden');
                         organizationsDropdown.style.display = 'none';
                     }
                 });
-            }
-    
-            // Only add event listeners to filter options if they exist
-            const filterOptions = document.querySelectorAll('.filter-option');
-            if (filterOptions.length > 0) {
-                filterOptions.forEach(option => {
-                    option.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        const iconElement = this.querySelector('i');
-                        const textContent = this.textContent.trim();
-                        const filterValue = this.getAttribute('data-value');
-                        
-                        const selectedIcon = document.getElementById('selected-icon');
-                        const selectedFilter = document.getElementById('selected-filter');
-                        const filterType = document.getElementById('filter-type');
-                        
-                        if (selectedIcon && selectedFilter && filterType) {
-                            selectedIcon.className = iconElement.className + ' mr-2';
-                            selectedFilter.textContent = textContent;
-                            filterType.value = filterValue;
-                        }
-    
-                        if (organizationsDropdown) {
-                            organizationsDropdown.classList.add('hidden');
-                            organizationsDropdown.style.display = 'none';
-                        }
-                    });
-                });
-            }
-        });
-</script>
-<script>
-        document.getElementById('chatIcon').addEventListener('click', function () {
-            document.getElementById('chatbot').classList.remove('hidden');
-            this.classList.add('hidden');
-        });
-    
-        document.getElementById('closeChatbot').addEventListener('click', function () {
-            document.getElementById('chatbot').classList.add('hidden');
-            document.getElementById('chatIcon').classList.remove('hidden');
-        });
-    
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const chatLog = document.querySelector('#chat-log');
-            const chatInput = document.querySelector('#chat-message-input');
-            const chatSubmit = document.querySelector('#chat-message-submit');
-            const chatClear = document.querySelector('#chat-message-clear');
-            const chatClose = document.querySelector('#closeChatbot');
-            const loading = document.querySelector('#loading');
-            const quickCommands = document.querySelectorAll('.quick-command');
-        
-            function escapeHtml(text) {
-                const div = document.createElement("div");
-                div.textContent = text;
-                return div.innerHTML;
-            }
-        
-            function handleSlashCommand(command, args) {
-                let response = '';
-                switch (command) {
-                    case '/help':
-                        response = '<strong>Available Commands:</strong><br>' +
-                            '/help - Show this message<br>' +
-                            '/report &lt;description&gt; - Report a bug<br>' +
-                            '/gsoc - Get GSoC info<br>' +
-                            '/stats - View platform stats<br>';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    case '/report':
-                        if (!args) {
-                            response = 'Please provide a description. Usage: /report &lt;description&gt;';
-                            chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                            chatLog.scrollTop = chatLog.scrollHeight;
-                            return true;
-                        }
-                        return false;
-                    case '/gsoc':
-                        response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                            'Explore OWASP\'s GSoC participation:<br>' +
-                            '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
-                            'Get involved with open-source at OWASP!';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    case '/stats':
-                        response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        
-            chatSubmit.onclick = function () {
-                const message = chatInput.value.trim();
-                chatInput.value = '';
-                if (message === "") return;
-        
-                const escapedMessage = escapeHtml(message);
-                chatLog.innerHTML += '<div class="bg-green-300 text-black dark:text-white p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
-                loading.classList.remove('hidden');
-        
-                // Check for slash command
-                if (message.startsWith('/')) {
-                    const [command, ...argsArr] = message.split(' ');
-                    const args = argsArr.join(' ').trim();
-                    if (handleSlashCommand(command, args)) {
-                        loading.classList.add('hidden');
-                        return;
-                    }
-                }
-        
-                fetch('/api/chatbot/conversation/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question: message }),
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            if (response.status === 429) {
-                                throw new Error('Rate limit exceeded');
-                            }
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const escapedAnswer = escapeHtml(data.answer);
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        loading.classList.add('hidden');
-                    })
-                    .catch((error) => {
-                        let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
-                        if (error.message === 'Rate limit exceeded') {
-                            errorMessage = 'The request limit has been reached. Please try again later.';
-                        }
-                        chatLog.innerHTML += '<div class="bg-red-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        loading.classList.add('hidden');
-                    });
-            };
-        
-            function clearChat() {
-                    chatInput.value = "";
-                    chatInput.focus();
-                    loading.classList.remove('hidden');
-
-                fetch('/api/chatbot/conversation/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question: "exit" }),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        chatLog.innerHTML = '';
-                        loading.classList.add('hidden');
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        loading.classList.add('hidden');
-                    });
-            }
-        
-            chatClear.onclick = clearChat;
-            chatClose.onclick = clearChat;
-        
-            chatInput.addEventListener('keyup', function (event) {
-                if (event.keyCode === 13) {  // Enter key
-                    chatSubmit.click();
-                }
             });
-        
-            // Handle quick command button clicks
-            quickCommands.forEach(button => {
-                button.addEventListener('click', function () {
-                    const command = this.getAttribute('data-command');
-                    chatInput.value = command;
-                    chatSubmit.click();
-                });
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const dropdownButton = document.getElementById('dropdownButton');
-            const dropdownMenu = document.getElementById('dropdownMenu');
-        
-            if (dropdownButton && dropdownMenu) {
-                // Toggle dropdown on button click
-                dropdownButton.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropdownMenu.classList.toggle('hidden');
-                });
-        
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function (e) {
-                    if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                        dropdownMenu.classList.add('hidden');
-                    }
-                });
-            }
-        });
-        
-</script>
-<script>
-        function toggleMobileSearch() {
-            const mobileSearch = document.getElementById('mobile-search');
-            mobileSearch.classList.toggle('hidden');
-            mobileSearch.classList.toggle('active');
         }
+    });
+</script>
+<script>
+    document.getElementById('chatIcon').addEventListener('click', function () {
+        document.getElementById('chatbot').classList.remove('hidden');
+        this.classList.add('hidden');
+    });
+
+    document.getElementById('closeChatbot').addEventListener('click', function () {
+        document.getElementById('chatbot').classList.add('hidden');
+        document.getElementById('chatIcon').classList.remove('hidden');
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const chatLog = document.querySelector('#chat-log');
+        const chatInput = document.querySelector('#chat-message-input');
+        const chatSubmit = document.querySelector('#chat-message-submit');
+        const chatClear = document.querySelector('#chat-message-clear');
+        const chatClose = document.querySelector('#closeChatbot');
+        const loading = document.querySelector('#loading');
+        const quickCommands = document.querySelectorAll('.quick-command');
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function handleSlashCommand(command, args) {
+            let response = '';
+            switch (command) {
+                case '/help':
+                    response = '<strong>Available Commands:</strong><br>' +
+                        '/help - Show this message<br>' +
+                        '/report &lt;description&gt; - Report a bug<br>' +
+                        '/gsoc - Get GSoC info<br>' +
+                        '/stats - View platform stats<br>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/report':
+                    if (!args) {
+                        response = 'Please provide a description. Usage: /report &lt;description&gt;';
+                        chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        return true;
+                    }
+                    return false;
+                case '/gsoc':
+                    response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
+                        'Explore OWASP\'s GSoC participation:<br>' +
+                        '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
+                        'Get involved with open-source at OWASP!';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/stats':
+                    response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        chatSubmit.onclick = function () {
+            const message = chatInput.value.trim();
+            chatInput.value = '';
+            if (message === "") return;
+
+            const escapedMessage = escapeHtml(message);
+            chatLog.innerHTML += '<div class="bg-green-300 text-black dark:text-white p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
+            loading.classList.remove('hidden');
+
+            // Check for slash command
+            if (message.startsWith('/')) {
+                const [command, ...argsArr] = message.split(' ');
+                const args = argsArr.join(' ').trim();
+                if (handleSlashCommand(command, args)) {
+                    loading.classList.add('hidden');
+                    return;
+                }
+            }
+
+            fetch('/api/chatbot/conversation/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: message }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            throw new Error('Rate limit exceeded');
+                        }
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const escapedAnswer = escapeHtml(data.answer);
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    loading.classList.add('hidden');
+                })
+                .catch((error) => {
+                    let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
+                    if (error.message === 'Rate limit exceeded') {
+                        errorMessage = 'The request limit has been reached. Please try again later.';
+                    }
+                    chatLog.innerHTML += '<div class="bg-red-300 text-black dark:text-white p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    loading.classList.add('hidden');
+                });
+        };
+
+        function clearChat() {
+            chatInput.value = "";
+            chatInput.focus();
+            loading.classList.remove('hidden');
+
+            fetch('/api/chatbot/conversation/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: "exit" }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    chatLog.innerHTML = '';
+                    loading.classList.add('hidden');
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    loading.classList.add('hidden');
+                });
+        }
+
+        chatClear.onclick = clearChat;
+        chatClose.onclick = clearChat;
+
+        chatInput.addEventListener('keyup', function (event) {
+            if (event.keyCode === 13) {  // Enter key
+                chatSubmit.click();
+            }
+        });
+
+        // Handle quick command button clicks
+        quickCommands.forEach(button => {
+            button.addEventListener('click', function () {
+                const command = this.getAttribute('data-command');
+                chatInput.value = command;
+                chatSubmit.click();
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropdownButton = document.getElementById('dropdownButton');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+
+        if (dropdownButton && dropdownMenu) {
+            // Toggle dropdown on button click
+            dropdownButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
+
+</script>
+<script>
+    function toggleMobileSearch() {
+        const mobileSearch = document.getElementById('mobile-search');
+        mobileSearch.classList.toggle('hidden');
+        mobileSearch.classList.toggle('active');
+    }
 </script>
 <script>
     // Recent Searches Dropdown Functionality
@@ -1307,11 +1309,11 @@
         const recentSearchesDropdown = document.getElementById("recent-searches-dropdown");
         const recentSearchesList = document.getElementById("recent-searches-list");
         const clearHistoryBtn = document.getElementById("clear-search-history-header");
-        
+
         if (!queryInput || !recentSearchesDropdown) return;
-        
+
         let recentSearches = [];
-        
+
         // Fetch recent searches
         async function fetchRecentSearches() {
             try {
@@ -1321,7 +1323,7 @@
                         "X-CSRFToken": "{{ csrf_token }}",
                     },
                 });
-                
+
                 if (response.ok) {
                     recentSearches = await response.json();
                     displayRecentSearches();
@@ -1330,14 +1332,14 @@
                 console.error("Error fetching recent searches:", error);
             }
         }
-        
+
         // Display recent searches in dropdown
         function displayRecentSearches() {
             if (recentSearches.length === 0) {
                 recentSearchesList.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No recent searches</div>';
                 return;
             }
-            
+
             recentSearchesList.innerHTML = recentSearches.slice(0, 10).map(search => {
                 const searchTypeDisplay = (search.search_type === 'all' || !search.search_type) ? 'All' :
                     search.search_type.charAt(0).toUpperCase() + search.search_type.slice(1);
@@ -1361,34 +1363,34 @@
                 `;
             }).filter(html => html !== '').join('');
         }
-        
+
         // Show dropdown on focus
-        queryInput.addEventListener("focus", function() {
+        queryInput.addEventListener("focus", function () {
             if (recentSearches.length === 0) {
                 fetchRecentSearches();
             }
             recentSearchesDropdown.classList.remove("hidden");
         });
-        
+
         // Hide dropdown when clicking outside
-        document.addEventListener("click", function(e) {
+        document.addEventListener("click", function (e) {
             if (!queryInput.contains(e.target) && !recentSearchesDropdown.contains(e.target)) {
                 recentSearchesDropdown.classList.add("hidden");
             }
         });
-        
+
         // Delete single search item
-        window.deleteSearchItem = async function(e, searchId) {
+        window.deleteSearchItem = async function (e, searchId) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             // Validate searchId is a number
             const id = parseInt(searchId, 10);
             if (isNaN(id) || id <= 0) {
                 alert("Invalid search item ID.");
                 return;
             }
-            
+
             try {
                 const response = await fetch("{% url 'search_history_api' %}?id=" + id, {
                     method: "DELETE",
@@ -1397,7 +1399,7 @@
                         "Content-Type": "application/json",
                     },
                 });
-                
+
                 if (response.ok) {
                     // Remove from local array and refresh display
                     recentSearches = recentSearches.filter(s => s.id !== id);
@@ -1410,13 +1412,13 @@
                 alert("Failed to delete search item.");
             }
         };
-        
+
         // Clear history handler
         if (clearHistoryBtn) {
-            clearHistoryBtn.addEventListener("click", async function(e) {
+            clearHistoryBtn.addEventListener("click", async function (e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 try {
                     const response = await fetch("{% url 'search_history_api' %}", {
                         method: "DELETE",
@@ -1425,7 +1427,7 @@
                             "Content-Type": "application/json",
                         },
                     });
-                    
+
                     if (response.ok) {
                         recentSearches = [];
                         displayRecentSearches();
@@ -1438,7 +1440,7 @@
                 }
             });
         }
-        
+
         // Initial fetch if input is already focused
         if (document.activeElement === queryInput) {
             fetchRecentSearches();
@@ -1477,19 +1479,19 @@
                     notificationList.innerHTML = "<p class='text-sm text-gray-500 dark:text-gray-500'>Unable to load notifications.</p>";
                     return;
                 }
-        
+
                 const notifications = data.notifications;
-        
+
 
                 notificationList.innerHTML = "";
 
                 const unreadNotifications = notifications.filter(notification => !notification.is_read);
                 if (unreadNotifications.length > 0) {
                     unreadCount.textContent = unreadNotifications.length;
-                    unreadCount.classList.remove("hidden"); 
+                    unreadCount.classList.remove("hidden");
                 } else {
-                    unreadCount.textContent = ""; 
-                    unreadCount.classList.add("hidden"); 
+                    unreadCount.textContent = "";
+                    unreadCount.classList.add("hidden");
                 }
 
                 if (notifications.length === 0) {
@@ -1501,8 +1503,8 @@
                     const notificationItem = document.createElement("div");
                     notificationItem.classList.add(
                         "flex", "items-start", "gap-3", "p-3", "rounded-lg", "hover:bg-gray-100", "transition-colors",
-                        !notification.is_read ? "bg-gray-50" : "bg-white", 
-                        !notification.is_read ? "font-semibold" : "font-normal" 
+                        !notification.is_read ? "bg-gray-50" : "bg-white",
+                        !notification.is_read ? "font-semibold" : "font-normal"
                     );
 
                     if (notification.link) {
@@ -1532,7 +1534,7 @@
                     button.addEventListener("click", function (e) {
                         e.stopPropagation();
                         const notificationId = this.getAttribute("data-notification-id");
-                        deleteNotification(notificationId, this.closest("div")); 
+                        deleteNotification(notificationId, this.closest("div"));
                     });
                 });
             } catch (error) {
@@ -1585,24 +1587,24 @@
                     console.error("Notification ID is undefined");
                     return;
                 }
-                
+
                 const response = await fetch(`/notifications/delete_notification/${notificationId}`, {
                     method: "DELETE",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}",
-                        "Content-Type": "application/json", 
+                        "Content-Type": "application/json",
                     },
                     credentials: "include",
                 });
-        
+
                 if (!response.ok) {
                     throw new Error(`Failed to delete notification: ${response.statusText}`);
                 }
-        
-                const data = await response.json(); 
+
+                const data = await response.json();
                 if (data.status === "success") {
                     notificationElement.remove();
-        
+
                     const unreadNotifications = document.querySelectorAll(".bg-gray-50");
                     if (unreadNotifications.length === 0) {
                         unreadCount.textContent = "";
@@ -1636,7 +1638,7 @@
                     .then(data => {
                         if (data.status === "success") {
                             unreadCount.textContent = "";
-                            unreadCount.classList.add("hidden"); 
+                            unreadCount.classList.add("hidden");
                             document.querySelectorAll(".bg-gray-50").forEach(el => {
                                 el.classList.remove("bg-gray-50", "font-semibold");
                                 el.classList.add("bg-white", "font-normal");
@@ -1657,49 +1659,49 @@
 </script>
 <!-- Add this script before the closing body tag -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const megaMenuButton = document.getElementById('mega-menu-button');
-    const megaMenu = document.querySelector('.mega-menu');
-    let isMenuOpen = false;
+    document.addEventListener('DOMContentLoaded', function () {
+        const megaMenuButton = document.getElementById('mega-menu-button');
+        const megaMenu = document.querySelector('.mega-menu');
+        let isMenuOpen = false;
 
-    // Toggle menu on button click
-    megaMenuButton.addEventListener('click', function(e) {
-        e.stopPropagation();
-        isMenuOpen = !isMenuOpen;
-        megaMenu.classList.toggle('hidden');
-        
-        // Update button aria attributes
-        megaMenuButton.setAttribute('aria-expanded', isMenuOpen);
-    });
+        // Toggle menu on button click
+        megaMenuButton.addEventListener('click', function (e) {
+            e.stopPropagation();
+            isMenuOpen = !isMenuOpen;
+            megaMenu.classList.toggle('hidden');
 
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-        if (isMenuOpen && !megaMenu.contains(e.target) && e.target !== megaMenuButton) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-    });
+            // Update button aria attributes
+            megaMenuButton.setAttribute('aria-expanded', isMenuOpen);
+        });
 
-    // Close menu on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && isMenuOpen) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-    });
+        // Close menu when clicking outside
+        document.addEventListener('click', function (e) {
+            if (isMenuOpen && !megaMenu.contains(e.target) && e.target !== megaMenuButton) {
+                megaMenu.classList.add('hidden');
+                isMenuOpen = false;
+                megaMenuButton.setAttribute('aria-expanded', 'false');
+            }
+        });
 
-    // Close menu on scroll
-    let lastScrollPosition = window.pageYOffset;
-    window.addEventListener('scroll', function() {
-        const currentScrollPosition = window.pageYOffset;
-        if (isMenuOpen && Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-        lastScrollPosition = currentScrollPosition;
+        // Close menu on escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && isMenuOpen) {
+                megaMenu.classList.add('hidden');
+                isMenuOpen = false;
+                megaMenuButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close menu on scroll
+        let lastScrollPosition = window.pageYOffset;
+        window.addEventListener('scroll', function () {
+            const currentScrollPosition = window.pageYOffset;
+            if (isMenuOpen && Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
+                megaMenu.classList.add('hidden');
+                isMenuOpen = false;
+                megaMenuButton.setAttribute('aria-expanded', 'false');
+            }
+            lastScrollPosition = currentScrollPosition;
+        });
     });
-});
 </script>
