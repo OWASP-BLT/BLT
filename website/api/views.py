@@ -19,7 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -51,6 +51,7 @@ from website.models import (
     Repo,
     SearchHistory,
     SecurityIncident,
+    SecurityIncidentHistory,
     Tag,
     TimeLog,
     Token,
@@ -1455,12 +1456,48 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = SecurityIncident.objects.all()
 
+    def update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return super().update(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(reporter=self.request.user)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        # Capture old state before save
+        old_instance = SecurityIncident.objects.select_for_update().get(pk=serializer.instance.pk)
+
+        # Save the updated incident
+        serializer.save()
+
+        # Create history records for changed fields
+        fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
+
+        for field in fields_to_track:
+            old_val = getattr(old_instance, field)
+            new_val = getattr(serializer.instance, field)
+
+            if old_val != new_val:
+                SecurityIncidentHistory.objects.create(
+                    incident=serializer.instance,
+                    field_name=field,
+                    old_value=old_val if old_val is not None else "",
+                    new_value=new_val if new_val is not None else "",
+                    changed_by=self.request.user,
+                )
+
     def get_queryset(self):
         queryset = self.queryset  # Use class-level queryset
 
         request = self.request
         severity = request.query_params.get("severity")
         status = request.query_params.get("status")
+        if severity:
+            severity = severity.lower()
+
+        if status:
+            status = status.lower()
 
         allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
         allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]
