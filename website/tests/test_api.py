@@ -1,5 +1,5 @@
 from io import BytesIO
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
@@ -61,8 +61,15 @@ class FileValidationTest(APITestCase):
 
 
 class RebuildSafeUrlTestCase(TestCase):
-    def test_rebuild_safe_url(self):
-        print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
+    @patch("socket.getaddrinfo")
+    def test_rebuild_safe_url(self, mock_getaddrinfo):
+        # Mock DNS resolution to return a valid public IP address for example.com
+        # This simulates successful DNS resolution to a public IP (not private/loopback/reserved)
+        # Format: [(family, type, proto, canonname, sockaddr)]
+        mock_getaddrinfo.return_value = [
+            (2, 1, 6, "", ("93.184.216.34", 0))  # IPv4 address for example.com
+        ]
+
         test_cases = [
             # Test case with credentials and encoded control characters in the path.
             (
