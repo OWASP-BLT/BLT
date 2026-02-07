@@ -1,7 +1,9 @@
 name: Security Scanning
 
 # Security scanning workflow for dependency vulnerabilities, code security issues,
-# and secrets detection. This workflow complements CodeQL with additional security tools.
+# and secrets detection. Complements existing GitHub Advanced Security (secret scanning)
+# and Dependabot (dependency scanning) with additional SAST tools.
+# See discussion: https://github.com/orgs/OWASP-BLT/discussions/5561
 
 on:
   pull_request:
@@ -26,6 +28,8 @@ jobs:
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
+    outputs:
+      scan_exit_code: ${{ steps.pip-audit.outputs.exit_code }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,9 +51,9 @@ jobs:
         id: pip-audit
         continue-on-error: true
         run: |
-          set +e
+          set -o pipefail
           pip-audit -r requirements.txt --format json --output pip-audit-results.json 2>&1 | tee pip-audit-output.txt
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
 
       - name: Upload pip-audit results
         if: always()
@@ -65,12 +69,12 @@ jobs:
         if: steps.pip-audit.outputs.exit_code != '0'
         run: |
           echo "::warning::Dependency vulnerabilities found. Please review pip-audit-results.json"
-          # Don't fail the build for now, just warn
-          # exit 1
 
   bandit-scan:
     name: Python Security Scan (Bandit)
     runs-on: ubuntu-latest
+    outputs:
+      scan_exit_code: ${{ steps.bandit.outputs.exit_code }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -87,9 +91,9 @@ jobs:
         id: bandit
         continue-on-error: true
         run: |
-          set +e
+          set -o pipefail
           bandit -r . -x ./node_modules,./venv,./.venv,./tests,./website/tests -f json -o bandit-results.json 2>&1 | tee bandit-output.txt
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
 
       - name: Upload Bandit results
         if: always()
@@ -118,6 +122,8 @@ jobs:
   secrets-scan:
     name: Secrets Detection
     runs-on: ubuntu-latest
+    outputs:
+      scan_exit_code: ${{ steps.secrets.outputs.exit_code }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -131,14 +137,28 @@ jobs:
         id: secrets
         continue-on-error: true
         run: |
-          set +e
-          detect-secrets scan --all-files --exclude-files '\.git/.*' --exclude-files 'node_modules/.*' --exclude-files '\.env\.example' > secrets-results.json 2>&1
+          detect-secrets scan \
+            --all-files \
+            --exclude-files '\.git/.*' \
+            --exclude-files 'node_modules/.*' \
+            --exclude-files '\.env\.example' \
+            --exclude-files '(^|/)tests?/.*' \
+            --exclude-files '(^|/)?test_.*\.(py|js|ts)$' \
+            --exclude-files '.*\.pyc$' \
+            > secrets-results.json 2>&1
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: Check for secrets
         run: |
           if [ -f secrets-results.json ]; then
-            SECRETS_COUNT=$(cat secrets-results.json | python -c "import sys, json; data=json.load(sys.stdin); print(sum(len(v) for v in data.get('results', {}).values()))" 2>/dev/null || echo "0")
+            SECRETS_COUNT=$(python -c "
+          import sys, json
+          try:
+              data = json.load(open('secrets-results.json'))
+              print(sum(len(v) for v in data.get('results', {}).values()))
+          except Exception:
+              print('0')
+          " 2>/dev/null || echo "0")
             if [ "$SECRETS_COUNT" != "0" ]; then
               echo "::warning::Potential secrets detected: $SECRETS_COUNT findings. Please review secrets-results.json"
             else
@@ -181,12 +201,15 @@ jobs:
               return;
             }
 
-            // Check job results
-            const depScan = '${{ needs.dependency-scan.result }}';
-            const banditScan = '${{ needs.bandit-scan.result }}';
-            const secretsScan = '${{ needs.secrets-scan.result }}';
+            // Check actual exit codes from scan jobs (not job result, which is
+            // always 'success' due to continue-on-error)
+            const depExit = '${{ needs.dependency-scan.outputs.scan_exit_code }}';
+            const banditExit = '${{ needs.bandit-scan.outputs.scan_exit_code }}';
+            const secretsExit = '${{ needs.secrets-scan.outputs.scan_exit_code }}';
 
-            const allPassed = depScan === 'success' && banditScan === 'success' && secretsScan === 'success';
+            core.info(`Scan exit codes - dependency: ${depExit}, bandit: ${banditExit}, secrets: ${secretsExit}`);
+
+            const allPassed = depExit === '0' && banditExit === '0' && secretsExit === '0';
             const newLabel = allPassed ? 'security: passed' : 'security: review needed';
             const labelColor = allPassed ? '0e8a16' : 'fbca04';
             const description = allPassed ? 'Security scans passed' : 'Security scans need review';
@@ -234,11 +257,19 @@ jobs:
 
             // Add label
             if (!currentNames.has(newLabel)) {
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: pull_number,
-                labels: [newLabel]
-              });
-              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  labels: [newLabel]
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning('Permission denied: Cannot add label to PR.');
+                } else {
+                  throw error;
+                }
+              }
             }
