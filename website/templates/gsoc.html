@@ -17,24 +17,7 @@
     Learn about the Google Summer of Code (GSoC) program, its benefits, and its partnership with OWASP {% env 'PROJECT_NAME' %}.
 {% endblock og_description %}
 {% block extra_head %}
-    <style>
-.mentor-description-container {
-    max-height: 8rem;
-    overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.mentor-description-container::-webkit-scrollbar {
-    display: none;
-}
-.mentor-description-text {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-.mentor-description-text::-webkit-scrollbar {
-    display: none;
-}
-    </style>
+    <link rel="stylesheet" href="{% static 'css/gsoc.css' %}">
 {% endblock extra_head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -84,6 +67,58 @@
             </div>
         </div>
     </div>
+    <!-- Horizontal GSoC Timeline - Single Background -->
+    <section class="py-12 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
+        <div class="w-[90%] mx-auto">
+            <h3 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">Google Summer of Code Timeline</h3>
+            <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-12 rounded-full"></div>
+            <!-- Timeline container -->
+            <div class="flex items-start justify-between overflow-x-auto px-4 space-x-8">
+                <!-- Step 1 -->
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
+                    <!-- Dot -->
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <!-- Title row (fixed height) -->
+                    <div class="relative mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Organization Applications</h4>
+                        <!-- Line aligned with title -->
+                        <div class="absolute left-full -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Jan 19 – Feb 3, 2026</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Open-source organizations apply to participate in GSoC.</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <div class="relative mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Student Applications</h4>
+                        <div class="absolute left-full -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">Mar 16 – Mar 31, 2026</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students submit proposals and connect with mentors.</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <div class="relative mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Community Bonding</h4>
+                        <div class="absolute left-full -translate-x-1/2 w-12 h-1 bg-gray-300 dark:bg-gray-700"></div>
+                    </div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 1 – May 24, 2026</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Accepted students prepare and plan with their mentors.</p>
+                </div>
+                <!-- Step 4 (last – no line) -->
+                <div class="relative flex flex-col items-center text-center min-w-[220px]">
+                    <div class="w-6 h-6 bg-red-500 rounded-full z-10"></div>
+                    <div class="mt-4 h-12 flex items-center justify-center w-full">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100">Coding Phase & Evaluations</h4>
+                    </div>
+                    <p class="mt-2 text-gray-700 dark:text-gray-300 text-sm">May 25, 2026 onwards</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-300 max-w-xs">Students work on projects and undergo evaluations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
     <!-- Main Content -->
     <div class="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div class="w-[85%] mx-auto">
@@ -93,21 +128,24 @@
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden transform">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">100+</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="100">0</div>
                             <div class="text-gray-700 dark:text-gray-300 font-medium">Countries Participated</div>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden transform">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">7</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="7">0</div>
                             <div class="text-gray-700 dark:text-gray-300 font-medium">Years with OWASP BLT</div>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden transform">
                         <div class="p-2 bg-[#e74c3c]"></div>
                         <div class="p-6 text-center">
-                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">20+</div>
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c] counter"
+                                 data-target="20">0</div>
                             <div class="text-gray-700 dark:text-gray-300 font-medium">Successful Projects</div>
                         </div>
                     </div>
@@ -209,9 +247,9 @@
                 </div>
             </div>
             <!-- OWASP Partnership Card -->
-            <div class="bg-white rounded-xl shadow-lg transition-all duration-300 p-8 mb-20 border border-gray-100">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">OWASP BLT & GSOC Partnership</h2>
-                <div class="space-y-6 text-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-all duration-300 p-8 mb-20 border border-gray-100 dark:border-gray-800">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">OWASP BLT & GSOC Partnership</h2>
+                <div class="space-y-6 text-gray-700 dark:text-gray-300">
                     <p class="leading-relaxed">
                         OWASP is an open community dedicated to enabling organizations to
                         conceive, develop, acquire, operate, and maintain applications that
@@ -221,15 +259,15 @@
                     </p>
                     <p class="leading-relaxed">
                         OWASP BLT (Bug Logging Tool) has been participating in the Google
-                        Summer of Code program for the past 5 consecutive years, from 2020 to
+                        Summer of Code program for the past 7 consecutive years, from 2018 to
                         2024. OWASP BLT is an open-source platform dedicated to making the
                         internet safer through community-driven bug reporting and
                         collaboration.
                     </p>
                     <p class="leading-relaxed">
                         All students currently enrolled in an accredited institution are
-                        welcome to participate in the Google Summer of Code program, hopefully
-                        along with the OWASP Foundation.
+                        welcome to participate in the Google Summer of Code program,
+                        hopefully along with the OWASP Foundation.
                     </p>
                 </div>
             </div>
@@ -1008,91 +1046,74 @@
                         <ul class="space-y-2 text-gray-700 dark:text-gray-300">
                             <li class="flex items-start">
                                 <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                <span>Rahul Negi
-                                    <span class="text-gray-500 dark:text-gray-500">(Python/Django Mentor)</span></span>
-                                </li>
-                                <li class="flex items-start">
-                                    <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                    <span>Bishal Das
-                                        <span class="text-gray-500 dark:text-gray-500">(Django & UI/UX Mentor)</span></span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                        <span>Sudhir Palavalasa
-                                            <span class="text-gray-500 dark:text-gray-500">(Backend and OAuth mentor)</span></span>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                                    <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                        <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2024
-                                    </h4>
-                                    <ul class="space-y-2 text-gray-700 dark:text-gray-300">
-                                        <li class="flex items-start">
-                                            <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                            <span>Swapnil Shinde
-                                                <span class="text-gray-500 dark:text-gray-500">(Django and blockchain mentor)</span></span>
-                                            </li>
-                                            <li class="flex items-start">
-                                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                <span>Arkadii Yakovets
-                                                    <span class="text-gray-500 dark:text-gray-500">(Python/Django mentor)</span></span>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                                            <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                                <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2023
-                                            </h4>
-                                            <ul class="space-y-2 text-gray-700 dark:text-gray-300">
-                                                <li class="flex items-start">
-                                                    <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                    <span>Aryan Ranjan
-                                                        <span class="text-gray-500 dark:text-gray-500">(Flutter and Django Mentor)</span></span>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                                                <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                                    <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2022
-                                                </h4>
-                                                <ul class="space-y-2 text-gray-700 dark:text-gray-300">
-                                                    <li class="flex items-start">
-                                                        <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                        <span>Sourav Badami
-                                                            <span class="text-gray-500 dark:text-gray-500">(Django Mentor)</span></span>
-                                                        </li>
-                                                        <li class="flex items-start">
-                                                            <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                            <span>Rahul Badami
-                                                                <span class="text-gray-500 dark:text-gray-500">(Payments Mentor)</span></span>
-                                                            </li>
-                                                            <li class="flex items-start">
-                                                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                                <span>Ankit Choudhary
-                                                                    <span class="text-gray-500 dark:text-gray-500">(Flutter Mentor)</span></span>
-                                                                </li>
-                                                                <li class="flex items-start">
-                                                                    <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                                    <span>Sparsh Agrawal
-                                                                        <span class="text-gray-500 dark:text-gray-500">(Flutter Mentor)</span></span>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                                                                <h4 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                                                    <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2020-2021
-                                                                </h4>
-                                                                <ul class="space-y-2 text-gray-700 dark:text-gray-300">
-                                                                    <li class="flex items-start">
-                                                                        <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
-                                                                        <span>Sourav Badami
-                                                                            <span class="text-gray-500 dark:text-gray-500">(Django Mentor)</span></span>
-                                                                        </li>
-                                                                    </ul>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            {% endblock content %}
+                                <span>Sourav Badami <span class="text-gray-500 dark:text-gray-400">(Django Mentor)</span></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Animated Stats JS -->
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const counters = document.querySelectorAll('.counter');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const getTarget = (counter) => {
+    const raw = counter.getAttribute('data-target');
+    const target = Number.parseInt(raw, 10);
+    return Number.isFinite(target) && target > 0 ? target : 0;
+  };
+
+  const setCounterText = (counter, value) => {
+    counter.textContent = value > 0 ? `${value}+` : '0';
+  };
+
+  const animateCounter = (counter) => {
+    const target = getTarget(counter);
+
+    // Stop animation if target is invalid or prefers reduced motion
+    if (target === 0 || prefersReducedMotion) {
+      setCounterText(counter, target);
+      return;
+    }
+
+    let count = 0;
+    const step = Math.max(1, Math.ceil(target / 200));
+
+    const updateCount = () => {
+      count += step;
+      if (count > target) count = target;
+      setCounterText(counter, count);
+      if (count < target) requestAnimationFrame(updateCount);
+    };
+    updateCount();
+  };
+
+  // Apply reduced motion fallback immediately
+  if (prefersReducedMotion) {
+    counters.forEach(counter => setCounterText(counter, getTarget(counter)));
+    return;
+  }
+
+  // IntersectionObserver fallback
+  if (!('IntersectionObserver' in window)) {
+    counters.forEach(counter => setCounterText(counter, getTarget(counter)));
+    return;
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        animateCounter(entry.target);
+        observer.unobserve(entry.target); // run once
+      }
+    });
+  }, { threshold: 0.5 });
+
+  counters.forEach(counter => observer.observe(counter));
+});
+
+    </script>
+{% endblock content %}
