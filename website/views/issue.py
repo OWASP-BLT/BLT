@@ -245,7 +245,7 @@ def resolve(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status = "close"
+            issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()
@@ -1217,7 +1217,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1243,7 +1243,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
