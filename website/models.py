@@ -560,6 +560,22 @@ class Hunt(models.Model):
     result_published = models.BooleanField(default=False)
     modified = models.DateTimeField(auto_now=True)
 
+    # Anonymous bug hunt fields
+    is_anonymous = models.BooleanField(default=False, help_text="Whether this hunt was created anonymously")
+    anonymous_creator_email = models.EmailField(
+        null=True, blank=True, help_text="Email of anonymous creator for notifications"
+    )
+    anonymous_payer_bch_address = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        validators=[validate_bch_address],
+        help_text="BCH address of anonymous payer as proof of payment availability for bug bounties",
+    )
+    requires_bug_verification = models.BooleanField(
+        default=True, help_text="Whether bugs need verification before payout"
+    )
+
     @property
     def domain_title(self):
         parsed_url = urlparse(self.url)
