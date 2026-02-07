@@ -1,0 +1,112 @@
+display_information:
+  name: OWASP BLT Bot
+  description: Integrate OWASP resources into your Slack workspace. Search projects, track bugs, manage polls, reminders, and huddles—all from Slack.
+  background_color: "#e74c3c"
+  long_description: "The OWASP BLT (Bug Logging Tool) Slack Bot brings the power of OWASP directly to your workspace. Search through OWASP projects, discover chapters, track GSoC opportunities, create polls, set reminders, schedule huddles, report bugs, and stay connected with the OWASP community—all without leaving Slack."
+
+features:
+  bot_user:
+    display_name: OWASP BLT
+    always_online: true
+
+  slash_commands:
+    # Core OWASP commands
+    - command: /discover
+      description: Search and explore OWASP projects
+      usage_hint: "[search term]"
+      should_escape: false
+
+    - command: /stats
+      description: View OWASP project statistics and metrics
+      usage_hint: ""
+      should_escape: false
+
+    - command: /contrib
+      description: Get information on how to contribute to OWASP
+      usage_hint: ""
+      should_escape: false
+
+    - command: /gsoc25
+      description: Search Google Summer of Code opportunities
+      usage_hint: "[search term]"
+      should_escape: false
+
+    - command: /blt
+      description: Search BLT projects and resources
+      usage_hint: "[search term]"
+      should_escape: false
+
+    # Utility commands
+    - command: /ghissue
+      description: Create a GitHub issue from Slack
+      usage_hint: "<owner/repo> <issue title and description>"
+      should_escape: false
+
+    - command: /help
+      description: Show all available commands and usage information
+      usage_hint: ""
+      should_escape: false
+
+    - command: /installed_apps
+      description: View installed apps in your workspace
+      usage_hint: ""
+      should_escape: false
+
+    - command: /report
+      description: Report a bug or security issue
+      usage_hint: "<bug description>"
+      should_escape: false
+
+    - command: /sweep
+      description: Post project status update to `#project-sweeper`
+      usage_hint: ""
+      should_escape: false
+
+    # Collaboration commands (NEW in PR `#5334`)
+    - command: /blt_poll
+      description: Create an interactive poll with voting
+      usage_hint: '"Question?" "Option 1" "Option 2" "Option 3"'
+      should_escape: false
+
+    - command: /blt_remind
+      description: Create reminders for yourself or team members
+      usage_hint: '"Message" in <number> <minutes|hours|days>'
+      should_escape: false
+
+    - command: /blt_huddle
+      description: Schedule huddles with participant tracking
+      usage_hint: '"Title" "Description" at/in <time> with `@user1` `@user2`'
+      should_escape: false
+
+oauth_config:
+  scopes:
+    bot:
+      - channels:read
+      - channels:join
+      - chat:write
+      - groups:read
+      - im:write
+      - users:read
+      - team:read
+      - commands
+      - conversations:history
+      - channels:history
+      - groups:history
+      - im:history
+      - mpim:history
+
+settings:
+  event_subscriptions:
+    bot_events:
+      - message.channels
+      - message.groups
+      - message.im
+      - message.mpim
+      - app_mention
+
+  interactivity:
+    is_enabled: true
+
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
