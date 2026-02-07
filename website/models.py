@@ -737,6 +737,48 @@ class Issue(models.Model):
         ]
 
 
+class IssuePledge(models.Model):
+    """
+    Stores a Bitcoin Cash (BCH) pledge made toward resolving an issue.
+
+    Pledges can be anonymous and are linked to an issue.
+    Funds are intended to be donated or tipped once the issue is closed.
+    """
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    PAID = "paid"
+    REFUNDED = "refunded"
+
+    STATUS_CHOICES = (
+        (PENDING, "Pending"),
+        (CONFIRMED, "Confirmed"),
+        (PAID, "Paid"),
+        (REFUNDED, "Refunded"),
+    )
+
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="pledges")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=8, validators=[MinValueValidator(Decimal("0.00000001"))])
+    bch_address = models.CharField(max_length=255, validators=[validate_bch_address])
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    txid = models.CharField(max_length=255, blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.amount} BCH → Issue #{self.issue.id}"
+
+    class Meta:
+        ordering = ["-created"]
+        verbose_name = "Issue Pledge"
+        verbose_name_plural = "Issue Pledges"
+        indexes = [
+            models.Index(fields=["issue", "status"], name="issuepledge_issue_status_idx"),
+            models.Index(fields=["user", "-created"], name="issuepledge_user_created_idx"),
+            models.Index(fields=["status", "-created"], name="issuepledge_status_created_idx"),
+        ]
+
+
 def is_using_gcs():
     """
     Determine if Google Cloud Storage is being used as the backend.

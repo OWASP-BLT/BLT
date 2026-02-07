@@ -113,7 +113,6 @@ Before you start contributing, you'll need to set up your development environmen
 
 ### Python Virtual Environment Setup
 
-
 ### Optional: Python Virtual Environment Setup using `uv`
 
 BLT can also be set up using [`uv`](https://github.com/astral-sh/uv), a fast Python package manager
@@ -129,7 +128,6 @@ This option is useful for contributors who prefer faster dependency resolution a
 > due to registry or PATH resolution issues. In such cases, explicitly
 > specifying the Python interpreter or using Docker/Poetry is recommended.
 
-
 ```bash
 pip install uv
 ```
@@ -138,7 +136,7 @@ pip install uv
 
 From the project root, run:
 
-```bash
+````bash
 uv sync
 
 To start the development server:
@@ -154,7 +152,7 @@ http://localhost:8000
 
    ```bash
    pyenv install 3.11.2
-   ```
+````
 
 2. Set up Poetry and virtual environment:
 
@@ -177,17 +175,19 @@ http://localhost:8000
 4. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Populating Test Data for Local Development
+
 For faster local development and testing, the project provides a built-in Django management command to automatically populate the database with realistic sample data.
 
 #### Generate Sample Data
 
 Run the following command after migrations:
 
-   ```bash
-   python manage.py generate_sample_data
-   ```
+```bash
+python manage.py generate_sample_data
+```
 
 This command automatically creates:
+
 - Users with profiles and follow relationships
 - Organizations
 - Domains
@@ -209,34 +209,38 @@ In addition to the main sample data generator, the project provides specialized 
 
 This command populates the platform with predefined OWASP BLT adventure challenges.
 
-   ```bash
-   python manage.py seed_adventures
-   ```
+```bash
+python manage.py seed_adventures
+```
 
 #### 2. Seed Security Lab Challenges
+
 This command seeds vulnerable security labs used for hands-on security practice, including:
+
 - IDOR
 - XSS
 - CSRF
 - SQL Injection
 - Other OWASP Top 10 style vulnerabilities
 
-   ```bash
-   python manage.py seed_all_security_lab
-   ```
+  ```bash
+  python manage.py seed_all_security_lab
+  ```
 
 #### Important Notes
+
 This command clears existing data before creating sample data.
 It is intended strictly for local development and testing.
 Do not run this in production environments.
 
 #### Full Local Setup Example
-   ```bash
-   python manage.py migrate
-   python manage.py generate_sample_data
-   python manage.py createsuperuser
-   python manage.py runserver
-   ```
+
+```bash
+python manage.py migrate
+python manage.py generate_sample_data
+python manage.py createsuperuser
+python manage.py runserver
+```
 
 This will give you a fully populated development environment with realistic relationships across the platform.
 
@@ -300,6 +304,18 @@ We also use pre-commit hooks to ensure code quality. Install them with:
 ```bash
 poetry run pre-commit install
 ```
+
+**Important:** The pre-commit hooks (including `django-collectstatic` and `django-test`) use `poetry run` to execute commands in the Poetry virtual environment. Make sure your Poetry environment is properly set up before committing:
+
+```bash
+poetry shell  # or run: poetry install
+```
+
+If you encounter issues with pre-commit hooks failing with "ModuleNotFoundError" or similar errors, ensure that:
+
+1. You've run `poetry install` to install all dependencies
+2. You've activated the Poetry environment with `poetry shell`
+3. The `.pre-commit-config.yaml` hooks are using `poetry run` to execute Python commands
 
 ### JavaScript Code Standards
 
