@@ -12,6 +12,7 @@ from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -1096,6 +1097,7 @@ class DomainDetailView(ListView):
             except EmptyPage:
                 closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
+            six_months_ago = timezone.now() - relativedelta(months=6)
             context.update(
                 {
                     "opened_net": open_issues,
@@ -1105,13 +1107,13 @@ class DomainDetailView(ListView):
                     "leaderboard": (
                         User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
                     ),
-                    "current_month": datetime.now().month,
+                    "current_month": timezone.now().month,
                     "domain_graph": (
                         Issue.objects.filter(
                             domain=domain,
                             hunt=None,
-                            created__month__gte=(datetime.now().month - 6),
-                            created__month__lte=datetime.now().month,
+                            created__gte=six_months_ago,
+                            created__lte=timezone.now(),
                         ).order_by("created")
                     ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
