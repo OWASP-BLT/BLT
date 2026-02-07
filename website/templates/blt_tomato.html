@@ -41,7 +41,8 @@
                                             <h3 class="text-xl font-semibold mb-2">
                                                 <a href="{{ project.repo_url }}"
                                                    class="text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] flex items-center gap-2"
-                                                   target="_blank">
+                                                   target="_blank"
+                                                   rel="noopener noreferrer">
                                                     <i class="fab fa-github"></i>
                                                     {{ project.project_name }}
                                                 </a>
@@ -50,6 +51,7 @@
                                         <div class="flex-shrink-0">
                                             <a href="{{ project.funding_hyperlinks }}"
                                                target="_blank"
+                                               rel="noopener noreferrer"
                                                class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] font-medium transition-all duration-200">
                                                 <i class="fas fa-heart"></i>
                                                 Support Project
@@ -59,6 +61,7 @@
                                             <div class="flex-shrink-0">
                                                 <a href="{{ project.proposal_url }}"
                                                    target="_blank"
+                                                   rel="noopener noreferrer"
                                                    class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] font-medium transition-all duration-200">
                                                     <i class="fas fa-heart"></i>
                                                     Show Proposal

@@ -174,6 +174,7 @@
                                            class="hover:text-[#e74c3c]">{{ issue.title }}</a>
                                         <a href="{{ issue.url }}"
                                            target="_blank"
+                                           rel="noopener noreferrer"
                                            class="text-gray-500 dark:text-gray-500 hover:text-[#e74c3c]"
                                            title="Open in GitHub">
                                             <svg xmlns="http://www.w3.org/2000/svg"
@@ -209,6 +210,7 @@
                                         <span>Repo:
                                             <a href="{{ issue.repo.repo_url }}"
                                                target="_blank"
+                                               rel="noopener noreferrer"
                                                class="hover:text-[#e74c3c]">{{ issue.repo.name }}</a>
                                         </span>
                                     {% endif %}
@@ -217,6 +219,7 @@
                                             {% if issue.user_profile.github_url %}
                                                 <a href="{{ issue.user_profile.github_url }}"
                                                    target="_blank"
+                                                   rel="noopener noreferrer"
                                                    class="hover:text-[#e74c3c]">
                                                     {{ issue.user_profile.user.username }}
                                                 </a>

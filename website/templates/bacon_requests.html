@@ -49,6 +49,7 @@
                             <h3 class="text-lg font-semibold hover:text-gray-900 dark:hover:text-white">{{ submission.user.username }}</h3>
                             <a href="{{ submission.github_url }}"
                                target="_blank"
+                               rel="noopener noreferrer"
                                class="text-blue-600 underline hover:text-gray-900 dark:hover:text-white">GitHub PR</a>
                         </div>
                     </div>
@@ -107,6 +108,7 @@
                             </div>
                             <a href="https://mempool.space/tx/{{ submission.transaction_id }}"
                                target="_blank"
+                               rel="noopener noreferrer"
                                class="fixed bottom-5 right-48 w-48 bg-blue-600 hover:bg-blue-700 hover:text-white text-white border-none px-4 py-2 cursor-pointer rounded font-bold mt-2.5 text-center no-underline">
                                 Check Transaction Status
                             </a>
@@ -127,6 +129,7 @@
         {% endif %}
         <a href="https://mempool.space/address/bc1parskmdj7cjh73xwsyugjpwp8xmly23035885st48kl43pjcj9ctsz2pf45"
            target="_blank"
+           rel="noopener noreferrer"
            class="fixed bottom-5 right-48 w-48 bg-blue-600 hover:bg-blue-700 hover:text-white text-white border-none px-4 py-2 cursor-pointer rounded font-bold mt-2.5 text-center no-underline">
             Check Transaction Status
         </a>
