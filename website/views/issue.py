@@ -92,6 +92,7 @@ from .constants import GSOC25_PROJECTS
 logger = logging.getLogger(__name__)
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
@@ -131,6 +132,7 @@ def like_issue(request, issue_pk):
     return HttpResponse("Success")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
     issue = get_object_or_404(Issue, pk=int(issue_pk))
@@ -2026,6 +2028,7 @@ def comment_on_content(request, content_pk):
     return render(request, "comments2.html", context)
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def unsave_issue(request, issue_pk):
     issue_pk = int(issue_pk)
@@ -2035,6 +2038,7 @@ def unsave_issue(request, issue_pk):
     return HttpResponse("OK")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue_pk = int(issue_pk)
@@ -2101,6 +2105,7 @@ def IssueEdit(request):
         return HttpResponse("POST ONLY")
 
 
+@require_POST
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     context = {}
