@@ -476,48 +476,27 @@ else:
     else:
         CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-if DEBUG or TESTING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-else:
-    # temp to check memory usage
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
 
 if DEBUG or TESTING:
     anon_throttle = 100000
     user_throttle = 100000
 
 else:
-    anon_throttle = 100
-    user_throttle = 1000
+    anon_throttle = 5
+    user_throttle = 100
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework.authentication.TokenAuthentication",),
     "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": f"{anon_throttle}/day",
-        "user": f"{user_throttle}/day",
+        "anon": f"{anon_throttle}/hour",
+        "user": f"{user_throttle}/hour",
     },
 }
 
@@ -562,6 +541,13 @@ SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for soc
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token for AJAX requests
+CSRF_COOKIE_SAMESITE = "Lax"
 
 MDEDITOR_CONFIGS = {
     "default": {

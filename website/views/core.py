@@ -41,6 +41,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -586,12 +587,26 @@ def status_page(request):
 
 
 def find_key(request, token):
-    if token == os.environ.get("ACME_TOKEN"):
-        return HttpResponse(os.environ.get("ACME_KEY"))
+    acme_token = os.environ.get("ACME_TOKEN")
+    if acme_token and constant_time_compare(token, acme_token):
+        acme_key = os.environ.get("ACME_KEY")
+        if not acme_key:
+            logger.error("ACME_KEY not configured in environment variables")
+            raise Http404("ACME_KEY not configured")
+        return HttpResponse(acme_key)
     for k, v in list(os.environ.items()):
-        if v == token and k.startswith("ACME_TOKEN_"):
+        if k.startswith("ACME_TOKEN_") and constant_time_compare(v, token):
             n = k.replace("ACME_TOKEN_", "")
-            return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
+            acme_key = os.environ.get("ACME_KEY_%s" % n)
+            if not acme_key:
+                logger.error("ACME_KEY_%s not configured in environment variables" % n)
+                raise Http404("ACME_KEY_%s not configured" % n)
+            return HttpResponse(acme_key)
+    logger.warning(
+        "Failed ACME token verification attempt from IP: %s",
+        request.META.get("REMOTE_ADDR"),
+        extra={"ip": request.META.get("REMOTE_ADDR"), "token_prefix": token[:10] if token else None},
+    )
     raise Http404("Token or key does not exist")
 
 
