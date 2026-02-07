@@ -2,6 +2,8 @@
 
 This document provides guidance for GitHub Copilot coding agent when working on the OWASP BLT (Bug Logging Tool) project.
 
+> **Note**: This repository also includes path-specific instructions in `.github/instructions/` that provide targeted guidance for frontend, backend, and test files. Those instructions supplement this main document.
+
 ## Project Overview
 
 OWASP BLT is a Django-based web application for bug bounty management and security research. The project uses:
@@ -247,6 +249,17 @@ python manage.py runserver
 - [README](../README.md) - Project overview and setup instructions
 - [Django Documentation](https://docs.djangoproject.com/) - Official Django docs
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs) - Tailwind CSS reference
+- [Path-Specific Instructions](instructions/) - Frontend, backend, and test-specific guidelines
+
+## Environment Setup
+
+The `.github/copilot/agent.yaml` file defines setup steps that run when starting work on a task:
+1. Install Python dependencies with Poetry
+2. Apply database migrations
+3. Collect static files for proper CSS/JS serving
+4. Run pre-commit hooks to ensure code quality
+
+These steps ensure the development environment is ready before making changes.
 
 ## Summary of Key Rules
 

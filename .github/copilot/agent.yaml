@@ -1,3 +1,20 @@
+# Copilot Coding Agent Setup Steps
+# These steps are executed when Copilot coding agent starts working on a task.
+# They ensure the development environment is properly configured.
+
 steps:
+  # Install Python dependencies
+  - run: poetry install --no-interaction
+    description: "Install Python dependencies with Poetry"
+    
+  # Run database migrations
+  - run: python manage.py migrate --noinput
+    description: "Apply database migrations"
+    
+  # Collect static files (required for proper styling in screenshots)
+  - run: python manage.py collectstatic --noinput
+    description: "Collect static files for serving CSS/JS"
+    
+  # Run pre-commit on all files to ensure code quality
   - run: pre-commit run --all-files
-    description: "Run pre-commit on all files before committing"
+    description: "Run pre-commit hooks (Black, isort, ruff, djLint) on all files"
