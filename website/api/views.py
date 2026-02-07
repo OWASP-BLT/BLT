@@ -54,6 +54,7 @@ from website.models import (
     Tag,
     TimeLog,
     Token,
+    Trademark,
     User,
     UserProfile,
 )
@@ -73,6 +74,7 @@ from website.serializers import (
     SecurityIncidentSerializer,
     TagSerializer,
     TimeLogSerializer,
+    TrademarkSerializer,
     UserProfileSerializer,
 )
 from website.utils import image_validator
@@ -1382,69 +1384,50 @@ def safe_json(response):
 @permission_classes([AllowAny])
 def trademark_search_api(request):
     """
-    API endpoint to search trademarks
+    API endpoint to search trademarks (local DB-backed)
     GET /api/trademarks/search/?query=keyword
     """
     query = request.query_params.get("query", "").strip()
 
     if not query:
-        return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if settings.USPTO_API is None:
-        return Response({"error": "USPTO API key not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(
+            {"error": "Query parameter is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
-        # Check availability
-        available_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/{query}"
-        headers = {
-            "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
-            "x-rapidapi-key": settings.USPTO_API,
-        }
+        # Search local trademark database
+        qs = Trademark.objects.filter(keyword__icontains=query).prefetch_related("owners").order_by("keyword")
 
-        available_response = requests.get(available_url, headers=headers, timeout=10)
-        available_data = safe_json(available_response)
-        if available_data is None:
+        if qs.exists():
+            # Limit results to avoid huge payloads
+            limited_qs = qs[:50]
+            serializer = TrademarkSerializer(limited_qs, many=True)
+
             return Response(
-                {"error": "Invalid JSON response from USPTO API"},
-                status=status.HTTP_502_BAD_GATEWAY,
+                {
+                    "available": False,
+                    "query": query,
+                    "count": qs.count(),
+                    "trademarks": serializer.data,
+                }
             )
 
-        if available_response.status_code == 429:
-            return Response(
-                {"error": "Rate limit exceeded. Please try again later."}, status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
-
-        # If not available, fetch trademark details
-        if isinstance(available_data, list) and len(available_data) > 0:
-            if available_data[0].get("available") == "no":
-                search_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/{query}/active"
-                search_response = requests.get(search_url, headers=headers, timeout=10)
-                search_data = safe_json(search_response)
-                if search_data is None:
-                    return Response(
-                        {"error": "Invalid JSON response from USPTO API"},
-                        status=status.HTTP_502_BAD_GATEWAY,
-                    )
-
-                return Response(
-                    {
-                        "available": False,
-                        "query": query,
-                        "count": search_data.get("count", 0),
-                        "trademarks": search_data.get("items", []),
-                    }
-                )
-            else:
-                return Response({"available": True, "query": query, "count": 0, "trademarks": []})
-
-        return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
-
-    except requests.exceptions.RequestException as e:
-        logger.error("Trademark API request failed")
-
+        # No trademark found → available
         return Response(
-            {"error": "Failed to fetch trademark data due to an external service error."},
-            status=status.HTTP_502_BAD_GATEWAY,
+            {
+                "available": True,
+                "query": query,
+                "count": 0,
+                "trademarks": [],
+            }
+        )
+
+    except Exception:
+        logger.exception("Local trademark search failed")
+        return Response(
+            {"error": "Failed to search trademark data."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
