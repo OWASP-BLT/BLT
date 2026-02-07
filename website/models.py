@@ -3077,6 +3077,23 @@ class Message(models.Model):
         return f"{self.username}: {self.content[:50]}"
 
 
+class ChatRequest(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_chat_requests")
+    receiver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_chat_requests"
+    )
+    email_sent = models.BooleanField(default=False)
+    is_unlocked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("sender", "receiver")
+
+    def __str__(self):
+        status = "Unlocked" if self.is_unlocked else "Locked"
+        return f"{self.sender.username} → {self.receiver.username} ({status})"
+
+
 class BannedApp(models.Model):
     APP_TYPES = (
         ("social", "Social Media"),
