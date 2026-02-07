@@ -75,7 +75,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -1092,16 +1092,33 @@ class OwaspComplianceChecker(APIView):
 
     def check_website_compliance(self, url):
         """Check website-related compliance criteria"""
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check for OWASP mention
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            # Check for project page link (strict hostname check)
+            owasp_links = []
+            for a in soup.find_all("a"):
+                href = a.get("href")
+                if not href:
+                    continue
+                netloc = urlparse(href).netloc.lower()
+                if netloc.endswith("owasp.org"):
+                    owasp_links.append(a)
+
             has_project_link = len(owasp_links) > 0
 
             # Check for up-to-date info
@@ -1111,32 +1128,42 @@ class OwaspComplianceChecker(APIView):
                 "has_owasp_mention": has_owasp_mention,
                 "has_project_link": has_project_link,
                 "has_dates": has_dates,
-                "details": {"url_checked": url, "recommendations": []},
+                "details": {"url_checked": safe_url, "recommendations": []},
             }
         except Exception as e:
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": url, "error": "Unable to check website compliance"},
+                "details": {"url_checked": safe_url, "error": str(e)},
             }
 
     def check_vendor_neutrality(self, url):
         """Check vendor neutrality compliance"""
+        # Sanitize incoming URL
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "URL rejected for safety"},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Look for common paywall terms
             paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
             content = soup.get_text().lower()
             has_paywall_indicators = any(term in content for term in paywall_terms)
 
-            return {"possible_paywall": has_paywall_indicators, "details": {"url_checked": url, "recommendations": []}}
+            return {
+                "possible_paywall": has_paywall_indicators,
+                "details": {"url_checked": safe_url, "recommendations": []},
+            }
         except Exception:
             return {
                 "possible_paywall": None,
-                "details": {"url_checked": url, "error": "Unable to check vendor neutrality"},
+                "details": {"url_checked": safe_url, "error": "Unable to check vendor neutrality"},
             }
 
     def post(self, request, *args, **kwargs):
