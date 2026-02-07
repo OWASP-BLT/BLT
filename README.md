@@ -105,6 +105,21 @@ docker-compose up
 
 Access the application at **http://localhost:8000**
 
+
+##### Docker Desktop (Windows)
+
+This project uses Linux containers.
+
+On modern Docker Desktop (WSL 2–based), Linux containers are enabled by default.
+You may not see a “Switch to Linux containers” option in the Docker tray menu — this is expected.
+
+If Docker Desktop is running and the following command shows `OSType: linux`,
+then your setup is correct and no additional action is required:
+
+```bash
+docker info | findstr OSType
+```
+
 #### Using Poetry
 ```bash
 # Install dependencies
