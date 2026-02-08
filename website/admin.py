@@ -85,6 +85,7 @@ from website.models import (
     Tag,
     TaskContent,
     Tasks,
+    TeamBadge,
     Thread,
     TimeLog,
     Trademark,
@@ -1150,6 +1151,13 @@ class UserBadgeAdmin(admin.ModelAdmin):
     date_hierarchy = "awarded_at"
 
 
+class TeamBadgeAdmin(admin.ModelAdmin):
+    list_display = ("user", "team", "badge", "awarded_by", "awarded_at")
+    list_filter = ("badge", "awarded_at")
+    search_fields = ("user__username", "badge__title", "reason", "team__name")
+    date_hierarchy = "awarded_at"
+
+
 admin.site.register(ActivityLog, ActivityLogAdmin)
 admin.site.register(BaconEarning, BaconEarningAdmin)
 admin.site.register(BaconSubmission, BaconSubmissionAdmin)
@@ -1171,6 +1179,7 @@ admin.site.register(StakingPool, StakingPoolAdmin)
 admin.site.register(StakingTransaction, StakingTransactionAdmin)
 admin.site.register(Thread, ThreadAdmin)
 admin.site.register(UserBadge, UserBadgeAdmin)
+admin.site.register(TeamBadge, TeamBadgeAdmin)
 
 
 @admin.register(BannedApp)

@@ -1569,9 +1569,12 @@ def sitemap(request):
     return render(request, "sitemap.html", context)
 
 
-def badge_list(request):
-    badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
+def badge_list(request, scope):
+    if scope == "team":
+        badges = Badge.objects.filter(scope__in=["team", "topuser_team"])
+    else:
+        badges = Badge.objects.filter(scope="user").annotate(user_count=Count("userbadge")).order_by("-user_count")
+
     return render(request, "badges.html", {"badges": badges})
 
 

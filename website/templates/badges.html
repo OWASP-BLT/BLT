@@ -28,19 +28,21 @@
                     <a href="{% url 'badge_user_list' badge_id=badge.id %}"
                        class="absolute top-0 left-0 w-full z-10">
                         <div class="absolute top-0 left-0 w-full h-2 bg-purple-600"></div>
-                        <div class="absolute top-2 p-5 bg-purple-600 text-white text-md font-medium py-1.5 shadow-lg cursor-pointer">
-                            <span class="text-white">
-                                {% if badge.user_count == 0 %}
-                                    No users
-                                {% elif badge.user_count == 1 %}
-                                    1 user
-                                {% else %}
-                                    {{ badge.user_count }} users
-                                {% endif %}
-                            </span>
-                        </div>
+                        {% if badge.user_count == 0 %}
+                            No users
+                        {% elif badge.user_count %}
+                            <div class="absolute top-2 p-5 bg-purple-600 text-white text-md font-medium py-1.5 shadow-lg cursor-pointer">
+                                <span class="text-white">
+                                    {% if badge.user_count == 1 %}
+                                        1 user
+                                    {% else %}
+                                        {{ badge.user_count }} users
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
                     </a>
-                    <div class="flex flex-col items-center p-8 pt-10 relative">
+                    <div class="flex flex-col items-center p-8 m-4 pt-10 relative">
                         {% if badge.icon %}
                             <div class="relative mb-6">
                                 <img src="{{ badge.icon.url }}"
