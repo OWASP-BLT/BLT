@@ -1003,7 +1003,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         if timelog.start_time:
             # Calculate duration excluding paused time
             total_duration = timelog.end_time - timelog.start_time
-            paused = timedelta(seconds=timelog.paused_duration or 0)
+            # paused_duration is already a timedelta object, not seconds
+            paused = timelog.paused_duration or timedelta(0)
             timelog.duration = total_duration - paused
 
         try:
