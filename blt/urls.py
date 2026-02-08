@@ -331,6 +331,7 @@ from website.views.teams import (
     leave_team,
     search_users,
 )
+from website.views.timer_webhook import github_timer_webhook
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
@@ -368,7 +369,6 @@ from website.views.user import (
     view_thread,
 )
 from website.views.video_call import video_call
-from website.views.timer_webhook import github_timer_webhook
 
 admin.autodiscover()
 

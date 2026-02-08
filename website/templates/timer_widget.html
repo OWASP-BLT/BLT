@@ -1,191 +1,59 @@
 {% load static %}
-
+<link rel="stylesheet" href="{% static 'css/timer.css' %}">
 <!-- Timer Widget Component -->
 <div class="timer-widget" id="timer-widget">
     <div class="timer-container">
         <div class="timer-header">
             <h3>Issue Timer</h3>
-            <span class="timer-status" id="timer-info" style="display: none;"></span>
+            <span class="timer-status hidden" id="timer-info"></span>
         </div>
-
         <div class="timer-display-container">
             <div class="timer-display" id="timer-display">00:00:00</div>
         </div>
-
         <div class="timer-form" id="timer-form">
             <div class="form-group">
                 <label for="github-issue-url">GitHub Issue URL (optional)</label>
-                <input 
-                    type="url" 
-                    id="github-issue-url" 
-                    class="form-control" 
-                    placeholder="https://github.com/owner/repo/issues/123"
-                >
+                <input type="url"
+                       id="github-issue-url"
+                       class="form-control"
+                       placeholder="https://github.com/owner/repo/issues/123">
             </div>
-
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="github-repo">Repository</label>
-                    <input 
-                        type="text" 
-                        id="github-repo" 
-                        class="form-control" 
-                        placeholder="owner/repo"
-                    >
+                    <input type="text"
+                           id="github-repo"
+                           class="form-control"
+                           placeholder="owner/repo">
                 </div>
                 <div class="form-group col-md-6">
                     <label for="github-issue-number">Issue #</label>
-                    <input 
-                        type="number" 
-                        id="github-issue-number" 
-                        class="form-control" 
-                        placeholder="123"
-                    >
+                    <input type="number"
+                           id="github-issue-number"
+                           class="form-control"
+                           placeholder="123">
                 </div>
             </div>
         </div>
-
         <div class="timer-controls">
-            <button 
-                id="start-timer-btn" 
-                class="btn btn-success"
-                title="Start Timer"
-            >
+            <button id="start-timer-btn" class="btn btn-success" title="Start Timer">
                 <i class="fas fa-play"></i> Start
             </button>
-
-            <button 
-                id="pause-timer-btn" 
-                class="btn btn-warning" 
-                style="display: none;"
-                title="Pause Timer"
-            >
+            <button id="pause-timer-btn"
+                    class="btn btn-warning hidden"
+                    title="Pause Timer">
                 <i class="fas fa-pause"></i> Pause
             </button>
-
-            <button 
-                id="resume-timer-btn" 
-                class="btn btn-info" 
-                style="display: none;"
-                title="Resume Timer"
-            >
+            <button id="resume-timer-btn"
+                    class="btn btn-info hidden"
+                    title="Resume Timer">
                 <i class="fas fa-play"></i> Resume
             </button>
-
-            <button 
-                id="stop-timer-btn" 
-                class="btn btn-danger" 
-                style="display: none;"
-                title="Stop Timer"
-            >
+            <button id="stop-timer-btn" class="btn btn-danger hidden" title="Stop Timer">
                 <i class="fas fa-stop"></i> Stop
             </button>
         </div>
-
-        <div id="timer-notification" class="notification" style="display: none;"></div>
+        <div id="timer-notification" class="notification hidden"></div>
     </div>
 </div>
-
-<style>
-.timer-widget {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.timer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.timer-header h3 {
-    margin: 0;
-    font-size: 1.5rem;
-}
-
-.timer-status {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 500;
-}
-
-.timer-display-container {
-    text-align: center;
-    margin: 20px 0;
-}
-
-.timer-display {
-    font-size: 3rem;
-    font-weight: bold;
-    font-family: 'Courier New', monospace;
-    color: #333;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    display: inline-block;
-    min-width: 200px;
-}
-
-.timer-form {
-    margin: 20px 0;
-}
-
-.timer-form .form-group {
-    margin-bottom: 15px;
-}
-
-.timer-form label {
-    font-weight: 500;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.timer-controls {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-.timer-controls .btn {
-    min-width: 100px;
-    font-weight: 500;
-}
-
-.notification {
-    margin-top: 15px;
-    padding: 10px 15px;
-    border-radius: 4px;
-    text-align: center;
-}
-
-.notification.success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.notification.error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-.notification.info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
-}
-
-.notification.warning {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeaa7;
-}
-</style>
-
 <script src="{% static 'js/timer.js' %}"></script>

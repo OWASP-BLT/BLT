@@ -152,7 +152,7 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 class TimeLogSerializer(serializers.ModelSerializer):
     active_duration = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = TimeLog
         fields = [
@@ -182,7 +182,7 @@ class TimeLogSerializer(serializers.ModelSerializer):
             "active_duration",
             "created",
         ]
-    
+
     def get_active_duration(self, obj):
         """Return the active duration in seconds"""
         duration = obj.get_active_duration()

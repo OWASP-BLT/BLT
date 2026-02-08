@@ -1470,15 +1470,15 @@ class TimeLog(models.Model):
         if self.end_time and self.start_time <= self.end_time:
             # Calculate duration excluding paused time
             total_duration = self.end_time - self.start_time
-            
+
             # Calculate total paused time (paused_duration is already a timedelta)
             total_paused = self.paused_duration or timedelta(0)
-            
+
             # If currently paused, add the ongoing pause interval
             if self.is_paused and self.last_pause_time:
                 current_pause = self.end_time - self.last_pause_time
                 total_paused += current_pause
-            
+
             self.duration = total_duration - total_paused
         super().save(*args, **kwargs)
 
@@ -1509,22 +1509,22 @@ class TimeLog(models.Model):
         """Get current active duration (excluding paused time)"""
         if not self.start_time:
             return timedelta(0)
-        
+
         end = self.end_time or timezone.now()
         total = end - self.start_time
-        
+
         # Subtract paused duration
         if self.paused_duration:
             total -= self.paused_duration
-        
+
         # If currently paused, subtract current pause time
         if self.is_paused and self.last_pause_time:
-            total -= (timezone.now() - self.last_pause_time)
-        
+            total -= timezone.now() - self.last_pause_time
+
         # Clamp to non-negative value
         if total.total_seconds() < 0:
             return timedelta(0)
-        
+
         return total
 
     def __str__(self):

@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
@@ -937,19 +937,19 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     queryset = TimeLog.objects.all()
     serializer_class = TimeLogSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def get_queryset(self):
         """
         Filter queryset based on query parameters.
         Supports filtering active timers with ?end_time__isnull=true
         """
         queryset = TimeLog.objects.filter(user=self.request.user)
-        
+
         # Check for end_time__isnull parameter
-        end_time_isnull = self.request.query_params.get('end_time__isnull')
-        if end_time_isnull and end_time_isnull.lower() == 'true':
+        end_time_isnull = self.request.query_params.get("end_time__isnull")
+        if end_time_isnull and end_time_isnull.lower() == "true":
             queryset = queryset.filter(end_time__isnull=True)
-        
+
         return queryset
 
     def perform_create(self, serializer):
@@ -1005,12 +1005,11 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     def stop(self, request, pk=None):
         """Stops the time log and calculates duration"""
         timelog = self.get_object()
-        
+
         # Check ownership
         if timelog.user != request.user:
             return Response(
-                {"detail": "You do not have permission to stop this time log."},
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "You do not have permission to stop this time log."}, status=status.HTTP_403_FORBIDDEN
             )
 
         timelog.end_time = timezone.now()
