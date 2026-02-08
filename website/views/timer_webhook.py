@@ -2,10 +2,13 @@
 Webhook endpoint for GitHub integration to automatically start timers
 when issues are assigned or moved to "In Progress"
 """
+import hashlib
+import hmac
 import json
 import logging
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.utils import timezone
@@ -15,6 +18,44 @@ from django.views.decorators.http import require_http_methods
 from website.models import TimeLog
 
 logger = logging.getLogger(__name__)
+
+
+def verify_github_signature(request):
+    """
+    Verify GitHub webhook signature using HMAC-SHA256
+    
+    Returns:
+        bool: True if signature is valid, False otherwise
+    """
+    signature_header = request.headers.get('X-Hub-Signature-256')
+    
+    if not signature_header:
+        logger.warning("GitHub webhook received without X-Hub-Signature-256 header")
+        return False
+    
+    # Get the webhook secret from settings
+    secret = getattr(settings, 'GITHUB_WEBHOOK_SECRET', None)
+    
+    if not secret:
+        logger.error("GITHUB_WEBHOOK_SECRET not configured in settings")
+        return False
+    
+    # Compute HMAC signature
+    if isinstance(secret, str):
+        secret = secret.encode('utf-8')
+    
+    computed_signature = 'sha256=' + hmac.new(
+        secret,
+        request.body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Use constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(computed_signature, signature_header):
+        logger.warning("GitHub webhook signature verification failed")
+        return False
+    
+    return True
 
 
 @csrf_exempt
@@ -28,7 +69,18 @@ def github_timer_webhook(request):
     - project_v2_item.edited: Start timer when issue moved to "In Progress"
     - issues.closed: Stop active timer for the issue
     - issues.unassigned: Pause timer when issue is unassigned
+    
+    Security:
+    - Verifies GitHub webhook signature using HMAC-SHA256
+    - Requires X-Hub-Signature-256 header with valid signature
     """
+    # Verify GitHub signature
+    if not verify_github_signature(request):
+        return JsonResponse(
+            {'error': 'Invalid or missing signature'},
+            status=401
+        )
+    
     try:
         payload = json.loads(request.body)
         event_type = request.headers.get('X-GitHub-Event', '')
