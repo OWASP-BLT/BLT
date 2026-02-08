@@ -8,6 +8,7 @@ class TimerManager {
         this.activeTimer = null;
         this.timerInterval = null;
         this.apiBaseUrl = '/api/timelogs';
+        this.lastLoadTime = null;
         this.init();
     }
 
@@ -52,6 +53,7 @@ class TimerManager {
                 const data = await response.json();
                 if (data.results && data.results.length > 0) {
                     this.activeTimer = data.results[0];
+                    this.lastLoadTime = Date.now();
                     this.updateUI();
                     this.startTimerDisplay();
                 }
@@ -183,19 +185,13 @@ class TimerManager {
         const display = document.getElementById('timer-display');
         if (!display) return;
 
-        const startTime = new Date(this.activeTimer.start_time);
-        const now = new Date();
-        let elapsed = (now - startTime) / 1000; // seconds
-
-        // Subtract paused duration
-        if (this.activeTimer.paused_duration) {
-            elapsed -= this.activeTimer.paused_duration;
-        }
-
-        // If currently paused, subtract current pause time
-        if (this.activeTimer.is_paused && this.activeTimer.last_pause_time) {
-            const pauseStart = new Date(this.activeTimer.last_pause_time);
-            elapsed -= (now - pauseStart) / 1000;
+        // Use active_duration from API as baseline (already in seconds)
+        let elapsed = this.activeTimer.active_duration || 0;
+        
+        // Add time elapsed since we loaded the timer
+        if (this.lastLoadTime && !this.activeTimer.is_paused) {
+            const timeSinceLoad = (Date.now() - this.lastLoadTime) / 1000;
+            elapsed += timeSinceLoad;
         }
 
         display.textContent = this.formatSeconds(Math.max(0, elapsed));
