@@ -1034,7 +1034,13 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def pause(self, request, pk=None):
         """Pauses an active time log"""
-        timelog = self.get_object()
+        try:
+            timelog = TimeLog.objects.get(pk=pk)
+        except TimeLog.DoesNotExist:
+            return Response(
+                {"detail": "Time log not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         if timelog.user != request.user:
             return Response(
@@ -1066,7 +1072,13 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def resume(self, request, pk=None):
         """Resumes a paused time log"""
-        timelog = self.get_object()
+        try:
+            timelog = TimeLog.objects.get(pk=pk)
+        except TimeLog.DoesNotExist:
+            return Response(
+                {"detail": "Time log not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         if timelog.user != request.user:
             return Response(
