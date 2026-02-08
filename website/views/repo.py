@@ -268,7 +268,7 @@ class RepoDetailView(DetailView):
                             }
                         )
                     except Exception as e:
-                        logger.error(f"Failed to generate AI summary: {str(e)}", exc_info=True)
+                        logger.error("Failed to generate AI summary: Something went wrong.", exc_info=True)
                         return JsonResponse(
                             {
                                 "status": "error",
@@ -285,7 +285,7 @@ class RepoDetailView(DetailView):
                         status=400,
                     )
             except Exception as e:
-                logger.error(f"Unexpected error in generate_ai_summary: {str(e)}", exc_info=True)
+                logger.error("Unexpected error in generate_ai_summary: Something went wrong.", exc_info=True)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -307,7 +307,7 @@ class RepoDetailView(DetailView):
                     }
                 )
             except Exception as e:
-                logger.error(f"Error refreshing {section}: {str(e)}", exc_info=True)
+                logger.error(f"Error refreshing {section}: Something went wrong.", exc_info=True)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -635,7 +635,7 @@ def add_repo(request):
         )
 
     except Exception as e:
-        logger.error(f"Error adding repository: {str(e)}", exc_info=True)
+        logger.error("Error adding repository: Something went wrong.", exc_info=True)
         return JsonResponse(
             {"status": "error", "message": "An error occurred while adding the repository. Please try again later."},
             status=500,
@@ -705,7 +705,7 @@ def refresh_repo_data(request, repo_id):
         logger.warning(f"Repository with ID {repo_id} not found")
         return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
     except Exception as e:
-        logger.error(f"Error refreshing repository data: {str(e)}", exc_info=True)
+        logger.error("Error refreshing repository data: Something went wrong.", exc_info=True)
 
         return JsonResponse(
             {
