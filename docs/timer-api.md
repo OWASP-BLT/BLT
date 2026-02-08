@@ -244,7 +244,17 @@ Endpoint for receiving GitHub events to automatically manage timers.
 
 **Headers:**
 - `X-GitHub-Event: issues` or `X-GitHub-Event: project_v2_item`
+- `X-Hub-Signature-256: sha256=<hmac_signature>` (Required for security)
 - `Content-Type: application/json`
+
+**Security:**
+
+This endpoint requires HMAC-SHA256 signature verification to prevent unauthorized requests.
+
+1. Configure `GITHUB_WEBHOOK_SECRET` in your Django settings
+2. GitHub will send the signature in the `X-Hub-Signature-256` header
+3. The signature is computed as: `sha256=` + HMAC-SHA256(secret, raw_request_body)
+4. Requests with missing or invalid signatures will receive HTTP 401 Unauthorized
 
 **Supported Events:**
 
@@ -464,9 +474,12 @@ console.log(`Duration: ${finalTimer.duration}`);
 
 ### Rate Limiting
 
-The API implements rate limiting to prevent abuse:
-- **Authenticated users:** 100 requests per minute
-- **Anonymous users:** 20 requests per minute
+The API implements method-based rate limiting to prevent abuse:
+- **GET requests:** 100 requests per minute
+- **POST requests:** 50 requests per minute  
+- **Other methods (PUT, PATCH, DELETE):** 30 requests per minute
+
+Rate limits are applied uniformly regardless of authentication status.
 
 If you exceed the rate limit, you'll receive a `429 Too Many Requests` response.
 

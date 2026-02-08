@@ -937,6 +937,20 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     queryset = TimeLog.objects.all()
     serializer_class = TimeLogSerializer
     permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """
+        Filter queryset based on query parameters.
+        Supports filtering active timers with ?end_time__isnull=true
+        """
+        queryset = TimeLog.objects.filter(user=self.request.user)
+        
+        # Check for end_time__isnull parameter
+        end_time_isnull = self.request.query_params.get('end_time__isnull')
+        if end_time_isnull and end_time_isnull.lower() == 'true':
+            queryset = queryset.filter(end_time__isnull=True)
+        
+        return queryset
 
     def perform_create(self, serializer):
         organization_url = self.request.data.get("organization_url")
