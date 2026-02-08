@@ -38,13 +38,17 @@ jobs:
             const prAuthor = pr.user.login.toLowerCase();
             const action = context.payload.action;
 
-            // Check if PR is from Copilot
-            // Matches official Copilot accounts: 'copilot', 'copilot-*' (e.g., copilot-swe-agent)
-            // This prevents false matches like 'mycopilot' or 'notcopilot'
-            const isCopilot = prAuthor === 'copilot' || prAuthor.startsWith('copilot-');
+            // First, ensure the author is a GitHub bot account (type 'Bot' and/or '[bot]' suffix)
+            const isBotAccount =
+              (pr.user.type && pr.user.type.toLowerCase() === 'bot') ||
+              pr.user.login.toLowerCase().endsWith('[bot]');
+
+            // Then, match official Copilot accounts: 'copilot', 'copilot-*' (e.g., copilot-swe-agent)
+            // This prevents false matches like 'mycopilot' or 'notcopilot' and prevents spoofing
+            const isCopilot = isBotAccount && (prAuthor === 'copilot' || prAuthor.startsWith('copilot-'));
 
             if (!isCopilot) {
-              core.info(`PR #${pr.number} is not from Copilot (author: ${pr.user.login}), skipping.`);
+              core.info(`PR #${pr.number} is not from a trusted Copilot bot (author: ${pr.user.login}), skipping.`);
               return;
             }
 
@@ -83,7 +87,7 @@ jobs:
               // Supports: fixes #123, closes #456, resolves #789, fix: #123, etc.
               const regex = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)[\s:]+#(\d+)/gi;
               const matches = [...prBody.matchAll(regex)];
-              return [...new Set(matches.map(m => parseInt(m[1])))];
+              return [...new Set(matches.map(m => parseInt(m[1], 10)))];
             }
 
             // Find linked issues via timeline API
@@ -182,6 +186,8 @@ jobs:
               core.info('PR opened/reopened - adding "Copilot started work" label');
 
               for (const itemNumber of itemsToLabel) {
+                // Remove "finished work" label if present (for reopened PRs)
+                await removeLabel(itemNumber, FINISHED_LABEL);
                 await addLabel(itemNumber, STARTED_LABEL);
               }
             }
