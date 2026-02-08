@@ -1010,6 +1010,76 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    @action(detail=True, methods=["post"])
+    def pause(self, request, pk=None):
+        """Pauses an active time log"""
+        try:
+            timelog = self.get_object()
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Time log not found.")
+
+        if timelog.user != request.user:
+            return Response(
+                {"detail": "You don't have permission to pause this time log."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if timelog.end_time:
+            return Response(
+                {"detail": "Cannot pause a completed time log."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if timelog.is_paused:
+            return Response(
+                {"detail": "Time log is already paused."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            timelog.pause()
+            return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while pausing the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["post"])
+    def resume(self, request, pk=None):
+        """Resumes a paused time log"""
+        try:
+            timelog = self.get_object()
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Time log not found.")
+
+        if timelog.user != request.user:
+            return Response(
+                {"detail": "You don't have permission to resume this time log."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if timelog.end_time:
+            return Response(
+                {"detail": "Cannot resume a completed time log."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not timelog.is_paused:
+            return Response(
+                {"detail": "Time log is not paused."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            timelog.resume()
+            return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while resuming the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 class SearchHistoryApiView(APIView):
     """API view for retrieving and clearing user search history"""

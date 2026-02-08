@@ -151,6 +151,8 @@ class ContributorSerializer(serializers.ModelSerializer):
 
 
 class TimeLogSerializer(serializers.ModelSerializer):
+    active_duration = serializers.SerializerMethodField()
+    
     class Meta:
         model = TimeLog
         fields = [
@@ -161,6 +163,12 @@ class TimeLogSerializer(serializers.ModelSerializer):
             "end_time",
             "duration",
             "github_issue_url",
+            "github_issue_number",
+            "github_repo",
+            "is_paused",
+            "paused_duration",
+            "last_pause_time",
+            "active_duration",
             "created",
         ]
         read_only_fields = [
@@ -168,8 +176,17 @@ class TimeLogSerializer(serializers.ModelSerializer):
             "user",
             "end_time",
             "duration",
+            "is_paused",
+            "paused_duration",
+            "last_pause_time",
+            "active_duration",
             "created",
-        ]  # These fields will be managed automatically
+        ]
+    
+    def get_active_duration(self, obj):
+        """Return the active duration in seconds"""
+        duration = obj.get_active_duration()
+        return duration.total_seconds() if duration else 0
 
 
 class ActivityLogSerializer(serializers.ModelSerializer):
