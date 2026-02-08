@@ -7,6 +7,12 @@ on:
   pull_request_target:
     types: [opened, reopened, closed]
 
+# Security Note: Using pull_request_target is safe here because:
+# 1. We only process PRs from trusted Copilot bot accounts
+# 2. We immediately exit if PR author doesn't match Copilot pattern
+# 3. We don't check out or execute any PR code
+# 4. We only perform label management via GitHub API
+
 permissions:
   issues: write
   pull-requests: read
@@ -33,9 +39,9 @@ jobs:
             const action = context.payload.action;
 
             // Check if PR is from Copilot
-            // Matches: 'Copilot', 'copilot-swe-agent', 'copilot-swe-agent[bot]', etc.
-            // This is intentionally broad to catch all official Copilot variants
-            const isCopilot = prAuthor === 'copilot' || prAuthor.includes('copilot');
+            // Matches official Copilot accounts: 'copilot', 'copilot-*' (e.g., copilot-swe-agent)
+            // This prevents false matches like 'mycopilot' or 'notcopilot'
+            const isCopilot = prAuthor === 'copilot' || prAuthor.startsWith('copilot-');
 
             if (!isCopilot) {
               core.info(`PR #${pr.number} is not from Copilot (author: ${pr.user.login}), skipping.`);
