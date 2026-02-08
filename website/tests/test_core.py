@@ -6,8 +6,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from website.models import Contributor, ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
-
+from website.models import Contributor, ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile, Domain
 
 class ForumTests(TestCase):
     def setUp(self):
@@ -26,7 +25,9 @@ class ForumTests(TestCase):
 
         # Check if post was created successfully
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post exists in database
         post = ForumPost.objects.first()
@@ -101,7 +102,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("comment_id", data)
 
         # Verify comment exists in database
         self.assertEqual(post.comments.count(), 1)
@@ -137,7 +140,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has repo link
         post = ForumPost.objects.first()
@@ -163,7 +168,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has project link
         post = ForumPost.objects.first()
@@ -189,7 +196,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has organization link
         post = ForumPost.objects.first()
@@ -221,7 +230,9 @@ class ForumTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
 
         # Verify post has all links
         post = ForumPost.objects.first()
@@ -658,3 +669,60 @@ class TopEarnersTests(TestCase):
         contributor1_earnings = next((e for e in top_earners if e.user.username == "testuser1"), None)
         self.assertIsNotNone(contributor1_earnings)
         self.assertEqual(float(contributor1_earnings.total_earnings), 10.0)
+class SitemapTests(TestCase):
+    """Test suite for sitemap functionality"""
+
+    def setUp(self):
+        self.client = Client()
+        # Create test user and domain for sitemap
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.domain = Domain.objects.create(name="test.example.com", url="https://test.example.com")
+
+    def test_sitemap_loads(self):
+        """Test that the sitemap page loads without errors"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_sitemap_context_has_username(self):
+        """Test that sitemap provides random_username in context"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("random_username", response.context)
+        # Should be a string, not a User object
+        self.assertIsInstance(response.context["random_username"], str)
+
+    def test_sitemap_context_has_domain(self):
+        """Test that sitemap provides random_domain in context"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("random_domain", response.context)
+        # Should be a string, not a Domain object
+        self.assertIsInstance(response.context["random_domain"], str)
+
+    def test_sitemap_with_no_users(self):
+        """Test that sitemap handles case when no users exist"""
+        User.objects.all().delete()
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        # Should have fallback value
+        self.assertEqual(response.context["random_username"], "user")
+
+    def test_sitemap_with_no_domains(self):
+        """Test that sitemap handles case when no domains exist"""
+        Domain.objects.all().delete()
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        # Should have fallback value
+        self.assertEqual(response.context["random_domain"], "example.com")
+
+    def test_sitemap_template_renders_urls(self):
+        """Test that sitemap template contains profile and domain URLs"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # Check that profile URL is present
+        self.assertIn("profile", content)
+        # Check that domain URL is present
+        self.assertIn("domain", content)
+        # Check that follow_user URL is present
+        self.assertIn("follow", content)
