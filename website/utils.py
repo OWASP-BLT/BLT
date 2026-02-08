@@ -7,6 +7,7 @@ import re
 import socket
 import time
 from collections import deque
+from datetime import datetime
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
@@ -21,6 +22,7 @@ from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from django.utils import timezone
 from openai import OpenAI
 from PIL import Image
 
@@ -726,7 +728,7 @@ def ai_summary(text):
         summary = response.choices[0].message.content.strip()
         return summary
     except Exception as e:
-        return f"Error generating summary: {str(e)}"
+        return "Error generating summary: Something went wrong."
 
 
 def gravatar_url(email, size=80):
@@ -814,11 +816,11 @@ class twitter:
                 status = api.update_status(status=message)
 
             # Get tweet URL
-            tweet_url = f"https://twitter.com/user/status/{status.id}"
+            tweet_url = f"https://x.com/user/status/{status.id}"
 
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
-            logging.error(f"Error sending tweet: {str(e)}")
+            logging.error("Error sending tweet: Something went wrong.")
             return {"success": False, "url": None, "txid": None, "error": str(e)}
 
     @staticmethod
@@ -868,7 +870,7 @@ class twitter:
             response.raise_for_status()
             return True
         except Exception as e:
-            logging.error(f"Error sending to Discord: {str(e)}")
+            logging.error("Error sending to Discord: Something went wrong.")
             return False
 
     @staticmethod
@@ -918,7 +920,7 @@ class twitter:
                                 channel_id = channel.get("id")
                                 break
                 except Exception as e:
-                    logging.error(f"Error finding #project-blt channel: {str(e)}")
+                    logging.error("Error finding #project-blt channel: Something went wrong.")
                     return False
 
             if not channel_id:
@@ -962,7 +964,7 @@ class twitter:
                     if not upload_response.json().get("ok"):
                         logging.warning(f"Error uploading image to Slack: {upload_response.json().get('error')}")
                 except Exception as e:
-                    logging.error(f"Error uploading image to Slack: {str(e)}")
+                    logging.error("Error uploading image to Slack: Something went wrong.")
 
             # Send the message
             response = requests.post("https://slack.com/api/chat.postMessage", headers=headers, json=payload)
@@ -975,7 +977,7 @@ class twitter:
 
             return True
         except Exception as e:
-            logging.error(f"Error sending to Slack: {str(e)}")
+            logging.error("Error sending to Slack: Something went wrong.")
             return False
 
 
@@ -1104,7 +1106,7 @@ def analyze_contribution(instance, action_type):
             return get_default_bacon_score(model_name, is_security)
 
     except Exception as e:
-        logging.error(f"Error analyzing contribution for BACON score: {str(e)}")
+        logging.error("Error analyzing contribution for BACON score: Something went wrong.")
         return get_default_bacon_score(model_name, is_security)
 
 
@@ -1129,3 +1131,105 @@ def get_default_bacon_score(model_name, is_security=False):
         score += 3
 
     return score
+
+
+def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
+    """
+    Fetch recent discussions from a GitHub repository using GraphQL API.
+
+    Args:
+        owner: Repository owner (default: "OWASP-BLT")
+        repo: Repository name (default: "BLT")
+        limit: Number of discussions to fetch (default: 5)
+
+    Returns:
+        List of discussion dictionaries with the following keys:
+        - title (str): Discussion title
+        - url (str): URL to the discussion on GitHub
+        - author (str): Username of the discussion author
+        - author_url (str): URL to the author's GitHub profile
+        - created_at (datetime): When the discussion was created (timezone-aware)
+        - comment_count (int): Number of comments on the discussion
+    """
+    github_token = settings.GITHUB_TOKEN
+    if not github_token or github_token == "abc123":  # abc123 is the placeholder in .env.example
+        logging.warning("GITHUB_TOKEN not set or is placeholder, cannot fetch discussions")
+        return []
+
+    query = """
+    query($owner: String!, $name: String!, $limit: Int!) {
+        repository(owner: $owner, name: $name) {
+            discussions(first: $limit, orderBy: {field: CREATED_AT, direction: DESC}) {
+                nodes {
+                    title
+                    url
+                    createdAt
+                    author {
+                        login
+                        url
+                    }
+                    comments {
+                        totalCount
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    headers = {
+        "Authorization": f"Bearer {github_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=headers,
+            json={"query": query, "variables": {"owner": owner, "name": repo, "limit": limit}},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if "errors" in data:
+            logging.error(f"GitHub GraphQL error: {data['errors']}")
+            return []
+
+        discussions = data.get("data", {}).get("repository", {}).get("discussions", {}).get("nodes", [])
+
+        # Transform the data into a simpler format
+        result = []
+        for discussion in discussions:
+            # Parse ISO 8601 date string to datetime object
+            created_at_str = discussion.get("createdAt", "")
+            try:
+                # GitHub returns ISO 8601 format: 2024-01-30T06:51:32Z
+                created_at = datetime.strptime(created_at_str, "%Y-%m-%dT%H:%M:%SZ")
+                # Make it timezone-aware using UTC
+                created_at = timezone.make_aware(created_at, timezone.utc)
+            except (ValueError, AttributeError):
+                created_at = timezone.now()  # Fallback to current time
+
+            result.append(
+                {
+                    "title": discussion.get("title", "Untitled"),
+                    "url": discussion.get("url", ""),
+                    "author": discussion.get("author", {}).get("login", "Anonymous")
+                    if discussion.get("author")
+                    else "Anonymous",
+                    "author_url": discussion.get("author", {}).get("url", "") if discussion.get("author") else "",
+                    "created_at": created_at,
+                    "comment_count": discussion.get("comments", {}).get("totalCount", 0),
+                }
+            )
+
+        logging.info(f"Fetched {len(result)} discussions from {owner}/{repo}")
+        return result
+
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch GitHub discussions: {e}")
+        return []
+    except Exception as e:
+        logging.exception("Unexpected error fetching GitHub discussions")
+        return []
