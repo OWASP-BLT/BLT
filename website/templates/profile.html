@@ -139,6 +139,47 @@
                     </div>
                 </div>
             {% endif %}
+            <!-- GitHub Connection Section (Only for profile owner) -->
+            {% if request.user == user %}
+                {% load socialaccount %}
+                {% get_social_accounts user as accounts %}
+                {% if not accounts.github %}
+                    <div class="border-t border-gray-300/80 dark:border-gray-600/80 pt-4 mt-4">
+                        <!-- BACON Token Reward Banner -->
+                        <div class="mb-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-6 h-6 text-orange-600 flex-shrink-0"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-orange-800 dark:text-orange-300">
+                                        {% trans "Connect GitHub and earn 10 BACON tokens!" %}
+                                    </p>
+                                    <p class="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                        {% trans "Link your GitHub profile to unlock rewards" %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Connect Button -->
+                        <a href="{% url 'github_connect' %}"
+                           class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-all duration-200 w-full">
+                            <svg class="w-5 h-5 fill-current"
+                                 viewBox="0 0 16 16"
+                                 version="1.1"
+                                 aria-hidden="true">
+                                <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
+                                </path>
+                            </svg>
+                            <span>{% trans "Connect GitHub" %}</span>
+                            <span class="ml-auto px-2 py-0.5 text-xs bg-orange-500 text-white rounded-full font-semibold">+10 BACON</span>
+                        </a>
+                    </div>
+                {% endif %}
+            {% endif %}
             <div class="select-none">
                 <div class="font-bold text-black/90 dark:text-white/90 mb-3">{% trans "Crypto Addresses" %}</div>
                 {% include "./includes/crypto_donation.html" %}
@@ -425,8 +466,7 @@
                 <ul class="top-findings select-none w-full flex flex-wrap gap-4">
                     {% if websites %}
                         {% for website in websites %}
-                            <li href="{% url 'domain' slug=website.name %}"
-                                class="flex gap-3 justify-between items-center border border-blue-500 bg-blue-100/20 py-2 px-4 rounded-lg">
+                            <li class="flex gap-3 justify-between items-center border border-blue-500 bg-blue-100/20 py-2 px-4 rounded-lg">
                                 <div class="flex items-center gap-2 w-full">
                                     <a href="{% url 'domain' slug=website.name %}">
                                         <img src="https://www.{{ website.name }}/favicon.ico"
@@ -455,7 +495,7 @@
             </div>
             <div class="flex flex-col gap-3 b">
                 <h1 class="text-xl font-semibold text-black/90 dark:text-white/90 flex items-center gap-4 justify-between">
-                    <span>{% trans "Badges" %} <a href="/badges"
+                    <span>{% trans "Badges" %} <a href="{% url 'badges' %}"
     title="View Badges"
     class="hover:text-red-600 text-black/80 dark:text-white/80"><i class="fas fa-info-circle"></i></a></span>
                     {% if is_mentor %}
@@ -907,7 +947,7 @@
                 </div>
             </div>
             <div class="font-bold mb-3 mt-4 flex justify-between items-center">
-                <span>Badges <a href="/badges" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
+                <span>Badges <a href="{% url 'badges' %}" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
                 {% if is_mentor %}
                     <button id="add-badge-button" class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
                         Assign a Badge

@@ -109,7 +109,7 @@
                 </a>
             </div>
             <!-- Issue Body -->
-            <div class="prose max-w-none">{{ issue.body|safe|linebreaks }}</div>
+            <div class="prose max-w-none">{{ issue.body_html|safe }}</div>
             <!-- Labels -->
             {% if issue.labels %}
                 <div class="mt-6">
@@ -162,7 +162,7 @@
                                     <div class="text-sm text-gray-500 dark:text-gray-500">{{ comment.created_at|timesince }} ago</div>
                                 </div>
                             </div>
-                            <div class="prose max-w-none">{{ comment.body|safe|linebreaks }}</div>
+                            <div class="prose max-w-none">{{ comment.body_html|safe }}</div>
                         </div>
                     {% endfor %}
                 </div>

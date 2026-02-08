@@ -1,6 +1,6 @@
 import logging
 
-from django.core.management import call_command
+from django.core import management
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -11,21 +11,25 @@ class Command(BaseCommand):
     help = "Runs commands scheduled to execute weekly"
 
     def handle(self, *args, **options):
+        logger.info(f"Starting weekly scheduled tasks at {timezone.now()}")
+
+        # Send weekly bug report digest to organization followers
         try:
-            logger.info(f"Starting weekly scheduled tasks at {timezone.now()}")
+            management.call_command("send_weekly_bug_digest")
+            logger.info("Completed weekly bug digest emails")
+        except Exception:
+            logger.exception("Error sending weekly bug digest")
 
-            # Send weekly Slack reports to organizations with Slack integration
-            try:
-                call_command("slack_weekly_report")
-            except Exception as e:
-                logger.error("Error sending weekly Slack reports", exc_info=True)
+        # Clean up old sample invite records (older than 7 days)
+        try:
+            management.call_command("cleanup_sample_invites", days=7)
+            logger.info("Completed sample invites cleanup")
+        except Exception:
+            logger.exception("Error cleaning up sample invites")
 
-            # Add other weekly commands here
-            try:
-                call_command("cleanup_sample_invites", days=7)
-            except Exception as e:
-                logger.error("Error in sample invites cleanup", exc_info=True)
-
-        except Exception as e:
-            logger.error("Error in weekly tasks", exc_info=True)
-            raise
+        # Send weekly Slack report
+        try:
+            management.call_command("slack_weekly_report")
+            logger.info("Completed weekly Slack report")
+        except Exception:
+            logger.exception("Error sending weekly Slack report")

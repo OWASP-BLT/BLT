@@ -24,7 +24,7 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
-
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
@@ -48,13 +48,13 @@ SERVER_EMAIL = os.environ.get("FROM_EMAIL", "blt-support@owasp.org")
 EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
 BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
-TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
+TWITTER_URL = os.environ.get("TWITTER_URL", "https://x.com/owasp_blt")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
+SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
@@ -119,6 +119,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "website.middleware.BaconRewardMessageMiddleware",  # Show BACON reward messages after OAuth
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -204,7 +205,9 @@ AUTHENTICATION_BACKENDS = (
 
 
 REST_AUTH = {"SESSION_LOGIN": False}
-CONN_MAX_AGE = 0
+# Set connection max age to 600 seconds (10 minutes) to enable connection pooling
+# This prevents "no more connections allowed" errors by reusing database connections
+CONN_MAX_AGE = 600
 
 # WSGI_APPLICATION = "blt.wsgi.application"
 
@@ -222,6 +225,14 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+# Use faster password hasher for tests to significantly speed up user creation
+# Keep PBKDF2 hasher in the list to support fixtures with existing password hashes
+if TESTING:
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+        "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    ]
 
 
 LANGUAGE_CODE = "en-us"
@@ -244,7 +255,9 @@ LANGUAGES = (
 
 MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
-db_from_env = dj_database_url.config(conn_max_age=500)
+# Configure database connection pooling with 600 second max age (10 minutes)
+# This enables connection reuse and prevents connection exhaustion
+db_from_env = dj_database_url.config(conn_max_age=600)
 
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
@@ -336,15 +349,30 @@ DATABASES = {
     }
 }
 
+# Test database optimizations for faster test execution
+if TESTING:
+    DATABASES["default"]["TEST"] = {
+        "NAME": ":memory:",  # Use in-memory database for tests
+    }
+
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    # Use connection pooling with 600 second max age to prevent connection exhaustion
+    DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=False)
+    # Apply test optimizations to configured database as well
+    if TESTING:
+        DATABASES["default"]["TEST"] = {
+            "NAME": ":memory:",
+        }
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
+# Security: Do not send emails to unknown accounts during password reset
+# This prevents account enumeration attacks
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -495,8 +523,9 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user", "repo"],
+        "SCOPE": ["user:email"],  # Minimal scope - only email access for security
         "AUTH_PARAMS": {"access_type": "online"},
+        "VERIFIED_EMAIL": True,  # Require verified email from GitHub
     },
     "google": {
         "SCOPE": ["profile", "email"],
@@ -524,7 +553,13 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
-SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
+
+# Social account settings for better UX
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create account without extra form
+SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it from provider
+SOCIALACCOUNT_EMAIL_REQUIRED = False  # Don't require email verification for social signups
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 

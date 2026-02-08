@@ -20,7 +20,7 @@
 {% block content %}
     <!-- Include Sidenav -->
     {% include "includes/sidenav.html" %}
-    <div class="absolute bottom-[10px] right-[15px]">
+    <div class="fixed bottom-4 right-24 z-50 flex gap-3 text-2xl">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/search.html">
             <i class="fab fa-github"></i>
         </a>
@@ -28,216 +28,249 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="row mt-20">
-        <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center">
-                <span class="search-header text-black dark:text-white text-3xl">Search Results for&nbsp;</span><span class="search-header-query text-blue-400 font-bold text-3xl">{{ query }}</span>
-            </h1>
-            <hr>
-        </div>
+    <div class="flex flex-col items-center mt-20">
+        <h1 class="text-center mb-4 mt-20">
+            <span class="text-black dark:text-gray-300 text-3xl">Search Results for&nbsp;</span><span class="text-blue-400 font-bold text-3xl">{{ query }}</span>
+        </h1>
     </div>
     {% if query %}
-        <div class="container mt-4">
-            <div class="flex">
-                <!-- Left sidebar with counts -->
-                {% if type == 'all' %}
-                    <div class="w-64 flex-shrink-0 pr-6 sticky top-4">
-                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Results Found</h2>
-                            <div class="space-y-2">
-                                {% if organizations %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('organizations-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Organizations</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ organizations|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if issues %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('issues-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Issues</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ issues|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if domains %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('domains-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Domains</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ domains|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if users %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('users-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Users</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ users|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if projects %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('projects-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Projects</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ projects|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if repos %}
-                                    <div class="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                         onclick="scrollToSection('repos-section')">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-gray-700 dark:text-gray-300">Repos</span>
-                                            <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ repos|length }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
+        {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
+            <div class="flex w-full min-h-[400px] justify-center items-center py-8">
+                <div class="flex flex-col items-center text-center px-4">
+                    <h2 class="text-3xl font-bold text-gray-300 dark:text-gray-500 mb-4">Nothing Found!</h2>
+                    <p class="text-gray-400 dark:text-gray-600 text-lg mb-6">Try searching with different keywords.</p>
+                    {% if popular_searches %}
+                        <div class="mt-4 max-w-2xl">
+                            <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-4">Popular searches you might like:</h3>
+                            <div class="flex flex-wrap gap-3 justify-center">
+                                {% for suggestion in popular_searches %}
+                                    <a href="?query={{ suggestion.query|urlencode }}&type=all"
+                                       class="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full transition-colors duration-200 group">
+                                        <span class="text-blue-600 dark:text-blue-300 font-medium mr-2">{{ suggestion.query }}</span>
+                                        <span class="text-gray-500 dark:text-gray-400 text-sm">
+                                            ({{ suggestion.result_count }} result{{ suggestion.result_count|pluralize }})
+                                        </span>
+                                        <svg class="w-4 h-4 ml-2 text-blue-400 group-hover:translate-x-1 transition-transform"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                {% endfor %}
                             </div>
+                            <p class="text-xs text-gray-400 dark:text-gray-600 mt-4">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Suggestions based on popular community searches
+                            </p>
                         </div>
-                    </div>
-                {% endif %}
-                <!-- Main content area -->
-                <div class="flex-1">
-                    {% if issues %}
-                        <div id="issues-section" class="bg-gray-50 dark:bg-gray-900 py-12">
-                            <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-                                <h2 class="text-4xl font-extrabold text-black dark:text-white mb-8">Issues</h2>
-                                <div class="list-group">
-                                    {% for activity in issues %}
-                                        {% include "includes/_activity.html" %}
-                                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="container mt-4">
+                <div class="flex">
+                    <!-- Left sidebar with counts -->
+                    {% if type == 'all' %}
+                        <div class="w-64 flex-shrink-0 pr-6 sticky top-4">
+                            <div class="bg-gray-3 dark:bg-gray-800 rounded-lg shadow-lg p-4 relative -top-20">
+                                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Results Found</h2>
+                                <hr class="mt-2 mb-3 border-gray-300 dark:border-gray-600 w-[220px] ml-[-10px]">
+                                <div class="space-y-2">
+                                    {% if organizations or issues or domains or users or projects or repos %}
+                                        <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                                             onclick="scrollToSection('organizations-section')">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700 dark:text-gray-300">Organizations</span>
+                                                <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ organizations|length }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if issues %}
+                                        <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                                             onclick="scrollToSection('issues-section')">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700 dark:text-gray-300">Issues</span>
+                                                <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ issues|length }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if domains %}
+                                        <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                                             onclick="scrollToSection('domains-section')">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700 dark:text-gray-300">Domains</span>
+                                                <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ domains|length }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if users %}
+                                        <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                                             onclick="scrollToSection('users-section')">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700 dark:text-gray-300">Users</span>
+                                                <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ users|length }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if projects %}
+                                        <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                                             onclick="scrollToSection('projects-section')">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700 dark:text-gray-300">Projects</span>
+                                                <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ projects|length }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if repos %}
+                                        <div class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                                             onclick="scrollToSection('repos-section')">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-700 dark:text-gray-300">Repos</span>
+                                                <span class="text-[#e74c3c] font-bold bg-red-50 px-3 py-1 rounded-full">{{ repos|length }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     {% endif %}
-                    {% if domains %}
-                        <div id="domains-section" class="row">
-                            <div class="col-12">
-                                <div class="bg-gray-50 dark:bg-gray-900 py-12">
-                                    <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-                                        <h2 class="text-4xl font-extrabold text-black dark:text-white mb-8">Domains</h2>
-                                        <div class="list-group">
-                                            {% for domain in domains %}
-                                                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 hover:shadow-2xl transition-shadow duration-300">
-                                                    <div class="flex items-center mb-4 space-x-4">
-                                                        {% if domain.logo %}
-                                                            <img class="h-16 w-16 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-                                                                 src="{{ domain.logo.url }}"
-                                                                 alt="{{ domain.name }} Logo"
-                                                                 height="64"
-                                                                 width="64">
-                                                        {% else %}
-                                                            <div class="h-16 w-16 bg-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-lg">
-                                                                <span class="text-gray-400 dark:text-gray-600 font-semibold">N/A</span>
+                    <!-- Main content area -->
+                    <div class="flex-1">
+                        {% if issues %}
+                            <div id="issues-section" class="bg-gray-50 dark:bg-gray-900 py-12">
+                                <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+                                    <h2 class="text-4xl font-extrabold text-black dark:text-white mb-8">Issues</h2>
+                                    <div class="list-group">
+                                        {% for activity in issues %}
+                                            {% include "includes/_activity.html" %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if domains %}
+                            <div id="domains-section" class="row">
+                                <div class="col-12">
+                                    <div class="bg-gray-50 dark:bg-gray-900 py-12">
+                                        <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+                                            <h2 class="text-4xl font-extrabold text-black dark:text-white mb-8">Domains</h2>
+                                            <div class="list-group">
+                                                {% for domain in domains %}
+                                                    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 hover:shadow-2xl transition-shadow duration-300">
+                                                        <div class="flex items-center mb-4 space-x-4">
+                                                            {% if domain.logo %}
+                                                                <img class="h-16 w-16 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                                                                     src="{{ domain.logo.url }}"
+                                                                     alt="{{ domain.name }} Logo"
+                                                                     height="64"
+                                                                     width="64">
+                                                            {% else %}
+                                                                <div class="h-16 w-16 bg-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-lg">
+                                                                    <span class="text-gray-400 dark:text-gray-600 font-semibold">N/A</span>
+                                                                </div>
+                                                            {% endif %}
+                                                            <div>
+                                                                <h2 class="text-4xl font-bold text-gray-800 dark:text-gray-200">
+                                                                    <a href="{{ domain.get_absolute_url }}" class="hover:text-blue-600">{{ domain.name }}</a>
+                                                                </h2>
+                                                                {% if domain.hostname_domain %}
+                                                                    <p class="text-md text-gray-500 dark:text-gray-500">{{ domain.hostname_domain }}</p>
+                                                                {% endif %}
                                                             </div>
-                                                        {% endif %}
-                                                        <div>
-                                                            <h2 class="text-4xl font-bold text-gray-800 dark:text-gray-200">
-                                                                <a href="{{ domain.get_absolute_url }}" class="hover:text-blue-600">{{ domain.name }}</a>
-                                                            </h2>
-                                                            {% if domain.hostname_domain %}
-                                                                <p class="text-md text-gray-500 dark:text-gray-500">{{ domain.hostname_domain }}</p>
+                                                        </div>
+                                                        <div class="flex items-center mb-4">
+                                                            {% if domain.webshot %}
+                                                                <a href="{{ domain.webshot.url }}" target="_blank" class="ml-auto">
+                                                                    <img src="{{ domain.webshot.url }}"
+                                                                         alt="{{ domain.name }} Webshot"
+                                                                         class="h-10 w-10 rounded-lg"
+                                                                         height="40"
+                                                                         width="40">
+                                                                </a>
                                                             {% endif %}
                                                         </div>
-                                                    </div>
-                                                    <div class="flex items-center mb-4">
-                                                        {% if domain.webshot %}
-                                                            <a href="{{ domain.webshot.url }}" target="_blank" class="ml-auto">
-                                                                <img src="{{ domain.webshot.url }}"
-                                                                     alt="{{ domain.name }} Webshot"
-                                                                     class="h-10 w-10 rounded-lg"
-                                                                     height="40"
-                                                                     width="40">
-                                                            </a>
+                                                        <div class="grid grid-cols-3 gap-4 text-md text-gray-600 dark:text-gray-400">
+                                                            <div class="flex items-center space-x-2 ml-4">
+                                                                <i class="fas fa-mouse-pointer text-green-600"></i>
+                                                                <span><strong>Clicks:</strong> {{ domain.clicks|default:"0" }}</span>
+                                                            </div>
+                                                            <div class="flex items-center space-x-2">
+                                                                <i class="fas fa-exclamation-circle text-red-600"></i>
+                                                                <span><strong>Open Issues:</strong> {{ domain.open_issues.count }}</span>
+                                                            </div>
+                                                            <div class="flex items-center space-x-2">
+                                                                <i class="fas fa-check-circle text-emerald-600"></i>
+                                                                <span><strong>Closed Issues:</strong> {{ domain.closed_issues.count }}</span>
+                                                            </div>
+                                                        </div>
+                                                        {% if domain.managers.exists %}
+                                                            <div class="mt-4 text-md ml-4">
+                                                                <strong>Managers:</strong>
+                                                                <div class="flex flex-wrap mt-2">
+                                                                    {% for manager in domain.managers.all %}
+                                                                        <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full mr-2 mb-2">
+                                                                            <i class="fas fa-user-circle mr-1"></i> {{ manager.get_full_name|default:manager.username }}
+                                                                        </span>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </div>
                                                         {% endif %}
-                                                    </div>
-                                                    <div class="grid grid-cols-3 gap-4 text-md text-gray-600 dark:text-gray-400">
-                                                        <div class="flex items-center space-x-2 ml-4">
-                                                            <i class="fas fa-mouse-pointer text-green-600"></i>
-                                                            <span><strong>Clicks:</strong> {{ domain.clicks|default:"0" }}</span>
+                                                        <div class="mt-4 flex space-x-3 ml-4">
+                                                            {% if domain.twitter %}
+                                                                <a href="https://x.com/{{ domain.twitter }}"
+                                                                   target="_blank"
+                                                                   class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-2 rounded-md flex items-center space-x-2">
+                                                                    <i class="fab fa-x-twitter"></i>
+                                                                    <span>Twitter</span>
+                                                                </a>
+                                                            {% endif %}
+                                                            {% if domain.facebook %}
+                                                                <a href="{{ domain.facebook }}"
+                                                                   target="_blank"
+                                                                   class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-md flex items-center space-x-2">
+                                                                    <i class="fab fa-facebook"></i>
+                                                                    <span>Facebook</span>
+                                                                </a>
+                                                            {% endif %}
+                                                            {% if domain.github %}
+                                                                <a href="{{ domain.github }}"
+                                                                   target="_blank"
+                                                                   class="text-white bg-gray-800 dark:bg-gray-100 hover:bg-black px-3 py-2 rounded-md flex items-center space-x-2">
+                                                                    <i class="fab fa-github"></i>
+                                                                    <span>GitHub</span>
+                                                                </a>
+                                                            {% endif %}
                                                         </div>
-                                                        <div class="flex items-center space-x-2">
-                                                            <i class="fas fa-exclamation-circle text-red-600"></i>
-                                                            <span><strong>Open Issues:</strong> {{ domain.open_issues.count }}</span>
-                                                        </div>
-                                                        <div class="flex items-center space-x-2">
-                                                            <i class="fas fa-check-circle text-emerald-600"></i>
-                                                            <span><strong>Closed Issues:</strong> {{ domain.closed_issues.count }}</span>
-                                                        </div>
-                                                    </div>
-                                                    {% if domain.managers.exists %}
-                                                        <div class="mt-4 text-md ml-4">
-                                                            <strong>Managers:</strong>
-                                                            <div class="flex flex-wrap mt-2">
-                                                                {% for manager in domain.managers.all %}
-                                                                    <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full mr-2 mb-2">
-                                                                        <i class="fas fa-user-circle mr-1"></i> {{ manager.get_full_name|default:manager.username }}
+                                                        {% if domain.tags.exists %}
+                                                            <div class="mt-4 flex flex-wrap ml-4">
+                                                                {% for tag in domain.tags.all %}
+                                                                    <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-md font-medium mr-2 mb-2">
+                                                                        <i class="fas fa-tag mr-1"></i>{{ tag.name }}
                                                                     </span>
                                                                 {% endfor %}
                                                             </div>
-                                                        </div>
-                                                    {% endif %}
-                                                    <div class="mt-4 flex space-x-3 ml-4">
-                                                        {% if domain.twitter %}
-                                                            <a href="https://twitter.com/{{ domain.twitter }}"
-                                                               target="_blank"
-                                                               class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-2 rounded-md flex items-center space-x-2">
-                                                                <i class="fab fa-twitter"></i>
-                                                                <span>Twitter</span>
-                                                            </a>
                                                         {% endif %}
-                                                        {% if domain.facebook %}
-                                                            <a href="{{ domain.facebook }}"
-                                                               target="_blank"
-                                                               class="text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-md flex items-center space-x-2">
-                                                                <i class="fab fa-facebook"></i>
-                                                                <span>Facebook</span>
-                                                            </a>
+                                                        {% if domain.top_tester %}
+                                                            <div class="mt-4 text-xl ml-4">
+                                                                <i class="fas fa-user-check text-blue-600 mr-1"></i>
+                                                                <strong>Top Tester:</strong> <span class="text-blue-600">{{ domain.top_tester.get_full_name|default:domain.top_tester.username }}</span>
+                                                            </div>
                                                         {% endif %}
-                                                        {% if domain.github %}
-                                                            <a href="{{ domain.github }}"
-                                                               target="_blank"
-                                                               class="text-white bg-gray-800 dark:bg-gray-100 hover:bg-black px-3 py-2 rounded-md flex items-center space-x-2">
-                                                                <i class="fab fa-github"></i>
-                                                                <span>GitHub</span>
-                                                            </a>
-                                                        {% endif %}
-                                                    </div>
-                                                    {% if domain.tags.exists %}
-                                                        <div class="mt-4 flex flex-wrap ml-4">
-                                                            {% for tag in domain.tags.all %}
-                                                                <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-md font-medium mr-2 mb-2">
-                                                                    <i class="fas fa-tag mr-1"></i>{{ tag.name }}
-                                                                </span>
-                                                            {% endfor %}
-                                                        </div>
-                                                    {% endif %}
-                                                    {% if domain.top_tester %}
-                                                        <div class="mt-4 text-xl ml-4">
-                                                            <i class="fas fa-user-check text-blue-600 mr-1"></i>
-                                                            <strong>Top Tester:</strong> <span class="text-blue-600">{{ domain.top_tester.get_full_name|default:domain.top_tester.username }}</span>
-                                                        </div>
-                                                    {% endif %}
-                                                    <div class="mt-4 ml-4">
-                                                        <div class="flex items-center space-x-2">
-                                                            <span class="text-md font-semibold">Domain Color:</span>
-                                                            <div class="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600"></div>
+                                                        <div class="mt-4 ml-4">
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="text-md font-semibold">Domain Color:</span>
+                                                                <div class="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600"></div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            {% endfor %}
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        {% endif %}
                     {% endif %}
                     {% if users %}
                         <div id="users-section" class="bg-gray-50 dark:bg-gray-900 py-12">
@@ -406,10 +439,10 @@
                                                             </a>
                                                         {% endif %}
                                                         {% if organization.twitter %}
-                                                            <a href="https://twitter.com/{{ organization.twitter }}"
+                                                            <a href="https://x.com/{{ organization.twitter }}"
                                                                target="_blank"
                                                                class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-3 rounded-md shadow-md transition-colors flex items-center space-x-2">
-                                                                <i class="fab fa-twitter"></i>
+                                                                <i class="fab fa-x-twitter"></i>
                                                             </a>
                                                         {% endif %}
                                                         {% if organization.facebook %}
@@ -490,10 +523,10 @@
                                                             </a>
                                                         {% endif %}
                                                         {% if project.twitter %}
-                                                            <a href="https://twitter.com/{{ project.twitter }}"
+                                                            <a href="https://x.com/{{ project.twitter }}"
                                                                target="_blank"
                                                                class="text-white bg-blue-400 hover:bg-blue-500 px-3 py-3 rounded-md shadow-md transition-colors flex items-center space-x-2">
-                                                                <i class="fab fa-twitter"></i>
+                                                                <i class="fab fa-x-twitter"></i>
                                                             </a>
                                                         {% endif %}
                                                         {% if project.facebook %}
@@ -766,13 +799,6 @@
                             </div>
                         </div>
                     {% endif %}
-                    {% if not issues and not domains and not users and not organizations and not projects and not tags and not repos %}
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="alert alert-warning text-center" role="alert">Nothing Found!</div>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -827,6 +853,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         return cookieValue;
     }
+
 });
     </script>
 {% endblock content %}
