@@ -11,7 +11,6 @@ from urllib.parse import parse_qs, urlparse
 import pytz
 import requests
 from annoying.fields import AutoOneToOneField
-from captcha.fields import CaptchaField
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -606,7 +605,6 @@ class Issue(models.Model):
     url = models.URLField()
     description = models.TextField()
     markdown_description = models.TextField(null=True, blank=True)
-    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
