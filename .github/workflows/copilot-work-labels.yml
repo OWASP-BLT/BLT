@@ -1,0 +1,183 @@
+name: Copilot Work Status Labels
+
+# Automatically manage labels on issues when Copilot starts and finishes work
+# - When Copilot opens a PR: adds "Copilot started work" label to linked issue(s)
+# - When Copilot's PR is closed/merged: removes "Copilot started work" and adds "Copilot finished work" label
+on:
+  pull_request_target:
+    types: [opened, reopened, closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  manage_copilot_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manage Copilot Work Labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              core.info('No pull_request in context. Skipping.');
+              return;
+            }
+
+            const prAuthor = pr.user.login.toLowerCase();
+            const action = context.payload.action;
+
+            // Check if PR is from Copilot
+            const isCopilot = prAuthor === 'copilot' ||
+                              prAuthor.includes('copilot') ||
+                              pr.user.type === 'Bot' && prAuthor.includes('copilot');
+
+            if (!isCopilot) {
+              core.info(`PR #${pr.number} is not from Copilot (author: ${pr.user.login}), skipping.`);
+              return;
+            }
+
+            core.info(`Processing Copilot PR #${pr.number} (action: ${action})`);
+
+            // Label names and colors
+            const STARTED_LABEL = 'Copilot started work';
+            const FINISHED_LABEL = 'Copilot finished work';
+            const STARTED_COLOR = '0366d6'; // Blue
+            const FINISHED_COLOR = '28a745'; // Green
+
+            // Ensure labels exist in the repository
+            async function ensureLabel(labelName, color, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                core.info(`Label "${labelName}" already exists`);
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner, repo,
+                    name: labelName,
+                    color: color,
+                    description: description
+                  });
+                  core.info(`Created label "${labelName}"`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            // Extract issue numbers from PR body (supports "fixes #123", "closes #456", etc.)
+            function extractLinkedIssues(prBody) {
+              if (!prBody) return [];
+              const regex = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
+              const matches = [...prBody.matchAll(regex)];
+              return [...new Set(matches.map(m => parseInt(m[1])))];
+            }
+
+            // Find linked issues via timeline API
+            async function findLinkedIssues(prNumber) {
+              try {
+                const allTimelineEvents = await github.paginate(
+                  github.rest.issues.listEventsForTimeline,
+                  {
+                    owner, repo,
+                    issue_number: prNumber,
+                    per_page: 100
+                  }
+                );
+
+                const linked = new Set();
+                for (const event of allTimelineEvents) {
+                  if (event.event === 'connected' && event.issue && !event.issue.pull_request) {
+                    linked.add(event.issue.number);
+                  }
+                }
+                return Array.from(linked);
+              } catch (e) {
+                core.warning(`Failed to get timeline for PR #${prNumber}: ${e.message}`);
+                return [];
+              }
+            }
+
+            // Add label to issue
+            async function addLabel(issueNumber, labelName) {
+              try {
+                const issue = await github.rest.issues.get({ owner, repo, issue_number: issueNumber });
+
+                // Check if label already exists on the issue
+                const hasLabel = issue.data.labels.some(l => l.name === labelName);
+                if (hasLabel) {
+                  core.info(`  Issue #${issueNumber} already has label "${labelName}"`);
+                  return;
+                }
+
+                await github.rest.issues.addLabels({
+                  owner, repo,
+                  issue_number: issueNumber,
+                  labels: [labelName]
+                });
+                core.info(`  Added label "${labelName}" to issue #${issueNumber}`);
+              } catch (e) {
+                core.warning(`  Failed to add label to issue #${issueNumber}: ${e.message}`);
+              }
+            }
+
+            // Remove label from issue
+            async function removeLabel(issueNumber, labelName) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo,
+                  issue_number: issueNumber,
+                  name: labelName
+                });
+                core.info(`  Removed label "${labelName}" from issue #${issueNumber}`);
+              } catch (e) {
+                // Ignore 404 errors (label not found on issue)
+                if (e.status === 404 || e.statusCode === 404) {
+                  core.info(`  Label "${labelName}" not found on issue #${issueNumber}`);
+                } else {
+                  core.warning(`  Failed to remove label from issue #${issueNumber}: ${e.message}`);
+                }
+              }
+            }
+
+            // Ensure both labels exist
+            await ensureLabel(STARTED_LABEL, STARTED_COLOR, 'Copilot has started working on this issue');
+            await ensureLabel(FINISHED_LABEL, FINISHED_COLOR, 'Copilot has finished working on this issue');
+
+            // Get linked issues from PR body and timeline
+            const bodyIssues = extractLinkedIssues(pr.body);
+            const timelineIssues = await findLinkedIssues(pr.number);
+            const linkedIssues = [...new Set([...bodyIssues, ...timelineIssues])];
+
+            if (linkedIssues.length === 0) {
+              core.info('No linked issues found in PR body or timeline');
+              return;
+            }
+
+            core.info(`Found ${linkedIssues.length} linked issue(s): ${linkedIssues.join(', ')}`);
+
+            // Handle PR opened/reopened - add "started work" label
+            if (action === 'opened' || action === 'reopened') {
+              core.info('PR opened/reopened - adding "Copilot started work" label');
+
+              for (const issueNumber of linkedIssues) {
+                await addLabel(issueNumber, STARTED_LABEL);
+              }
+            }
+
+            // Handle PR closed - remove "started" and add "finished" label
+            if (action === 'closed') {
+              core.info('PR closed - removing "Copilot started work" and adding "Copilot finished work" label');
+
+              for (const issueNumber of linkedIssues) {
+                await removeLabel(issueNumber, STARTED_LABEL);
+                await addLabel(issueNumber, FINISHED_LABEL);
+              }
+            }
+
+            core.info('✅ Copilot work status labels updated successfully');
