@@ -116,21 +116,13 @@ def handle_project_event(payload):
 def start_timer_for_user(github_username, issue_number, issue_url, repo_full_name):
     """Start a timer for a user when assigned to an issue"""
     try:
-        # Try to find user by GitHub username
-        # This assumes users have their GitHub username stored
-        # You may need to adjust based on your user model
-        user = User.objects.filter(
-            userprofile__user_github__iexact=github_username
-        ).first()
-        
-        if not user:
-            # Try to find by username match
-            user = User.objects.filter(username__iexact=github_username).first()
+        # Try to find user by username match
+        user = User.objects.filter(username__iexact=github_username).first()
         
         if not user:
             return JsonResponse({
                 'status': 'warning',
-                'message': f'User not found for GitHub username: {github_username}'
+                'message': f'User not found for GitHub username: {github_username}. Please create a user with username "{github_username}" in BLT.'
             })
         
         # Check if there's already an active timer for this issue
