@@ -48,7 +48,7 @@ def github_timer_webhook(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
     except Exception as e:
-        logger.error(f"Error processing webhook: {str(e)}")
+        logger.exception("Error processing webhook")
         return JsonResponse({'error': 'Internal server error'}, status=500)
 
 
@@ -160,8 +160,8 @@ def start_timer_for_user(github_username, issue_number, issue_url, repo_full_nam
         })
         
     except Exception as e:
-        logger.error(f"Error starting timer: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.exception("Error starting timer for user %s on issue #%s", github_username, issue_number)
+        return JsonResponse({'error': 'Internal server error'}, status=500)
 
 
 def stop_timer_for_issue(issue_number, repo_full_name):
@@ -193,8 +193,8 @@ def stop_timer_for_issue(issue_number, repo_full_name):
         })
         
     except Exception as e:
-        logger.error(f"Error stopping timer: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.exception("Error stopping timer for issue #%s in repo %s", issue_number, repo_full_name)
+        return JsonResponse({'error': 'Internal server error'}, status=500)
 
 
 def pause_timer_for_issue(issue_number, repo_full_name):
@@ -226,5 +226,5 @@ def pause_timer_for_issue(issue_number, repo_full_name):
         })
         
     except Exception as e:
-        logger.error(f"Error pausing timer: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.exception("Error pausing timer for issue #%s in repo %s", issue_number, repo_full_name)
+        return JsonResponse({'error': 'Internal server error'}, status=500)
