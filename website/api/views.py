@@ -4,7 +4,7 @@ import os
 import smtplib
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -990,14 +990,21 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def stop(self, request, pk=None):
         """Stops the time log and calculates duration"""
-        try:
-            timelog = self.get_object()
-        except ObjectDoesNotExist:
-            raise NotFound(detail="Time log not found.")
+        timelog = self.get_object()
+        
+        # Check ownership
+        if timelog.user != request.user:
+            return Response(
+                {"detail": "You do not have permission to stop this time log."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         timelog.end_time = timezone.now()
         if timelog.start_time:
-            timelog.duration = timelog.end_time - timelog.start_time
+            # Calculate duration excluding paused time
+            total_duration = timelog.end_time - timelog.start_time
+            paused = timedelta(seconds=timelog.paused_duration or 0)
+            timelog.duration = total_duration - paused
 
         try:
             timelog.save()
@@ -1013,10 +1020,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def pause(self, request, pk=None):
         """Pauses an active time log"""
-        try:
-            timelog = self.get_object()
-        except ObjectDoesNotExist:
-            raise NotFound(detail="Time log not found.")
+        timelog = self.get_object()
 
         if timelog.user != request.user:
             return Response(
@@ -1048,10 +1052,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def resume(self, request, pk=None):
         """Resumes a paused time log"""
-        try:
-            timelog = self.get_object()
-        except ObjectDoesNotExist:
-            raise NotFound(detail="Time log not found.")
+        timelog = self.get_object()
 
         if timelog.user != request.user:
             return Response(
