@@ -81,7 +81,6 @@ from website.views.company import (
     OrganizationDashboardManageJobsView,
     OrganizationDashboardManageRolesView,
     OrganizationDashboardTeamOverviewView,
-    OrganizationDashboardVulnerabilityManagementView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -879,11 +878,12 @@ urlpatterns = [
         OrganizationDashboardAnalyticsView.as_view(),
         name="organization_analytics",
     ),
-    path(
-        "organization/<int:id>/dashboard/vulnerability-management/",
-        OrganizationDashboardVulnerabilityManagementView.as_view(),
-        name="organization_vulnerability_management",
-    ),
+    # Commented out - OrganizationDashboardVulnerabilityManagementView doesn't exist yet
+    # path(
+    #     "organization/<int:id>/dashboard/vulnerability-management/",
+    #     OrganizationDashboardVulnerabilityManagementView.as_view(),
+    #     name="organization_vulnerability_management",
+    # ),
     path(
         "organization/<int:id>/dashboard/integrations/",
         OrganizationDashboardIntegrations.as_view(),
