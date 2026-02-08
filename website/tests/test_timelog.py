@@ -301,3 +301,39 @@ class GitHubWebhookTest(TestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @override_settings(GITHUB_WEBHOOK_SECRET="test-webhook-secret")
+    def test_invalid_signature_rejected(self):
+        """Test webhook rejects requests with invalid signature"""
+        url = reverse("github-timer-webhook")
+        payload = {"action": "assigned"}
+        payload_json = json.dumps(payload)
+
+        response = self.client.post(
+            url,
+            payload_json,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="issues",
+            HTTP_X_HUB_SIGNATURE_256="sha256=invalidsignature",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("error", response.json())
+
+    @override_settings(GITHUB_WEBHOOK_SECRET="test-webhook-secret")
+    def test_missing_signature_rejected(self):
+        """Test webhook rejects requests with missing signature"""
+        url = reverse("github-timer-webhook")
+        payload = {"action": "assigned"}
+        payload_json = json.dumps(payload)
+
+        response = self.client.post(
+            url,
+            payload_json,
+            content_type="application/json",
+            HTTP_X_GITHUB_EVENT="issues",
+            # Intentionally omit HTTP_X_HUB_SIGNATURE_256 header
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("error", response.json())
