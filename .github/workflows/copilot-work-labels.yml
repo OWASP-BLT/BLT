@@ -35,7 +35,7 @@ jobs:
             // Check if PR is from Copilot
             const isCopilot = prAuthor === 'copilot' ||
                               prAuthor.includes('copilot') ||
-                              pr.user.type === 'Bot' && prAuthor.includes('copilot');
+                              (pr.user.type === 'Bot' && prAuthor.includes('copilot'));
 
             if (!isCopilot) {
               core.info(`PR #${pr.number} is not from Copilot (author: ${pr.user.login}), skipping.`);
@@ -137,7 +137,7 @@ jobs:
                 core.info(`  Removed label "${labelName}" from issue #${issueNumber}`);
               } catch (e) {
                 // Ignore 404 errors (label not found on issue)
-                if (e.status === 404 || e.statusCode === 404) {
+                if (e.status === 404) {
                   core.info(`  Label "${labelName}" not found on issue #${issueNumber}`);
                 } else {
                   core.warning(`  Failed to remove label from issue #${issueNumber}: ${e.message}`);
