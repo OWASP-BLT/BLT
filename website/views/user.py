@@ -513,6 +513,14 @@ class LeaderboardBase:
         if year and month:
             data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
 
+        # Bot identifiers to exclude from leaderboard
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(username__icontains=bot)
+
         data = (
             data.annotate(total_score=Sum("points__score"))
             .order_by("-total_score")
@@ -521,6 +529,7 @@ class LeaderboardBase:
                 username__isnull=False,
             )
             .exclude(username="")
+            .exclude(bot_exclusions)  # Exclude bot users
         )
         if api:
             return data.values("id", "username", "total_score")
@@ -621,6 +630,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Code Review Leaderboard - Use reviewer_contributor
         # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
         # Filter for reviews on PRs merged in the last 6 months
+        # Create bot exclusion query for reviewers
+        reviewer_bot_exclusions = Q()
+        for bot in bots:
+            reviewer_bot_exclusions |= Q(reviewer_contributor__name__icontains=bot)
+
         reviewed_pr_leaderboard = (
             GitHubReview.objects.filter(
                 reviewer_contributor__isnull=False,
@@ -630,6 +644,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
                 | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
             )
+            .exclude(reviewer_bot_exclusions)  # Exclude bot reviewers
             .select_related("reviewer_contributor", "reviewer__user")
             .values(
                 "reviewer_contributor__name",
@@ -1110,30 +1125,37 @@ def get_score(request):
 
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
-    if request.method == "GET":
-        try:
-            userx = User.objects.get(username=user)
-            flag = 0
-            list_userfrof = request.user.userprofile.follows.all()
-            for prof in list_userfrof:
-                if str(prof) == (userx.email):
-                    request.user.userprofile.follows.remove(userx.userprofile)
-                    flag = 1
-            if flag != 1:
-                request.user.userprofile.follows.add(userx.userprofile)
-                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
-                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+    if request.method != "GET":
+        return HttpResponse(status=405)
 
-                send_mail(
-                    "You got a new follower!!",
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [userx.email],
-                    html_message=msg_html,
-                )
-            return HttpResponse("Success")
-        except User.DoesNotExist:
-            return HttpResponse(f"User {user} not found", status=404)
+    userx = get_object_or_404(User, username=user)
+
+    profile = request.user.userprofile
+    target_profile = userx.userprofile
+
+    # Toggle follow / unfollow
+    if profile.follows.filter(id=target_profile.id).exists():
+        profile.follows.remove(target_profile)
+    else:
+        profile.follows.add(target_profile)
+
+        context = {
+            "follower": request.user,
+            "followed": userx,
+        }
+
+        msg_plain = render_to_string("email/follow_user.html", context)
+        msg_html = render_to_string("email/follow_user.html", context)
+
+        send_mail(
+            "You got a new follower!!",
+            msg_plain,
+            settings.EMAIL_TO_STRING,
+            [userx.email],
+            html_message=msg_html,
+        )
+
+    return HttpResponse("Success")
 
 
 # get issue and comment id from url
