@@ -57,7 +57,7 @@ class TimerManager {
                 }
             }
         } catch (error) {
-            console.error('Error loading active timer:', error);
+            // Error loading active timer - silently fail
         }
     }
 
@@ -88,7 +88,6 @@ class TimerManager {
                 this.showNotification(error.detail || 'Failed to start timer', 'error');
             }
         } catch (error) {
-            console.error('Error starting timer:', error);
             this.showNotification('Failed to start timer', 'error');
         }
     }
@@ -116,7 +115,6 @@ class TimerManager {
                 this.showNotification(error.detail || 'Failed to stop timer', 'error');
             }
         } catch (error) {
-            console.error('Error stopping timer:', error);
             this.showNotification('Failed to stop timer', 'error');
         }
     }
@@ -139,7 +137,6 @@ class TimerManager {
                 this.showNotification(error.detail || 'Failed to pause timer', 'error');
             }
         } catch (error) {
-            console.error('Error pausing timer:', error);
             this.showNotification('Failed to pause timer', 'error');
         }
     }
@@ -162,7 +159,6 @@ class TimerManager {
                 this.showNotification(error.detail || 'Failed to resume timer', 'error');
             }
         } catch (error) {
-            console.error('Error resuming timer:', error);
             this.showNotification('Failed to resume timer', 'error');
         }
     }
@@ -289,7 +285,6 @@ class TimerManager {
 
     showNotification(message, type = 'info') {
         // Simple notification - can be replaced with your notification system
-        console.log(`[${type.toUpperCase()}] ${message}`);
         
         // If you have a notification element
         const notification = document.getElementById('timer-notification');
