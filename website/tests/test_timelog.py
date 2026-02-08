@@ -1,9 +1,13 @@
 """
 Tests for TimeLog model and API endpoints
 """
+import hashlib
+import hmac
+import json
 from datetime import timedelta
+from django.conf import settings
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -281,7 +285,23 @@ class GitHubWebhookTest(TestCase):
             password='testpass123'
         )
         self.client = APIClient()
+        self.webhook_secret = 'test-webhook-secret'
+    
+    def _create_signature(self, payload):
+        """Helper to create GitHub webhook signature"""
+        if isinstance(payload, dict):
+            payload = json.dumps(payload).encode('utf-8')
+        elif isinstance(payload, str):
+            payload = payload.encode('utf-8')
+        
+        signature = hmac.new(
+            self.webhook_secret.encode('utf-8'),
+            payload,
+            hashlib.sha256
+        ).hexdigest()
+        return f'sha256={signature}'
 
+    @override_settings(GITHUB_WEBHOOK_SECRET='test-webhook-secret')
     def test_issue_assigned_webhook(self):
         """Test webhook when issue is assigned"""
         url = reverse('github-timer-webhook')
@@ -299,16 +319,21 @@ class GitHubWebhookTest(TestCase):
             }
         }
         
+        payload_json = json.dumps(payload)
+        signature = self._create_signature(payload_json)
+        
         response = self.client.post(
             url,
-            payload,
-            format='json',
-            HTTP_X_GITHUB_EVENT='issues'
+            payload_json,
+            content_type='application/json',
+            HTTP_X_GITHUB_EVENT='issues',
+            HTTP_X_HUB_SIGNATURE_256=signature
         )
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('status', response.json())
 
+    @override_settings(GITHUB_WEBHOOK_SECRET='test-webhook-secret')
     def test_issue_closed_webhook(self):
         """Test webhook when issue is closed"""
         # Create an active timer
@@ -331,11 +356,15 @@ class GitHubWebhookTest(TestCase):
             }
         }
         
+        payload_json = json.dumps(payload)
+        signature = self._create_signature(payload_json)
+        
         response = self.client.post(
             url,
-            payload,
-            format='json',
-            HTTP_X_GITHUB_EVENT='issues'
+            payload_json,
+            content_type='application/json',
+            HTTP_X_GITHUB_EVENT='issues',
+            HTTP_X_HUB_SIGNATURE_256=signature
         )
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -344,13 +373,18 @@ class GitHubWebhookTest(TestCase):
         timelog.refresh_from_db()
         self.assertIsNotNone(timelog.end_time)
 
+    @override_settings(GITHUB_WEBHOOK_SECRET='test-webhook-secret')
     def test_invalid_json_webhook(self):
         """Test webhook with invalid JSON"""
         url = reverse('github-timer-webhook')
+        invalid_payload = 'invalid json'
+        signature = self._create_signature(invalid_payload)
+        
         response = self.client.post(
             url,
-            'invalid json',
-            content_type='application/json'
+            invalid_payload,
+            content_type='application/json',
+            HTTP_X_HUB_SIGNATURE_256=signature
         )
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
