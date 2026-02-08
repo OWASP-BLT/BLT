@@ -1,7 +1,7 @@
 name: Copilot Work Status Labels
 
-# Automatically manage labels on issues when Copilot starts and finishes work
-# - When Copilot opens a PR: adds "Copilot started work" label to linked issue(s)
+# Automatically manage labels on PRs and issues when Copilot starts and finishes work
+# - When Copilot opens a PR: adds "Copilot started work" label to the PR and linked issue(s)
 # - When Copilot's PR is closed/merged: removes "Copilot started work" and adds "Copilot finished work" label
 on:
   pull_request_target:
@@ -14,7 +14,7 @@ on:
 # 4. We only perform label management via GitHub API
 
 permissions:
-  issues: write
+  issues: write  # Required to add/remove labels on both PRs and issues
   pull-requests: read
 
 jobs:
@@ -163,19 +163,23 @@ jobs:
             const timelineIssues = await findLinkedIssues(pr.number);
             const linkedIssues = [...new Set([...bodyIssues, ...timelineIssues])];
 
+            // Always label the PR itself, plus any linked issues
+            const itemsToLabel = [pr.number, ...linkedIssues];
+
             if (linkedIssues.length === 0) {
-              core.info('No linked issues found in PR body or timeline');
-              return;
+              core.info('No linked issues found, will label PR only');
+            } else {
+              core.info(`Found ${linkedIssues.length} linked issue(s): ${linkedIssues.join(', ')}`);
             }
 
-            core.info(`Found ${linkedIssues.length} linked issue(s): ${linkedIssues.join(', ')}`);
+            core.info(`Will label PR #${pr.number} and ${linkedIssues.length} linked issue(s)`);
 
             // Handle PR opened/reopened - add "started work" label
             if (action === 'opened' || action === 'reopened') {
               core.info('PR opened/reopened - adding "Copilot started work" label');
 
-              for (const issueNumber of linkedIssues) {
-                await addLabel(issueNumber, STARTED_LABEL);
+              for (const itemNumber of itemsToLabel) {
+                await addLabel(itemNumber, STARTED_LABEL);
               }
             }
 
@@ -183,9 +187,9 @@ jobs:
             if (action === 'closed') {
               core.info('PR closed - removing "Copilot started work" and adding "Copilot finished work" label');
 
-              for (const issueNumber of linkedIssues) {
-                await removeLabel(issueNumber, STARTED_LABEL);
-                await addLabel(issueNumber, FINISHED_LABEL);
+              for (const itemNumber of itemsToLabel) {
+                await removeLabel(itemNumber, STARTED_LABEL);
+                await addLabel(itemNumber, FINISHED_LABEL);
               }
             }
 
