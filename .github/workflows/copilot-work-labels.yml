@@ -32,7 +32,9 @@ jobs:
             const prAuthor = pr.user.login.toLowerCase();
             const action = context.payload.action;
 
-            // Check if PR is from Copilot (matches 'copilot' or any username containing 'copilot')
+            // Check if PR is from Copilot
+            // Matches: 'Copilot', 'copilot-swe-agent', 'copilot-swe-agent[bot]', etc.
+            // This is intentionally broad to catch all official Copilot variants
             const isCopilot = prAuthor === 'copilot' || prAuthor.includes('copilot');
 
             if (!isCopilot) {
@@ -71,7 +73,9 @@ jobs:
             // Extract issue numbers from PR body (supports "fixes #123", "closes #456", etc.)
             function extractLinkedIssues(prBody) {
               if (!prBody) return [];
-              const regex = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
+              // Regex matches GitHub's issue linking keywords with optional colon and whitespace
+              // Supports: fixes #123, closes #456, resolves #789, fix: #123, etc.
+              const regex = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)[\s:]+#(\d+)/gi;
               const matches = [...prBody.matchAll(regex)];
               return [...new Set(matches.map(m => parseInt(m[1])))];
             }
@@ -90,6 +94,7 @@ jobs:
 
                 const linked = new Set();
                 for (const event of allTimelineEvents) {
+                  // Filter for 'connected' events that link to issues (not PRs)
                   if (event.event === 'connected' && event.issue && !event.issue.pull_request) {
                     linked.add(event.issue.number);
                   }
