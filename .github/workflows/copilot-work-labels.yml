@@ -32,10 +32,8 @@ jobs:
             const prAuthor = pr.user.login.toLowerCase();
             const action = context.payload.action;
 
-            // Check if PR is from Copilot
-            const isCopilot = prAuthor === 'copilot' ||
-                              prAuthor.includes('copilot') ||
-                              (pr.user.type === 'Bot' && prAuthor.includes('copilot'));
+            // Check if PR is from Copilot (matches 'copilot' or any username containing 'copilot')
+            const isCopilot = prAuthor === 'copilot' || prAuthor.includes('copilot');
 
             if (!isCopilot) {
               core.info(`PR #${pr.number} is not from Copilot (author: ${pr.user.login}), skipping.`);
