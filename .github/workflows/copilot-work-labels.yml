@@ -186,7 +186,8 @@ jobs:
               core.info('PR opened/reopened - adding "Copilot started work" label');
 
               for (const itemNumber of itemsToLabel) {
-                // Remove "finished work" label if present (for reopened PRs)
+                // Remove "finished work" label to ensure mutually exclusive states
+                // (no-op on first open, relevant when reopening a closed PR)
                 await removeLabel(itemNumber, FINISHED_LABEL);
                 await addLabel(itemNumber, STARTED_LABEL);
               }
