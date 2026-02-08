@@ -29,19 +29,17 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
 from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
@@ -74,7 +72,14 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    fetch_github_discussions,
+    rebuild_safe_url,
+    save_analysis_report,
+    validate_file_type,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -1343,14 +1348,30 @@ class FacebookLogin(SocialLoginView):
 class UploadCreate(View):
     template_name = "home.html"
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(UploadCreate, self).dispatch(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
-        data = request.FILES.get("image")
-        result = default_storage.save("uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
-        return JsonResponse({"status": result})
+        # Validate file type
+        is_valid, error = validate_file_type(
+            request=request,
+            file_field_name="image",
+            allowed_extensions=["png", "jpg", "jpeg", "gif", "webp"],
+            allowed_mime_types=["image/png", "image/jpeg", "image/gif", "image/webp"],
+            max_size=20 * 1024 * 1024,  # optional: 20MB limit
+        )
+
+        if not is_valid:
+            return HttpResponseBadRequest(error)
+
+        file = request.FILES.get("image")
+        if not file:
+            return HttpResponseBadRequest("No file uploaded.")
+
+        # Safe filename handling
+        hash_val = kwargs.get("hash", "upload")
+        extension = file.name.split(".")[-1].lower()
+        filename = f"uploads/{hash_val}.{extension}"
+
+        result = default_storage.save(filename, file)
+        return JsonResponse({"status": "ok", "file": result})
 
 
 class StatsDetailView(TemplateView):
@@ -1673,7 +1694,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1686,8 +1707,8 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
-    # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+    # Get recent GitHub discussions from BLT repository
+    recent_discussions = fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5)
 
     # Get recent activities for the feed
     recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
@@ -1856,7 +1877,7 @@ def home(request):
             "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
-            "recent_posts": recent_posts,
+            "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
@@ -2492,7 +2513,7 @@ def run_management_command(request):
                 log_entry.success = False
                 log_entry.save()
 
-                error_msg = f"Error executing command '{command}': {str(e)}"
+                error_msg = f"Error executing command '{command}': Something went wrong."
                 logging.error(error_msg)
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
