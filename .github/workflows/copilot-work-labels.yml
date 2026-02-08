@@ -172,7 +172,10 @@ jobs:
               core.info(`Found ${linkedIssues.length} linked issue(s): ${linkedIssues.join(', ')}`);
             }
 
-            core.info(`Will label PR #${pr.number} and ${linkedIssues.length} linked issue(s)`);
+            const labelTarget = linkedIssues.length > 0 
+              ? `PR #${pr.number} and ${linkedIssues.length} linked issue(s)` 
+              : `PR #${pr.number} only`;
+            core.info(`Will label ${labelTarget}`);
 
             // Handle PR opened/reopened - add "started work" label
             if (action === 'opened' || action === 'reopened') {
