@@ -1471,8 +1471,8 @@ class TimeLog(models.Model):
             # Calculate duration excluding paused time
             total_duration = self.end_time - self.start_time
             
-            # Calculate total paused time
-            total_paused = timedelta(seconds=self.paused_duration or 0)
+            # Calculate total paused time (paused_duration is already a timedelta)
+            total_paused = self.paused_duration or timedelta(0)
             
             # If currently paused, add the ongoing pause interval
             if self.is_paused and self.last_pause_time:
