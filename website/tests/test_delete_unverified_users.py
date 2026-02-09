@@ -139,6 +139,31 @@ class DeleteUnverifiedUsersTest(TestCase):
         # Verify user still exists
         self.assertTrue(User.objects.filter(username="testuser").exists())
 
+    def test_batch_size_validation(self):
+        """Test that batch_size must be at least 1"""
+        # Create user
+        user = User.objects.create_user(username="testuser2", email="test2@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        # Try to run with batch_size = 0
+        out, err = self.call_command(days=self.cutoff_days, batch_size=0)
+
+        # Verify error message
+        self.assertIn("Batch size must be 1 or greater", out)
+
+        # Verify user still exists
+        self.assertTrue(User.objects.filter(username="testuser2").exists())
+
+        # Try to run with negative batch_size
+        out, err = self.call_command(days=self.cutoff_days, batch_size=-5)
+
+        # Verify error message
+        self.assertIn("Batch size must be 1 or greater", out)
+
+        # Verify user still exists
+        self.assertTrue(User.objects.filter(username="testuser2").exists())
+
     def test_no_email_address_records(self):
         """Test deletion of users with no EmailAddress records at all"""
         # Create old user with no EmailAddress records
