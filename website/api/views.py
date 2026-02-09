@@ -1490,19 +1490,41 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(reporter=self.request.user)
 
+    def get_object(self):
+        """
+        Override to acquire row-level lock before serializer initialization.
+        This prevents race conditions in concurrent updates.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Lookup by pk and acquire lock
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+
+        obj = queryset.select_for_update().get(**filter_kwargs)
+
+        # Check object permissions
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
     @transaction.atomic
     def perform_update(self, serializer):
         # Capture old state before save
-        old_instance = SecurityIncident.objects.select_for_update().get(pk=serializer.instance.pk)
+        old_instance = serializer.instance
+
+        # Store old values before save
+        old_values = {}
+        fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
+        for field in fields_to_track:
+            old_values[field] = getattr(old_instance, field)
 
         # Save the updated incident
         serializer.save()
 
         # Create history records for changed fields
-        fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
-
         for field in fields_to_track:
-            old_val = getattr(old_instance, field)
+            old_val = old_values[field]
             new_val = getattr(serializer.instance, field)
 
             if old_val != new_val:
