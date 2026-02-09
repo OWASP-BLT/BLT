@@ -601,24 +601,74 @@ jobs:
             const testExitCode = '${{ needs.test.outputs.test_result }}';
             core.info(`Test exit code from job output: ${testExitCode}`);
             
-            // Try to extract test count from test output
-            let testCount = null;
+            // Try to extract test counts from test output
+            let totalTests = 0;
+            let failedTests = 0;
+            let skippedTests = 0;
+            let passedTests = 0;
+            
             try {
               const testOutput = fs.readFileSync('test-output.txt', 'utf8');
-              // Match "Ran X test(s)" pattern from Django test runner
-              // Django outputs "Ran 1 test in" (singular) or "Ran N tests in" (plural)
-              const match = testOutput.match(/Ran (\d+) tests? in/);
-              if (match && match[1]) {
-                testCount = match[1];
-                core.info(`Extracted test count: ${testCount}`);
+              
+              // Match "Ran X test(s)" pattern to get total test count
+              const totalMatch = testOutput.match(/Ran (\d+) tests? in/);
+              if (totalMatch && totalMatch[1]) {
+                totalTests = parseInt(totalMatch[1], 10);
+                core.info(`Total tests: ${totalTests}`);
               }
+              
+              // Match FAILED line to extract failures, errors, and skipped counts
+              // Examples: "FAILED (failures=1)" or "FAILED (failures=1, errors=2, skipped=3)"
+              const failedMatch = testOutput.match(/FAILED \((.*?)\)/);
+              if (failedMatch) {
+                const failureDetails = failedMatch[1];
+                
+                // Extract failures count
+                const failuresMatch = failureDetails.match(/failures=(\d+)/);
+                if (failuresMatch) {
+                  failedTests += parseInt(failuresMatch[1], 10);
+                }
+                
+                // Extract errors count (also considered failures)
+                const errorsMatch = failureDetails.match(/errors=(\d+)/);
+                if (errorsMatch) {
+                  failedTests += parseInt(errorsMatch[1], 10);
+                }
+                
+                // Extract skipped count
+                const skippedMatch = failureDetails.match(/skipped=(\d+)/);
+                if (skippedMatch) {
+                  skippedTests = parseInt(skippedMatch[1], 10);
+                }
+              } else {
+                // If test output contains "OK", all tests passed with no skips
+                if (testOutput.includes('\nOK\n') || testOutput.includes('\nOK (')) {
+                  // Check for skipped tests in OK line: "OK (skipped=2)"
+                  const okSkippedMatch = testOutput.match(/OK \(skipped=(\d+)\)/);
+                  if (okSkippedMatch) {
+                    skippedTests = parseInt(okSkippedMatch[1], 10);
+                  }
+                }
+              }
+              
+              // Calculate passed tests
+              passedTests = totalTests - failedTests - skippedTests;
+              
+              core.info(`Parsed test results - Total: ${totalTests}, Failed: ${failedTests}, Skipped: ${skippedTests}, Passed: ${passedTests}`);
             } catch (e) {
               core.warning(`Could not read or parse test output: ${e.message}`);
             }
             
-            // Build label with test count if available
-            const baseLabelText = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
-            const newLabel = testCount ? `${baseLabelText} (${testCount})` : baseLabelText;
+            // Build label with test counts in format: "tests: P:# F:# S:#"
+            // Use stable label format to avoid creating many repository labels
+            let newLabel;
+            if (totalTests > 0) {
+              newLabel = `tests: P:${passedTests} F:${failedTests} S:${skippedTests}`;
+            } else {
+              // Fallback if we couldn't parse counts
+              newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
+            }
+            
             const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
             const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
             
