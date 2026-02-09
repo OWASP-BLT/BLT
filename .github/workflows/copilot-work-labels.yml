@@ -160,44 +160,10 @@ jobs:
 
             // For synchronize event
             if (action === 'synchronize') {
-              // Get the latest commit message to check if work is finished
-              try {
-                // The synchronize event includes the commit SHA that triggered it
-                const headSha = pr.head.sha;
-
-                // Get the specific commit that triggered the synchronize event
-                const { data: commit } = await github.rest.repos.getCommit({
-                  owner,
-                  repo,
-                  ref: headSha
-                });
-
-                const commitMessage = commit.commit.message.toLowerCase();
-
-                // Check if commit message indicates finished work
-                const indicatesFinished =
-                  commitMessage.includes('finished work') ||
-                  commitMessage.includes('complete') ||
-                  commitMessage.includes('finalize') ||
-                  commitMessage.includes('final') ||
-                  commitMessage.includes('done') ||
-                  commitMessage.includes('ready for review') ||
-                  commitMessage.includes('ready to merge');
-
-                if (indicatesFinished) {
-                  core.info(`Copilot commit message indicates finished work on PR #${prNumber}`);
-                  await removeLabel(prNumber, STARTED_LABEL);
-                  await addLabel(prNumber, FINISHED_LABEL);
-                  return;
-                }
-              } catch (e) {
-                core.warning(`Failed to check commit message: ${e.message}`);
-              }
-
-              // Default: work is in progress
-              core.info(`Copilot pushed commits to PR #${prNumber} - ensuring "started work" label`);
-              await removeLabel(prNumber, FINISHED_LABEL);
-              await addLabel(prNumber, STARTED_LABEL);
+              // When Copilot pushes any commit, mark work as finished
+              core.info(`Copilot pushed commits to PR #${prNumber} - adding "finished work" label`);
+              await removeLabel(prNumber, STARTED_LABEL);
+              await addLabel(prNumber, FINISHED_LABEL);
               return;
             }
 
