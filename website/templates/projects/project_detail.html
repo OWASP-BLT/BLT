@@ -42,7 +42,8 @@
                     <div class="relative flex items-center h-full px-8">
                         <div class="flex items-center gap-6">
                             {% if project.organization.logo %}
-                                <img src="{{ project.organization.logo.url }}"
+                                <img loading="lazy"
+                                     src="{{ project.organization.logo.url }}"
                                      width="50"
                                      height="50"
                                      alt="{{ project.organization.name }}"
@@ -78,7 +79,8 @@
             <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                 <div class="flex items-start gap-6">
                     {% if project.logo %}
-                        <img src="{{ project.logo.url }}"
+                        <img loading="lazy"
+                             src="{{ project.logo.url }}"
                              width="60"
                              height="60"
                              alt="{{ project.name }}"
@@ -403,7 +405,7 @@
     <script>
     function copyToClipboard(elementId) {
         const element = document.getElementById(elementId);
-        
+
         // Select the text
         element.select();
         element.setSelectionRange(0, 99999); // For mobile devices
@@ -414,12 +416,12 @@
                 // Get the button
                 const button = element.nextElementSibling;
                 const originalText = button.textContent;
-                
+
                 // Change button style to show success
                 button.textContent = 'Copied!';
                 button.classList.remove('bg-red-500', 'hover:bg-red-600');
                 button.classList.add('bg-green-500', 'hover:bg-green-600');
-                
+
                 // Reset button after 2 seconds
                 setTimeout(() => {
                     button.textContent = originalText;

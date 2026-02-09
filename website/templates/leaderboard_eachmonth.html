@@ -68,19 +68,22 @@
                                         <!-- User Avatar -->
                                         <div class="mb-4 relative">
                                             {% if month.user.userprofile.avatar %}
-                                                <img src="{{ month.user.userprofile.avatar }}"
+                                                <img loading="lazy"
+                                                     src="{{ month.user.userprofile.avatar }}"
                                                      class="w-20 h-20 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                      alt="{{ month.user.username }}"
                                                      width="80"
                                                      height="80">
                                             {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                                                <img src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                <img loading="lazy"
+                                                     src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}"
                                                      class="w-20 h-20 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                      alt="{{ month.user.username }}"
                                                      width="80"
                                                      height="80">
                                             {% else %}
-                                                <img src="{% gravatar_url month.user.email 50 %}"
+                                                <img loading="lazy"
+                                                     src="{% gravatar_url month.user.email 50 %}"
                                                      class="w-20 h-20 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                      alt="{{ month.user.username }}"
                                                      width="80"

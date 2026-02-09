@@ -31,7 +31,8 @@
                             <!-- Overview Section -->
                             <section class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 mb-8">
                                 <div class="mb-8 -mx-8 -mt-8">
-                                    <img src="{% static 'images/bacon.webp' %}"
+                                    <img loading="lazy"
+                                         src="{% static 'images/bacon.webp' %}"
                                          alt="BACON Project Image"
                                          class="w-full h-auto object-cover rounded-t-xl"
                                          height="auto"
@@ -230,13 +231,15 @@
                                             <div class="flex items-start justify-between mb-4">
                                                 <div class="flex items-center gap-3">
                                                     {% if submission.user.userprofile.avatar %}
-                                                        <img src="{{ submission.user.userprofile.avatar }}"
+                                                        <img loading="lazy"
+                                                             src="{{ submission.user.userprofile.avatar }}"
                                                              alt="{{ submission.user.username }}"
                                                              class="w-10 h-10 rounded-full"
                                                              width="40"
                                                              height="40">
                                                     {% else %}
-                                                        <img src="{% gravatar_url submission.user.email 40 %}"
+                                                        <img loading="lazy"
+                                                             src="{% gravatar_url submission.user.email 40 %}"
                                                              alt="{{ submission.user.username }}"
                                                              class="w-10 h-10 rounded-full"
                                                              width="40"
@@ -259,7 +262,8 @@
                                             <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                                                 <p class="flex items-center gap-2">
                                                     <i class="fas fa-code-branch w-5"></i>
-                                                    <span class="font-medium">Type:</span> {{ submission.get_contribution_type_display }}
+                                                    <span class="font-medium">Type:</span> {{
+                                                    submission.get_contribution_type_display }}
                                                 </p>
                                                 <p class="flex items-center gap-2">
                                                     <i class="fas fa-exchange-alt w-5"></i>
@@ -345,22 +349,22 @@
     </div>
     <script>
         document.getElementById("baconForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-        
-            const formData = {
-                github_url: document.getElementById("github_url").value,
-                contribution_type: document.getElementById("contribution_type").value,
-                description: document.getElementById("description").value
-            };
+        event.preventDefault();
 
-            fetch("/api/bacon/submit/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}"
-                },
-                body: JSON.stringify(formData)
-            })
+        const formData = {
+            github_url: document.getElementById("github_url").value,
+            contribution_type: document.getElementById("contribution_type").value,
+            description: document.getElementById("description").value
+        };
+
+        fetch("/api/bacon/submit/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify(formData)
+        })
             .then(response => response.json())
             .then(data => {
                 if (data.message) {
@@ -375,32 +379,32 @@
                 console.error("Error:", error);
                 alert("An unexpected error occurred.");
             });
-        });
+    });
 
-        function toggleDescription(id) {
-            let desc = document.getElementById("description-" + id);
-            desc.classList.toggle("hidden");
-        }
+    function toggleDescription(id) {
+        let desc = document.getElementById("description-" + id);
+        desc.classList.toggle("hidden");
+    }
 
-        function toggleInspect(id) {
-            let inspectBox = document.getElementById("inspect-" + id);
-            inspectBox.classList.toggle("hidden");
-        }
+    function toggleInspect(id) {
+        let inspectBox = document.getElementById("inspect-" + id);
+        inspectBox.classList.toggle("hidden");
+    }
 
-        function updateSubmission(id, status) {
-            let baconAmount = document.getElementById("bacon-input-" + id).value;
+    function updateSubmission(id, status) {
+        let baconAmount = document.getElementById("bacon-input-" + id).value;
 
-            fetch(`/update-submission-status/${id}/`, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    status: status,
-                    bacon_amount: baconAmount
-                })
+        fetch(`/update-submission-status/${id}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                status: status,
+                bacon_amount: baconAmount
             })
+        })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -412,6 +416,6 @@
                 }
             })
             .catch(error => console.error("Error:", error));
-        }
+    }
     </script>
 {% endblock content %}

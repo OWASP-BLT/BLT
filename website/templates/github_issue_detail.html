@@ -52,7 +52,8 @@
                     <a href="{{ issue.user_profile.github_url }}"
                        target="_blank"
                        class="flex items-center hover:text-[#e74c3c]">
-                        <img src="{{ issue.user_profile.github_url }}.png"
+                        <img loading="lazy"
+                             src="{{ issue.user_profile.github_url }}.png"
                              alt="{{ issue.user.login }}"
                              class="w-6 h-6 rounded-full mr-2"
                              width="24"
@@ -63,13 +64,15 @@
                     <a href="{% url 'profile' issue.user_profile.user.username %}"
                        class="flex items-center hover:text-[#e74c3c]">
                         {% if issue.user_profile.user_avatar %}
-                            <img src="{{ issue.user_profile.user_avatar.url }}"
+                            <img loading="lazy"
+                                 src="{{ issue.user_profile.user_avatar.url }}"
                                  alt="{{ issue.user.login }}"
                                  class="w-6 h-6 rounded-full mr-2"
                                  width="24"
                                  height="24">
                         {% else %}
-                            <img src="{% gravatar_url issue.user_profile.user.email 24 %}"
+                            <img loading="lazy"
+                                 src="{% gravatar_url issue.user_profile.user.email 24 %}"
                                  alt="{{ issue.user.login }}"
                                  class="w-6 h-6 rounded-full mr-2"
                                  width="24"
@@ -81,7 +84,8 @@
                     <a href="{{ issue.user.html_url }}"
                        target="_blank"
                        class="flex items-center hover:text-[#e74c3c]">
-                        <img src="{{ issue.user.avatar_url }}"
+                        <img loading="lazy"
+                             src="{{ issue.user.avatar_url }}"
                              alt="{{ issue.user.login }}"
                              class="w-6 h-6 rounded-full mr-2"
                              width="24"
@@ -129,7 +133,8 @@
                     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assignees</h3>
                     <div class="flex -space-x-2">
                         {% for assignee in issue.assignees %}
-                            <img src="{{ assignee.avatar_url }}"
+                            <img loading="lazy"
+                                 src="{{ assignee.avatar_url }}"
                                  alt="{{ assignee.login }}"
                                  title="{{ assignee.login }}"
                                  class="w-8 h-8 rounded-full border-2 border-white"
@@ -148,7 +153,8 @@
                     {% for comment in issue.comment_list %}
                         <div class="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 last:pb-0">
                             <div class="flex items-center mb-4">
-                                <img src="{{ comment.user.avatar_url }}"
+                                <img loading="lazy"
+                                     src="{{ comment.user.avatar_url }}"
                                      alt="{{ comment.user.login }}"
                                      class="w-8 h-8 rounded-full mr-3"
                                      width="32"

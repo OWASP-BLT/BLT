@@ -53,7 +53,8 @@
                     <!-- Card Image with Gradient Overlay (Square) -->
                     <div class="relative aspect-square overflow-hidden">
                         {% if post.image %}
-                            <img src="{{ post.image.url }}"
+                            <img loading="lazy"
+                                 src="{{ post.image.url }}"
                                  alt="{{ post.title }}"
                                  width="300"
                                  height="300"

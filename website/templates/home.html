@@ -332,19 +332,22 @@
                                         <div class="flex items-center gap-3">
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if profile.avatar %}
-                                                <img src="{{ profile.avatar }}"
+                                                <img loading="lazy"
+                                                     src="{{ profile.avatar }}"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% elif profile.user.socialaccount_set.all.0.get_avatar_url %}
-                                                <img src="{{ profile.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                <img loading="lazy"
+                                                     src="{{ profile.user.socialaccount_set.all.0.get_avatar_url }}"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% else %}
-                                                <img src="{% gravatar_url profile.user.email 50 %}"
+                                                <img loading="lazy"
+                                                     src="{% gravatar_url profile.user.email 50 %}"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
@@ -380,19 +383,22 @@
                                             <a href="{% url 'profile' user.username %}"
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.userprofile.avatar %}
-                                                    <img src="{{ user.userprofile.avatar }}"
+                                                    <img loading="lazy"
+                                                         src="{{ user.userprofile.avatar }}"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full">
                                                 {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full">
                                                 {% else %}
-                                                    <img src="{% gravatar_url user.email 50 %}"
+                                                    <img loading="lazy"
+                                                         src="{% gravatar_url user.email 50 %}"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -429,14 +435,16 @@
                                                target="_blank"
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.contributor__avatar_url %}
-                                                    <img src="{{ user.contributor__avatar_url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ user.contributor__avatar_url }}"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full"
                                                          onerror="this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% else %}
-                                                    <img src="{% static 'images/dummy-user.webp' %}"
+                                                    <img loading="lazy"
+                                                         src="{% static 'images/dummy-user.webp' %}"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -475,19 +483,22 @@
                                         <div class="flex items-center gap-3">
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if invite.sender.userprofile.avatar %}
-                                                <img src="{{ invite.sender.userprofile.avatar }}"
+                                                <img loading="lazy"
+                                                     src="{{ invite.sender.userprofile.avatar }}"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% elif invite.sender.socialaccount_set.all.0.get_avatar_url %}
-                                                <img src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
+                                                <img loading="lazy"
+                                                     src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% else %}
-                                                <img src="{% gravatar_url invite.sender.email 50 %}"
+                                                <img loading="lazy"
+                                                     src="{% gravatar_url invite.sender.email 50 %}"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
@@ -899,7 +910,8 @@
                                 </div>
                                 {% if bug.screenshots.all.0 %}
                                     <div class="mb-4 rounded-lg overflow-hidden">
-                                        <img src="{{ bug.screenshots.all.0.image.url }}"
+                                        <img loading="lazy"
+                                             src="{{ bug.screenshots.all.0.image.url }}"
                                              alt="Screenshot"
                                              class="w-full h-32 object-cover"
                                              width="400"
@@ -910,13 +922,15 @@
                                     <div class="flex items-center">
                                         {% if bug.user %}
                                             {% if bug.user.userprofile.avatar %}
-                                                <img src="{{ bug.user.userprofile.avatar }}"
+                                                <img loading="lazy"
+                                                     src="{{ bug.user.userprofile.avatar }}"
                                                      alt="{{ bug.user.username }}"
                                                      class="w-6 h-6 rounded-full mr-2"
                                                      width="24"
                                                      height="24">
                                             {% else %}
-                                                <img src="{% gravatar_url bug.user.email 30 %}"
+                                                <img loading="lazy"
+                                                     src="{% gravatar_url bug.user.email 30 %}"
                                                      alt="{{ bug.user.username }}"
                                                      class="w-6 h-6 rounded-full mr-2"
                                                      width="24"
@@ -966,7 +980,8 @@
                             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                                 {% if post.image %}
                                     <div class="w-full h-48 overflow-hidden">
-                                        <img src="{{ post.image.url }}"
+                                        <img loading="lazy"
+                                             src="{{ post.image.url }}"
                                              alt="{{ post.title }}"
                                              width="800"
                                              height="400"
@@ -1184,12 +1199,14 @@
                     <div class="flex flex-col items-center text-center">
                         <a href="{% url 'organization_detail' slug='owasp' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/OWASP_black_logo.svg' %}"
+                            <img loading="lazy"
+                                 src="{% static 'images/OWASP_black_logo.svg' %}"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
                                  class="block dark:hidden max-w-full max-h-full">
-                            <img src="{% static 'images/OWASP_white_logo.svg' %}"
+                            <img loading="lazy"
+                                 src="{% static 'images/OWASP_white_logo.svg' %}"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
@@ -1203,12 +1220,14 @@
                     <div class="flex flex-col items-center text-center">
                         <a href="{% url 'organization_detail' slug='sentry' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/sentry-logo.svg' %}"
+                            <img loading="lazy"
+                                 src="{% static 'images/sentry-logo.svg' %}"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
                                  class="block dark:hidden max-w-full max-h-full">
-                            <img src="{% static 'images/sentry-white.png' %}"
+                            <img loading="lazy"
+                                 src="{% static 'images/sentry-white.png' %}"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
@@ -1222,7 +1241,8 @@
                     <div class="flex flex-col items-center text-center">
                         <a href="{% url 'organization_detail' slug='google' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/googlelogo_color_272x92dp.webp' %}"
+                            <img loading="lazy"
+                                 src="{% static 'images/googlelogo_color_272x92dp.webp' %}"
                                  alt="Google Logo"
                                  width="272"
                                  height="92"
@@ -1298,7 +1318,7 @@
         copyText.select();
         copyText.setSelectionRange(0, 99999);
         document.execCommand("copy");
-        
+
         // Show feedback
         var button = event.target.closest('button');
         var originalText = button.innerHTML;

@@ -26,13 +26,15 @@
                                             {% for usr in flagers %}
                                                 <div class="flex items-center p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                                                     {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
                                                              class="h-10 w-10 rounded-full object-cover"
                                                              alt="{{ usr.user.username }}"
                                                              height="40"
                                                              width="40">
                                                     {% else %}
-                                                        <img src="{% gravatar_url usr.user.email 50 %}"
+                                                        <img loading="lazy"
+                                                             src="{% gravatar_url usr.user.email 50 %}"
                                                              class="h-10 w-10 rounded-full object-cover"
                                                              alt="{{ usr.user.username }}"
                                                              height="40"
@@ -80,13 +82,15 @@
                                             {% for usr in likers %}
                                                 <div class="flex items-center p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                                                     {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
                                                              class="h-10 w-10 rounded-full object-cover"
                                                              alt="{{ usr.user.username }}"
                                                              height="40"
                                                              width="40">
                                                     {% else %}
-                                                        <img src="{% gravatar_url usr.user.email 50 %}"
+                                                        <img loading="lazy"
+                                                             src="{% gravatar_url usr.user.email 50 %}"
                                                              class="h-10 w-10 rounded-full object-cover"
                                                              alt="{{ usr.user.username }}"
                                                              height="40"
@@ -118,9 +122,9 @@
 <script>
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
-        
+
         navigator.clipboard.writeText(textToCopy);
-      
+
         $.notify("Bug details copied to clipboard!", {
             style: "custom",
             className: "success"
@@ -199,14 +203,14 @@
     async function resolveIssue(){
         var id = {{object.pk}};
 
-        const request = await fetch(`/resolve/${id}/`)
-        window.location.reload();
+    const request = await fetch(`/resolve/${id}/`) 
+    window.location.reload();
         if (request.status == 403){
-            $.notify("Permission Denied", {
-                style: "custom",
-                className: "danger"
-            });
-        }
+        $.notify("Permission Denied", {
+            style: "custom",
+            className: "danger"
+        });
+    }
     }
 </script>
 <script>
@@ -322,19 +326,19 @@
             }
         })
     }
-    
+
     function likeOpenn() {
         document.getElementById('like-modal').classList.remove('hidden');
     }
-    
+
     function flagOpenn() {
         document.getElementById('flag-modal').classList.remove('hidden');
     }
-    
+
     document.getElementById('close-like').addEventListener('click', function() {
         document.getElementById('like-modal').classList.add('hidden');
     });
-    
+
     document.getElementById('close-flag').addEventListener('click', function() {
         document.getElementById('flag-modal').classList.add('hidden');
     });

@@ -160,7 +160,8 @@
                                                     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 hover:shadow-2xl transition-shadow duration-300">
                                                         <div class="flex items-center mb-4 space-x-4">
                                                             {% if domain.logo %}
-                                                                <img class="h-16 w-16 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                                                                <img loading="lazy"
+                                                                     class="h-16 w-16 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
                                                                      src="{{ domain.logo.url }}"
                                                                      alt="{{ domain.name }} Logo"
                                                                      height="64"
@@ -182,7 +183,8 @@
                                                         <div class="flex items-center mb-4">
                                                             {% if domain.webshot %}
                                                                 <a href="{{ domain.webshot.url }}" target="_blank" class="ml-auto">
-                                                                    <img src="{{ domain.webshot.url }}"
+                                                                    <img loading="lazy"
+                                                                         src="{{ domain.webshot.url }}"
                                                                          alt="{{ domain.name }} Webshot"
                                                                          class="h-10 w-10 rounded-lg"
                                                                          height="40"
@@ -279,19 +281,22 @@
                                         {% for user in users %}
                                             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 hover:shadow-2xl transition-shadow duration-300 flex items-center">
                                                 {% if user.userprofile.user_avatar %}
-                                                    <img src="{{ user.userprofile.user_avatar.url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ user.userprofile.user_avatar.url }}"
                                                          class="h-24 w-24 object-cover rounded-md border border-indigo-200 mr-6"
                                                          alt="{{ user.username }}"
                                                          height="96"
                                                          width="96">
                                                 {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
                                                          class="h-24 w-24 object-cover rounded-full border border-indigo-200 mr-6"
                                                          alt="user image"
                                                          height="96"
                                                          width="96">
                                                 {% else %}
-                                                    <img src="{% static 'images/dummy-user.webp' %}"
+                                                    <img loading="lazy"
+                                                         src="{% static 'images/dummy-user.webp' %}"
                                                          class="h-24 w-24 object-cover rounded-full border border-indigo-200 mr-6"
                                                          alt="user image"
                                                          height="96"
@@ -370,7 +375,8 @@
                                                     <div class="flex flex-wrap gap-4 mt-4">
                                                         {% for badge in user.badges %}
                                                             <div class="flex items-center space-x-2 bg-gray-200 dark:bg-gray-700 rounded-md p-3">
-                                                                <img src="{{ badge.badge.icon.url }}"
+                                                                <img loading="lazy"
+                                                                     src="{{ badge.badge.icon.url }}"
                                                                      alt="{{ badge.badge.title }}"
                                                                      class="w-12 h-12 object-contain"
                                                                      title="{{ badge.badge.title }}"
@@ -403,7 +409,8 @@
                                             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 hover:shadow-2xl transition-shadow duration-300">
                                                 <div class="flex items-center">
                                                     {% if organization.logo %}
-                                                        <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
+                                                        <img loading="lazy"
+                                                             class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
                                                              src="{{ organization.logo.url }}"
                                                              alt="{{ organization.name }} Logo"
                                                              height="96"
@@ -495,7 +502,8 @@
                                             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 hover:shadow-2xl transition-shadow duration-300">
                                                 <div class="flex items-center">
                                                     {% if project.logo %}
-                                                        <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
+                                                        <img loading="lazy"
+                                                             class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
                                                              src="{{ project.logo.url }}"
                                                              alt="{{ project.name }} Logo"
                                                              height="96"
@@ -541,7 +549,8 @@
                                                 <div class="mt-4 flex items-center space-x-3">
                                                     {% if project.organization %}
                                                         {% if project.organization.logo %}
-                                                            <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
+                                                            <img loading="lazy"
+                                                                 class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
                                                                  src="{{ project.organization.logo.url }}"
                                                                  alt="{{ project.organization.name }} Logo"
                                                                  height="96"
@@ -609,7 +618,8 @@
                                                 {% for org in matching_organizations %}
                                                     <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-md shadow-md hover:shadow-lg transition-shadow flex items-center gap-3">
                                                         {% if org.logo %}
-                                                            <img src="{{ org.logo.url }}"
+                                                            <img loading="lazy"
+                                                                 src="{{ org.logo.url }}"
                                                                  alt="{{ org.name }} logo"
                                                                  class="rounded-md"
                                                                  height="32"
@@ -630,7 +640,8 @@
                                                 {% for domain in matching_domains %}
                                                     <div class="bg-green-100 text-green-800 px-4 py-2 rounded-md shadow-md hover:shadow-lg transition-shadow flex items-center gap-3">
                                                         {% if domain.logo %}
-                                                            <img src="{{ domain.logo.url }}"
+                                                            <img loading="lazy"
+                                                                 src="{{ domain.logo.url }}"
                                                                  alt="{{ domain.name }} logo"
                                                                  class="rounded-md"
                                                                  height="32"
@@ -652,7 +663,8 @@
                                                 {% for issue in matching_issues %}
                                                     <div class="bg-red-100 text-red-800 px-4 py-2 rounded-md shadow-md hover:shadow-lg transition-shadow flex items-center gap-3">
                                                         {% if issue.logo %}
-                                                            <img src="{{ issue.logo.url }}"
+                                                            <img loading="lazy"
+                                                                 src="{{ issue.logo.url }}"
                                                                  alt="{{ issue.description }} logo"
                                                                  class="rounded-md"
                                                                  height="32"
@@ -674,13 +686,15 @@
                                                 {% for profile in matching_user_profiles %}
                                                     <div class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md shadow-md hover:shadow-lg transition-shadow flex items-center gap-3">
                                                         {% if profile.user_avatar %}
-                                                            <img src="{{ profile.user_avatar.url }}"
+                                                            <img loading="lazy"
+                                                                 src="{{ profile.user_avatar.url }}"
                                                                  alt="{{ profile.user.username }}"
                                                                  class="rounded-md"
                                                                  height="32"
                                                                  width="32">
                                                         {% else %}
-                                                            <img src="{% gravatar_url profile.user.email 200 %}"
+                                                            <img loading="lazy"
+                                                                 src="{% gravatar_url profile.user.email 200 %}"
                                                                  class="rounded-md"
                                                                  alt="avatar"
                                                                  width="32"
@@ -719,7 +733,8 @@
                                             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 hover:shadow-2xl transition-shadow duration-300">
                                                 <div class="flex items-center">
                                                     {% if repo.logo_url %}
-                                                        <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
+                                                        <img loading="lazy"
+                                                             class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
                                                              src="{{ repo.logo_url }}"
                                                              alt="{{ repo.name }} Logo"
                                                              height="96"
@@ -806,54 +821,54 @@
     function scrollToSection(sectionId) {
         const section = document.getElementById(sectionId);
         if (section) {
-            section.scrollIntoView({ 
+            section.scrollIntoView({
                 behavior: 'smooth',
                 block: 'start'
             });
         }
     }
-document.addEventListener("DOMContentLoaded", function () {
-    const messageButtons = document.querySelectorAll(".start-chat");
-    messageButtons.forEach(button => {
-        button.addEventListener("click", function () {
-            const userId = this.getAttribute("data-user-id");
+    document.addEventListener("DOMContentLoaded", function () {
+        const messageButtons = document.querySelectorAll(".start-chat");
+        messageButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                const userId = this.getAttribute("data-user-id");
 
-            fetch(`/messaging/start-thread/${userId}/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = `/messaging/?thread=${data.thread_id}`;
-                } else {
-                    alert("Error starting chat.");
-                }
-            })
-            .catch(error => console.error("Error:", error));
+                fetch(`/messaging/start-thread/${userId}/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({})
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = `/messaging/?thread=${data.thread_id}`;
+                        } else {
+                            alert("Error starting chat.");
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+            });
         });
-    });
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
 
-});
+    });
         </script>
     {% endif %}
 {% endblock content %}

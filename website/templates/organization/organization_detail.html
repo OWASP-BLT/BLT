@@ -40,7 +40,8 @@
                     <div class="flex items-center space-x-4">
                         {% if organization.logo %}
                             <div class="w-24 h-24 bg-white dark:bg-gray-800 rounded-lg shadow-md p-2 flex items-center justify-center">
-                                <img src="{{ MEDIA_URL }}{{ organization.logo }}"
+                                <img loading="lazy"
+                                     src="{{ MEDIA_URL }}{{ organization.logo }}"
                                      alt="{{ organization.name }} logo"
                                      width="96"
                                      height="96"
@@ -418,7 +419,8 @@
                             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
                                 <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Administrator</h3>
                                 <div class="flex items-center space-x-3">
-                                    <img src="{% gravatar_url organization.admin.email 40 %}"
+                                    <img loading="lazy"
+                                         src="{% gravatar_url organization.admin.email 40 %}"
                                          alt="{{ organization.admin.username }}"
                                          width="40"
                                          height="40"
@@ -438,7 +440,8 @@
                                 <div class="space-y-3">
                                     {% for manager in organization.managers.all %}
                                         <div class="flex items-center space-x-3">
-                                            <img src="{% gravatar_url manager.email 32 %}"
+                                            <img loading="lazy"
+                                                 src="{% gravatar_url manager.email 32 %}"
                                                  alt="{{ manager.username }}"
                                                  width="32"
                                                  height="32"
@@ -474,7 +477,8 @@
                                         <div class="flex-1">
                                             <div class="flex items-center space-x-3">
                                                 {% if project_data.project.logo %}
-                                                    <img src="{{ project_data.project.logo.url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ project_data.project.logo.url }}"
                                                          alt="{{ project_data.project.name }} logo"
                                                          width="32"
                                                          height="32"
@@ -519,7 +523,8 @@
                                 <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
                                     <div class="flex items-center space-x-3">
                                         {% if contributor.avatar_url %}
-                                            <img src="{{ contributor.avatar_url }}"
+                                            <img loading="lazy"
+                                                 src="{{ contributor.avatar_url }}"
                                                  alt="{{ contributor.username }}"
                                                  width="40"
                                                  height="40"
@@ -619,7 +624,8 @@
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <div class="flex items-center">
                                                         {% if item.avatar_url %}
-                                                            <img src="{{ item.avatar_url }}"
+                                                            <img loading="lazy"
+                                                                 src="{{ item.avatar_url }}"
                                                                  alt="{{ item.username }}"
                                                                  width="40"
                                                                  height="40"
@@ -718,137 +724,137 @@
 {% endblock %}
 {% block after_js %}
     <script>
-function syncGithubProjects() {
-    const button = event.target.closest('button');
-    const originalContent = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+    function syncGithubProjects() {
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
 
-    fetch('/stats/sync-github-projects/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Failed to sync projects. Please try again.');
-            button.disabled = false;
-            button.innerHTML = originalContent;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while syncing projects.');
-        button.disabled = false;
-        button.innerHTML = originalContent;
-    });
-}
-
-function updateGithubRepos(slug) {
-    const button = document.getElementById('updateReposBtn');
-    const statusArea = document.getElementById('repoUpdateStatus');
-    const statusMessages = document.getElementById('statusMessages');
-    
-    // Disable button and show status area
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
-    statusArea.classList.remove('hidden');
-    statusMessages.innerHTML = '';
-    
-    // Style the status area to look like a terminal
-    statusMessages.className = 'text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto';
-    
-    // Connect to the server-sent events endpoint
-    let eventSource;
-    try {
-        eventSource = new EventSource(`/organization/${slug}/update-repos/`);
-    } catch (err) {
-        console.error('Error creating EventSource:', err);
-        statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-        return;
+        fetch('/stats/sync-github-projects/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to sync projects. Please try again.');
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while syncing projects.');
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            });
     }
-    
-    // Set a timeout to detect connection issues
-    const connectionTimeout = setTimeout(() => {
-        if (eventSource.readyState !== EventSource.OPEN) {
-            statusMessages.innerHTML += '<div class="text-red-500">Error: Connection timeout</div>';
-            eventSource.close();
+
+    function updateGithubRepos(slug) {
+        const button = document.getElementById('updateReposBtn');
+        const statusArea = document.getElementById('repoUpdateStatus');
+        const statusMessages = document.getElementById('statusMessages');
+
+        // Disable button and show status area
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+        statusArea.classList.remove('hidden');
+        statusMessages.innerHTML = '';
+
+        // Style the status area to look like a terminal
+        statusMessages.className = 'text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto';
+
+        // Connect to the server-sent events endpoint
+        let eventSource;
+        try {
+            eventSource = new EventSource(`/organization/${slug}/update-repos/`);
+        } catch (err) {
+            console.error('Error creating EventSource:', err);
+            statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-        }
-    }, 10000); // 10 second timeout
-    
-    // Handle connection open
-    eventSource.onopen = function() {
-        clearTimeout(connectionTimeout);
-    };
-    
-    // Handle incoming messages
-    eventSource.onmessage = function(event) {
-        const message = event.data;
-        
-        // Check if the update is complete
-        if (message.includes('DONE')) {
-            clearTimeout(connectionTimeout);
-            eventSource.close();
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-            
-            // Add a refresh button
-            const refreshBtn = document.createElement('button');
-            refreshBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
-            refreshBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Refresh Page';
-            refreshBtn.onclick = function() { location.reload(); };
-            statusArea.appendChild(refreshBtn);
-            
             return;
         }
-        
-        // Add the message to the terminal
-        const line = document.createElement('div');
-        
-        // Style based on message content
-        if (message.includes('Error:') || message.includes('[error]')) {
-            line.className = 'text-red-500';
-        } else if (message.includes('[created]')) {
-            line.className = 'text-blue-400';
-        } else if (message.includes('[updated]')) {
-            line.className = 'text-yellow-400';
-        }
-        
-        line.textContent = message;
-        statusMessages.appendChild(line);
-        
-        // Auto-scroll to the bottom
-        statusMessages.scrollTop = statusMessages.scrollHeight;
-    };
-    
-    // Handle errors
+
+        // Set a timeout to detect connection issues
+        const connectionTimeout = setTimeout(() => {
+            if (eventSource.readyState !== EventSource.OPEN) {
+                statusMessages.innerHTML += '<div class="text-red-500">Error: Connection timeout</div>';
+                eventSource.close();
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+            }
+        }, 10000); // 10 second timeout
+
+        // Handle connection open
+    eventSource.onopen = function() {
+            clearTimeout(connectionTimeout);
+        };
+
+        // Handle incoming messages
+    eventSource.onmessage = function(event) {
+            const message = event.data;
+
+            // Check if the update is complete
+            if (message.includes('DONE')) {
+                clearTimeout(connectionTimeout);
+                eventSource.close();
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+
+                // Add a refresh button
+                const refreshBtn = document.createElement('button');
+                refreshBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+                refreshBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Refresh Page';
+            refreshBtn.onclick = function() { location.reload(); };
+                statusArea.appendChild(refreshBtn);
+
+                return;
+            }
+
+            // Add the message to the terminal
+            const line = document.createElement('div');
+
+            // Style based on message content
+            if (message.includes('Error:') || message.includes('[error]')) {
+                line.className = 'text-red-500';
+            } else if (message.includes('[created]')) {
+                line.className = 'text-blue-400';
+            } else if (message.includes('[updated]')) {
+                line.className = 'text-yellow-400';
+            }
+
+            line.textContent = message;
+            statusMessages.appendChild(line);
+
+            // Auto-scroll to the bottom
+            statusMessages.scrollTop = statusMessages.scrollHeight;
+        };
+
+        // Handle errors
     eventSource.onerror = function(error) {
-        clearTimeout(connectionTimeout);
-        console.error('EventSource error:', error);
-        
-        eventSource.close();
-        
-        statusMessages.innerHTML += '<div class="text-red-500">Error: Connection to the server was lost</div>';
-        
-        // Add a retry button
-        const retryBtn = document.createElement('button');
-        retryBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
-        retryBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Retry';
+            clearTimeout(connectionTimeout);
+            console.error('EventSource error:', error);
+
+            eventSource.close();
+
+            statusMessages.innerHTML += '<div class="text-red-500">Error: Connection to the server was lost</div>';
+
+            // Add a retry button
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+            retryBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Retry';
         retryBtn.onclick = function() { updateGithubRepos(slug); };
-        statusArea.appendChild(retryBtn);
-        
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
-    };
-}
+            statusArea.appendChild(retryBtn);
+
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+        };
+    }
     </script>
     <!-- Add Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -856,22 +862,22 @@ function updateGithubRepos(slug) {
             crossorigin=""></script>
     {% if organization.latitude and organization.longitude %}
         <script>
-            // Initialize the map
+    // Initialize the map
             const map = L.map('org-map').setView([{{ organization.latitude }}, {{ organization.longitude }}], 13);
-            
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Add a marker for the organization's location
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add a marker for the organization's location
             const marker = L.marker([{{ organization.latitude }}, {{ organization.longitude }}])
                 .addTo(map)
-                .bindPopup("{{ organization.name }}");
-            
-            // Open the popup by default
-            marker.openPopup();
+        .bindPopup("{{ organization.name }}");
+
+    // Open the popup by default
+    marker.openPopup();
         </script>
     {% endif %}
 {% endblock %}

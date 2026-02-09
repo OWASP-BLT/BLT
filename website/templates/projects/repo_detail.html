@@ -52,7 +52,8 @@
                 <div class="flex-1">
                     <div class="flex items-center gap-4 mb-4">
                         {% if repo.logo_url %}
-                            <img src="{{ repo.logo_url }}"
+                            <img loading="lazy"
+                                 src="{{ repo.logo_url }}"
                                  width="40"
                                  height="40"
                                  alt="{{ repo.name }} logo"
@@ -539,7 +540,8 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 contributors-grid">
                                 {% for contributor in top_contributors %}
                                     <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors group">
-                                        <img src="{{ contributor.avatar_url }}"
+                                        <img loading="lazy"
+                                             src="{{ contributor.avatar_url }}"
                                              width="30"
                                              height="30"
                                              alt="{{ contributor.name }}"
@@ -1318,7 +1320,8 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {% for stargazer in stargazers %}
                         <div class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
-                            <img src="{{ stargazer.avatar_url }}"
+                            <img loading="lazy"
+                                 src="{{ stargazer.avatar_url }}"
                                  alt="{{ stargazer.login }}'s avatar"
                                  class="w-10 h-10 rounded-full"
                                  height="40"
@@ -1376,34 +1379,34 @@
     {{ block.super }}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const refreshButton = document.getElementById('refresh-github-data');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            
-            if (refreshButton) {
+        const refreshButton = document.getElementById('refresh-github-data');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        if (refreshButton) {
                 refreshButton.addEventListener('click', function() {
-                    const repoId = this.getAttribute('data-repo-id');
-                    
-                    // Show loading overlay
-                    if (loadingOverlay) {
-                        loadingOverlay.classList.remove('hidden');
-                    }
-                    
-                    // Disable the button to prevent multiple clicks
-                    refreshButton.disabled = true;
-                    refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
-                    
-                    // Get CSRF token
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    
-                    // Make the AJAX request to refresh the data
-                    fetch(`/repository/${repoId}/refresh/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken,
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'same-origin'
-                    })
+                const repoId = this.getAttribute('data-repo-id');
+
+                // Show loading overlay
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('hidden');
+                }
+
+                // Disable the button to prevent multiple clicks
+                refreshButton.disabled = true;
+                refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                // Make the AJAX request to refresh the data
+                fetch(`/repository/${repoId}/refresh/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`Network response was not ok: ${response.status}`);
@@ -1415,21 +1418,21 @@
                         const issuesCount = document.getElementById('issues-count');
                         const prsCount = document.getElementById('prs-count');
                         const dollarTagCount = document.getElementById('dollar-tag-count');
-                        
+
                         if (issuesCount) issuesCount.textContent = data.data.issues_count;
                         if (prsCount) prsCount.textContent = data.data.prs_count;
                         if (dollarTagCount) dollarTagCount.textContent = data.data.dollar_tag_count;
-                        
+
                         // Update the last updated text
                         const lastUpdatedText = document.getElementById('last-updated-text');
                         if (lastUpdatedText && data.data.last_updated) {
                             const lastUpdated = new Date(data.data.last_updated);
                             lastUpdatedText.textContent = `Last updated: ${lastUpdated.toLocaleString()}`;
                         }
-                        
+
                         // Show success message
                         alert('Repository data refreshed successfully! Reload the page to see the updated issues and PRs.');
-                        
+
                         // Optional: Reload the page to show updated data
                         // window.location.reload();
                     })
@@ -1442,14 +1445,14 @@
                         if (loadingOverlay) {
                             loadingOverlay.classList.add('hidden');
                         }
-                        
+
                         // Re-enable the button
                         refreshButton.disabled = false;
                         refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
                     });
-                });
-            }
-        });
+            });
+        }
+    });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/repo_detail.js' %}"></script>

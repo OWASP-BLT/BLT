@@ -113,7 +113,8 @@
             <!-- Hackathon Header -->
             <div class="relative rounded-lg overflow-hidden mb-8">
                 {% if hackathon.banner_image %}
-                    <img src="{{ hackathon.banner_image.url }}"
+                    <img loading="lazy"
+                         src="{{ hackathon.banner_image.url }}"
                          alt="{{ hackathon.name }}"
                          width="1200"
                          height="256"
@@ -385,7 +386,8 @@
                                             <div class="w-8 h-8 mr-3">
                                                 {% if entry.is_contributor %}
                                                     {% if entry.contributor.avatar_url %}
-                                                        <img src="{{ entry.contributor.avatar_url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ entry.contributor.avatar_url }}"
                                                              alt="{{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -397,7 +399,8 @@
                                                     {% endif %}
                                                 {% else %}
                                                     {% if entry.user.userprofile.user_avatar %}
-                                                        <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ entry.user.userprofile.user_avatar.url }}"
                                                              alt="{{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -464,7 +467,8 @@
                                             <div class="w-8 h-8 mr-3">
                                                 {% if entry.is_contributor %}
                                                     {% if entry.contributor.avatar_url %}
-                                                        <img src="{{ entry.contributor.avatar_url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ entry.contributor.avatar_url }}"
                                                              alt="Avatar for {{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -477,7 +481,8 @@
                                                     {% endif %}
                                                 {% else %}
                                                     {% if entry.user.userprofile.user_avatar %}
-                                                        <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ entry.user.userprofile.user_avatar.url }}"
                                                              alt="Avatar for {{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -554,7 +559,8 @@
                                                rel="noopener noreferrer"
                                                class="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition">
                                                 {% if sponsor.logo %}
-                                                    <img src="{{ sponsor.logo.url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ sponsor.logo.url }}"
                                                          alt="{{ sponsor.organization.name }}"
                                                          width="48"
                                                          height="48"
@@ -604,11 +610,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the sparkline chart
-    const ctx = document.getElementById('viewsSparkline').getContext('2d');
+        // Initialize the sparkline chart
+        const ctx = document.getElementById('viewsSparkline').getContext('2d');
     const dates = {{ view_dates|safe }};
     const counts = {{ view_counts|safe }};
-    
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -650,13 +656,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Initialize the PR activity chart
     const prCtx = document.getElementById('prActivityChart').getContext('2d');
     const prDates = {{ pr_dates|safe }};
     const prCounts = {{ pr_counts|safe }};
     const mergedPrCounts = {{ merged_pr_counts|safe }};
-    
+
     new Chart(prCtx, {
         type: 'bar',
         data: {
@@ -710,17 +716,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Share button functionality
     const shareButton = document.getElementById('shareButton');
     const shareDropdown = document.getElementById('shareDropdown');
-    
+
     // Toggle dropdown on button click
     shareButton.addEventListener('click', function(e) {
         e.stopPropagation();
         shareDropdown.classList.toggle('hidden');
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
         if (!shareButton.contains(e.target) && !shareDropdown.contains(e.target)) {
@@ -729,119 +735,119 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Helper function to show success toast
-function showCopySuccessToast() {
-    const toast = document.createElement('div');
-    toast.className = 'fixed bottom-24 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
-    
-    const container = document.createElement('div');
-    container.className = 'flex items-center';
-    
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'w-5 h-5 text-green-400 mr-2');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
-    path.setAttribute('stroke-width', '2');
-    path.setAttribute('d', 'M5 13l4 4L19 7');
-    svg.appendChild(path);
-    
-    const text = document.createTextNode(' Link copied to clipboard!');
-    
-    container.appendChild(svg);
-    container.appendChild(text);
-    toast.appendChild(container);
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('opacity-0');
-        setTimeout(() => {
-            toast.remove();
-        }, 500);
-    }, 3000);
-}
+    // Helper function to show success toast
+    function showCopySuccessToast() {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-24 left-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
 
-// Helper function to show error toast
-function showCopyErrorToast(message) {
-    const errorToast = document.createElement('div');
-    errorToast.className = 'fixed bottom-24 left-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
-    
-    const errorContainer = document.createElement('div');
-    errorContainer.className = 'flex items-center';
-    
-    const errorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    errorSvg.setAttribute('class', 'w-5 h-5 mr-2');
-    errorSvg.setAttribute('fill', 'none');
-    errorSvg.setAttribute('stroke', 'currentColor');
-    errorSvg.setAttribute('viewBox', '0 0 24 24');
-    const errorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    errorPath.setAttribute('stroke-linecap', 'round');
-    errorPath.setAttribute('stroke-linejoin', 'round');
-    errorPath.setAttribute('stroke-width', '2');
-    errorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
-    errorSvg.appendChild(errorPath);
-    
-    const errorText = document.createTextNode(' ' + message);
-    
-    errorContainer.appendChild(errorSvg);
-    errorContainer.appendChild(errorText);
-    errorToast.appendChild(errorContainer);
-    document.body.appendChild(errorToast);
-    
-    setTimeout(() => {
-        errorToast.classList.add('opacity-0');
-        setTimeout(() => {
-            errorToast.remove();
-        }, 500);
-    }, 3000);
-}
+        const container = document.createElement('div');
+        container.className = 'flex items-center';
 
-// Copy to clipboard function with fallback for insecure contexts
-function copyToClipboard() {
-    const url = window.location.href;
-    
-    // Check if clipboard API is available and we're in a secure context
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(url).then(function() {
-            showCopySuccessToast();
-            document.getElementById('shareDropdown').classList.add('hidden');
-        }).catch(function(err) {
-            console.error('Failed to copy: ', err);
-            showCopyErrorToast('Failed to copy link. Please try again.');
-            document.getElementById('shareDropdown').classList.add('hidden');
-        });
-    } else {
-        // Fallback for insecure context or unsupported Clipboard API
-        const textArea = document.createElement('textarea');
-        textArea.value = url;
-        // Avoid scrolling to bottom
-        textArea.style.position = 'fixed';
-        textArea.style.top = '0';
-        textArea.style.left = '0';
-        textArea.style.width = '2em';
-        textArea.style.height = '2em';
-        textArea.style.padding = '0';
-        textArea.style.border = 'none';
-        textArea.style.outline = 'none';
-        textArea.style.boxShadow = 'none';
-        textArea.style.background = 'transparent';
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            // Using deprecated execCommand as fallback for older browsers and HTTP contexts
-            document.execCommand('copy');
-            showCopySuccessToast();
-            document.getElementById('shareDropdown').classList.add('hidden');
-        } catch (err) {
-            console.error('Fallback: Unable to copy', err);
-            showCopyErrorToast('Failed to copy link. Please try again.');
-            document.getElementById('shareDropdown').classList.add('hidden');
-        }
-        document.body.removeChild(textArea);
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'w-5 h-5 text-green-400 mr-2');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M5 13l4 4L19 7');
+        svg.appendChild(path);
+
+        const text = document.createTextNode(' Link copied to clipboard!');
+
+        container.appendChild(svg);
+        container.appendChild(text);
+        toast.appendChild(container);
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                toast.remove();
+            }, 500);
+        }, 3000);
     }
-}
+
+    // Helper function to show error toast
+    function showCopyErrorToast(message) {
+        const errorToast = document.createElement('div');
+        errorToast.className = 'fixed bottom-24 left-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-500 ease-in-out z-50';
+
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'flex items-center';
+
+        const errorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        errorSvg.setAttribute('class', 'w-5 h-5 mr-2');
+        errorSvg.setAttribute('fill', 'none');
+        errorSvg.setAttribute('stroke', 'currentColor');
+        errorSvg.setAttribute('viewBox', '0 0 24 24');
+        const errorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        errorPath.setAttribute('stroke-linecap', 'round');
+        errorPath.setAttribute('stroke-linejoin', 'round');
+        errorPath.setAttribute('stroke-width', '2');
+        errorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        errorSvg.appendChild(errorPath);
+
+        const errorText = document.createTextNode(' ' + message);
+
+        errorContainer.appendChild(errorSvg);
+        errorContainer.appendChild(errorText);
+        errorToast.appendChild(errorContainer);
+        document.body.appendChild(errorToast);
+
+        setTimeout(() => {
+            errorToast.classList.add('opacity-0');
+            setTimeout(() => {
+                errorToast.remove();
+            }, 500);
+        }, 3000);
+    }
+
+    // Copy to clipboard function with fallback for insecure contexts
+    function copyToClipboard() {
+        const url = window.location.href;
+
+        // Check if clipboard API is available and we're in a secure context
+        if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(function() {
+                showCopySuccessToast();
+                document.getElementById('shareDropdown').classList.add('hidden');
+        }).catch(function(err) {
+                console.error('Failed to copy: ', err);
+                showCopyErrorToast('Failed to copy link. Please try again.');
+                document.getElementById('shareDropdown').classList.add('hidden');
+            });
+        } else {
+            // Fallback for insecure context or unsupported Clipboard API
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            // Avoid scrolling to bottom
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            textArea.style.padding = '0';
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                // Using deprecated execCommand as fallback for older browsers and HTTP contexts
+                document.execCommand('copy');
+                showCopySuccessToast();
+                document.getElementById('shareDropdown').classList.add('hidden');
+            } catch (err) {
+                console.error('Fallback: Unable to copy', err);
+                showCopyErrorToast('Failed to copy link. Please try again.');
+                document.getElementById('shareDropdown').classList.add('hidden');
+            }
+            document.body.removeChild(textArea);
+        }
+    }
     </script>
 {% endblock scripts %}

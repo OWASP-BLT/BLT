@@ -17,12 +17,12 @@
 {% endblock og_description %}
 {% block body %}
     {% comment %} <div class="fixed bottom-6 right-6 z-50 flex gap-3">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html" class="bg-gray-800 dark:bg-gray-100 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
-            <i class="fab fa-github text-xl"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1" class="bg-[#e74c3c] hover:bg-[#c0392b] text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
-            <i class="fab fa-figma text-xl"></i>
-        </a>
+    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html" class="bg-gray-800 dark:bg-gray-100 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
+        <i class="fab fa-github text-xl"></i>
+    </a>
+    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1" class="bg-[#e74c3c] hover:bg-[#c0392b] text-white p-3 rounded-full shadow-lg transition-all duration-200 hover:scale-110">
+        <i class="fab fa-figma text-xl"></i>
+    </a>
     </div> {% endcomment %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Header Section -->
@@ -78,13 +78,15 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 {% if member.user_avatar %}
-                                                    <img src="{{ member.user_avatar.url }}"
+                                                    <img loading="lazy"
+                                                         src="{{ member.user_avatar.url }}"
                                                          alt="{{ member.user.username }}"
                                                          width="40"
                                                          height="40"
                                                          class="w-10 h-10 rounded-full mr-3 border-2 border-[#e74c3c]/20 object-cover">
                                                 {% else %}
-                                                    <img src="{% static 'images/dummy-user.webp' %}"
+                                                    <img loading="lazy"
+                                                         src="{% static 'images/dummy-user.webp' %}"
                                                          alt="{{ member.user.username }}"
                                                          width="40"
                                                          height="40"
@@ -154,8 +156,8 @@
             </div>
             <!-- Daily Status Reports Section -->
             {% comment %}
-            DEBUG: Team Members: {{ team_members|length }}
-            DEBUG: Daily Reports: {{ daily_status_reports|length }}
+        DEBUG: Team Members: {{ team_members|length }}
+        DEBUG: Daily Reports: {{ daily_status_reports|length }}
             {% endcomment %}
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -250,13 +252,15 @@
                                             <div class="flex items-center">
                                                 {% with user_profile=report.user.userprofile %}
                                                     {% if user_profile.user_avatar %}
-                                                        <img src="{{ user_profile.user_avatar.url }}"
+                                                        <img loading="lazy"
+                                                             src="{{ user_profile.user_avatar.url }}"
                                                              alt="{{ report.user.username }}"
                                                              width="32"
                                                              height="32"
                                                              class="w-8 h-8 rounded-full mr-3 object-cover">
                                                     {% else %}
-                                                        <img src="{% static 'images/dummy-user.webp' %}"
+                                                        <img loading="lazy"
+                                                             src="{% static 'images/dummy-user.webp' %}"
                                                              alt="{{ report.user.username }}"
                                                              width="32"
                                                              height="32"

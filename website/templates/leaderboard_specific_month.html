@@ -90,19 +90,22 @@
                                     <!-- User Info -->
                                     <div class="flex-shrink-0">
                                         {% if leader.userprofile.avatar %}
-                                            <img src="{{ leader.userprofile.avatar }}"
+                                            <img loading="lazy"
+                                                 src="{{ leader.userprofile.avatar }}"
                                                  class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                  alt="{{ leader.username }}"
                                                  width="48"
                                                  height="48">
                                         {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                            <img loading="lazy"
+                                                 src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
                                                  class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                  alt="{{ leader.username }}"
                                                  width="48"
                                                  height="48">
                                         {% else %}
-                                            <img src="{% gravatar_url leader.email 50 %}"
+                                            <img loading="lazy"
+                                                 src="{% gravatar_url leader.email 50 %}"
                                                  class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                  alt="{{ leader.username }}"
                                                  width="48"
@@ -140,125 +143,125 @@
     </div>
     <!-- Month Picker Script -->
     <script>
-        function padToTwo(number) {
-            if (number <= 9999) {
-                number = ("0" + number).slice(-2);
-            }
-            return number;
+    function padToTwo(number) {
+        if (number <= 9999) {
+            number = ("0" + number).slice(-2);
         }
+        return number;
+    }
 
         (function($) {
             $.fn.monthly = function(options) {
-                var months = options.months || [
-                    "January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"
-                ];
+            var months = options.months || [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
 
                 var Monthly = function(el) {
-                    this._el = $(el);
-                    this._init();
-                    this._render();
-                    this._renderYears();
-                    this._renderMonths();
-                    this._bind();
-                };
+                this._el = $(el);
+                this._init();
+                this._render();
+                this._renderYears();
+                this._renderMonths();
+                this._bind();
+            };
 
-                Monthly.prototype = {
+            Monthly.prototype = {
                     _init: function() {
-                        this._el.text(months[0] + " " + options.years[0]);
-                    },
+                    this._el.text(months[0] + " " + options.years[0]);
+                },
 
                     _render: function() {
-                        var linkPosition = this._el.offset();
-                        this._container = $('<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50">')
-                            .css({
-                                display: "none",
-                                position: "absolute",
-                                top: linkPosition.top + this._el.height() + (options.topOffset || 0),
-                                left: linkPosition.left
-                            })
-                            .appendTo($("body"));
-                    },
+                    var linkPosition = this._el.offset();
+                    this._container = $('<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50">')
+                        .css({
+                            display: "none",
+                            position: "absolute",
+                            top: linkPosition.top + this._el.height() + (options.topOffset || 0),
+                            left: linkPosition.left
+                        })
+                        .appendTo($("body"));
+                },
 
                     _bind: function() {
-                        var self = this;
-                        this._el.on("click", $.proxy(this._show, this));
-                        $(document).on("click", $.proxy(this._hide, this));
+                    var self = this;
+                    this._el.on("click", $.proxy(this._show, this));
+                    $(document).on("click", $.proxy(this._hide, this));
                         this._yearsSelect.on("click", function(e) {
-                            e.stopPropagation();
-                        });
-                        this._container.on("click", "button", $.proxy(this._selectMonth, this));
-                    },
+                        e.stopPropagation();
+                    });
+                    this._container.on("click", "button", $.proxy(this._selectMonth, this));
+                },
 
                     _show: function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this._container.css("display", "inline-block");
-                    },
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this._container.css("display", "inline-block");
+                },
 
                     _hide: function() {
-                        this._container.css("display", "none");
-                    },
+                    this._container.css("display", "none");
+                },
 
                     _selectMonth: function(e) {
-                        var monthIndex = $(e.target).data("value"),
-                            month = $("<div>").text(months[monthIndex]).html(),
-                            year = $("<div>").text(this._yearsSelect.val()).html();
-                        this._el.text(month + " " + year);
-                        if (options.onMonthSelect) {
-                            options.onMonthSelect(monthIndex + 1, month, year);
-                        }
-                    },
+                    var monthIndex = $(e.target).data("value"),
+                        month = $("<div>").text(months[monthIndex]).html(),
+                        year = $("<div>").text(this._yearsSelect.val()).html();
+                    this._el.text(month + " " + year);
+                    if (options.onMonthSelect) {
+                        options.onMonthSelect(monthIndex + 1, month, year);
+                    }
+                },
 
                     _renderYears: function() {
                         var markup = $.map(options.years, function(year) {
-                            return $("<option>").text(year)[0].outerHTML;
-                        });
-                        var yearsWrap = $('<div class="mb-4">').appendTo(this._container);
-                        this._yearsSelect = $('<select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-inherit text-inherit">')
-                            .html(markup.join(""))
-                            .appendTo(yearsWrap);
-                    },
+                        return $("<option>").text(year)[0].outerHTML;
+                    });
+                    var yearsWrap = $('<div class="mb-4">').appendTo(this._container);
+                    this._yearsSelect = $('<select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-inherit text-inherit">')
+                        .html(markup.join(""))
+                        .appendTo(yearsWrap);
+                },
 
                     _renderMonths: function() {
-                        var self = this;
-                        var container = $('<div class="grid grid-cols-3 gap-2">');
-                        
+                    var self = this;
+                    var container = $('<div class="grid grid-cols-3 gap-2">');
+
                         $.each(months, function(i, month) {
-                            $('<button>')
-                                .attr('data-value', i)
-                                .addClass('px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] cursor-pointer')
-                                .text(month)
-                                .appendTo(container);
-                        });
-                        
-                        this._container.append(container);
-                    }
-                };
+                        $('<button>')
+                            .attr('data-value', i)
+                            .addClass('px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] cursor-pointer')
+                            .text(month)
+                            .appendTo(container);
+                    });
+
+                    this._container.append(container);
+                }
+            };
 
                 return this.each(function() {
-                    return new Monthly(this);
-                });
-            };
-        })(jQuery);
+                return new Monthly(this);
+            });
+        };
+    })(jQuery);
 
         $(function() {
-            let current_year = new Date().getFullYear();
-            let years = [];
-            for (let year = current_year; year >= 2000; year -= 1) {
-                years.push(year);
-            }
+        let current_year = new Date().getFullYear();
+        let years = [];
+        for (let year = current_year; year >= 2000; year -= 1) {
+            years.push(year);
+        }
 
-            $("#selection").monthly({
-                years: years,
-                topOffset: 8,
+        $("#selection").monthly({
+            years: years,
+            topOffset: 8,
                 onMonthSelect: function(mi, m, y) {
-                    mi = padToTwo(mi);
-                    $("#selection").val(m + " " + y);
-                    $("#monthly").val(y + "-" + mi);
-                    window.location = `?month=${mi}&year=${y}`;
-                }
-            });
+                mi = padToTwo(mi);
+                $("#selection").val(m + " " + y);
+                $("#monthly").val(y + "-" + mi);
+                window.location = `?month=${mi}&year=${y}`;
+            }
         });
+    });
     </script>
 {% endblock content %}

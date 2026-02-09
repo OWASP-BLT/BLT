@@ -47,7 +47,8 @@
                             Locate the most recent successful build and click on it to proceed with the download.
                         </p>
                     </div>
-                    <img src="{% static 'img/sizzle/app_finding_1.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/app_finding_1.jpg' %}"
                          alt="Finding the App on GitHub Actions"
                          height="200"
                          width="200"
@@ -62,7 +63,8 @@
                             Select the appropriate version of the app for your device and download it.
                         </p>
                     </div>
-                    <img src="{% static 'img/sizzle/app_finding_2.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/app_finding_2.jpg' %}"
                          alt="Choosing Device Version to Download"
                          height="200"
                          width="200"
@@ -75,7 +77,8 @@
                         <div class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Open the App and Login</div>
                         <p class="text-gray-600 dark:text-gray-400">Once downloaded, open the app and login using your credentials.</p>
                     </div>
-                    <img src="{% static 'img/sizzle/running_sizzle_1.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/running_sizzle_1.jpg' %}"
                          alt="Logging into the App"
                          height="200"
                          width="200"
@@ -88,7 +91,8 @@
                         <div class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Access the Side Menu and Click "Sizzle"</div>
                         <p class="text-gray-600 dark:text-gray-400">Open the side menu and tap on the "Sizzle" button to continue.</p>
                     </div>
-                    <img src="{% static 'img/sizzle/running_sizzle_2.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/running_sizzle_2.jpg' %}"
                          alt="Accessing Side Menu"
                          height="200"
                          width="200"
@@ -103,7 +107,8 @@
                             Enter your GitHub username in the provided field and click "Add Username".
                         </p>
                     </div>
-                    <img src="{% static 'img/sizzle/running_sizzle_3.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/running_sizzle_3.jpg' %}"
                          alt="Entering GitHub Username"
                          height="200"
                          width="200"
@@ -116,7 +121,8 @@
                         <div class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Start Time Tracking</div>
                         <p class="text-gray-600 dark:text-gray-400">Click on the "Start Work" button to begin tracking your work time.</p>
                     </div>
-                    <img src="{% static 'img/sizzle/running_sizzle_4.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/running_sizzle_4.jpg' %}"
                          alt="Starting Time Tracking"
                          height="200"
                          width="200"
@@ -131,7 +137,8 @@
                             All assigned issues will be displayed here. Select any task to begin working and click on the "Run" button to start tracking time for that task.
                         </p>
                     </div>
-                    <img src="{% static 'img/sizzle/running_sizzle_5.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/running_sizzle_5.jpg' %}"
                          alt="Viewing and Selecting Tasks"
                          height="200"
                          width="200"
@@ -146,7 +153,8 @@
                             Congratulations! You are now tracking time for the selected task. Click on the "Stop" button to stop tracking once completed.
                         </p>
                     </div>
-                    <img src="{% static 'img/sizzle/running_sizzle_6.jpg' %}"
+                    <img loading="lazy"
+                         src="{% static 'img/sizzle/running_sizzle_6.jpg' %}"
                          alt="Tracking Time for Selected Task"
                          height="200"
                          width="200"
@@ -171,7 +179,8 @@
         <div class="relative">
             <button class="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-full p-2 text-gray-800 dark:text-gray-200 hover:bg-gray-200 transition duration-300"
                     id="closeModal">×</button>
-            <img src=""
+            <img loading="lazy"
+                 src=""
                  alt="Expanded Image"
                  id="modalImage"
                  height="600"
@@ -180,23 +189,23 @@
         </div>
     </div>
     <script>
-        const images = document.querySelectorAll('img');
-        const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const closeModal = document.getElementById('closeModal');
-        images.forEach(image => {
-            image.addEventListener('click', () => {
-                modal.classList.remove('hidden');
-                modalImage.src = image.src;
-            });
+    const images = document.querySelectorAll('img');
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const closeModal = document.getElementById('closeModal');
+    images.forEach(image => {
+        image.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            modalImage.src = image.src;
         });
-        closeModal.addEventListener('click', () => {
+    });
+    closeModal.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
             modal.classList.add('hidden');
-        });
-        window.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
+        }
+    });
     </script>
 {% endblock content %}

@@ -161,7 +161,8 @@
                                                 <div id="previewLogoDiv"
                                                      class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#e74c3c] transition-colors duration-200">
                                                     {% if hunt.logo %}
-                                                        <img id="logoPreview"
+                                                        <img loading="lazy"
+                                                             id="logoPreview"
                                                              src="{{ MEDIA_URL }}/{{ hunt.logo }}"
                                                              height="128"
                                                              width="128"
@@ -170,7 +171,8 @@
                                                         <div id="defaultLogoIcon"
                                                              class="absolute inset-0 items-center justify-center text-[#e74c3c] hidden">
                                                         {% else %}
-                                                            <img id="logoPreview"
+                                                            <img loading="lazy"
+                                                                 id="logoPreview"
                                                                  height="128"
                                                                  width="128"
                                                                  class="absolute inset-0 h-full w-full object-cover hidden rounded-2xl"
@@ -248,7 +250,8 @@
                                             <div class="flex items-start gap-x-4">
                                                 <div class="relative">
                                                     {% if hunt.banner %}
-                                                        <img id="bannerPreview"
+                                                        <img loading="lazy"
+                                                             id="bannerPreview"
                                                              height="128"
                                                              width="128"
                                                              src="{{ MEDIA_URL }}/{{ hunt.banner }}"
@@ -257,7 +260,8 @@
                                                         <div id="defaultBannerIcon"
                                                              class="hidden items-center justify-center w-64 h-32 bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-400 dark:text-gray-600">
                                                         {% else %}
-                                                            <img id="bannerPreview"
+                                                            <img loading="lazy"
+                                                                 id="bannerPreview"
                                                                  width="128"
                                                                  height="128"
                                                                  class="hidden max-w-md max-h-48 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
@@ -499,51 +503,51 @@
     <!-- Hunt Controller Script -->
     <script src="{% static 'organization/js/hunt_controller.js' %}?v=2.9"></script>
     <script>
-        // Set organization ID for JavaScript access
-        window.organizationId = {{ organization.id }};
-        
-        // Date inputs are now plain text with MM/DD/YYYY format
-        // Add date validation and formatting
-        function validateDateFormat(input) {
-            const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-            const value = input.value.trim();
-            
-            if (value && !datePattern.test(value)) {
-                input.style.borderColor = '#e74c3c';
-                // Show error message if error div exists
-                const errorDiv = document.getElementById(input.id + '_error');
-                if (!errorDiv) {
-                    const error = document.createElement('div');
-                    error.id = input.id + '_error';
-                    error.className = 'text-xs text-[#e74c3c] mt-1';
-                    error.textContent = 'Please enter date in MM/DD/YYYY format';
-                    input.parentNode.insertBefore(error, input.nextSibling);
-                }
-            } else {
-                input.style.borderColor = '';
-                const errorDiv = document.getElementById(input.id + '_error');
-                if (errorDiv) {
-                    errorDiv.remove();
-                }
+    // Set organization ID for JavaScript access
+    window.organizationId = {{ organization.id }};
+
+    // Date inputs are now plain text with MM/DD/YYYY format
+    // Add date validation and formatting
+    function validateDateFormat(input) {
+        const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+        const value = input.value.trim();
+
+        if (value && !datePattern.test(value)) {
+            input.style.borderColor = '#e74c3c';
+            // Show error message if error div exists
+            const errorDiv = document.getElementById(input.id + '_error');
+            if (!errorDiv) {
+                const error = document.createElement('div');
+                error.id = input.id + '_error';
+                error.className = 'text-xs text-[#e74c3c] mt-1';
+                error.textContent = 'Please enter date in MM/DD/YYYY format';
+                input.parentNode.insertBefore(error, input.nextSibling);
+            }
+        } else {
+            input.style.borderColor = '';
+            const errorDiv = document.getElementById(input.id + '_error');
+            if (errorDiv) {
+                errorDiv.remove();
             }
         }
-        
-        // Add event listeners for date validation
+    }
+
+    // Add event listeners for date validation
         document.addEventListener('DOMContentLoaded', function() {
-            const startDate = document.getElementById('start_date');
-            const endDate = document.getElementById('end_date');
-            
-            if (startDate) {
+        const startDate = document.getElementById('start_date');
+        const endDate = document.getElementById('end_date');
+
+        if (startDate) {
                 startDate.addEventListener('blur', function() {
-                    validateDateFormat(this);
-                });
-            }
-            
-            if (endDate) {
+                validateDateFormat(this);
+            });
+        }
+
+        if (endDate) {
                 endDate.addEventListener('blur', function() {
-                    validateDateFormat(this);
-                });
-            }
-        });
+                validateDateFormat(this);
+            });
+        }
+    });
     </script>
 {% endblock scripts %}
