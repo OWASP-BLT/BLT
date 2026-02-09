@@ -73,7 +73,7 @@
                     <!-- Left sidebar with counts -->
                     {% if type == 'all' %}
                         <div class="w-64 flex-shrink-0 pr-6 sticky top-4">
-                            <div class="bg-gray-3 dark:bg-gray-800 rounded-lg shadow-lg p-4 relative -top-20">
+                            <div class="bg-gray-300 dark:bg-gray-800 rounded-lg shadow-lg p-4 relative -top-20">
                                 <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Results Found</h2>
                                 <hr class="mt-2 mb-3 border-gray-300 dark:border-gray-600 w-[220px] ml-[-10px]">
                                 <div class="space-y-2">
@@ -476,7 +476,7 @@
                                                     </p>
                                                 </div>
                                             </div>
-                                            {% if organization.tags.all %}
+                                            {% if organization.tags.exists %}
                                                 <div class="mt-2 flex flex-wrap space-x-2">
                                                     {% for tag in organization.tags.all %}
                                                         <span class="bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-800 px-3 py-1 rounded-full text-md font-semibold shadow-sm my-1">
@@ -501,8 +501,8 @@
                                             <div class="flex items-center">
                                                 {% if project.logo %}
                                                     <img class="h-24 w-24 object-cover rounded-lg border border-indigo-200 mr-6"
-                                                         src="{{ organization.logo.url }}"
-                                                         alt="{{ organization.name }} Logo"
+                                                         src="{{ project.logo.url }}"
+                                                         alt="{{ project.name }} Logo"
                                                          height="96"
                                                          width="96">
                                                 {% else %}
