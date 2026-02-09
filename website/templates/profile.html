@@ -326,7 +326,7 @@
                                                  width="30"
                                                  class="rounded-full size-[32px]"
                                                  alt="Organization logo"
-                                                 onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                 onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                         </a>
                                         <div>
                                             @{{ activity.user|default:"Anonymous" }}
@@ -474,7 +474,7 @@
                                              width="20"
                                              class="size-11"
                                              alt="Organization logo"
-                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                     </a>
                                     <a class="hover:text-red-600"
                                        href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:20 }}</a>
@@ -779,7 +779,7 @@
                                 <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
                                     <div class="flex items-center">
                                         <a href="{% url 'domain' slug=activity.domain_name %}">
-                                            <img src="https://www.{{ activity.domain_name }}/favicon.ico" height="30" width="30" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            <img src="https://www.{{ activity.domain_name }}/favicon.ico" height="30" width="30" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                         </a>
                                         <div class="w-[80%]">
                                             <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
@@ -929,7 +929,7 @@
                                 <li class="flex justify-between mb-3 items-center">
                                     <div class="flex w-full">
                                         <a href="{% url 'domain' slug=website.name %}">
-                                            <img src="https://www.{{ website.name }}/favicon.ico" height="20" width="20" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            <img src="https://www.{{ website.name }}/favicon.ico" height="20" width="20" class="mr-3" alt="Organization logo" onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                         </a>
                                         <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
                                     </div>
