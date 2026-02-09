@@ -1012,6 +1012,11 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                 {"detail": "You do not have permission to stop this time log."}, status=status.HTTP_403_FORBIDDEN
             )
 
+        # If timer is paused, add the current pause interval to paused_duration BEFORE resetting
+        if timelog.is_paused and timelog.last_pause_time:
+            current_pause = timezone.now() - timelog.last_pause_time
+            timelog.paused_duration = (timelog.paused_duration or timedelta(0)) + current_pause
+
         timelog.end_time = timezone.now()
         if timelog.start_time:
             # Calculate duration excluding paused time
@@ -1020,7 +1025,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             paused = timelog.paused_duration or timedelta(0)
             timelog.duration = total_duration - paused
 
-        # Reset pause state when stopping the timer
+        # Reset pause state after calculating final pause duration
         if timelog.is_paused:
             timelog.is_paused = False
             timelog.last_pause_time = None
