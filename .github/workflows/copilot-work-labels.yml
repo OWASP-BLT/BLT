@@ -2,10 +2,17 @@ name: Copilot Work Status Labels
 
 # Automatically manage labels on PRs and issues when Copilot starts and finishes work
 # - When Copilot opens a PR: adds "Copilot started work" label to the PR and linked issue(s)
+# - When Copilot pushes commits: updates "Copilot started work" label (work resumed)
 # - When Copilot's PR is closed/merged: removes "Copilot started work" and adds "Copilot finished work" label
 on:
   pull_request_target:
-    types: [opened, reopened, closed]
+    types: [opened, reopened, synchronize, closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to update labels for'
+        required: true
+        type: number
 
 # Security Note: Using pull_request_target is safe here because:
 # 1. We only process PRs from trusted Copilot bot accounts
@@ -28,7 +35,25 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const pr = context.payload.pull_request;
+
+            // Get PR from context or workflow_dispatch input
+            let pr = context.payload.pull_request;
+            let action = context.payload.action;
+
+            // Handle workflow_dispatch trigger
+            if (!pr && context.payload.inputs && context.payload.inputs.pr_number) {
+              const prNumber = parseInt(context.payload.inputs.pr_number, 10);
+              core.info(`Manual trigger for PR #${prNumber}`);
+
+              const { data: prData } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: prNumber
+              });
+              pr = prData;
+              // Treat manual dispatch as a synchronize event (work resumed)
+              action = 'synchronize';
+            }
 
             if (!pr) {
               core.info('No pull_request in context. Skipping.');
@@ -36,7 +61,6 @@ jobs:
             }
 
             const prAuthor = pr.user.login.toLowerCase();
-            const action = context.payload.action;
 
             // First, ensure the author is a GitHub bot account (type 'Bot' and/or '[bot]' suffix)
             const isBotAccount =
@@ -176,8 +200,8 @@ jobs:
               core.info(`Found ${linkedIssues.length} linked issue(s): ${linkedIssues.join(', ')}`);
             }
 
-            const labelTarget = linkedIssues.length > 0 
-              ? `PR #${pr.number} and ${linkedIssues.length} linked issue(s)` 
+            const labelTarget = linkedIssues.length > 0
+              ? `PR #${pr.number} and ${linkedIssues.length} linked issue(s)`
               : `PR #${pr.number} only`;
             core.info(`Will label ${labelTarget}`);
 
@@ -188,6 +212,17 @@ jobs:
               for (const itemNumber of itemsToLabel) {
                 // Remove "finished work" label to ensure mutually exclusive states
                 // (no-op on first open, relevant when reopening a closed PR)
+                await removeLabel(itemNumber, FINISHED_LABEL);
+                await addLabel(itemNumber, STARTED_LABEL);
+              }
+            }
+
+            // Handle PR synchronize - ensure "started work" label is present (work resumed)
+            if (action === 'synchronize') {
+              core.info('PR updated with new commits - ensuring "Copilot started work" label is present');
+
+              for (const itemNumber of itemsToLabel) {
+                // Remove "finished work" label if present (Copilot resumed work)
                 await removeLabel(itemNumber, FINISHED_LABEL);
                 await addLabel(itemNumber, STARTED_LABEL);
               }
