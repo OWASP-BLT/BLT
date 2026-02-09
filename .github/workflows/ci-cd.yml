@@ -641,8 +641,8 @@ jobs:
                   skippedTests = parseInt(skippedMatch[1], 10);
                 }
               } else {
-                // If test output contains "OK", all tests passed with no skips
-                if (testOutput.includes('\nOK\n') || testOutput.includes('\nOK (')) {
+                // Check for OK status (all tests passed or passed with skipped)
+                if (/\bOK\b/.test(testOutput)) {
                   // Check for skipped tests in OK line: "OK (skipped=2)"
                   const okSkippedMatch = testOutput.match(/OK \(skipped=(\d+)\)/);
                   if (okSkippedMatch) {
@@ -651,8 +651,8 @@ jobs:
                 }
               }
               
-              // Calculate passed tests
-              passedTests = totalTests - failedTests - skippedTests;
+              // Calculate passed tests (ensure non-negative)
+              passedTests = Math.max(0, totalTests - failedTests - skippedTests);
               
               core.info(`Parsed test results - Total: ${totalTests}, Failed: ${failedTests}, Skipped: ${skippedTests}, Passed: ${passedTests}`);
             } catch (e) {
