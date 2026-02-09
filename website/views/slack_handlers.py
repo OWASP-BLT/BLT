@@ -3385,8 +3385,8 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
             footer_text = "⚠️ *Partial results:* GitHub API rate limit reached."
 
             if rate_limit_reset_time:
-                reset_dt = datetime.datetime.fromtimestamp(rate_limit_reset_time)
-                now = datetime.datetime.now()
+                reset_dt = datetime.datetime.fromtimestamp(rate_limit_reset_time, tz=datetime.timezone.utc)
+                now = timezone.now()
                 minutes_until = max(1, int((reset_dt - now).total_seconds() / 60))
                 footer_text += f" Full results available in ~{minutes_until} minutes."
             else:
