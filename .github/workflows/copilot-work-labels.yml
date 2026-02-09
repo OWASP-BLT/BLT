@@ -34,19 +34,34 @@ jobs:
             const STARTED_COLOR = '0366d6'; // Blue
             const FINISHED_COLOR = '28a745'; // Green
 
+            // Check if PR is from Copilot
+            function isCopilotPR(pr) {
+              const prAuthor = pr.user.login.toLowerCase();
+              const isBotAccount =
+                (pr.user.type && pr.user.type.toLowerCase() === 'bot') ||
+                pr.user.login.toLowerCase().endsWith('[bot]');
+              return isBotAccount && (prAuthor === 'copilot' || prAuthor.startsWith('copilot-'));
+            }
+
             // Ensure labels exist in the repository
             async function ensureLabel(labelName, color, description) {
               try {
                 await github.rest.issues.getLabel({ owner, repo, name: labelName });
               } catch (e) {
                 if (e.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner, repo,
-                    name: labelName,
-                    color: color,
-                    description: description
-                  });
-                  core.info(`Created label "${labelName}"`);
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner, repo,
+                      name: labelName,
+                      color: color,
+                      description: description
+                    });
+                    core.info(`Created label "${labelName}"`);
+                  } catch (createError) {
+                    core.warning(`Failed to create label "${labelName}": ${createError.message}`);
+                  }
+                } else {
+                  core.warning(`Error checking label "${labelName}": ${e.message}`);
                 }
               }
             }
@@ -134,39 +149,24 @@ jobs:
             }
 
             const prNumber = pr.number;
-            const prAuthor = pr.user.login.toLowerCase();
             const action = context.payload.action;
 
-            // For synchronize event, check if PR is from Copilot
+            // Check if PR is from Copilot
+            if (!isCopilotPR(pr)) {
+              core.info(`PR #${prNumber} is not from Copilot (author: ${pr.user.login}), skipping`);
+              return;
+            }
+
+            // For synchronize event
             if (action === 'synchronize') {
-              const isBotAccount =
-                (pr.user.type && pr.user.type.toLowerCase() === 'bot') ||
-                pr.user.login.toLowerCase().endsWith('[bot]');
-              const isCopilot = isBotAccount && (prAuthor === 'copilot' || prAuthor.startsWith('copilot-'));
-
-              if (!isCopilot) {
-                core.info(`PR #${prNumber} is not from Copilot (author: ${pr.user.login}), skipping`);
-                return;
-              }
-
               core.info(`Copilot pushed commits to PR #${prNumber} - ensuring "started work" label`);
               await removeLabel(prNumber, FINISHED_LABEL);
               await addLabel(prNumber, STARTED_LABEL);
               return;
             }
 
-            // For closed event, check if PR is from Copilot
+            // For closed event
             if (action === 'closed') {
-              const isBotAccount =
-                (pr.user.type && pr.user.type.toLowerCase() === 'bot') ||
-                pr.user.login.toLowerCase().endsWith('[bot]');
-              const isCopilot = isBotAccount && (prAuthor === 'copilot' || prAuthor.startsWith('copilot-'));
-
-              if (!isCopilot) {
-                core.info(`PR #${prNumber} is not from Copilot (author: ${pr.user.login}), skipping`);
-                return;
-              }
-
               core.info(`Copilot PR #${prNumber} closed - adding "finished work" label`);
               await removeLabel(prNumber, STARTED_LABEL);
               await addLabel(prNumber, FINISHED_LABEL);
