@@ -102,7 +102,9 @@
                                         class="w-full h-[250px] rounded-lg shadow"></iframe>
                             </div>
                             <p class="text-blue-600 underline">
-                                <a href="{{ lecture.video_url }}" target="_blank">Watch Separately</a>
+                                <a href="{{ lecture.video_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">Watch Separately</a>
                             </p>
                         {% elif lecture.content_type == "DOCUMENT" %}
                             <div class="prose max-w-none bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">{{ lecture.content|safe }}</div>
@@ -118,6 +120,7 @@
                                     {% if lecture.live_url %}
                                         <a href="{{ lecture.live_url }}"
                                            target="_blank"
+                                           rel="noopener noreferrer"
                                            class="mt-3 inline-block px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition">
                                             Join Live Session
                                         </a>

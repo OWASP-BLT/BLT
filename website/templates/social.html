@@ -49,6 +49,7 @@
                     </p>
                     <a href="https://x.com/OWASP_BLT"
                        target="_blank"
+                       rel="noopener noreferrer"
                        class="inline-flex items-center gap-2 bg-black hover:text-white hover:bg-black/80 text-white px-6 py-3 rounded-full font-semibold transition-colors duration-200">
                         <i class="fab fa-x-twitter text-xl"></i>
                         Follow @OWASP_BLT
@@ -59,6 +60,7 @@
                 {% for item in queue_items %}
                     <a href="{{ item.url|default:'#' }}"
                        target="_blank"
+                       rel="noopener noreferrer"
                        class="w-full flex items-start gap-2 border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 transition-colors duration-200 hover:text-black cursor-pointer">
                         <img src="{% static 'img/logo.png' %}"
                              alt="BLT Logo"

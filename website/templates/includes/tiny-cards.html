@@ -6,16 +6,19 @@
     {% if left == "BTC" %}
         <a href="https://blockchair.com/bitcoin/address/{{ right }}"
            target="_blank"
+           rel="noopener noreferrer"
            class="text-[#6B7280] font-medium p-1"><i class="fas fa-external-link-alt"></i></a>
     {% endif %}
     {% if left == "BCH" %}
         <a href="https://blockchair.com/bitcoin-cash/address/{{ right }}"
            target="_blank"
+           rel="noopener noreferrer"
            class="text-[#6B7280] p-1"><i class="fas fa-external-link-alt"></i></a>
     {% endif %}
     {% if left == "ETH" %}
         <a href="https://etherscan.io/address/{{ right }}"
            target="_blank"
+           rel="noopener noreferrer"
            class="text-[#6B7280] p-1"><i class="fas fa-external-link-alt"></i></a>
     {% endif %}
     {% if link %}

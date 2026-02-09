@@ -110,6 +110,7 @@
                                                     <div class="flex items-center gap-2 mb-2">
                                                         <a href="/issue/{{ bug.id }}/"
                                                            target="_blank"
+                                                           rel="noopener noreferrer"
                                                            class="text-blue-600 hover:text-blue-800 font-semibold">
                                                             Bug #{{ bug.id }}
                                                         </a>
@@ -601,7 +602,7 @@
                     <div class="flex items-start space-x-4 px-4">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-2">
-                                <a href="/issue/${bug.id}" target="_blank" class="text-lg font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                <a href="/issue/${bug.id}" target="_blank" rel="noopener noreferrer" class="text-lg font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400">
                                     Bug #${bug.id}
                                 </a>
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full ${confidenceColor}">

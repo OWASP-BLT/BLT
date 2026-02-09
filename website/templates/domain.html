@@ -114,7 +114,8 @@
                             <div class="flex items-center gap-4">
                                 <a href="{{ domain.url }}"
                                    class="text-2xl font-bold hover:text-[#e74c3c] transition duration-200"
-                                   target="_blank">{{ name }}</a>
+                                   target="_blank"
+                                   rel="noopener noreferrer">{{ name }}</a>
                                 {% if request.user.is_superuser %}
                                     <div class="flex items-center gap-3">
                                         <a href="{% url 'admin:website_domain_change' domain.id %}"
