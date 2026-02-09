@@ -54,6 +54,7 @@
                     <div class="relative aspect-square overflow-hidden">
                         {% if post.image %}
                             <img src="{{ post.image.url }}"
+                                 loading="lazy"
                                  alt="{{ post.title }}"
                                  width="300"
                                  height="300"

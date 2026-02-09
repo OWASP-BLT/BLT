@@ -132,6 +132,7 @@
                                 <div class="relative">
                                     <div id="viewImageContainer" class="hidden">
                                         <img id="viewImage"
+                                             loading="lazy"
                                              src=""
                                              alt="Queue image"
                                              width="600"
@@ -227,6 +228,7 @@
                                 </div>
                                 <div id="createImagePreview" class="mt-4 hidden">
                                     <img id="createPreviewImg"
+                                         loading="lazy"
                                          src=""
                                          alt="Image preview"
                                          width="128"
@@ -291,6 +293,7 @@
                                 <div id="currentImageContainer" class="mb-4 hidden">
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Image:</p>
                                     <img id="currentImage"
+                                         loading="lazy"
                                          src=""
                                          alt="Current image"
                                          width="128"
@@ -324,6 +327,7 @@
                                 <div id="editImagePreview" class="mt-4 hidden">
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">New Image Preview:</p>
                                     <img id="editPreviewImg"
+                                         loading="lazy"
                                          src=""
                                          alt="Image preview"
                                          width="128"
@@ -454,6 +458,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                                     {% if item.image %}
                                                         <img src="{{ item.image.url }}"
+                                                             loading="lazy"
                                                              alt="Queue image"
                                                              width="40"
                                                              height="40"
@@ -550,6 +555,7 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                                     {% if item.image %}
                                                         <img src="{{ item.image.url }}"
+                                                             loading="lazy"
                                                              alt="Queue image"
                                                              width="144"
                                                              height="144"
@@ -690,6 +696,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500">
                                         {% if item.image %}
                                             <img src="{{ item.image.url }}"
+                                                 loading="lazy"
                                                  alt="Queue image"
                                                  width="40"
                                                  height="40"

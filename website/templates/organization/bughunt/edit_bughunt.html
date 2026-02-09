@@ -162,6 +162,7 @@
                                                      class="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#e74c3c] transition-colors duration-200">
                                                     {% if hunt.logo %}
                                                         <img id="logoPreview"
+                                                             loading="lazy"
                                                              src="{{ MEDIA_URL }}/{{ hunt.logo }}"
                                                              height="128"
                                                              width="128"
@@ -171,6 +172,7 @@
                                                              class="absolute inset-0 items-center justify-center text-[#e74c3c] hidden">
                                                         {% else %}
                                                             <img id="logoPreview"
+                                                                 loading="lazy"
                                                                  height="128"
                                                                  width="128"
                                                                  class="absolute inset-0 h-full w-full object-cover hidden rounded-2xl"
@@ -249,6 +251,7 @@
                                                 <div class="relative">
                                                     {% if hunt.banner %}
                                                         <img id="bannerPreview"
+                                                             loading="lazy"
                                                              height="128"
                                                              width="128"
                                                              src="{{ MEDIA_URL }}/{{ hunt.banner }}"
@@ -258,6 +261,7 @@
                                                              class="hidden items-center justify-center w-64 h-32 bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-400 dark:text-gray-600">
                                                         {% else %}
                                                             <img id="bannerPreview"
+                                                                 loading="lazy"
                                                                  width="128"
                                                                  height="128"
                                                                  class="hidden max-w-md max-h-48 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
