@@ -1,5 +1,6 @@
 import logging
 import time
+from urllib.parse import urlparse
 
 import requests
 from django.core.management.base import BaseCommand
@@ -31,12 +32,15 @@ class Command(BaseCommand):
 
             for repo in repos:
                 try:
-                    # Extract owner and repo name from repo_url
-                    if "github.com" in repo.repo_url:
-                        parts = repo.repo_url.split("github.com/")
-                        if len(parts) > 1:
-                            repo_path = parts[1].strip("/")
+                    repo_url = (repo.repo_url or "").strip()
+                    url_to_parse = repo_url if repo_url.startswith(("http://", "https://")) else f"https://{repo_url}"
+                    parsed = urlparse(url_to_parse)
+                    hostname = parsed.netloc.split(":")[0].lower()
 
+                    if hostname in ("github.com", "www.github.com"):
+                        repo_path = parsed.path.lstrip("/")
+
+                        if repo_path:
                             # Make API request to GitHub
                             api_url = f"https://api.github.com/repos/{repo_path}"
                             headers = {"Accept": "application/vnd.github.v3+json"}
@@ -75,7 +79,6 @@ class Command(BaseCommand):
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"Error updating {repo.name}: {str(e)}"))
                     error_count += 1
-
             self.stdout.write(
                 self.style.SUCCESS(f"Repository update completed. Updated: {updated_count}, Errors: {error_count}")
             )
@@ -83,7 +86,6 @@ class Command(BaseCommand):
             log_entry.success = True
             log_entry.error_message = None
             log_entry.save()
-
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Command failed: {str(e)}"))
             log_entry.success = False

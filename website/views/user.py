@@ -1127,30 +1127,37 @@ def get_score(request):
 
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
-    if request.method == "GET":
-        try:
-            userx = User.objects.get(username=user)
-            flag = 0
-            list_userfrof = request.user.userprofile.follows.all()
-            for prof in list_userfrof:
-                if str(prof) == (userx.email):
-                    request.user.userprofile.follows.remove(userx.userprofile)
-                    flag = 1
-            if flag != 1:
-                request.user.userprofile.follows.add(userx.userprofile)
-                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
-                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+    if request.method != "GET":
+        return HttpResponse(status=405)
 
-                send_mail(
-                    "You got a new follower!!",
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [userx.email],
-                    html_message=msg_html,
-                )
-            return HttpResponse("Success")
-        except User.DoesNotExist:
-            return HttpResponse(f"User {user} not found", status=404)
+    userx = get_object_or_404(User, username=user)
+
+    profile = request.user.userprofile
+    target_profile = userx.userprofile
+
+    # Toggle follow / unfollow
+    if profile.follows.filter(id=target_profile.id).exists():
+        profile.follows.remove(target_profile)
+    else:
+        profile.follows.add(target_profile)
+
+        context = {
+            "follower": request.user,
+            "followed": userx,
+        }
+
+        msg_plain = render_to_string("email/follow_user.html", context)
+        msg_html = render_to_string("email/follow_user.html", context)
+
+        send_mail(
+            "You got a new follower!!",
+            msg_plain,
+            settings.EMAIL_TO_STRING,
+            [userx.email],
+            html_message=msg_html,
+        )
+
+    return HttpResponse("Success")
 
 
 # get issue and comment id from url
