@@ -313,7 +313,7 @@ if "DYNO" in os.environ:  # for Heroku
             },
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
 
@@ -328,7 +328,7 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
     # Removed DEBUG override - DEBUG should be controlled by environment variable
