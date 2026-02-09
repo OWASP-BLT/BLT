@@ -206,6 +206,7 @@ jobs:
             core.info(`Will label ${labelTarget}`);
 
             // Handle PR opened/reopened - add "started work" label
+            // Note: Bot verification already passed above, so this only runs for Copilot PRs
             if (action === 'opened' || action === 'reopened') {
               core.info('PR opened/reopened - adding "Copilot started work" label');
 
@@ -218,6 +219,7 @@ jobs:
             }
 
             // Handle PR synchronize - ensure "started work" label is present (work resumed)
+            // Note: Bot verification already passed above, so this only runs for Copilot PRs
             if (action === 'synchronize') {
               core.info('PR updated with new commits - ensuring "Copilot started work" label is present');
 
