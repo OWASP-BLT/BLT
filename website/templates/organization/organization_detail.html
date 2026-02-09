@@ -41,7 +41,7 @@
                         {% if organization.logo %}
                             <div class="w-24 h-24 bg-white dark:bg-gray-800 rounded-lg shadow-md p-2 flex items-center justify-center">
                                 <img src="{{ MEDIA_URL }}{{ organization.logo }}"
-                                     loading="lazy"
+                                     fetchpriority="high"
                                      alt="{{ organization.name }} logo"
                                      width="96"
                                      height="96"
