@@ -75,10 +75,10 @@ from website.models import (
 from website.utils import (
     analyze_pr_content,
     fetch_github_data,
-    save_analysis_report,
-    validate_file_type,
     fetch_github_discussions,
     rebuild_safe_url,
+    save_analysis_report,
+    validate_file_type,
 )
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
