@@ -162,34 +162,33 @@ jobs:
             if (action === 'synchronize') {
               // Get the latest commit message to check if work is finished
               try {
-                const { data: commits } = await github.rest.pulls.listCommits({
+                // The synchronize event includes the commit SHA that triggered it
+                const headSha = pr.head.sha;
+
+                // Get the specific commit that triggered the synchronize event
+                const { data: commit } = await github.rest.repos.getCommit({
                   owner,
                   repo,
-                  pull_number: prNumber,
-                  per_page: 1,
-                  page: 1
+                  ref: headSha
                 });
 
-                if (commits.length > 0) {
-                  const latestCommit = commits[commits.length - 1];
-                  const commitMessage = latestCommit.commit.message.toLowerCase();
+                const commitMessage = commit.commit.message.toLowerCase();
 
-                  // Check if commit message indicates finished work
-                  const indicatesFinished =
-                    commitMessage.includes('finished work') ||
-                    commitMessage.includes('complete') ||
-                    commitMessage.includes('finalize') ||
-                    commitMessage.includes('final') ||
-                    commitMessage.includes('done') ||
-                    commitMessage.includes('ready for review') ||
-                    commitMessage.includes('ready to merge');
+                // Check if commit message indicates finished work
+                const indicatesFinished =
+                  commitMessage.includes('finished work') ||
+                  commitMessage.includes('complete') ||
+                  commitMessage.includes('finalize') ||
+                  commitMessage.includes('final') ||
+                  commitMessage.includes('done') ||
+                  commitMessage.includes('ready for review') ||
+                  commitMessage.includes('ready to merge');
 
-                  if (indicatesFinished) {
-                    core.info(`Copilot commit message indicates finished work on PR #${prNumber}`);
-                    await removeLabel(prNumber, STARTED_LABEL);
-                    await addLabel(prNumber, FINISHED_LABEL);
-                    return;
-                  }
+                if (indicatesFinished) {
+                  core.info(`Copilot commit message indicates finished work on PR #${prNumber}`);
+                  await removeLabel(prNumber, STARTED_LABEL);
+                  await addLabel(prNumber, FINISHED_LABEL);
+                  return;
                 }
               } catch (e) {
                 core.warning(`Failed to check commit message: ${e.message}`);
