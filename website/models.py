@@ -11,7 +11,6 @@ from urllib.parse import parse_qs, urlparse
 import pytz
 import requests
 from annoying.fields import AutoOneToOneField
-from captcha.fields import CaptchaField
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -606,7 +605,6 @@ class Issue(models.Model):
     url = models.URLField()
     description = models.TextField()
     markdown_description = models.TextField(null=True, blank=True)
-    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
@@ -1277,75 +1275,6 @@ class SearchHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
-
-
-class ForumCategory(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "Forum Categories"
-
-
-class ForumPost(models.Model):
-    STATUS_CHOICES = (
-        ("open", "Open"),
-        ("in_progress", "In Progress"),
-        ("completed", "Completed"),
-        ("declined", "Declined"),
-    )
-
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    description = models.TextField(max_length=1000, null=True, blank=True)
-    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
-    up_votes = models.IntegerField(null=True, blank=True, default=0)
-    down_votes = models.IntegerField(null=True, blank=True, default=0)
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    is_pinned = models.BooleanField(default=False)
-    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    organization = models.ForeignKey(
-        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
-    )
-
-    def __str__(self):
-        return f"{self.title} by {self.user}"
-
-    class Meta:
-        ordering = ["-is_pinned", "-created"]
-
-
-class ForumVote(models.Model):
-    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    up_vote = models.BooleanField(default=False)
-    down_vote = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Vote by {self.user} on {self.post.title}"
-
-
-class ForumComment(models.Model):
-    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
-
-    def __str__(self):
-        return f"Comment by {self.user} on {self.post.title}"
-
-    class Meta:
-        ordering = ["created"]
 
 
 class Contributor(models.Model):
