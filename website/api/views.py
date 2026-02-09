@@ -1489,15 +1489,18 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def perform_update(self, serializer):
         # Re-fetch with row-level lock inside the atomic block
-        instance = SecurityIncident.objects.select_for_update().get(pk=serializer.instance.pk)
+        locked_instance = SecurityIncident.objects.select_for_update().get(pk=serializer.instance.pk)
 
-        # Store old values before save
+        # Store old values from the locked instance BEFORE any modifications
         old_values = {}
         fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
         for field in fields_to_track:
-            old_values[field] = getattr(instance, field)
+            old_values[field] = getattr(locked_instance, field)
 
-        # Save the updated incident
+        # Update serializer to use the locked instance
+        serializer.instance = locked_instance
+
+        # Save the updated incident (now operating on locked instance with validated data)
         serializer.save()
 
         # Create history records for changed fields
