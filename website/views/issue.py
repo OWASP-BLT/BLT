@@ -52,7 +52,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
-from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from user_agents import parse
@@ -2125,129 +2124,6 @@ def flag_issue(request, issue_pk):
 
 def select_bid(request):
     return render(request, "bid_selection.html")
-
-
-@method_decorator(login_required, name="dispatch")
-class GithubIssueView(TemplateView):
-    template_name = "github_issue.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        # Check if the user has a GitHub social token
-        has_github_token = SocialToken.objects.filter(account__user=request.user, account__provider="github").exists()
-
-        # Redirect to social connections if no token is found
-        if not has_github_token:
-            return redirect("/accounts/social/connections/")
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        # Retrieve data from form
-        title = request.POST.get("issue_title")
-        description = request.POST.get("description")
-
-        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
-        labels = request.POST.get("labels")
-        labels_list = [label.strip() for label in labels.split(",")] if labels else []
-        try:
-            access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
-        except SocialToken.DoesNotExist:
-            logger.warning("Access token not found")
-            return redirect("github_login")
-
-        token = access_token.token
-        # Create GitHub issue
-        issue = self.create_github_issue(repository, title, description, token, labels_list)
-
-        if "id" in issue:
-            success_message = f"Issue successfully created: #{issue['number']} - {issue['title']}"
-            return render(request, "github_issue.html", {"message": success_message})
-        else:
-            return render(request, "github_issue.html", {"error": issue.get("message"), "form_data": request.POST})
-
-    def create_github_issue(self, repo, title, description, access_token, labels_list):
-        url = f"https://api.github.com/repos/{repo}/issues"
-        headers = {"Authorization": f"token {access_token}", "Accept": "application/vnd.github.v3+json"}
-        data = {"title": title, "body": description, "labels": labels_list}
-        response = requests.post(url, json=data, headers=headers)
-        return response.json()
-
-
-@login_required(login_url="/accounts/login")
-def get_github_issue(request):
-    if request.method == "POST":
-        description = request.POST.get("description")
-        repository_url = request.POST.get("repository_url")
-
-        if not description:
-            return JsonResponse({"error": "Description is required"}, status=400)
-
-        # Call the generate_github_issue function
-        issue_details = generate_github_issue(description)
-
-        if "error" in issue_details:
-            return JsonResponse({"error": "There's a problem with AI"}, status=500)
-
-        # Render the github_issue.html page with the generated issue details
-        return render(
-            request,
-            "github_issue.html",
-            {
-                "issue_title": issue_details.get("title", ""),
-                "description": issue_details.get("description", ""),
-                "labels": ", ".join(issue_details.get("labels", [])),
-                "repository_url": repository_url,
-            },
-        )
-
-    return JsonResponse({"error": "Invalid request method"}, status=405)
-
-
-def generate_github_issue(description):
-    try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
-
-        # Call the OpenAI API with the gpt-4o-mini model
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are a helpful assistant that analyzes bug reports. 
-                    Always respond with a valid JSON object in this exact format:
-                    {
-                        "title": "Brief bug title",
-                        "description": "Detailed bug description",
-                        "labels": ["bug", "other-relevant-labels"]
-                    }""",
-                },
-                {"role": "user", "content": f"Analyze this bug report and respond with a JSON object: {description}"},
-            ],
-            temperature=0.7,
-            max_tokens=1000,
-        )
-
-        # Extract and parse the response
-        if response.choices and response.choices[0].message:
-            issue_details_str = response.choices[0].message.content
-            issue_details = json.loads(issue_details_str)  # Parse the JSON response
-
-            # Validate the response has all required fields
-            if not all(k in issue_details for k in ["title", "description", "labels"]):
-                return {"error": "Invalid response format from OpenAI"}
-
-            return {
-                "title": issue_details["title"],
-                "description": issue_details["description"],
-                "labels": issue_details["labels"],
-            }
-
-        return {"error": "No valid response from OpenAI"}
-
-    except json.JSONDecodeError:
-        return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
-    except Exception as e:
-        return {"error": "There's a problem with OpenAI", "details": str(e)}
 
 
 class ContributeView(TemplateView):
