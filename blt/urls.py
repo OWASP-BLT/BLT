@@ -1253,7 +1253,7 @@ urlpatterns = [
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
 ]
 
-if settings.DEBUG and not settings.TESTING:
+if settings.DEBUG:
     import debug_toolbar
 
     urlpatterns = [
@@ -1266,7 +1266,6 @@ if settings.DEBUG and not settings.TESTING:
         path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
         path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
         path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
-        path("silk/", include("silk.urls", namespace="silk")),
     ] + urlpatterns
 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

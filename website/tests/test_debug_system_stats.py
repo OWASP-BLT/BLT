@@ -1,7 +1,6 @@
 from importlib import reload
 from unittest.mock import patch
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import NoReverseMatch, clear_url_caches, reverse
@@ -11,20 +10,7 @@ from rest_framework.test import APIClient
 User = get_user_model()
 
 
-# Get the current INSTALLED_APPS and add silk
-def get_installed_apps_with_silk():
-    apps = list(settings.INSTALLED_APPS)
-    if "silk" not in apps:
-        apps.append("silk")
-    return apps
-
-
-@override_settings(
-    ALLOWED_HOSTS=["*"],
-    DEBUG=True,
-    TESTING=False,
-    INSTALLED_APPS=get_installed_apps_with_silk(),
-)
+@override_settings(ALLOWED_HOSTS=["*"])
 class DebugPanelAPITest(TestCase):
     """Tests for debug panel API endpoints"""
 
@@ -39,6 +25,7 @@ class DebugPanelAPITest(TestCase):
 
         reload(blt.urls)
 
+    @override_settings(DEBUG=True)
     def test_get_system_stats_success(self):
         """Test getting system stats in debug mode"""
         self.reload_urls()
@@ -59,6 +46,23 @@ class DebugPanelAPITest(TestCase):
         with self.assertRaises(NoReverseMatch):
             reverse("api_debug_system_stats")
 
+    @override_settings(DEBUG=False)
+    def test_all_debug_endpoints_blocked_in_production(self):
+        """Ensure all debug endpoints are not registered when DEBUG=False"""
+        self.reload_urls()
+        endpoints = [
+            "api_debug_system_stats",
+            "api_debug_cache_info",
+            "api_debug_clear_cache",
+            "api_debug_populate_data",
+        ]
+
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(NoReverseMatch):
+                    reverse(endpoint)
+
+    @override_settings(DEBUG=True)
     def test_get_cache_info_success(self):
         """Test getting cache information"""
         self.reload_urls()
@@ -70,6 +74,7 @@ class DebugPanelAPITest(TestCase):
         self.assertIn("backend", data["data"])
         self.assertIn("keys_count", data["data"])
 
+    @override_settings(DEBUG=True)
     def test_clear_cache_success(self):
         """Test clearing cache"""
         self.reload_urls()
@@ -81,22 +86,13 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(data["message"], "Cache cleared successfully")
 
     @override_settings(DEBUG=False)
-    def test_all_debug_endpoints_blocked_in_production(self):
-        """Verify all debug endpoints are not registered when DEBUG=False"""
+    def test_clear_cache_forbidden_in_production(self):
+        """Test that cache clear route is not registered in production"""
         self.reload_urls()
+        with self.assertRaises(NoReverseMatch):
+            reverse("api_debug_clear_cache")
 
-        debug_endpoints = [
-            "api_debug_system_stats",
-            "api_debug_cache_info",
-            "api_debug_populate_data",
-            "api_debug_clear_cache",
-        ]
-
-        for endpoint in debug_endpoints:
-            with self.subTest(endpoint=endpoint):
-                with self.assertRaises(NoReverseMatch):
-                    reverse(endpoint)
-
+    @override_settings(DEBUG=True)
     def test_populate_data_success(self):
         """Test populating test data"""
         self.reload_urls()
@@ -106,6 +102,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
+    @override_settings(DEBUG=True)
     def test_populate_data_missing_fixture_returns_404(self):
         """Test that missing fixture file returns 404 and error payload"""
         self.reload_urls()
@@ -118,6 +115,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
+    @override_settings(DEBUG=True)
     @patch("website.api.views.call_command")
     def test_populate_data_handles_errors(self, mock_call_command):
         """Test that errors while loading fixtures return 500 and error payload"""
@@ -131,6 +129,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
+    @override_settings(DEBUG=True)
     @patch("django.core.cache.cache.clear")
     def test_clear_cache_handles_errors(self, mock_cache_clear):
         """Test that cache clear endpoint handles errors gracefully"""
@@ -144,6 +143,25 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertFalse(data["success"])
 
+    @override_settings(DEBUG=True)
+    def test_debug_endpoint_requires_authentication(self):
+        """Test that debug endpoints require authentication even locally"""
+        self.reload_urls()
+        endpoints = [
+            "api_debug_system_stats",
+            "api_debug_cache_info",
+        ]
+
+        for endpoint in endpoints:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.get(reverse(endpoint))
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_403_FORBIDDEN,
+                    f"{endpoint} should return 403 for unauthenticated requests",
+                )
+
+    @override_settings(DEBUG=True)
     def test_post_endpoints_require_authentication(self):
         """Test that POST debug endpoints require authentication when in debug mode"""
         self.reload_urls()
@@ -223,6 +241,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_non_local_host(self):
         """Test that debug endpoints block access from non-local hosts even when DEBUG=True"""
         self.reload_urls()
@@ -234,6 +253,7 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
         self.assertIn("local development", data["error"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_localhost(self):
         """Test that debug endpoints allow localhost access"""
         self.reload_urls()
@@ -244,6 +264,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_127_0_0_1(self):
         """Test that debug endpoints allow 127.0.0.1 access"""
         self.reload_urls()
@@ -254,6 +275,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_127_prefix(self):
         """Test that debug endpoints allow 127.x.x.x IPs"""
         self.reload_urls()
@@ -264,6 +286,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_allows_testserver(self):
         """Test that debug endpoints allow access from the Django test server"""
         self.reload_urls()
@@ -274,6 +297,7 @@ class DebugPanelAPITest(TestCase):
         data = response.json()
         self.assertTrue(data["success"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_external_ip(self):
         """Test that debug endpoints block access from external IPs"""
         self.reload_urls()
@@ -285,6 +309,7 @@ class DebugPanelAPITest(TestCase):
         self.assertFalse(data["success"])
         self.assertIn("local development", data["error"])
 
+    @override_settings(DEBUG=True)
     def test_debug_endpoint_blocks_remote_host(self):
         """Test that debug endpoints block access from remote hosts"""
         self.reload_urls()
@@ -294,12 +319,3 @@ class DebugPanelAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         data = response.json()
         self.assertFalse(data["success"])
-
-    def test_debug_endpoint_requires_authentication(self):
-        """Test that debug endpoints require authentication even locally"""
-        self.reload_urls()
-        response = self.client.get(
-            reverse("api_debug_system_stats"),
-            HTTP_HOST="localhost:8000",
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
