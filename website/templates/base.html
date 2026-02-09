@@ -106,7 +106,16 @@
         <script>
             (function() {
                 const savedTheme = localStorage.getItem("theme");
+                
+                // Use saved user preference if it exists
                 if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark");
+                }
+                else if (savedTheme === "light") {
+                    document.documentElement.classList.remove("dark");
+                }
+                // No saved preference, check system preference
+                else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                     document.documentElement.classList.add("dark");
                 }
             })();
@@ -315,7 +324,7 @@
             });
             $('input[name="screenshot"]').on('change', function() {
                 var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
-                $(this).parent().find('span').html(file);
+                $(this).parent().find('span').text(file);
             });
         });
         /* eslint-enable */

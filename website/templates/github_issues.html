@@ -201,7 +201,9 @@
                                         </span>
                                     {% endif %}
                                 </div>
-                                {% if issue.body %}<p class="text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{{ issue.body }}</p>{% endif %}
+                                {% if issue.body_html %}
+                                    <div class="text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{{ issue.body_html }}</div>
+                                {% endif %}
                                 <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
                                     <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
                                     {% if issue.closed_at %}<span>Closed: {{ issue.closed_at|date:"M d, Y" }}</span>{% endif %}

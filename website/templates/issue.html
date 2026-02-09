@@ -114,7 +114,7 @@
                     </a>
                     <div class="flex items-center">
                         <img class="size-8 rounded-full object-cover"
-                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.webp' %}{% endif %}"
                              alt="User Profile Logo"
                              width="32px"
                              height="32px">

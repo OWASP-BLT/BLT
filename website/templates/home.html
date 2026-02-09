@@ -434,9 +434,9 @@
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}';">
+                                                         onerror="this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% else %}
-                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                    <img src="{% static 'images/dummy-user.webp' %}"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -1222,7 +1222,7 @@
                     <div class="flex flex-col items-center text-center">
                         <a href="{% url 'organization_detail' slug='google' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/googlelogo_color_272x92dp.png' %}"
+                            <img src="{% static 'images/googlelogo_color_272x92dp.webp' %}"
                                  alt="Google Logo"
                                  width="272"
                                  height="92"
