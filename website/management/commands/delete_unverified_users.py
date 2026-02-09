@@ -45,6 +45,11 @@ class Command(LoggedBaseCommand):
             )
             return
 
+        # Enforce minimum batch size for safety
+        if batch_size < 1:
+            self.stdout.write(self.style.ERROR("Batch size must be 1 or greater. Provided: {}".format(batch_size)))
+            return
+
         cutoff_date = timezone.now() - timedelta(days=days)
         # Store cutoff for use in has_user_activity
         self.cutoff_datetime = cutoff_date
@@ -152,7 +157,6 @@ class Command(LoggedBaseCommand):
                 with transaction.atomic():
                     # Count related EmailAddress records before deletion
                     email_count = EmailAddress.objects.filter(user__in=batch_users).count()
-                    email_addresses_deleted += email_count
 
                     # Delete the batch
                     batch_deleted, objects_deleted = batch_users.delete()
@@ -162,7 +166,9 @@ class Command(LoggedBaseCommand):
                     user_key = "{}.{}".format(user_model._meta.app_label, user_model.__name__)
                     users_deleted = objects_deleted.get(user_key, 0)
 
+                    # Increment counters only after successful deletion
                     deleted_count += users_deleted
+                    email_addresses_deleted += email_count
                     self.stdout.write(
                         "  Batch {}/{}: Deleted {} users".format(
                             batch_num, (len(user_ids) + batch_size - 1) // batch_size, users_deleted
