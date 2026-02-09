@@ -1020,6 +1020,11 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             paused = timelog.paused_duration or timedelta(0)
             timelog.duration = total_duration - paused
 
+        # Reset pause state when stopping the timer
+        if timelog.is_paused:
+            timelog.is_paused = False
+            timelog.last_pause_time = None
+
         try:
             timelog.save()
             return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)

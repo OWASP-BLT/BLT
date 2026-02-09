@@ -213,6 +213,29 @@ class TimeLogAPITest(APITestCase):
         self.assertIn("active_duration", response.data)
         self.assertGreater(response.data["active_duration"], 1700)
 
+    def test_stop_paused_timer_resets_pause_state(self):
+        """Test that stopping a paused timer resets the pause state"""
+        # Create and pause a timer
+        timelog = TimeLog.objects.create(user=self.user, start_time=timezone.now() - timedelta(minutes=10))
+        timelog.pause()
+        timelog.save()
+
+        # Verify it's paused
+        self.assertTrue(timelog.is_paused)
+        self.assertIsNotNone(timelog.last_pause_time)
+
+        # Stop the timer
+        url = reverse("timelogs-stop", kwargs={"pk": timelog.id})
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify pause state is reset
+        timelog.refresh_from_db()
+        self.assertIsNotNone(timelog.end_time)
+        self.assertFalse(timelog.is_paused)
+        self.assertIsNone(timelog.last_pause_time)
+
 
 class GitHubWebhookTest(TestCase):
     """Test GitHub webhook integration"""
