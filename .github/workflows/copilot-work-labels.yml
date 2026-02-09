@@ -135,6 +135,24 @@ jobs:
                 prNumber = context.payload.pull_request.number;
               }
 
+              // Check if comment is from Copilot and indicates finished work
+              const commentAuthor = comment.user.login.toLowerCase();
+              const isFromCopilot = commentAuthor === 'copilot' ||
+                                   commentAuthor.startsWith('copilot-') ||
+                                   commentAuthor.includes('copilot');
+              const indicatesFinished = comment.body.toLowerCase().includes('finished work') ||
+                                       comment.body.toLowerCase().includes('finished working') ||
+                                       comment.body.toLowerCase().includes('completed') ||
+                                       comment.body.toLowerCase().includes('done');
+
+              if (isFromCopilot && indicatesFinished) {
+                core.info(`Copilot comment indicates finished work on PR #${prNumber} - adding "finished work" label`);
+                await removeLabel(prNumber, STARTED_LABEL);
+                await addLabel(prNumber, FINISHED_LABEL);
+                return;
+              }
+
+              // Otherwise, assume work is starting/in progress
               core.info(`Comment mentions Copilot on PR #${prNumber} - adding "started work" label`);
               await removeLabel(prNumber, FINISHED_LABEL);
               await addLabel(prNumber, STARTED_LABEL);
