@@ -29,19 +29,17 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
@@ -74,7 +72,14 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    fetch_github_discussions,
+    rebuild_safe_url,
+    save_analysis_report,
+    validate_file_type,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -88,6 +93,27 @@ SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
 # ----------------------------------------------------------------------------------
+def get_popular_searches(limit=5, min_users=3):
+    """Returns a list of dicts with query and average result count."""
+
+    popular = (
+        SearchHistory.objects.values("query")
+        .annotate(user_count=Count("user", distinct=True), avg_results=Avg("result_count"))
+        .filter(user_count__gte=min_users, avg_results__gt=0)
+        .order_by("-user_count", "-avg_results")[:limit]
+    )
+
+    suggestions = []
+    for item in popular:
+        suggestions.append(
+            {
+                "query": item["query"],
+                "result_count": int(item["avg_results"]) if item["avg_results"] else 0,
+                "user_count": item["user_count"],
+            }
+        )
+
+    return suggestions
 
 
 def memory_usage_by_module(limit=1000):
@@ -752,6 +778,43 @@ def search(request, template="search.html"):
                 "repos": Repo.objects.filter(primary_language__icontains=query),
             }
 
+        has_results = False
+
+        if stype == "all" or not stype:
+            has_results = bool(
+                context.get("organizations")
+                or context.get("issues")
+                or context.get("domains")
+                or context.get("users")
+                or context.get("projects")
+                or context.get("repos")
+            )
+        elif stype == "tags":
+            has_results = bool(
+                context.get("matching_organizations")
+                or context.get("matching_domains")
+                or context.get("matching_issues")
+                or context.get("matching_user_profiles")
+                or context.get("matching_repos")
+            )
+        else:
+            type_to_key = {
+                "issues": "issues",
+                "domains": "domains",
+                "users": "users",
+                "labels": "issues",
+                "organizations": "organizations",
+                "projects": "projects",
+                "repos": "repos",
+                "languages": "repos",
+            }
+            key = type_to_key.get(stype, stype)
+            has_results = bool(context.get(key))
+        # If no results found, add popular search suggestions
+        if not has_results:
+            context["popular_searches"] = get_popular_searches(limit=5, min_users=3)
+            context["has_no_results"] = True
+
     # Handle authenticated user features
     if request.user.is_authenticated:
         try:
@@ -1035,42 +1098,63 @@ def add_forum_post(request):
         try:
             data = json.loads(request.body)
             title = data.get("title")
-            category = data.get("category")
             description = data.get("description")
+            category = data.get("category")
             repo_id = data.get("repo")
             project_id = data.get("project")
             organization_id = data.get("organization")
 
-            if not all([title, category, description]):
+            if (
+                not isinstance(title, str)
+                or not title.strip()
+                or not isinstance(description, str)
+                or not description.strip()
+                or category is None
+            ):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            # Explicitly validate category exists before creating post
-            category_obj = ForumCategory.objects.get(pk=category)
+            category = int(category)
+            ForumCategory.objects.get(id=category)
 
-            post_data = {
-                "user": request.user,
-                "title": title,
-                "category_id": category,
-                "description": description,
-            }
-
+            # validate optional foreign keys
             if repo_id:
-                post_data["repo_id"] = repo_id
+                repo_id = int(repo_id)
+                Repo.objects.get(id=repo_id)
+            else:
+                repo_id = None
+
             if project_id:
-                post_data["project_id"] = project_id
+                project_id = int(project_id)
+                Project.objects.get(id=project_id)
+            else:
+                project_id = None
+
             if organization_id:
-                post_data["organization_id"] = organization_id
+                organization_id = int(organization_id)
+                Organization.objects.get(id=organization_id)
+            else:
+                organization_id = None
 
-            post = ForumPost.objects.create(**post_data)
+            post = ForumPost.objects.create(
+                user=request.user,
+                title=title,
+                description=description,
+                category_id=category,
+                repo_id=repo_id,
+                project_id=project_id,
+                organization_id=organization_id,
+            )
 
-            return JsonResponse({"status": "success", "post_id": post.id})
+            return JsonResponse({"success": True, "post_id": post.id})
+        except ForumCategory.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
+        except (Repo.DoesNotExist, Project.DoesNotExist, Organization.DoesNotExist):
+            return JsonResponse({"success": False, "error": "Invalid reference ID"}, status=404)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
         except (ValueError, TypeError):
             logger.exception("Validation error in add_forum_post")
             return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except ForumCategory.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
         except Exception:
             logger.exception("Unexpected error in add_forum_post")
             return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
@@ -1089,10 +1173,10 @@ def add_forum_comment(request):
             if not all([post_id, content]):
                 return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
 
-            post = ForumPost.objects.get(id=post_id)
+            post = ForumPost.objects.get(id=int(post_id))
             comment = ForumComment.objects.create(post=post, user=request.user, content=content)
 
-            return JsonResponse({"status": "success", "comment_id": comment.id})
+            return JsonResponse({"success": True, "comment_id": comment.id})
         except ForumPost.DoesNotExist:
             return JsonResponse({"success": False, "error": "Post not found"}, status=404)
         except json.JSONDecodeError:
@@ -1110,33 +1194,32 @@ def add_forum_comment(request):
 @login_required
 @require_POST
 def delete_forum_post(request):
-    if not request.user.is_superuser:
-        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-
     try:
         data = json.loads(request.body)
         post_id = data.get("post_id")
 
         if not post_id:
-            return JsonResponse({"status": "error", "message": "Post ID is required"})
+            return JsonResponse({"status": "error", "message": "Post ID is required"}, status=400)
 
-        # Validate post_id is an integer
         try:
             post_id = int(post_id)
         except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
+            return JsonResponse({"status": "error", "message": "Invalid Post ID format"}, status=400)
 
         post = ForumPost.objects.get(id=post_id)
+
+        if request.user != post.user and not request.user.is_superuser:
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
         post.delete()
 
-        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
+        return JsonResponse({"status": "success", "message": "Post deleted successfully"}, status=200)
     except ForumPost.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Post not found"})
+        return JsonResponse({"status": "error", "message": "Post not found"}, status=404)
     except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
     except Exception as e:
         logging.exception("Unexpected error deleting forum post")
-        return JsonResponse({"status": "error", "message": "Server error occurred"})
+        return JsonResponse({"status": "error", "message": "Server error occurred"}, status=500)
 
 
 @ensure_csrf_cookie
@@ -1144,6 +1227,8 @@ def view_forum(request):
     # Annotate categories with post counts
     categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
     selected_category = request.GET.get("category")
+    selected_status = request.GET.get("status")
+    selected_sort = request.GET.get("sort")
 
     # Add is_selected flag to categories for cleaner template logic
     for category in categories:
@@ -1156,12 +1241,24 @@ def view_forum(request):
         ForumPost.objects.select_related("user", "category")
         .prefetch_related("comments")
         .annotate(comment_count=Count("comments"))
-        .order_by("-created")  # Sort by newest first
         .all()
     )
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
+
+    if selected_status:
+        posts = posts.filter(status=selected_status)
+
+    # sorting of filters by newest, oldest, most votes, most comments
+    if selected_sort == "oldest":
+        posts = posts.order_by("created")
+    elif selected_sort == "most_votes":
+        posts = posts.order_by("-up_votes")
+    elif selected_sort == "most_comments":
+        posts = posts.order_by("-comment_count")
+    else:
+        posts = posts.order_by("-created")  # newest first (default)
 
     # Optimize user vote queries to avoid N+1 problem
     if request.user.is_authenticated:
@@ -1184,6 +1281,8 @@ def view_forum(request):
             "categories": categories,
             "posts": posts,
             "selected_category": selected_category,
+            "selected_status": selected_status,
+            "selected_sort": selected_sort,
             "organizations": organizations,
             "projects": projects,
             "repos": repos,
@@ -1249,14 +1348,30 @@ class FacebookLogin(SocialLoginView):
 class UploadCreate(View):
     template_name = "home.html"
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(UploadCreate, self).dispatch(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
-        data = request.FILES.get("image")
-        result = default_storage.save("uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
-        return JsonResponse({"status": result})
+        # Validate file type
+        is_valid, error = validate_file_type(
+            request=request,
+            file_field_name="image",
+            allowed_extensions=["png", "jpg", "jpeg", "gif", "webp"],
+            allowed_mime_types=["image/png", "image/jpeg", "image/gif", "image/webp"],
+            max_size=20 * 1024 * 1024,  # optional: 20MB limit
+        )
+
+        if not is_valid:
+            return HttpResponseBadRequest(error)
+
+        file = request.FILES.get("image")
+        if not file:
+            return HttpResponseBadRequest("No file uploaded.")
+
+        # Safe filename handling
+        hash_val = kwargs.get("hash", "upload")
+        extension = file.name.split(".")[-1].lower()
+        filename = f"uploads/{hash_val}.{extension}"
+
+        result = default_storage.save(filename, file)
+        return JsonResponse({"status": "ok", "file": result})
 
 
 class StatsDetailView(TemplateView):
@@ -1579,7 +1694,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1592,8 +1707,8 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
-    # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+    # Get recent GitHub discussions from BLT repository
+    recent_discussions = fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5)
 
     # Get recent activities for the feed
     recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
@@ -1762,7 +1877,7 @@ def home(request):
             "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
-            "recent_posts": recent_posts,
+            "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
@@ -2398,7 +2513,7 @@ def run_management_command(request):
                 log_entry.success = False
                 log_entry.save()
 
-                error_msg = f"Error executing command '{command}': {str(e)}"
+                error_msg = f"Error executing command '{command}': Something went wrong."
                 logging.error(error_msg)
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":

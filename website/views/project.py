@@ -1263,8 +1263,14 @@ class RepoDetailView(DetailView):
 
         # Calculate impact scores and enrich with contributor details
         processed_stats = []
+        # Fetch all contributors at once
+        contributor_ids = [stat["contributor"] for stat in stats_query]
+        contributors = Contributor.objects.in_bulk(contributor_ids)
+
         for stat in stats_query:
-            contributor = Contributor.objects.get(id=stat["contributor"])
+            contributor = contributors.get(stat["contributor"])
+            if not contributor:
+                continue
 
             # Calculate impact score using weighted values
             impact_score = (
@@ -2037,7 +2043,7 @@ class RepoDetailView(DetailView):
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": f"An unexpected error occurred: {str(e)}",
+                        "message": "An unexpected error occurred.",
                     },
                     status=500,
                 )

@@ -9,12 +9,14 @@ import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
+import markdown
 import requests
 import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
+from bleach import clean
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -44,6 +46,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
@@ -94,70 +97,60 @@ logger = logging.getLogger(__name__)
 
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
+
+    # Fetch user profile once (NO prefetch)
     userprof = UserProfile.objects.get(user=request.user)
 
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+    # Remove downvote if exists
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+
+    # Toggle upvote
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
-    if issue.user is not None:
-        liked_user = issue.user
-        liker_user = request.user
-        issue_pk = issue.pk
-        msg_plain = render_to_string(
-            "email/issue_liked.html",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
-        msg_html = render_to_string(
-            "email/issue_liked.html",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
 
-        send_mail(
-            "Your issue got an upvote!!",
-            msg_plain,
-            settings.EMAIL_TO_STRING,
-            [liked_user.email],
-            html_message=msg_html,
-        )
+        # Send email only on NEW upvote
+        if issue.user and issue.user.email:
+            msg_context = {
+                "liker_user": request.user.username,
+                "liked_user": issue.user.username,
+                "issue_pk": issue.pk,
+            }
 
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    context["object"] = issue
-    context["likes"] = total_votes
-    context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
+            msg_plain = render_to_string("email/issue_liked.html", msg_context)
+            msg_html = render_to_string("email/issue_liked.html", msg_context)
+
+            send_mail(
+                "Your issue got an upvote!!",
+                msg_plain,
+                settings.EMAIL_TO_STRING,
+                [issue.user.email],
+                html_message=msg_html,
+            )
+
     return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
 def dislike_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
+
+    # Fetch user profile once
     userprof = UserProfile.objects.get(user=request.user)
 
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+    # Remove upvote if exists
+    if userprof.issue_upvoted.filter(pk=issue.pk).exists():
         userprof.issue_upvoted.remove(issue)
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+
+    # Toggle downvote
+    if userprof.issue_downvoted.filter(pk=issue.pk).exists():
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["dislikes"] = total_votes
-    context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
+
     return HttpResponse("Success")
 
 
@@ -348,11 +341,10 @@ def newhome(request, template="bugs_list.html"):
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    current_time = timezone.now()
     leaderboard = (
         User.objects.filter(
-            points__created__month=current_time.month,
-            points__created__year=current_time.year,
+            points__created__month=timezone.now().month,
+            points__created__year=timezone.now().year,
         )
         .annotate(total_points=Sum("points__score"))
         .order_by("-total_points")
@@ -1545,8 +1537,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = (
             User.objects.filter(
-                points__created__month=datetime.now().month,
-                points__created__year=datetime.now().year,
+                points__created__month=timezone.now().month,
+                points__created__year=timezone.now().year,
             )
             .annotate(total_score=Sum("points__score"))
             .order_by("-total_score")[:10],
@@ -2342,6 +2334,53 @@ class GitHubIssuesView(ListView):
 
         # Add the form for adding GitHub issues
         context["form"] = GitHubIssueForm()
+        for issue in context.get("object_list", []):
+            body = issue.body or ""
+            try:
+                html = markdown.markdown(
+                    body,
+                    extensions=[
+                        "markdown.extensions.fenced_code",
+                        "markdown.extensions.tables",
+                        "markdown.extensions.nl2br",
+                    ],
+                )
+                issue.body_html = mark_safe(
+                    clean(
+                        html,
+                        tags=[
+                            "a",
+                            "b",
+                            "i",
+                            "em",
+                            "strong",
+                            "p",
+                            "br",
+                            "code",
+                            "pre",
+                            "ul",
+                            "ol",
+                            "li",
+                            "h1",
+                            "h2",
+                            "h3",
+                            "h4",
+                            "h5",
+                            "h6",
+                            "blockquote",
+                            "table",
+                            "thead",
+                            "tbody",
+                            "tr",
+                            "th",
+                            "td",
+                        ],
+                        strip=True,
+                    )
+                )
+
+            except Exception:
+                issue.body_html = escape(body)
 
         return context
 
@@ -2446,10 +2485,50 @@ class GitHubIssueDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        issue = self.get_object()
+        # Convert markdown bodies to HTML for display using markdown
 
+        issue = context.get("object")
+        body = issue.body or ""
         # Add any additional context needed for the detail view
-        context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
+        context["comment_list"] = issue.get_comments()
+        md_extensions = ["markdown.extensions.fenced_code", "markdown.extensions.tables", "markdown.extensions.nl2br"]
+        allowed_tags = [
+            "a",
+            "b",
+            "i",
+            "em",
+            "strong",
+            "p",
+            "br",
+            "code",
+            "pre",
+            "ul",
+            "ol",
+            "li",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "table",
+            "thead",
+            "tbody",
+            "tr",
+            "th",
+            "td",
+        ]
+        try:
+            issue.body_html = mark_safe(
+                clean(
+                    markdown.markdown(body, extensions=md_extensions),
+                    tags=allowed_tags,
+                    strip=True,
+                )
+            )
+        except Exception:
+            issue.body_html = escape(issue.body or "")
 
         return context
 
@@ -2636,39 +2715,49 @@ def refresh_gsoc_project(request):
                 owner, repo_name = repo_full_name.split("/")
                 repo = Repo.objects.filter(name=repo_name).first()
 
-                if repo:
-                    prs_without_profiles = GitHubIssue.objects.filter(
-                        repo=repo,
-                        type="pull_request",
-                        is_merged=True,
-                        merged_at__gte=since_date,
-                        user_profile=None,
-                    )
+                if not repo:
+                    continue
 
-                    batch_size = 50
-                    for i in range(0, prs_without_profiles.count(), batch_size):
-                        batch = prs_without_profiles[i : i + batch_size]
+                prs_without_profiles = GitHubIssue.objects.filter(
+                    repo=repo,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=since_date,
+                    user_profile=None,
+                    contributor__isnull=False,
+                ).select_related("contributor")
 
-                        for pr in batch:
-                            try:
-                                pr_url_parts = pr.url.split("/")
-                                if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                                    github_url = f"https://github.com/{pr_url_parts[3]}"
+                # Collect contributor GitHub URLs
+                github_urls = {
+                    pr.contributor.github_url
+                    for pr in prs_without_profiles
+                    if pr.contributor
+                    and pr.contributor.github_url
+                    and not pr.contributor.github_url.endswith("[bot]")
+                    and "bot" not in pr.contributor.github_url.lower()
+                }
 
-                                    if github_url.endswith("[bot]") or "bot" in github_url.lower():
-                                        continue
+                # Fetch all matching user profiles in one query
+                profiles_map = {p.github_url: p for p in UserProfile.objects.filter(github_url__in=github_urls)}
 
-                                    user_profile = UserProfile.objects.filter(github_url=github_url).first()
+                prs_to_update = []
 
-                                    if user_profile:
-                                        pr.user_profile = user_profile
-                                        pr.save()
+                for pr in prs_without_profiles:
+                    github_url = pr.contributor.github_url if pr.contributor else None
+                    user_profile = profiles_map.get(github_url)
 
-                            except (IndexError, AttributeError):
-                                continue
+                    if user_profile:
+                        pr.user_profile = user_profile
+                        prs_to_update.append(pr)
+
+                if prs_to_update:
+                    GitHubIssue.objects.bulk_update(prs_to_update, ["user_profile"])
 
             except Exception as e:
-                messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
+                messages.warning(
+                    request,
+                    f"Error updating user profiles for {repo_full_name}: {str(e)}",
+                )
 
         messages.success(
             request,
