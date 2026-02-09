@@ -3034,15 +3034,14 @@ RATE_LIMIT_SECONDS = 30
 def get_contributors_info(workspace_client, user_id, project_name, activity):
     """Handle contributors information command"""
     try:
-        # Send immediate response
-        response = JsonResponse(
-            {
-                "response_type": "ephemeral",
-                "text": "🔍 Fetching contributor information... I'll send you the results in a DM shortly!",
-            }
-        )
         last_used = contributor_rate_limit.get(user_id, 0)
         now = time.time()
+
+        # Evict stale entries periodically
+        if len(contributor_rate_limit) > 1000:
+            stale = [k for k, v in contributor_rate_limit.items() if now - v > RATE_LIMIT_SECONDS]
+            for k in stale:
+                del contributor_rate_limit[k]
 
         if now - last_used < RATE_LIMIT_SECONDS:
             wait = int(RATE_LIMIT_SECONDS - (now - last_used))
@@ -3051,6 +3050,14 @@ def get_contributors_info(workspace_client, user_id, project_name, activity):
             )
         # Update usage timestamp
         contributor_rate_limit[user_id] = now
+
+        # Send immediate response
+        response = JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "🔍 Fetching contributor information... I'll send you the results in a DM shortly!",
+            }
+        )
 
         # Process the request in a background thread
         def process_contributors():
@@ -3410,7 +3417,9 @@ def fetch_all_contributors(workspace_client, user_id, headers, activity):
         )
 
         send_dm(workspace_client, user_id, "Top OWASP Contributors", blocks)
-        activity.success = True
+        activity.success = bool(sorted_contributors)
+        if not sorted_contributors:
+            activity.error_message = "No contributor data retrieved"
         activity.save()
 
     except Exception as e:
