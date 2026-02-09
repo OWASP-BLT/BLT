@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 
 from allauth.account.models import EmailAddress
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
@@ -46,6 +46,8 @@ class Command(LoggedBaseCommand):
             return
 
         cutoff_date = timezone.now() - timedelta(days=days)
+        # Store cutoff for use in has_user_activity
+        self.cutoff_datetime = cutoff_date
 
         # Find users to delete
         unverified_users = self.get_unverified_users(cutoff_date)
@@ -70,6 +72,7 @@ class Command(LoggedBaseCommand):
         3. Are not staff or superusers
         4. Have no significant activity (issues, points, etc.)
         """
+        User = get_user_model()
         # Get all users registered before cutoff who are not staff/superuser
         candidate_users = User.objects.filter(date_joined__lt=cutoff_date, is_staff=False, is_superuser=False)
 
@@ -90,6 +93,10 @@ class Command(LoggedBaseCommand):
     def has_user_activity(self, user):
         """Check if user has any meaningful activity in the system"""
         try:
+            # Check for recent login
+            if user.last_login is not None and user.last_login >= self.cutoff_datetime:
+                return True
+
             # Check for reported issues
             if hasattr(user, "issue_set") and user.issue_set.exists():
                 return True
@@ -127,12 +134,15 @@ class Command(LoggedBaseCommand):
         batch_num = 0
 
         self.stdout.write(
-            self.style.WARNING("Starting deletion of {} unverified users registered more than {} days ago...".format(total_count, days))
+            self.style.WARNING(
+                "Starting deletion of {} unverified users registered more than {} days ago...".format(total_count, days)
+            )
         )
 
         # Process in batches
         user_ids = list(users.values_list("id", flat=True))
 
+        User = get_user_model()
         for i in range(0, len(user_ids), batch_size):
             batch_num += 1
             batch_ids = user_ids[i : i + batch_size]
@@ -147,15 +157,22 @@ class Command(LoggedBaseCommand):
                     # Delete the batch
                     batch_deleted, objects_deleted = batch_users.delete()
 
-                    deleted_count += batch_deleted
+                    # Extract actual User count from objects_deleted dict
+                    user_model = get_user_model()
+                    user_key = "{}.{}".format(user_model._meta.app_label, user_model.__name__)
+                    users_deleted = objects_deleted.get(user_key, 0)
+
+                    deleted_count += users_deleted
                     self.stdout.write(
                         "  Batch {}/{}: Deleted {} users".format(
-                            batch_num, (len(user_ids) + batch_size - 1) // batch_size, batch_deleted
+                            batch_num, (len(user_ids) + batch_size - 1) // batch_size, users_deleted
                         )
                     )
 
                     logger.info(
-                        "Deleted batch {} ({} users). Objects deleted: {}".format(batch_num, batch_deleted, objects_deleted)
+                        "Deleted batch {} ({} users). Objects deleted: {}".format(
+                            batch_num, users_deleted, objects_deleted
+                        )
                     )
 
             except Exception as e:
@@ -166,13 +183,17 @@ class Command(LoggedBaseCommand):
         # Final summary
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(
-            self.style.SUCCESS("Successfully deleted {} unverified users registered more than {} days ago".format(deleted_count, days))
+            self.style.SUCCESS(
+                "Successfully deleted {} unverified users registered more than {} days ago".format(deleted_count, days)
+            )
         )
         self.stdout.write("  - Total EmailAddress records deleted: {}".format(email_addresses_deleted))
         self.stdout.write("=" * 70)
 
         logger.info(
-            "Completed deletion: {} users deleted, {} EmailAddress records removed".format(deleted_count, email_addresses_deleted)
+            "Completed deletion: {} users deleted, {} EmailAddress records removed".format(
+                deleted_count, email_addresses_deleted
+            )
         )
 
     def display_dry_run_preview(self, users, days, batch_size):
@@ -181,7 +202,9 @@ class Command(LoggedBaseCommand):
 
         self.stdout.write("\n" + "=" * 70)
         self.stdout.write(
-            self.style.WARNING("DRY RUN: Would delete {} unverified users registered more than {} days ago".format(total_count, days))
+            self.style.WARNING(
+                "DRY RUN: Would delete {} unverified users registered more than {} days ago".format(total_count, days)
+            )
         )
         self.stdout.write("=" * 70 + "\n")
 
@@ -200,7 +223,10 @@ class Command(LoggedBaseCommand):
 
             self.stdout.write(
                 "  - {} ({}) | Registered: {} | Emails: {}".format(
-                    user.username, user.email or "no email", user.date_joined.strftime("%Y-%m-%d %H:%M:%S"), email_status
+                    user.username,
+                    user.email or "no email",
+                    user.date_joined.strftime("%Y-%m-%d %H:%M:%S"),
+                    email_status,
                 )
             )
 

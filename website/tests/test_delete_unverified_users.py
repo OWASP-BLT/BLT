@@ -26,9 +26,7 @@ class DeleteUnverifiedUsersTest(TestCase):
     def test_delete_old_unverified_user(self):
         """Test that old unverified users are deleted"""
         # Create user older than threshold without verified email
-        old_user = User.objects.create_user(
-            username="oldunverified", email="old@example.com", password="testpass123"
-        )
+        old_user = User.objects.create_user(username="oldunverified", email="old@example.com", password="testpass123")
         old_user.date_joined = self.cutoff_date - timedelta(days=5)
         old_user.save()
 
@@ -111,9 +109,7 @@ class DeleteUnverifiedUsersTest(TestCase):
     def test_dry_run_no_deletion(self):
         """Test that dry-run mode doesn't actually delete users"""
         # Create old unverified user
-        old_user = User.objects.create_user(
-            username="testdryrun", email="dryrun@example.com", password="testpass123"
-        )
+        old_user = User.objects.create_user(username="testdryrun", email="dryrun@example.com", password="testpass123")
         old_user.date_joined = self.cutoff_date - timedelta(days=5)
         old_user.save()
 
@@ -246,3 +242,47 @@ class DeleteUnverifiedUsersTest(TestCase):
         # Verify EmailAddress records were deleted
         self.assertEqual(EmailAddress.objects.count(), initial_email_count - 2)
         self.assertFalse(EmailAddress.objects.filter(user__username="multiemail").exists())
+
+    def test_keep_users_with_activity(self):
+        """Test that users with activity (issues, points, etc.) are NOT deleted"""
+        from website.models import Points
+
+        # Create old unverified user
+        active_user = User.objects.create_user(
+            username="activeuser", email="active@example.com", password="testpass123"
+        )
+        active_user.date_joined = self.cutoff_date - timedelta(days=10)
+        active_user.save()
+
+        # Create unverified email
+        EmailAddress.objects.create(user=active_user, email="active@example.com", verified=False, primary=True)
+
+        # Add activity: create points for this user
+        Points.objects.create(user=active_user, score=10)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted due to activity
+        self.assertTrue(User.objects.filter(username="activeuser").exists())
+
+    def test_keep_users_with_recent_login(self):
+        """Test that users with recent login activity are NOT deleted"""
+        # Create old unverified user with recent login
+        recent_login_user = User.objects.create_user(
+            username="recentlogin", email="recentlogin@example.com", password="testpass123"
+        )
+        recent_login_user.date_joined = self.cutoff_date - timedelta(days=10)
+        recent_login_user.last_login = timezone.now() - timedelta(days=5)  # Recent login
+        recent_login_user.save()
+
+        # Create unverified email
+        EmailAddress.objects.create(
+            user=recent_login_user, email="recentlogin@example.com", verified=False, primary=True
+        )
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted due to recent login
+        self.assertTrue(User.objects.filter(username="recentlogin").exists())
