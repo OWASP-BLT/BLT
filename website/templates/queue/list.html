@@ -858,6 +858,15 @@
         </div>
     </div>
     <script>
+        function isSafeImageUrl(url) {
+    try {
+        const parsed = new URL(url, window.location.origin);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Launch Control functionality
     const showLaunchControlBtn = document.getElementById('showLaunchControlBtn');
@@ -953,11 +962,12 @@ document.addEventListener('DOMContentLoaded', function() {
             editQueueId.value = id;
             editMessage.value = message;
             editCharCount.textContent = message.length;
-            
-            if (imageUrl) {
+        
+            if (imageUrl && isSafeImageUrl(imageUrl)) {
                 currentImage.src = imageUrl;
                 currentImageContainer.classList.remove('hidden');
             } else {
+                currentImage.removeAttribute('src');
                 currentImageContainer.classList.add('hidden');
             }
             
@@ -1046,11 +1056,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             viewMessage.value = message;
             
-            if (imageUrl) {
+            if (imageUrl && isSafeImageUrl(imageUrl)) {
                 viewImage.src = imageUrl;
                 viewImageContainer.classList.remove('hidden');
                 noImageText.classList.add('hidden');
             } else {
+                viewImage.removeAttribute('src');
                 viewImageContainer.classList.add('hidden');
                 noImageText.classList.remove('hidden');
             }
