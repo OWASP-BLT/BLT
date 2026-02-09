@@ -34,10 +34,6 @@ from website.models import (
     DailyStatusReport,
     Domain,
     Enrollment,
-    ForumCategory,
-    ForumComment,
-    ForumPost,
-    ForumVote,
     GitHubIssue,
     GitHubReview,
     Hackathon,
@@ -532,42 +528,6 @@ class ChatBotLogAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "answer", "created")
 
 
-class ForumPostAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "user",
-        "title",
-        "description",
-        "up_votes",
-        "down_votes",
-        "status",
-        "created",
-        "repo",
-        "project",
-        "organization",
-    )
-    list_filter = ("status", "category", "repo", "project", "organization")
-    search_fields = ("title", "description", "user__username")
-    autocomplete_fields = ["repo", "project", "organization"]
-
-
-class ForumVoteAdmin(admin.ModelAdmin):
-    list_display = ("user", "post", "up_vote", "down_vote", "created")
-    list_filter = ("up_vote", "down_vote")
-    search_fields = ("user__username", "post__title")
-
-
-class ForumCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "created")
-    search_fields = ("name", "description")
-
-
-class ForumCommentAdmin(admin.ModelAdmin):
-    list_display = ("user", "post", "content", "created", "last_modified")
-    list_filter = ("created", "last_modified")
-    search_fields = ("content", "user__username", "post__title")
-
-
 class BlockedAdmin(admin.ModelAdmin):
     list_display = (
         "address",
@@ -963,10 +923,6 @@ admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
-admin.site.register(ForumPost, ForumPostAdmin)
-admin.site.register(ForumVote, ForumVoteAdmin)
-admin.site.register(ForumCategory, ForumCategoryAdmin)
-admin.site.register(ForumComment, ForumCommentAdmin)
 admin.site.register(TimeLog, TimeLogAdmin)
 admin.site.register(Contribution, ContributionAdmin)
 admin.site.register(InviteFriend)
