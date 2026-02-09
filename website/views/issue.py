@@ -9,12 +9,14 @@ import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
+import markdown
 import requests
 import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
+from bleach import clean
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -44,6 +46,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
@@ -338,11 +341,10 @@ def newhome(request, template="bugs_list.html"):
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    current_time = timezone.now()
     leaderboard = (
         User.objects.filter(
-            points__created__month=current_time.month,
-            points__created__year=current_time.year,
+            points__created__month=timezone.now().month,
+            points__created__year=timezone.now().year,
         )
         .annotate(total_points=Sum("points__score"))
         .order_by("-total_points")
@@ -1535,8 +1537,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = (
             User.objects.filter(
-                points__created__month=datetime.now().month,
-                points__created__year=datetime.now().year,
+                points__created__month=timezone.now().month,
+                points__created__year=timezone.now().year,
             )
             .annotate(total_score=Sum("points__score"))
             .order_by("-total_score")[:10],
@@ -2332,6 +2334,53 @@ class GitHubIssuesView(ListView):
 
         # Add the form for adding GitHub issues
         context["form"] = GitHubIssueForm()
+        for issue in context.get("object_list", []):
+            body = issue.body or ""
+            try:
+                html = markdown.markdown(
+                    body,
+                    extensions=[
+                        "markdown.extensions.fenced_code",
+                        "markdown.extensions.tables",
+                        "markdown.extensions.nl2br",
+                    ],
+                )
+                issue.body_html = mark_safe(
+                    clean(
+                        html,
+                        tags=[
+                            "a",
+                            "b",
+                            "i",
+                            "em",
+                            "strong",
+                            "p",
+                            "br",
+                            "code",
+                            "pre",
+                            "ul",
+                            "ol",
+                            "li",
+                            "h1",
+                            "h2",
+                            "h3",
+                            "h4",
+                            "h5",
+                            "h6",
+                            "blockquote",
+                            "table",
+                            "thead",
+                            "tbody",
+                            "tr",
+                            "th",
+                            "td",
+                        ],
+                        strip=True,
+                    )
+                )
+
+            except Exception:
+                issue.body_html = escape(body)
 
         return context
 
@@ -2436,10 +2485,50 @@ class GitHubIssueDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        issue = self.get_object()
+        # Convert markdown bodies to HTML for display using markdown
 
+        issue = context.get("object")
+        body = issue.body or ""
         # Add any additional context needed for the detail view
-        context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
+        context["comment_list"] = issue.get_comments()
+        md_extensions = ["markdown.extensions.fenced_code", "markdown.extensions.tables", "markdown.extensions.nl2br"]
+        allowed_tags = [
+            "a",
+            "b",
+            "i",
+            "em",
+            "strong",
+            "p",
+            "br",
+            "code",
+            "pre",
+            "ul",
+            "ol",
+            "li",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "table",
+            "thead",
+            "tbody",
+            "tr",
+            "th",
+            "td",
+        ]
+        try:
+            issue.body_html = mark_safe(
+                clean(
+                    markdown.markdown(body, extensions=md_extensions),
+                    tags=allowed_tags,
+                    strip=True,
+                )
+            )
+        except Exception:
+            issue.body_html = escape(issue.body or "")
 
         return context
 
