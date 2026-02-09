@@ -341,11 +341,10 @@ def newhome(request, template="bugs_list.html"):
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    current_time = timezone.now()
     leaderboard = (
         User.objects.filter(
-            points__created__month=current_time.month,
-            points__created__year=current_time.year,
+            points__created__month=timezone.now().month,
+            points__created__year=timezone.now().year,
         )
         .annotate(total_points=Sum("points__score"))
         .order_by("-total_points")
@@ -1538,8 +1537,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = (
             User.objects.filter(
-                points__created__month=datetime.now().month,
-                points__created__year=datetime.now().year,
+                points__created__month=timezone.now().month,
+                points__created__year=timezone.now().year,
             )
             .annotate(total_score=Sum("points__score"))
             .order_by("-total_score")[:10],
