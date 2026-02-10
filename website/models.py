@@ -2114,6 +2114,9 @@ class GitHubIssue(models.Model):
     has_dollar_tag = models.BooleanField(default=False)
     bounty_expiry_date = models.DateTimeField(null=True, blank=True)
     sponsors_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    payment_pending = models.BooleanField(
+        default=False, help_text="Set True when payout is in progress to prevent duplicate payments."
+    )
     repo = models.ForeignKey(
         Repo,
         null=True,

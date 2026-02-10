@@ -39,8 +39,9 @@ def webhook_rate_limit(max_calls=10, period=60):
     def decorator(func):
         @wraps(func)
         def wrapper(request, *args, **kwargs):
-            # Use IP-based rate limiting for webhooks
-            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR")
+            # Use REMOTE_ADDR for rate limiting to avoid spoofing via X-Forwarded-For
+            # If behind a trusted proxy, use a proxy-aware utility (e.g., django-ipware) instead
+            ip = request.META.get("REMOTE_ADDR")
             cache_key = f"webhook_ratelimit_{func.__name__}_{ip}"
 
             try:
@@ -229,6 +230,7 @@ def bounty_payout(request):
         repo_name = data["repo"]
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]
+        # For test compatibility: if is_timed_bounty is True in the request, require bounty_expiry_date
         is_timed_bounty = _coerce_to_bool(data.get("is_timed_bounty"))
 
         # Look up repository and issue
@@ -242,19 +244,17 @@ def bounty_payout(request):
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        # --- First transaction: validation and intent marking ---
+        # --- First transaction: validation and atomic intent marking ---
         try:
             with transaction.atomic():
                 github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
 
-                # Check timed bounty expiry
-                if is_timed_bounty:
-                    if not github_issue.bounty_expiry_date:
-                        logger.warning(f"Timed bounty flag set but no expiry date found for issue #{issue_number}")
-                        return JsonResponse(
-                            {"status": "error", "message": "Timed bounty expiry date not set"}, status=400
-                        )
-
+                # For test compatibility: if is_timed_bounty True and no expiry, return 400
+                if is_timed_bounty and github_issue.bounty_expiry_date is None:
+                    logger.warning(f"Timed bounty expiry date not set for issue #{issue_number}")
+                    return JsonResponse({"status": "error", "message": "Timed bounty expiry date not set"}, status=400)
+                # Only enforce expiry if bounty_expiry_date is set (timed bounty)
+                if github_issue.bounty_expiry_date is not None:
                     now = timezone.now()
                     if now > github_issue.bounty_expiry_date:
                         logger.info(
@@ -262,7 +262,7 @@ def bounty_payout(request):
                         )
                         return JsonResponse({"status": "error", "message": "Bounty expired"}, status=400)
 
-                # Check for duplicate payment
+                # Check for duplicate payment or in-progress payment
                 if github_issue.sponsors_tx_id:
                     logger.info(f"Payment already processed for issue #{issue_number}")
                     return JsonResponse(
@@ -273,11 +273,19 @@ def bounty_payout(request):
                         },
                         status=200,
                     )
+                if github_issue.payment_pending:
+                    logger.info(f"Payment is already in progress for issue #{issue_number}")
+                    return JsonResponse(
+                        {
+                            "status": "warning",
+                            "message": "Bounty payment is already in progress for this issue. Please wait.",
+                        },
+                        status=202,
+                    )
 
-                # Optionally mark payment as pending (if field exists)
-                if hasattr(github_issue, "payment_pending"):
-                    github_issue.payment_pending = True
-                    github_issue.save(update_fields=["payment_pending"])
+                # Mark payment as pending atomically
+                github_issue.payment_pending = True
+                github_issue.save(update_fields=["payment_pending"])
 
         except GitHubIssue.DoesNotExist:
             logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name}")

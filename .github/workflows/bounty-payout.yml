@@ -44,6 +44,7 @@ jobs:
               return;
             }
 
+            const MAX_DURATION_HOURS = 720;
             const parseBountyLabel = (labelName) => {
               if (!labelName || !labelName.includes('$')) {
                 return null;
@@ -52,11 +53,18 @@ jobs:
               const trimmed = labelName.trim();
               const timedMatch = trimmed.match(/^\$(\d+(?:\.\d{2})?)\s+(\d+)$/);
               if (timedMatch) {
-                return {
-                  amount: timedMatch[1],
-                  durationHours: parseInt(timedMatch[2], 10),
-                  labelName: labelName
-                };
+                const duration = parseInt(timedMatch[2], 10);
+                // Only treat as timed if duration is > 0 and <= MAX_DURATION_HOURS
+                if (duration > 0 && duration <= MAX_DURATION_HOURS) {
+                  return {
+                    amount: timedMatch[1],
+                    durationHours: duration,
+                    labelName: labelName
+                  };
+                } else {
+                  // Invalid duration, treat as invalid label
+                  return null;
+                }
               }
 
               const bountyMatch = trimmed.match(/\$(\d+(?:\.\d{2})?)/);
@@ -106,7 +114,7 @@ jobs:
               return;
             }
 
-            const isTimedBounty = Boolean(bountyLabelDetails.durationHours);
+            const isTimedBounty = bountyLabelDetails.durationHours !== null;
             let bountyAmount = bountyLabelDetails.amount;
 
             // Convert to cents for API (e.g., "25.50" -> 2550, "50" -> 5000)
