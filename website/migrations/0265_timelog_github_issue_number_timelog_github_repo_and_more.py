@@ -6,35 +6,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0264_remove_forum_models'),
+        ("website", "0264_remove_forum_models"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='timelog',
-            name='github_issue_number',
+            model_name="timelog",
+            name="github_issue_number",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='timelog',
-            name='github_repo',
+            model_name="timelog",
+            name="github_repo",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='timelog',
-            name='is_paused',
+            model_name="timelog",
+            name="is_paused",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='timelog',
-            name='last_pause_time',
+            model_name="timelog",
+            name="last_pause_time",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='timelog',
-            name='paused_duration',
+            model_name="timelog",
+            name="paused_duration",
             field=models.DurationField(blank=True, default=datetime.timedelta, null=True),
         ),
     ]

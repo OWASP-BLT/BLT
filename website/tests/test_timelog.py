@@ -218,7 +218,7 @@ class TimeLogAPITest(APITestCase):
         """Test that stopping a paused timer resets the pause state"""
         # Create and pause a timer
         timelog = TimeLog.objects.create(user=self.user, start_time=timezone.now() - timedelta(minutes=10))
-        
+
         # Pause the timer after 5 minutes
         timelog.pause()
         pause_start = timelog.last_pause_time
@@ -242,11 +242,11 @@ class TimeLogAPITest(APITestCase):
         self.assertIsNotNone(timelog.end_time)
         self.assertFalse(timelog.is_paused)
         self.assertIsNone(timelog.last_pause_time)
-        
+
         # Verify that paused_duration includes the final pause interval
         self.assertIsNotNone(timelog.paused_duration)
         self.assertGreater(timelog.paused_duration.total_seconds(), 0)
-        
+
         # Verify that duration correctly excludes all paused time
         total_duration = timelog.end_time - timelog.start_time
         expected_duration = total_duration - timelog.paused_duration
