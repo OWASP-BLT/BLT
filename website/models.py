@@ -3,6 +3,7 @@ import os
 import re
 import time
 import uuid
+import warnings
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -356,6 +357,12 @@ class OrgEncryptionConfig(models.Model):
                 raise ValidationError(
                     {"pgp_fingerprint": 'PGP fingerprint is required when preferred method is "openpgp".'}
                 )
+        elif self.preferred_method == self.ENCRYPTION_METHOD_SYM_7Z:
+            warnings.warn(
+                "Symmetric 7z encryption is less secure than public-key methods. "
+                "Consider using age or OpenPGP for stronger zero-trust guarantees.",
+                UserWarning,
+            )
 
     def save(self, *args, **kwargs):
         """Ensure validation runs on save."""
