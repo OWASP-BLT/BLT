@@ -21,6 +21,7 @@ from datetime import timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from website.models import User
@@ -67,16 +68,15 @@ class Command(BaseCommand):
             last_login__isnull=True,
             date_joined__lt=cutoff_date,
         ).exclude(
-            is_superuser=True,
-            is_staff=True,
+            Q(is_superuser=True) | Q(is_staff=True)
         )
 
         if include_new:
             new_users = User.objects.filter(
                 last_login__isnull=True,
+                date_joined__gte=cutoff_date,
             ).exclude(
-                is_superuser=True,
-                is_staff=True,
+                Q(is_superuser=True) | Q(is_staff=True)
             )
             unverified_users = unverified_users | new_users
 
@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 for user in unverified_users[:20]:
                     days_old = (timezone.now() - user.date_joined).days
                     self.stdout.write(
-                        f"  - {user.username} ({user.email}) - Created: {user.date_joined.date()} ({days_old} days old)"
+                        f"  - {user.username} - Created: {user.date_joined.date()} ({days_old} days old)"
                     )
                 if count > 20:
                     self.stdout.write(f"  ... and {count - 20} more")
@@ -103,7 +103,10 @@ class Command(BaseCommand):
 
             if not skip_confirmation:
                 self.stdout.write(self.style.WARNING(f"About to delete {count} users."))
-                confirm = input("Continue? [y/N] ")
+                try:
+                    confirm = input("Continue? [y/N] ")
+                except (EOFError, KeyboardInterrupt):
+                    confirm = "n"
                 if confirm.lower() != "y":
                     self.stdout.write("Aborted.")
                     return
