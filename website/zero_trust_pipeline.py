@@ -41,37 +41,26 @@ REPORT_TMP_DIR = getattr(settings, "REPORT_TMP_DIR", os.path.join(settings.BASE_
 def _validate_age_recipient(recipient: str) -> bool:
     """Validate age recipient format (age1... or ssh-ed25519/rsa key)."""
     if recipient.startswith("age1"):
-        # age public key format: age1[a-z0-9]{58}
         return bool(re.match(r"^age1[a-z0-9]{58}$", recipient))
-    # Also allow SSH keys
+
     return recipient.startswith(("ssh-ed25519 ", "ssh-rsa "))
 
 
 def _validate_pgp_fingerprint(fingerprint: str) -> bool:
     """Validate PGP fingerprint is hexadecimal."""
-    # PGP fingerprints are 40 hex characters (SHA-1) or 64 (SHA-256)
     return bool(re.match(r"^[A-Fa-f0-9]{40}$|^[A-Fa-f0-9]{64}$", fingerprint))
 
 
 def _sanitize_filename(filename: str) -> str:
     """Sanitize uploaded filename to prevent path traversal and other issues."""
-    # Get basename to prevent path traversal
+
     filename = os.path.basename(filename)
-
-    # Normalize unicode
     filename = unicodedata.normalize("NFKD", filename)
-
-    # Remove null bytes and control characters
     filename = "".join(c for c in filename if c not in ("\x00", "\r", "\n"))
-
-    # Only allow alphanumeric, spaces, dots, dashes, underscores
     safe_chars = string.ascii_letters + string.digits + " .-_"
     filename = "".join(c if c in safe_chars else "_" for c in filename)
-
-    # Prevent hidden files and ensure extension
     filename = filename.strip(". ")
 
-    # Fallback if name is empty
     if not filename:
         filename = f"upload_{uuid.uuid4().hex[:8]}"
 
@@ -80,12 +69,9 @@ def _sanitize_filename(filename: str) -> str:
 
 def _generate_secure_password(length: int = 32) -> str:
     """
-    Generate a cryptographically secure random password.
-
-    Uses uppercase, lowercase, digits, and safe special characters.
-    Ensures at least one character from each category.
+    Generate a cryptographically secure random password..
     """
-    # Character sets (avoid ambiguous characters like 0/O, 1/l/I)
+
     uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"
     lowercase = "abcdefghijkmnopqrstuvwxyz"
     digits = "23456789"
@@ -93,7 +79,6 @@ def _generate_secure_password(length: int = 32) -> str:
 
     all_chars = uppercase + lowercase + digits + special
 
-    # Ensure at least one from each category
     password_chars = [
         secrets.choice(uppercase),
         secrets.choice(lowercase),
@@ -101,10 +86,8 @@ def _generate_secure_password(length: int = 32) -> str:
         secrets.choice(special),
     ]
 
-    # Fill the rest randomly
     password_chars.extend(secrets.choice(all_chars) for _ in range(length - 4))
 
-    # Shuffle to avoid predictable pattern
     password_list = list(password_chars)
     secrets.SystemRandom().shuffle(password_list)
 
@@ -120,68 +103,57 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
     3. Encrypt using the org's configuration.
     4. Compute SHA-256, send via email, update Issue metadata.
     5. Securely delete all temp files.
-
-    Args:
-        issue: The Issue instance to attach metadata to.
-        uploaded_files: List of UploadedFile objects from the request.
-
-    Raises:
-        ValueError: If file validation fails (size, count).
-        RuntimeError: If organization config is missing or encryption fails.
-        Exception: Various exceptions from encryption/email operations.
-
-    File Handling Policy:
-        All file types are accepted as this is a security vulnerability reporting
-        system where proof-of-concept exploits, malware samples, and executable
-        files may be legitimate parts of a security disclosure. Organizations
-        receiving encrypted artifacts should:
-        - Open attachments in isolated/sandboxed environments
-        - Scan with antivirus before opening
-        - Follow their internal security procedures for handling untrusted files
-
-        Files are encrypted before delivery and never stored in plaintext on disk.
     """
-    # Validation constants
+
     MAX_FILE_SIZE = getattr(settings, "ZERO_TRUST_MAX_FILE_SIZE", 50 * 1024 * 1024)  # 50MB
+    MAX_TOTAL_SIZE = getattr(settings, "ZERO_TRUST_MAX_TOTAL_SIZE", 100 * 1024 * 1024)  # 100MB
     MAX_FILES_COUNT = getattr(settings, "ZERO_TRUST_MAX_FILES", 10)
 
     # Validate file count
     if len(uploaded_files) > MAX_FILES_COUNT:
         raise ValueError(f"Maximum {MAX_FILES_COUNT} files allowed")
 
+    # Validate file sizes during streaming
+    total_size = 0
+    for f in uploaded_files:
+        if hasattr(f, "size") and f.size:
+            if f.size > MAX_FILE_SIZE:
+                raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE / (1024*1024):.0f}MB")
+            total_size += f.size
+
+    if total_size > MAX_TOTAL_SIZE:
+        raise ValueError(
+            f"Total upload size {total_size / (1024*1024):.1f}MB exceeds maximum {MAX_TOTAL_SIZE / (1024*1024):.0f}MB"
+        )
+
+    os.makedirs(REPORT_TMP_DIR, exist_ok=True)
+
+    issue_tmp_dir = None
+
     try:
-        os.makedirs(REPORT_TMP_DIR, exist_ok=True)
-        # Use mkdtemp for guaranteed unique directory (prevents UUID collision and race conditions)
+        # Use mkdtemp to avoid UUID collisions and ensure a fresh directory
         issue_tmp_dir = tempfile.mkdtemp(prefix=f"issue_{issue.id}_", dir=REPORT_TMP_DIR)
-        # 1. Save uploaded files with sanitized names
-        file_paths = []
-        used_names = set()  # Track used filenames to prevent overwrites
-        streamed_total_size = 0
+
+        # 1. Save uploaded files with sanitized, collision-safe names
+        file_paths: List[str] = []
+        used: set = set()
+
         for f in uploaded_files:
             safe_name = _sanitize_filename(f.name)
+
             # Handle duplicate filenames by appending counter
-            if safe_name in used_names:
+            if safe_name in used:
                 name_parts = os.path.splitext(safe_name)
                 counter = 1
-                while f"{name_parts[0]}_{counter}{name_parts[1]}" in used_names:
+                while f"{name_parts[0]}_{counter}{name_parts[1]}" in used:
                     counter += 1
                 safe_name = f"{name_parts[0]}_{counter}{name_parts[1]}"
-            used_names.add(safe_name)
+
+            used.add(safe_name)
             dest_path = os.path.join(issue_tmp_dir, safe_name)
-            per_file_size = 0
+
             with open(dest_path, "wb") as out:
                 for chunk in f.chunks():
-                    chunk_size = len(chunk)
-                    per_file_size += chunk_size
-                    streamed_total_size += chunk_size
-                    if per_file_size > MAX_FILE_SIZE:
-                        if os.path.exists(dest_path):
-                            os.remove(dest_path)
-                        raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE} bytes")
-                    if streamed_total_size > MAX_FILE_SIZE:
-                        if os.path.exists(dest_path):
-                            os.remove(dest_path)
-                        raise ValueError(f"Total upload size exceeds {MAX_FILE_SIZE} bytes")
                     out.write(chunk)
             file_paths.append(dest_path)
 
@@ -206,7 +178,6 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         artifact_sha256 = _compute_sha256(encrypted_path)
         delivery_status = _send_encrypted_issue_email(issue, org_config, encrypted_path, artifact_sha256, method_used)
 
-        # Update Issue metadata only (no plaintext storage)
         issue.artifact_sha256 = artifact_sha256
         issue.encryption_method = method_used
         issue.delivery_method = "email:smtp"
@@ -232,32 +203,29 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         )
         raise
     finally:
-        _secure_delete_path(issue_tmp_dir)
+        if issue_tmp_dir is not None:
+            _secure_delete_path(issue_tmp_dir)
 
 
 def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
     """
     Build a compressed tarball containing metadata.json and uploaded files.
-
-    Creates a tar.gz archive with:
-    - metadata.json: Issue metadata (ID, domain, timestamp, label)
-    - Uploaded files: All files from file_paths with their basenames
-
     The metadata.json is created temporarily and removed after archiving.
-
-    Args:
-        issue: The Issue instance to extract metadata from.
-        file_paths: List of absolute file paths to include in the archive.
-        output_tar: Path where the tar.gz file should be created.
-
-    Returns:
-        None (creates file at output_tar path)
     """
+    # Get human-readable label text
+    label_text = None
+    if issue.label is not None:
+        try:
+            # Issue.labels is a tuple of (value, display_name) pairs
+            label_text = dict(Issue.labels).get(issue.label, str(issue.label))
+        except (AttributeError, KeyError):
+            label_text = str(issue.label)
     metadata = {
         "issue_id": issue.id,
         "domain_url": issue.domain.url if issue.domain else None,
         "created_at": issue.created.isoformat() if issue.created else None,
-        "label": issue.label,
+        "label": label_text,
+        "label_code": issue.label,
         "note": "Zero-trust issue. Metadata only; full details in attached files.",
     }
     meta_path = os.path.join(os.path.dirname(output_tar), "metadata.json")
@@ -272,15 +240,11 @@ def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
     os.remove(meta_path)
 
 
-# REPLACE THIS ENTIRE FUNCTION
 def _encrypt_artifact_for_org(
     org_config: OrgEncryptionConfig, input_path: str, tmp_dir: str, issue: Issue
 ) -> Tuple[str, str]:
     """
     Encrypt the artifact using org's preferred method.
-
-    Returns:
-        Tuple of (encrypted_file_path, encryption_method_used)
     """
     preferred = org_config.preferred_method
 
@@ -334,47 +298,51 @@ def _encrypt_artifact_for_org(
             )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP
 
-    # Symmetric 7z with OOB password delivery (NOW ENABLED)
+    # Symmetric 7z with OOB password delivery
     if preferred == OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z:
-        # Generate cryptographically secure random password
         password = _generate_secure_password()
 
         out = os.path.join(tmp_dir, "report_payload.tar.gz.7z")
-        cmd = [
-            getattr(settings, "SEVENZ_BINARY", "7z"),
-            "a",  # add
-            "-t7z",  # 7z format
-            "-mhe=on",  # encrypt headers
-            f"-p{password}",  # password
-            "-mx=9",  # maximum compression
-            "-mhc=on",  # compress headers
-            "-ms=on",  # solid archive
-            out,
-            input_path,
-        ]
 
+        password_file = os.path.join(tmp_dir, ".7z_password")
         try:
-            subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
-        except subprocess.TimeoutExpired as e:
-            logger.error(f"7z encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
-            raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
-        except subprocess.CalledProcessError as e:
-            logger.error(
-                f"7z encryption failed for issue {issue.id}, return code: {e.returncode}",
-                exc_info=True,
-                extra={"stderr": e.stderr.decode("utf-8", errors="replace") if e.stderr else None},
-            )
-            raise RuntimeError(
-                f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
-            )
+            with open(password_file, "w", encoding="utf-8") as pf:
+                pf.write(password)
+
+            cmd = [
+                getattr(settings, "SEVENZ_BINARY", "7z"),
+                "a",
+                "-t7z",
+                "-mhe=on",
+                f"-p@{password_file}",
+                "-mx=9",
+                "-mhc=on",
+                "-ms=on",
+                out,
+                input_path,
+            ]
+
+            try:
+                subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
+            except subprocess.TimeoutExpired as e:
+                logger.error(f"7z encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
+                raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
+            except subprocess.CalledProcessError as e:
+                stderr = e.stderr.decode("utf-8", errors="replace") if e.stderr else ""
+                logger.error(
+                    f"7z encryption failed for issue {issue.id}, return code: {e.returncode}, stderr: {stderr}",
+                    exc_info=True,
+                )
+                raise RuntimeError(f"Encryption failed: {stderr or 'Unknown error'}")
+        finally:
+            # Securely delete password file
+            if os.path.exists(password_file):
+                _secure_delete_file(password_file)
 
         # Deliver password out-of-band BEFORE returning
         _deliver_password_oob(org_config, issue.id, password)
 
         # Remove password reference (Python's immutable strings prevent true memory clearing)
-        # Note: The password string will remain in memory until garbage collected.
-        # For production systems handling highly sensitive data, consider using
-        # libraries like 'securemem' or ctypes to zero memory buffers.
         del password
 
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z
@@ -440,17 +408,6 @@ def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, passwo
     """
     Deliver the symmetric encryption password via out-of-band email channel.
 
-    Security model:
-    - Password is sent in a SEPARATE email from the encrypted artifact
-    - Both emails go to the same contact_email (organization's secure contact)
-    - Organizations should implement additional controls (e.g., require both
-      artifact email and password email to be present before decryption)
-    - Password is NEVER logged or stored in the database
-
-    Args:
-        org_config: Organization encryption configuration
-        issue_id: Issue ID for reference
-        password: The symmetric encryption password (will be sent then discarded)
     """
     subject = f"[VULN REPORT PASSWORD] Decryption key for issue_id: {issue_id}"
 

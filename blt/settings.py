@@ -271,14 +271,12 @@ if SENTRY_DSN:
         request_url = event.get("request", {}).get("url", "")
 
         # Block all zero-trust endpoint data
-        if "/api/zero-trust/issues/" in request_url:
-            # Still send the error but strip sensitive data
+        if "/api/zero-trust/issues" in request_url:
             if "request" in event:
-                event["request"].pop("data", None)  # Remove request body
-                event["request"].pop("cookies", None)  # Remove cookies
-                event["request"].pop("headers", None)  # Remove headers (tokens!)
+                event["request"].pop("data", None)
+                event["request"].pop("cookies", None)
+                event["request"].pop("headers", None)
 
-                # Add sanitized message
                 event["request"]["_sanitized"] = (
                     "Zero-trust endpoint data redacted. " "See server logs for issue_id reference."
                 )
@@ -286,7 +284,6 @@ if SENTRY_DSN:
             # Remove exception context that might contain file data
             if "exception" in event:
                 for exc in event["exception"].get("values", []):
-                    # Keep the error type and message, but remove local variables
                     if "stacktrace" in exc:
                         for frame in exc["stacktrace"].get("frames", []):
                             frame.pop("vars", None)
@@ -298,8 +295,8 @@ if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        send_default_pii=False,  # CHANGED: Don't send PII by default
-        before_send=_sentry_before_send,  # NEW: Filter zero-trust data
+        send_default_pii=False,
+        before_send=_sentry_before_send,
         traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
@@ -324,10 +321,6 @@ if "DYNO" in os.environ:  # for Heroku
     EMAIL_USE_TLS = True
     if not TESTING:
         SECURE_SSL_REDIRECT = True
-
-    # import logging
-
-    # logging.basicConfig(level=logging.DEBUG)
 
     GS_BUCKET_NAME = "bhfiles"
 
@@ -437,24 +430,41 @@ ACCOUNT_LOGOUT_ON_GET = True
 class SensitiveDataFilter(logging.Filter):
     """
     Prevent accidental logging of sensitive zero-trust data.
+    Uses context-aware pattern matching to reduce false positives.
     """
 
     def filter(self, record):
         # Redact any log messages that might contain sensitive patterns
         msg = str(record.getMessage()).lower()
 
-        # Check for patterns that suggest sensitive data
+        # Check for patterns that suggest sensitive data (with context)
         sensitive_patterns = [
-            "uploaded_files",
             "request.files",
-            "poc",
-            "exploit",
-            "payload",
+            "uploaded_files[",
+            ".chunks()",
+            "poc data",
+            "exploit code",
+            "vulnerability payload",
         ]
 
-        if any(pattern in msg for pattern in sensitive_patterns):
-            record.msg = "[REDACTED: Potential sensitive data in log message]"
+        critical_patterns = [
+            "uploaded_files =",
+            "file content:",
+        ]
+
+        # Check critical patterns first (always redact)
+        if any(pattern in msg for pattern in critical_patterns):
+            record.msg = "[REDACTED: Sensitive file data in log message]"
             record.args = ()
+            return True
+
+        # Check context-aware patterns (partial redaction)
+        for pattern in sensitive_patterns:
+            if pattern in msg:
+                # Replace just the sensitive part instead of entire message
+                record.msg = record.msg.replace(pattern.upper() if pattern.isupper() else pattern, "[REDACTED]")
+                record.args = ()
+                return True
 
         return True
 
