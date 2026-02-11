@@ -29,6 +29,7 @@ on:
 env:
   FORCE_COLOR: 1
   POETRY_CACHE_DIR: ~/.cache/pypoetry
+  SECRET_KEY: ci-test-secret-key
 
 # Default permissions for the workflow
 permissions:
