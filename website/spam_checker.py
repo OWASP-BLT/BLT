@@ -4,6 +4,8 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from website.models import Issue
+
 logger = logging.getLogger(__name__)
 
 # Common spam patterns (case-insensitive)
@@ -72,8 +74,6 @@ def is_new_account(user):
 
 def check_rapid_submissions(user, reporter_ip):
     """Check if the user/IP has submitted too many reports in a short time window."""
-    from website.models import Issue
-
     time_threshold = timezone.now() - timedelta(minutes=RAPID_SUBMISSION_MINUTES)
 
     if user and user.is_authenticated:
