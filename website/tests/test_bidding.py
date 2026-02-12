@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -164,3 +165,109 @@ class BiddingTestCase(TestCase):
         self.assertEqual(new_bid.issue_url, self.valid_github_issue_url)
         self.assertEqual(float(new_bid.amount_bch), float(self.bid_amount))
         self.assertEqual(new_bid.status, "Open")
+
+
+class ChangeBidStatusTests(TestCase):
+    """Test cases for the change_bid_status view."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="bidder", password="testpass")
+        self.bid = Bid.objects.create(
+            user=self.user,
+            issue_url="https://github.com/OWASP-BLT/BLT/issues/1",
+            status="Open",
+        )
+
+    def test_unauthenticated_redirects_to_login(self):
+        """Unauthenticated POST to change_bid_status should redirect to login."""
+        response = self.client.post(
+            reverse("change_bid_status"),
+            json.dumps({"id": self.bid.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login", response.url)
+
+    def test_authenticated_changes_status(self):
+        """Authenticated POST should change bid status to Selected."""
+        self.client.login(username="bidder", password="testpass")
+        response = self.client.post(
+            reverse("change_bid_status"),
+            json.dumps({"id": self.bid.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.bid.refresh_from_db()
+        self.assertEqual(self.bid.status, "Selected")
+
+    def test_nonexistent_bid_returns_error(self):
+        """POST with invalid bid ID should return error."""
+        self.client.login(username="bidder", password="testpass")
+        response = self.client.post(
+            reverse("change_bid_status"),
+            json.dumps({"id": 99999}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["success"])
+
+    def test_get_request_returns_405(self):
+        """GET request should return 405 Method Not Allowed."""
+        self.client.login(username="bidder", password="testpass")
+        response = self.client.get(reverse("change_bid_status"))
+        self.assertEqual(response.status_code, 405)
+
+
+class GetUniqueIssuesTests(TestCase):
+    """Test cases for the get_unique_issues view."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser2", password="testpass")
+        self.bid = Bid.objects.create(
+            user=self.user,
+            issue_url="https://github.com/OWASP-BLT/BLT/issues/42",
+            status="Open",
+        )
+
+    def test_returns_bids_for_issue(self):
+        """POST with valid issue_url should return matching bids."""
+        response = self.client.post(
+            reverse("get_unique_issues"),
+            json.dumps({"issue_url": "https://github.com/OWASP-BLT/BLT/issues/42"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+
+    def test_missing_issue_url_returns_error(self):
+        """POST without issue_url should return error."""
+        response = self.client.post(
+            reverse("get_unique_issues"),
+            json.dumps({}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["success"])
+
+    def test_get_request_returns_405(self):
+        """GET request should return 405 Method Not Allowed."""
+        response = self.client.get(reverse("get_unique_issues"))
+        self.assertEqual(response.status_code, 405)
+
+    def test_invalid_json_returns_error(self):
+        """POST with invalid JSON should return error."""
+        response = self.client.post(
+            reverse("get_unique_issues"),
+            "not valid json",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["success"])
