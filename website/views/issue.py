@@ -17,6 +17,7 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
+from comments.models import Comment
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -58,7 +59,6 @@ from rest_framework.authtoken.models import Token
 from user_agents import parse
 
 from blt import settings
-from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
@@ -163,6 +163,8 @@ def vote_count(request, issue_pk):
     return JsonResponse({"likes": total_upvotes, "dislikes": total_downvotes})
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
@@ -242,7 +244,7 @@ def create_github_issue(request, id):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def resolve(request, id):
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
