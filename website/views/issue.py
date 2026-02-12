@@ -1219,7 +1219,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1245,7 +1245,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
@@ -1904,7 +1904,11 @@ def delete_content_comment(request):
         raise Http404("Content does not exist")
 
     if request.method == "POST":
-        comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
+        try:
+            comment_pk = int(request.POST.get("comment_pk", 0))
+        except (ValueError, TypeError):
+            raise Http404("Invalid comment ID")
+        comment = get_object_or_404(Comment, pk=comment_pk, author=request.user.username)
         comment.delete()
 
     context = {
