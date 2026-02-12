@@ -32,7 +32,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -665,10 +665,14 @@ def search(request, template="search.html"):
             users = (
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
+                .prefetch_related(Prefetch("user__userbadge_set", queryset=UserBadge.objects.all(), to_attr="badges"))
+                .select_related("user")
                 .order_by("-total_score")[0:20]
             )
+            # Attach badges from prefetched data to each profile for template access
+            users = list(users)
             for userprofile in users:
-                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+                userprofile.badges = userprofile.user.badges
             context = {
                 "request": request,
                 "query": query,
@@ -707,11 +711,14 @@ def search(request, template="search.html"):
             }
 
         elif stype == "organizations":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = list(
+                Organization.objects.filter(name__icontains=query).prefetch_related(
+                    Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains")
+                )
+            )
             for org in organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
+                if org.prefetched_domains:
+                    org.absolute_url = org.prefetched_domains[0].get_absolute_url()
             context = {
                 "request": request,
                 "query": query,
@@ -737,7 +744,11 @@ def search(request, template="search.html"):
 
         elif stype == "tags":
             tags = Tag.objects.filter(name__icontains=query)
-            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+            matching_organizations = list(
+                Organization.objects.filter(tags__in=tags)
+                .distinct()
+                .prefetch_related(Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains"))
+            )
             matching_domains = Domain.objects.filter(tags__in=tags).distinct()
             if request.user.is_authenticated:
                 matching_issues = (
@@ -750,9 +761,8 @@ def search(request, template="search.html"):
             matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
             matching_repos = Repo.objects.filter(tags__in=tags).distinct()
             for org in matching_organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
+                if org.prefetched_domains:
+                    org.absolute_url = org.prefetched_domains[0].get_absolute_url()
             context = {
                 "request": request,
                 "query": query,
@@ -2120,11 +2130,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
