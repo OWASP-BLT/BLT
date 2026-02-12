@@ -100,7 +100,7 @@ def pending_transactions_view(request):
     for transaction in pending_transactions:
         user = transaction.user
         btc_address = getattr(user.userprofile, "btc_address", None)
-        transactions_data = [{"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned}]
+        transactions_data.append({"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned})
 
     # If you want to return it as a JSON response:
     return JsonResponse({"pending_transactions": transactions_data})
@@ -314,7 +314,8 @@ def update_submission_status(request, submission_id):
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
-        except Exception as e:
+        except Exception:
+            logger.exception("Error updating submission status")
             return JsonResponse({"error": "error updating submission status"}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -444,7 +445,8 @@ def get_wallet_balance(request):
             return JsonResponse({"balance": balance_data, "success": True})
         else:
             return JsonResponse({"error": "Failed to fetch wallet balance"}, status=response.status_code)
-    except requests.RequestException as e:
+    except requests.RequestException:
+        logger.exception("Error fetching wallet balance")
         return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
 
 
