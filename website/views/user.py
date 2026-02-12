@@ -714,10 +714,11 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         ]
 
         for month_indx, usr in enumerate(leaderboard):
-            month_winner = {"user": usr, "month": months[month_indx]}
+            month_winner = {"user": usr, "month": months[month_indx], "month_num": month_indx + 1}
             month_winners.append(month_winner)
 
         context["leaderboard"] = month_winners
+        context["current_year"] = year
 
         return context
 
@@ -756,6 +757,81 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
             raise Http404(f"Invalid query passed | Month:{month}")
 
         context["leaderboard"] = self.get_leaderboard(month, year, api=False)
+        context["current_month"] = month
+        context["current_year"] = year
+        return context
+
+
+class UserMonthlyActivityView(ListView):
+    """
+    Returns: User's issues and points for a specific month
+    """
+
+    model = Points
+    template_name = "user_monthly_activity.html"
+    context_object_name = "points_list"
+    paginate_by = 50
+
+    def get_queryset(self):
+        username = self.kwargs.get("username")
+        month = self.request.GET.get("month")
+        year = self.request.GET.get("year")
+
+        if not month or not year:
+            raise Http404("Month and year parameters are required")
+
+        try:
+            month = int(month)
+            year = int(year)
+        except ValueError:
+            raise Http404("Invalid month or year parameter")
+
+        if not (1 <= month <= 12):
+            raise Http404("Invalid month parameter")
+
+        # Store validated values as instance attributes
+        self.validated_month = month
+        self.validated_year = year
+        self.validated_user = get_object_or_404(User, username=username)
+
+        return (
+            Points.objects.filter(user=self.validated_user, created__year=year, created__month=month)
+            .select_related("issue", "domain", "user")
+            .order_by("-created")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Use validated values from get_queryset
+        context["profile_user"] = self.validated_user
+        context["month"] = self.validated_month
+        context["year"] = self.validated_year
+
+        # Get month name
+        month_names = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
+        context["month_name"] = month_names[self.validated_month - 1]
+
+        # Calculate total score for the month
+        total_score = self.get_queryset().aggregate(total=Sum("score"))["total"] or 0
+        context["total_score"] = total_score
+
+        # Get issue count
+        context["issue_count"] = self.get_queryset().filter(issue__isnull=False).values("issue").distinct().count()
+
         return context
 
 

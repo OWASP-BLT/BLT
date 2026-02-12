@@ -101,7 +101,13 @@
                                                     {{ month.user.userprofile.get_title_display }}
                                                 </span>
                                             </div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-500">{{ month.user.total_score }} Points</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-500">
+                                                <a href="{% url 'user_monthly_activity' username=month.user.username %}?month={{ month.month_num }}&year={{ current_year }}"
+                                                   class="text-[#e74c3c] hover:text-[#c0392b] font-medium transition-colors">
+                                                    {{ month.user.total_score }} Points
+                                                    <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                                                </a>
+                                            </div>
                                         </div>
                                         <!-- Stats -->
                                         <div class="w-full grid grid-cols-2 gap-4">
