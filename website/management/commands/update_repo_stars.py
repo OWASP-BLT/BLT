@@ -3,6 +3,7 @@ import time
 from urllib.parse import urlparse
 
 import requests
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -46,7 +47,7 @@ class Command(BaseCommand):
                             headers = {"Accept": "application/vnd.github.v3+json"}
 
                             # Add GitHub token if available
-                            github_token = None
+                            github_token = getattr(settings, "GITHUB_TOKEN", None)
                             if github_token:
                                 headers["Authorization"] = f"token {github_token}"
 
