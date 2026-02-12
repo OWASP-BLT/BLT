@@ -62,12 +62,9 @@ def instructor_dashboard(request):
 def edit_course(request, course_id):
     template = "education/dashboard_edit_course.html"
     tags = Tag.objects.all()
-    try:
-        course = Course.objects.get(id=course_id)
-        context = {"course": course, "tags": tags}
-        return render(request, template, context)
-    except Course.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Course not found"}, status=404)
+    course = get_object_or_404(Course, id=course_id)
+    context = {"course": course, "tags": tags}
+    return render(request, template, context)
 
 
 @login_required(login_url="/accounts/login")
@@ -385,6 +382,7 @@ def edit_lecture(request, lecture_id):
 
 
 @instructor_required
+@require_POST
 def delete_lecture(request, lecture_id):
     """Delete a lecture"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
@@ -544,7 +542,7 @@ def create_or_update_course(request):
                 if not is_valid:
                     return JsonResponse({"success": False, "message": error_message}, status=400)
             user = request.user
-            user_profile = UserProfile.objects.get(user=user)
+            user_profile = get_object_or_404(UserProfile, user=user)
 
             course_id = request.POST.get("id")
             if course_id:
