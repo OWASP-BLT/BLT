@@ -214,7 +214,7 @@ def profile_edit(request):
 
                 messages.info(
                     request,
-                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                    "A verification link has been sent to your new email. Please verify to complete the update.",
                 )
                 return redirect("profile", slug=request.user.username)
 
@@ -1096,12 +1096,6 @@ def create_wallet(request):
     wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
     Wallet.objects.bulk_create(wallets_to_create)
     return JsonResponse(f"Created {len(wallets_to_create)} wallets", safe=False)
-
-
-def create_tokens(request):
-    for user in User.objects.all():
-        Token.objects.get_or_create(user=user)
-    return JsonResponse("Created", safe=False)
 
 
 def get_score(request):
