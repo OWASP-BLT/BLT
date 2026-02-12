@@ -84,6 +84,7 @@ from website.models import (
     Thread,
     TimeLog,
     Trademark,
+    TrademarkMatch,
     TrademarkOwner,
     Transaction,
     UserAdventureProgress,
@@ -95,6 +96,149 @@ from website.models import (
     Wallet,
     Winner,
 )
+
+
+@admin.register(TrademarkMatch)
+class TrademarkMatchAdmin(admin.ModelAdmin):
+    """Admin interface for trademark matches."""
+
+    list_display = [
+        "checked_name",
+        "matched_trademark_name",
+        "risk_level_badge",
+        "similarity_score_display",
+        "status_badge",
+        "checked_at",
+        "is_reviewed",
+    ]
+
+    list_filter = [
+        "risk_level",
+        "status",
+        "is_reviewed",
+        "checked_at",
+    ]
+
+    search_fields = [
+        "checked_name",
+        "matched_trademark_name",
+        "organization__name",
+        "website__name",
+    ]
+
+    readonly_fields = [
+        "checked_name",
+        "matched_trademark_name",
+        "similarity_score",
+        "checked_at",
+        "verified_at",
+        "is_high_risk",
+        "is_medium_risk",
+    ]
+
+    fieldsets = (
+        (
+            "Match Information",
+            {
+                "fields": (
+                    "checked_name",
+                    "matched_trademark_name",
+                    "similarity_score",
+                    "risk_level",
+                )
+            },
+        ),
+        (
+            "Related Objects",
+            {
+                "fields": ("organization", "website"),
+            },
+        ),
+        (
+            "Status & Review",
+            {
+                "fields": ("status", "is_reviewed", "notes"),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("checked_at", "verified_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    actions = [
+        "mark_as_reviewed",
+        "mark_as_false_positive",
+        "mark_as_acknowledged",
+    ]
+
+    def risk_level_badge(self, obj):
+        """Display risk level as a colored badge."""
+        colors = {
+            "low": "#28a745",
+            "medium": "#ffc107",
+            "high": "#dc3545",
+        }
+        color = colors.get(obj.risk_level, "#6c757d")
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; '
+            'border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_risk_level_display(),
+        )
+
+    risk_level_badge.short_description = "Risk Level"
+
+    def similarity_score_display(self, obj):
+        """Display similarity score with color coding."""
+        color = "red" if obj.similarity_score >= 90 else "orange" if obj.similarity_score >= 80 else "green"
+        return format_html('<span style="color: {}; font-weight: bold;">{:.1f}%</span>', color, obj.similarity_score)
+
+    similarity_score_display.short_description = "Score"
+    similarity_score_display.admin_order_field = "similarity_score"
+
+    def status_badge(self, obj):
+        """Display status as a badge."""
+        colors = {
+            "pending": "#007bff",
+            "false_positive": "#6c757d",
+            "acknowledged": "#28a745",
+            "action_taken": "#17a2b8",
+        }
+        color = colors.get(obj.status, "#6c757d")
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; '
+            'border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_status_display(),
+        )
+
+    status_badge.short_description = "Status"
+    status_badge.admin_order_field = "status"
+
+    def mark_as_reviewed(self, request, queryset):
+        """Mark selected matches as reviewed."""
+        updated = queryset.update(is_reviewed=True)
+        self.message_user(request, f"{updated} trademark match(es) marked as reviewed.")
+
+    mark_as_reviewed.short_description = "Mark selected as reviewed"
+
+    def mark_as_false_positive(self, request, queryset):
+        """Mark selected matches as false positives."""
+        updated = queryset.update(status="false_positive", is_reviewed=True)
+        self.message_user(request, f"{updated} trademark match(es) marked as false positive.")
+
+    mark_as_false_positive.short_description = "Mark as false positive"
+
+    def mark_as_acknowledged(self, request, queryset):
+        """Mark selected matches as acknowledged."""
+        updated = queryset.update(status="acknowledged", is_reviewed=True)
+        self.message_user(request, f"{updated} trademark match(es) marked as acknowledged.")
+
+    mark_as_acknowledged.short_description = "Mark as acknowledged"
 
 
 class UserResource(resources.ModelResource):

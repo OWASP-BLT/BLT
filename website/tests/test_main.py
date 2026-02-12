@@ -1,5 +1,6 @@
 import os
 import time
+from unittest import skipIf
 from unittest.mock import patch
 
 import chromedriver_autoinstaller
@@ -34,7 +35,11 @@ from ..models import (
     UserProfile,
 )
 
+CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+NO_CHROME = not os.path.exists(CHROME_PATH)
 
+
+@skipIf(NO_CHROME, "Chrome not installed locally; skipping Selenium UI tests")
 @tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]

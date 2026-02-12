@@ -53,6 +53,7 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
+from website.views.api.trademark import organization_trademark_check, trademark_report_api
 from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
@@ -333,6 +334,7 @@ from website.views.teams import (
     leave_team,
     search_users,
 )
+from website.views.trademark import trademark_report_view
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
@@ -1239,6 +1241,11 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("api/trademark-report/", trademark_report_view, name="trademark_report"),
+    path("api/trademark-report/", trademark_report_api, name="trademark_report_api"),
+    path(
+        "api/organization/<int:org_id>/trademarks/", organization_trademark_check, name="organization_trademark_check"
+    ),
 ]
 
 if settings.DEBUG:
