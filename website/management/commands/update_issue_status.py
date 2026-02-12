@@ -9,14 +9,18 @@ class Command(LoggedBaseCommand):
 
     def handle(self, *args, **options):
         issues = Issue.objects.filter(github_url__isnull=False)
+        updated_issues = []
         for issue in issues:
             try:
                 response = requests.get(issue.github_url)
                 if response.status_code == 200:
                     data = response.json()
                     issue.status = data.get("state", "open")
-                    issue.save()
+                    updated_issues.append(issue)
             except Exception as e:
                 self.stderr.write(f"Error updating issue {issue.id}: {str(e)}")
 
-        self.stdout.write("Issue status update completed")
+        if updated_issues:
+            Issue.objects.bulk_update(updated_issues, ["status"])
+
+        self.stdout.write(f"Issue status update completed. Updated {len(updated_issues)} issues.")
