@@ -81,11 +81,13 @@ def check_rapid_submissions(user, reporter_ip):
             user=user,
             created__gte=time_threshold,
         ).count()
-    else:
+    elif reporter_ip:
         recent_count = Issue.objects.filter(
             reporter_ip_address=reporter_ip,
             created__gte=time_threshold,
         ).count()
+    else:
+        return False
 
     return recent_count >= RAPID_SUBMISSION_LIMIT
 
