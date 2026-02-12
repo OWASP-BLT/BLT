@@ -120,7 +120,7 @@ def select_contribution(request):
 
 @user_passes_test(admin_required)
 def distribute_bacon(request, contribution_id):
-    contribution = Contribution.objects.get(id=contribution_id)
+    contribution = get_object_or_404(Contribution, id=contribution_id)
     if contribution.status == "closed" and not BaconToken.objects.filter(contribution=contribution).exists():
         token = create_bacon_token(contribution.user, contribution)
         if token:
