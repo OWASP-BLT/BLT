@@ -40,7 +40,7 @@ def slack_escape(text):
     )
 
 
-# @login_required
+@login_required
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
     users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
@@ -100,7 +100,7 @@ def pending_transactions_view(request):
     for transaction in pending_transactions:
         user = transaction.user
         btc_address = getattr(user.userprofile, "btc_address", None)
-        transactions_data = [{"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned}]
+        transactions_data.append({"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned})
 
     # If you want to return it as a JSON response:
     return JsonResponse({"pending_transactions": transactions_data})
