@@ -1397,7 +1397,8 @@ class CreateHunt(TemplateView):
             else:
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing organization: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required
@@ -1809,7 +1810,8 @@ def add_or_update_domain(request):
                     else:
                         return HttpResponse("Unauthorized: Only admin can create domains")
         except (OrganizationAdmin.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing domain: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required(login_url="/accounts/login")
@@ -2983,7 +2985,8 @@ def send_message_api(request):
         return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        logger.error("Error sending message: %s", e)
+        return JsonResponse({"success": False, "error": "An internal error occurred."}, status=500)
 
 
 def room_messages_api(request, room_id):
