@@ -277,9 +277,7 @@ def weekly_report(request):
 
             for issue in issues:
                 report_data.append(
-                    f"Description: {issue.description}\n"
-                    f"Views: {issue.views}\n"
-                    f"Label: {issue.get_label_display()}\n\n"
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
                 )
 
             send_mail(
@@ -1075,7 +1073,7 @@ class DomainDetailView(ListView):
             )
 
             if self.request.user.is_authenticated:
-                context["wallet"] = Wallet.objects.get(user=self.request.user)
+                context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
             # Handle pagination for open issues
             open_paginator = Paginator(open_issues, self.paginate_by)

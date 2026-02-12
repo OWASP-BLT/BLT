@@ -17,6 +17,7 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
+from comments.models import Comment
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -58,7 +59,6 @@ from rest_framework.authtoken.models import Token
 from user_agents import parse
 
 from blt import settings
-from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
@@ -508,7 +508,7 @@ def search_issues(request, template="search.html"):
         }
 
     if request.user.is_authenticated:
-        context["wallet"] = Wallet.objects.get(user=request.user)
+        context["wallet"] = Wallet.objects.filter(user=request.user).first()
     issues = serializers.serialize("json", context["issues"])
     issues = json.loads(issues)
     return HttpResponse(json.dumps({"issues": issues}), content_type="application/json")
@@ -1219,7 +1219,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1245,7 +1245,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
@@ -1534,7 +1534,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         context["leaderboard"] = (
             User.objects.filter(
                 points__created__month=timezone.now().month,
@@ -1594,7 +1594,7 @@ class AllIssuesView(ListView):
         page = self.request.GET.get("page")
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -1670,7 +1670,7 @@ class SpecificIssuesView(ListView):
         page = self.request.GET.get("page")
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -1749,7 +1749,7 @@ class IssueView(DetailView):
             context["users_score"] = 0
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
