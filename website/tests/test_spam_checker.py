@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from website.spam_checker import (
     calculate_spam_score,
+    check_rapid_submissions,
     check_spam_keywords,
     count_urls,
     is_new_account,
@@ -92,6 +93,41 @@ class TestIsRepetitiveContent(TestCase):
         self.assertFalse(is_repetitive_content(None))
 
 
+class TestCheckRapidSubmissions(TestCase):
+    @patch("website.spam_checker.Issue")
+    def test_authenticated_user_under_limit(self, mock_issue_cls):
+        mock_issue_cls.objects.filter.return_value.count.return_value = 1
+        user = MagicMock()
+        user.is_authenticated = True
+        self.assertFalse(check_rapid_submissions(user, "1.2.3.4"))
+
+    @patch("website.spam_checker.Issue")
+    def test_authenticated_user_over_limit(self, mock_issue_cls):
+        mock_issue_cls.objects.filter.return_value.count.return_value = 5
+        user = MagicMock()
+        user.is_authenticated = True
+        self.assertTrue(check_rapid_submissions(user, "1.2.3.4"))
+
+    @patch("website.spam_checker.Issue")
+    def test_anonymous_user_with_ip(self, mock_issue_cls):
+        mock_issue_cls.objects.filter.return_value.count.return_value = 1
+        user = MagicMock()
+        user.is_authenticated = False
+        self.assertFalse(check_rapid_submissions(user, "10.0.0.1"))
+
+    def test_anonymous_user_with_none_ip(self):
+        """When reporter_ip is None, should return False without querying the DB."""
+        user = MagicMock()
+        user.is_authenticated = False
+        self.assertFalse(check_rapid_submissions(user, None))
+
+    def test_anonymous_user_with_empty_ip(self):
+        """When reporter_ip is empty string, should return False."""
+        user = MagicMock()
+        user.is_authenticated = False
+        self.assertFalse(check_rapid_submissions(user, ""))
+
+
 class TestCalculateSpamScore(TestCase):
     def _make_user(self, days_old=30, authenticated=True):
         user = MagicMock()
@@ -144,3 +180,43 @@ class TestCalculateSpamScore(TestCase):
         self.assertIsInstance(result["score"], int)
         self.assertIsInstance(result["is_spam"], bool)
         self.assertIsInstance(result["reasons"], list)
+
+    @patch("website.spam_checker.check_rapid_submissions", return_value=False)
+    def test_excessive_caps_flagged(self, mock_rapid):
+        """Descriptions with >70% uppercase letters should be flagged."""
+        user = self._make_user(days_old=30)
+        result = calculate_spam_score(
+            description="THIS IS AN ALL CAPS BUG REPORT DESCRIPTION THAT IS LONG ENOUGH",
+            markdown_description="",
+            user=user,
+            reporter_ip="1.2.3.4",
+        )
+        self.assertIn("Excessive use of capital letters", result["reasons"])
+
+    @patch("website.spam_checker.check_rapid_submissions", return_value=False)
+    def test_normal_caps_not_flagged(self, mock_rapid):
+        """Normal mixed-case text should not trigger the caps check."""
+        user = self._make_user(days_old=30)
+        result = calculate_spam_score(
+            description="This is a normal bug report with proper capitalization and enough words",
+            markdown_description="",
+            user=user,
+            reporter_ip="1.2.3.4",
+        )
+        self.assertNotIn("Excessive use of capital letters", result["reasons"])
+
+    @patch(
+        "website.spam_checker.check_rapid_submissions",
+        side_effect=Exception("DB connection failed"),
+    )
+    def test_rapid_submission_exception_handled(self, mock_rapid):
+        """When check_rapid_submissions raises an exception, it should be caught gracefully."""
+        user = self._make_user(days_old=30)
+        result = calculate_spam_score(
+            description="Found a bug on the settings page when clicking save",
+            markdown_description="",
+            user=user,
+            reporter_ip="1.2.3.4",
+        )
+        # Should not raise, and rapid submission reason should not appear
+        self.assertNotIn("Rapid successive submissions detected", result["reasons"])
