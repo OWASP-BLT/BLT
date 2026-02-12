@@ -17,6 +17,7 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
+from comments.models import Comment
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -58,7 +59,6 @@ from rest_framework.authtoken.models import Token
 from user_agents import parse
 
 from blt import settings
-from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
@@ -1753,14 +1753,19 @@ class IssueView(DetailView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        # Fetch each interaction group once, derive count from the list
+        likers = list(UserProfile.objects.filter(issue_upvoted=self.object))
+        context["likers"] = likers
+        context["likes"] = len(likers)
+
+        dislikers = list(UserProfile.objects.filter(issue_downvoted=self.object))
+        context["dislikers"] = dislikers
+        context["dislikes"] = len(dislikers)
+
+        flagers = list(UserProfile.objects.filter(issue_flaged=self.object))
+        context["flagers"] = flagers
+        context["flags"] = len(flagers)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
