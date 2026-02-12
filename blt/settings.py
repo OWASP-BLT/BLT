@@ -19,7 +19,7 @@ env_file = os.path.join(BASE_DIR, ".env")
 environ.Env.read_env(env_file)
 
 print(f"Reading .env file from {env_file}")
-print(f"DATABASE_URL configured")
+print("DATABASE_URL configured")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
