@@ -54,6 +54,17 @@ from website.api.views import (
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
 from website.views.banned_apps import BannedAppsView, search_banned_apps
+from website.views.bidding import (
+    accept_bid,
+    bid_api_status,
+    bid_detail,
+    check_current_bid,
+    complete_bid,
+    dynamic_bid_image,
+    enhanced_bidding_view,
+    fund_bid,
+)
+from website.views.bidding import github_webhook as bidding_github_webhook
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -1029,6 +1040,15 @@ urlpatterns = [
         name="generate_bid_image",
     ),
     path("bidding/", SaveBiddingData, name="BiddingData"),
+    path("bidding/enhanced/", enhanced_bidding_view, name="enhanced_bidding"),
+    path("bid/<int:bid_id>/", bid_detail, name="bid_detail"),
+    path("bid/<int:bid_id>/accept/", accept_bid, name="accept_bid"),
+    path("bid/<int:bid_id>/fund/", fund_bid, name="fund_bid"),
+    path("bid/<int:bid_id>/complete/", complete_bid, name="complete_bid"),
+    path("bid/image/<str:token>.png", dynamic_bid_image, name="dynamic_bid_image"),
+    path("api/bid/<int:bid_id>/status/", bid_api_status, name="bid_api_status"),
+    path("api/bid/check-current/", check_current_bid, name="check_current_bid"),
+    path("webhooks/github/bidding/", bidding_github_webhook, name="bidding_github_webhook"),
     path("select_bid/", select_bid, name="select_bid"),
     path("get_unique_issues/", get_unique_issues, name="get_unique_issues"),
     path("change_bid_status/", change_bid_status, name="change_bid_status"),
