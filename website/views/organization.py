@@ -277,9 +277,7 @@ def weekly_report(request):
 
             for issue in issues:
                 report_data.append(
-                    f"Description: {issue.description}\n"
-                    f"Views: {issue.views}\n"
-                    f"Label: {issue.get_label_display()}\n\n"
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
                 )
 
             send_mail(
@@ -320,27 +318,39 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if issues:
             Issue.objects.bulk_update(issues, ["verified", "score"])
 
-        for key, value in request.POST.items():
-            if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
-                submit_type = key.split("_")[0]
-                issue_id = key.split("_")[1]
-                issue = Issue.objects.get(pk=issue_id)
-                if issue.hunt == hunt and submit_type == "item":
-                    if value == "on":
-                        issue.verified = True
-                elif issue.hunt == hunt and submit_type == "value":
-                    if value != "":
-                        issue.score = int(value)
-                try:
-                    if request.POST["checkAll"]:
-                        issue.verified = True
-                except KeyError:
-                    pass
-                issue.save()
+        # Collect issue IDs from POST keys, then batch-fetch instead of querying per key
+        issue_ids = set()
+        for key in request.POST:
+            if key not in ("csrfmiddlewaretoken", "submit", "checkAll"):
+                parts = key.split("_", 1)
+                if len(parts) == 2:
+                    issue_ids.add(parts[1])
 
-        if request.POST["submit"] == "save":
+        issues_map = {str(issue.pk): issue for issue in Issue.objects.filter(pk__in=issue_ids, hunt=hunt)}
+        check_all = request.POST.get("checkAll")
+
+        for key, value in request.POST.items():
+            if key not in ("csrfmiddlewaretoken", "submit", "checkAll"):
+                parts = key.split("_", 1)
+                if len(parts) != 2:
+                    continue
+                submit_type, issue_id = parts
+                issue = issues_map.get(issue_id)
+                if issue is None:
+                    continue
+                if submit_type == "item" and value == "on":
+                    issue.verified = True
+                elif submit_type == "value" and value != "":
+                    issue.score = int(value)
+                if check_all:
+                    issue.verified = True
+
+        if issues_map:
+            Issue.objects.bulk_update(issues_map.values(), ["verified", "score"])
+
+        if request.POST.get("submit") == "save":
             pass
-        elif request.POST["submit"] == "publish":
+        elif request.POST.get("submit") == "publish":
             with transaction.atomic():
                 issue_with_score = (
                     Issue.objects.filter(hunt=hunt, verified=True)
