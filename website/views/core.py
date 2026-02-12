@@ -710,7 +710,9 @@ def search(request, template="search.html"):
                     label_values.append(value)
 
             issues_base_qs = (
-                Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+                Issue.objects.filter(label__in=label_values, hunt=None).select_related("user", "domain")
+                if label_values
+                else Issue.objects.none()
             )
 
             if request.user.is_authenticated:
@@ -2151,11 +2153,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
