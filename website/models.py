@@ -4,7 +4,6 @@ import re
 import time
 import uuid
 from datetime import datetime, timedelta
-from decimal import Decimal
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
@@ -53,7 +52,6 @@ def validate_btc_address(value):
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-        Wallet.objects.create(user=instance)
 
 
 class Subscription(models.Model):
@@ -1144,44 +1142,6 @@ class OrganizationAdmin(models.Model):
     organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-
-class Wallet(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    account_id = models.TextField(null=True, blank=True)
-    current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def deposit(self, value):
-        self.transaction_set.create(value=value, running_balance=self.current_balance + Decimal(value))
-        self.current_balance += Decimal(value)
-        self.save()
-
-    def withdraw(self, value):
-        if value > self.current_balance:
-            raise Exception("This wallet has insufficient balance.")
-
-        self.transaction_set.create(value=-value, running_balance=self.current_balance - Decimal(value))
-        self.current_balance -= Decimal(value)
-        self.save()
-
-    def transfer(self, wallet, value):
-        self.withdraw(value)
-        wallet.deposit(value)
-
-
-class Transaction(models.Model):
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
-    value = models.DecimalField(max_digits=6, decimal_places=2)
-    running_balance = models.DecimalField(max_digits=6, decimal_places=2)
-    created = models.DateTimeField(auto_now_add=True)
-
-
-class Payment(models.Model):
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
-    value = models.DecimalField(max_digits=6, decimal_places=2)
-    active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
 
 
