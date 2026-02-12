@@ -17,6 +17,7 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
+from comments.models import Comment
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -58,7 +59,6 @@ from rest_framework.authtoken.models import Token
 from user_agents import parse
 
 from blt import settings
-from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
@@ -527,33 +527,32 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def change_bid_status(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            bid_id = data.get("id")
-            bid = Bid.objects.get(id=bid_id)
-            bid.status = "Selected"
-            bid.save()
-            return JsonResponse({"success": True})
-        except Bid.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Bid not found"})
-    return HttpResponse(status=405)
+    try:
+        data = json.loads(request.body)
+        bid_id = data.get("id")
+        bid = Bid.objects.get(id=bid_id)
+        bid.status = "Selected"
+        bid.save()
+        return JsonResponse({"success": True})
+    except Bid.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Bid not found"})
 
 
+@require_POST
 def get_unique_issues(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            issue_url = data.get("issue_url")
-            if not issue_url:
-                return JsonResponse({"success": False, "error": "issue_url not provided"})
+    try:
+        data = json.loads(request.body)
+        issue_url = data.get("issue_url")
+        if not issue_url:
+            return JsonResponse({"success": False, "error": "issue_url not provided"})
 
-            all_bids = Bid.objects.filter(issue_url=issue_url).values()
-            return JsonResponse(list(all_bids), safe=False)
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON"})
-    return HttpResponse(status=405)
+        all_bids = Bid.objects.filter(issue_url=issue_url).values()
+        return JsonResponse(list(all_bids), safe=False)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON"})
 
 
 def SaveBiddingData(request):
@@ -1219,7 +1218,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1245,7 +1244,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
@@ -2079,28 +2078,27 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.process_issue(user, issue, created, domain)
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def IssueEdit(request):
-    if request.method == "POST":
-        issue = Issue.objects.get(pk=request.POST.get("issue_pk"))
+    issue = Issue.objects.get(pk=request.POST.get("issue_pk"))
+    if request.user == issue.user or request.user.is_superuser:
         uri = request.POST.get("domain")
         link = uri.replace("www.", "")
-        if request.user == issue.user or request.user.is_superuser:
-            domain, created = Domain.objects.get_or_create(name=link, defaults={"url": "http://" + link})
-            issue.domain = domain
-            if uri[:4] != "http" and uri[:5] != "https":
-                uri = "https://" + uri
-            issue.url = uri
-            issue.description = request.POST.get("description")
-            issue.label = request.POST.get("label")
-            issue.save()
-            if created:
-                return HttpResponse("Domain Created")
-            else:
-                return HttpResponse("Updated")
+        domain, created = Domain.objects.get_or_create(name=link, defaults={"url": "http://" + link})
+        issue.domain = domain
+        if uri[:4] != "http" and uri[:5] != "https":
+            uri = "https://" + uri
+        issue.url = uri
+        issue.description = request.POST.get("description")
+        issue.label = request.POST.get("label")
+        issue.save()
+        if created:
+            return HttpResponse("Domain Created")
         else:
-            return HttpResponse("Unauthorised")
+            return HttpResponse("Updated")
     else:
-        return HttpResponse("POST ONLY")
+        return HttpResponse("Unauthorised", status=403)
 
 
 @login_required(login_url="/accounts/login")
