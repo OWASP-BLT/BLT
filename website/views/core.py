@@ -614,11 +614,17 @@ def search(request, template="search.html"):
         if stype == "all":
             organizations = Organization.objects.filter(name__icontains=query)[:20]
             if request.user.is_authenticated:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).select_related("user", "domain").exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[:20]
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[:20]
+                )
             else:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).select_related("user", "domain").exclude(is_hidden=True)[:20]
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)[:20]
+                )
             domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
             users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
             projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[:20]
@@ -638,13 +644,17 @@ def search(request, template="search.html"):
 
         elif stype == "issues":
             if request.user.is_authenticated:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).select_related("user", "domain").exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[0:20]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+                )
             else:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).select_related("user", "domain").exclude(is_hidden=True)[
-                    0:20
-                ]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)[0:20]
+                )
 
             context = {
                 "request": request,
