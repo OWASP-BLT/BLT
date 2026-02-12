@@ -1895,7 +1895,7 @@ def management_commands(request):
     available_commands = []
 
     # Get the date 30 days ago for stats
-    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     # Get sort parameter from request
     sort_param = request.GET.get("sort", "name")
@@ -2000,7 +2000,7 @@ def management_commands(request):
 
             # Generate all dates in the 30-day range
             for i in range(30):
-                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date = (timezone.now() - timedelta(days=29 - i)).date()
                 date_range.append(date)
                 date_values[date.isoformat()] = 0
 
