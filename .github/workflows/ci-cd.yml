@@ -29,7 +29,6 @@ on:
 env:
   FORCE_COLOR: 1
   POETRY_CACHE_DIR: ~/.cache/pypoetry
-  SECRET_KEY: ci-test-secret-key
 
 # Default permissions for the workflow
 permissions:
@@ -362,9 +361,6 @@ jobs:
     name: Run Tests
     needs: setup
     runs-on: ubuntu-latest
-    env:
-      SECRET_KEY: ci-test-secret-key
-      DATABASE_URL: sqlite:///db.sqlite3
     permissions:
       contents: read
     outputs:
@@ -768,9 +764,7 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run -d \
-          -e SECRET_KEY=ci-test-secret-key \
-          --name my-container my-app
+          docker run -d --name my-container my-app
 
       - run: docker exec my-container pip install poetry
       - run: docker exec my-container poetry lock
