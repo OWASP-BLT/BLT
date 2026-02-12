@@ -12,6 +12,7 @@ from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -1096,6 +1097,7 @@ class DomainDetailView(ListView):
             except EmptyPage:
                 closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
+            six_months_ago = timezone.now() - relativedelta(months=6)
             context.update(
                 {
                     "opened_net": open_issues,
@@ -1105,13 +1107,13 @@ class DomainDetailView(ListView):
                     "leaderboard": (
                         User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
                     ),
-                    "current_month": datetime.now().month,
+                    "current_month": timezone.now().month,
                     "domain_graph": (
                         Issue.objects.filter(
                             domain=domain,
                             hunt=None,
-                            created__month__gte=(datetime.now().month - 6),
-                            created__month__lte=datetime.now().month,
+                            created__gte=six_months_ago,
+                            created__lte=timezone.now(),
                         ).order_by("created")
                     ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
@@ -1395,7 +1397,8 @@ class CreateHunt(TemplateView):
             else:
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing organization: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required
@@ -1807,7 +1810,8 @@ def add_or_update_domain(request):
                     else:
                         return HttpResponse("Unauthorized: Only admin can create domains")
         except (OrganizationAdmin.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing domain: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required(login_url="/accounts/login")
@@ -2981,7 +2985,8 @@ def send_message_api(request):
         return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        logger.error("Error sending message: %s", e)
+        return JsonResponse({"success": False, "error": "An internal error occurred."}, status=500)
 
 
 def room_messages_api(request, room_id):

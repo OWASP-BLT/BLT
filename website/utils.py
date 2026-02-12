@@ -1120,7 +1120,6 @@ def get_default_bacon_score(model_name, is_security=False):
         "hunt": 15,
         "ipreport": 3,
         "organization": 10,
-        "forumpost": 2,
     }
 
     # Get base score or default to 5
