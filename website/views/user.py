@@ -825,12 +825,15 @@ class UserMonthlyActivityView(ListView):
         ]
         context["month_name"] = month_names[self.validated_month - 1]
 
-        # Calculate total score for the month
-        total_score = self.get_queryset().aggregate(total=Sum("score"))["total"] or 0
-        context["total_score"] = total_score
-
-        # Get issue count
-        context["issue_count"] = self.get_queryset().filter(issue__isnull=False).values("issue").distinct().count()
+        # Use the paginator's queryset to avoid duplicate queries
+        # Calculate total score and issue count in a single query
+        base_queryset = self.get_queryset()
+        aggregation = base_queryset.aggregate(
+            total_score=Sum("score"),
+            issue_count=Count("issue", distinct=True, filter=Q(issue__isnull=False)),
+        )
+        context["total_score"] = aggregation["total_score"] or 0
+        context["issue_count"] = aggregation["issue_count"]
 
         return context
 
