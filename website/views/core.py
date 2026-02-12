@@ -80,6 +80,7 @@ from website.utils import (
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+SEARCH_RESULT_LIMIT = 20
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -612,23 +613,31 @@ def search(request, template="search.html"):
 
         # Handle type='all' - search ALL models
         if stype == "all":
-            organizations = Organization.objects.filter(name__icontains=query)[:20]
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 issues = (
                     Issue.objects.filter(Q(description__icontains=query), hunt=None)
                     .select_related("user", "domain")
-                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[:20]
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[:SEARCH_RESULT_LIMIT]
                 )
             else:
                 issues = (
                     Issue.objects.filter(Q(description__icontains=query), hunt=None)
                     .select_related("user", "domain")
-                    .exclude(is_hidden=True)[:20]
+                    .exclude(is_hidden=True)[:SEARCH_RESULT_LIMIT]
                 )
-            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[:20]
-            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[:20]
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:SEARCH_RESULT_LIMIT]
+            users = (
+                User.objects.filter(username__icontains=query)
+                .exclude(is_superuser=True)
+                .order_by("-points")[0:SEARCH_RESULT_LIMIT]
+            )
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
 
             context = {
                 "request": request,
@@ -647,13 +656,13 @@ def search(request, template="search.html"):
                 issues_qs = (
                     Issue.objects.filter(Q(description__icontains=query), hunt=None)
                     .select_related("user", "domain")
-                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:SEARCH_RESULT_LIMIT]
                 )
             else:
                 issues_qs = (
                     Issue.objects.filter(Q(description__icontains=query), hunt=None)
                     .select_related("user", "domain")
-                    .exclude(is_hidden=True)[0:20]
+                    .exclude(is_hidden=True)[0:SEARCH_RESULT_LIMIT]
                 )
 
             context = {
@@ -668,14 +677,14 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
+                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:SEARCH_RESULT_LIMIT],
             }
 
         elif stype == "users":
             users = (
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
-                .order_by("-total_score")[0:20]
+                .order_by("-total_score")[0:SEARCH_RESULT_LIMIT]
             )
             for userprofile in users:
                 userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
@@ -705,9 +714,11 @@ def search(request, template="search.html"):
             )
 
             if request.user.is_authenticated:
-                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
+                    0:SEARCH_RESULT_LIMIT
+                ]
             else:
-                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:SEARCH_RESULT_LIMIT]
 
             context = {
                 "request": request,
@@ -717,7 +728,7 @@ def search(request, template="search.html"):
             }
 
         elif stype == "organizations":
-            organizations = Organization.objects.filter(name__icontains=query)[:20]
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             for org in organizations:
                 d = Domain.objects.filter(organization=org).first()
                 if d:
@@ -734,7 +745,9 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[:20],
+                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                    :SEARCH_RESULT_LIMIT
+                ],
             }
 
         elif stype == "repos":
@@ -742,23 +755,31 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[:20],
+                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                    :SEARCH_RESULT_LIMIT
+                ],
             }
 
         elif stype == "tags":
             tags = Tag.objects.filter(name__icontains=query)
-            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()[:20]
-            matching_domains = Domain.objects.filter(tags__in=tags).distinct()[:20]
+            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
+            matching_domains = Domain.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 matching_issues = (
                     Issue.objects.filter(tags__in=tags)
+                    .select_related("user", "domain")
                     .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-                    .distinct()[:20]
+                    .distinct()[:SEARCH_RESULT_LIMIT]
                 )
             else:
-                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()[:20]
-            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()[:20]
-            matching_repos = Repo.objects.filter(tags__in=tags).distinct()[:20]
+                matching_issues = (
+                    Issue.objects.filter(tags__in=tags)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)
+                    .distinct()[:SEARCH_RESULT_LIMIT]
+                )
+            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
+            matching_repos = Repo.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             for org in matching_organizations:
                 d = Domain.objects.filter(organization=org).first()
                 if d:
@@ -780,7 +801,7 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "repos": Repo.objects.filter(primary_language__icontains=query)[:20],
+                "repos": Repo.objects.filter(primary_language__icontains=query)[:SEARCH_RESULT_LIMIT],
             }
 
         has_results = False
