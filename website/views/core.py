@@ -2244,7 +2244,10 @@ def template_list(request):
     filter_by = request.GET.get("filter", "all")
     sort = request.GET.get("sort", "name")
     direction = request.GET.get("dir", "asc")
-    page = int(request.GET.get("page", 1))
+    try:
+        page = int(request.GET.get("page", 1))
+    except (ValueError, TypeError):
+        page = 1
     per_page = 20
 
     def extract_template_info(template_path):

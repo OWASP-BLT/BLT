@@ -277,9 +277,7 @@ def weekly_report(request):
 
             for issue in issues:
                 report_data.append(
-                    f"Description: {issue.description}\n"
-                    f"Views: {issue.views}\n"
-                    f"Label: {issue.get_label_display()}\n\n"
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
                 )
 
             send_mail(
@@ -789,9 +787,15 @@ def load_more_issues(request):
     """
     AJAX handler for loading more GitHub issues with pagination support
     """
-    page = int(request.GET.get("page", 1))
+    try:
+        page = int(request.GET.get("page", 1))
+    except (ValueError, TypeError):
+        page = 1
     state = request.GET.get("state", "open")
-    per_page = int(request.GET.get("per_page", 10))
+    try:
+        per_page = int(request.GET.get("per_page", 10))
+    except (ValueError, TypeError):
+        per_page = 10
 
     # Validate inputs
     if page < 1:
