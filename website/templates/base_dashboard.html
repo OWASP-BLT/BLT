@@ -54,6 +54,30 @@
                 crossorigin="anonymous"></script>
         <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                 crossorigin="anonymous"></script>
+        <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        </script>
+        <script>
+            (function() {
+                const savedTheme = localStorage.getItem("theme");
+                
+                // Use saved user preference if it exists
+                if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark");
+                }
+                else if (savedTheme === "light") {
+                    document.documentElement.classList.remove("dark");
+                }
+                // No saved preference, check system preference
+                else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         {% block style %}
         {% endblock style %}
     </head>
@@ -61,11 +85,11 @@
         <section>
             <div class="main-content">
                 <div class="header-section">
-                    <a class="toggle-btn  menu-collapsed"><i class="fa fa-bars"></i></a>
+                    <a class="toggle-btn menu-collapsed"><i class="fa fa-bars"></i></a>
                     <div class="menu-right">
                         <div class="user-panel-top">
                             <a class="navbar-brand" href="#">
-                                <img src="{% static 'img/logo-small-transparent.png' %}"
+                                <img src="{% static 'img/owasp-blt-logo.svg' %}"
                                      alt="logo"
                                      width="100%"
                                      height="100%">

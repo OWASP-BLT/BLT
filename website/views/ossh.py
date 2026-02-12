@@ -1,22 +1,111 @@
 import json
+import logging
 import re
+import time
 from collections import defaultdict
+from functools import wraps
 
 from django.core.cache import cache
-from django.db.models import Count, FloatField, Q, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 
 from website.models import OsshArticle, OsshCommunity, OsshDiscussionChannel, Repo
-from website.utils import fetch_github_user_data
+from website.utils import fetch_github_user_data, get_client_ip
 
 from .constants import COMMON_TECHNOLOGIES, COMMON_TOPICS, PROGRAMMING_LANGUAGES, TAG_NORMALIZATION
 
+logger = logging.getLogger(__name__)
+
+CACHE_TIMEOUT = 3600
+MIN_LANGUAGE_PERCENTAGE = 5  # Minimum language percentage (0-100 scale) to include
+MAX_REQUEST_SIZE = 1024 * 10
 ALLOWED_TAGS = set(PROGRAMMING_LANGUAGES + COMMON_TECHNOLOGIES + COMMON_TOPICS)
+GITHUB_USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$")
 
 
-# Helper function to tokenize text
+def rate_limit(max_requests=10, window_sec=60, methods=("POST",)):
+    """
+    Fixed-window IP+path limiter using Django cache.
+    """
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped(request, *args, **kwargs):
+            if methods and request.method not in methods:
+                return view_func(request, *args, **kwargs)
+
+            key = f"rl:{get_client_ip(request)}:{request.path}"
+            try:
+                created = cache.add(key, 1, timeout=window_sec)
+                count = 1 if created else cache.incr(key)
+            except Exception:
+                # Fallback: Use window metadata to maintain fixed-window semantics
+                data = cache.get(key)
+                now = time.time()
+                if data is None:
+                    data = {"count": 1, "window_start": now}
+                    cache.set(key, data, timeout=window_sec)
+                    count = 1
+                else:
+                    if not isinstance(data, dict):
+                        # Normalize int/float values from the atomic path
+                        data = {"count": int(data), "window_start": now}
+
+                    # Check if we're still in the same window
+                    window_start = data.get("window_start", now)
+                    elapsed = now - window_start
+
+                    if elapsed >= window_sec:
+                        data = {"count": 1, "window_start": now}
+                        cache.set(key, data, timeout=window_sec)
+                        count = 1
+                    else:
+                        count = data.get("count", 0) + 1
+                        data["count"] = count
+                        remaining_time = max(1, int(window_sec - elapsed))
+                        cache.set(key, data, timeout=remaining_time)
+
+            if count > max_requests:
+                resp = JsonResponse({"error": "Too many requests"}, status=429)
+                resp["Retry-After"] = str(window_sec)
+                resp["X-RateLimit-Limit"] = str(max_requests)
+                resp["X-RateLimit-Remaining"] = "0"
+                return resp
+
+            remaining = max(0, max_requests - count)
+
+            response = view_func(request, *args, **kwargs)
+            try:
+                response["X-RateLimit-Limit"] = str(max_requests)
+                response["X-RateLimit-Remaining"] = str(remaining)
+            except Exception as exc:
+                logger.debug(
+                    "Failed to set rate limit headers on response: %s",
+                    exc,
+                    exc_info=True,
+                )
+
+            return response
+
+        return _wrapped
+
+    return decorator
+
+
+def get_cache_key(username):
+    """Sanitize username for safe cache key"""
+    safe_username = re.sub(r"[^a-zA-Z0-9_-]", "", username).lower()
+    return f"github_data_{safe_username}"
+
+
+def is_valid_github_username(username):
+    """Validate GitHub username format."""
+    if not username or len(username) > 39:
+        return False
+    return bool(GITHUB_USERNAME_PATTERN.match(username))
+
+
 def tokenize(text):
     """Tokenize text into words, handling camelCase and special characters."""
     if not text:
@@ -27,7 +116,6 @@ def tokenize(text):
     return set(word.lower() for word in text.split())
 
 
-# Helper function to normalize tags
 def normalize_tag(tag):
     """Normalize tag variations."""
     return TAG_NORMALIZATION.get(tag, tag)
@@ -46,6 +134,8 @@ def ossh_results(request):
 
         if not github_username:
             return JsonResponse({"error": "GitHub username is required"}, status=400)
+        if not is_valid_github_username(github_username):
+            return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
         context = {"username": github_username}
         return render(request, template, context)
@@ -53,25 +143,41 @@ def ossh_results(request):
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
+@rate_limit(max_requests=10, window_sec=60, methods=("POST",))
 def get_github_data(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
+
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
 
-            cached_data = cache.get(f"github_data_{github_username}")
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
+
+            cached_data = cache.get(get_cache_key(github_username))
             if cached_data:
-                print("Found cached user data")
+                logger.debug("Found cached user data")
                 user_data = cached_data
             else:
                 user_data = fetch_github_user_data(github_username)
+                if not user_data or not isinstance(user_data, dict):
+                    return JsonResponse({"error": "Failed to fetch GitHub data"}, status=500)
+
+                # Validate required keys exist
+                required_keys = ["repositories", "top_languages", "top_topics"]
+                if not all(key in user_data for key in required_keys):
+                    return JsonResponse({"error": "Incomplete GitHub data"}, status=500)
                 user_tags, language_weights = preprocess_user_data(user_data)
                 user_data["user_tags"] = user_tags
                 user_data["language_weights"] = language_weights
-                cache.set(f"github_data_{github_username}", user_data, timeout=3600)  # Cache for 1 hour
+                cache.set(get_cache_key(github_username), user_data, timeout=CACHE_TIMEOUT)
 
             return render(request, "ossh/includes/github_stats.html", {"user_data": user_data})
 
@@ -80,7 +186,7 @@ def get_github_data(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_github_data: {e}", exc_info=True)
+            logger.error(f"Error in get_github_data: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -88,62 +194,60 @@ def get_github_data(request):
 
 def preprocess_user_data(user_data):
     user_tags = defaultdict(int)
+    ALLOWED_NORMALIZED_TAGS = {normalize_tag(tag) for tag in ALLOWED_TAGS}
 
     for repo in user_data["repositories"]:
         if repo.get("description"):
             words = tokenize(repo["description"])
             for word in words:
                 normalized_word = normalize_tag(word)
-                if normalized_word in TAG_NORMALIZATION.values():
+                if normalized_word in ALLOWED_NORMALIZED_TAGS:
                     user_tags[normalized_word] += 1
 
     if user_data.get("top_topics"):
         for topic in user_data["top_topics"]:
             normalized_topic = normalize_tag(topic)
-            if normalized_topic in TAG_NORMALIZATION.values():
-                user_tags[normalized_topic] = user_tags.get(normalized_topic, 0) + 1
-            else:
-                user_tags[normalized_topic] = 1
+            if normalized_topic in ALLOWED_NORMALIZED_TAGS:
+                user_tags[normalized_topic] += 1
 
     user_tags = sorted(user_tags.items(), key=lambda x: x[1], reverse=True)
 
     # Extract user's languages with weights
     total_bytes = sum(lang[1] for lang in user_data["top_languages"])
-    language_weights = {
-        lang: (bytes_count / total_bytes * 100)
-        for lang, bytes_count in user_data["top_languages"]
-        if (bytes_count / total_bytes * 100) >= 0.05
-    }
+    if total_bytes == 0:
+        language_weights = {}
+    else:
+        language_weights = {
+            lang: (bytes_count / total_bytes * 100)
+            for lang, bytes_count in user_data["top_languages"]
+            if (bytes_count / total_bytes * 100) >= MIN_LANGUAGE_PERCENTAGE
+        }
 
-    print(user_tags)
-    print(language_weights)
+    logger.debug(f"User tags: {user_tags}")
+    logger.debug(f"Language weights: {language_weights}")
     return user_tags, language_weights
 
 
 def repo_recommender(user_tags, language_weights):
     tag_names = [tag for tag, _ in user_tags]
     language_list = list(language_weights.keys())
-
+    tag_weight_map = dict(user_tags)
     repos = (
         Repo.objects.filter(Q(primary_language__in=language_list) | Q(tags__name__in=tag_names))
         .distinct()
         .prefetch_related("tags")
-    )
-
-    repos = repos.annotate(
-        tag_score=Coalesce(Count("tags", filter=Q(tags__name__in=tag_names)), Value(0), output_field=FloatField()),
-        language_score=Value(0, output_field=FloatField()),
+        .select_related("project")
     )
 
     recommended_repos = []
     for repo in repos:
-        tag_score = repo.tag_score
+        tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in repo.tags.all())
         language_score = language_weights.get(repo.primary_language, 0)
 
         relevance_score = tag_score + language_score
 
-        if relevance_score > 0:  # Ensure non-zero relevance
-            matching_tags = [tag.name for tag in repo.tags.all() if tag.name in dict(user_tags)]
+        if relevance_score > 0:
+            matching_tags = [tag.name for tag in repo.tags.all() if tag.name in tag_weight_map]
             matching_languages = [repo.primary_language] if repo.primary_language in language_weights else []
 
             reasoning = []
@@ -164,16 +268,23 @@ def repo_recommender(user_tags, language_weights):
     return recommended_repos[:5]
 
 
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_repos(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -186,7 +297,7 @@ def get_recommended_repos(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_repos: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_repos: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
@@ -194,6 +305,7 @@ def get_recommended_repos(request):
 
 def community_recommender(user_tags, language_weights):
     tag_names = [tag for tag, _ in user_tags]
+    tag_weight_map = dict(user_tags)
     language_list = list(language_weights.keys())
 
     communities = (
@@ -202,20 +314,15 @@ def community_recommender(user_tags, language_weights):
         .prefetch_related("tags")
     )
 
-    communities = communities.annotate(
-        tag_score=Coalesce(Count("tags", filter=Q(tags__name__in=tag_names)), Value(0), output_field=FloatField()),
-        language_score=Value(0, output_field=FloatField()),
-    )
-
     recommended_communities = []
     for community in communities:
-        tag_score = community.tag_score
+        tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in community.tags.all())
         language_score = language_weights.get(community.metadata.get("primary_language", ""), 0)
 
         relevance_score = tag_score + language_score
 
         if relevance_score > 0:
-            matching_tags = [tag.name for tag in community.tags.all() if tag.name in dict(user_tags)]
+            matching_tags = [tag.name for tag in community.tags.all() if tag.name in tag_weight_map]
             matching_languages = (
                 [community.metadata.get("primary_language")]
                 if community.metadata.get("primary_language") in language_weights
@@ -240,16 +347,23 @@ def community_recommender(user_tags, language_weights):
     return recommended_communities
 
 
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_communities(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -264,40 +378,36 @@ def get_recommended_communities(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_communities: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_communities: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 def discussion_channel_recommender(user_tags, language_weights, top_n=5):
-    matching_channels = OsshDiscussionChannel.objects.filter(Q(tags__name__in=[tag[0] for tag in user_tags])).distinct()
+    """
+    Recommend discussion channels based on user's tag preferences.
+    """
+    tag_names = [tag for tag, _ in user_tags]
+    matching_channels = (
+        OsshDiscussionChannel.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
+    )
 
     recommended_channels = []
+    tag_weight_map = dict(user_tags)
+
     for channel in matching_channels:
-        tag_matches = sum(1 for tag in user_tags if tag[0] in channel.tags.values_list("name", flat=True))
+        channel_tag_names = {tag.name for tag in channel.tags.all()}
 
-        language_weight = sum(
-            language_weights.get(tag[1], 0)
-            for tag in user_tags
-            if tag[0] in channel.tags.values_list("name", flat=True)
-        )
-
-        relevance_score = tag_matches + language_weight + (channel.member_count // 1000)
+        tag_score = sum(tag_weight_map.get(tag, 0) for tag in channel_tag_names)
+        relevance_score = tag_score
 
         if relevance_score > 0:
-            matching_tags = [tag.name for tag in channel.tags.all() if tag.name in dict(user_tags)]
-            matching_languages = [
-                tag[1]
-                for tag in user_tags
-                if tag[0] in channel.tags.values_list("name", flat=True) and tag[1] in language_weights
-            ]
+            matching_tags = [tag for tag in channel_tag_names if tag in tag_weight_map]
 
             reasoning = []
             if matching_tags:
                 reasoning.append(f"Matching tags: {', '.join(matching_tags)}")
-            if matching_languages:
-                reasoning.append(f"Matching language: {', '.join(matching_languages)}")
 
             recommended_channels.append(
                 {
@@ -311,16 +421,23 @@ def discussion_channel_recommender(user_tags, language_weights, top_n=5):
     return recommended_channels[:top_n]
 
 
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_discussion_channels(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -338,43 +455,33 @@ def get_recommended_discussion_channels(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_discussion_channels: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 def article_recommender(user_tags, language_weights, top_n=5):
+    """
+    Recommend articles based on user's tag preferences.
+    """
     tag_names = [tag for tag, _ in user_tags]
-    tag_weight_map = dict(user_tags)  # Convert to dictionary for fast lookup
-    language_list = list(language_weights.keys())
+    tag_weight_map = dict(user_tags)
 
-    articles = (
-        OsshArticle.objects.filter(Q(tags__name__in=tag_names))
-        .distinct()
-        .prefetch_related("tags")
-        .annotate(
-            tag_score=Coalesce(Count("tags", filter=Q(tags__name__in=tag_names)), Value(0), output_field=FloatField()),
-            language_score=Value(0, output_field=FloatField()),
-        )
-    )
+    articles = OsshArticle.objects.filter(Q(tags__name__in=tag_names)).distinct().prefetch_related("tags")
 
     recommended_articles = []
     for article in articles:
         tag_score = sum(tag_weight_map.get(tag.name, 0) for tag in article.tags.all())
-        primary_language = article.metadata.get("primary_language", "") if hasattr(article, "metadata") else ""
-        language_score = language_weights.get(primary_language, 0)
 
-        relevance_score = tag_score + language_score
+        relevance_score = tag_score
+
         if relevance_score > 0:
             matching_tags = [tag.name for tag in article.tags.all() if tag.name in tag_weight_map]
-            matching_languages = [primary_language] if primary_language in language_weights else []
 
             reasoning = []
             if matching_tags:
                 reasoning.append(f"Matching tags: {', '.join(matching_tags)}")
-            if matching_languages:
-                reasoning.append(f"Matching language: {', '.join(matching_languages)}")
 
             recommended_articles.append(
                 {
@@ -387,16 +494,23 @@ def article_recommender(user_tags, language_weights, top_n=5):
     return sorted(recommended_articles, key=lambda x: x["relevance_score"], reverse=True)[:top_n]
 
 
+@rate_limit(max_requests=20, window_sec=60, methods=("POST",))
 def get_recommended_articles(request):
     if request.method == "POST":
         try:
+            if len(request.body) > MAX_REQUEST_SIZE:
+                return JsonResponse({"error": "Request too large"}, status=413)
             data = json.loads(request.body)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid JSON payload"}, status=400)
             github_username = data.get("github_username")
 
             if not github_username:
                 return JsonResponse({"error": "GitHub username is required"}, status=400)
+            if not is_valid_github_username(github_username):
+                return JsonResponse({"error": "Invalid GitHub username format"}, status=400)
 
-            user_data = cache.get(f"github_data_{github_username}")
+            user_data = cache.get(get_cache_key(github_username))
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
@@ -412,7 +526,7 @@ def get_recommended_articles(request):
         except KeyError:
             return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            print(f"Error in get_recommended_articles: {e}")  # Print instead of logging
+            logger.error(f"Error in get_recommended_articles: {e}", exc_info=True)
             return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)

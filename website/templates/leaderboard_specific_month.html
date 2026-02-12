@@ -24,48 +24,48 @@
 {% endblock before_js %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 p-6 lg:p-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <!-- Header Section -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
                         <i class="fas fa-trophy text-2xl text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">Monthly Leaderboard</h1>
-                        <p class="text-gray-600 mt-2">Track the top performers for any specific month</p>
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Monthly Leaderboard</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Track the top performers for any specific month</p>
                     </div>
                 </div>
             </div>
             <!-- Month Selector -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="relative w-full sm:w-auto">
                         <input type="text"
                                id="selection"
-                               class="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#e74c3c] focus:border-[#e74c3c] text-gray-900 cursor-pointer bg-white font-inherit text-inherit"
+                               class="w-full sm:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-[#e74c3c] focus:border-[#e74c3c] text-gray-900 dark:text-gray-100 cursor-pointer bg-white dark:bg-gray-800 font-inherit text-inherit"
                                placeholder="Select Month"
                                readonly>
                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="fas fa-calendar-alt text-gray-400"></i>
+                            <i class="fas fa-calendar-alt text-gray-400 dark:text-gray-600"></i>
                         </div>
                     </div>
-                    <div class="text-sm text-gray-600">Click to select a specific month and year</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Click to select a specific month and year</div>
                 </div>
             </div>
             <!-- Leaderboard Content -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
                 {% if not leaderboard %}
                     <div class="p-8 text-center">
-                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-trophy text-gray-400 text-2xl"></i>
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-trophy text-gray-400 dark:text-gray-600 text-2xl"></i>
                         </div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
-                        <p class="text-gray-500">There are no records for the selected month.</p>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Data Available</h3>
+                        <p class="text-gray-500 dark:text-gray-500">There are no records for the selected month.</p>
                     </div>
                 {% else %}
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
                         {% for leader in leaderboard %}
                             <div class="p-4 hover:bg-gray-50 transition-all duration-200">
                                 <div class="flex items-center space-x-4">
@@ -76,15 +76,15 @@
                                                 <i class="fas fa-trophy text-yellow-600"></i>
                                             </div>
                                         {% elif forloop.counter == 2 %}
-                                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                <i class="fas fa-medal text-gray-600"></i>
+                                            <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                <i class="fas fa-medal text-gray-600 dark:text-gray-400"></i>
                                             </div>
                                         {% elif forloop.counter == 3 %}
                                             <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                                                 <i class="fas fa-award text-orange-600"></i>
                                             </div>
                                         {% else %}
-                                            <span class="text-gray-500 font-medium">#{{ forloop.counter }}</span>
+                                            <span class="text-gray-500 dark:text-gray-500 font-medium">#{{ forloop.counter }}</span>
                                         {% endif %}
                                     </div>
                                     <!-- User Info -->
@@ -113,7 +113,7 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2">
                                             <a href="{% url 'profile' slug=leader.username %}"
-                                               class="text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                               class="text-lg font-medium text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] transition-colors">
                                                 {{ leader.username }}
                                             </a>
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if leader.userprofile.get_title_display == 'GOLD' %}bg-yellow-100 text-yellow-800{% elif leader.userprofile.get_title_display == 'SILVER' %}bg-gray-100 text-gray-800{% elif leader.userprofile.get_title_display == 'BRONZE' %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
@@ -121,7 +121,7 @@
                                             </span>
                                         </div>
                                         <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-sm text-gray-500">{{ leader.total_score }} Points</span>
+                                            <span class="text-sm text-gray-500 dark:text-gray-500">{{ leader.total_score }} Points</span>
                                             {% if leader.amount %}
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
                                                     <i class="fas fa-dollar-sign mr-1"></i>
@@ -170,7 +170,7 @@
 
                     _render: function() {
                         var linkPosition = this._el.offset();
-                        this._container = $('<div class="bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">')
+                        this._container = $('<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50">')
                             .css({
                                 display: "none",
                                 position: "absolute",
@@ -215,7 +215,7 @@
                             return $("<option>").text(year)[0].outerHTML;
                         });
                         var yearsWrap = $('<div class="mb-4">').appendTo(this._container);
-                        this._yearsSelect = $('<select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-inherit text-inherit">')
+                        this._yearsSelect = $('<select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-inherit text-inherit">')
                             .html(markup.join(""))
                             .appendTo(yearsWrap);
                     },

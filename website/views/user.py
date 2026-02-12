@@ -1,9 +1,14 @@
+import hashlib
+import hmac
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 
 from allauth.account.signals import user_signed_up
+from dateutil import parser as dateutil_parser
+from dateutil.parser import ParserError
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -11,6 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
@@ -28,15 +34,18 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
-from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    BaconEarning,
+    BaconSubmission,
     Badge,
     Challenge,
     Contributor,
+    ContributorStats,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     InviteFriend,
     Issue,
@@ -44,6 +53,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -53,6 +63,40 @@ from website.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def extract_github_username(github_url):
+    """
+    Extract GitHub username from a GitHub URL for avatar display.
+
+    Args:
+        github_url (str): GitHub URL like 'https://github.com/username' or 'https://github.com/apps/dependabot'
+
+    Returns:
+        str or None: The username part of the URL, or None if invalid/empty
+    """
+    if not github_url or not isinstance(github_url, str):
+        return None
+
+    # Strip trailing slashes and whitespace
+    github_url = github_url.strip().rstrip("/")  # Clean URL format
+
+    # Remove query parameters and fragments if present
+    github_url = github_url.split("?")[0].split("#")[0]
+
+    # Ensure URL contains at least one slash
+    if "/" not in github_url:
+        return None
+
+    # Split on "/" and get the last segment
+    segments = github_url.split("/")
+    username = segments[-1] if segments else None
+
+    # Return username only if it's non-empty and not domain parts or protocol prefixes
+    if username and username not in ["github.com", "www.github.com", "www", "http:", "https:"]:
+        return username
+
+    return None
 
 
 @receiver(user_signed_up)
@@ -101,32 +145,91 @@ def update_bch_address(request):
 
 @login_required
 def profile_edit(request):
+    from allauth.account.models import EmailAddress
+
     Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
+    # Get the user's current email BEFORE changes
+    original_email = request.user.email
+
     if request.method == "POST":
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+
         if form.is_valid():
-            # Check if email is unique
             new_email = form.cleaned_data["email"]
+
+            # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
-            # Save the form
+            # Check if the user already has this email
+            existing_email = EmailAddress.objects.filter(user=request.user, email=new_email).first()
+            if existing_email:
+                if existing_email.verified:
+                    form.add_error("email", "You already have this email verified. Please set it as primary instead.")
+                    return render(request, "profile_edit.html", {"form": form})
+
+            if EmailAddress.objects.exclude(user=request.user).filter(email=new_email).exists():
+                form.add_error("email", "This email is already registered or pending verification")
+                return render(request, "profile_edit.html", {"form": form})
+
+            # Detect email change before saving profile fields
+            email_changed = new_email != original_email
+
+            # Save profile form (does "not" touch email in user model)
             form.save()
 
-            # Update the User model's email
-            request.user.email = new_email
-            request.user.save()
+            if email_changed:
+                # Remove any pending unverified emails
+                EmailAddress.objects.filter(user=request.user, verified=False).delete()
 
+                # Create new unverified email entry
+                # Create or update email entry as unverified
+                email_address, created = EmailAddress.objects.update_or_create(
+                    user=request.user,
+                    email=new_email,
+                    defaults={"verified": False, "primary": False},
+                )
+
+                # Rate limit: atomic check-and-set to prevent race conditions
+                rate_key = f"email_verification_rate_{request.user.id}"
+
+                # add() only sets if key doesn't exist (atomic operation)
+                if not cache.add(rate_key, True, timeout=60):
+                    messages.warning(
+                        request,
+                        "Too many requests. Please wait a minute before trying again.",
+                    )
+                    return redirect("profile", slug=request.user.username)
+
+                # Send verification email
+                try:
+                    email_address.send_confirmation(request, signup=False)
+                except Exception as e:
+                    logger.exception(f"Failed to send email confirmation to {new_email}: {e}")
+                    messages.error(request, "Failed to send verification email. Please try again later.")
+                    return redirect("profile", slug=request.user.username)
+
+                messages.info(
+                    request,
+                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                )
+                return redirect("profile", slug=request.user.username)
+
+            # No email change=normal success
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
+
         else:
             messages.error(request, "Please correct the errors below.")
+
     else:
-        # Initialize the form with the user's current email
-        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
+        form = UserProfileForm(
+            instance=user_profile,
+            initial={"email": request.user.email},
+        )
 
     return render(request, "profile_edit.html", {"form": form})
 
@@ -204,7 +307,7 @@ def get_github_stats(user_profile):
         reviews__reviewer=user_profile,
     ).count()
 
-    print(f"Total PRs found: {user_prs.count()}")
+    logger.debug(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
     merged_count = user_prs.filter(is_merged=True).count()
@@ -247,7 +350,7 @@ def get_github_stats(user_profile):
 
     # Get review ranking
     all_reviewers = (
-        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        UserProfile.objects.annotate(review_count=Count("reviews_made_as_user"))
         .filter(review_count__gt=0)
         .order_by("-review_count")
     )
@@ -297,6 +400,17 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        # Add bacon earning data
+        bacon_earning = BaconEarning.objects.filter(user=user).first()
+        logger.debug(f"Bacon earning for {user.username}: {bacon_earning}")
+        context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
+
+        # Get bacon submission stats
+        context["bacon_submissions"] = {
+            "pending": BaconSubmission.objects.filter(user=user, transaction_status="pending").count(),
+            "completed": BaconSubmission.objects.filter(user=user, transaction_status="completed").count(),
+        }
+
         milestones = [7, 15, 30, 100, 180, 365]
         base_milestone = 0
         next_milestone = 0
@@ -324,19 +438,20 @@ class UserProfileDetailView(DetailView):
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:3]
         context["activity_screenshots"] = {}
-        for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
+        screenshots = IssueScreenshot.objects.filter(issue__in=context["activities"]).select_related("issue")
+        context["activity_screenshots"] = {s.issue: s for s in screenshots}
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
-        context["current_month"] = datetime.now().month
+        context["current_month"] = timezone.now().month
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
+        six_months_ago = timezone.now() - relativedelta(months=6)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
             .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
+                created__gte=six_months_ago,
+                created__lte=timezone.now(),
             )
             .annotate(month=ExtractMonth("created"))
             .values("month")
@@ -344,25 +459,26 @@ class UserProfileDetailView(DetailView):
             .order_by()
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
+        bug_counts = Issue.objects.filter(user=self.object, hunt=None).values("label").annotate(count=Count("id"))
+        bug_count_map = {item["label"]: item["count"] for item in bug_counts}
+        for i in range(7):
+            context[f"bug_type_{i}_count"] = bug_count_map.get(str(i), 0)
+        bug_qs = Issue.objects.filter(user=self.object, hunt=None)
+        for i in range(7):
+            context[f"bug_type_{i}"] = bug_qs.filter(label=str(i))
 
         arr = []
-        allFollowers = user.userprofile.follower.all()
-        for userprofile in allFollowers:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["followers"] = arr
+        allFollowers = user.userprofile.follower.select_related("user").all()
+        context["followers"] = [up.user for up in allFollowers]
 
         arr = []
-        allFollowing = user.userprofile.follows.all()
-        for userprofile in allFollowing:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["following"] = arr
+        allFollowing = user.userprofile.follows.select_related("user").all()
+        context["following"] = [up.user for up in allFollowing]
 
-        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
+        context["followers_list"] = [up.user.email for up in allFollowers]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         # tags
-        context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
+        context["user_related_tags"] = user.userprofile.tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         # pull request info
         stats = get_github_stats(user.userprofile)
@@ -399,23 +515,33 @@ class LeaderboardBase:
         if year and month:
             data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
 
+        # Bot identifiers to exclude from leaderboard
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(username__icontains=bot)
+
         data = (
             data.annotate(total_score=Sum("points__score"))
             .order_by("-total_score")
             .filter(
                 total_score__gt=0,
+                username__isnull=False,
             )
+            .exclude(username="")
+            .exclude(bot_exclusions)  # Exclude bot users
         )
         if api:
             return data.values("id", "username", "total_score")
-
         return data
 
     def current_month_leaderboard(self, api=False):
         """
         leaderboard which includes current month users scores
         """
-        return self.get_leaderboard(month=int(datetime.now().month), year=int(datetime.now().year), api=api)
+        return self.get_leaderboard(month=int(timezone.now().month), year=int(timezone.now().year), api=api)
 
     def monthly_year_leaderboard(self, year, api=False):
         """
@@ -442,36 +568,91 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_global.html"
 
     def get_context_data(self, *args, **kwargs):
+        """
+        Assembles template context for the global leaderboard page, adding leaderboards and related data.
+
+        The context includes:
+        - `user_related_tags`: tags associated with user profiles.
+        - `wallet`: the requesting user's Wallet if authenticated.
+        - `leaderboard`: top users by total score (limited to 10).
+        - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
+        - `code_review_leaderboard`: top reviewers by review count (top 10).
+        - `top_visitors`: user profiles ordered by daily visit count (top 10).
+
+        Returns:
+            dict: Context mapping names (as listed above) to their querysets or values.
+        """
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
 
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
-        # Pull Request Leaderboard
+        # Pull Request Leaderboard - Use Contributor model
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for PRs merged in the last 6 months
+        from dateutil.relativedelta import relativedelta
+
+        bots = ["copilot", "[bot]", "dependabot", "github-actions", "renovate"]
+        since_date = timezone.now() - relativedelta(months=6)
+
+        # Create dynamic bot exclusion query
+        bot_exclusions = Q()
+        for bot in bots:
+            bot_exclusions |= Q(contributor__name__icontains=bot)
+
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            GitHubIssue.objects.filter(
+                type="pull_request",
+                is_merged=True,
+                contributor__isnull=False,
+                merged_at__gte=since_date,
+            )
+            .filter(
+                Q(repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .exclude(bot_exclusions)  # Exclude bot contributors
+            .select_related("contributor", "user_profile__user")
             .values(
+                "contributor__name",
+                "contributor__github_url",
+                "contributor__avatar_url",
                 "user_profile__user__username",
-                "user_profile__user__email",
-                "user_profile__github_url",
             )
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed PR Leaderboard
+        # Code Review Leaderboard - Use reviewer_contributor
+        # Dynamically filters for OWASP-BLT repos (will include any new BLT repos added to database)
+        # Filter for reviews on PRs merged in the last 6 months
+        # Create bot exclusion query for reviewers
+        reviewer_bot_exclusions = Q()
+        for bot in bots:
+            reviewer_bot_exclusions |= Q(reviewer_contributor__name__icontains=bot)
+
         reviewed_pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request")
+            GitHubReview.objects.filter(
+                reviewer_contributor__isnull=False,
+                pull_request__merged_at__gte=since_date,
+            )
+            .filter(
+                Q(pull_request__repo__repo_url__startswith="https://github.com/OWASP-BLT/")
+                | Q(pull_request__repo__repo_url__startswith="https://github.com/owasp-blt/")
+            )
+            .exclude(reviewer_bot_exclusions)  # Exclude bot reviewers
+            .select_related("reviewer_contributor", "reviewer__user")
             .values(
-                "reviews__reviewer__user__username",
-                "reviews__reviewer__user__email",
-                "user_profile__github_url",
+                "reviewer_contributor__name",
+                "reviewer_contributor__github_url",
+                "reviewer_contributor__avatar_url",
+                "reviewer__user__username",
             )
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:10]
@@ -502,12 +683,12 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         year = self.request.GET.get("year")
 
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(year, str) and not year.isdigit():
             raise Http404(f"Invalid query passed | Year:{year}")
@@ -553,15 +734,15 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
 
         if not month:
-            month = datetime.now().month
+            month = timezone.now().month
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(month, str) and not month.isdigit():
             raise Http404(f"Invalid query passed | Month:{month}")
@@ -688,10 +869,233 @@ def contributors(request):
     return JsonResponse({"contributors": contributors_data})
 
 
+def contributor_stats_view(request):
+    """
+    Weekly Activity view that highlights streak and challenge completions.
+    This view displays contributor statistics with enhanced highlights for user achievements.
+    """
+    from datetime import timedelta
+
+    from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+
+    # Calculate the date range for the current week
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=7)
+
+    # Get time period from request (defaulting to current week)
+    time_period = request.GET.get("period", "current_week")
+    page_number = request.GET.get("page", 1)
+
+    # Define time periods
+    if time_period == "today":
+        start_date = end_date
+    elif time_period == "current_week":
+        start_date = end_date - timedelta(days=7)
+    elif time_period == "current_month":
+        start_date = end_date.replace(day=1)
+    elif time_period == "last_month":
+        if end_date.month == 1:
+            start_date = end_date.replace(year=end_date.year - 1, month=12, day=1)
+        else:
+            start_date = end_date.replace(month=end_date.month - 1, day=1)
+
+    # Get user profiles with recent activity and streak/challenge data
+    user_profiles = (
+        UserProfile.objects.select_related("user")
+        .filter(user__is_active=True)
+        .prefetch_related("user__user_challenges", "user__points_set")
+    )
+
+    # Get recent streak achievements (users who reached milestone streaks this week)
+    streak_highlights = []
+    for profile in user_profiles:
+        if profile.current_streak > 0:
+            # Check if they reached a milestone streak recently
+            milestone_achieved = None
+            if profile.current_streak == 7:
+                milestone_achieved = "7-day streak achieved!"
+            elif profile.current_streak == 15:
+                milestone_achieved = "15-day streak achieved!"
+            elif profile.current_streak == 30:
+                milestone_achieved = "30-day streak achieved!"
+            elif profile.current_streak == 100:
+                milestone_achieved = "100-day streak achieved!"
+            elif profile.current_streak == 180:
+                milestone_achieved = "180-day streak achieved!"
+            elif profile.current_streak == 365:
+                milestone_achieved = "365-day streak achieved!"
+
+            if milestone_achieved:
+                streak_highlights.append(
+                    {
+                        "user": profile.user,
+                        "current_streak": profile.current_streak,
+                        "longest_streak": profile.longest_streak,
+                        "milestone": milestone_achieved,
+                        "user_profile": profile,
+                    }
+                )
+
+    # Get recent challenge completions from the past week
+    completed_challenges = (
+        Challenge.objects.filter(completed=True, completed_at__gte=start_date, completed_at__lte=end_date)
+        .select_related()
+        .prefetch_related("participants")
+    )
+
+    challenge_highlights = []
+    for challenge in completed_challenges:
+        for participant in challenge.participants.all():
+            challenge_highlights.append(
+                {
+                    "user": participant,
+                    "challenge": challenge,
+                    "completed_at": challenge.completed_at,
+                    "points_earned": challenge.points,
+                }
+            )
+
+    # Get contributor stats for the time period
+    contributor_stats = []
+    try:
+        # Get aggregated stats for the time period
+        stats_query = (
+            ContributorStats.objects.filter(date__gte=start_date, date__lte=end_date)
+            .values("contributor")
+            .annotate(
+                total_commits=Sum("commits"),
+                total_issues_opened=Sum("issues_opened"),
+                total_issues_closed=Sum("issues_closed"),
+                total_prs=Sum("pull_requests"),
+                total_comments=Sum("comments"),
+            )
+            .order_by("-total_commits")
+        )
+        contributor_ids = [s["contributor"] for s in stats_query]
+
+        contributors = Contributor.objects.in_bulk(contributor_ids)
+
+        for stat in stats_query:
+            contributor = contributors.get(stat["contributor"])
+            if not contributor:
+                continue
+
+            # Calculate impact score
+            impact_score = (
+                stat["total_commits"] * 5
+                + stat["total_prs"] * 3
+                + stat["total_issues_opened"] * 2
+                + stat["total_issues_closed"] * 2
+                + stat["total_comments"]
+            )
+
+            # Determine impact level
+            if impact_score > 200:
+                impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
+            elif impact_score > 100:
+                impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
+            else:
+                impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+
+            contributor_stats.append(
+                {
+                    "contributor": contributor,
+                    "commits": stat["total_commits"] or 0,
+                    "issues_opened": stat["total_issues_opened"] or 0,
+                    "issues_closed": stat["total_issues_closed"] or 0,
+                    "pull_requests": stat["total_prs"] or 0,
+                    "comments": stat["total_comments"] or 0,
+                    "impact_score": impact_score,
+                    "impact_level": impact_level,
+                }
+            )
+    except Exception as e:
+        logger.error(f"Error fetching contributor stats: {e}")
+
+    # Sort by impact score
+    contributor_stats.sort(key=lambda x: x["impact_score"], reverse=True)
+
+    # Paginate contributor stats
+    paginator = Paginator(contributor_stats, 10)
+    try:
+        paginated_stats = paginator.page(page_number)
+    except PageNotAnInteger:
+        paginated_stats = paginator.page(1)
+    except EmptyPage:
+        paginated_stats = paginator.page(paginator.num_pages)
+
+    # Get weekly leaderboard - top users by points earned in the time period
+    leaderboard = []
+
+    try:
+        leaderboard_query = (
+            Points.objects.filter(created__gte=start_date, created__lte=end_date)
+            .values("user")
+            .annotate(total_points=Sum("score"))
+            .order_by("-total_points")[:10]
+        )
+
+        user_ids = [entry["user"] for entry in leaderboard_query]
+
+        users = User.objects.in_bulk(user_ids)
+        profiles = {p.user_id: p for p in UserProfile.objects.filter(user_id__in=user_ids)}
+
+        for entry in leaderboard_query:
+            user_id = entry["user"]
+
+            user = users.get(user_id)
+            user_profile = profiles.get(user_id)
+
+            if not user or not user_profile:
+                continue
+
+            leaderboard.append(
+                {
+                    "user": user,
+                    "user_profile": user_profile,
+                    "total_points": entry["total_points"],
+                }
+            )
+
+    except Exception as e:
+        logger.error(f"Error fetching leaderboard: {e}")
+
+    # Prepare time period options
+    time_period_options = [
+        ("today", "Today's Data"),
+        ("current_week", "Current Week"),
+        ("current_month", "Current Month"),
+        ("last_month", "Last Month"),
+    ]
+
+    context = {
+        "contributor_stats": paginated_stats,
+        "page_obj": paginated_stats,
+        "paginator": paginator,
+        "is_paginated": paginator.num_pages > 1,
+        "time_period": time_period,
+        "time_period_options": time_period_options,
+        "start_date": start_date,
+        "end_date": end_date,
+        "streak_highlights": streak_highlights,
+        "challenge_highlights": challenge_highlights,
+        "total_streak_achievements": len(streak_highlights),
+        "total_challenge_completions": len(challenge_highlights),
+        "leaderboard": leaderboard,
+    }
+
+    return render(request, "weekly_activity.html", context)
+
+
+@login_required
 def create_wallet(request):
-    for user in User.objects.all():
-        Wallet.objects.get_or_create(user=user)
-    return JsonResponse("Created", safe=False)
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+    existing_wallet_user_ids = Wallet.objects.values_list("user_id", flat=True)
+    users_without_wallets = User.objects.exclude(id__in=existing_wallet_user_ids)
+    wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
+    Wallet.objects.bulk_create(wallets_to_create)
+    return JsonResponse(f"Created {len(wallets_to_create)} wallets", safe=False)
 
 
 def create_tokens(request):
@@ -723,30 +1127,37 @@ def get_score(request):
 
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
-    if request.method == "GET":
-        try:
-            userx = User.objects.get(username=user)
-            flag = 0
-            list_userfrof = request.user.userprofile.follows.all()
-            for prof in list_userfrof:
-                if str(prof) == (userx.email):
-                    request.user.userprofile.follows.remove(userx.userprofile)
-                    flag = 1
-            if flag != 1:
-                request.user.userprofile.follows.add(userx.userprofile)
-                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
-                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+    if request.method != "GET":
+        return HttpResponse(status=405)
 
-                send_mail(
-                    "You got a new follower!!",
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [userx.email],
-                    html_message=msg_html,
-                )
-            return HttpResponse("Success")
-        except User.DoesNotExist:
-            return HttpResponse(f"User {user} not found", status=404)
+    userx = get_object_or_404(User, username=user)
+
+    profile = request.user.userprofile
+    target_profile = userx.userprofile
+
+    # Toggle follow / unfollow
+    if profile.follows.filter(id=target_profile.id).exists():
+        profile.follows.remove(target_profile)
+    else:
+        profile.follows.add(target_profile)
+
+        context = {
+            "follower": request.user,
+            "followed": userx,
+        }
+
+        msg_plain = render_to_string("email/follow_user.html", context)
+        msg_html = render_to_string("email/follow_user.html", context)
+
+        send_mail(
+            "You got a new follower!!",
+            msg_plain,
+            settings.EMAIL_TO_STRING,
+            [userx.email],
+            html_message=msg_html,
+        )
+
+    return HttpResponse("Success")
 
 
 # get issue and comment id from url
@@ -839,16 +1250,93 @@ def badge_user_list(request, badge_id):
     )
 
 
+def validate_github_signature(payload_body: bytes, signature_header: str | None) -> bool:
+    """
+    Validate GitHub webhook signature using HMAC-SHA256.
+
+    - payload_body: raw request.body (bytes)
+    - signature_header: value of X-Hub-Signature-256 from GitHub
+      e.g. "sha256=abc123..."
+    """
+    if not signature_header:
+        logger.warning("Missing X-Hub-Signature-256 header")
+        return False
+
+    secret = settings.GITHUB_WEBHOOK_SECRET
+    if not secret:
+        logger.warning("GITHUB_WEBHOOK_SECRET is not set")
+        return False
+
+    expected = (
+        "sha256="
+        + hmac.new(
+            secret.encode("utf-8"),
+            payload_body,
+            hashlib.sha256,
+        ).hexdigest()
+    )
+
+    return hmac.compare_digest(expected, signature_header)
+
+
+def safe_parse_github_datetime(value, *, default=None, field_name=""):
+    """
+    Safely parse a GitHub timestamp string into a datetime.
+
+    Returns `default` if the value is empty or malformed, and logs a warning
+    instead of letting ParserError crash the webhook handler.
+    """
+    if not value:
+        return default
+    try:
+        return dateutil_parser.parse(value)
+    except (ParserError, ValueError, TypeError, OverflowError) as exc:
+        logger.warning(
+            "Failed to parse GitHub datetime for %s: %r (%s)",
+            field_name,
+            value,
+            exc,
+        )
+        return default
+
+
 @csrf_exempt
 def github_webhook(request):
-    if request.method == "POST":
-        # Validate GitHub signature
-        # this doesn't seem to work?
-        # signature = request.headers.get("X-Hub-Signature-256")
-        # if not validate_signature(request.body, signature):
-        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+    """
+    Entry point for GitHub webhooks.
 
-        payload = json.loads(request.body)
+    Validates the HMAC signature (X-Hub-Signature-256), parses the JSON payload,
+    routes the event to the appropriate handler based on X-GitHub-Event,
+    and returns a JSON response indicating success or error.
+    """
+    if request.method == "POST":
+        # Fail closed if secret is not configured
+        if not getattr(settings, "GITHUB_WEBHOOK_SECRET", None):
+            logger.error("GITHUB_WEBHOOK_SECRET is not configured; refusing webhook request.")
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Webhook secret not configured",
+                },
+                status=503,
+            )
+
+        signature = request.headers.get("X-Hub-Signature-256")
+
+        if not validate_github_signature(request.body, signature):
+            return JsonResponse(
+                {"status": "error", "message": "Unauthorized request"},
+                status=403,
+            )
+
+        try:
+            payload = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"status": "error", "message": "Invalid JSON payload"},
+                status=400,
+            )
+
         event_type = request.headers.get("X-GitHub-Event", "")
 
         event_handlers = {
@@ -865,17 +1353,156 @@ def github_webhook(request):
         if handler:
             return handler(payload)
         else:
-            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
+            return JsonResponse(
+                {"status": "error", "message": "Unhandled event type"},
+                status=400,
+            )
     else:
         return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
 
 
 def handle_pull_request_event(payload):
-    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
-        if pr_user_profile:
-            pr_user_instance = pr_user_profile.user
-            assign_github_badge(pr_user_instance, "First PR Merged")
+    """
+    Handle GitHub pull_request events.
+
+    Persists pull request lifecycle data into GitHubIssue for repositories
+    tracked in the BLT database. Supports key actions such as opened, closed,
+    reopened, edited, and synchronize, updating fields like state, merged flag,
+    merged_at/closed_at timestamps, linked repo, user_profile and contributor.
+    Also preserves existing badge assignment behaviour for merged PRs.
+    """
+    action = payload.get("action")
+    pr_data = payload.get("pull_request") or {}
+    repo_data = payload.get("repository") or {}
+
+    logger.debug(f"GitHub pull_request event: {action}")
+
+    # Only care about main lifecycle actions; ignore label/assigned/etc.
+    if action not in {"opened", "closed", "reopened", "edited", "synchronize"}:
+        return JsonResponse({"status": "ignored", "action": action}, status=200)
+
+    # --- PR basic fields ---
+    # Use GitHub's global PR ID for GitHubIssue.issue_id (avoids clash with issues)
+    pr_global_id = pr_data.get("id")  # big integer, globally unique per PR
+    pr_number = pr_data.get("number")  # visible PR number (#123)
+    pr_state = pr_data.get("state") or "open"  # "open" / "closed"
+    pr_html_url = pr_data.get("html_url") or ""
+    pr_title = pr_data.get("title") or ""
+    pr_body = pr_data.get("body") or ""
+    is_merged = bool(pr_data.get("merged", False))
+
+    # --- PR author / user mapping ---
+    pr_user = pr_data.get("user") or {}
+    pr_user_html_url = pr_user.get("html_url")
+    pr_user_profile = None
+    if pr_user_html_url:
+        # Same pattern as other handlers (push, review, status, etc.)
+        pr_user_profile = UserProfile.objects.filter(github_url=pr_user_html_url).first()
+
+    # contributor mapping for PR leaderboard
+    contributor = None
+    gh_login = pr_user.get("login")
+    gh_avatar = pr_user.get("avatar_url")
+    gh_github_url = pr_user_html_url
+    gh_id = pr_user.get("id")  # GitHub user ID (preferred unique key)
+
+    try:
+        if gh_id is not None:
+            # Primary: use github_id as the unique identifier
+            contributor, _ = Contributor.objects.get_or_create(
+                github_id=gh_id,
+                defaults={
+                    "github_url": gh_github_url or "",
+                    "name": gh_login or extract_github_username(gh_github_url) or "",
+                    "avatar_url": gh_avatar or "",
+                    "contributor_type": "User",
+                    "contributions": 0,
+                },
+            )
+        elif gh_github_url:
+            # Fallback: try to find existing contributor by URL, but don't create
+            # without github_id, since it's a required unique field
+            contributor = Contributor.objects.filter(github_url=gh_github_url).first()
+
+    except Exception as e:
+        logger.error(f"Error getting/creating Contributor for PR: {e}")
+        contributor = None
+
+    # --- Timestamps (using same style as handle_issue_event) ---
+    created_at = safe_parse_github_datetime(
+        pr_data.get("created_at"),
+        default=timezone.now(),
+        field_name="pull_request.created_at",
+    )
+    updated_at = safe_parse_github_datetime(
+        pr_data.get("updated_at"),
+        default=timezone.now(),
+        field_name="pull_request.updated_at",
+    )
+    closed_at = safe_parse_github_datetime(
+        pr_data.get("closed_at"),
+        default=None,
+        field_name="pull_request.closed_at",
+    )
+    merged_at = safe_parse_github_datetime(
+        pr_data.get("merged_at"),
+        default=None,
+        field_name="pull_request.merged_at",
+    )
+
+    # --- Repo mapping (same style as handle_issue_event) ---
+    repo_html_url = repo_data.get("html_url")
+    repo_full_name = repo_data.get("full_name")  # "owner/repo" (for logging only)
+
+    if not pr_global_id or not repo_html_url:
+        logger.warning("Pull request event missing required data (id or repo_html_url)")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    repo = None
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT for PR: {repo_html_url}")
+        # Not an error: we only track PRs for repos that exist in our DB
+    except Exception as e:
+        logger.error(f"Error finding repository for PR: {e}")
+
+    if repo:
+        # --- Upsert GitHubIssue row for this PR ---
+        try:
+            github_issue, created = GitHubIssue.objects.update_or_create(
+                issue_id=pr_global_id,  # unique per PR (avoids clash with issues)
+                repo=repo,
+                defaults={
+                    "type": "pull_request",
+                    "title": pr_title,
+                    "body": pr_body,
+                    "state": pr_state,
+                    "url": pr_html_url,
+                    "is_merged": is_merged,
+                    "created_at": created_at,
+                    "updated_at": updated_at,
+                    "closed_at": closed_at,
+                    "merged_at": merged_at if is_merged else None,
+                    "user_profile": pr_user_profile,
+                    "contributor": contributor,
+                    # has_dollar_tag, sponsors_tx_id, p2p_* left untouched
+                },
+            )
+
+            logger.info(
+                f"{'Created' if created else 'Updated'} GitHubIssue PR #{pr_number} "
+                f"(id={pr_global_id}) in repo {repo_full_name} | "
+                f"state={pr_state} merged={is_merged}"
+            )
+        except Exception as e:
+            logger.error(f"Error creating/updating GitHubIssue for PR #{pr_number}: {e}")
+
+    # --- Badge logic (preserve existing behaviour) ---
+    if action == "closed" and is_merged and pr_user_profile:
+        pr_user_instance = pr_user_profile.user
+        assign_github_badge(pr_user_instance, "First PR Merged")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
@@ -897,12 +1524,70 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    print("issue closed")
-    if payload["action"] == "closed":
+    """
+    Handle GitHub issue events (opened, closed, etc.)
+    Updates GitHubIssue records in BLT to match GitHub issue state
+    """
+    action = payload.get("action")
+    issue_data = payload.get("issue", {})
+    repo_data = payload.get("repository", {})
+
+    logger.debug(f"GitHub issue event: {action}")
+
+    # Extract issue details
+    issue_id = issue_data.get("number")
+    issue_state = issue_data.get("state")
+    issue_html_url = issue_data.get("html_url")
+
+    # Extract repository details
+    repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
+    repo_html_url = repo_data.get("html_url")
+
+    if not issue_id or not repo_html_url:
+        logger.warning("Issue event missing required data")
+        return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
+
+    # Find the Repo in BLT database
+    try:
+        repo = Repo.objects.get(repo_url=repo_html_url)
+    except Repo.DoesNotExist:
+        logger.info(f"Repository not found in BLT: {repo_html_url}")
+        # Not an error - we only track issues for repos we have in our database
+        # Continue to badge assignment
+    except Exception as e:
+        logger.error(f"Error finding repository: {e}")
+        # Continue to badge assignment
+    else:
+        # Find and update the GitHubIssue record
+        try:
+            github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
+
+            # Update the issue state
+            github_issue.state = issue_state
+
+            # Update closed_at timestamp if the issue was closed
+            if action == "closed" and issue_data.get("closed_at"):
+                github_issue.closed_at = dateutil_parser.parse(issue_data["closed_at"])
+
+            # Update updated_at timestamp
+            if issue_data.get("updated_at"):
+                github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
+
+            github_issue.save()
+            logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
+        except GitHubIssue.DoesNotExist:
+            logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
+            # Not an error - we may not have all issues in our database
+        except Exception as e:
+            logger.error(f"Error updating GitHubIssue: {e}")
+
+    # Assign badge for first issue closed (existing functionality)
+    if action == "closed":
         closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
@@ -942,7 +1627,7 @@ def assign_github_badge(user, action_title):
             UserBadge.objects.create(user=user, badge=badge)
 
     except Badge.DoesNotExist:
-        print(f"Badge '{action_title}' does not exist.")
+        logger.warning(f"Badge '{action_title}' does not exist.")
 
 
 @method_decorator(login_required, name="dispatch")
@@ -961,11 +1646,116 @@ class UserChallengeListView(View):
                 # If the user is not participating, set progress to 0
                 challenge.progress = 0
 
+            # Calculate the progress circle offset (same as team challenges)
+            circumference = 125.6
+            challenge.stroke_dasharray = circumference
+            challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
+
         return render(
             request,
             "user_challenges.html",
             {"challenges": challenges, "user_challenges": user_challenges},
         )
+
+    def post(self, request):
+        """Handle manual challenge progress updates"""
+        import json
+
+        from django.http import JsonResponse
+
+        try:
+            data = json.loads(request.body)
+            challenge_id = data.get("challenge_id")
+            action = data.get("action")  # 'join', 'update_progress', 'complete'
+            progress_value = data.get("progress", 0)
+
+            challenge = get_object_or_404(Challenge, id=challenge_id, challenge_type="single")
+
+            if action == "join":
+                # Add user to challenge participants
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+                return JsonResponse({"success": True, "message": "Joined challenge successfully!"})
+
+            elif action == "update_progress":
+                # Update progress manually
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+
+                # Ensure progress is between 0 and 100
+                progress_value = max(0, min(100, int(progress_value)))
+                challenge.progress = progress_value
+                challenge.save()
+
+                # Check if challenge is now completed
+                if progress_value == 100 and not challenge.completed:
+                    challenge.completed = True
+                    challenge.completed_at = timezone.now()
+                    challenge.save()
+
+                    # Award points and BACON
+                    Points.objects.create(
+                        user=request.user, score=challenge.points, reason=f"Completed '{challenge.title}' challenge"
+                    )
+
+                    from website.feed_signals import giveBacon
+
+                    giveBacon(request.user, amt=challenge.bacon_reward)
+
+                    # Handle staking pool completion
+                    from website.challenge_signals import handle_staking_pool_completion
+
+                    handle_staking_pool_completion(request.user, challenge)
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Challenge completed! Earned {challenge.points} points and {challenge.bacon_reward} BACON tokens!",
+                            "completed": True,
+                        }
+                    )
+
+                return JsonResponse({"success": True, "message": "Progress updated successfully!"})
+
+            elif action == "complete":
+                # Mark challenge as 100% complete
+                if request.user not in challenge.participants.all():
+                    challenge.participants.add(request.user)
+
+                if not challenge.completed:
+                    challenge.progress = 100
+                    challenge.completed = True
+                    challenge.completed_at = timezone.now()
+                    challenge.save()
+
+                    # Award points and BACON
+                    Points.objects.create(
+                        user=request.user, score=challenge.points, reason=f"Completed '{challenge.title}' challenge"
+                    )
+
+                    from website.feed_signals import giveBacon
+
+                    giveBacon(request.user, amt=challenge.bacon_reward)
+
+                    # Handle staking pool completion
+                    from website.challenge_signals import handle_staking_pool_completion
+
+                    handle_staking_pool_completion(request.user, challenge)
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Challenge completed! Earned {challenge.points} points and {challenge.bacon_reward} BACON tokens!",
+                            "completed": True,
+                        }
+                    )
+                else:
+                    return JsonResponse({"success": False, "message": "Challenge already completed!"})
+
+            return JsonResponse({"success": False, "message": "Invalid action"})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "message": "An error occurred while updating the challenge"})
 
 
 @login_required
@@ -1122,7 +1912,7 @@ def mark_as_read(request):
         except Exception as e:
             logger.error(f"Error marking notifications as read: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+                {"status": "error", "message": "An error occurred while marking notifications as read"}, status=400
             )
 
 
@@ -1139,7 +1929,7 @@ def delete_notification(request, notification_id):
         except Exception as e:
             logger.error(f"Error deleting notification: {e}")
             return JsonResponse(
-                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                {"status": "error", "message": "An error occurred while deleting notification, please try again."},
                 status=400,
             )
     else:

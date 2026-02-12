@@ -1,9 +1,13 @@
 # bacon/bitcoin_utils.py
 
+import logging
+
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from django.conf import settings
 
 from website.models import BaconToken
+
+logger = logging.getLogger(__name__)
 
 
 def get_rpc_client():
@@ -29,7 +33,7 @@ def create_bacon_token(user, contribution):
         return token
 
     except JSONRPCException as e:
-        print(f"Error creating token: {e}")
+        logger.error(f"Error creating token: {e}")
         return None
 
 

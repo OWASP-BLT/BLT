@@ -18,6 +18,7 @@
 {% endblock og_description %}
 {% load i18n %}
 {% block content %}
+    {% include "includes/sidenav.html" %}
     <h1>{% trans "Sign Out" %}</h1>
     <p>{% trans "Are you sure?" %}</p>
     <form method="post"
@@ -28,7 +29,7 @@
                    name="{{ redirect_field_name }}"
                    value="{{ redirect_field_value }}" />
         {% endif %}
-        <button class="btn btn-primary text-black" type="submit">{% trans "Yes" %}</button>
+        <button class="btn btn-primary text-black dark:text-white" type="submit">{% trans "Yes" %}</button>
         <a href="{% url 'account_profile' %}" class="btn btn-default">{% trans "Cancel" %}</a>
     </form>
 {% endblock content %}

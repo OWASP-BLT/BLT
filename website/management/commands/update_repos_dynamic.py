@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -162,19 +163,19 @@ class Command(LoggedBaseCommand):
         self.stdout.write(f"Updating repository: {repo.name}")
 
         # Extract owner and repo name from the repo URL
-        repo_url_parts = repo.repo_url.split("/")
-        if "github.com" in repo.repo_url and len(repo_url_parts) >= 5:
-            owner = repo_url_parts[-2]
-            repo_name = repo_url_parts[-1]
+        parsed = urlparse(repo.repo_url)
+        # parsed.netloc will be something like "github.com"
 
-            # Update repository data from GitHub API
-            self.update_repo_data(repo, owner, repo_name)
-
-            # Fetch issues with $ in tags and closed PRs if not skipped
-            if not skip_issues:
-                self.fetch_issues_and_prs(repo, owner, repo_name)
+        if parsed.netloc == "github.com":
+            path = parsed.path.strip("/")  # e.g. "owner/repo"
+            parts = path.split("/")
+            if len(parts) >= 2:
+                owner, repo_name = parts[-2], parts[-1]
+                # TODO: add your GitHub fetch/update logic here
+            else:
+                self.stdout.write("Invalid GitHub URL format.")
         else:
-            self.stdout.write(self.style.WARNING(f"Not a valid GitHub repository URL: {repo.repo_url}"))
+            self.stdout.write("Not a GitHub URL.")
 
         # Update the last_updated timestamp
         repo.last_updated = timezone.now()

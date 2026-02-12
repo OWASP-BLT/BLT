@@ -3,120 +3,141 @@
     "project_name": "O-Saft",
     "repo_url": "https://github.com/OWASP/O-Saft",
     "funding_url": "https://raw.githubusercontent.com/OWASP/O-Saft/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-o-saft&title=OWASP+O-Saft, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-o-saft&title=OWASP+O-Saft, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "OWASP-VWAD",
     "repo_url": "https://github.com/OWASP/OWASP-VWAD",
     "funding_url": "https://raw.githubusercontent.com/OWASP/OWASP-VWAD/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-vulnerable-web-applications-directory&title=OWASP+Vulnerable+Web+Applications+Directory"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-vulnerable-web-applications-directory&title=OWASP+Vulnerable+Web+Applications+Directory",
+    "proposal_url":""
+    
   },
   {
     "project_name": "ASVS",
     "repo_url": "https://github.com/OWASP/ASVS",
     "funding_url": "https://raw.githubusercontent.com/OWASP/ASVS/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-application-security-verification-standard&title=OWASP+Application+Security+Verification+Standard, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-application-security-verification-standard&title=OWASP+Application+Security+Verification+Standard, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "ZSC",
     "repo_url": "https://github.com/OWASP/ZSC",
     "funding_url": "https://raw.githubusercontent.com/OWASP/ZSC/master/.github/FUNDING.yml",
-    "funding_details": "zdresearch"
+    "funding_details": "zdresearch",
+    "proposal_url":""
   },
   {
     "project_name": "Top10",
     "repo_url": "https://github.com/OWASP/Top10",
     "funding_url": "https://raw.githubusercontent.com/OWASP/Top10/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-top-ten&title=OWASP+Top+Ten, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-top-ten&title=OWASP+Top+Ten, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "MAS",
     "repo_url": "https://github.com/OWASP/owasp-masvs",
     "funding_url": "https://raw.githubusercontent.com/OWASP/owasp-masvs/master/.github/FUNDING.yml",
-    "funding_details": "https://www.icrc.org/en/donate/ukraine"
+    "funding_details": "https://www.icrc.org/en/donate/ukraine",
+    "proposal_url":""
   },
   {
     "project_name": "owasp-mastg",
     "repo_url": "https://github.com/OWASP/owasp-mastg",
     "funding_url": "https://raw.githubusercontent.com/OWASP/owasp-mastg/master/.github/FUNDING.yml",
-    "funding_details": "https://www.icrc.org/en/donate/ukraine"
+    "funding_details": "https://www.icrc.org/en/donate/ukraine",
+    "proposal_url":""
   },
   {
     "project_name": "Nettacker",
     "repo_url": "https://github.com/OWASP/Nettacker",
     "funding_url": "https://raw.githubusercontent.com/OWASP/Nettacker/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-nettacker&title=OWASP+Nettacker"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-nettacker&title=OWASP+Nettacker",
+    "proposal_url":""
   },
   {
     "project_name": "wstg",
     "repo_url": "https://github.com/OWASP/wstg",
     "funding_url": "https://raw.githubusercontent.com/OWASP/wstg/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-web-security-testing-guide&title=OWASP+Web+Security+Testing+Guide, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-web-security-testing-guide&title=OWASP+Web+Security+Testing+Guide, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "Python-Honeypot",
     "repo_url": "https://github.com/OWASP/Python-Honeypot",
     "funding_url": "https://raw.githubusercontent.com/OWASP/Python-Honeypot/master/.github/FUNDING.yml",
-    "funding_details": "zdresearch"
+    "funding_details": "zdresearch",
+    "proposal_url":""
   },
   {
     "project_name": "API-Security",
     "repo_url": "https://github.com/OWASP/API-Security",
     "funding_url": "https://raw.githubusercontent.com/OWASP/API-Security/master/.github/FUNDING.yml",
-    "funding_details": "OWASP, https://owasp.org/donate/?reponame=www-project-api-security&title=OWASP+API+Security+Project"
+    "funding_details": "OWASP, https://owasp.org/donate/?reponame=www-project-api-security&title=OWASP+API+Security+Project",
+    "proposal_url":""
   },
   {
     "project_name": "Intelligent-Intrusion-Detection-System",
     "repo_url": "https://github.com/OWASP/Intelligent-Intrusion-Detection-System",
     "funding_url": "https://raw.githubusercontent.com/OWASP/Intelligent-Intrusion-Detection-System/master/.github/FUNDING.yml",
-    "funding_details": "hardlyhuman, gsriharsha, https://www.paypal.me/SRIHARSHAGAJAVALLI"
+    "funding_details": "hardlyhuman, gsriharsha, https://www.paypal.me/SRIHARSHAGAJAVALLI",
+    "proposal_url":""
   },
   {
     "project_name": "owasp.github.io",
     "repo_url": "https://github.com/OWASP/owasp.github.io",
     "funding_url": "https://raw.githubusercontent.com/OWASP/owasp.github.io/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/"
+    "funding_details": "https://owasp.org/donate/",
+    "proposal_url":""
   },
   {
     "project_name": "Wrongsecrets",
     "repo_url": "https://github.com/OWASP/wrongsecrets",
     "funding_url": "https://raw.githubusercontent.com/OWASP/wrongsecrets/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-wrongsecrets&title=OWASP+wrongsecrets, https://www.icrc.org/en/donate/ukraine, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-wrongsecrets&title=OWASP+wrongsecrets, https://www.icrc.org/en/donate/ukraine, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "wrongsecrets-binaries",
     "repo_url": "https://github.com/OWASP/wrongsecrets-binaries",
     "funding_url": "https://raw.githubusercontent.com/OWASP/wrongsecrets-binaries/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-wrongsecrets&title=OWASP+wrongsecrets"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-wrongsecrets&title=OWASP+wrongsecrets",
+    "proposal_url":""
   },
   {
     "project_name": "wrongsecrets-ctf-party",
     "repo_url": "https://github.com/OWASP/wrongsecrets-ctf-party",
     "funding_url": "https://raw.githubusercontent.com/OWASP/wrongsecrets-ctf-party/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-wrongsecrets&title=OWASP+wrongsecrets, https://www.icrc.org/en/donate/ukraine, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-wrongsecrets&title=OWASP+wrongsecrets, https://www.icrc.org/en/donate/ukraine, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "secure-coding-practices-quick-reference-guide",
     "repo_url": "https://github.com/OWASP/secure-coding-practices-quick-reference-guide",
     "funding_url": "https://raw.githubusercontent.com/OWASP/secure-coding-practices-quick-reference-guide/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate/?reponame=www-project-secure-coding-practices-quick-reference-guide&title=OWASP+Secure+Coding+Practices+Quick+Reference+Guide, OWASP"
+    "funding_details": "https://owasp.org/donate/?reponame=www-project-secure-coding-practices-quick-reference-guide&title=OWASP+Secure+Coding+Practices+Quick+Reference+Guide, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "BLT",
     "repo_url": "https://github.com/OWASP-BLT/BLT",
     "funding_url": "https://raw.githubusercontent.com/OWASP-BLT/BLT/master/.github/FUNDING.yml",
-    "funding_details": "https://owasp.org/donate?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool"
+    "funding_details": "https://owasp.org/donate?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool",
+    "proposal_url":"https://github.com/OWASP-BLT/BLT/blob/main/PROPOSAL.md"
   },
   {
     "project_name": "Juice Shop",
     "repo_url": "https://github.com/juice-shop/juice-shop",
     "funding_url": "https://raw.githubusercontent.com/juice-shop/juice-shop/master/.github/FUNDING.yml",
-    "funding_details": "https://sponsor.owasp-juice.shop, OWASP"
+    "funding_details": "https://sponsor.owasp-juice.shop, OWASP",
+    "proposal_url":""
   },
   {
     "project_name": "ModSecurity Core Rule Set",
     "repo_url": "https://github.com/coreruleset/coreruleset",
     "funding_url": "https://raw.githubusercontent.com/coreruleset/coreruleset/master/.github/FUNDING.yml",
-    "funding_details": "https://coreruleset.org/donate"
+    "funding_details": "https://coreruleset.org/donate",
+    "proposal_url":""
   }
 ]

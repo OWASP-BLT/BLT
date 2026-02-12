@@ -6,6 +6,7 @@ import time
 
 import requests
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from slack_bolt import App
 from slack_bolt.adapter.django import SlackRequestHandler
@@ -26,8 +27,34 @@ if not SLACK_BOT_TOKEN or not SLACK_SIGNING_SECRET:
     app = None
     handler = None
 else:
-    app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
-    handler = SlackRequestHandler(app)
+    # Check if tokens are placeholder values
+    # Note: Empty strings are handled separately, not included in substring check
+    # because "" in "any_string" always returns True in Python
+    placeholder_values = ["your_slack", "example", "abc123"]
+    token_lower = (SLACK_BOT_TOKEN or "").lower()
+    secret_lower = (SLACK_SIGNING_SECRET or "").lower()
+    is_placeholder = any(
+        placeholder in token_lower or placeholder in secret_lower for placeholder in placeholder_values
+    )
+
+    if (
+        is_placeholder
+        or len(SLACK_BOT_TOKEN) < 10
+        or len(SLACK_SIGNING_SECRET) < 10
+        or not SLACK_BOT_TOKEN.strip()
+        or not SLACK_SIGNING_SECRET.strip()
+    ):
+        logger.warning("Slack tokens appear to be placeholders. Slack integration disabled.")
+        app = None
+        handler = None
+    else:
+        try:
+            app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+            handler = SlackRequestHandler(app)
+        except Exception as e:
+            logger.warning(f"Failed to initialize Slack integration: {str(e)}. Slack integration disabled.")
+            app = None
+            handler = None
 
 pagination_data = {}
 
@@ -205,8 +232,7 @@ if app:
         except Exception as e:
             logger.error(f"Error handling /discover command: {e}")
 
-    app.action("select_repository")
-
+    @app.action("select_repository")
     def handle_repository_selection(ack, body, client):
         try:
             ack()
@@ -380,6 +406,15 @@ if app:
 
         except Exception as e:
             logger.error(f"Error sending DM to user {user_id}: {e}")
+
+
+def slack_landing_page(request):
+    """Landing page for Slack bot with features and installation button."""
+    slack_client_id = os.environ.get("SLACK_ID_CLIENT")
+    context = {
+        "slack_client_id": slack_client_id,
+    }
+    return render(request, "slack.html", context)
 
 
 @csrf_exempt

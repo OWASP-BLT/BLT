@@ -32,8 +32,6 @@ function copyToClipboard(elementId) {
 
 // Function to refresh a section of the repository detail page
 async function refreshSection(button, section) {
-    console.log(`refreshSection called with section: ${section}`);
-
     // Check if already spinning
     if (button.querySelector('.animate-spin')) {
         return;
@@ -69,8 +67,6 @@ async function refreshSection(button, section) {
         // Ensure section is a string and properly formatted
         const sectionValue = String(section).trim();
         formData.append('section', sectionValue);
-
-        console.log(`Sending section: '${sectionValue}'`);
 
         // Try to get CSRF token from cookie first
         function getCookie(name) {
@@ -113,8 +109,6 @@ async function refreshSection(button, section) {
             body: formData
         });
 
-        console.log(`Response status: ${response.status}`);
-
         // Check if response is OK before trying to parse JSON
         if (!response.ok) {
             throw new Error(`Server responded with status: ${response.status}`);
@@ -124,12 +118,10 @@ async function refreshSection(button, section) {
         let data;
         try {
             const responseText = await response.text();
-            console.log('Raw response:', responseText);
 
             // Only try to parse as JSON if it looks like JSON
             if (responseText.trim().startsWith('{')) {
                 data = JSON.parse(responseText);
-                console.log('Parsed response data:', data);
             } else {
                 throw new Error('Response is not valid JSON');
             }
@@ -404,6 +396,57 @@ function attachPaginationListeners() {
     });
 }
 
+// --- AJAX Stargazers Pagination & Filter ---
+function attachStargazersListeners() {
+    // Pagination links
+    document.querySelectorAll('.stargazers-pagination-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetchStargazers(this.getAttribute('href'));
+        });
+    });
+    // Filter links
+    document.querySelectorAll('.stargazers-filter-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetchStargazers(this.getAttribute('href'));
+        });
+    });
+}
+
+function fetchStargazers(url) {
+    const stargazersSection = document.getElementById('stargazers-section');
+    if (!stargazersSection) return;
+    // Show loading state
+    stargazersSection.classList.add('opacity-50');
+    fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+    })
+    .then(html => {
+        // Parse the returned HTML and extract the stargazers section
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const newSection = tempDiv.querySelector('#stargazers-section');
+        if (newSection) {
+            stargazersSection.innerHTML = newSection.innerHTML;
+            // Update URL
+            window.history.pushState({}, '', url);
+            // Re-attach listeners
+            attachStargazersListeners();
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching stargazers:', error);
+    })
+    .finally(() => {
+        stargazersSection.classList.remove('opacity-50');
+    });
+}
+
 // Initialize everything when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize progress bars
@@ -418,14 +461,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Set up AI Summary button with direct event listener
     const aiSummaryButton = document.querySelector('button[data-section="ai_summary"]');
     if (aiSummaryButton) {
-        console.log('AI Summary button found:', aiSummaryButton);
-
         // Remove the inline onclick attribute and add a proper event listener
         aiSummaryButton.removeAttribute('onclick');
 
         aiSummaryButton.addEventListener('click', function (e) {
             e.preventDefault();
-            console.log('AI Summary button clicked via event listener');
             refreshSection(this, 'ai_summary');
         });
     }
@@ -440,8 +480,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add a proper event listener
         button.addEventListener('click', function (e) {
             e.preventDefault();
-            console.log(`Refresh button clicked for section: ${section}`);
             refreshSection(this, section);
         });
     });
+
+    attachStargazersListeners();
 }); 

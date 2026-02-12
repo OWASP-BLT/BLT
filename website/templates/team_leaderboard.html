@@ -21,31 +21,31 @@
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
             <!-- Header Section -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
                         <i class="fas fa-trophy text-2xl text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">Global Teams Leaderboard</h1>
-                        <p class="text-gray-600 mt-2">Discover the top-performing teams and their achievements</p>
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Global Teams Leaderboard</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Discover the top-performing teams and their achievements</p>
                     </div>
                 </div>
             </div>
             {% if not leaderboard %}
                 <!-- No Teams State -->
-                <div class="bg-white rounded-xl shadow-md p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-users text-2xl text-gray-400"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-2xl text-gray-400 dark:text-gray-600"></i>
                     </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No Teams Available</h3>
-                    <p class="text-gray-600">There are no teams registered in the leaderboard yet.</p>
+                    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">No Teams Available</h3>
+                    <p class="text-gray-600 dark:text-gray-400">There are no teams registered in the leaderboard yet.</p>
                 </div>
             {% else %}
                 <!-- Leaderboard List -->
                 <div class="grid gap-4 mb-8">
                     {% for team, points in leaderboard %}
-                        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
                                     <!-- Team Logo -->
@@ -57,22 +57,22 @@
                                                  height="48"
                                                  class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
                                         {% else %}
-                                            <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                                                <i class="fas fa-users text-2xl text-gray-400"></i>
+                                            <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                                <i class="fas fa-users text-2xl text-gray-400 dark:text-gray-600"></i>
                                             </div>
                                         {% endif %}
                                         <!-- Rank Badge -->
                                         {% if team.rank %}
-                                            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold {% if team.rank == 'GOLD' %}bg-[#D4AF37] text-white {% elif team.rank == 'SILVER' %}bg-[#C0C0C0] text-gray-800 {% elif team.rank == 'BRONZE' %}bg-[#be7225] text-white {% elif team.rank == 'PLATINUM' %}bg-[#E5E4E2] text-gray-800 {% else %}bg-gray-800 text-white{% endif %}">
+                                            <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold {% if team.rank == 'GOLD' %}bg-[#D4AF37] text-white {% elif team.rank == 'SILVER' %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200 {% elif team.rank == 'BRONZE' %}bg-[#be7225] text-white {% elif team.rank == 'PLATINUM' %}bg-[#E5E4E2] text-gray-800 {% else %}bg-gray-800 text-white{% endif %}">
                                                 {{ forloop.counter }}
                                             </div>
                                         {% endif %}
                                     </div>
                                     <!-- Team Info -->
                                     <div>
-                                        <h3 class="text-xl font-bold text-gray-800">{{ team.name }}</h3>
+                                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">{{ team.name }}</h3>
                                         {% if team.rank %}
-                                            <span class="inline-block px-3 py-1 text-sm rounded-full mt-1 {% if team.rank == 'GOLD' %}bg-[#D4AF37] text-white {% elif team.rank == 'SILVER' %}bg-[#C0C0C0] text-gray-800 {% elif team.rank == 'BRONZE' %}bg-[#be7225] text-white {% elif team.rank == 'PLATINUM' %}bg-[#E5E4E2] text-gray-800 {% else %}bg-gray-800 text-white{% endif %}">
+                                            <span class="inline-block px-3 py-1 text-sm rounded-full mt-1 {% if team.rank == 'GOLD' %}bg-[#D4AF37] text-white {% elif team.rank == 'SILVER' %}bg-[#C0C0C0] text-gray-800 dark:text-gray-200 {% elif team.rank == 'BRONZE' %}bg-[#be7225] text-white {% elif team.rank == 'PLATINUM' %}bg-[#E5E4E2] text-gray-800 {% else %}bg-gray-800 text-white{% endif %}">
                                                 {{ team.rank }}
                                             </span>
                                         {% endif %}
@@ -81,7 +81,7 @@
                                 <!-- Points -->
                                 <div class="text-center">
                                     <div class="text-3xl font-bold text-[#e74c3c]">{{ points }}</div>
-                                    <div class="text-sm text-gray-600">Points</div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">Points</div>
                                 </div>
                             </div>
                         </div>
@@ -89,16 +89,16 @@
                 </div>
                 <!-- Pagination -->
                 {% if leaderboard.has_other_pages %}
-                    <div class="flex items-center justify-center space-x-2 bg-white rounded-xl shadow-md p-4">
+                    <div class="flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
                         <!-- Previous Page -->
                         {% if leaderboard.has_previous %}
                             <a href="?page={{ leaderboard.previous_page_number }}"
-                               class="flex items-center px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                               class="flex items-center px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
                                 <i class="fas fa-chevron-left mr-2"></i>
                                 Previous
                             </a>
                         {% else %}
-                            <span class="flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                            <span class="flex items-center px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
                                 <i class="fas fa-chevron-left mr-2"></i>
                                 Previous
                             </span>
@@ -110,25 +110,25 @@
                                     <span class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-lg">{{ num }}</span>
                                 {% elif num > leaderboard.number|add:'-3' and num < leaderboard.number|add:'3' %}
                                     <a href="?page={{ num }}"
-                                       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors duration-300">
+                                       class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 transition-colors duration-300">
                                         {{ num }}
                                     </a>
                                 {% endif %}
                             {% endfor %}
                         </div>
                         <!-- Current Page Indicator (Mobile) -->
-                        <span class="sm:hidden px-4 py-2 text-sm font-medium text-gray-700">
+                        <span class="sm:hidden px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                             Page {{ leaderboard.number }} of {{ leaderboard.paginator.num_pages }}
                         </span>
                         <!-- Next Page -->
                         {% if leaderboard.has_next %}
                             <a href="?page={{ leaderboard.next_page_number }}"
-                               class="flex items-center px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
+                               class="flex items-center px-4 py-2 text-sm font-medium text-[#e74c3c] bg-white dark:bg-gray-800 rounded-lg border border-[#e74c3c] hover:bg-[#e74c3c] hover:text-white transition-colors duration-300">
                                 Next
                                 <i class="fas fa-chevron-right ml-2"></i>
                             </a>
                         {% else %}
-                            <span class="flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                            <span class="flex items-center px-4 py-2 text-sm font-medium text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-lg cursor-not-allowed">
                                 Next
                                 <i class="fas fa-chevron-right ml-2"></i>
                             </span>

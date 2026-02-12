@@ -1,19 +1,19 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    View Bughunt
+    View Bug Bounty
 {% endblock title %}
 {% block description %}
-    View detailed information about the Bughunt, including the hunt name, duration, description, and domain URL. Check the status and participate in the event.
+    View detailed information about the Bug Bounty, including the hunt name, duration, description, and domain URL. Check the status and participate in the event.
 {% endblock description %}
 {% block keywords %}
-    View Bughunt, Bughunt Details, Hunt Information, Hunt Description, Domain URL, Participate in Bughunt
+    View Bug Bounty, Bug Bounty Details, Hunt Information, Hunt Description, Domain URL, Participate in Bug Bounty
 {% endblock keywords %}
 {% block og_title %}
-    View Bughunt - Detailed Hunt Information
+    View Bug Bounty - Detailed Hunt Information
 {% endblock og_title %}
 {% block og_description %}
-    Access comprehensive details about the Bughunt, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
+    Access comprehensive details about the Bug Bounty, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
 {% endblock og_description %}
 {% block content %}
     <section>
@@ -25,10 +25,10 @@
     <main>
         <article id="banner"
                  class="jumbotron jumbotron-fluid h-[400px] bg-cover bg-no-repeat bg-center bg-[url('https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg')]">
-            <div class="italic pl-4 mt-4 text-gray-100">
+            <div class="italic pl-4 mt-4 text-gray-100 dark:text-gray-900">
                 <h1 class="text-5xl italic">
                     {{ hunt.domain.organization.name }}
-                    <span class="inline-block px-2 py-1 text-xs font-bold text-center text-gray-100 align-baseline bg-primary-500 rounded">{{ hunt.domain.name }}</span>
+                    <span class="inline-block px-2 py-1 text-xs font-bold text-center text-gray-100 dark:text-gray-900 align-baseline bg-primary-500 rounded">{{ hunt.domain.name }}</span>
                 </h1>
                 <p class="lead mt-5">{{ hunt.name }} / {{ hunt.starts_on|date:'Y-m-d H:i' }} - {{ hunt.end_on|date:'Y-m-d H:i' }}</p>
             </div>
@@ -79,7 +79,6 @@
             });
 
             $(".reference-link").each(function (i, obj) {
-                console.log(obj)
             })
         })
     </script>

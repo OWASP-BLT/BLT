@@ -1,8 +1,35 @@
+import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from .models import Challenge, IpReport, Issue, Points, TimeLog, UserProfile
+
+logger = logging.getLogger(__name__)
+
+
+def handle_staking_pool_completion(user, challenge):
+    """Handle staking pool completion when a user completes a challenge"""
+    from .models import StakingEntry  # Import here to avoid circular imports
+    from .views.staking_competitive import calculate_individual_user_progress  # Import progress function
+
+    # Find active staking entries for this user and challenge
+    active_entries = StakingEntry.objects.filter(
+        user=user, pool__challenge=challenge, pool__status="active", status="active", challenge_completed=False
+    )
+
+    # Check each staking entry individually with pool-specific progress
+    for entry in active_entries:
+        # Calculate progress only from when user joined this specific pool
+        pool_progress = calculate_individual_user_progress(user, challenge, pool_entry=entry)
+
+        # If user has completed the challenge for this specific pool, complete the entry
+        if pool_progress >= 100:
+            entry.complete_challenge()
+            logger.info(
+                f"Staking pool completion for {user.username} in {entry.pool.name}: Challenge completed with {pool_progress}% progress"
+            )
 
 
 def update_challenge_progress(user, challenge_title, model_class, reason, threshold=None, team_threshold=None):
@@ -38,6 +65,20 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
 
                 team.team_points += challenge.points
                 team.save()
+
+                # Award BACON tokens to all team members
+                from website.feed_signals import giveBacon
+
+                for team_member in team.user_profiles.all():
+                    if team_member.user:
+                        giveBacon(team_member.user, amt=challenge.bacon_reward)
+
+                # Award BACON tokens to all team members
+                from website.feed_signals import giveBacon
+
+                for team_member in team.user_profiles.all():
+                    if team_member.user:
+                        giveBacon(team_member.user, amt=challenge.bacon_reward)
         else:
             if user not in challenge.participants.all():
                 challenge.participants.add(user)
@@ -47,7 +88,7 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
 
             challenge.progress = int(progress)
             challenge.save()
-            print(challenge.completed)
+            logger.debug(f"Challenge completion status: {challenge.completed}")
             if challenge.progress == 100 and not challenge.completed:
                 challenge.completed = True  # Explicitly mark the challenge as completed
                 challenge.completed_at = timezone.now()
@@ -55,6 +96,14 @@ def update_challenge_progress(user, challenge_title, model_class, reason, thresh
 
                 # Award points to the user
                 Points.objects.create(user=user, score=challenge.points, reason=reason)
+
+                # Award BACON tokens for completing the challenge
+                from website.feed_signals import giveBacon
+
+                giveBacon(user, amt=challenge.bacon_reward)
+
+                # Handle staking pool completion
+                handle_staking_pool_completion(user, challenge)
 
     except Challenge.DoesNotExist:
         pass
@@ -124,7 +173,7 @@ def handle_sign_in_challenges(user, user_profile):
     Update progress for single challenges based on the user's streak.
     """
     try:
-        print("Handling user sign-in challenge...")
+        logger.debug("Handling user sign-in challenge...")
         challenge_title = "Sign in for 5 Days"
         challenge = Challenge.objects.get(title=challenge_title, challenge_type="single")
 
@@ -132,13 +181,13 @@ def handle_sign_in_challenges(user, user_profile):
             challenge.participants.add(user)
 
         streak_count = user_profile.current_streak
-        print(streak_count)
+        logger.debug(f"User {user.username} streak count: {streak_count}")
 
         if streak_count >= 5:
             progress = 100
         else:
             progress = streak_count * 100 / 5  # Calculate progress if streak is less than 5
-        print(progress)
+        logger.debug(f"Challenge progress: {progress}%")
         # Update the challenge progress
         challenge.progress = int(progress)
         challenge.save()
@@ -155,6 +204,14 @@ def handle_sign_in_challenges(user, user_profile):
                 reason=f"Completed '{challenge_title}' challenge",
             )
 
+            # Award BACON tokens for completing the challenge
+            from website.feed_signals import giveBacon
+
+            giveBacon(user, amt=challenge.bacon_reward)
+
+            # Handle staking pool completion
+            handle_staking_pool_completion(user, challenge)
+
     except Challenge.DoesNotExist:
         # Handle case when the challenge does not exist
         pass
@@ -167,7 +224,7 @@ def handle_team_sign_in_challenges(team):
     try:
         challenge_title = "All Members Sign in for 5 Days"  # Title of the team challenge
         challenge = Challenge.objects.get(title=challenge_title, challenge_type="team")
-        print("Handling team sign-in challenge...")
+        logger.debug("Handling team sign-in challenge...")
 
         # Ensure the team is registered as a participant
         if team not in challenge.team_participants.all():
@@ -194,6 +251,13 @@ def handle_team_sign_in_challenges(team):
             # Add points to the team
             team.team_points += challenge.points
             team.save()
+
+            # Award BACON tokens to all team members
+            from website.feed_signals import giveBacon
+
+            for team_member in team.user_profiles.all():
+                if team_member.user:
+                    giveBacon(team_member.user, amt=challenge.bacon_reward)
     except Challenge.DoesNotExist:
-        print(f"Challenge '{challenge_title}' does not exist.")
+        logger.warning(f"Challenge '{challenge_title}' does not exist.")
         pass
