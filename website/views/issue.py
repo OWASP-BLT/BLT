@@ -17,6 +17,7 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
+from comments.models import Comment
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -58,7 +59,6 @@ from rest_framework.authtoken.models import Token
 from user_agents import parse
 
 from blt import settings
-from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
@@ -1219,7 +1219,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1245,7 +1245,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
@@ -2534,38 +2534,35 @@ class GitHubIssueDetailView(DetailView):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def page_vote(request):
     """
     Handle upvote/downvote for a page
     """
-    if request.method == "POST":
-        template_name = request.POST.get("template_name")
-        vote_type = request.POST.get("vote_type")
+    template_name = request.POST.get("template_name")
+    vote_type = request.POST.get("vote_type")
 
-        if not template_name or vote_type not in ["upvote", "downvote"]:
-            return JsonResponse({"status": "error", "message": "Invalid parameters"})
+    if not template_name or vote_type not in ["upvote", "downvote"]:
+        return JsonResponse({"status": "error", "message": "Invalid parameters"})
 
-        # Clean the template name to use as a key
-        page_key = template_name.replace("/", "_").replace(".html", "")
-        vote_key = f"{vote_type}_{page_key}"
+    # Clean the template name to use as a key
+    page_key = template_name.replace("/", "_").replace(".html", "")
+    vote_key = f"{vote_type}_{page_key}"
 
-        # Get or create the DailyStats entry
-        try:
-            stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
-            # Increment the vote count
-            current_value = int(stat.value)
-            stat.value = str(current_value + 1)
-            stat.save()
+    # Get or create the DailyStats entry
+    try:
+        stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
+        # Increment the vote count
+        current_value = int(stat.value)
+        stat.value = str(current_value + 1)
+        stat.save()
 
-            # Get the counts for both vote types
-            upvotes, downvotes = get_page_votes(template_name)
+        # Get the counts for both vote types
+        upvotes, downvotes = get_page_votes(template_name)
 
-            return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+        return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
+    except Exception:
+        return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
 
 
 class GsocView(View):
