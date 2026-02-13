@@ -719,6 +719,8 @@ def search(request, template="search.html"):
             for org in organizations:
                 if org.prefetched_domains:
                     org.absolute_url = org.prefetched_domains[0].get_absolute_url()
+                else:
+                    org.absolute_url = ""
             context = {
                 "request": request,
                 "query": query,
@@ -763,6 +765,8 @@ def search(request, template="search.html"):
             for org in matching_organizations:
                 if org.prefetched_domains:
                     org.absolute_url = org.prefetched_domains[0].get_absolute_url()
+                else:
+                    org.absolute_url = ""
             context = {
                 "request": request,
                 "query": query,
