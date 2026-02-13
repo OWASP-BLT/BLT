@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
+    help = "Create superuser accounts from SUPERUSERS setting (debug only)"
+
     def handle(self, *args, **options):
         for user in settings.SUPERUSERS:
             username = user[0]
