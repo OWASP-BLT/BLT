@@ -1,14 +1,16 @@
 // Function to copy text to clipboard
 function copyToClipboard(elementId) {
   const element = document.getElementById(elementId);
+  if (!element) return;
 
   // Select the text
   element.select();
   element.setSelectionRange(0, 99999); // For mobile devices
 
   // Copy the text
-  try {
-    navigator.clipboard.writeText(element.value).then(() => {
+  navigator.clipboard
+    .writeText(element.value)
+    .then(() => {
       // Get the button
       const button = element.nextElementSibling;
       const originalText = button.textContent;
@@ -24,10 +26,25 @@ function copyToClipboard(elementId) {
         button.classList.remove("bg-green-500", "hover:bg-green-600");
         button.classList.add("bg-red-500", "hover:bg-red-600");
       }, 2000);
+    })
+    .catch(() => {
+      // Error silently handled or use a custom tracker if available
     });
-  } catch (err) {
-    // Error silently handled or use a custom tracker if available
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
   }
+  return cookieValue;
 }
 
 // Function to refresh a section of the repository detail page
@@ -72,23 +89,6 @@ async function refreshSection(button, section) {
     const sectionValue = String(section).trim();
     formData.append("section", sectionValue);
 
-    // Try to get CSRF token from cookie first
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== "") {
-        const cookies = document.cookie.split(";");
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          // Does this cookie string begin with the name we want?
-          if (cookie.substring(0, name.length + 1) === name + "=") {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-
     // Try to get CSRF token from cookie first, then fallback to meta tag
     let csrfToken = getCookie("csrftoken");
 
@@ -121,14 +121,7 @@ async function refreshSection(button, section) {
     // Try to parse the response as JSON
     let data;
     try {
-      const responseText = await response.text();
-
-      // Only try to parse as JSON if it looks like JSON
-      if (responseText.trim().startsWith("{")) {
-        data = JSON.parse(responseText);
-      } else {
-        throw new Error("Response is not valid JSON");
-      }
+      data = await response.json();
     } catch (parseError) {
       throw new Error("Failed to parse server response");
     }
@@ -155,13 +148,16 @@ async function refreshSection(button, section) {
         data.message || "AI summary regenerated successfully";
     } else if (sectionValue === "basic") {
       // Update stats with new data
+      const safeLastUpdated = data.data.last_updated
+        ? `Updated ${data.data.last_updated.replace("\u00a0", " ")}`
+        : "Updated N/A";
       const updates = {
         stars: data.data.stars,
         forks: data.data.forks,
         watchers: data.data.watchers,
         network: data.data.network_count,
         subscribers: data.data.subscribers_count,
-        "last-updated": `Updated ${data.data.last_updated.replace("\u00a0", " ")}`,
+        "last-updated": safeLastUpdated,
       };
 
       // Update each stat if the element exists
@@ -203,9 +199,12 @@ async function refreshSection(button, section) {
       messageContainer.textContent = data.message;
     } else if (sectionValue === "technical") {
       // Update technical details with new data
+      const sizeMb = Number.isFinite(data.data.size)
+        ? `${(data.data.size / 1024).toFixed(2)} MB`
+        : "N/A";
       const technicalElements = {
         primary_language: data.data.primary_language,
-        size: `${(data.data.size / 1024).toFixed(2)} MB`,
+        size: sizeMb,
         license: data.data.license,
         release_name: data.data.release_name,
         release_date: data.data.release_date,
@@ -236,7 +235,10 @@ async function refreshSection(button, section) {
         '[data-community="total-count"]',
       );
       if (totalCountEl) {
-        totalCountEl.textContent = `${communityData.total_contributors.toLocaleString()} total contributors`;
+        const total = Number.isFinite(communityData.total_contributors)
+          ? communityData.total_contributors.toLocaleString()
+          : "0";
+        totalCountEl.textContent = `${total} total contributors`;
       }
 
       // Update contributors grid
@@ -250,7 +252,7 @@ async function refreshSection(button, section) {
                                 ${contributor.name}
                                 ${contributor.verified ? '<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>' : ""}
                             </div>
-                            <div class="text-sm text-gray-500">${contributor.contributions.toLocaleString()} commits</div>
+                            <div class="text-sm text-gray-500">${(contributor.contributions ?? 0).toLocaleString()} commits</div>
                         </div>
                         <a href="${contributor.github_url}" target="_blank" class="p-2 text-gray-400 hover:text-gray-600">
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -396,9 +398,11 @@ function updateContributorStats(timePeriod, page = 1) {
     headers: {
       "X-Requested-With": "XMLHttpRequest",
       "X-CSRFToken":
+        getCookie("csrftoken") ||
         document
           .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content") || "",
+          ?.getAttribute("content") ||
+        "",
     },
   })
     .then((response) => {
@@ -409,7 +413,9 @@ function updateContributorStats(timePeriod, page = 1) {
       if (typeof DOMPurify !== "undefined") {
         tableContainer.innerHTML = DOMPurify.sanitize(html);
       } else {
-        tableContainer.innerHTML = html; // Fallback
+        tableContainer.textContent =
+          "Unable to safely load contributor statistics. Please refresh.";
+        return;
       }
       // Update URL without page reload
       window.history.pushState({}, "", currentUrl.toString());
@@ -477,7 +483,9 @@ function fetchStargazers(url) {
           stargazersSection.innerHTML =
             DOMPurify.sanitize(newSection.innerHTML);
         } else {
-          stargazersSection.innerHTML = newSection.innerHTML;
+          stargazersSection.textContent =
+            "Unable to load stargazers safely. Please try again later.";
+          return;
         }
 
         window.history.pushState({}, "", url);
@@ -502,20 +510,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Attach pagination listeners
   attachPaginationListeners();
-
-  // Set up AI Summary button with direct event listener
-  const aiSummaryButton = document.querySelector(
-    'button[data-section="ai_summary"]',
-  );
-  if (aiSummaryButton) {
-    // Remove the inline onclick attribute and add a proper event listener
-    aiSummaryButton.removeAttribute("onclick");
-
-    aiSummaryButton.addEventListener("click", function (e) {
-      e.preventDefault();
-      refreshSection(this, "ai_summary");
-    });
-  }
 
   // Set up all refresh buttons
   document.querySelectorAll(".refresh-btn").forEach((button) => {
