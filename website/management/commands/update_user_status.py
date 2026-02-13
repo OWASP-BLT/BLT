@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
@@ -11,6 +12,13 @@ class Command(LoggedBaseCommand):
 
     def handle(self, *args, **options):
         inactive_threshold = timezone.now() - timedelta(days=30)
-        updated = User.objects.filter(last_login__lt=inactive_threshold, is_active=True).update(is_active=False)
+        updated = (
+            User.objects.filter(is_active=True)
+            .filter(
+                Q(last_login__lt=inactive_threshold)
+                | Q(last_login__isnull=True, date_joined__lt=inactive_threshold)
+            )
+            .update(is_active=False)
+        )
 
-        self.stdout.write(f"Deactivated {updated} inactive users.")
+        self.stdout.write(self.style.SUCCESS(f"Deactivated {updated} inactive users."))
