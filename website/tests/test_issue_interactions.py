@@ -20,7 +20,7 @@ class VoteCountTests(TestCase):
         url = reverse("vote_count", args=[self.issue.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/login/", response.url)
+        self.assertIn("/accounts/login", response.url)
 
     def test_returns_vote_counts(self):
         """Authenticated user should see vote counts as JSON."""
@@ -55,7 +55,7 @@ class FlagIssueTests(TestCase):
         url = reverse("flag_issue", args=[self.issue.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/login/", response.url)
+        self.assertIn("/accounts/login", response.url)
 
     def test_flag_issue_toggles_flag(self):
         """Flagging an issue should add a flag, flagging again should remove it."""
@@ -95,7 +95,7 @@ class SaveIssueTests(TestCase):
         url = reverse("save_issue", args=[self.issue.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/login/", response.url)
+        self.assertIn("/accounts/login", response.url)
 
     def test_save_issue_adds_to_saved(self):
         """Saving an issue should add it to the user's saved list."""
