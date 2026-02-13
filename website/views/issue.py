@@ -157,7 +157,7 @@ def dislike_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def vote_count(request, issue_pk):
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
 
     total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
@@ -2031,7 +2031,7 @@ def comment_on_content(request, content_pk):
 @login_required(login_url="/accounts/login")
 def unsave_issue(request, issue_pk):
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.remove(issue)
     return HttpResponse("OK")
@@ -2040,7 +2040,7 @@ def unsave_issue(request, issue_pk):
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
 
     already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
@@ -2107,7 +2107,7 @@ def IssueEdit(request):
 def flag_issue(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     if userprof in UserProfile.objects.filter(issue_flaged=issue):
         userprof.issue_flaged.remove(issue)
