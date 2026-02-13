@@ -17,7 +17,6 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
-from comments.models import Comment
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -59,6 +58,7 @@ from rest_framework.authtoken.models import Token
 from user_agents import parse
 
 from blt import settings
+from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
