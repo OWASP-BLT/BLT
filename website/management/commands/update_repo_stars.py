@@ -46,9 +46,9 @@ class Command(BaseCommand):
                             api_url = f"https://api.github.com/repos/{repo_path}"
                             headers = {"Accept": "application/vnd.github.v3+json"}
 
-                            # Add GitHub token if available
+                            # Add GitHub token if available (settings may default to "blank")
                             github_token = getattr(settings, "GITHUB_TOKEN", None)
-                            if github_token:
+                            if github_token and github_token != "blank":
                                 headers["Authorization"] = f"token {github_token}"
 
                             response = requests.get(api_url, headers=headers)
