@@ -15,8 +15,7 @@ class Command(LoggedBaseCommand):
         updated = (
             User.objects.filter(is_active=True)
             .filter(
-                Q(last_login__lt=inactive_threshold)
-                | Q(last_login__isnull=True, date_joined__lt=inactive_threshold)
+                Q(last_login__lt=inactive_threshold) | Q(last_login__isnull=True, date_joined__lt=inactive_threshold)
             )
             .update(is_active=False)
         )
