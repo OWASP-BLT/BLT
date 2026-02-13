@@ -1105,16 +1105,18 @@ def create_tokens(request):
 
 
 def get_score(request):
-    # Single query: annotate scores and select_related profile to avoid N+1
-    temp_users = (
+    # Annotate scores and evaluate queryset eagerly for batch profile fetch
+    temp_users = list(
         User.objects.annotate(total_score=Sum("points__score"))
         .filter(total_score__gt=0)
-        .select_related("userprofile")
         .order_by("-total_score")
     )
+    # Batch-fetch profiles without triggering AutoOneToOneField auto-creation
+    profiles_map = {p.user_id: p for p in UserProfile.objects.filter(user__in=temp_users)}
+
     users = []
     for rank, user in enumerate(temp_users, start=1):
-        profile = user.userprofile
+        profile = profiles_map.get(user.id)
         users.append(
             {
                 "rank": rank,
