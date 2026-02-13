@@ -3054,3 +3054,4 @@ def set_theme(request):
             return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
 
     return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+
