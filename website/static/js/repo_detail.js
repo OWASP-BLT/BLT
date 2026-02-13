@@ -52,7 +52,10 @@ async function refreshSection(button, section) {
   button.appendChild(spinner);
 
   // Create message container if it doesn't exist
-  const container = button.closest(".refresh-container");
+  let container = button.closest(".refresh-container");
+  if (!container) {
+    container = button.parentElement || document.body;
+  }
   let messageContainer = container.querySelector(".refresh-message");
   if (!messageContainer) {
     messageContainer = document.createElement("div");
@@ -310,8 +313,8 @@ async function refreshSection(button, section) {
                             ${stat.comments ? stat.comments.toLocaleString() : "0"}
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap text-center">
-                            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stat.impact_level.class}">
-                                ${stat.impact_level.text}
+                            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stat.impact_level?.class ?? ""}">
+                                ${stat.impact_level?.text ?? "N/A"}
                             </div>
                         </td>
                     `;
@@ -427,7 +430,7 @@ function attachPaginationListeners() {
   document.querySelectorAll(".pagination-link").forEach((button) => {
     button.addEventListener("click", (e) => {
       e.preventDefault();
-      const page = e.target.dataset.page;
+      const page = e.currentTarget.dataset.page;
       const timePeriod = document.getElementById("time-period-select").value;
       updateContributorStats(timePeriod, page);
     });
@@ -465,21 +468,19 @@ function fetchStargazers(url) {
       return response.text();
     })
     .then((html) => {
-      // Parse the returned HTML and extract the stargazers section
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = html;
-      const newSection = tempDiv.querySelector("#stargazers-section");
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const newSection = doc.querySelector("#stargazers-section");
+
       if (newSection) {
         if (typeof DOMPurify !== "undefined") {
-          stargazersSection.innerHTML = DOMPurify.sanitize(
-            newSection.innerHTML,
-          );
+          stargazersSection.innerHTML =
+            DOMPurify.sanitize(newSection.innerHTML);
         } else {
           stargazersSection.innerHTML = newSection.innerHTML;
         }
-        // Update URL
+
         window.history.pushState({}, "", url);
-        // Re-attach listeners
         attachStargazersListeners();
       }
     })
