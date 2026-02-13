@@ -1926,7 +1926,10 @@ def update_role(request):
     users_map = {u.username: u for u in User.objects.filter(username__in=usernames)}
     admins_map = {
         a.user.username: a
-        for a in OrganizationAdmin.objects.select_related("user").filter(user__username__in=usernames)
+        for a in OrganizationAdmin.objects.select_related("user").filter(
+            user__username__in=usernames,
+            organization=requesting_admin.organization,
+        )
     }
 
     # Collect domain PKs for batch fetch
