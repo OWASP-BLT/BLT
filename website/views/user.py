@@ -157,6 +157,9 @@ def profile_edit(request):
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
 
         if form.is_valid():
+        
+            profile_instance =  form.save()
+
             new_email = form.cleaned_data["email"]
 
             # Check email uniqueness
@@ -179,7 +182,7 @@ def profile_edit(request):
             email_changed = new_email != original_email
 
             # Save profile form (does "not" touch email in user model)
-            form.save()
+            
 
             if email_changed:
                 # Remove any pending unverified emails
@@ -223,6 +226,7 @@ def profile_edit(request):
             return redirect("profile", slug=request.user.username)
 
         else:
+            print("FORM ERRORS:", form.errors)
             messages.error(request, "Please correct the errors below.")
 
     else:
