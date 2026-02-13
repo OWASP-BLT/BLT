@@ -276,6 +276,7 @@ def UpdateIssue(request):
                     tokenauth = True
                     break
     except Exception:
+        logger.exception("Token authentication lookup failed in UpdateIssue")
         tokenauth = False
     if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
@@ -1860,6 +1861,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
             try:
                 issue.screenshot = request.FILES["screenshot"]
             except Exception:
+                logger.debug("No screenshot uploaded for hunt submission, returning to form")
                 issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )
