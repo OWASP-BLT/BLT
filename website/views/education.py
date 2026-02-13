@@ -355,7 +355,7 @@ def edit_lecture(request, lecture_id):
     if lecture.content_type == "VIDEO":
         video_url = request.POST.get("video_url", "")
         if not is_valid_url(video_url, "video"):
-            messages.error(request, "Only YouTube URLs are allowed for video lectures.")
+            messages.error(request, "Only YouTube and Vimeo URLs are allowed for video lectures.")
             if is_standalone:
                 return redirect("view_lecture", lecture_id)
             else:
