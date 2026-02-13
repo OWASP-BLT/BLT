@@ -388,7 +388,7 @@ def remove_user_from_issue(request, id):
                 request.user = User.objects.get(id=token.user_id)
                 tokenauth = True
     except Exception:
-        pass
+        logger.exception("Token authentication lookup failed in remove_user_from_issue")
 
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
@@ -881,7 +881,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
         except Exception:
-            pass
+            logger.exception("Failed to process screenshot data in get_initial")
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
@@ -2066,7 +2066,7 @@ def assign_issue_to_user(request, user, **kwargs):
             del request.session["domain"]
             del request.session["created"]
         except Exception:
-            pass
+            logger.exception("Failed to clear session keys in assign_issue_to_user")
         request.session.modified = True
 
         issue = Issue.objects.get(id=issue_id)
