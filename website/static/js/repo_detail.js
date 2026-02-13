@@ -190,7 +190,7 @@ async function refreshSection(button, section) {
         if (element && value !== null && value !== undefined) {
           element.textContent = value.toLocaleString();
         } else if (element) {
-          element.textContent = value;
+          element.textContent = "";
         }
       }
 
