@@ -1107,9 +1107,7 @@ def create_tokens(request):
 def get_score(request):
     # Annotate scores and evaluate queryset eagerly for batch profile fetch
     temp_users = list(
-        User.objects.annotate(total_score=Sum("points__score"))
-        .filter(total_score__gt=0)
-        .order_by("-total_score")
+        User.objects.annotate(total_score=Sum("points__score")).filter(total_score__gt=0).order_by("-total_score")
     )
     # Batch-fetch profiles without triggering AutoOneToOneField auto-creation
     profiles_map = {p.user_id: p for p in UserProfile.objects.filter(user__in=temp_users)}
