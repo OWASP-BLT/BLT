@@ -1950,15 +1950,15 @@ def update_role(request):
         if requesting_admin.role == 0:
             if role_val == "9":
                 admin.is_active = False
-            elif role_val:
-                admin.role = role_val
+            elif role_val in ("0", "1"):
+                admin.role = int(role_val)
             domain_val = request.POST.get("domain@" + username, "")
             admin.domain = domains_map.get(domain_val) if domain_val else None
         elif requesting_admin.role == 1:
             if role_val == "9":
                 admin.is_active = False
             elif role_val == "1":
-                admin.role = role_val
+                admin.role = int(role_val)
 
         admins_to_update.append(admin)
 
