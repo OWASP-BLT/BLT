@@ -26,7 +26,7 @@ function copyToClipboard(elementId) {
       }, 2000);
     });
   } catch (err) {
-    console.error("Failed to copy text: ", err);
+    // Error silently handled or use a custom tracker if available
   }
 }
 
@@ -98,9 +98,7 @@ async function refreshSection(button, section) {
     }
 
     if (!csrfToken) {
-      console.error(
-        "CSRF token not found. Make sure cookies are enabled or the CSRF meta tag exists.",
-      );
+      // CSRF token not found. Cookies might be disabled or meta tag is missing.
     }
 
     const response = await fetch(window.location.href, {
@@ -129,7 +127,6 @@ async function refreshSection(button, section) {
         throw new Error("Response is not valid JSON");
       }
     } catch (parseError) {
-      console.error("Error parsing response:", parseError);
       throw new Error("Failed to parse server response");
     }
 
@@ -143,7 +140,7 @@ async function refreshSection(button, section) {
         } else {
           summaryContainer.textContent = data.data.ai_summary;
         }
-      } else {
+      } else if (summaryContainer) {
         summaryContainer.innerHTML =
           '<p class="text-gray-600 italic">AI summary unavailable for this repo.</p>';
       }
@@ -190,8 +187,10 @@ async function refreshSection(button, section) {
       // Update each stat if the element exists
       for (const [key, value] of Object.entries(updates)) {
         const element = document.querySelector(`[data-stat="${key}"]`);
-        if (element) {
+        if (element && value !== null && value !== undefined) {
           element.textContent = value.toLocaleString();
+        } else if (element) {
+          element.textContent = value;
         }
       }
 
@@ -342,15 +341,14 @@ async function refreshSection(button, section) {
         data.message || "Contributor statistics refreshed successfully";
     }
   } catch (error) {
-    console.error("Error:", error);
     messageContainer.className =
       "absolute top-full right-0 mt-2 text-sm whitespace-nowrap z-10 text-red-600";
     messageContainer.textContent = error.message;
   } finally {
     // Remove spinner and restore icon
-    const spinner = button.querySelector(".animate-spin").parentNode;
-    if (spinner) {
-      spinner.remove();
+    const spinnerElement = button.querySelector(".animate-spin");
+    if (spinnerElement && spinnerElement.parentNode) {
+      spinnerElement.parentNode.remove();
     }
 
     // Show the original icon
@@ -405,7 +403,11 @@ function updateContributorStats(timePeriod, page = 1) {
       return response.text();
     })
     .then((html) => {
-      tableContainer.innerHTML = html;
+      if (typeof DOMPurify !== "undefined") {
+        tableContainer.innerHTML = DOMPurify.sanitize(html);
+      } else {
+        tableContainer.innerHTML = html; // Fallback
+      }
       // Update URL without page reload
       window.history.pushState({}, "", currentUrl.toString());
 
@@ -413,7 +415,6 @@ function updateContributorStats(timePeriod, page = 1) {
       attachPaginationListeners();
     })
     .catch((error) => {
-      console.error("Error:", error);
       tableContainer.classList.remove("opacity-50");
     })
     .finally(() => {
@@ -469,7 +470,13 @@ function fetchStargazers(url) {
       tempDiv.innerHTML = html;
       const newSection = tempDiv.querySelector("#stargazers-section");
       if (newSection) {
-        stargazersSection.innerHTML = newSection.innerHTML;
+        if (typeof DOMPurify !== "undefined") {
+          stargazersSection.innerHTML = DOMPurify.sanitize(
+            newSection.innerHTML,
+          );
+        } else {
+          stargazersSection.innerHTML = newSection.innerHTML;
+        }
         // Update URL
         window.history.pushState({}, "", url);
         // Re-attach listeners
@@ -477,7 +484,7 @@ function fetchStargazers(url) {
       }
     })
     .catch((error) => {
-      console.error("Error fetching stargazers:", error);
+      // Error silently handled
     })
     .finally(() => {
       stargazersSection.classList.remove("opacity-50");
