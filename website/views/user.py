@@ -3,6 +3,7 @@ import hmac
 import json
 import logging
 import os
+import re
 from datetime import datetime
 
 from allauth.account.signals import user_signed_up
@@ -1529,10 +1530,35 @@ def handle_review_event(payload):
     return JsonResponse({"status": "success"}, status=200)
 
 
+def _extract_bounty_from_labels(labels):
+    """
+    Extract the total bounty amount in USD from GitHub issue labels.
+
+    Matches labels like "$5", "$10", "$100", "$1,000", "$50.00", etc.
+    Returns the sum of all matching dollar labels as a Decimal.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    total = Decimal("0.00")
+    dollar_pattern = re.compile(r"^\$([\d,]+(?:\.\d{1,2})?)$")
+    for label in labels:
+        label_name = label.get("name", "") if isinstance(label, dict) else str(label)
+        match = dollar_pattern.match(label_name.strip())
+        if match:
+            try:
+                amount = Decimal(match.group(1).replace(",", ""))
+                total += amount
+            except InvalidOperation:
+                continue
+    return total
+
+
 def handle_issue_event(payload):
     """
-    Handle GitHub issue events (opened, closed, etc.)
-    Updates GitHubIssue records in BLT to match GitHub issue state
+    Handle GitHub issue events (opened, closed, labeled, unlabeled, etc.)
+    Updates GitHubIssue records in BLT to match GitHub issue state.
+    On labeled/unlabeled events, extracts bounty from dollar-sign labels
+    and stores/updates the value in GitHubIssue.p2p_amount_usd.
     """
     action = payload.get("action")
     issue_data = payload.get("issue", {})
@@ -1546,7 +1572,7 @@ def handle_issue_event(payload):
     issue_html_url = issue_data.get("html_url")
 
     # Extract repository details
-    repo_full_name = repo_data.get("full_name")  # e.g., "owner/repo"
+    repo_full_name = repo_data.get("full_name")  # e.g. - "owner/repo"
     repo_html_url = repo_data.get("html_url")
 
     if not issue_id or not repo_html_url:
@@ -1554,16 +1580,16 @@ def handle_issue_event(payload):
         return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
 
     # Find the Repo in BLT database
+    repo = None
     try:
         repo = Repo.objects.get(repo_url=repo_html_url)
     except Repo.DoesNotExist:
         logger.info(f"Repository not found in BLT: {repo_html_url}")
         # Not an error - we only track issues for repos we have in our database
-        # Continue to badge assignment
     except Exception as e:
         logger.error(f"Error finding repository: {e}")
-        # Continue to badge assignment
-    else:
+
+    if repo:
         # Find and update the GitHubIssue record
         try:
             github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
@@ -1579,11 +1605,48 @@ def handle_issue_event(payload):
             if issue_data.get("updated_at"):
                 github_issue.updated_at = dateutil_parser.parse(issue_data["updated_at"])
 
+            # Sync bounty from labels on opened, labeled, or unlabeled events
+            if action in ("opened", "labeled", "unlabeled"):
+                labels = issue_data.get("labels", [])
+                github_issue.p2p_amount_usd = _extract_bounty_from_labels(labels)
+
             github_issue.save()
             logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
         except GitHubIssue.DoesNotExist:
-            logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
-            # Not an error - we may not have all issues in our database
+            # If the issue doesn't exist yet and this is an opened event, create it
+            if action == "opened":
+                try:
+                    labels = issue_data.get("labels", [])
+                    bounty = _extract_bounty_from_labels(labels)
+
+                    created_at = safe_parse_github_datetime(
+                        issue_data.get("created_at"),
+                        default=timezone.now(),
+                        field_name="issue.created_at",
+                    )
+                    updated_at = safe_parse_github_datetime(
+                        issue_data.get("updated_at"),
+                        default=timezone.now(),
+                        field_name="issue.updated_at",
+                    )
+
+                    github_issue = GitHubIssue.objects.create(
+                        issue_id=issue_id,
+                        title=issue_data.get("title", ""),
+                        body=issue_data.get("body", ""),
+                        state=issue_state or "open",
+                        type="issue",
+                        created_at=created_at,
+                        updated_at=updated_at,
+                        url=issue_html_url or "",
+                        repo=repo,
+                        p2p_amount_usd=bounty if bounty > 0 else None,
+                    )
+                    logger.info(f"Created GitHubIssue {issue_id} in repo {repo_full_name}")
+                except Exception as e:
+                    logger.error(f"Error creating GitHubIssue: {e}")
+            else:
+                logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
         except Exception as e:
             logger.error(f"Error updating GitHubIssue: {e}")
 

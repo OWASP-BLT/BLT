@@ -1,0 +1,40 @@
+name: Auto Add Issue Badge
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  add-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Insert badge into issue description
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            const badgeUrl = `https://blt.owasp.org/api/v1/badge/issue/${issueNumber}/`;
+            const badgeMarkdown = `![Issue Stats](${badgeUrl})`;
+
+            const currentBody = context.payload.issue.body || '';
+
+            // Avoid duplicate badge insertion
+            if (currentBody.includes('api/v1/badge/issue/')) {
+              console.log(`Badge already present in issue #${issueNumber}, skipping.`);
+              return;
+            }
+
+            const newBody = `${badgeMarkdown}\n\n${currentBody}`;
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: newBody,
+            });
+
+            console.log(`Badge added to issue #${issueNumber}`);

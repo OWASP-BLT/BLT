@@ -6,7 +6,7 @@ import os
 import smtplib
 import socket
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import markdown
@@ -56,6 +56,7 @@ from django.views.generic.edit import CreateView
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
 from user_agents import parse
 
 from blt import settings
@@ -2875,6 +2876,25 @@ class GitHubIssueDetailView(DetailView):
     template_name = "github_issue_detail.html"
     context_object_name = "issue"
 
+    def get(self, request, *args, **kwargs):
+        """Track unique daily visits via the IP model."""
+        response = super().get(request, *args, **kwargs)
+        try:
+            user_ip = get_client_ip(request)
+            today = timezone.now().date()
+            if not IP.objects.filter(address=user_ip, path=request.path, created__date=today).exists():
+                IP.objects.create(
+                    address=user_ip,
+                    path=request.path,
+                    created=timezone.now(),
+                    count=1,
+                    agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                    referer=request.META.get("HTTP_REFERER", "")[:255] if request.META.get("HTTP_REFERER") else None,
+                )
+        except Exception as e:
+            logger.error(f"Error tracking IP view for GitHubIssue: {e}")
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Convert markdown bodies to HTML for display using markdown
@@ -2923,6 +2943,162 @@ class GitHubIssueDetailView(DetailView):
             issue.body_html = escape(issue.body or "")
 
         return context
+
+
+class GitHubIssueBadgeView(APIView):
+    """
+    Dynamic SVG badge for a GitHub issue showing:
+    - 30-day unique page views (from IP model, detail-page visits only)
+    - Current bounty amount in USD (from GitHubIssue.p2p_amount_usd)
+
+    Design:
+    - Brand-colored (#e74c3c) shields.io-style SVG badge
+    - Responsive width based on content
+    - 5-minute cache TTL with ETag support for conditional requests
+
+    Analytics rules:
+    - Counts ONLY real issue-detail page visits stored in the IP model
+    - EXCLUDES badge-endpoint hits from view-count analytics
+    - Tracks badge-endpoint visits separately for its own IP logging
+    - Uses a 30-day rolling window
+    - No GitHub API calls; all data read from the database
+    """
+
+    BRAND_COLOR = "#e74c3c"  # BLT red
+    CACHE_TTL = 300  # 5 minutes
+
+    def get(self, request, issue_id):
+        import hashlib
+
+        from django.core.cache import cache
+
+        cache_key = f"issue_badge_{issue_id}"
+        cached = cache.get(cache_key)
+
+        # Track badge-endpoint visit in IP model
+        try:
+            user_ip = get_client_ip(request)
+            today = timezone.now().date()
+            badge_path = request.path
+            if not IP.objects.filter(address=user_ip, path=badge_path, created__date=today).exists():
+                IP.objects.create(
+                    address=user_ip,
+                    path=badge_path,
+                    created=timezone.now(),
+                    count=1,
+                )
+        except Exception:
+            pass  # Never let IP tracking break the badge response
+
+        if cached:
+            svg_content = cached
+        else:
+            # Look up the GitHubIssue
+            github_issue = GitHubIssue.objects.filter(issue_id=issue_id, type="issue").order_by("-updated_at").first()
+
+            bounty_amount = int(github_issue.p2p_amount_usd or 0) if github_issue else 0
+
+            # Compute 30-day unique views from the issue DETAIL page
+            detail_path = f"/github-issues/{github_issue.pk}/" if github_issue else None
+            thirty_days_ago = timezone.now() - timedelta(days=30)
+
+            if detail_path:
+                activity_count = (
+                    IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
+                    .values("address")
+                    .distinct()
+                    .count()
+                )
+            else:
+                activity_count = 0
+
+            svg_content = self._generate_badge_svg(activity_count, bounty_amount)
+            cache.set(cache_key, svg_content, self.CACHE_TTL)
+
+        # ETag for conditional requests
+        etag = hashlib.md5(svg_content.encode()).hexdigest()
+        if_none_match = request.META.get("HTTP_IF_NONE_MATCH", "")
+        if if_none_match == etag:
+            return HttpResponse(status=304)
+
+        response = HttpResponse(svg_content, content_type="image/svg+xml")
+        response["Cache-Control"] = f"public, max-age={self.CACHE_TTL}"
+        response["ETag"] = etag
+        return response
+
+    @staticmethod
+    def _generate_badge_svg(activity_count, bounty_amount):
+        """
+        Generate a shields.io-style SVG badge with BLT brand color (#e74c3c).
+        Responsive width computed from label/value text lengths.
+        """
+        views_label = "views / 30d"
+        views_value = str(activity_count)
+        bounty_label = "bounty"
+        bounty_value = f"${bounty_amount}" if bounty_amount > 0 else "$0"
+
+        # Character-width approximation for Verdana 11px
+        char_width = 6.5
+        padding = 10
+
+        vl_w = int(len(views_label) * char_width + padding * 2)
+        vv_w = int(len(views_value) * char_width + padding * 2)
+        bl_w = int(len(bounty_label) * char_width + padding * 2)
+        bv_w = int(len(bounty_value) * char_width + padding * 2)
+
+        views_total = vl_w + vv_w
+        bounty_total = bl_w + bv_w
+        gap = 4
+        total_width = views_total + gap + bounty_total
+        h = 20
+
+        label_bg = "#555"
+        brand = "#e74c3c"  # BLT red for the value sections
+        bounty_bg = "#e74c3c" if bounty_amount > 0 else "#9f9f9f"
+
+        bx = views_total + gap  # bounty group x-offset
+
+        return (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{h}">'
+            f'<linearGradient id="s" x2="0" y2="100%">'
+            f'<stop offset="0" stop-color="#bbb" stop-opacity=".1"/>'
+            f'<stop offset="1" stop-opacity=".1"/>'
+            f"</linearGradient>"
+            f'<clipPath id="r">'
+            f'<rect width="{total_width}" height="{h}" rx="3" fill="#fff"/>'
+            f"</clipPath>"
+            f'<g clip-path="url(#r)">'
+            # views segment
+            f'<rect width="{vl_w}" height="{h}" fill="{label_bg}"/>'
+            f'<rect x="{vl_w}" width="{vv_w}" height="{h}" fill="{brand}"/>'
+            # bounty segment
+            f'<rect x="{bx}" width="{bl_w}" height="{h}" fill="{label_bg}"/>'
+            f'<rect x="{bx + bl_w}" width="{bv_w}" height="{h}" fill="{bounty_bg}"/>'
+            # gradient overlay
+            f'<rect width="{total_width}" height="{h}" fill="url(#s)"/>'
+            f"</g>"
+            f'<g fill="#fff" text-anchor="middle" '
+            f'font-family="Verdana,Geneva,DejaVu Sans,sans-serif" '
+            f'font-size="11" text-rendering="geometricPrecision">'
+            # views label
+            f'<text x="{vl_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
+            f"{views_label}</text>"
+            f'<text x="{vl_w / 2}" y="13">{views_label}</text>'
+            # views value
+            f'<text x="{vl_w + vv_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
+            f"{views_value}</text>"
+            f'<text x="{vl_w + vv_w / 2}" y="13">{views_value}</text>'
+            # bounty label
+            f'<text x="{bx + bl_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
+            f"{bounty_label}</text>"
+            f'<text x="{bx + bl_w / 2}" y="13">{bounty_label}</text>'
+            # bounty value
+            f'<text x="{bx + bl_w + bv_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
+            f"{bounty_value}</text>"
+            f'<text x="{bx + bl_w + bv_w / 2}" y="13">{bounty_value}</text>'
+            f"</g>"
+            f"</svg>"
+        )
 
 
 @login_required(login_url="/accounts/login")
