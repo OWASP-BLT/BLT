@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.test import Client, TestCase, override_settings
@@ -191,17 +192,17 @@ class GitHubIssueBadgeTests(TestCase):
         IP.objects.create(
             address="10.0.0.1",
             path=detail_path,
-            created=timezone.now(),
             count=1,
         )
         # Old visit (40 days ago)
-        old_date = timezone.now() - timezone.timedelta(days=40)
-        IP.objects.create(
+        old_date = timezone.now() - timedelta(days=40)
+        old_ip = IP.objects.create(
             address="10.0.0.2",
             path=detail_path,
-            created=old_date,
             count=1,
         )
+        # auto_now_add ignores the value passed to create(), so update via DB
+        IP.objects.filter(pk=old_ip.pk).update(created=old_date)
 
         url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)

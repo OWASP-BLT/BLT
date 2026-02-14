@@ -2885,17 +2885,19 @@ class GitHubIssueDetailView(DetailView):
         try:
             user_ip = get_client_ip(request)
             today = timezone.now().date()
-            day_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
-            IP.objects.get_or_create(
+            existing = IP.objects.filter(
                 address=user_ip,
                 path=request.path,
-                created=day_start,
-                defaults={
-                    "count": 1,
-                    "agent": request.META.get("HTTP_USER_AGENT", "")[:255],
-                    "referer": request.META.get("HTTP_REFERER", "")[:255] if request.META.get("HTTP_REFERER") else None,
-                },
-            )
+                created__date=today,
+            ).first()
+            if not existing:
+                IP.objects.create(
+                    address=user_ip,
+                    path=request.path,
+                    count=1,
+                    agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                    referer=request.META.get("HTTP_REFERER", "")[:255] if request.META.get("HTTP_REFERER") else None,
+                )
         except Exception as e:
             logger.error(f"Error tracking IP view for GitHubIssue: {e}")
         return response
@@ -2977,20 +2979,8 @@ class GitHubIssueBadgeView(APIView):
         cache_key = f"issue_badge_{owner}_{repo_name}_{issue_id}"
         cached = cache.get(cache_key)
 
-        # Track badge-endpoint visit in IP model
-        try:
-            user_ip = get_client_ip(request)
-            today = timezone.now().date()
-            badge_path = request.path
-            if not IP.objects.filter(address=user_ip, path=badge_path, created__date=today).exists():
-                IP.objects.create(
-                    address=user_ip,
-                    path=badge_path,
-                    created=timezone.now(),
-                    count=1,
-                )
-        except Exception:
-            pass  # Never let IP tracking break the badge response
+        # IP tracking is handled by the ip_restrict middleware;
+        # no need to duplicate it here.
 
         if cached:
             svg_content = cached
