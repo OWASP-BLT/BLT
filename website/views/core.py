@@ -25,7 +25,6 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -40,7 +39,6 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
@@ -50,10 +48,6 @@ from website.models import (
     Badge,
     DailyStats,
     Domain,
-    ForumCategory,
-    ForumComment,
-    ForumPost,
-    ForumVote,
     Hunt,
     InviteFriend,
     InviteOrganization,
@@ -1026,271 +1020,6 @@ def search(request, template="search.html"):
 #         )
 
 
-@login_required
-def vote_forum_post(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            post_id = data.get("post_id")
-            up_vote = data.get("up_vote", False)
-            down_vote = data.get("down_vote", False)
-
-            post = ForumPost.objects.get(id=post_id)
-            vote, created = ForumVote.objects.get_or_create(
-                post=post, user=request.user, defaults={"up_vote": up_vote, "down_vote": down_vote}
-            )
-
-            if not created:
-                vote.up_vote = up_vote
-                vote.down_vote = down_vote
-                vote.save()
-
-            # Update vote counts
-            post.up_votes = ForumVote.objects.filter(post=post, up_vote=True).count()
-            post.down_votes = ForumVote.objects.filter(post=post, down_vote=True).count()
-            post.save()
-
-            return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
-        except ForumPost.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in vote_forum_post")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in vote_forum_post")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-def set_vote_status(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            post_id = data.get("id")
-            vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "up_vote": vote.up_vote if vote else False,
-                    "down_vote": vote.down_vote if vote else False,
-                }
-            )
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in set_vote_status")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in set_vote_status")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-def add_forum_post(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            title = data.get("title")
-            description = data.get("description")
-            category = data.get("category")
-            repo_id = data.get("repo")
-            project_id = data.get("project")
-            organization_id = data.get("organization")
-
-            if (
-                not isinstance(title, str)
-                or not title.strip()
-                or not isinstance(description, str)
-                or not description.strip()
-                or category is None
-            ):
-                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
-
-            category = int(category)
-            ForumCategory.objects.get(id=category)
-
-            # validate optional foreign keys
-            if repo_id:
-                repo_id = int(repo_id)
-                Repo.objects.get(id=repo_id)
-            else:
-                repo_id = None
-
-            if project_id:
-                project_id = int(project_id)
-                Project.objects.get(id=project_id)
-            else:
-                project_id = None
-
-            if organization_id:
-                organization_id = int(organization_id)
-                Organization.objects.get(id=organization_id)
-            else:
-                organization_id = None
-
-            post = ForumPost.objects.create(
-                user=request.user,
-                title=title,
-                description=description,
-                category_id=category,
-                repo_id=repo_id,
-                project_id=project_id,
-                organization_id=organization_id,
-            )
-
-            return JsonResponse({"success": True, "post_id": post.id})
-        except ForumCategory.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
-        except (Repo.DoesNotExist, Project.DoesNotExist, Organization.DoesNotExist):
-            return JsonResponse({"success": False, "error": "Invalid reference ID"}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in add_forum_post")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in add_forum_post")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-def add_forum_comment(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            post_id = data.get("post_id")
-            content = data.get("content")
-
-            if not all([post_id, content]):
-                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
-
-            post = ForumPost.objects.get(id=int(post_id))
-            comment = ForumComment.objects.create(post=post, user=request.user, content=content)
-
-            return JsonResponse({"success": True, "comment_id": comment.id})
-        except ForumPost.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in add_forum_comment")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in add_forum_comment")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-@require_POST
-def delete_forum_post(request):
-    try:
-        data = json.loads(request.body)
-        post_id = data.get("post_id")
-
-        if not post_id:
-            return JsonResponse({"status": "error", "message": "Post ID is required"}, status=400)
-
-        try:
-            post_id = int(post_id)
-        except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Post ID format"}, status=400)
-
-        post = ForumPost.objects.get(id=post_id)
-
-        if request.user != post.user and not request.user.is_superuser:
-            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-        post.delete()
-
-        return JsonResponse({"status": "success", "message": "Post deleted successfully"}, status=200)
-    except ForumPost.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Post not found"}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON data"}, status=400)
-    except Exception as e:
-        logging.exception("Unexpected error deleting forum post")
-        return JsonResponse({"status": "error", "message": "Server error occurred"}, status=500)
-
-
-@ensure_csrf_cookie
-def view_forum(request):
-    # Annotate categories with post counts
-    categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
-    selected_category = request.GET.get("category")
-    selected_status = request.GET.get("status")
-    selected_sort = request.GET.get("sort")
-
-    # Add is_selected flag to categories for cleaner template logic
-    for category in categories:
-        category.is_selected = str(category.id) == selected_category
-
-    # Get total posts count before filtering
-    total_posts_count = ForumPost.objects.count()
-
-    posts = (
-        ForumPost.objects.select_related("user", "category")
-        .prefetch_related("comments")
-        .annotate(comment_count=Count("comments"))
-        .all()
-    )
-
-    if selected_category:
-        posts = posts.filter(category_id=selected_category)
-
-    if selected_status:
-        posts = posts.filter(status=selected_status)
-
-    # sorting of filters by newest, oldest, most votes, most comments
-    if selected_sort == "oldest":
-        posts = posts.order_by("created")
-    elif selected_sort == "most_votes":
-        posts = posts.order_by("-up_votes")
-    elif selected_sort == "most_comments":
-        posts = posts.order_by("-comment_count")
-    else:
-        posts = posts.order_by("-created")  # newest first (default)
-
-    # Optimize user vote queries to avoid N+1 problem
-    if request.user.is_authenticated:
-        # Get all votes for current user and these posts in one query
-        post_ids = [post.id for post in posts]
-        user_votes = {vote.post_id: vote for vote in ForumVote.objects.filter(post_id__in=post_ids, user=request.user)}
-
-        # Attach votes to posts
-        for post in posts:
-            post.user_vote = user_votes.get(post.id)
-
-    organizations = Organization.objects.all().order_by("name")
-    projects = Project.objects.all().order_by("name")
-    repos = Repo.objects.all().order_by("name")
-
-    return render(
-        request,
-        "forum.html",
-        {
-            "categories": categories,
-            "posts": posts,
-            "selected_category": selected_category,
-            "selected_status": selected_status,
-            "selected_sort": selected_sort,
-            "organizations": organizations,
-            "projects": projects,
-            "repos": repos,
-            "total_posts_count": total_posts_count,
-        },
-    )
-
-
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
@@ -1520,41 +1249,6 @@ class StatsDetailView(TemplateView):
             }
         )
         return context
-
-
-def view_suggestions(request):
-    category_id = request.GET.get("category")
-    status = request.GET.get("status")
-    sort = request.GET.get("sort", "newest")
-
-    suggestions = ForumPost.objects.all()
-
-    # Apply filters
-    if category_id:
-        suggestions = suggestions.filter(category_id=category_id)
-    if status:
-        suggestions = suggestions.filter(status=status)
-
-    # Apply sorting
-    if sort == "oldest":
-        suggestions = suggestions.order_by("created")
-    elif sort == "most_votes":
-        suggestions = suggestions.order_by("-up_votes")
-    elif sort == "most_comments":
-        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
-    else:  # newest
-        suggestions = suggestions.order_by("-created")
-
-    categories = ForumCategory.objects.all()
-
-    return render(
-        request,
-        "feature_suggestion.html",
-        {
-            "suggestions": suggestions,
-            "categories": categories,
-        },
-    )
 
 
 def sitemap(request):
@@ -2200,7 +1894,7 @@ def management_commands(request):
     available_commands = []
 
     # Get the date 30 days ago for stats
-    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     # Get sort parameter from request
     sort_param = request.GET.get("sort", "name")
@@ -2305,7 +1999,7 @@ def management_commands(request):
 
             # Generate all dates in the 30-day range
             for i in range(30):
-                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date = (timezone.now() - timedelta(days=29 - i)).date()
                 date_range.append(date)
                 date_values[date.isoformat()] = 0
 
@@ -2425,11 +2119,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
@@ -3301,28 +2995,19 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
+@require_POST
 def set_theme(request):
     """View to save user's theme preference"""
-    if request.method == "POST":
-        try:
-            import json
+    try:
+        import json
 
-            data = json.loads(request.body)
-            theme = data.get("theme", "light")
+        data = json.loads(request.body)
+        theme = data.get("theme", "light")
 
-            # Save theme in session
-            request.session["theme"] = theme
+        # Save theme in session
+        request.session["theme"] = theme
 
-            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
-            # if request.user.is_authenticated:
-            #     profile = request.user.userprofile
-            #     profile.theme_preference = theme
-            #     profile.save()
-
-            return JsonResponse({"status": "success", "theme": theme})
-        except Exception as e:
-            logging.exception("Error occurred while setting theme")
-            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+        return JsonResponse({"status": "success", "theme": theme})
+    except Exception:
+        logging.exception("Error occurred while setting theme")
+        return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
