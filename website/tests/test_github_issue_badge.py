@@ -1,11 +1,14 @@
 from decimal import Decimal
-from unittest.mock import patch
 
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from website.models import IP, GitHubIssue, Repo
+
+BADGE_KWARGS = {"owner": "owner", "repo_name": "test-repo", "issue_id": 42}
+BADGE_KWARGS_NO_BOUNTY = {"owner": "owner", "repo_name": "test-repo", "issue_id": 99}
+BADGE_KWARGS_MISSING = {"owner": "owner", "repo_name": "test-repo", "issue_id": 999999}
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
@@ -56,7 +59,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_returns_svg(self):
         """Badge endpoint returns image/svg+xml content type."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/svg+xml")
@@ -66,7 +69,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_contains_brand_color(self):
         """SVG output contains the BLT brand color #e74c3c."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         self.assertIn("#e74c3c", response.content.decode())
 
@@ -75,41 +78,41 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_shows_bounty(self):
         """Badge includes the bounty dollar amount when set."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         content = response.content.decode()
-        self.assertIn("$50", content)
+        self.assertIn("$50.00", content)
 
     # ------------------------------------------------------------------
-    # 4. Zero-bounty badge shows $0
+    # 4. Zero-bounty badge shows $0.00
     # ------------------------------------------------------------------
     def test_badge_zero_bounty(self):
-        """Badge shows $0 when no bounty is set."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 99})
+        """Badge shows $0.00 when no bounty is set."""
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS_NO_BOUNTY)
         response = self.client.get(url)
         content = response.content.decode()
-        self.assertIn("$0", content)
+        self.assertIn("$0.00", content)
 
     # ------------------------------------------------------------------
     # 5. Non-existent issue returns badge with zeros
     # ------------------------------------------------------------------
     def test_badge_nonexistent_issue(self):
         """Badge still returns a valid SVG for an unknown issue_id."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 999999})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS_MISSING)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/svg+xml")
         content = response.content.decode()
-        # Should show 0 views and $0
+        # Should show 0 views and $0.00
         self.assertIn(">0<", content)
-        self.assertIn("$0", content)
+        self.assertIn("$0.00", content)
 
     # ------------------------------------------------------------------
     # 6. Cache headers present
     # ------------------------------------------------------------------
     def test_badge_cache_headers(self):
         """Response includes Cache-Control with max-age=300."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         self.assertIn("max-age=300", response["Cache-Control"])
 
@@ -118,7 +121,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_etag_header(self):
         """Response includes an ETag header."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         self.assertIn("ETag", response)
         self.assertTrue(len(response["ETag"]) > 0)
@@ -128,7 +131,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_conditional_304(self):
         """Sending If-None-Match with the correct ETag yields 304."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         first = self.client.get(url)
         etag = first["ETag"]
         second = self.client.get(url, HTTP_IF_NONE_MATCH=etag)
@@ -139,7 +142,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_tracks_ip(self):
         """Badge endpoint creates an IP record for the visitor."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         ip_before = IP.objects.filter(path=url).count()
         self.client.get(url)
         ip_after = IP.objects.filter(path=url).count()
@@ -150,7 +153,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_no_duplicate_ip_same_day(self):
         """Second request from same IP on same day does not create a new IP record."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         self.client.get(url)
         count_after_first = IP.objects.filter(path=url).count()
         self.client.get(url)
@@ -172,7 +175,7 @@ class GitHubIssueBadgeTests(TestCase):
                 count=1,
             )
 
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         content = response.content.decode()
         # The views value should be "3"
@@ -200,7 +203,7 @@ class GitHubIssueBadgeTests(TestCase):
             count=1,
         )
 
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         content = response.content.decode()
         # Only the recent visit should be counted
@@ -211,8 +214,48 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_valid_svg(self):
         """Badge output starts with <svg and closes with </svg>."""
-        url = reverse("github_issue_badge", kwargs={"issue_id": 42})
+        url = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
         response = self.client.get(url)
         content = response.content.decode()
         self.assertTrue(content.startswith("<svg"))
         self.assertTrue(content.strip().endswith("</svg>"))
+
+    # ------------------------------------------------------------------
+    # 14. Cross-repo disambiguation – same issue_id in two repos
+    # ------------------------------------------------------------------
+    def test_badge_disambiguates_repos(self):
+        """Badge returns the correct bounty when the same issue_id exists in two repos."""
+        other_repo = Repo.objects.create(
+            name="other-repo",
+            slug="other-owner-other-repo",
+            repo_url="https://github.com/other-owner/other-repo",
+        )
+        GitHubIssue.objects.create(
+            issue_id=42,
+            title="Same number, different repo",
+            body="",
+            state="open",
+            type="issue",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/other-owner/other-repo/issues/42",
+            repo=other_repo,
+            p2p_amount_usd=Decimal("999.00"),
+        )
+
+        # Badge for original repo should still show $50.00
+        url_original = reverse("github_issue_badge", kwargs=BADGE_KWARGS)
+        resp_original = self.client.get(url_original)
+        self.assertIn("$50.00", resp_original.content.decode())
+
+        from django.core.cache import cache
+
+        cache.clear()
+
+        # Badge for other repo should show $999.00
+        url_other = reverse(
+            "github_issue_badge",
+            kwargs={"owner": "other-owner", "repo_name": "other-repo", "issue_id": 42},
+        )
+        resp_other = self.client.get(url_other)
+        self.assertIn("$999.00", resp_other.content.decode())

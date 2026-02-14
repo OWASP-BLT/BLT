@@ -1459,7 +1459,7 @@ def handle_pull_request_event(payload):
 
     # --- Repo mapping (same style as handle_issue_event) ---
     repo_html_url = repo_data.get("html_url")
-    repo_full_name = repo_data.get("full_name")  # "owner/repo" (for logging only)
+    repo_full_name = repo_data.get("full_name")  # "owner/repo"
 
     if not pr_global_id or not repo_html_url:
         logger.warning("Pull request event missing required data (id or repo_html_url)")
@@ -1608,7 +1608,8 @@ def handle_issue_event(payload):
             # Sync bounty from labels on opened, labeled, or unlabeled events
             if action in ("opened", "labeled", "unlabeled"):
                 labels = issue_data.get("labels", [])
-                github_issue.p2p_amount_usd = _extract_bounty_from_labels(labels)
+                amount = _extract_bounty_from_labels(labels)
+                github_issue.p2p_amount_usd = amount if amount else None
 
             github_issue.save()
             logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
@@ -1640,7 +1641,7 @@ def handle_issue_event(payload):
                         updated_at=updated_at,
                         url=issue_html_url or "",
                         repo=repo,
-                        p2p_amount_usd=bounty if bounty > 0 else None,
+                        p2p_amount_usd=bounty or None,
                     )
                     logger.info(f"Created GitHubIssue {issue_id} in repo {repo_full_name}")
                 except Exception as e:

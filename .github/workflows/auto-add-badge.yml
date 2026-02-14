@@ -17,13 +17,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueNumber = context.issue.number;
-            const badgeUrl = `https://blt.owasp.org/api/v1/badge/issue/${issueNumber}/`;
+            const owner = context.repo.owner;
+            const repoName = context.repo.repo;
+            const badgeUrl = `https://blt.owasp.org/api/v1/badge/issue/${owner}/${repoName}/${issueNumber}/`;
             const badgeMarkdown = `![Issue Stats](${badgeUrl})`;
 
             const currentBody = context.payload.issue.body || '';
 
-            // Avoid duplicate badge insertion
-            if (currentBody.includes('api/v1/badge/issue/')) {
+            // Avoid duplicate badge insertion (check for this specific issue's badge)
+            if (currentBody.includes(`api/v1/badge/issue/${owner}/${repoName}/${issueNumber}/`)) {
               console.log(`Badge already present in issue #${issueNumber}, skipping.`);
               return;
             }

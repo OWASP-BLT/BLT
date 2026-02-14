@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import io
 import json
 import logging
@@ -7,6 +8,7 @@ import smtplib
 import socket
 import uuid
 from datetime import datetime, timedelta
+from decimal import Decimal
 from urllib.parse import urlparse
 
 import markdown
@@ -24,6 +26,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -2882,15 +2885,17 @@ class GitHubIssueDetailView(DetailView):
         try:
             user_ip = get_client_ip(request)
             today = timezone.now().date()
-            if not IP.objects.filter(address=user_ip, path=request.path, created__date=today).exists():
-                IP.objects.create(
-                    address=user_ip,
-                    path=request.path,
-                    created=timezone.now(),
-                    count=1,
-                    agent=request.META.get("HTTP_USER_AGENT", "")[:255],
-                    referer=request.META.get("HTTP_REFERER", "")[:255] if request.META.get("HTTP_REFERER") else None,
-                )
+            day_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+            IP.objects.get_or_create(
+                address=user_ip,
+                path=request.path,
+                created=day_start,
+                defaults={
+                    "count": 1,
+                    "agent": request.META.get("HTTP_USER_AGENT", "")[:255],
+                    "referer": request.META.get("HTTP_REFERER", "")[:255] if request.META.get("HTTP_REFERER") else None,
+                },
+            )
         except Exception as e:
             logger.error(f"Error tracking IP view for GitHubIssue: {e}")
         return response
@@ -2967,12 +2972,9 @@ class GitHubIssueBadgeView(APIView):
     BRAND_COLOR = "#e74c3c"  # BLT red
     CACHE_TTL = 300  # 5 minutes
 
-    def get(self, request, issue_id):
-        import hashlib
-
-        from django.core.cache import cache
-
-        cache_key = f"issue_badge_{issue_id}"
+    def get(self, request, owner, repo_name, issue_id):
+        repo_url = f"https://github.com/{owner}/{repo_name}"
+        cache_key = f"issue_badge_{owner}_{repo_name}_{issue_id}"
         cached = cache.get(cache_key)
 
         # Track badge-endpoint visit in IP model
@@ -2993,24 +2995,31 @@ class GitHubIssueBadgeView(APIView):
         if cached:
             svg_content = cached
         else:
-            # Look up the GitHubIssue
-            github_issue = GitHubIssue.objects.filter(issue_id=issue_id, type="issue").order_by("-updated_at").first()
+            try:
+                # Look up the GitHubIssue scoped to the specific repo
+                github_issue = GitHubIssue.objects.filter(
+                    issue_id=issue_id, type="issue", repo__repo_url=repo_url
+                ).first()
 
-            bounty_amount = int(github_issue.p2p_amount_usd or 0) if github_issue else 0
+                bounty_amount = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
 
-            # Compute 30-day unique views from the issue DETAIL page
-            detail_path = f"/github-issues/{github_issue.pk}/" if github_issue else None
-            thirty_days_ago = timezone.now() - timedelta(days=30)
+                # Compute 30-day unique views from the issue DETAIL page
+                detail_path = f"/github-issues/{github_issue.pk}/" if github_issue else None
+                thirty_days_ago = timezone.now() - timedelta(days=30)
 
-            if detail_path:
-                activity_count = (
-                    IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
-                    .values("address")
-                    .distinct()
-                    .count()
-                )
-            else:
+                if detail_path:
+                    activity_count = (
+                        IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
+                        .values("address")
+                        .annotate(address_count=Count("address"))
+                        .count()
+                    )
+                else:
+                    activity_count = 0
+            except Exception as e:
+                logger.error(f"Database error generating badge for {owner}/{repo_name}#{issue_id}: {e}")
                 activity_count = 0
+                bounty_amount = Decimal(0)
 
             svg_content = self._generate_badge_svg(activity_count, bounty_amount)
             cache.set(cache_key, svg_content, self.CACHE_TTL)
@@ -3035,7 +3044,7 @@ class GitHubIssueBadgeView(APIView):
         views_label = "views / 30d"
         views_value = str(activity_count)
         bounty_label = "bounty"
-        bounty_value = f"${bounty_amount}" if bounty_amount > 0 else "$0"
+        bounty_value = f"${bounty_amount:.2f}" if bounty_amount > 0 else "$0.00"
 
         # Character-width approximation for Verdana 11px
         char_width = 6.5

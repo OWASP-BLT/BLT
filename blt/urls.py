@@ -1145,7 +1145,11 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
-    path("api/v1/badge/issue/<int:issue_id>/", GitHubIssueBadgeView.as_view(), name="github_issue_badge"),
+    path(
+        "api/v1/badge/issue/<str:owner>/<str:repo_name>/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge",
+    ),
     path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
     path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
     path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
