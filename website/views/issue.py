@@ -2977,7 +2977,7 @@ class GitHubIssueBadgeView(APIView):
 
     def get(self, request, owner, repo_name, issue_id):
         repo_url = f"https://github.com/{owner}/{repo_name}"
-        cache_key = f"issue_badge_{owner}_{repo_name}_{issue_id}"
+        cache_key = "issue_badge_" + "\x00".join([owner, repo_name, str(issue_id)])
         cached = cache.get(cache_key)
 
         # IP tracking is handled by the ip_restrict middleware;
