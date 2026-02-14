@@ -163,6 +163,8 @@ def vote_count(request, issue_pk):
     return JsonResponse({"likes": total_upvotes, "dislikes": total_downvotes})
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
@@ -242,7 +244,7 @@ def create_github_issue(request, id):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def resolve(request, id):
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
