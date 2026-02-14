@@ -1,7 +1,7 @@
 # Stage 1: Build stage
 FROM python:3.11.2 AS builder
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
 # Install system dependencies
@@ -44,7 +44,7 @@ RUN pip install opentelemetry-api opentelemetry-instrumentation
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
 # Copy only necessary files from builder stage
