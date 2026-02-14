@@ -2534,38 +2534,35 @@ class GitHubIssueDetailView(DetailView):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def page_vote(request):
     """
     Handle upvote/downvote for a page
     """
-    if request.method == "POST":
-        template_name = request.POST.get("template_name")
-        vote_type = request.POST.get("vote_type")
+    template_name = request.POST.get("template_name")
+    vote_type = request.POST.get("vote_type")
 
-        if not template_name or vote_type not in ["upvote", "downvote"]:
-            return JsonResponse({"status": "error", "message": "Invalid parameters"})
+    if not template_name or vote_type not in ["upvote", "downvote"]:
+        return JsonResponse({"status": "error", "message": "Invalid parameters"})
 
-        # Clean the template name to use as a key
-        page_key = template_name.replace("/", "_").replace(".html", "")
-        vote_key = f"{vote_type}_{page_key}"
+    # Clean the template name to use as a key
+    page_key = template_name.replace("/", "_").replace(".html", "")
+    vote_key = f"{vote_type}_{page_key}"
 
-        # Get or create the DailyStats entry
-        try:
-            stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
-            # Increment the vote count
-            current_value = int(stat.value)
-            stat.value = str(current_value + 1)
-            stat.save()
+    # Get or create the DailyStats entry
+    try:
+        stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
+        # Increment the vote count
+        current_value = int(stat.value)
+        stat.value = str(current_value + 1)
+        stat.save()
 
-            # Get the counts for both vote types
-            upvotes, downvotes = get_page_votes(template_name)
+        # Get the counts for both vote types
+        upvotes, downvotes = get_page_votes(template_name)
 
-            return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+        return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
+    except Exception:
+        return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
 
 
 class GsocView(View):
