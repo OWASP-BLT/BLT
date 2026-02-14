@@ -48,6 +48,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
@@ -2994,7 +2995,7 @@ class GitHubIssueBadgeView(APIView):
                 bounty_amount = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
 
                 # Compute 30-day unique views from the issue DETAIL page
-                detail_path = f"/github-issues/{github_issue.pk}/" if github_issue else None
+                detail_path = reverse("github_issue_detail", kwargs={"pk": github_issue.pk}) if github_issue else None
                 thirty_days_ago = timezone.now() - timedelta(days=30)
 
                 if detail_path:
@@ -3014,10 +3015,10 @@ class GitHubIssueBadgeView(APIView):
             svg_content = self._generate_badge_svg(activity_count, bounty_amount)
             cache.set(cache_key, svg_content, self.CACHE_TTL)
 
-        # ETag for conditional requests
-        etag = hashlib.md5(svg_content.encode()).hexdigest()
+        # ETag for conditional requests (RFC 7232: ETag values must be quoted)
+        etag = f'"{hashlib.md5(svg_content.encode()).hexdigest()}"'
         if_none_match = request.META.get("HTTP_IF_NONE_MATCH", "")
-        if if_none_match == etag:
+        if etag in (tag.strip() for tag in if_none_match.split(",")):
             return HttpResponse(status=304)
 
         response = HttpResponse(svg_content, content_type="image/svg+xml")
