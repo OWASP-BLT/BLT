@@ -156,8 +156,7 @@ def dislike_issue(request, issue_pk):
 
 @login_required(login_url="/accounts/login")
 def vote_count(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
 
     total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
@@ -245,7 +244,7 @@ def create_github_issue(request, id):
 @login_required(login_url="/accounts/login")
 @csrf_exempt
 def resolve(request, id):
-    issue = Issue.objects.get(id=id)
+    issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
             issue.status = "close"
@@ -390,7 +389,7 @@ def remove_user_from_issue(request, id):
     except:
         pass
 
-    issue = Issue.objects.get(id=id)
+    issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         issue.remove_user()
         # Remove user from corresponding activity object that was created
@@ -2034,8 +2033,7 @@ def comment_on_content(request, content_pk):
 
 @login_required(login_url="/accounts/login")
 def unsave_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.remove(issue)
     return HttpResponse("OK")
@@ -2043,8 +2041,7 @@ def unsave_issue(request, issue_pk):
 
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = UserProfile.objects.get(user=request.user)
 
     already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
@@ -2110,8 +2107,7 @@ def IssueEdit(request):
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = UserProfile.objects.get(user=request.user)
     if userprof in UserProfile.objects.filter(issue_flaged=issue):
         userprof.issue_flaged.remove(issue)
