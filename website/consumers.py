@@ -358,7 +358,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def check_room_exists(self):
         try:
             return Room.objects.filter(id=self.room_id).exists()
-        except (ValueError, Room.DoesNotExist):
+        except (ValueError, TypeError):
             return False
 
     @database_sync_to_async
