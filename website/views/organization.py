@@ -277,9 +277,7 @@ def weekly_report(request):
 
             for issue in issues:
                 report_data.append(
-                    f"Description: {issue.description}\n"
-                    f"Views: {issue.views}\n"
-                    f"Label: {issue.get_label_display()}\n\n"
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
                 )
 
             send_mail(
@@ -422,6 +420,7 @@ class DomainListView(ListView):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def subscribe_to_domains(request, pk):
     domain = Domain.objects.filter(pk=pk).first()
     if domain is None:
@@ -2666,7 +2665,7 @@ def update_organization_repos(request, slug):
         organization = get_object_or_404(Organization, slug=slug)
 
         # Check if repositories were updated in the last 24 hours
-        one_day_ago = timezone.timedelta(days=1)
+        one_day_ago = timedelta(days=1)
         if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
             time_since_update = timezone.now() - organization.repos_updated_at
             hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
