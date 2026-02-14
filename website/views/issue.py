@@ -2841,7 +2841,7 @@ class GitHubIssuesView(ListView):
 
                 # Create the GitHub issue
                 new_issue = GitHubIssue(
-                    issue_id=issue_data["id"],
+                    issue_id=issue_data["number"],
                     title=issue_data["title"],
                     body=issue_data.get("body", ""),
                     state=issue_data["state"],
