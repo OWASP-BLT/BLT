@@ -1753,14 +1753,19 @@ class IssueView(DetailView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        # Fetch each interaction group once, derive count from the list
+        likers = list(UserProfile.objects.filter(issue_upvoted=self.object))
+        context["likers"] = likers
+        context["likes"] = len(likers)
+
+        dislikers = list(UserProfile.objects.filter(issue_downvoted=self.object))
+        context["dislikers"] = dislikers
+        context["dislikes"] = len(dislikers)
+
+        flagers = list(UserProfile.objects.filter(issue_flaged=self.object))
+        context["flagers"] = flagers
+        context["flags"] = len(flagers)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
