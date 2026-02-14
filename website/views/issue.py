@@ -717,7 +717,7 @@ class IssueBaseCreate(object):
             self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
 
             screenshot_name = self.request.POST.get("screenshot-hash") + ".png"
-            screenshot_path = os.path.join("uploads", screenshot_name)
+            screenshot_path = f"uploads/{screenshot_name}"
             reopen = default_storage.open(screenshot_path, "rb")
             try:
                 django_file = File(reopen)
