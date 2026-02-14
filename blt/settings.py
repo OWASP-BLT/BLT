@@ -68,6 +68,13 @@ SCOUT_MONITOR = True
 SCOUT_KEY = os.environ.get("SCOUT_KEY")
 SCOUT_NAME = PROJECT_NAME
 
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.github.dev',
+    'https://*.app.github.dev',
+    'http://localhost:*',
+]
+
 
 INSTALLED_APPS = (
     # "scout_apm.django",
