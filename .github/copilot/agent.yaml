@@ -1,6 +1,12 @@
 # Copilot Coding Agent Setup Steps
 # These steps are executed when Copilot coding agent starts working on a task.
 # They ensure the development environment is properly configured.
+name: "BLT Coding Agent"
+description: "Specialized GitHub Copilot agent for OWASP BLT Django project with pre-commit validation"
+target: github-copilot
+infer: true
+tools:
+  - "*"  # Allow all available tools
 
 steps:
   # Install Python dependencies
@@ -17,4 +23,10 @@ steps:
     
   # Run pre-commit on all files to ensure code quality
   - run: pre-commit run --all-files
-    description: "Run pre-commit hooks (Black, isort, ruff, djLint) on all files"
+    description: "Run pre-commit hooks on all files to ensure code quality and formatting standards"
+  
+  - run: poetry run python manage.py check
+    description: "Run Django system checks to validate configuration and detect common issues"
+  
+  - run: poetry run python manage.py makemigrations --check --dry-run
+    description: "Check if there are any missing database migrations"
