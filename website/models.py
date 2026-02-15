@@ -529,7 +529,7 @@ class Trademark(models.Model):
 def validate_image(fieldfile_obj):
     try:
         filesize = fieldfile_obj.file.size
-    except:
+    except Exception:
         filesize = fieldfile_obj.size
     megabyte_limit = 3.0
     if filesize > megabyte_limit * 1024 * 1024:
