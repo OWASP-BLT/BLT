@@ -1904,13 +1904,6 @@ class IssueView(DetailView):
             context["cve_severity"] = self.object.get_cve_severity()
             context["suggested_tip_amount"] = self.object.get_suggested_tip_amount()
 
-        userprof = None
-        if self.request.user.is_authenticated:
-            userprof = UserProfile.objects.filter(user=self.request.user).first()
-        vote_context = get_issue_vote_context(self.object, userprof)
-
-        context.update(vote_context)
-
         # Keep legacy keys in sync without extra queries (backward compatibility)
         context["likes"] = context["positive_votes"]
         context["dislikes"] = context["negative_votes"]
