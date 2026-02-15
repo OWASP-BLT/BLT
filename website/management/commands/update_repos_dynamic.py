@@ -171,7 +171,9 @@ class Command(LoggedBaseCommand):
             parts = path.split("/")
             if len(parts) >= 2:
                 owner, repo_name = parts[-2], parts[-1]
-                # TODO: add your GitHub fetch/update logic here
+                self.update_repo_data(repo, owner, repo_name)
+                if not skip_issues:
+                    self.fetch_issues_and_prs(repo, owner, repo_name)
             else:
                 self.stdout.write("Invalid GitHub URL format.")
         else:
