@@ -15,8 +15,8 @@ class Command(BaseCommand):
             logger.info(f"Starting 10 minute scheduled tasks at {timezone.now()}")
             try:
                 call_command("cron_send_reminders")
-            except Exception as e:
+            except Exception:
                 logger.error("Error sending user reminders", exc_info=True)
-        except Exception as e:
+        except Exception:
             logger.error("Error in 10 minute tasks", exc_info=True)
             raise
