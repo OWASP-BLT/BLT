@@ -28,12 +28,13 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
+from website.decorators import ratelimit
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
@@ -1939,3 +1940,62 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@ratelimit(key="user", rate="10/m", method="POST")
+@login_required
+@require_POST
+def toggle_follow(request, username):
+    """Toggle follow/unfollow for a user (HTMX + non-HTMX safe)"""
+
+    target_user = get_object_or_404(User, username=username)
+
+    if request.user == target_user:
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "Cannot follow yourself"}, status=400)
+        messages.error(request, "You cannot follow yourself")
+        return redirect("profile", slug=username)
+
+    follower_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    target_profile, _ = UserProfile.objects.get_or_create(user=target_user)
+
+    if follower_profile.follows.filter(pk=target_profile.pk).exists():
+        follower_profile.follows.remove(target_profile)
+        is_following = False
+        action = "unfollowed"
+    else:
+        follower_profile.follows.add(target_profile)
+        is_following = True
+        action = "followed"
+
+        if target_user.email:
+            context = {"follower": request.user, "followed": target_user}
+            msg_plain = render_to_string("email/follow_user.html", context)
+            msg_html = render_to_string("email/follow_user.html", context)
+            send_mail(
+                "You got a new follower!!",
+                msg_plain,
+                settings.EMAIL_TO_STRING,
+                [target_user.email],
+                html_message=msg_html,
+                fail_silently=True,
+            )
+
+    follower_count = target_profile.follower.count()
+
+    # HTMX response
+    if request.headers.get("HX-Request"):
+        html = render_to_string(
+            "includes/_follow_button.html",
+            {
+                "user": target_user,
+                "is_following": is_following,
+                "follower_count": follower_count,
+            },
+            request=request,
+        )
+        return HttpResponse(html)
+
+    # Normal request fallback
+    messages.success(request, f"You {action} {target_user.username}")
+    return redirect("profile", slug=username)
