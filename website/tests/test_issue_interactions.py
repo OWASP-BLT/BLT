@@ -51,9 +51,9 @@ class FlagIssueTests(TestCase):
         self.client = Client()
 
     def test_unauthenticated_redirects_to_login(self):
-        """Unauthenticated users should be redirected to login."""
+        """Unauthenticated POST should redirect to login."""
         url = reverse("flag_issue", args=[self.issue.pk])
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login", response.url)
 
@@ -63,12 +63,12 @@ class FlagIssueTests(TestCase):
         url = reverse("flag_issue", args=[self.issue.pk])
 
         # First flag - should add
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(UserProfile.objects.filter(issue_flaged=self.issue, user=self.user).exists())
 
         # Second flag - should remove
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(UserProfile.objects.filter(issue_flaged=self.issue, user=self.user).exists())
 
@@ -76,13 +76,13 @@ class FlagIssueTests(TestCase):
         """Flagging a nonexistent issue should return 404."""
         self.client.login(username="testuser", password="testpass")
         url = reverse("flag_issue", args=[99999])
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 404)
 
 
 @override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
 class SaveIssueTests(TestCase):
-    """Test cases for the save_issue and unsave_issue views."""
+    """Test cases for the save_issue view."""
 
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="testpass")
@@ -91,9 +91,9 @@ class SaveIssueTests(TestCase):
         self.client = Client()
 
     def test_save_unauthenticated_redirects_to_login(self):
-        """Unauthenticated users should be redirected to login."""
+        """Unauthenticated POST should redirect to login."""
         url = reverse("save_issue", args=[self.issue.pk])
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login", response.url)
 
@@ -101,45 +101,32 @@ class SaveIssueTests(TestCase):
         """Saving an issue should add it to the user's saved list."""
         self.client.login(username="testuser", password="testpass")
         url = reverse("save_issue", args=[self.issue.pk])
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, b"OK")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertTrue(data["user_has_saved"])
         self.assertTrue(self.profile.issue_saved.filter(pk=self.issue.pk).exists())
 
     def test_save_issue_toggles(self):
-        """Saving an already-saved issue should remove it."""
+        """Saving an already-saved issue should remove it (toggle)."""
         self.client.login(username="testuser", password="testpass")
         url = reverse("save_issue", args=[self.issue.pk])
 
         # First save
-        self.client.get(url)
+        self.client.post(url)
         self.assertTrue(self.profile.issue_saved.filter(pk=self.issue.pk).exists())
 
-        # Second save - should remove
-        response = self.client.get(url)
-        self.assertEqual(response.content, b"REMOVED")
-        self.assertFalse(self.profile.issue_saved.filter(pk=self.issue.pk).exists())
-
-    def test_unsave_issue(self):
-        """Unsaving an issue should remove it from saved list."""
-        self.client.login(username="testuser", password="testpass")
-        self.profile.issue_saved.add(self.issue)
-
-        url = reverse("unsave_issue", args=[self.issue.pk])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        # Second save - should unsave (toggle)
+        response = self.client.post(url)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertFalse(data["user_has_saved"])
         self.assertFalse(self.profile.issue_saved.filter(pk=self.issue.pk).exists())
 
     def test_save_nonexistent_issue_returns_404(self):
         """Saving a nonexistent issue should return 404."""
         self.client.login(username="testuser", password="testpass")
         url = reverse("save_issue", args=[99999])
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)
-
-    def test_unsave_nonexistent_issue_returns_404(self):
-        """Unsaving a nonexistent issue should return 404."""
-        self.client.login(username="testuser", password="testpass")
-        url = reverse("unsave_issue", args=[99999])
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 404)
