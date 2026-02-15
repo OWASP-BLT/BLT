@@ -713,8 +713,7 @@ class IssueBaseCreate(object):
         obj.domain = domain
         if self.request.POST.get("screenshot-hash"):
             filename = self.request.POST.get("screenshot-hash")
-            extension = filename.split(".")[-1]
-            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
+            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4())
 
             screenshot_name = self.request.POST.get("screenshot-hash") + ".png"
             screenshot_path = f"uploads/{screenshot_name}"
@@ -1411,7 +1410,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             # Save screenshots
             for screenshot in self.request.FILES.getlist("screenshots"):
                 filename = screenshot.name
-                extension = filename.split(".")[-1]
                 screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
                 default_storage.save(f"screenshots/{screenshot.name}", screenshot)
                 IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
