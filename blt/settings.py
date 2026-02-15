@@ -103,6 +103,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "dashboard",
 )
 
 if DEBUG:
