@@ -305,20 +305,15 @@ def update_submission_status(request, submission_id):
         if new_bacon_amount is not None:
             submission.bacon_amount = new_bacon_amount
 
-            submission.save()
-            return JsonResponse(
-                {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
-            )
-
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)
-        except Exception:
-            logger.exception("Error updating submission status")
-            return JsonResponse({"error": "error updating submission status"}, status=400)
+        submission.save()
+        return JsonResponse(
+            {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
+        )
 
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON format"}, status=400)
     except Exception:
+        logger.exception("Error updating submission status")
         return JsonResponse({"error": "error updating submission status"}, status=400)
 
 
