@@ -21,6 +21,6 @@ class Command(BaseCommand):
 
             # Other hourly commands can be added here
             # management.call_command('other_hourly_command')
-        except Exception as e:
-            logger.error(f"Error in hourly tasks: {e}")
+        except Exception:
+            logger.exception("Error in hourly tasks")
             raise

@@ -1131,7 +1131,7 @@ class AddDomainView(View):
             domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
-        organization_obj = Organization.objects.get(id=id)
+        organization_obj = get_object_or_404(Organization, id=id)
 
         domain_exist = Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"])).exists()
 
@@ -1228,7 +1228,7 @@ class AddDomainView(View):
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
-        organization_obj = Organization.objects.get(id=id)
+        organization_obj = get_object_or_404(Organization, id=id)
 
         domain_exist = (
             Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"]))

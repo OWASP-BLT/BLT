@@ -8,9 +8,10 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import IntegrityError
 from django.db.models import Count
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 # Create your views here.
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -107,13 +108,12 @@ def join_requests(request):
     join_requests = JoinRequest.objects.filter(user=request.user)
     if request.method == "POST":
         team_id = request.POST.get("team_id")
-        team = Organization.objects.get(id=team_id, type="team")
-        if request.user.is_authenticated:
-            user_profile = request.user.userprofile
-            user_profile.team = team
-            user_profile.save()
-            team.managers.add(request.user)
-            JoinRequest.objects.filter(user=request.user, team=team).delete()
+        team = get_object_or_404(Organization, id=team_id, type="team")
+        user_profile = request.user.userprofile
+        user_profile.team = team
+        user_profile.save()
+        team.managers.add(request.user)
+        JoinRequest.objects.filter(user=request.user, team=team).delete()
         return redirect("team_overview")
 
     return render(request, "join_requests.html", {"join_requests": join_requests})
@@ -156,37 +156,37 @@ def send_join_request(team, requesting_user, target_username):
 
 
 @login_required
+@require_POST
 def delete_team(request):
-    if request.user.is_authenticated:
-        user_profile = request.user.userprofile
-        if user_profile.team and user_profile.team.admin == request.user:
-            team = user_profile.team
-            team.managers.clear()
-            team.delete()
-            user_profile.team = None
-            user_profile.save()
+    user_profile = request.user.userprofile
+    if user_profile.team and user_profile.team.admin == request.user:
+        team = user_profile.team
+        team.managers.clear()
+        team.delete()
+        user_profile.team = None
+        user_profile.save()
     return redirect("team_overview")
 
 
 @login_required
+@require_POST
 def leave_team(request):
-    if request.user.is_authenticated:
-        user_profile = request.user.userprofile
-        if user_profile.team:
-            team = user_profile.team
-            if team.admin == request.user:
-                managers = team.managers.all()
-                if managers.exists():
-                    new_admin = managers.first()
-                    team.managers.remove(new_admin)
-                    team.admin = new_admin
-                    team.save()
-                else:
-                    team.delete()
+    user_profile = request.user.userprofile
+    if user_profile.team:
+        team = user_profile.team
+        if team.admin == request.user:
+            managers = team.managers.all()
+            if managers.exists():
+                new_admin = managers.first()
+                team.managers.remove(new_admin)
+                team.admin = new_admin
+                team.save()
             else:
-                team.managers.remove(request.user)
-            user_profile.team = None
-            user_profile.save()
+                team.delete()
+        else:
+            team.managers.remove(request.user)
+        user_profile.team = None
+        user_profile.save()
     return redirect("team_overview")
 
 

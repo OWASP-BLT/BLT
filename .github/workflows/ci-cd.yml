@@ -29,6 +29,7 @@ on:
 env:
   FORCE_COLOR: 1
   POETRY_CACHE_DIR: ~/.cache/pypoetry
+  SECRET_KEY: ci-test-secret-key
 
 # Default permissions for the workflow
 permissions:
@@ -361,6 +362,9 @@ jobs:
     name: Run Tests
     needs: setup
     runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-test-secret-key
+      DATABASE_URL: sqlite:///db.sqlite3
     permissions:
       contents: read
     outputs:
@@ -433,7 +437,7 @@ jobs:
       actions: read
     steps:
       - name: Download test output
-        if: needs.test.outputs.test_result != '0'
+        if: always()
         uses: actions/download-artifact@v4.1.3
         with:
           name: test-output
@@ -584,6 +588,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pull_number = context.issue.number;
@@ -600,7 +605,74 @@ jobs:
             const testExitCode = '${{ needs.test.outputs.test_result }}';
             core.info(`Test exit code from job output: ${testExitCode}`);
             
-            const newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
+            // Try to extract test counts from test output
+            let totalTests = 0;
+            let failedTests = 0;
+            let skippedTests = 0;
+            let passedTests = 0;
+            
+            try {
+              const testOutput = fs.readFileSync('test-output.txt', 'utf8');
+              
+              // Match "Ran X test(s)" pattern to get total test count
+              const totalMatch = testOutput.match(/Ran (\d+) tests? in/);
+              if (totalMatch && totalMatch[1]) {
+                totalTests = parseInt(totalMatch[1], 10);
+                core.info(`Total tests: ${totalTests}`);
+              }
+              
+              // Match FAILED line to extract failures, errors, and skipped counts
+              // Examples: "FAILED (failures=1)" or "FAILED (failures=1, errors=2, skipped=3)"
+              const failedMatch = testOutput.match(/FAILED \((.*?)\)/);
+              if (failedMatch) {
+                const failureDetails = failedMatch[1];
+                
+                // Extract failures count
+                const failuresMatch = failureDetails.match(/failures=(\d+)/);
+                if (failuresMatch) {
+                  failedTests += parseInt(failuresMatch[1], 10);
+                }
+                
+                // Extract errors count (also considered failures)
+                const errorsMatch = failureDetails.match(/errors=(\d+)/);
+                if (errorsMatch) {
+                  failedTests += parseInt(errorsMatch[1], 10);
+                }
+                
+                // Extract skipped count
+                const skippedMatch = failureDetails.match(/skipped=(\d+)/);
+                if (skippedMatch) {
+                  skippedTests = parseInt(skippedMatch[1], 10);
+                }
+              } else {
+                // Check for OK status (all tests passed or passed with skipped)
+                if (/\bOK\b/.test(testOutput)) {
+                  // Check for skipped tests in OK line: "OK (skipped=2)"
+                  const okSkippedMatch = testOutput.match(/OK \(skipped=(\d+)\)/);
+                  if (okSkippedMatch) {
+                    skippedTests = parseInt(okSkippedMatch[1], 10);
+                  }
+                }
+              }
+              
+              // Calculate passed tests (ensure non-negative)
+              passedTests = Math.max(0, totalTests - failedTests - skippedTests);
+              
+              core.info(`Parsed test results - Total: ${totalTests}, Failed: ${failedTests}, Skipped: ${skippedTests}, Passed: ${passedTests}`);
+            } catch (e) {
+              core.warning(`Could not read or parse test output: ${e.message}`);
+            }
+            
+            // Build label with test counts in format: "tests: P:# F:# S:#"
+            // Use stable label format to avoid creating many repository labels
+            let newLabel;
+            if (totalTests > 0) {
+              newLabel = `tests: P:${passedTests} F:${failedTests} S:${skippedTests}`;
+            } else {
+              // Fallback if we couldn't parse counts
+              newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
+            }
+            
             const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
             const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
             
@@ -683,7 +755,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          
       - name: Set up Docker
         run: |
           docker --version
@@ -696,7 +771,9 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run -d --name my-container my-app
+          docker run -d \
+          -e SECRET_KEY=ci-test-secret-key \
+          --name my-container my-app
 
       - run: docker exec my-container pip install poetry
       - run: docker exec my-container poetry lock
