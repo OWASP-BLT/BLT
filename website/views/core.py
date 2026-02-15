@@ -39,8 +39,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -1928,7 +1927,7 @@ def management_commands(request):
     available_commands = []
 
     # Get the date 30 days ago for stats
-    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     # Get sort parameter from request
     sort_param = request.GET.get("sort", "name")
@@ -2033,7 +2032,7 @@ def management_commands(request):
 
             # Generate all dates in the 30-day range
             for i in range(30):
-                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date = (timezone.now() - timedelta(days=29 - i)).date()
                 date_range.append(date)
                 date_values[date.isoformat()] = 0
 
@@ -3029,28 +3028,19 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
+@require_POST
 def set_theme(request):
     """View to save user's theme preference"""
-    if request.method == "POST":
-        try:
-            import json
+    try:
+        import json
 
-            data = json.loads(request.body)
-            theme = data.get("theme", "light")
+        data = json.loads(request.body)
+        theme = data.get("theme", "light")
 
-            # Save theme in session
-            request.session["theme"] = theme
+        # Save theme in session
+        request.session["theme"] = theme
 
-            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
-            # if request.user.is_authenticated:
-            #     profile = request.user.userprofile
-            #     profile.theme_preference = theme
-            #     profile.save()
-
-            return JsonResponse({"status": "success", "theme": theme})
-        except Exception as e:
-            logging.exception("Error occurred while setting theme")
-            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+        return JsonResponse({"status": "success", "theme": theme})
+    except Exception:
+        logging.exception("Error occurred while setting theme")
+        return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)

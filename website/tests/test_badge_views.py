@@ -1,9 +1,9 @@
 import io
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import Client, TestCase
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.timezone import now
 from PIL import Image
 
@@ -28,7 +28,7 @@ class BadgeViewsTest(TestCase):
         # Create IP records for last 7 days
         today = now().date()
         for i in range(7):
-            date = today - timezone.timedelta(days=i)
+            date = today - timedelta(days=i)
             badge_path = reverse("project-badge", kwargs={"slug": self.project.slug})
             IP.objects.create(address=f"192.168.1.{i}", path=badge_path, created=date, count=1)
 
@@ -127,7 +127,7 @@ class BadgeViewsTest(TestCase):
 
         # Simulate next day visit
         with patch("django.utils.timezone.now") as mock_now:
-            mock_now.return_value = now() + timezone.timedelta(days=1)
+            mock_now.return_value = now() + timedelta(days=1)
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
 
@@ -149,7 +149,7 @@ class BadgeViewsTest(TestCase):
         self.assertTrue(image_data.startswith(b"\x89PNG"))
 
         # Check we have the expected number of historical records
-        seven_days_ago = now().date() - timezone.timedelta(days=7)
+        seven_days_ago = now().date() - timedelta(days=7)
         visit_count = IP.objects.filter(path=url, created__date__gte=seven_days_ago).count()
         # 7 from setup + 1 from this test
         self.assertEqual(visit_count, 8)

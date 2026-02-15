@@ -79,12 +79,8 @@ def staking_home(request):
     completed_pools = StakingPool.objects.filter(status="completed").order_by("-completed_at")[:5]
 
     # Get user's BACON balance
-    user_bacon_balance = 0
-    try:
-        bacon_earning = BaconEarning.objects.get(user=request.user)
-        user_bacon_balance = bacon_earning.tokens_earned
-    except BaconEarning.DoesNotExist:
-        pass
+    bacon_earning = BaconEarning.objects.filter(user=request.user).first()
+    user_bacon_balance = bacon_earning.tokens_earned if bacon_earning else 0
 
     # Add join status to each pool
     all_pools = list(open_pools) + list(full_pools) + list(active_pools) + list(completed_pools)
@@ -171,21 +167,11 @@ def pool_detail(request, pool_id):
             participant.challenge_completed_status = False
 
     # Check if user has joined this pool
-    user_entry = None
-    if request.user.is_authenticated:
-        try:
-            user_entry = StakingEntry.objects.get(pool=pool, user=request.user)
-        except StakingEntry.DoesNotExist:
-            pass
+    user_entry = StakingEntry.objects.filter(pool=pool, user=request.user).first()
 
     # Get user's BACON balance
-    user_bacon_balance = 0
-    if request.user.is_authenticated:
-        try:
-            bacon_earning = BaconEarning.objects.get(user=request.user)
-            user_bacon_balance = bacon_earning.tokens_earned
-        except BaconEarning.DoesNotExist:
-            pass
+    bacon_earning = BaconEarning.objects.filter(user=request.user).first()
+    user_bacon_balance = bacon_earning.tokens_earned if bacon_earning else 0
 
     # Check if user can join
     can_join = False
@@ -318,12 +304,8 @@ def my_staking(request):
     total_winnings = completed_entries.filter(status="won").aggregate(total=Sum("actual_reward"))["total"] or 0
 
     # Get user's BACON balance
-    user_bacon_balance = 0
-    try:
-        bacon_earning = BaconEarning.objects.get(user=request.user)
-        user_bacon_balance = bacon_earning.tokens_earned
-    except BaconEarning.DoesNotExist:
-        pass
+    bacon_earning = BaconEarning.objects.filter(user=request.user).first()
+    user_bacon_balance = bacon_earning.tokens_earned if bacon_earning else 0
 
     context = {
         "active_entries": active_entries,
@@ -425,13 +407,12 @@ def create_staking_pool(request):
             challenge = get_object_or_404(Challenge, id=challenge_id, challenge_type="single")
 
             # Check if user has enough BACON to stake
-            try:
-                bacon_earning = BaconEarning.objects.get(user=request.user)
-                if bacon_earning.tokens_earned < stake_amount:
-                    messages.error(request, f"You need at least {stake_amount} BACON to create this pool.")
-                    return redirect("create_staking_pool")
-            except BaconEarning.DoesNotExist:
+            bacon_earning = BaconEarning.objects.filter(user=request.user).first()
+            if not bacon_earning:
                 messages.error(request, "You don't have any BACON tokens.")
+                return redirect("create_staking_pool")
+            if bacon_earning.tokens_earned < stake_amount:
+                messages.error(request, f"You need at least {stake_amount} BACON to create this pool.")
                 return redirect("create_staking_pool")
 
             # Create the pool
@@ -465,12 +446,8 @@ def create_staking_pool(request):
     challenges = Challenge.objects.filter(challenge_type="single").order_by("title")
 
     # Get user's BACON balance
-    user_bacon_balance = 0
-    try:
-        bacon_earning = BaconEarning.objects.get(user=request.user)
-        user_bacon_balance = bacon_earning.tokens_earned
-    except BaconEarning.DoesNotExist:
-        pass
+    bacon_earning = BaconEarning.objects.filter(user=request.user).first()
+    user_bacon_balance = bacon_earning.tokens_earned if bacon_earning else 0
 
     context = {
         "challenges": challenges,
