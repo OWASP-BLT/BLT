@@ -880,7 +880,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     )
 
                     self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
-        except (IOError, OSError):
+        except Exception:
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
