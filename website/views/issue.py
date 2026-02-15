@@ -1870,18 +1870,23 @@ class IssueView(DetailView):
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
 
-        # Fetch each interaction group once, derive count from the list
-        likers = list(UserProfile.objects.filter(issue_upvoted=self.object))
-        context["likers"] = likers
-        context["likes"] = len(likers)
+        # Get vote/flag/save context using the helper function
+        if self.request.user.is_authenticated:
+            userprof = UserProfile.objects.get(user=self.request.user)
+            vote_context = get_issue_vote_context(self.object, userprof)
+        else:
+            vote_context = get_issue_vote_context(self.object, None)
 
-        dislikers = list(UserProfile.objects.filter(issue_downvoted=self.object))
-        context["dislikers"] = dislikers
-        context["dislikes"] = len(dislikers)
+        context.update(vote_context)
 
-        flagers = list(UserProfile.objects.filter(issue_flaged=self.object))
-        context["flagers"] = flagers
-        context["flags"] = len(flagers)
+        # Add likers and flagers for modals (limit to 20 for performance)
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)[:20]
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)[:20]
+
+        # Keep legacy keys for backward compatibility (if needed elsewhere)
+        context["likes"] = vote_context["positive_votes"]
+        context["dislikes"] = vote_context["negative_votes"]
+        context["flags"] = vote_context["flags_count"]
 
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
@@ -2253,24 +2258,6 @@ def IssueEdit(request):
             return HttpResponse("Unauthorised")
     else:
         return HttpResponse("POST ONLY")
-
-
-@login_required(login_url="/accounts/login")
-def flag_issue(request, issue_pk):
-    context = {}
-    issue = get_object_or_404(Issue, pk=int(issue_pk))
-    userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_flaged=issue):
-        userprof.issue_flaged.remove(issue)
-    else:
-        userprof.issue_flaged.add(issue)
-        issue_pk = issue.pk
-
-    userprof.save()
-    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
-    context["object"] = issue
-    context["flags"] = total_flag_votes
-    return render(request, "includes/_flags.html", context)
 
 
 def select_bid(request):

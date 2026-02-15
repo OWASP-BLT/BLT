@@ -3,10 +3,7 @@
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
     <!-- HTMX fragment for like/dislike/flag that updates dynamically -->
-    <div id="vote-section-{{ object.id }}"
-         hx-get="{% url 'issue_votes' object.id %}"
-         hx-trigger="vote from:body"
-         hx-swap="outerHTML">
+    <div id="vote-section-{{ object.id }}">
         {% include "includes/_like_section.html" with object=object positive_votes=positive_votes negative_votes=negative_votes flags_count=flags_count user_vote=user_vote user_has_flagged=user_has_flagged %}
     </div>
     <!-- Share button (static) -->
@@ -33,10 +30,7 @@
         {% endif %}
     </div>
     <!-- Bookmark section that updates via HTMX -->
-    <div id="bookmark-section-{{ object.id }}"
-         hx-get="{% url 'issue_bookmark' object.id %}"
-         hx-trigger="bookmark from:body"
-         hx-swap="outerHTML">
+    <div id="bookmark-section-{{ object.id }}">
         {% include "includes/_bookmark_section.html" with object=object user_has_saved=user_has_saved|default:False %}
     </div>
 </div>
