@@ -214,7 +214,7 @@ def profile_edit(request):
 
                 messages.info(
                     request,
-                    "A verification link has been sent to your new email. " "Please verify to complete the update.",
+                    "A verification link has been sent to your new email. Please verify to complete the update.",
                 )
                 return redirect("profile", slug=request.user.username)
 
@@ -1105,23 +1105,28 @@ def create_tokens(request):
 
 
 def get_score(request):
-    users = []
-    temp_users = (
-        User.objects.annotate(total_score=Sum("points__score")).order_by("-total_score").filter(total_score__gt=0)
+    # Annotate scores and evaluate queryset eagerly for batch profile fetch
+    temp_users = list(
+        User.objects.annotate(total_score=Sum("points__score")).filter(total_score__gt=0).order_by("-total_score")
     )
-    rank_user = 1
-    for each in temp_users.all():
-        temp = {}
-        temp["rank"] = rank_user
-        temp["id"] = each.id
-        temp["User"] = each.username
-        temp["score"] = Points.objects.filter(user=each.id).aggregate(total_score=Sum("score"))
-        temp["image"] = list(UserProfile.objects.filter(user=each.id).values("user_avatar"))[0]
-        temp["title_type"] = list(UserProfile.objects.filter(user=each.id).values("title"))[0]
-        temp["follows"] = list(UserProfile.objects.filter(user=each.id).values("follows"))[0]
-        temp["savedissue"] = list(UserProfile.objects.filter(user=each.id).values("issue_saved"))[0]
-        rank_user = rank_user + 1
-        users.append(temp)
+    # Batch-fetch profiles without triggering AutoOneToOneField auto-creation
+    profiles_map = {p.user_id: p for p in UserProfile.objects.filter(user__in=temp_users)}
+
+    users = []
+    for rank, user in enumerate(temp_users, start=1):
+        profile = profiles_map.get(user.id)
+        users.append(
+            {
+                "rank": rank,
+                "id": user.id,
+                "User": user.username,
+                "score": {"total_score": user.total_score},
+                "image": {"user_avatar": profile.user_avatar if profile else ""},
+                "title_type": {"title": profile.title if profile else 0},
+                "follows": {"follows": profile.follows.count() if profile else 0},
+                "savedissue": {"issue_saved": profile.issue_saved.count() if profile else 0},
+            }
+        )
     return JsonResponse(users, safe=False)
 
 

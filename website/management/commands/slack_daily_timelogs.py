@@ -1,6 +1,7 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
+from django.utils import timezone
 from slack_bolt import App
 
 from website.management.base import LoggedBaseCommand
@@ -10,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 class Command(LoggedBaseCommand):
-    help = "Sends messages to organizations with a Slack integration for " "Sizzle timelogs to be run every hour."
+    help = "Sends messages to organizations with a Slack integration for Sizzle timelogs to be run every hour."
 
     def handle(self, *args, **kwargs):
-        # Get the current hour in UTC
-        current_hour_utc = datetime.utcnow().hour
+        now = timezone.now()
+        current_hour_utc = now.hour
 
         # Fetch all Slack integrations with related integration data
         slack_integrations = SlackIntegration.objects.select_related("integration__organization").all()
@@ -30,7 +31,7 @@ class Command(LoggedBaseCommand):
             ):
                 logger.info(f"Processing updates for organization: {current_org.name}")
 
-                last_24_hours = datetime.utcnow() - timedelta(hours=24)
+                last_24_hours = now - timedelta(hours=24)
 
                 timelog_history = TimeLog.objects.filter(
                     organization=current_org,
@@ -47,9 +48,7 @@ class Command(LoggedBaseCommand):
                         st = timelog.start_time
                         et = timelog.end_time
                         issue_url = timelog.github_issue_url if timelog.github_issue_url else "No issue URL"
-                        summary_message += (
-                            f"Task: {timelog}\n" f"Start: {st}\n" f"End: {et}\n" f"Issue URL: {issue_url}\n\n"
-                        )
+                        summary_message += f"Task: {timelog}\nStart: {st}\nEnd: {et}\nIssue URL: {issue_url}\n\n"
                         total_time += et - st
 
                     human_friendly_total_time = self.format_timedelta(total_time)
