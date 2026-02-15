@@ -385,16 +385,14 @@ def UpdateIssue(request):
     if not request.POST.get("issue_pk"):
         return HttpResponse("Missing issue ID")
     issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+    tokenauth = False
     try:
-        tokenauth = False
         if "token" in request.POST:
-            for token in Token.objects.all():
-                if request.POST["token"] == token.key:
-                    request.user = User.objects.get(id=token.user_id)
-                    tokenauth = True
-                    break
-    except Exception:
-        logger.exception("Token authentication lookup failed in UpdateIssue")
+            token = Token.objects.select_related("user").filter(key=request.POST["token"]).first()
+            if token:
+                request.user = token.user
+                tokenauth = True
+    except (KeyError, Token.DoesNotExist, User.DoesNotExist):
         tokenauth = False
     if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
@@ -502,12 +500,12 @@ def delete_issue(request, id):
 def remove_user_from_issue(request, id):
     tokenauth = False
     try:
-        for token in Token.objects.all():
-            if request.POST.get("token") == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Exception:
-        logger.exception("Token authentication lookup failed in remove_user_from_issue")
+        token = Token.objects.select_related("user").filter(key=request.POST.get("token")).first()
+        if token:
+            request.user = token.user
+            tokenauth = True
+    except (KeyError, Token.DoesNotExist):
+        tokenauth = False
 
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
@@ -1248,10 +1246,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             elif self.request.user.is_authenticated:
                 obj.user = self.request.user
             else:
-                for token in Token.objects.all():
-                    if self.request.POST.get("token") == token.key:
-                        obj.user = User.objects.get(id=token.user_id)
-                        tokenauth = True
+                token = Token.objects.select_related("user").filter(key=self.request.POST.get("token")).first()
+                if token:
+                    obj.user = token.user
+                    tokenauth = True
 
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
