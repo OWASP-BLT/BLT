@@ -276,7 +276,8 @@ def UpdateIssue(request):
                     request.user = User.objects.get(id=token.user_id)
                     tokenauth = True
                     break
-    except:
+    except Exception:
+        logger.exception("Token authentication lookup failed in UpdateIssue")
         tokenauth = False
     if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
         if request.POST.get("action") == "close":
@@ -385,11 +386,11 @@ def remove_user_from_issue(request, id):
     tokenauth = False
     try:
         for token in Token.objects.all():
-            if request.POST["token"] == token.key:
+            if request.POST.get("token") == token.key:
                 request.user = User.objects.get(id=token.user_id)
                 tokenauth = True
-    except:
-        pass
+    except Exception:
+        logger.exception("Token authentication lookup failed in remove_user_from_issue")
 
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
@@ -400,8 +401,9 @@ def remove_user_from_issue(request, id):
         ).first()
         # Have to define a default anonymous user since the not null constraint fails
         anonymous_user = User.objects.get_or_create(username="anonymous")[0]
-        issue_activity.user = anonymous_user
-        issue_activity.save()
+        if issue_activity:
+            issue_activity.user = anonymous_user
+            issue_activity.save()
         messages.success(request, "User removed from the issue")
         if tokenauth:
             return JsonResponse("User removed from the issue", safe=False)
@@ -880,8 +882,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     )
 
                     self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
-        except:
-            tokenauth = False
+        except Exception:
+            logger.exception("Failed to process screenshot data in get_initial")
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
@@ -1864,7 +1866,8 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
             issue.description = description
             try:
                 issue.screenshot = request.FILES["screenshot"]
-            except:
+            except Exception:
+                logger.debug("No screenshot uploaded for hunt submission, returning to form")
                 issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )
@@ -2073,7 +2076,7 @@ def assign_issue_to_user(request, user, **kwargs):
             del request.session["domain"]
             del request.session["created"]
         except Exception:
-            pass
+            logger.exception("Failed to clear session keys in assign_issue_to_user")
         request.session.modified = True
 
         issue = Issue.objects.get(id=issue_id)
