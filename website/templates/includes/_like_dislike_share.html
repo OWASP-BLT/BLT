@@ -2,10 +2,15 @@
 {% load custom_tags %}
 <!-- Modern redesigned like/dislike/share component -->
 <div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 dark:border-gray-600 py-6 my-3">
-    <!-- HTMX fragment for like/dislike/flag -->
-    {% include "includes/_like_section.html" with object=object positive_votes=positive_votes negative_votes=negative_votes flags_count=flags_count user_vote=user_vote user_has_flagged=user_has_flagged %}
+    <!-- HTMX fragment for like/dislike/flag that updates dynamically -->
+    <div id="vote-section-{{ object.id }}"
+         hx-get="{% url 'issue_votes' object.id %}"
+         hx-trigger="vote from:body"
+         hx-swap="outerHTML">
+        {% include "includes/_like_section.html" with object=object positive_votes=positive_votes negative_votes=negative_votes flags_count=flags_count user_vote=user_vote user_has_flagged=user_has_flagged %}
+    </div>
     <!-- Share button (static) -->
-    <button onclick="copyClipboard()"
+    <button onclick="copyBugToClipboard('{{ object.domain_title|escapejs }}', '{{ object.description|escapejs }}', '{{ object.id }}')"
             class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
         <i class="fa-solid fa-share-nodes text-gray-400"></i>
         <span class="font-semibold">Share</span>
@@ -16,24 +21,30 @@
         {% if flagers %}
             <button onclick="openFlagModal('{{ object.id }}')"
                     class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                View Flags
+                <i class="fa-regular fa-flag"></i> View Flags ({{ flagers|length }})
             </button>
         {% endif %}
         <!-- View Likes button -->
         {% if likers %}
             <button onclick="openLikeModal('{{ object.id }}')"
                     class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                View Likes
+                <i class="fa-regular fa-thumbs-up"></i> View Likes ({{ likers|length }})
             </button>
         {% endif %}
     </div>
-    <!-- Bookmark section for HTMX updates -->
-    {% include "includes/_bookmark_section.html" with object=object user_has_saved=user_has_saved|default:False %}
+    <!-- Bookmark section that updates via HTMX -->
+    <div id="bookmark-section-{{ object.id }}"
+         hx-get="{% url 'issue_bookmark' object.id %}"
+         hx-trigger="bookmark from:body"
+         hx-swap="outerHTML">
+        {% include "includes/_bookmark_section.html" with object=object user_has_saved=user_has_saved|default:False %}
+    </div>
 </div>
-{% include "includes/_like_modal.html" with modal_id="like-modal-"|add:object.id|stringformat:"s" %}
-{% include "includes/_flag_modal.html" with modal_id="flag-modal-"|add:object.id|stringformat:"s" %}
-<!-- Keep the existing JavaScript -->
+<!-- Modals -->
+{% include "includes/_like_modal.html" with modal_id="like-modal-"|add:object.id|stringformat:"s" likers=likers %}
+{% include "includes/_flag_modal.html" with modal_id="flag-modal-"|add:object.id|stringformat:"s" flagers=flagers %}
 <script>
+    // CSRF token utility function
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -48,229 +59,145 @@
         }
         return cookieValue;
     }
-</script>
-<script>
-    function copyClipboard() {
-        var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
+
+    // Copy bug details to clipboard
+    function copyBugToClipboard(domain, description, issueId) {
+        const fqdn = '{% env "FQDN" %}';
+        const textToCopy = `Bug Found on ${domain} - ${description} Report: https://${fqdn}/issue/${issueId}`;
         
-        navigator.clipboard.writeText(textToCopy);
-      
-        $.notify("Bug details copied to clipboard!", {
-            style: "custom",
-            className: "success"
-        });
-    }
-
-    function like_unlike_handler(e) {
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/like_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-
-    $('body').on('click', '#like_unlike', like_unlike_handler);
-
-    function dislike_handler(e){
-        e.preventDefault();
-        var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
-        $.ajax({
-            type: 'GET',
-            url: '/dislike_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-    $('body').on('click', '#dislike-btn', dislike_handler);
-</script>
-<script>
-    function flag_unflag_handler(e){
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/flag_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-        });
-    }
-
-    $('body').on('click', '#flag-unflag', flag_unflag_handler);
-
-</script>
-<script>
-    function bookmark_handler(e){
-        e.preventDefault();
-        var issue_pk = $(this).attr('name');
-        $.ajax({
-            type: 'GET',
-            url: '/save_issue/' + issue_pk + '/',
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-            error: function (e) {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    showNotification("Bug details copied to clipboard!", "success");
+                })
+                .catch((err) => {
+                    console.error("Failed to copy:", err);
+                    fallbackCopy(textToCopy);
                 });
-            }
-        });
-    }
-
-    $('body').on('click', '#bookmark', bookmark_handler);
-</script>
-<script>
-    // Only define copyClipboard if not already defined
-    if (typeof copyClipboard === 'undefined') {
-        function copyClipboard() {
-            var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(textToCopy)
-                    .then(function () {
-                        if (window.createMessage) {
-                            window.createMessage("Bug details copied to clipboard!", "success", 3000);
-                        } else {
-                            // Fallback notification
-                            alert("Bug details copied to clipboard!");
-                        }
-                    })
-                    .catch(function (err) {
-                        console.error("Failed to copy:", err);
-                        // Fallback failed - inform user
-                        alert("Failed to copy. Please copy manually.");
-        const request = await fetch(`/resolve/${id}/`, {
-            method: 'POST',
-            headers: {'X-CSRFToken': getCookie('csrftoken')},
-        });
-        if (request.status == 403){
-            $.notify("Permission Denied", {
-                style: "custom",
-                className: "danger"
-            });
         } else {
-            window.location.reload();
-        }
-    }
-</script>
-<script>
-    function createIssue(){
-        var issue_pk = $("#create_issue").attr('name');
-        $.ajax({
-            type: 'POST',
-            url: '/create_github_issue/' + issue_pk + '/',
-            headers: {'X-CSRFToken': getCookie('csrftoken')},
-            data: {},
-            success: function (data) {
-                if(data["status"] != "ok"){
-                    $.notify(data["status_reason"], {
-                        style: "custom",
-                        className: "danger"
-                    });
-            } else {
-                // Fallback: create temporary textarea for older browsers
-                var textArea = document.createElement("textarea");
-                textArea.value = textToCopy;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    if (window.createMessage) {
-                        window.createMessage("Bug details copied to clipboard!", "success", 3000);
-                    } else {
-                        alert("Bug details copied to clipboard!");
-                    }
-                } catch (err) {
-                    alert("Failed to copy. Please copy manually.");
-                }
-                document.body.removeChild(textArea);
-            }
+            fallbackCopy(textToCopy);
         }
     }
     
-    // Define modal functions with issue ID support
+    // Fallback copy method for older browsers
+    function fallbackCopy(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showNotification("Bug details copied to clipboard!", "success");
+            } else {
+                showNotification("Failed to copy. Please copy manually.", "error");
+            }
+        } catch (err) {
+            console.error("Fallback copy error:", err);
+            showNotification("Failed to copy. Please copy manually.", "error");
+        }
+        
+        document.body.removeChild(textArea);
+    }
+    
+    // Show notification
+    function showNotification(message, type) {
+        if (typeof $.notify === 'function') {
+            $.notify(message, {
+                style: "custom",
+                className: type === "success" ? "success" : "danger"
+            });
+        } else if (window.createMessage) {
+            window.createMessage(message, type, 3000);
+        } else {
+            alert(message);
+        }
+    }
+
+    // HTMX vote handlers
+    function handleVote(issueId, voteType) {
+        const url = voteType === 'upvote' ? `/like_issue/${issueId}/` : `/dislike_issue/${issueId}/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'HX-Request': 'true'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Update the vote section with the new HTML
+            document.getElementById(`vote-section-${issueId}`).outerHTML = html;
+            // Trigger custom event for any other listeners
+            document.body.dispatchEvent(new CustomEvent('vote', { detail: { issueId, voteType } }));
+        })
+        .catch(error => {
+            console.error('Vote error:', error);
+            showNotification("Error processing vote", "error");
+        });
+    }
+
+    // HTMX bookmark handler
+    function handleBookmark(issueId) {
+        fetch(`/save_issue/${issueId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'HX-Request': 'true'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById(`bookmark-section-${issueId}`).outerHTML = html;
+            document.body.dispatchEvent(new CustomEvent('bookmark', { detail: { issueId } }));
+        })
+        .catch(error => {
+            console.error('Bookmark error:', error);
+            showNotification("Error processing bookmark", "error");
+        });
+    }
+
+    // HTMX flag handler
+    function handleFlag(issueId) {
+        fetch(`/flag_issue/${issueId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'HX-Request': 'true'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Update both vote section and flag button
+            document.getElementById(`vote-section-${issueId}`).outerHTML = html;
+            document.body.dispatchEvent(new CustomEvent('vote', { detail: { issueId, voteType: 'flag' } }));
+        })
+        .catch(error => {
+            console.error('Flag error:', error);
+            showNotification("Error processing flag", "error");
+        });
+    }
+
+    // Modal functions
     function openLikeModal(issueId) {
-        const modalId = issueId ? 'like-modal-' + issueId : 'like-modal';
-        const modal = document.getElementById(modalId);
+        const modal = document.getElementById(`like-modal-${issueId}`);
         if (modal) {
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
-
-
-        $.ajax({
-            type: 'POST',
-            url: '/issue/edit/',
-            data: {
-                issue_pk: $('#issue_pk').val(),
-                domain: $('.form input[name=domain]').val(),
-                description: $('.form input[name=description]').val(),
-                label: $('.form select').val(),
-                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
-            },
-            success: function (data) {
-                $('.issue-desc').text($('.form input[name=description]').val());
-                $('.issue-domain').text($('.form input[name=domain]').val());
-                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
-                $('.issue-domain').attr("href", sanitizedDomain);
-                label = $('.form select').val();
-                var l = $(".form select option[value='" + label + "']").text();
-                $('.bug-label').text(l);
-                $('.form').hide();
-                $('.editables').show();
-                $.notify("Issue updated!", {
-                    style: "custom",
-                    className: "success"
-                });
-                if (data === "Domain Created")
-                    $.notify("Domain Added!", {
-                        style: "custom",
-                        className: "success"
-                    });
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        });
-    });
-</script>
-<script>
-    function subscribe_domain(){
-        $.ajax({
-            type: 'POST',
-            url: '/domain/{{ object.domain.id }}/subscribe/',
-            headers: {'X-CSRFToken': getCookie('csrftoken')},
-            data: {},
-            success: function (data) {
-                window.location.reload();
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        })
     }
     
     function closeLikeModal(issueId) {
-        const modalId = issueId ? 'like-modal-' + issueId : 'like-modal';
-        const modal = document.getElementById(modalId);
+        const modal = document.getElementById(`like-modal-${issueId}`);
         if (modal) {
             modal.classList.add('hidden');
         }
@@ -278,8 +205,7 @@
     }
     
     function openFlagModal(issueId) {
-        const modalId = issueId ? 'flag-modal-' + issueId : 'flag-modal';
-        const modal = document.getElementById(modalId);
+        const modal = document.getElementById(`flag-modal-${issueId}`);
         if (modal) {
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
@@ -287,60 +213,125 @@
     }
     
     function closeFlagModal(issueId) {
-        const modalId = issueId ? 'flag-modal-' + issueId : 'flag-modal';
-        const modal = document.getElementById(modalId);
+        const modal = document.getElementById(`flag-modal-${issueId}`);
         if (modal) {
             modal.classList.add('hidden');
         }
         document.body.style.overflow = 'auto';
     }
-    
-    // Only attach event listeners once globally
-    if (!window.modalListenersAttached) {
-        document.addEventListener('DOMContentLoaded', function() {
-            // Close modals when clicking outside
-            document.addEventListener('click', function(event) {
-                // Find all visible modals
-                const visibleLikeModals = document.querySelectorAll('[id^="like-modal-"]:not(.hidden), #like-modal:not(.hidden)');
-                const visibleFlagModals = document.querySelectorAll('[id^="flag-modal-"]:not(.hidden), #flag-modal:not(.hidden)');
-                
-                // Close like modals when clicking outside
-                visibleLikeModals.forEach(function(modal) {
-                    if (event.target === modal) {
-                        const issueId = modal.id.replace('like-modal-', '') || (modal.id === 'like-modal' ? '' : '');
-                        closeLikeModal(issueId || null);
-                    }
-                });
-                
-                // Close flag modals when clicking outside
-                visibleFlagModals.forEach(function(modal) {
-                    if (event.target === modal) {
-                        const issueId = modal.id.replace('flag-modal-', '') || (modal.id === 'flag-modal' ? '' : '');
-                        closeFlagModal(issueId || null);
-                    }
-                });
+
+    // Resolve issue
+    async function resolveIssue(id) {
+        try {
+            const response = await fetch(`/resolve/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
             });
             
-            // Close modals with Escape key
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    // Close all visible modals
-                    const visibleLikeModals = document.querySelectorAll('[id^="like-modal-"]:not(.hidden), #like-modal:not(.hidden)');
-                    const visibleFlagModals = document.querySelectorAll('[id^="flag-modal-"]:not(.hidden), #flag-modal:not(.hidden)');
-                    
-                    visibleLikeModals.forEach(function(modal) {
-                        modal.classList.add('hidden');
-                    });
-                    
-                    visibleFlagModals.forEach(function(modal) {
-                        modal.classList.add('hidden');
-                    });
-                    
-                    document.body.style.overflow = 'auto';
+            if (response.status === 403) {
+                showNotification("Permission Denied", "error");
+            } else if (response.ok) {
+                window.location.reload();
+            } else {
+                showNotification("Error resolving issue", "error");
+            }
+        } catch (error) {
+            console.error('Resolve error:', error);
+            showNotification("Error resolving issue", "error");
+        }
+    }
+
+    // Create GitHub issue
+    function createGitHubIssue(issueId) {
+        fetch(`/create_github_issue/${issueId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "ok") {
+                showNotification("GitHub issue created successfully!", "success");
+                if (data.github_url) {
+                    window.open(data.github_url, '_blank');
+                }
+            } else {
+                showNotification(data.status_reason || "Failed to create GitHub issue", "error");
+            }
+        })
+        .catch(error => {
+            console.error('GitHub issue error:', error);
+            showNotification("Error creating GitHub issue", "error");
+        });
+    }
+
+    // Subscribe to domain
+    function subscribeToDomain(domainId) {
+        fetch(`/domain/${domainId}/subscribe/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                showNotification("Error subscribing to domain", "error");
+            }
+        })
+        .catch(error => {
+            console.error('Subscribe error:', error);
+            showNotification("Error subscribing to domain", "error");
+        });
+    }
+
+    // Initialize event listeners once
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal close on outside click
+        document.addEventListener('click', function(event) {
+            // Like modals
+            document.querySelectorAll('[id^="like-modal-"]:not(.hidden)').forEach(modal => {
+                if (event.target === modal) {
+                    const issueId = modal.id.replace('like-modal-', '');
+                    closeLikeModal(issueId);
+                }
+            });
+            
+            // Flag modals
+            document.querySelectorAll('[id^="flag-modal-"]:not(.hidden)').forEach(modal => {
+                if (event.target === modal) {
+                    const issueId = modal.id.replace('flag-modal-', '');
+                    closeFlagModal(issueId);
                 }
             });
         });
         
-        window.modalListenersAttached = true;
-    }
+        // Escape key to close modals
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('[id^="like-modal-"]:not(.hidden), [id^="flag-modal-"]:not(.hidden)').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+                document.body.style.overflow = 'auto';
+            }
+        });
+        
+        // Initialize HTMX if available
+        if (window.htmx) {
+            htmx.on("htmx:afterSwap", function(evt) {
+                // Re-attach any necessary event handlers
+                console.log("HTMX swap completed", evt.detail);
+            });
+        }
+    });
 </script>
