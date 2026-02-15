@@ -156,14 +156,15 @@ def dislike_issue(request, issue_pk):
 
 @login_required(login_url="/accounts/login")
 def vote_count(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
 
     total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
     return JsonResponse({"likes": total_upvotes, "dislikes": total_downvotes})
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
@@ -243,9 +244,9 @@ def create_github_issue(request, id):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def resolve(request, id):
-    issue = Issue.objects.get(id=id)
+    issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
             issue.status = "close"
@@ -390,7 +391,7 @@ def remove_user_from_issue(request, id):
     except:
         pass
 
-    issue = Issue.objects.get(id=id)
+    issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         issue.remove_user()
         # Remove user from corresponding activity object that was created
@@ -1219,7 +1220,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1245,7 +1246,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
@@ -1752,14 +1753,19 @@ class IssueView(DetailView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        # Fetch each interaction group once, derive count from the list
+        likers = list(UserProfile.objects.filter(issue_upvoted=self.object))
+        context["likers"] = likers
+        context["likes"] = len(likers)
+
+        dislikers = list(UserProfile.objects.filter(issue_downvoted=self.object))
+        context["dislikers"] = dislikers
+        context["dislikes"] = len(dislikers)
+
+        flagers = list(UserProfile.objects.filter(issue_flaged=self.object))
+        context["flagers"] = flagers
+        context["flags"] = len(flagers)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
@@ -1904,7 +1910,11 @@ def delete_content_comment(request):
         raise Http404("Content does not exist")
 
     if request.method == "POST":
-        comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
+        try:
+            comment_pk = int(request.POST.get("comment_pk", 0))
+        except (ValueError, TypeError):
+            raise Http404("Invalid comment ID")
+        comment = get_object_or_404(Comment, pk=comment_pk, author=request.user.username)
         comment.delete()
 
     context = {
@@ -2030,8 +2040,7 @@ def comment_on_content(request, content_pk):
 
 @login_required(login_url="/accounts/login")
 def unsave_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.remove(issue)
     return HttpResponse("OK")
@@ -2039,8 +2048,7 @@ def unsave_issue(request, issue_pk):
 
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = UserProfile.objects.get(user=request.user)
 
     already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
@@ -2106,8 +2114,7 @@ def IssueEdit(request):
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=int(issue_pk))
     userprof = UserProfile.objects.get(user=request.user)
     if userprof in UserProfile.objects.filter(issue_flaged=issue):
         userprof.issue_flaged.remove(issue)
@@ -2534,38 +2541,35 @@ class GitHubIssueDetailView(DetailView):
 
 
 @login_required(login_url="/accounts/login")
-@csrf_exempt
+@require_POST
 def page_vote(request):
     """
     Handle upvote/downvote for a page
     """
-    if request.method == "POST":
-        template_name = request.POST.get("template_name")
-        vote_type = request.POST.get("vote_type")
+    template_name = request.POST.get("template_name")
+    vote_type = request.POST.get("vote_type")
 
-        if not template_name or vote_type not in ["upvote", "downvote"]:
-            return JsonResponse({"status": "error", "message": "Invalid parameters"})
+    if not template_name or vote_type not in ["upvote", "downvote"]:
+        return JsonResponse({"status": "error", "message": "Invalid parameters"})
 
-        # Clean the template name to use as a key
-        page_key = template_name.replace("/", "_").replace(".html", "")
-        vote_key = f"{vote_type}_{page_key}"
+    # Clean the template name to use as a key
+    page_key = template_name.replace("/", "_").replace(".html", "")
+    vote_key = f"{vote_type}_{page_key}"
 
-        # Get or create the DailyStats entry
-        try:
-            stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
-            # Increment the vote count
-            current_value = int(stat.value)
-            stat.value = str(current_value + 1)
-            stat.save()
+    # Get or create the DailyStats entry
+    try:
+        stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
+        # Increment the vote count
+        current_value = int(stat.value)
+        stat.value = str(current_value + 1)
+        stat.save()
 
-            # Get the counts for both vote types
-            upvotes, downvotes = get_page_votes(template_name)
+        # Get the counts for both vote types
+        upvotes, downvotes = get_page_votes(template_name)
 
-            return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
-        except Exception:
-            return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"})
+        return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
+    except Exception:
+        return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
 
 
 class GsocView(View):

@@ -116,6 +116,22 @@
 </div>
 <!-- Keep the existing JavaScript -->
 <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+<script>
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
         
@@ -199,13 +215,17 @@
     async function resolveIssue(){
         var id = {{object.pk}};
 
-        const request = await fetch(`/resolve/${id}/`)
-        window.location.reload();
+        const request = await fetch(`/resolve/${id}/`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+        });
         if (request.status == 403){
             $.notify("Permission Denied", {
                 style: "custom",
                 className: "danger"
             });
+        } else {
+            window.location.reload();
         }
     }
 </script>
@@ -213,8 +233,9 @@
     function createIssue(){
         var issue_pk = $("#create_issue").attr('name');
         $.ajax({
-            type: 'GET',
-            url: '/create_github_issue/' + issue_pk,
+            type: 'POST',
+            url: '/create_github_issue/' + issue_pk + '/',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
             data: {},
             success: function (data) {
                 if(data["status"] != "ok"){
@@ -308,8 +329,9 @@
 <script>
     function subscribe_domain(){
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/domain/{{ object.domain.id }}/subscribe/',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
             data: {},
             success: function (data) {
                 window.location.reload();

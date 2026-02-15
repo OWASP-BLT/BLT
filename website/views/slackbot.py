@@ -232,8 +232,7 @@ if app:
         except Exception as e:
             logger.error(f"Error handling /discover command: {e}")
 
-    app.action("select_repository")
-
+    @app.action("select_repository")
     def handle_repository_selection(ack, body, client):
         try:
             ack()
