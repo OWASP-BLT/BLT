@@ -59,7 +59,6 @@ from website.models import (
     User,
     UserBadge,
     UserProfile,
-    Wallet,
 )
 
 logger = logging.getLogger(__name__)
@@ -444,8 +443,6 @@ class UserProfileDetailView(DetailView):
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = timezone.now().month
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         six_months_ago = timezone.now() - relativedelta(months=6)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
@@ -573,7 +570,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         The context includes:
         - `user_related_tags`: tags associated with user profiles.
-        - `wallet`: the requesting user's Wallet if authenticated.
         - `leaderboard`: top users by total score (limited to 10).
         - `pr_leaderboard`: top repositories/users by merged pull request count (top 10).
         - `code_review_leaderboard`: top reviewers by review count (top 10).
@@ -586,9 +582,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
@@ -682,9 +675,6 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
-
         year = self.request.GET.get("year")
 
         if not year:
@@ -732,9 +722,6 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
@@ -1088,16 +1075,6 @@ def contributor_stats_view(request):
 
 
 @login_required
-def create_wallet(request):
-    if not request.user.is_staff:
-        return JsonResponse({"error": "Unauthorized"}, status=403)
-    existing_wallet_user_ids = Wallet.objects.values_list("user_id", flat=True)
-    users_without_wallets = User.objects.exclude(id__in=existing_wallet_user_ids)
-    wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
-    Wallet.objects.bulk_create(wallets_to_create)
-    return JsonResponse(f"Created {len(wallets_to_create)} wallets", safe=False)
-
-
 def create_tokens(request):
     for user in User.objects.all():
         Token.objects.get_or_create(user=user)

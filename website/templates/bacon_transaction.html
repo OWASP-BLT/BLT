@@ -197,40 +197,6 @@
             background-color: #f8d7da;
             color: #721c24;
         }
-
-        #wallet-balance {
-            position: fixed;
-            top: 100px; /* Move the wallet balance section down */
-            right: 20px;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 250px;
-        }
-        #wallet-balance h3 {
-            margin-top: 0;
-            font-size: 1.2rem;
-            color: #333;
-        }
-        #wallet-balance p {
-            margin: 5px 0;
-            font-size: 0.9rem;
-            color: #555;
-        }
-        #fetch-balance {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        #fetch-balance:hover {
-            background: #0056b3;
-        }
         #password-field {
             display: none;
             margin-top: 10px;
@@ -331,25 +297,6 @@
         </div>
     </div>
     <div id="response-message"></div>
-    <div id="wallet-balance">
-        <h3>Wallet Balance</h3>
-        <p>
-            <strong>Cardinal:</strong> <span id="balance-cardinal">Loading...</span>
-        </p>
-        <p>
-            <strong>Ordinal:</strong> <span id="balance-ordinal">Loading...</span>
-        </p>
-        <p>
-            <strong>Runes:</strong> <span id="balance-runes">Loading...</span>
-        </p>
-        <p>
-            <strong>Runic:</strong> <span id="balance-runic">Loading...</span>
-        </p>
-        <p>
-            <strong>Total:</strong> <span id="balance-total">Loading...</span>
-        </p>
-        <button id="fetch-balance">Fetch Balance</button>
-    </div>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const checkboxes = document.querySelectorAll(".select-user");
@@ -361,7 +308,6 @@
             const modalTotalBacon = document.getElementById("modal-total-bacon");
             const performTx = document.getElementById("perform-tx");
             const selectAll = document.getElementById("select-all");
-            const fetchBalanceButton = document.getElementById("fetch-balance");
             const networkSelect = document.getElementById("network");
             const dryRunRadios = document.querySelectorAll('input[name="dry-run"]');
             const passwordField = document.getElementById("password-field");
@@ -480,24 +426,6 @@
             document.getElementById("transaction-form").addEventListener("submit", function(event) {
                 event.preventDefault();
                 alert("Performing actual transaction...");
-            });
-
-            // Fetch and display wallet balance on button click
-            fetchBalanceButton.addEventListener("click", function() {
-                fetch("/api/get-wallet-balance/")
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.getElementById("balance-cardinal").textContent = data.balance.cardinal;
-                            document.getElementById("balance-ordinal").textContent = data.balance.ordinal;
-                            document.getElementById("balance-runes").textContent = JSON.stringify(data.balance.runes);
-                            document.getElementById("balance-runic").textContent = data.balance.runic;
-                            document.getElementById("balance-total").textContent = data.balance.total;
-                        } else {
-                            alert("Error fetching wallet balance: " + data.error);
-                        }
-                    })
-                    .catch(error => alert("Error: " + error));
             });
         });
     </script>
