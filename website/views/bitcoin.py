@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
@@ -40,7 +40,7 @@ def slack_escape(text):
     )
 
 
-# @login_required
+@login_required
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
     users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
@@ -106,7 +106,6 @@ def pending_transactions_view(request):
     return JsonResponse({"pending_transactions": transactions_data})
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(login_required, name="dispatch")
 class BaconSubmissionView(View):
     def post(self, request):
@@ -283,29 +282,28 @@ def bacon_requests_view(request):
 
 
 @login_required
-@csrf_exempt
+@require_POST
 def update_submission_status(request, submission_id):
     """Allows a mentor to update the submission status and bacon amount."""
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            new_status = data.get("status")  # 'accepted' or 'declined'
-            new_bacon_amount = data.get("bacon_amount")
+    try:
+        data = json.loads(request.body)
+        new_status = data.get("status")  # 'accepted' or 'declined'
+        new_bacon_amount = data.get("bacon_amount")
 
-            submission = get_object_or_404(BaconSubmission, id=submission_id)
+        submission = get_object_or_404(BaconSubmission, id=submission_id)
 
-            # Check if the user is a mentor
-            mentor_badge = Badge.objects.filter(title="mentor").first()
-            is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+        # Check if the user is a mentor
+        mentor_badge = Badge.objects.filter(title="mentor").first()
+        is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
 
-            if not is_mentor:
-                return JsonResponse({"error": "Unauthorized"}, status=403)
+        if not is_mentor:
+            return JsonResponse({"error": "Unauthorized"}, status=403)
 
-            # Update status and bacon amount if provided
-            if new_status:
-                submission.status = new_status
-            if new_bacon_amount is not None:
-                submission.bacon_amount = new_bacon_amount
+        # Update status and bacon amount if provided
+        if new_status:
+            submission.status = new_status
+        if new_bacon_amount is not None:
+            submission.bacon_amount = new_bacon_amount
 
             submission.save()
             return JsonResponse(
@@ -318,7 +316,10 @@ def update_submission_status(request, submission_id):
             logger.exception("Error updating submission status")
             return JsonResponse({"error": "error updating submission status"}, status=400)
 
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+    except Exception:
+        return JsonResponse({"error": "error updating submission status"}, status=400)
 
 
 @login_required
