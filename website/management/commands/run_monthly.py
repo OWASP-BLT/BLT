@@ -1,8 +1,7 @@
 import logging
 
+from django.core import management
 from django.core.management.base import BaseCommand
-
-# from django.core import management
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -15,9 +14,8 @@ class Command(BaseCommand):
         try:
             logger.info(f"Starting monthly scheduled tasks at {timezone.now()}")
 
-            # Add commands to be executed monthly
-            # management.call_command('monthly_command1')
-            # management.call_command('monthly_command2')
-        except Exception:
-            logger.exception("Error in monthly tasks")
+            # Award BACON tokens to top users for the month
+            management.call_command("reward_top_users")
+        except Exception as e:
+            logger.error(f"Error in monthly tasks: {str(e)}")
             raise
