@@ -717,12 +717,19 @@ class IssueBaseCreate(object):
 
             screenshot_name = self.request.POST.get("screenshot-hash") + ".png"
             screenshot_path = f"uploads/{screenshot_name}"
-            reopen = default_storage.open(screenshot_path, "rb")
             try:
-                django_file = File(reopen)
-                obj.screenshot.save(screenshot_name, django_file, save=True)
-            finally:
-                reopen.close()
+                reopen = default_storage.open(screenshot_path, "rb")
+                try:
+                    django_file = File(reopen)
+                    obj.screenshot.save(screenshot_name, django_file, save=True)
+                finally:
+                    reopen.close()
+            except FileNotFoundError:
+                messages.error(
+                    self.request,
+                    "Screenshot file not found. Please try uploading again.",
+                )
+                return render(self.request, "report.html", {"form": self.get_form()})
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
