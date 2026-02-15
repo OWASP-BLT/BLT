@@ -54,7 +54,6 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -409,8 +408,6 @@ urlpatterns = [
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
-    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
-    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
