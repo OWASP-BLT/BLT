@@ -23,6 +23,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -60,7 +61,7 @@ from user_agents import parse
 from blt import settings
 from comments.models import Comment
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
-from website.forms import CaptchaForm, GitHubIssueForm
+from website.forms import CaptchaForm, GitHubIssueForm, IssuePledgeForm
 from website.models import (
     IP,
     Activity,
@@ -71,6 +72,7 @@ from website.models import (
     GitHubIssue,
     Hunt,
     Issue,
+    IssuePledge,
     IssueScreenshot,
     Points,
     Repo,
@@ -93,6 +95,48 @@ from website.utils import (
 from .constants import GSOC25_PROJECTS
 
 logger = logging.getLogger(__name__)
+
+
+@require_POST
+def submit_pledge(request):
+    """
+    Handles AJAX submission of an issue pledge.
+
+    Creates a new IssuePledge linked to the issue and user.
+    Supports anonymous pledges.
+    Returns JSON success or error responses.
+    """
+    issue_id = request.POST.get("issue_id")
+    if not issue_id:
+        return JsonResponse({"error": "Issue ID missing"}, status=400)
+
+    issue = get_object_or_404(Issue, id=issue_id)
+
+    if issue.status == "closed":
+        return JsonResponse({"error": "Cannot pledge on a closed issue"}, status=400)
+
+    form = IssuePledgeForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({"error": form.errors}, status=400)
+
+    anonymous = form.cleaned_data.get("anonymous", False)
+    if request.user.is_authenticated and not anonymous:
+        if IssuePledge.objects.filter(issue=issue, user=request.user).exists():
+            return JsonResponse({"error": "You have already pledged to this issue"}, status=400)
+
+    pledge = form.save(commit=False)
+    pledge.issue = issue
+    pledge.anonymous = anonymous
+
+    pledge.user = request.user if request.user.is_authenticated and not anonymous else None
+
+    try:
+        pledge.full_clean()
+    except ValidationError as e:
+        return JsonResponse({"error": e.message_dict}, status=400)
+
+    pledge.save()
+    return JsonResponse({"success": True})
 
 
 @login_required(login_url="/accounts/login")
@@ -249,7 +293,7 @@ def resolve(request, id):
     issue = get_object_or_404(Issue, id=id)
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
-            issue.status = "close"
+            issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = timezone.now()
             issue.save()

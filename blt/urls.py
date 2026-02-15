@@ -206,6 +206,7 @@ from website.views.issue import (
     search_issues,
     select_bid,
     submit_bug,
+    submit_pledge,
     submit_pr,
     unsave_issue,
     update_content_comment,
@@ -402,6 +403,7 @@ handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
 urlpatterns = [
+    path("issue/pledge/", submit_pledge, name="submit_pledge"),
     path("simulation/", dashboard, name="simulation_dashboard"),
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),

@@ -22,7 +22,7 @@ repos:
     rev: v0.1.13
     hooks:
       - id: ruff
-        args: 
+        args:
           - --fix
       - id: ruff-format
 
@@ -42,7 +42,7 @@ repos:
         args: [pre-commit-hooks/check_style_tags.py]
         language: python
         types: [html]
-        pass_filenames: false  # <-- ADD THIS LINE
+        pass_filenames: false # <-- ADD THIS LINE
         verbose: true
 
   - repo: local
@@ -63,6 +63,5 @@ repos:
         pass_filenames: false
         always_run: true
         verbose: true
-
 
 fail_fast: true
