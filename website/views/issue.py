@@ -1874,7 +1874,7 @@ class IssueView(DetailView):
 
         # Get vote/flag/save context using the helper function
         if self.request.user.is_authenticated:
-            userprof = UserProfile.objects.get(user=self.request.user)
+            userprof, _ = UserProfile.objects.get_or_create(user=self.request.user)
             vote_context = get_issue_vote_context(self.object, userprof)
         else:
             vote_context = get_issue_vote_context(self.object, None)
