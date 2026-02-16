@@ -41,10 +41,9 @@ class Command(BaseCommand):
             emailaddress__verified=True,
         )
 
-        count = unverified_users.count()
-        label = "user" if count == 1 else "users"
-
         if dry_run:
+            count = unverified_users.count()
+            label = "user" if count == 1 else "users"
             self.stdout.write(
                 self.style.WARNING(
                     f"DRY RUN: Would delete {count} unverified {label} who joined more than {days} days ago"
@@ -57,9 +56,10 @@ class Command(BaseCommand):
                 if count > 10:
                     self.stdout.write(f"  ... and {count - 10} more")
         else:
-            unverified_users.delete()
+            deleted_count, _ = unverified_users.delete()
+            label = "user" if deleted_count == 1 else "users"
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Successfully deleted {count} unverified {label} who joined more than {days} days ago"
+                    f"Successfully deleted {deleted_count} unverified {label} who joined more than {days} days ago"
                 )
             )
