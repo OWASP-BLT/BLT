@@ -145,6 +145,9 @@ jobs:
                     })
                     .filter(num => num !== null);
 
+                  // Create a Set of existing migration numbers for efficient lookup
+                  const existingNumbersSet = new Set(existingNumbers);
+
                   // Use reduce instead of spread operator to avoid stack overflow with many migrations
                   const maxExisting = existingNumbers.length > 0 
                     ? existingNumbers.reduce((max, num) => Math.max(max, num), 0) 
@@ -153,12 +156,24 @@ jobs:
 
                   // Check for conflicts
                   for (const prMigration of prMigrations[app]) {
-                    if (prMigration.number <= maxExisting) {
+                    // Check if this exact migration number already exists in base branch
+                    if (existingNumbersSet.has(prMigration.number)) {
                       conflicts.push({
                         app,
                         filename: prMigration.filename,
                         number: prMigration.number,
                         maxExisting,
+                        conflictType: 'duplicate',
+                      });
+                    }
+                    // Also check if migration number is less than max (not sequential)
+                    else if (prMigration.number < maxExisting) {
+                      conflicts.push({
+                        app,
+                        filename: prMigration.filename,
+                        number: prMigration.number,
+                        maxExisting,
+                        conflictType: 'non-sequential',
                       });
                     }
                   }
@@ -181,18 +196,24 @@ jobs:
 
               // If there are conflicts, add or update a comment to the PR
               if (conflicts.length > 0) {
-                const conflictMessages = conflicts.map(c => 
-                  `- \`${c.filename}\` has migration number **${String(c.number).padStart(4, '0')}**, but the latest migration in \`${c.app}/migrations\` is **${String(c.maxExisting).padStart(4, '0')}**`
-                ).join('\n');
+                const conflictMessages = conflicts.map(c => {
+                  if (c.conflictType === 'duplicate') {
+                    return `- \`${c.filename}\` has migration number **${String(c.number).padStart(4, '0')}**, which **already exists** in \`${c.app}/migrations\` (latest is **${String(c.maxExisting).padStart(4, '0')}**)`;
+                  } else {
+                    return `- \`${c.filename}\` has migration number **${String(c.number).padStart(4, '0')}**, but the latest migration in \`${c.app}/migrations\` is **${String(c.maxExisting).padStart(4, '0')}**`;
+                  }
+                }).join('\n');
 
                 const commentBody = `## ⚠️ Migration Number Conflict Detected
                 
-                This PR contains migration files with numbers that overlap with existing migrations in the base branch:
+                This PR contains migration files with numbers that conflict with existing migrations in the base branch:
                 
                 ${conflictMessages}
                 
                 ### What this means:
-                Migration files must be numbered sequentially. The migration numbers in this PR are lower than or equal to existing migrations, which will cause conflicts.
+                Migration files must be numbered sequentially and uniquely. This PR contains migrations that either:
+                - Have a number that already exists in the base branch (duplicate)
+                - Have a number lower than the latest migration (not sequential)
                 
                 ### How to fix:
                 1. Delete the migration files in this PR
