@@ -19,7 +19,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         Only enforce for regular email/password signups.
         """
         # Check if this is a social account signup
-        if hasattr(request, "session") and "sociallogin" in request.session:
+        if hasattr(request, "session") and "socialaccount_sociallogin" in request.session:
             return False
         return super().is_email_verification_mandatory(request)
 
@@ -58,6 +58,11 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def is_auto_signup_allowed(self, request, sociallogin):
         """
-        Enable auto-signup for social accounts without email verification.
+        Enable auto-signup for social accounts only when the provider has verified the email.
         """
-        return True
+        # Only auto-signup if the email address from the provider is verified
+        if sociallogin.email_addresses:
+            if any(addr.verified for addr in sociallogin.email_addresses):
+                return True
+        # Fall back to default behavior (which checks for email uniqueness, etc.)
+        return super().is_auto_signup_allowed(request, sociallogin)
