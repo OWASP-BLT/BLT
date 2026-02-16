@@ -1,3 +1,4 @@
+from datetime import timedelta
 from io import StringIO
 from unittest.mock import patch
 
@@ -11,7 +12,7 @@ from website.models import BaconEarning, Points, UserProfile
 
 class RewardTopUsersCommandTest(TestCase):
     def setUp(self):
-        """Create test users with points for the current month."""
+        """Create test users with points for the previous month."""
         self.users = []
         for i in range(5):
             user = User.objects.create_user(
@@ -22,11 +23,13 @@ class RewardTopUsersCommandTest(TestCase):
             UserProfile.objects.get_or_create(user=user)
             self.users.append(user)
 
-        # Award different points to each user
+        # Award different points to each user in the previous month
         now = timezone.now()
+        first_of_current = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        prev_month = first_of_current - timedelta(days=1)
         point_values = [100, 80, 60, 40, 20]
         for user, points in zip(self.users, point_values):
-            Points.objects.create(user=user, score=points, created=now)
+            Points.objects.create(user=user, score=points, created=prev_month)
 
     def test_dry_run_does_not_award_bacon(self):
         """Dry run should show rewards but not actually give BACON."""
@@ -92,6 +95,9 @@ class RewardTopUsersCommandTest(TestCase):
     def test_weekly_period(self, mock_give_bacon):
         """Should support weekly period option."""
         mock_give_bacon.return_value = 50
+        # Create points within the last week for the weekly test
+        recent = timezone.now() - timedelta(days=2)
+        Points.objects.create(user=self.users[0], score=200, created=recent)
         out = StringIO()
         call_command("reward_top_users", "--period", "week", "--top", "1", stdout=out)
         output = out.getvalue()

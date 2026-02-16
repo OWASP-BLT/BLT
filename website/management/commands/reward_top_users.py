@@ -58,17 +58,22 @@ class Command(LoggedBaseCommand):
 
         now = timezone.now()
         if period == "month":
-            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            period_label = now.strftime("%B %Y")
+            # Default to previous month so a monthly cron on the 1st rewards last month
+            first_of_current = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            last_of_prev = first_of_current - timedelta(days=1)
+            start_date = last_of_prev.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = first_of_current
+            period_label = last_of_prev.strftime("%B %Y")
         else:
             start_date = now - timedelta(days=7)
+            end_date = now
             period_label = f"week of {start_date.strftime('%b %d')} - {now.strftime('%b %d, %Y')}"
 
         self.stdout.write(f"Calculating top {top_n} users for {period_label}...")
 
         # Get top users by total points earned in the period
         top_users = (
-            Points.objects.filter(created__gte=start_date)
+            Points.objects.filter(created__gte=start_date, created__lt=end_date)
             .values("user__id", "user__username")
             .annotate(total_points=Sum("score"))
             .order_by("-total_points")[:top_n]
@@ -92,6 +97,7 @@ class Command(LoggedBaseCommand):
             if dry_run:
                 self.stdout.write(f"  [DRY RUN] #{rank} {username}: {total_points} points -> {bacon_amount} BACON")
                 total_bacon_awarded += bacon_amount
+                rewarded_count += 1
             else:
                 try:
                     user_profile = UserProfile.objects.get(user__id=user_data["user__id"])
