@@ -40,6 +40,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -1107,7 +1108,7 @@ class FacebookLogin(SocialLoginView):
         return self.request.build_absolute_uri(reverse("facebook_callback"))
 
 
-class UploadCreate(View):
+class UploadCreate(LoginRequiredMixin, View):
     template_name = "home.html"
 
     def post(self, request, *args, **kwargs):
