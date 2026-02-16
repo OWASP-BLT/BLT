@@ -310,7 +310,7 @@ class RepoDetailView(DetailView):
             "Accept": "application/vnd.github.v3+json",
             "Authorization": f"token {settings.GITHUB_TOKEN}",
         }
-        response = requests.get(milestones_url, headers=headers)
+        response = requests.get(milestones_url, headers=headers, timeout=10)
         if response.status_code == 200:
             return response.json()
         return []
@@ -412,7 +412,7 @@ def add_repo(request):
         if github_token:
             headers["Authorization"] = f"token {github_token}"
             # Test the token with a request
-            test_response = requests.get(api_url, headers=headers)
+            test_response = requests.get(api_url, headers=headers, timeout=10)
             use_token = test_response.status_code != 401  # Keep token if not unauthorized
 
         if not use_token:
@@ -422,7 +422,7 @@ def add_repo(request):
 
         # Fetch repository data
         logger.debug(f"Fetching repo data from: {api_url}")
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(api_url, headers=headers, timeout=10)
         logger.debug(f"GitHub API Response Status: {response.status_code}")
 
         if response.status_code == 404:
@@ -488,7 +488,7 @@ def add_repo(request):
         def get_issue_count(full_name, query, headers):
             encoded_query = quote_plus(f"repo:{full_name} {query}")
             search_url = f"https://api.github.com/search/issues?q={encoded_query}"
-            resp = requests.get(search_url, headers=headers)
+            resp = requests.get(search_url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
             return 0
@@ -504,7 +504,7 @@ def add_repo(request):
         page = 1
         while True:
             contrib_url = f"{api_url}/contributors?anon=true&per_page=100&page={page}"
-            c_resp = requests.get(contrib_url, headers=headers)
+            c_resp = requests.get(contrib_url, headers=headers, timeout=10)
             if c_resp.status_code != 200:
                 break
             contributors_data = c_resp.json()
@@ -518,7 +518,7 @@ def add_repo(request):
         release_name = None
         release_datetime = None
         releases_url = f"{api_url}/releases/latest"
-        release_resp = requests.get(releases_url, headers=headers)
+        release_resp = requests.get(releases_url, headers=headers, timeout=10)
         if release_resp.status_code == 200:
             release_info = release_resp.json()
             release_name = release_info.get("name") or release_info.get("tag_name")
@@ -555,7 +555,7 @@ def add_repo(request):
 
         # Try to fetch and generate AI summary from README
         readme_url = f"{api_url}/readme"
-        readme_resp = requests.get(readme_url, headers=headers)
+        readme_resp = requests.get(readme_url, headers=headers, timeout=10)
         if readme_resp.status_code == 200:
             readme_data = readme_resp.json()
             import base64
