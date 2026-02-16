@@ -514,6 +514,7 @@ def get_course_content(request, course_id):
         )
 
 
+@login_required(login_url="/accounts/login")
 @require_POST
 def create_or_update_course(request):
     user_profile = get_object_or_404(UserProfile, user=request.user)
@@ -550,12 +551,16 @@ def create_or_update_course(request):
                 course = Course.objects.get(id=course_id)
             except Course.DoesNotExist:
                 return JsonResponse({"success": False, "message": "Course not found"}, status=404)
+            if course.instructor != user_profile:
+                return JsonResponse(
+                    {"success": False, "message": "You do not have permission to edit this course"}, status=403
+                )
         else:
             course = Course()
+            course.instructor = user_profile
 
         course.title = title
         course.description = description
-        course.instructor = user_profile
         course.level = level
         if thumbnail:
             course.thumbnail = thumbnail
@@ -565,13 +570,14 @@ def create_or_update_course(request):
         tags = Tag.objects.filter(id__in=tag_ids)
         course.tags.set(tags)
 
+        status_code = 201 if not course_id else 200
         return JsonResponse(
             {
                 "success": True,
                 "message": "Course created/updated successfully",
                 "course_id": course.id,
             },
-            status=201,
+            status=status_code,
         )
     except Exception as e:
         logger.error(f"Error in create_or_update_course: {e}")
