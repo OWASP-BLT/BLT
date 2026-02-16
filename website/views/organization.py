@@ -1958,12 +1958,7 @@ def update_role(request):
         if domain_val:
             domain_pks.add(domain_val)
     domains_map = (
-        {
-            str(d.pk): d
-            for d in Domain.objects.filter(
-                pk__in=domain_pks, organization=requesting_admin.organization
-            )
-        }
+        {str(d.pk): d for d in Domain.objects.filter(pk__in=domain_pks, organization=requesting_admin.organization)}
         if domain_pks
         else {}
     )
