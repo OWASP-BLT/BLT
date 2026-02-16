@@ -5,9 +5,10 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.shortcuts import HttpResponse, render
+from django.shortcuts import HttpResponse, get_object_or_404, render
 from django.template.loader import render_to_string
 from django.utils.html import escape
+from django.views.decorators.http import require_POST
 
 from website.models import Issue
 
@@ -102,14 +103,15 @@ def delete_comment(request):
 
 
 @login_required(login_url="/accounts/login/")
+@require_POST
 def edit_comment(request, pk):
-    if request.method == "GET":
-        issue = Issue.objects.get(pk=request.GET["issue_pk"])
-        comment = Comment.objects.get(pk=request.GET["comment_pk"])
-        comment.text = request.GET.get("text_comment")
-        comment.text = escape(comment.text)
-        comment.save()
-        all_comment = Comment.objects.filter(issue=issue)
+    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+    comment = get_object_or_404(Comment, pk=request.POST.get("comment_pk"))
+    if request.user.username != comment.author:
+        return HttpResponse("Cannot edit this comment", status=403)
+    comment.text = escape(request.POST.get("text_comment", ""))
+    comment.save()
+    all_comment = Comment.objects.filter(issue=issue)
     return render(
         request,
         "comments.html",
