@@ -162,7 +162,7 @@ if app:
                     logger.debug(f"Could not join channel: {channel_error}")
 
                 try:
-                    gh_response = requests.get("https://api.github.com/orgs/OWASP-BLT/repos")
+                    gh_response = requests.get("https://api.github.com/orgs/OWASP-BLT/repos", timeout=10)
                     if gh_response.status_code == 200:
                         repos = gh_response.json()
                         if not repos:
@@ -239,7 +239,7 @@ if app:
             logger.debug(f"User {user_id} selected repository: {selected_repo}")
 
             # Fetch latest issues from the selected GitHub repository
-            issues_response = requests.get(f"https://api.github.com/repos/{selected_repo}/issues")
+            issues_response = requests.get(f"https://api.github.com/repos/{selected_repo}/issues", timeout=10)
             if issues_response.status_code == 200:
                 issues = issues_response.json()
                 issues = [issue for issue in issues if "pull_request" not in issue]
