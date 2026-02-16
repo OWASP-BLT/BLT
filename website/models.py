@@ -49,6 +49,12 @@ def validate_btc_address(value):
     # Additional validation for the rest of the address could be added here
 
 
+def validate_eth_address(value):
+    """Validates that an Ethereum address starts with 0x and is 42 characters long."""
+    if not value.startswith("0x") or len(value) != 42:
+        raise ValidationError('Ethereum address must start with "0x" and be 42 characters long.')
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -935,7 +941,7 @@ class UserProfile(models.Model):
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
     btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
     bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
-    eth_address = models.CharField(max_length=100, blank=True, null=True)
+    eth_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_eth_address])
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
     x_username = models.CharField(max_length=50, blank=True, null=True)

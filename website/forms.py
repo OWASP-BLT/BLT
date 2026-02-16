@@ -22,7 +22,7 @@ from website.models import (
 
 
 class UserProfileForm(forms.ModelForm):
-    email = forms.EmailField(required=False)
+    email = forms.EmailField(required=True)
 
     class Meta:
         model = UserProfile
