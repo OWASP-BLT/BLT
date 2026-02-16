@@ -1082,9 +1082,9 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             # Save the TimeLog with the user and organization (if found, or None)
             serializer.save(user=self.request.user, organization=organization)
 
-        except ValidationError as e:
-            raise ParseError(detail=str(e))
-        except Exception as e:
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
             raise ParseError(detail="An unexpected error occurred while creating the time log.")
 
     @action(detail=False, methods=["post"])
@@ -1178,9 +1178,9 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         try:
             serializer.save(user=self.request.user, recorded_at=timezone.now())
-        except ValidationError as e:
-            raise ParseError(detail=str(e))
-        except Exception as e:
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
 
 
@@ -1250,12 +1250,12 @@ class OwaspComplianceChecker(APIView):
                 "has_dates": has_dates,
                 "details": {"url_checked": safe_url, "recommendations": []},
             }
-        except Exception as e:
+        except Exception:
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": safe_url, "error": str(e)},
+                "details": {"url_checked": safe_url, "error": "Compliance check failed."},
             }
 
     def check_vendor_neutrality(self, url):
