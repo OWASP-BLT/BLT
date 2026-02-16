@@ -349,16 +349,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.send(
                     text_data=json.dumps({"type": "connection_status", "status": "disconnected", "code": close_code})
                 )
-            except:
+            except Exception:
                 pass
-        except:
+        except Exception:
             pass
 
     @database_sync_to_async
     def check_room_exists(self):
         try:
             return Room.objects.filter(id=self.room_id).exists()
-        except:
+        except Exception:
             return False
 
     @database_sync_to_async
