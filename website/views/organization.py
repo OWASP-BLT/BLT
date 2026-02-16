@@ -77,55 +77,54 @@ from website.utils import format_timedelta, get_client_ip, get_github_issue_titl
 logger = logging.getLogger(__name__)
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def add_domain_to_organization(request):
-    if request.method == "POST":
-        try:
-            domain = Domain.objects.get(id=request.POST.get("domain"))
-            organization_name = request.POST.get("organization")
-            # Validate organization name: only alphanumerics, dashes, underscores, 3-30 characters
-            if not re.match(r"^[a-zA-Z0-9_-]{3,30}$", organization_name):
-                messages.error(
-                    request,
-                    "Invalid organization name. Only alphanumeric characters, dashes, and underscores are allowed (3-30 characters).",
-                )
+    try:
+        domain = Domain.objects.get(id=request.POST.get("domain"))
+        organization_name = request.POST.get("organization")
+        # Validate organization name: only alphanumerics, dashes, underscores, 3-30 characters
+        if not re.match(r"^[a-zA-Z0-9_-]{3,30}$", organization_name):
+            messages.error(
+                request,
+                "Invalid organization name. Only alphanumeric characters, dashes, and underscores are allowed (3-30 characters).",
+            )
+            return redirect("domain", slug=domain.url)
+        organization = Organization.objects.filter(name=organization_name).first()
+
+        if not organization:
+            # Sanitize URL using rebuild_safe_url
+            url = rebuild_safe_url(domain.url)
+
+            if not url:
+                messages.error(request, "Invalid domain: Unsafe URL detected")
                 return redirect("domain", slug=domain.url)
-            organization = Organization.objects.filter(name=organization_name).first()
 
-            if not organization:
-                # Sanitize URL using rebuild_safe_url
-                url = rebuild_safe_url(domain.url)
-
-                if not url:
-                    messages.error(request, "Invalid domain: Unsafe URL detected")
+            try:
+                response = requests.get(url, timeout=5)
+                soup = BeautifulSoup(response.text, "html.parser")
+                if organization_name in soup.get_text():
+                    organization = Organization.objects.create(name=organization_name)
+                    domain.organization = organization
+                    domain.save()
+                    messages.success(request, "Organization added successfully")
                     return redirect("domain", slug=domain.url)
-
-                try:
-                    response = requests.get(url, timeout=5)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    if organization_name in soup.get_text():
-                        organization = Organization.objects.create(name=organization_name)
-                        domain.organization = organization
-                        domain.save()
-                        messages.success(request, "Organization added successfully")
-                        return redirect("domain", slug=domain.url)
-                    else:
-                        messages.error(request, "Organization not found in the domain")
-                        return redirect("domain", slug=domain.url)
-                except requests.RequestException:
-                    messages.error(request, "Could not connect to the domain")
+                else:
+                    messages.error(request, "Organization not found in the domain")
                     return redirect("domain", slug=domain.url)
-            else:
-                domain.organization = organization
-                domain.save()
-                messages.success(request, "Organization added successfully")
+            except requests.RequestException:
+                messages.error(request, "Could not connect to the domain")
                 return redirect("domain", slug=domain.url)
-        except Domain.DoesNotExist:
-            messages.error(request, "Domain does not exist")
-            return redirect("home")
-        except requests.RequestException:
-            messages.error(request, "Could not connect to the domain")
-            return redirect("home")
-    else:
+        else:
+            domain.organization = organization
+            domain.save()
+            messages.success(request, "Organization added successfully")
+            return redirect("domain", slug=domain.url)
+    except Domain.DoesNotExist:
+        messages.error(request, "Domain does not exist")
+        return redirect("home")
+    except requests.RequestException:
+        messages.error(request, "Could not connect to the domain")
         return redirect("home")
 
 
