@@ -1007,7 +1007,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        url = request.POST.get("url").replace("www.", "").replace("https://", "")
+        url = (request.POST.get("url") or "").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
         request.POST.update(url=url)
@@ -2279,7 +2279,7 @@ class GithubIssueView(TemplateView):
         title = request.POST.get("issue_title")
         description = request.POST.get("description")
 
-        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
+        repository = (request.POST.get("repository_url") or "").replace("https://github.com/", "").replace(".git", "")
         labels = request.POST.get("labels")
         labels_list = [label.strip() for label in labels.split(",")] if labels else []
         try:

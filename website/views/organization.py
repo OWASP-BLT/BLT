@@ -1211,9 +1211,10 @@ class HuntCreate(CreateView):
         self.object = form.save(commit=False)
         self.object.user = self.request.user
 
+        hunt_url = self.request.POST.get("url") or ""
         domain, created = Domain.objects.get_or_create(
-            name=self.request.POST.get("url").replace("www.", ""),
-            defaults={"url": "http://" + self.request.POST.get("url").replace("www.", "")},
+            name=hunt_url.replace("www.", ""),
+            defaults={"url": "http://" + hunt_url.replace("www.", "")},
         )
         self.object.domain = domain
 
