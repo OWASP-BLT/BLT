@@ -16,7 +16,6 @@ if os.getenv("ENV") != "production":
 
     load_dotenv()
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
@@ -161,7 +160,6 @@ if app:
                     client.conversations_join(channel=command["channel_id"])
                 except Exception as channel_error:
                     logger.debug(f"Could not join channel: {channel_error}")
-                    pass
 
                 try:
                     gh_response = requests.get("https://api.github.com/orgs/OWASP-BLT/repos")
