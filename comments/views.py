@@ -84,6 +84,10 @@ def delete_comment(request):
         comment_pk = request.POST.get("comment_pk")
         if not comment_pk:
             return HttpResponse("Missing comment ID", status=400)
+        try:
+            comment_pk = int(comment_pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid comment ID", status=400)
         comment = get_object_or_404(Comment, pk=comment_pk)
         if request.user.username != comment.author:
             return HttpResponse("Cannot delete this comment", status=403)
@@ -109,7 +113,14 @@ def delete_comment(request):
 def edit_comment(request, pk):
     if request.method == "POST":
         issue = get_object_or_404(Issue, pk=pk)
-        comment = get_object_or_404(Comment, pk=request.POST.get("comment_pk"))
+        comment_pk = request.POST.get("comment_pk")
+        if not comment_pk:
+            return HttpResponse("Missing comment ID", status=400)
+        try:
+            comment_pk = int(comment_pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid comment ID", status=400)
+        comment = get_object_or_404(Comment, pk=comment_pk)
         if request.user.username != comment.author:
             return HttpResponse("Cannot edit this comment", status=403)
         text = request.POST.get("text_comment")
