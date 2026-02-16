@@ -477,9 +477,12 @@ class Joinorganization(TemplateView):
             url = request.POST["url"]
             email = request.POST["email"]
             product = request.POST["product"]
-            sub = Subscription.objects.get(name=product)
             if name == "" or url == "" or email == "" or product == "":
                 return JsonResponse({"error": "Empty Fields"})
+            try:
+                sub = Subscription.objects.get(name=product)
+            except Subscription.DoesNotExist:
+                return JsonResponse({"error": "Invalid subscription plan"})
             paymentType = request.POST["paymentType"]
             if paymentType == "wallet":
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
