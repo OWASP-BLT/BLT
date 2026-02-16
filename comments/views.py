@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -140,19 +141,21 @@ def reply_comment(request, pk):
 
 @login_required(login_url="/accounts/login")
 def autocomplete(request):
+    callback = request.GET.get("callback", "")
+    if not callback or not re.match(r"^[a-zA-Z_$][a-zA-Z0-9_.]*$", callback):
+        return HttpResponse("Invalid callback", status=400)
+
     q_string = request.GET.get("search", "")
     q_string = escape(q_string)
     if len(q_string) == 0:
-        return HttpResponse(request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json")
+        return HttpResponse(callback + "(" + json.dumps([]) + ");", content_type="application/json")
     q_list = q_string.split(" ")
-    q_s = q_list[len(q_list) - 1]
+    q_s = q_list[-1]
     if len(q_s) == 0 or q_s[0] != "@":
-        return HttpResponse(request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json")
+        return HttpResponse(callback + "(" + json.dumps([]) + ");", content_type="application/json")
 
     q_s = q_s[1:]
-    search_qs = User.objects.filter(username__startswith=q_s)
-    results = []
-    for r in search_qs:
-        results.append(r.username)
-    resp = request.GET["callback"] + "(" + json.dumps(results) + ");"
+    search_qs = User.objects.filter(username__startswith=q_s)[:20]
+    results = [r.username for r in search_qs]
+    resp = callback + "(" + json.dumps(results) + ");"
     return HttpResponse(resp, content_type="application/json")
