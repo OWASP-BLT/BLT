@@ -420,6 +420,7 @@ class DomainListView(ListView):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def subscribe_to_domains(request, pk):
     domain = Domain.objects.filter(pk=pk).first()
     if domain is None:
@@ -631,6 +632,25 @@ class Listbounties(TemplateView):
                     "total_earned": earner["issues_completed"] * BOUNTY_AMOUNT,
                 }
             )
+
+        # TEMP: mock leaderboard data for local UI testing
+        if settings.DEBUG and not leaderboard:
+            leaderboard = [
+                {
+                    "name": "Alice",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/1",
+                    "github_url": "https://github.com/alice",
+                    "issues_completed": 12,
+                    "total_earned": 60,
+                },
+                {
+                    "name": "Bob",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/2",
+                    "github_url": "https://github.com/bob",
+                    "issues_completed": 8,
+                    "total_earned": 40,
+                },
+            ]
 
         context = {
             "hunts": hunts,
@@ -2405,13 +2425,19 @@ def join_room(request, room_id):
     return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
-@login_required(login_url="/accounts/login")
 @require_POST
 def delete_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
 
-    # Check if the user is the admin or the anonymous creator
+    # Admin can always delete
     is_admin = request.user.is_authenticated and room.admin == request.user
+
+    # Explicitly handle anonymous users without session
+    if request.user.is_anonymous and not request.session.session_key:
+        messages.error(request, "Your session has expired. You can no longer delete this room.")
+        return redirect("rooms_list")
+
+    # Anonymous creator check (only if session exists)
     is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
 
     if not (is_admin or is_anon_creator):
