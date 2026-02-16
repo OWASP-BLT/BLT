@@ -1,46 +1,40 @@
 import logging
 
-from django.core.management import call_command
+from django.core import management
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+# Commands to run daily, in order
+DAILY_COMMANDS = [
+    ("update_github_issues", "updating GitHub issues"),
+    ("fetch_contributor_stats", "fetching contributor stats"),
+    ("check_keywords", "checking keywords"),
+    ("check_owasp_projects", "checking OWASP projects"),
+    ("check_trademarks", "checking trademarks"),
+    ("update_repo_stars", "updating repo stars"),
+    ("fetch_gsoc_prs", "fetching GSoC PRs"),
+    ("fetch_pr_reviews", "fetching PR reviews"),
+    ("cron_send_reminders", "sending user reminders"),
+]
 
 
 class Command(BaseCommand):
     help = "Runs commands scheduled to execute daily"
 
     def handle(self, *args, **options):
-        try:
-            logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
+        logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
+
+        succeeded = 0
+        failed = 0
+
+        for command_name, description in DAILY_COMMANDS:
             try:
-                call_command("update_github_issues")
-            except Exception as e:
-                logger.error("Error updating GitHub issues", exc_info=True)
-            try:
-                call_command("fetch_contributor_stats")
-            except Exception as e:
-                logger.error("Error fetching contributor stats", exc_info=True)
-            try:
-                call_command("check_keywords")
-            except Exception as e:
-                logger.error("Error checking keywords", exc_info=True)
-            try:
-                call_command("check_owasp_projects")
-            except Exception as e:
-                logger.error("Error checking OWASP projects", exc_info=True)
-            try:
-                call_command("check_trademarks")
-            except Exception as e:
-                logger.error("Error checking trademarks", exc_info=True)
-            try:
-                call_command("update_repo_stars")
-            except Exception as e:
-                logger.error("Error updating repo stars", exc_info=True)
-            try:
-                call_command("fetch_gsoc_prs")
-            except Exception as e:
-                logger.error("Error fetching GSoC PRs", exc_info=True)
-        except Exception as e:
-            logger.error("Error in daily tasks", exc_info=True)
-            raise
+                management.call_command(command_name)
+                succeeded += 1
+            except Exception:
+                logger.exception(f"Error {description}")
+                failed += 1
+
+        logger.info(f"Daily tasks complete: {succeeded} succeeded, {failed} failed")

@@ -1,27 +1,41 @@
-from django.contrib.auth.models import User
+from django.db.models import Count
 
 from website.management.base import LoggedBaseCommand
-from website.models import Issue, UserProfile
+from website.models import UserProfile
+
+# Title thresholds: (max_issues, title_level)
+TITLE_THRESHOLDS = [
+    (10, 1),
+    (50, 2),
+    (200, 3),
+]
+DEFAULT_TITLE = 4
+
+
+def get_title_for_count(issue_count):
+    """Return the title level for a given issue count."""
+    for max_issues, title_level in TITLE_THRESHOLDS:
+        if issue_count <= max_issues:
+            return title_level
+    return DEFAULT_TITLE
 
 
 class Command(LoggedBaseCommand):
-    help = "Update user based on number of bugs"
+    help = "Update user titles based on number of bugs reported"
 
     def handle(self, *args, **options):
-        all_user_prof = UserProfile.objects.all()
-        all_user = User.objects.all()
-        for user_ in all_user:
-            user_prof = UserProfile.objects.get(user=user_)
-            total_issues = Issue.objects.filter(user=user_).count()
-            if total_issues <= 10:
-                user_prof.title = 1
-            elif total_issues <= 50:
-                user_prof.title = 2
-            elif total_issues <= 200:
-                user_prof.title = 3
-            else:
-                user_prof.title = 4
+        # Single annotated query replaces per-profile N+1 issue count lookups
+        profiles = list(UserProfile.objects.annotate(issue_count=Count("user__issue")).select_related("user"))
 
-            user_prof.save()
+        changed = []
+        for profile in profiles:
+            new_title = get_title_for_count(profile.issue_count)
+            if profile.title != new_title:
+                profile.title = new_title
+                changed.append(profile)
 
-        return str("All users updated.")
+        # Bulk update only the profiles that changed
+        if changed:
+            UserProfile.objects.bulk_update(changed, ["title"])
+
+        self.stdout.write(self.style.SUCCESS(f"Updated {len(changed)} of {len(profiles)} user titles."))

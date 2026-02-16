@@ -25,24 +25,20 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
@@ -52,10 +48,6 @@ from website.models import (
     Badge,
     DailyStats,
     Domain,
-    ForumCategory,
-    ForumComment,
-    ForumPost,
-    ForumVote,
     Hunt,
     InviteFriend,
     InviteOrganization,
@@ -74,12 +66,20 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    fetch_github_discussions,
+    rebuild_safe_url,
+    save_analysis_report,
+    validate_file_type,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+SEARCH_RESULT_LIMIT = 20  # Max results per category in search views
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -88,6 +88,27 @@ SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
 # ----------------------------------------------------------------------------------
+def get_popular_searches(limit=5, min_users=3):
+    """Returns a list of dicts with query and average result count."""
+
+    popular = (
+        SearchHistory.objects.values("query")
+        .annotate(user_count=Count("user", distinct=True), avg_results=Avg("result_count"))
+        .filter(user_count__gte=min_users, avg_results__gt=0)
+        .order_by("-user_count", "-avg_results")[:limit]
+    )
+
+    suggestions = []
+    for item in popular:
+        suggestions.append(
+            {
+                "query": item["query"],
+                "result_count": int(item["avg_results"]) if item["avg_results"] else 0,
+                "user_count": item["user_count"],
+            }
+        )
+
+    return suggestions
 
 
 def memory_usage_by_module(limit=1000):
@@ -591,17 +612,31 @@ def search(request, template="search.html"):
 
         # Handle type='all' - search ALL models
         if stype == "all":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[:SEARCH_RESULT_LIMIT]
                 )
             else:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
-            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)[:SEARCH_RESULT_LIMIT]
+                )
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:SEARCH_RESULT_LIMIT]
+            users = (
+                User.objects.filter(username__icontains=query)
+                .exclude(is_superuser=True)
+                .order_by("-points")[0:SEARCH_RESULT_LIMIT]
+            )
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
 
             context = {
                 "request": request,
@@ -617,13 +652,17 @@ def search(request, template="search.html"):
 
         elif stype == "issues":
             if request.user.is_authenticated:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[0:20]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:SEARCH_RESULT_LIMIT]
+                )
             else:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
-                    0:20
-                ]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)[0:SEARCH_RESULT_LIMIT]
+                )
 
             context = {
                 "request": request,
@@ -637,14 +676,14 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
+                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:SEARCH_RESULT_LIMIT],
             }
 
         elif stype == "users":
             users = (
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
-                .order_by("-total_score")[0:20]
+                .order_by("-total_score")[0:SEARCH_RESULT_LIMIT]
             )
             for userprofile in users:
                 userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
@@ -670,13 +709,17 @@ def search(request, template="search.html"):
                     label_values.append(value)
 
             issues_base_qs = (
-                Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+                Issue.objects.filter(label__in=label_values, hunt=None).select_related("user", "domain")
+                if label_values
+                else Issue.objects.none()
             )
 
             if request.user.is_authenticated:
-                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
+                    0:SEARCH_RESULT_LIMIT
+                ]
             else:
-                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:SEARCH_RESULT_LIMIT]
 
             context = {
                 "request": request,
@@ -686,7 +729,7 @@ def search(request, template="search.html"):
             }
 
         elif stype == "organizations":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             for org in organizations:
                 d = Domain.objects.filter(organization=org).first()
                 if d:
@@ -703,7 +746,9 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                    :SEARCH_RESULT_LIMIT
+                ],
             }
 
         elif stype == "repos":
@@ -711,23 +756,31 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                    :SEARCH_RESULT_LIMIT
+                ],
             }
 
         elif stype == "tags":
             tags = Tag.objects.filter(name__icontains=query)
-            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-            matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
+            matching_domains = Domain.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 matching_issues = (
                     Issue.objects.filter(tags__in=tags)
+                    .select_related("user", "domain")
                     .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-                    .distinct()
+                    .distinct()[:SEARCH_RESULT_LIMIT]
                 )
             else:
-                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()
-            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-            matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+                matching_issues = (
+                    Issue.objects.filter(tags__in=tags)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)
+                    .distinct()[:SEARCH_RESULT_LIMIT]
+                )
+            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
+            matching_repos = Repo.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             for org in matching_organizations:
                 d = Domain.objects.filter(organization=org).first()
                 if d:
@@ -749,8 +802,45 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "repos": Repo.objects.filter(primary_language__icontains=query),
+                "repos": Repo.objects.filter(primary_language__icontains=query)[:SEARCH_RESULT_LIMIT],
             }
+
+        has_results = False
+
+        if stype == "all" or not stype:
+            has_results = bool(
+                context.get("organizations")
+                or context.get("issues")
+                or context.get("domains")
+                or context.get("users")
+                or context.get("projects")
+                or context.get("repos")
+            )
+        elif stype == "tags":
+            has_results = bool(
+                context.get("matching_organizations")
+                or context.get("matching_domains")
+                or context.get("matching_issues")
+                or context.get("matching_user_profiles")
+                or context.get("matching_repos")
+            )
+        else:
+            type_to_key = {
+                "issues": "issues",
+                "domains": "domains",
+                "users": "users",
+                "labels": "issues",
+                "organizations": "organizations",
+                "projects": "projects",
+                "repos": "repos",
+                "languages": "repos",
+            }
+            key = type_to_key.get(stype, stype)
+            has_results = bool(context.get(key))
+        # If no results found, add popular search suggestions
+        if not has_results:
+            context["popular_searches"] = get_popular_searches(limit=5, min_users=3)
+            context["has_no_results"] = True
 
     # Handle authenticated user features
     if request.user.is_authenticated:
@@ -963,235 +1053,6 @@ def search(request, template="search.html"):
 #         )
 
 
-@login_required
-def vote_forum_post(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            post_id = data.get("post_id")
-            up_vote = data.get("up_vote", False)
-            down_vote = data.get("down_vote", False)
-
-            post = ForumPost.objects.get(id=post_id)
-            vote, created = ForumVote.objects.get_or_create(
-                post=post, user=request.user, defaults={"up_vote": up_vote, "down_vote": down_vote}
-            )
-
-            if not created:
-                vote.up_vote = up_vote
-                vote.down_vote = down_vote
-                vote.save()
-
-            # Update vote counts
-            post.up_votes = ForumVote.objects.filter(post=post, up_vote=True).count()
-            post.down_votes = ForumVote.objects.filter(post=post, down_vote=True).count()
-            post.save()
-
-            return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
-        except ForumPost.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in vote_forum_post")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in vote_forum_post")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-def set_vote_status(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            post_id = data.get("id")
-            vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "up_vote": vote.up_vote if vote else False,
-                    "down_vote": vote.down_vote if vote else False,
-                }
-            )
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in set_vote_status")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in set_vote_status")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-def add_forum_post(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            title = data.get("title")
-            category = data.get("category")
-            description = data.get("description")
-            repo_id = data.get("repo")
-            project_id = data.get("project")
-            organization_id = data.get("organization")
-
-            if not all([title, category, description]):
-                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
-
-            # Explicitly validate category exists before creating post
-            category_obj = ForumCategory.objects.get(pk=category)
-
-            post_data = {
-                "user": request.user,
-                "title": title,
-                "category_id": category,
-                "description": description,
-            }
-
-            if repo_id:
-                post_data["repo_id"] = repo_id
-            if project_id:
-                post_data["project_id"] = project_id
-            if organization_id:
-                post_data["organization_id"] = organization_id
-
-            post = ForumPost.objects.create(**post_data)
-
-            return JsonResponse({"status": "success", "post_id": post.id})
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in add_forum_post")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except ForumCategory.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Category not found"}, status=404)
-        except Exception:
-            logger.exception("Unexpected error in add_forum_post")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-def add_forum_comment(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            post_id = data.get("post_id")
-            content = data.get("content")
-
-            if not all([post_id, content]):
-                return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
-
-            post = ForumPost.objects.get(id=post_id)
-            comment = ForumComment.objects.create(post=post, user=request.user, content=content)
-
-            return JsonResponse({"status": "success", "comment_id": comment.id})
-        except ForumPost.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Post not found"}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON data"}, status=400)
-        except (ValueError, TypeError):
-            logger.exception("Validation error in add_forum_comment")
-            return JsonResponse({"success": False, "error": "Invalid data provided"}, status=400)
-        except Exception:
-            logger.exception("Unexpected error in add_forum_comment")
-            return JsonResponse({"success": False, "error": "Server error occurred"}, status=500)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
-
-
-@login_required
-@require_POST
-def delete_forum_post(request):
-    if not request.user.is_superuser:
-        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
-
-    try:
-        data = json.loads(request.body)
-        post_id = data.get("post_id")
-
-        if not post_id:
-            return JsonResponse({"status": "error", "message": "Post ID is required"})
-
-        # Validate post_id is an integer
-        try:
-            post_id = int(post_id)
-        except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Post ID format"})
-
-        post = ForumPost.objects.get(id=post_id)
-        post.delete()
-
-        return JsonResponse({"status": "success", "message": "Post deleted successfully"})
-    except ForumPost.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Post not found"})
-    except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON data"})
-    except Exception as e:
-        logging.exception("Unexpected error deleting forum post")
-        return JsonResponse({"status": "error", "message": "Server error occurred"})
-
-
-@ensure_csrf_cookie
-def view_forum(request):
-    # Annotate categories with post counts
-    categories = ForumCategory.objects.annotate(post_count=Count("forumpost")).all()
-    selected_category = request.GET.get("category")
-
-    # Add is_selected flag to categories for cleaner template logic
-    for category in categories:
-        category.is_selected = str(category.id) == selected_category
-
-    # Get total posts count before filtering
-    total_posts_count = ForumPost.objects.count()
-
-    posts = (
-        ForumPost.objects.select_related("user", "category")
-        .prefetch_related("comments")
-        .annotate(comment_count=Count("comments"))
-        .order_by("-created")  # Sort by newest first
-        .all()
-    )
-
-    if selected_category:
-        posts = posts.filter(category_id=selected_category)
-
-    # Optimize user vote queries to avoid N+1 problem
-    if request.user.is_authenticated:
-        # Get all votes for current user and these posts in one query
-        post_ids = [post.id for post in posts]
-        user_votes = {vote.post_id: vote for vote in ForumVote.objects.filter(post_id__in=post_ids, user=request.user)}
-
-        # Attach votes to posts
-        for post in posts:
-            post.user_vote = user_votes.get(post.id)
-
-    organizations = Organization.objects.all().order_by("name")
-    projects = Project.objects.all().order_by("name")
-    repos = Repo.objects.all().order_by("name")
-
-    return render(
-        request,
-        "forum.html",
-        {
-            "categories": categories,
-            "posts": posts,
-            "selected_category": selected_category,
-            "organizations": organizations,
-            "projects": projects,
-            "repos": repos,
-            "total_posts_count": total_posts_count,
-        },
-    )
-
-
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
@@ -1249,14 +1110,30 @@ class FacebookLogin(SocialLoginView):
 class UploadCreate(View):
     template_name = "home.html"
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(UploadCreate, self).dispatch(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
-        data = request.FILES.get("image")
-        result = default_storage.save("uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
-        return JsonResponse({"status": result})
+        # Validate file type
+        is_valid, error = validate_file_type(
+            request=request,
+            file_field_name="image",
+            allowed_extensions=["png", "jpg", "jpeg", "gif", "webp"],
+            allowed_mime_types=["image/png", "image/jpeg", "image/gif", "image/webp"],
+            max_size=20 * 1024 * 1024,  # optional: 20MB limit
+        )
+
+        if not is_valid:
+            return HttpResponseBadRequest(error)
+
+        file = request.FILES.get("image")
+        if not file:
+            return HttpResponseBadRequest("No file uploaded.")
+
+        # Safe filename handling
+        hash_val = kwargs.get("hash", "upload")
+        extension = file.name.split(".")[-1].lower()
+        filename = f"uploads/{hash_val}.{extension}"
+
+        result = default_storage.save(filename, file)
+        return JsonResponse({"status": "ok", "file": result})
 
 
 class StatsDetailView(TemplateView):
@@ -1407,41 +1284,6 @@ class StatsDetailView(TemplateView):
         return context
 
 
-def view_suggestions(request):
-    category_id = request.GET.get("category")
-    status = request.GET.get("status")
-    sort = request.GET.get("sort", "newest")
-
-    suggestions = ForumPost.objects.all()
-
-    # Apply filters
-    if category_id:
-        suggestions = suggestions.filter(category_id=category_id)
-    if status:
-        suggestions = suggestions.filter(status=status)
-
-    # Apply sorting
-    if sort == "oldest":
-        suggestions = suggestions.order_by("created")
-    elif sort == "most_votes":
-        suggestions = suggestions.order_by("-up_votes")
-    elif sort == "most_comments":
-        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
-    else:  # newest
-        suggestions = suggestions.order_by("-created")
-
-    categories = ForumCategory.objects.all()
-
-    return render(
-        request,
-        "feature_suggestion.html",
-        {
-            "suggestions": suggestions,
-            "categories": categories,
-        },
-    )
-
-
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
     random_user = User.objects.filter(is_active=True).exclude(is_superuser=True).order_by("?").first()
@@ -1579,7 +1421,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1592,8 +1434,8 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
-    # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+    # Get recent GitHub discussions from BLT repository
+    recent_discussions = fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5)
 
     # Get recent activities for the feed
     recent_activities = Activity.objects.select_related("user").order_by("-timestamp")[:5]
@@ -1762,7 +1604,7 @@ def home(request):
             "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
-            "recent_posts": recent_posts,
+            "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
@@ -2253,7 +2095,7 @@ def management_commands(request):
     wrapper_schedules = load_command_schedules_from_run_wrappers()
 
     # Get the date 30 days ago for stats
-    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     # Get sort parameter from request
     sort_param = request.GET.get("sort", "name")
@@ -2379,7 +2221,7 @@ def management_commands(request):
 
             # Generate all dates in the 30-day range
             for i in range(30):
-                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date = (timezone.now() - timedelta(days=29 - i)).date()
                 date_range.append(date)
                 date_values[date.isoformat()] = 0
 
@@ -2538,11 +2380,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
@@ -2626,7 +2468,7 @@ def run_management_command(request):
                 log_entry.success = False
                 log_entry.save()
 
-                error_msg = f"Error executing command '{command}': {str(e)}"
+                error_msg = f"Error executing command '{command}': Something went wrong."
                 logging.error(error_msg)
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -3414,28 +3256,19 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
+@require_POST
 def set_theme(request):
     """View to save user's theme preference"""
-    if request.method == "POST":
-        try:
-            import json
+    try:
+        import json
 
-            data = json.loads(request.body)
-            theme = data.get("theme", "light")
+        data = json.loads(request.body)
+        theme = data.get("theme", "light")
 
-            # Save theme in session
-            request.session["theme"] = theme
+        # Save theme in session
+        request.session["theme"] = theme
 
-            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
-            # if request.user.is_authenticated:
-            #     profile = request.user.userprofile
-            #     profile.theme_preference = theme
-            #     profile.save()
-
-            return JsonResponse({"status": "success", "theme": theme})
-        except Exception as e:
-            logging.exception("Error occurred while setting theme")
-            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+        return JsonResponse({"status": "success", "theme": theme})
+    except Exception:
+        logging.exception("Error occurred while setting theme")
+        return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
