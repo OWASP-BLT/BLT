@@ -114,9 +114,18 @@ def join_requests(request):
             return redirect("team_overview")
         user_profile = request.user.userprofile
         with transaction.atomic():
-            # Remove user from old team's managers if switching teams
+            # Handle admin reassignment if user is switching teams
             if user_profile.team:
-                user_profile.team.managers.remove(request.user)
+                old_team = user_profile.team
+                old_team.managers.remove(request.user)
+                if old_team.admin == request.user:
+                    new_admin = old_team.managers.first()
+                    if new_admin:
+                        old_team.admin = new_admin
+                        old_team.save()
+                    else:
+                        UserProfile.objects.filter(team=old_team).update(team=None)
+                        old_team.delete()
             user_profile.team = team
             user_profile.save()
             team.managers.add(request.user)
