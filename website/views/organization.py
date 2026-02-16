@@ -318,27 +318,35 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if issues:
             Issue.objects.bulk_update(issues, ["verified", "score"])
 
+        check_all = "checkAll" in request.POST
+
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
-                submit_type = key.split("_")[0]
-                issue_id = key.split("_")[1]
-                issue = Issue.objects.get(pk=issue_id)
+                parts = key.split("_", 1)
+                if len(parts) != 2:
+                    continue
+                submit_type, issue_id = parts
+                try:
+                    issue = Issue.objects.get(pk=issue_id)
+                except (Issue.DoesNotExist, ValueError):
+                    continue
                 if issue.hunt == hunt and submit_type == "item":
                     if value == "on":
                         issue.verified = True
                 elif issue.hunt == hunt and submit_type == "value":
                     if value != "":
-                        issue.score = int(value)
-                try:
-                    if request.POST["checkAll"]:
-                        issue.verified = True
-                except KeyError:
-                    pass
+                        try:
+                            issue.score = int(value)
+                        except (ValueError, TypeError):
+                            pass
+                if check_all:
+                    issue.verified = True
                 issue.save()
 
-        if request.POST["submit"] == "save":
+        submit_action = request.POST.get("submit", "")
+        if submit_action == "save":
             pass
-        elif request.POST["submit"] == "publish":
+        elif submit_action == "publish":
             with transaction.atomic():
                 issue_with_score = (
                     Issue.objects.filter(hunt=hunt, verified=True)
