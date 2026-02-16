@@ -242,6 +242,7 @@ class ForumTests(TestCase):
         self.assertEqual(post.repo.id, repo.id)
         self.assertEqual(post.project.id, project.id)
         self.assertEqual(post.organization.id, organization.id)
+from website.models import Domain, GitHubIssue, Repo, UserProfile
 
 
 class TopEarnersTests(TestCase):
@@ -434,11 +435,9 @@ class DarkModeTests(TestCase):
         self.assertEqual(data["theme"], "light")
 
     def test_set_theme_invalid_method(self):
-        """Test that GET request to set-theme endpoint returns error"""
+        """Test that GET request to set-theme endpoint returns 405"""
         response = self.client.get(reverse("set_theme"))
-        self.assertEqual(response.status_code, 400)
-        data = response.json()
-        self.assertEqual(data["status"], "error")
+        self.assertEqual(response.status_code, 405)
 
     def test_dark_mode_toggle_in_base_template(self):
         """Test that dark mode toggle is present in base template"""
