@@ -59,11 +59,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
     libmemcached11 libmemcachedutil2 dos2unix \
-    # OpenCV runtime dependencies
-    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
-    libgtk-3-0 libavcodec-dev libavformat-dev libswscale-dev \
-    libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev \
-    libpng-dev libjpeg-dev libopenexr-dev libtiff-dev libwebp-dev && \
+    libglib2.0-0 libsm6 libxext6 libxrender1 libgomp1 \
+    libgtk-3-0 libavcodec58 libavformat58 libswscale5 \
+    libgstreamer-plugins-base1.0-0 libgstreamer1.0-0 \
+    libpng16-16 libjpeg62-turbo libopenexr25 libtiff5 libwebp6 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy application code

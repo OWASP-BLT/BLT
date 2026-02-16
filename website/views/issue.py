@@ -1766,7 +1766,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             for screenshot in self.request.FILES.getlist("screenshots"):
                 filename = screenshot.name
                 # Ensure JPG extension for processed files
-                if hasattr(screenshot, "_processed") or filename.endswith("_processed.jpg"):
+                if hasattr(screenshot, "_processed") and screenshot._processed:
                     extension = "jpg"
                 else:
                     extension = filename.split(".")[-1]

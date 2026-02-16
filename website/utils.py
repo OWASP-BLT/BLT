@@ -1,6 +1,7 @@
 import ast
 import difflib
 import hashlib
+import io
 import logging
 import os
 import re
@@ -11,6 +12,7 @@ from datetime import datetime
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
+import cv2
 import markdown
 import numpy as np
 import requests
@@ -18,6 +20,7 @@ import tweepy
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
@@ -1231,7 +1234,38 @@ def fetch_github_discussions(owner="OWASP-BLT", repo="BLT", limit=5):
     except Exception as e:
         logging.exception("Unexpected error fetching GitHub discussions")
         return []
+
+
 # Image Processing Utilities for Privacy Protection
+
+# Module-level cache for the Haar Cascade face classifier to avoid reloading from disk
+# on every call to overlay_faces / is_face_processing_available.
+_face_cascade_cache = None
+
+
+def _get_face_cascade():
+    """Return the cached Haar Cascade classifier, loading it on first call."""
+    global _face_cascade_cache
+    if _face_cascade_cache is not None:
+        return _face_cascade_cache
+
+    try:
+        cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        classifier = cv2.CascadeClassifier(cascade_path)
+        if classifier.empty():
+            logging.error("Failed to load Haar Cascade classifier from: %s", cascade_path)
+            return None
+        _face_cascade_cache = classifier
+        logging.debug("Haar Cascade classifier loaded and cached from: %s", cascade_path)
+        return _face_cascade_cache
+    except ImportError:
+        logging.error("OpenCV not available – cannot load Haar Cascade classifier.")
+        return None
+    except Exception:
+        logging.error("Unexpected error loading Haar Cascade classifier.", exc_info=True)
+        return None
+
+
 def overlay_faces(image, color=(0, 0, 0)):
     """
     Detect faces in an image using OpenCV Haar Cascade and overlay them with a solid color.
@@ -1244,22 +1278,19 @@ def overlay_faces(image, color=(0, 0, 0)):
         numpy array: Image with faces overlaid, or original image if detection fails
     """
     try:
-        import cv2
-
-        logging.info("Starting face detection process")
+        logging.debug("Starting face detection process")
 
         # Convert image to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        logging.info(f"Converted to grayscale, shape: {gray.shape}")
+        logging.debug(f"Converted to grayscale, shape: {gray.shape}")
 
-        # Load OpenCV's pre-trained Haar Cascade face detection model
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-
-        if face_cascade.empty():
-            logging.error("Failed to load Haar Cascade classifier")
+        # Use cached Haar Cascade classifier (loaded once, reused across calls)
+        face_cascade = _get_face_cascade()
+        if face_cascade is None:
+            logging.error("Haar Cascade classifier not available")
             return image
 
-        logging.info("Haar Cascade classifier loaded successfully")
+        logging.debug("Haar Cascade classifier ready (cached)")
 
         # Detect faces in the image
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -1268,7 +1299,7 @@ def overlay_faces(image, color=(0, 0, 0)):
 
         # Overlay a solid color on each face found
         for i, (x, y, w, h) in enumerate(faces):
-            logging.info(f"Overlaying face {i+1}: position=({x}, {y}), size=({w}x{h})")
+            logging.debug(f"Overlaying face {i+1}: position=({x}, {y}), size=({w}x{h})")
             # Draw a filled rectangle over the face region with the specified color
             cv2.rectangle(image, (x, y), (x + w, y + h), color, thickness=cv2.FILLED)
 
@@ -1304,6 +1335,7 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
     Returns:
         UploadedFile: New UploadedFile with processed image, or None if processing fails
     """
+
     if not image_file:
         logging.warning("No image file provided for processing")
         return None
@@ -1311,17 +1343,14 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
     logging.info(f"Processing screenshot: {getattr(image_file, 'name', 'unknown')}")
 
     try:
-        import cv2
-        from django.core.files.base import ContentFile
-
-        logging.info("OpenCV imported successfully for screenshot processing")
+        logging.debug("OpenCV imported successfully for screenshot processing")
 
         # Reset file pointer to beginning
         image_file.seek(0)
 
         # Read the uploaded image file using the same method as reference code
         image_data = image_file.read()
-        logging.info(f"Read image data: {len(image_data)} bytes")
+        logging.debug(f"Read image data: {len(image_data)} bytes")
 
         np_img = np.frombuffer(image_data, np.uint8)
         img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
@@ -1330,7 +1359,7 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
             logging.error("Failed to decode image with OpenCV")
             return None
 
-        logging.info(f"Successfully decoded image with shape: {img.shape}")
+        logging.debug(f"Successfully decoded image with shape: {img.shape}")
 
         # Overlay faces in the image with a solid color (same as reference code)
         img_with_overlayed_faces = overlay_faces(img, color=overlay_color)
@@ -1342,7 +1371,7 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
             logging.error("Failed to encode processed image")
             return None
 
-        logging.info("Successfully encoded processed image")
+        logging.debug("Successfully encoded processed image")
 
         # Generate new filename with JPG extension
         original_name = image_file.name
@@ -1370,11 +1399,6 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
 
         # Fallback: Just convert to JPEG without face detection
         try:
-            import io
-
-            from django.core.files.base import ContentFile
-            from PIL import Image
-
             # Reset file pointer to beginning
             image_file.seek(0)
             image_data = image_file.read()
@@ -1425,27 +1449,36 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
             pass
 
 
-def is_face_processing_available():
+def is_face_processing_available(cv2_module=None):
     """
     Check if face processing functionality is available.
-
+    This helper is intentionally simple so it can be unit-tested. The optional
+    ``cv2_module`` argument allows tests to inject a mock OpenCV-like object
+    without requiring the real ``cv2`` package or filesystem access.
+    Args:
+        cv2_module: Optional module-like object providing ``__version__``,
+            ``data.haarcascades``, and ``CascadeClassifier``. If not provided,
+            the real ``cv2`` module will be imported.
     Returns:
-        bool: True if OpenCV and required cascade files are available, False otherwise
+        bool: True if OpenCV and required cascade files are available, False otherwise.
     """
     try:
-        import cv2
-
-        logging.info(f"OpenCV version: {cv2.__version__}")
+        if cv2_module is None:
+            try:
+                import cv2 as _cv2
+            except ImportError:
+                logging.error("OpenCV not available.")
+                return False
+            cv2_module = _cv2
+        logging.info(f"OpenCV version: {cv2_module.__version__}")
         # Try to load the Haar Cascade classifier
-        face_cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        face_cascade_path = cv2_module.data.haarcascades + "haarcascade_frontalface_default.xml"
         logging.info(f"Attempting to load cascade from: {face_cascade_path}")
-        face_cascade = cv2.CascadeClassifier(face_cascade_path)
+        face_cascade = cv2_module.CascadeClassifier(face_cascade_path)
         is_available = not face_cascade.empty()
         logging.info(f"Face cascade loaded successfully: {is_available}")
         return is_available
-    except ImportError as e:
-        logging.error(f"OpenCV not available: {str(e)}")
-        return False
-    except Exception as e:
-        logging.error(f"Face processing not available: {str(e)}")
+    except Exception:
+        # Any unexpected error means face processing is not available.
+        logging.error("Face processing not available.", exc_info=True)
         return False
