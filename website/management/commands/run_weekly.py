@@ -6,6 +6,14 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
+# Commands to run weekly, in order
+WEEKLY_COMMANDS = [
+    ("send_weekly_bug_digest", "sending weekly bug digest"),
+    ("cleanup_sample_invites", "cleaning up sample invites", {"days": 7}),
+    ("delete_unverified_users", "deleting unverified users", {"days": 30}),
+    ("slack_weekly_report", "sending weekly Slack report"),
+]
+
 
 class Command(BaseCommand):
     help = "Runs commands scheduled to execute weekly"
@@ -13,23 +21,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info(f"Starting weekly scheduled tasks at {timezone.now()}")
 
-        # Send weekly bug report digest to organization followers
-        try:
-            management.call_command("send_weekly_bug_digest")
-            logger.info("Completed weekly bug digest emails")
-        except Exception:
-            logger.exception("Error sending weekly bug digest")
+        succeeded = 0
+        failed = 0
 
-        # Clean up old sample invite records (older than 7 days)
-        try:
-            management.call_command("cleanup_sample_invites", days=7)
-            logger.info("Completed sample invites cleanup")
-        except Exception:
-            logger.exception("Error cleaning up sample invites")
+        for entry in WEEKLY_COMMANDS:
+            command_name = entry[0]
+            description = entry[1]
+            kwargs = entry[2] if len(entry) > 2 else {}
 
-        # Send weekly Slack report
-        try:
-            management.call_command("slack_weekly_report")
-            logger.info("Completed weekly Slack report")
-        except Exception:
-            logger.exception("Error sending weekly Slack report")
+            try:
+                management.call_command(command_name, **kwargs)
+                logger.info(f"Completed {description}")
+                succeeded += 1
+            except Exception:
+                logger.exception(f"Error {description}")
+                failed += 1
+
+        logger.info(f"Weekly tasks complete: {succeeded} succeeded, {failed} failed")
