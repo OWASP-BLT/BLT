@@ -35,13 +35,16 @@ jobs:
             core.info('New commits pushed, checking for change requests');
 
             try {
-              // Get all reviews for the PR
-              const { data: reviews } = await github.rest.pulls.listReviews({
-                owner,
-                repo,
-                pull_number,
-                per_page: 100,
-              });
+              // Get all reviews for the PR (with pagination)
+              const reviews = await github.paginate(
+                github.rest.pulls.listReviews,
+                {
+                  owner,
+                  repo,
+                  pull_number,
+                  per_page: 100,
+                }
+              );
 
               const totalReviews = reviews.length;
               core.info(`Found ${totalReviews} total reviews`);
