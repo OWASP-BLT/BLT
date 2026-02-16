@@ -13,6 +13,11 @@ permissions:
   contents: read
   pull-requests: write
 
+# Prevent multiple workflow runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   dismiss_change_requests:
     runs-on: ubuntu-latest
