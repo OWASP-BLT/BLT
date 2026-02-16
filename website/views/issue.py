@@ -1941,8 +1941,8 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
             messages.error(request, "Hunt has ended")
             return redirect("index")
         else:
-            url = request.POST["url"]
-            description = request.POST["description"]
+            url = request.POST.get("url", "")
+            description = request.POST.get("description", "")
             if url == "" or description == "":
                 issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
@@ -1957,7 +1957,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )
                 return render(request, template, {"hunt": hunt, "issue_list": issue_list})
-            label = request.POST["label"]
+            label = request.POST.get("label", "")
             if request.POST.get("file"):
                 if isinstance(request.POST.get("file"), six.string_types):
                     import imghdr
