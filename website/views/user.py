@@ -115,6 +115,7 @@ def handle_user_signup(request, user, **kwargs):
             pass
 
 
+@login_required
 def update_bch_address(request):
     if request.method == "POST":
         selected_crypto = request.POST.get("selected_crypto")
@@ -140,8 +141,7 @@ def update_bch_address(request):
     else:
         messages.error(request, "Invalid request method.")
 
-        username = request.user.username if request.user.username else "default_username"
-        return redirect(reverse("profile", args=[username]))
+    return redirect(reverse("profile", args=[request.user.username]))
 
 
 @login_required
@@ -1167,6 +1167,7 @@ def follow_user(request, user):
 
 
 # get issue and comment id from url
+@login_required
 def monitor_create_view(request):
     if request.method == "POST":
         form = MonitorForm(request.POST)
