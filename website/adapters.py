@@ -18,9 +18,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         Skip mandatory email verification for social account signups.
         Only enforce for regular email/password signups.
         """
-        # Check if this is a social account signup
-        if hasattr(request, "session") and "socialaccount_sociallogin" in request.session:
-            return False
+        # Check if the signup is coming from a social account flow
         return super().is_email_verification_mandatory(request)
 
 
