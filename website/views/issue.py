@@ -2221,8 +2221,12 @@ def assign_issue_to_user(request, user, **kwargs):
             logger.exception("Failed to clear session keys in assign_issue_to_user")
         request.session.modified = True
 
-        issue = Issue.objects.get(id=issue_id)
-        domain = Domain.objects.get(id=domain_id)
+        try:
+            issue = Issue.objects.get(id=issue_id)
+            domain = Domain.objects.get(id=domain_id)
+        except (Issue.DoesNotExist, Domain.DoesNotExist):
+            logger.warning("Stale session data: issue %s or domain %s no longer exists", issue_id, domain_id)
+            return
 
         issue.user = user
         issue.save()
