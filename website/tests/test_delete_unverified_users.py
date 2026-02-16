@@ -26,9 +26,7 @@ class DeleteUnverifiedUsersCommandTest(TestCase):
         )
         self.old_verified.date_joined = old_date
         self.old_verified.save(update_fields=["date_joined"])
-        EmailAddress.objects.create(
-            user=self.old_verified, email="verified@example.com", verified=True, primary=True
-        )
+        EmailAddress.objects.create(user=self.old_verified, email="verified@example.com", verified=True, primary=True)
 
         # Recent unverified user (should NOT be deleted -- not past cutoff)
         self.recent_unverified = User.objects.create_user(
@@ -105,9 +103,7 @@ class DeleteUnverifiedUsersCommandTest(TestCase):
     def test_preserves_user_with_at_least_one_verified_email(self):
         """User with multiple emails where at least one is verified should be preserved."""
         old_date = timezone.now() - timedelta(days=60)
-        multi_email = User.objects.create_user(
-            username="multi_email", email="primary@example.com", password="testpass"
-        )
+        multi_email = User.objects.create_user(username="multi_email", email="primary@example.com", password="testpass")
         multi_email.date_joined = old_date
         multi_email.save(update_fields=["date_joined"])
         EmailAddress.objects.create(user=multi_email, email="primary@example.com", verified=False, primary=True)
