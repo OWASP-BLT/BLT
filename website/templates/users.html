@@ -33,26 +33,26 @@
         <!-- Filter Tags Section -->
         <div class="flex flex-wrap items-center justify-center gap-4 my-12 px-4 max-w-5xl mx-auto">
             <a href="?contributors=true"
-               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if show_contributors %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if show_contributors %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-100 border border-gray-200 dark:border-gray-700{% endif %}">
                 <i class="fas fa-users mr-2"></i>
                 <span>OWASP Contributors</span>
-                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if show_contributors %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
+                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if show_contributors %}bg-white/20 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300{% endif %}">
                     {{ contributors_count }}
                 </span>
             </a>
             <a href="?githubbers=true"
-               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if githubbers %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if githubbers %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-100 border border-gray-200 dark:border-gray-700{% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
-                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if githubbers %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
+                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if githubbers %}bg-white/20 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300{% endif %}">
                     {{ users_with_github_count }}
                 </span>
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
-                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if tag_obj.name == tag %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200{% endif %}">
+                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if tag_obj.name == tag %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:bg-gray-100 border border-gray-200 dark:border-gray-700{% endif %}">
                     <span>{{ tag_obj.name }}</span>
-                    <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if tag_obj.name == tag %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
+                    <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if tag_obj.name == tag %}bg-white/20 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300{% endif %}">
                         {{ tag_obj.user_count }}
                     </span>
                 </a>
@@ -62,13 +62,13 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 pb-12">
             {% if show_contributors %}
                 {% for contributor in contributors %}
-                    <div class="group bg-white dark:bg-gray-800 p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-800 hover:border-[#e74c3c]/20 h-[420px]">
+                    <div class="group bg-white dark:bg-gray-800 p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700 hover:border-[#e74c3c]/20 h-[420px]">
                         <img src="{{ contributor.avatar_url }}"
                              class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                              width="100px"
                              height="100px"
                              alt="{{ contributor.name }}'s avatar"
-                             onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                             onerror="this.src='{% static 'images/dummy-user.webp' %}'">
                         <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ contributor.name }}</div>
                         <div class="text-purple-600 text-lg">{{ contributor.contributor_type }}</div>
                         <p class="text-gray-600 dark:text-gray-400 text-center px-4">Contributions: {{ contributor.contributions }}</p>
@@ -90,14 +90,14 @@
                 {% endfor %}
             {% else %}
                 {% for user in users %}
-                    <div class="group bg-white dark:bg-gray-800 p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-800 hover:border-[#e74c3c]/20 h-[420px]">
+                    <div class="group bg-white dark:bg-gray-800 p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700 hover:border-[#e74c3c]/20 h-[420px]">
                         {% if user.user_avatar %}
                             <img src="{{ user.user_avatar.url }}"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                  width="100px"
                                  height="100px"
                                  alt="{{ user.user.username }}'s avatar"
-                                 onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                 onerror="this.src='{% static 'images/dummy-user.webp' %}'">
                         {% elif user.github_url %}
                             {% with github_username=user.github_url|cut:"https://github.com/"|cut:"/" %}
                                 <img src="https://github.com/{{ github_username }}.png"
@@ -105,10 +105,10 @@
                                      width="100px"
                                      height="100px"
                                      alt="{{ user.user.username }}'s avatar"
-                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                     onerror="this.src='{% static 'images/dummy-user.webp' %}'">
                             {% endwith %}
                         {% else %}
-                            <img src="{% static 'images/dummy-user.png' %}"
+                            <img src="{% static 'images/dummy-user.webp' %}"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                  width="100px"
                                  height="100px"

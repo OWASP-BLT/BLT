@@ -23,41 +23,93 @@
                     Discover our vision for the future of web security. Track our progress and upcoming features as we continue to evolve OWASP BLT.
                 </p>
             </div>
-            <!-- Milestone List Section -->
+            <!-- GitHub Projects Section -->
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 mb-10">
                 <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-8 flex items-center gap-3">
-                    <i class="fas fa-tasks text-[#e74c3c]"></i>
-                    Development Milestones {{ milestones|length }}
+                    <i class="fab fa-github text-[#e74c3c]"></i>
+                    Development Projects
+                    {% if projects %}
+                        <span class="text-lg font-normal text-gray-500 dark:text-gray-400">({{ projects|length }})</span>
+                    {% endif %}
                 </h2>
                 <div class="space-y-6">
-                    {% for milestone in milestones %}
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:-translate-y-1">
-                            <div class="flex flex-wrap items-center gap-4 mb-4">
-                                <div class="flex items-center gap-2">
-                                    <i class="{{ milestone.icon }} text-[#e74c3c]"></i>
-                                    <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ milestone.title }}</h3>
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    {% for tag in milestone.tags %}
-                                        <span class="px-3 py-1 bg-{{ tag.color }} text-white rounded-full text-sm font-semibold">{{ tag.label }}</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% if milestone.description %}
-                                <p class="text-gray-700 dark:text-gray-300 mb-4">{{ milestone.description }}</p>
-                            {% endif %}
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                    <i class="{{ milestone.progress_icon }} text-[#e74c3c]"></i>
-                                </div>
-                                <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                    <div class="h-full bg-[#e74c3c] rounded-full"
-                                         style="width: {{ milestone.progress }}"></div>
-                                </div>
-                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ milestone.progress }}</span>
-                            </div>
+                    <p class="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                        We track all our development milestones, features, and progress on GitHub Projects.
+                        This gives you real-time visibility into what we're working on and what's coming next.
+                    </p>
+                    {% if projects %}
+                        <!-- Projects List -->
+                        <div class="space-y-4 mt-8">
+                            {% for project in projects %}
+                                <a href="{{ project.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="block bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:-translate-y-1 hover:border-[#e74c3c]/50">
+                                    <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                                {{ project.title }}
+                                                <i class="fas fa-external-link-alt text-sm text-gray-400"></i>
+                                            </h3>
+                                            {% if project.description %}<p class="text-gray-700 dark:text-gray-300 mb-3">{{ project.description }}</p>{% endif %}
+                                            <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                                <span>
+                                                    <i class="fas fa-tasks text-[#e74c3c]"></i>
+                                                    {{ project.total_items }} item{{ project.total_items|pluralize }}
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-check-circle text-green-500"></i>
+                                                    {{ project.done_items }} done
+                                                </span>
+                                                <span>
+                                                    <i class="far fa-circle text-gray-400"></i>
+                                                    {{ project.open_items }} open
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-clock text-gray-400"></i>
+                                                    Updated {{ project.last_updated }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Progress Bar -->
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-[#e74c3c] rounded-full transition-all"
+                                                 style="width: {{ project.progress }}%"></div>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-800 dark:text-gray-200 min-w-[3rem] text-right">{{ project.progress }}%</span>
+                                    </div>
+                                </a>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
+                        <!-- View All Button -->
+                        <div class="flex justify-center mt-8">
+                            <a href="{{ github_projects_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all">
+                                <span>View All Projects on GitHub</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <!-- Fallback when projects can't be loaded -->
+                        <div class="text-center py-8">
+                            <p class="text-gray-700 dark:text-gray-300 mb-6">
+                                <i class="fas fa-info-circle text-[#e74c3c] mr-2"></i>
+                                Unable to load projects at this time. View them directly on GitHub.
+                            </p>
+                            <a href="{{ github_projects_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="group inline-flex items-center gap-3 px-8 py-4 bg-[#e74c3c] text-white text-lg font-semibold rounded-xl shadow-lg hover:bg-[#c0392b] transition-all transform hover:scale-105">
+                                <i class="fab fa-github text-2xl"></i>
+                                <span>View Our GitHub Projects</span>
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <!-- Community Input Section -->
@@ -68,16 +120,7 @@
                         Your voice matters in our development journey. Share your ideas and help us build the future of web security.
                     </p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <a href="{% url 'view_forum' %}" class="group">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:-translate-y-1">
-                            <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors">
-                                <i class="fas fa-comments text-2xl text-gray-400 dark:text-gray-500 group-hover:text-white"></i>
-                            </div>
-                            <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">Join Discussion</h3>
-                            <p class="text-gray-700 dark:text-gray-300">Share your thoughts in our community forum</p>
-                        </div>
-                    </a>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <a href="{% url 'github_issues' %}" class="group">
                         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md hover:-translate-y-1">
                             <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors">

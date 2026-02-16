@@ -2,16 +2,16 @@
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
-{% block title %}Home - Bug Logging Tool{% endblock %}
+{% block title %}Home - Gamified Crowd-Sourced QA Testing{% endblock %}
 {% block description %}
-    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Earn rewards through AI-powered testing tools.
 {% endblock %}
 {% block keywords %}
-    Bug Logging Tool, OWASP, security, bug reporting, rewards, open source, community, web security, contributions
+    QA Testing, Bug Logging Tool, OWASP, security, vulnerability disclosure, gamified testing, rewards, open source, community, AI tools, git repositories
 {% endblock %}
-{% block og_title %}Home - Bug Logging Tool{% endblock %}
+{% block og_title %}Home - Gamified Crowd-Sourced QA Testing{% endblock %}
 {% block og_description %}
-    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Earn rewards through AI-powered testing tools.
 {% endblock %}
 {% block content %}
     <!-- Include Sidebar -->
@@ -39,23 +39,23 @@
                         <ul class="text-sm">
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Memory Usage:</span>
-                                <span class="font-mono">{{ system_stats.memory_usage }}</span>
+                                <span class="font-mono" data-stat="memory">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>CPU Usage:</span>
-                                <span class="font-mono">{{ system_stats.cpu_percent }}</span>
+                                <span class="font-mono" data-stat="cpu">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Python Version:</span>
-                                <span class="font-mono text-xs">{{ system_stats.python_version|truncatechars:20 }}</span>
+                                <span class="font-mono text-xs" data-stat="python_version">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 border-b border-gray-700 dark:border-gray-200 dark:text-gray-400">
                                 <span>Django Version:</span>
-                                <span class="font-mono">{{ system_stats.django_version }}</span>
+                                <span class="font-mono" data-stat="django_version">Loading...</span>
                             </li>
                             <li class="flex justify-between py-1 dark:text-gray-400">
                                 <span>DB Connections:</span>
-                                <span class="font-mono">{{ system_stats.db_connections }}</span>
+                                <span class="font-mono" data-stat="db_connections">Loading...</span>
                             </li>
                         </ul>
                     </div>
@@ -119,10 +119,10 @@
                         <i class="fas fa-tachometer-alt mr-2"></i>
                         Check Performance
                     </button>
-                    <button id="sync-github-btn"
+                    <button id="management-commands-btn"
                             class="bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 px-4 rounded-lg flex items-center justify-center">
                         <i class="fab fa-github mr-2"></i>
-                        Sync GitHub Data
+                        Go to Management Commands
                     </button>
                 </div>
                 <!-- Status Messages -->
@@ -434,9 +434,9 @@
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}';">
+                                                         onerror="this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% else %}
-                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                    <img src="{% static 'images/dummy-user.webp' %}"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -561,11 +561,11 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'blt' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
@@ -590,15 +590,17 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'flutter' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
-                            <a href="#"
+                            <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
+                               target="_blank"
+                               rel="noopener noreferrer"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
                                 <i class="fab fa-apple mr-2"></i> Download App
                             </a>
@@ -619,15 +621,16 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'extension' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
-                            <a href="#"
+                            <a href="{% url 'extension' %}"
+                               target="_blank"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
                                 <i class="fab fa-chrome mr-2"></i> Install Extension
                             </a>
@@ -648,15 +651,15 @@
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Action"
                                target="_blank"
-                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                               class="inline-flex items-center text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
                                 {% for repo in repo_stars %}
                                     {% if repo.key == 'action' %}
-                                        <span class="ml-2 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                        <span class="ml-2 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
                                     {% endif %}
                                 {% endfor %}
                             </a>
-                            <a href="#"
+                            <a href="https://github.com/marketplace/actions/owasp-blt-action-auto-assign-issue-and-unassign-after-5-days"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
                                 <i class="fas fa-code-branch mr-2"></i> Use Latest
                             </a>
@@ -772,26 +775,39 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Recent Forum Posts -->
+                    <!-- Recent GitHub Discussions -->
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
                                 <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Recent Discussions</h3>
-                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_posts.count }} recent)</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-500">({{ recent_discussions|length }} recent)</span>
                             </div>
                             <div class="space-y-4">
-                                {% for post in recent_posts %}
+                                {% for discussion in recent_discussions %}
                                     <div class="flex flex-col gap-1">
-                                        <a href="{% url 'view_forum' %}?post={{ post.id }}"
-                                           class="text-sm hover:text-[#e74c3c] font-medium">{{ post.title }}</a>
+                                        <a href="{{ discussion.url }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="text-sm hover:text-[#e74c3c] font-medium">{{ discussion.title }}</a>
                                         <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
                                             <span class="flex items-center gap-1">
                                                 <i class="fas fa-user"></i>
-                                                {{ post.user|default:"Anonymous" }}
+                                                {% if discussion.author_url %}
+                                                    <a href="{{ discussion.author_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="hover:text-[#e74c3c]">{{ discussion.author }}</a>
+                                                {% else %}
+                                                    {{ discussion.author }}
+                                                {% endif %}
                                             </span>
                                             <span class="flex items-center gap-1">
                                                 <i class="fas fa-clock"></i>
-                                                {{ post.created|timesince }} ago
+                                                {{ discussion.created_at|timesince }} ago
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-comments"></i>
+                                                {{ discussion.comment_count }} comment{{ discussion.comment_count|pluralize }}
                                             </span>
                                         </div>
                                     </div>
@@ -800,9 +816,13 @@
                                 {% endfor %}
                             </div>
                             <div class="flex justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <a href="{% url 'view_forum' %}"
+                                <a href="https://github.com/OWASP-BLT/BLT/discussions"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
                                    class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
-                                <a href="{% url 'view_forum' %}"
+                                <a href="https://github.com/OWASP-BLT/BLT/discussions/new/choose"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
                                    class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium flex items-center">
                                     <i class="fas fa-plus mr-1"></i>
                                     New Discussion
@@ -1168,7 +1188,12 @@
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
-                                 class="max-w-full max-h-full">
+                                 class="block dark:hidden max-w-full max-h-full">
+                            <img src="{% static 'images/OWASP_white_logo.svg' %}"
+                                 alt="OWASP Logo"
+                                 width="128"
+                                 height="128"
+                                 class="hidden dark:block max-w-full max-h-full">
                         </a>
                         <p class="text-gray-700 dark:text-gray-300">
                             BLT is an official OWASP project, adhering to the highest standards of open-source security.
@@ -1182,7 +1207,12 @@
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
-                                 class="max-w-full max-h-full">
+                                 class="block dark:hidden max-w-full max-h-full">
+                            <img src="{% static 'images/sentry-white.png' %}"
+                                 alt="Sentry Logo"
+                                 width="128"
+                                 height="128"
+                                 class="hidden dark:block max-w-full max-h-full">
                         </a>
                         <p class="text-gray-700 dark:text-gray-300">
                             Sentry provides BLT with a free plan for error monitoring and performance tracking.
@@ -1192,7 +1222,7 @@
                     <div class="flex flex-col items-center text-center">
                         <a href="{% url 'organization_detail' slug='google' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/googlelogo_color_272x92dp.png' %}"
+                            <img src="{% static 'images/googlelogo_color_272x92dp.webp' %}"
                                  alt="Google Logo"
                                  width="272"
                                  height="92"
@@ -1249,6 +1279,12 @@
                     <a href="https://x.com/OWASP_BLT" target="_blank"><i class="fab fa-x-twitter fa-2x"></i></a>
                     <a href="https://github.com/OWASP-BLT" target="_blank"><i class="fab fa-github fa-2x"></i></a>
                 </div>
+                <!-- Email Support -->
+                <p class="mt-4 text-sm">
+                    Need help? Email us at
+                    <a href="mailto:blt-support@owasp.org"
+                       class="text-red-500 hover:underline">blt-support@owasp.org</a>
+                </p>
                 <p class="mt-4">© {{ current_year }} OWASP BLT. All rights reserved.</p>
                 <p>Last commit: {{ last_commit }}</p>
             </div>
@@ -1273,3 +1309,8 @@
     }
     </script>
 {% endblock content %}
+{% block extra_js %}
+    {% if debug_mode %}
+        <script src="{% static 'js/debug-panel.js' %}" defer></script>
+    {% endif %}
+{% endblock extra_js %}

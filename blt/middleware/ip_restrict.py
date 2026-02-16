@@ -35,14 +35,14 @@ class IPRestrictMiddleware:
         """
         Retrieve blocked IP addresses from cache or database.
         """
-        blocked_addresses = Blocked.objects.values_list("address", flat=True)
+        blocked_addresses = Blocked.objects.filter(address__isnull=False).values_list("address", flat=True)
         return set(self.get_cached_data("blocked_ips", blocked_addresses))
 
     def blocked_ip_network(self):
         """
         Retrieve blocked IP networks from cache or database.
         """
-        blocked_network = Blocked.objects.values_list("ip_network", flat=True)
+        blocked_network = Blocked.objects.filter(ip_network__isnull=False).values_list("ip_network", flat=True)
         blocked_ip_network = []
 
         for range_str in self.get_cached_data("blocked_ip_network", blocked_network):
@@ -59,9 +59,9 @@ class IPRestrictMiddleware:
         """
         Retrieve blocked user agents from cache or database.
         """
-        blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
-        # Filter out None values
-        blocked_user_agents = [agent for agent in blocked_user_agents if agent is not None]
+        blocked_user_agents = Blocked.objects.filter(user_agent_string__isnull=False).values_list(
+            "user_agent_string", flat=True
+        )
         return set(self.get_cached_data("blocked_agents", blocked_user_agents))
 
     def ip_in_ips(self, ip, blocked_ips):
@@ -86,14 +86,16 @@ class IPRestrictMiddleware:
         """
         Check if the user agent is in the list of blocked user agents by checking if the
         full user agent string contains any of the blocked substrings.
+        Returns the matching blocked pattern if found, None otherwise.
         """
         if not user_agent or not blocked_agents:
-            return False
+            return None
 
         user_agent_str = str(user_agent).strip().lower()
-        return any(
-            blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents if blocked_agent is not None
-        )
+        for blocked_agent in blocked_agents:
+            if blocked_agent.lower() in user_agent_str:
+                return blocked_agent  # Return the specific matching pattern
+        return None
 
     async def increment_block_count_async(self, ip=None, network=None, user_agent=None):
         """
@@ -118,16 +120,8 @@ class IPRestrictMiddleware:
                 elif network:
                     Blocked.objects.filter(ip_network=network).update(count=models.F("count") + 1)
                 elif user_agent:
-                    # Find matching user agents and update them
-                    matching_agents = [
-                        agent
-                        for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                        if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
-                    ]
-                    if matching_agents:
-                        Blocked.objects.filter(user_agent_string__in=matching_agents).update(
-                            count=models.F("count") + 1
-                        )
+                    # user_agent is now the specific blocked pattern, not the full incoming string
+                    Blocked.objects.filter(user_agent_string=user_agent).update(count=models.F("count") + 1)
         except Exception as e:
             logger.error(f"Error incrementing block count: {str(e)}", exc_info=True)
 
@@ -172,6 +166,9 @@ class IPRestrictMiddleware:
                     duplicate_ids = list(duplicates.values_list("id", flat=True))
                     IP.objects.filter(id__in=duplicate_ids).delete()
 
+        except transaction.TransactionManagementError as e:
+            # Failed to record IP due to transaction management error
+            logger.warning(f"Failed to record IP {ip} - transaction management error: {str(e)}")
         except Exception as e:
             # Log the error but don't let it break the request
             logger.error(f"Error recording IP {ip}: {str(e)}", exc_info=True)
@@ -207,8 +204,9 @@ class IPRestrictMiddleware:
             return HttpResponseForbidden()
 
         # Check if user agent is blocked
-        if await sync_to_async(self.is_user_agent_blocked)(agent, blocked_agents):
-            await self.increment_block_count_async(user_agent=agent)
+        matching_pattern = await sync_to_async(self.is_user_agent_blocked)(agent, blocked_agents)
+        if matching_pattern:
+            await self.increment_block_count_async(user_agent=matching_pattern)
             return HttpResponseForbidden()
 
         # Record IP information
@@ -246,8 +244,9 @@ class IPRestrictMiddleware:
             return HttpResponseForbidden()
 
         # Check if user agent is blocked
-        if self.is_user_agent_blocked(agent, blocked_agents):
-            self.increment_block_count(user_agent=agent)
+        matching_pattern = self.is_user_agent_blocked(agent, blocked_agents)
+        if matching_pattern:
+            self.increment_block_count(user_agent=matching_pattern)
             return HttpResponseForbidden()
 
         # Record IP information

@@ -21,7 +21,6 @@ from website.models import (
     BaconSubmission,
     BaconToken,
     Badge,
-    BannedApp,
     Bid,
     Blocked,
     Challenge,
@@ -34,10 +33,6 @@ from website.models import (
     DailyStatusReport,
     Domain,
     Enrollment,
-    ForumCategory,
-    ForumComment,
-    ForumPost,
-    ForumVote,
     GitHubIssue,
     GitHubReview,
     Hackathon,
@@ -532,42 +527,6 @@ class ChatBotLogAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "answer", "created")
 
 
-class ForumPostAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "user",
-        "title",
-        "description",
-        "up_votes",
-        "down_votes",
-        "status",
-        "created",
-        "repo",
-        "project",
-        "organization",
-    )
-    list_filter = ("status", "category", "repo", "project", "organization")
-    search_fields = ("title", "description", "user__username")
-    autocomplete_fields = ["repo", "project", "organization"]
-
-
-class ForumVoteAdmin(admin.ModelAdmin):
-    list_display = ("user", "post", "up_vote", "down_vote", "created")
-    list_filter = ("up_vote", "down_vote")
-    search_fields = ("user__username", "post__title")
-
-
-class ForumCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "description", "created")
-    search_fields = ("name", "description")
-
-
-class ForumCommentAdmin(admin.ModelAdmin):
-    list_display = ("user", "post", "content", "created", "last_modified")
-    list_filter = ("created", "last_modified")
-    search_fields = ("content", "user__username", "post__title")
-
-
 class BlockedAdmin(admin.ModelAdmin):
     list_display = (
         "address",
@@ -732,6 +691,78 @@ class ThreadAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+def backfill_slack_usernames(modeladmin, request, queryset):
+    """
+    Admin action to backfill username field for SlackBotActivity records.
+    Fetches usernames from Slack API for records that have user_id but no username.
+    """
+    import logging
+    import os
+
+    from slack_sdk.web import WebClient
+
+    logger = logging.getLogger(__name__)
+
+    # Import here to avoid circular imports
+    from website.views.slack_handlers import get_slack_username
+
+    # Filter to only records that have user_id but no username
+    records_to_update = queryset.filter(user_id__isnull=False).exclude(user_id="").filter(username__isnull=True)
+
+    if not records_to_update.exists():
+        modeladmin.message_user(request, "No records found with user_id but missing username.")
+        return
+
+    updated_count = 0
+    failed_count = 0
+    skipped_count = 0
+
+    # Get Slack tokens
+    SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+
+    for activity in records_to_update:
+        workspace_client = None
+
+        try:
+            # Try to get workspace-specific client
+            slack_integration = SlackIntegration.objects.get(workspace_name=activity.workspace_id)
+            workspace_client = WebClient(token=slack_integration.bot_access_token)
+        except SlackIntegration.DoesNotExist:
+            # Use default OWASP token for OWASP workspace
+            if activity.workspace_id == "T04T40NHX" and SLACK_TOKEN:
+                workspace_client = WebClient(token=SLACK_TOKEN)
+            else:
+                logger.warning(
+                    f"No Slack integration found for workspace {activity.workspace_id} "
+                    f"and not OWASP workspace. Skipping activity {activity.id}"
+                )
+                skipped_count += 1
+                continue
+
+        if workspace_client:
+            try:
+                username = get_slack_username(workspace_client, activity.user_id)
+                if username:
+                    activity.username = username
+                    activity.save(update_fields=["username"])
+                    updated_count += 1
+                else:
+                    logger.warning(f"Could not fetch username for user_id {activity.user_id} in activity {activity.id}")
+                    failed_count += 1
+            except Exception as e:
+                logger.error(
+                    f"Error fetching username for activity {activity.id}, user_id {activity.user_id}: {str(e)}",
+                    exc_info=True,
+                )
+                failed_count += 1
+
+    message = f"Backfill complete: {updated_count} updated, {failed_count} failed, {skipped_count} skipped."
+    modeladmin.message_user(request, message)
+
+
+backfill_slack_usernames.short_description = "Backfill username from Slack API"
+
+
 class SlackBotActivityAdmin(admin.ModelAdmin):
     list_display = (
         "workspace_name",
@@ -745,6 +776,7 @@ class SlackBotActivityAdmin(admin.ModelAdmin):
     search_fields = ("workspace_name", "user_id", "username", "error_message")
     readonly_fields = ("created",)
     ordering = ("-created",)
+    actions = [backfill_slack_usernames]
 
 
 class RoomAdmin(admin.ModelAdmin):
@@ -890,10 +922,6 @@ admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
-admin.site.register(ForumPost, ForumPostAdmin)
-admin.site.register(ForumVote, ForumVoteAdmin)
-admin.site.register(ForumCategory, ForumCategoryAdmin)
-admin.site.register(ForumComment, ForumCommentAdmin)
 admin.site.register(TimeLog, TimeLogAdmin)
 admin.site.register(Contribution, ContributionAdmin)
 admin.site.register(InviteFriend)
@@ -1098,21 +1126,6 @@ admin.site.register(StakingPool, StakingPoolAdmin)
 admin.site.register(StakingTransaction, StakingTransactionAdmin)
 admin.site.register(Thread, ThreadAdmin)
 admin.site.register(UserBadge, UserBadgeAdmin)
-
-
-@admin.register(BannedApp)
-class BannedAppAdmin(admin.ModelAdmin):
-    list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
-    list_filter = ("app_type", "is_active", "ban_date")
-    search_fields = ("country_name", "country_code", "app_name", "ban_reason")
-    date_hierarchy = "ban_date"
-    ordering = ("country_name", "app_name")
-
-    fieldsets = (
-        ("App Information", {"fields": ("app_name", "app_type")}),
-        ("Country Information", {"fields": ("country_name", "country_code")}),
-        ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
-    )
 
 
 class AdventureTaskInline(admin.TabularInline):
