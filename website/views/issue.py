@@ -647,6 +647,7 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
+@login_required
 def change_bid_status(request):
     if request.method == "POST":
         try:
@@ -658,6 +659,8 @@ def change_bid_status(request):
             return JsonResponse({"success": True})
         except Bid.DoesNotExist:
             return JsonResponse({"success": False, "error": "Bid not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
     return HttpResponse(status=405)
 
 

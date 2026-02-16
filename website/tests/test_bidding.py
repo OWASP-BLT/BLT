@@ -179,17 +179,14 @@ class ChangeBidStatusTests(TestCase):
             status="Open",
         )
 
-    def test_unauthenticated_post_succeeds(self):
-        """Unauthenticated POST to change_bid_status currently returns 200.
-
-        Note: change_bid_status does not have @login_required yet.
-        """
+    def test_unauthenticated_post_redirects(self):
+        """Unauthenticated POST to change_bid_status should redirect to login."""
         response = self.client.post(
             reverse("change_bid_status"),
             json.dumps({"id": self.bid.id}),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_authenticated_changes_status(self):
         """Authenticated POST should change bid status to Selected."""
