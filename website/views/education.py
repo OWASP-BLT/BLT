@@ -277,6 +277,7 @@ def delete_section(request, section_id):
 
 
 # Lecture CRUD operations
+@login_required(login_url="/accounts/login")
 @require_POST
 def add_lecture(request, section_id):
     """Add a new lecture to a section, else standalone"""
@@ -514,6 +515,7 @@ def get_course_content(request, course_id):
         )
 
 
+@login_required(login_url="/accounts/login")
 @require_POST
 def create_or_update_course(request):
     try:
