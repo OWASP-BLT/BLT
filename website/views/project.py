@@ -37,13 +37,10 @@ from django_filters.views import FilterView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
-from website.bitcoin_utils import create_bacon_token
 from website.filters import ProjectRepoFilter
 from website.models import (
     IP,
-    BaconToken,
     Challenge,
-    Contribution,
     Contributor,
     ContributorStats,
     GitHubIssue,
@@ -52,7 +49,7 @@ from website.models import (
     Repo,
     UserProfile,
 )
-from website.utils import admin_required
+
 
 logger = logging.getLogger(__name__)
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -108,30 +105,6 @@ def blt_tomato(request):
     processed_projects.sort(key=lambda x: x["proposal_url"] is None)
 
     return render(request, "blt_tomato.html", {"projects": processed_projects})
-
-
-@user_passes_test(admin_required)
-def select_contribution(request):
-    contributions = Contribution.objects.filter(status="closed").exclude(
-        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
-    )
-    return render(request, "select_contribution.html", {"contributions": contributions})
-
-
-@user_passes_test(admin_required)
-def distribute_bacon(request, contribution_id):
-    contribution = get_object_or_404(Contribution, id=contribution_id)
-    if contribution.status == "closed" and not BaconToken.objects.filter(contribution=contribution).exists():
-        token = create_bacon_token(contribution.user, contribution)
-        if token:
-            messages.success(request, "Bacon distributed successfully")
-            return redirect("contribution_detail", contribution_id=contribution.id)
-        else:
-            messages.error(request, "Failed to distribute bacon")
-    contributions = Contribution.objects.filter(status="closed").exclude(
-        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
-    )
-    return render(request, "select_contribution.html", {"contributions": contributions})
 
 
 class ProjectBadgeView(APIView):

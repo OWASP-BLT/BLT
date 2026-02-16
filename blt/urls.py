@@ -53,16 +53,7 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-from website.views.bitcoin import (
-    BaconSubmissionView,
-    bacon_requests_view,
-    bacon_view,
-    batch_send_bacon_tokens_view,
-    get_wallet_balance,
-    initiate_transaction,
-    pending_transactions_view,
-    update_submission_status,
-)
+
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
@@ -293,10 +284,8 @@ from website.views.project import (
     blt_tomato,
     create_project,
     delete_project,
-    distribute_bacon,
     gsoc_pr_report,
     repo_activity_data,
-    select_contribution,
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
@@ -344,7 +333,6 @@ from website.views.user import (
     contributor_stats_view,
     contributors,
     contributors_view,
-    create_wallet,
     delete_notification,
     delete_thread,
     deletions,
@@ -362,7 +350,6 @@ from website.views.user import (
     set_public_key,
     start_thread,
     toggle_follow,
-    update_bch_address,
     user_dashboard,
     users_view,
     view_thread,
@@ -699,7 +686,6 @@ urlpatterns = [
         deletions,
         name="deletions",
     ),
-    re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^education/$", education_home, name="education"),
     path("education/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("education/create-standalone-lecture/", create_standalone_lecture, name="create_standalone_lecture"),
@@ -790,7 +776,6 @@ urlpatterns = [
         name="api_organization_job_stats",
     ),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
-    re_path(r"^api/v1/createwallet/$", create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
@@ -846,12 +831,6 @@ urlpatterns = [
         r"^contribute/$",
         ContributeView.as_view(),
         name="contribution_guidelines",
-    ),
-    path("select_contribution/", select_contribution, name="select_contribution"),
-    path(
-        "distribute_bacon/<int:contribution_id>/",
-        distribute_bacon,
-        name="distribute_bacon",
     ),
     path("activity/like/<int:id>/", like_activity, name="like_activity"),
     path("activity/dislike/<int:id>/", dislike_activity, name="dislike_activity"),
@@ -1024,11 +1003,6 @@ urlpatterns = [
         trademark_detailview,
         name="trademark_detailview",
     ),
-    path(
-        "update_bch_address/",
-        update_bch_address,
-        name="update_bch_address",
-    ),
     # path(
     #     "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
     # ),
@@ -1107,12 +1081,6 @@ urlpatterns = [
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
     path("video_call/", video_call, name="video_call"),
-    path(
-        "batch-send-bacon-tokens/",
-        batch_send_bacon_tokens_view,
-        name="batch_send_bacon_tokens",
-    ),
-    path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("open-source-sorting-hat/", ossh_home, name="ossh_home"),
     path("open-source-sorting-hat/results", ossh_results, name="ossh_results"),
     path("get-github-data/", get_github_data, name="get_github_data"),
@@ -1145,11 +1113,6 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
-    path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
-    path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
-    path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
-    path("initiate-transaction/", initiate_transaction, name="initiate_transaction"),
-    path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
     # Hackathon URLs

@@ -60,7 +60,6 @@ from website.models import (
     User,
     UserBadge,
     UserProfile,
-    Wallet,
 )
 
 logger = logging.getLogger(__name__)
@@ -115,33 +114,6 @@ def handle_user_signup(request, user, **kwargs):
             pass
 
 
-def update_bch_address(request):
-    if request.method == "POST":
-        selected_crypto = request.POST.get("selected_crypto")
-        new_address = request.POST.get("new_address")
-        if selected_crypto and new_address:
-            try:
-                user_profile = request.user.userprofile
-                if selected_crypto == "Bitcoin":
-                    user_profile.btc_address = new_address
-                elif selected_crypto == "Ethereum":
-                    user_profile.eth_address = new_address
-                elif selected_crypto == "BitcoinCash":
-                    user_profile.bch_address = new_address
-                else:
-                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
-                    return redirect(reverse("profile", args=[request.user.username]))
-                user_profile.save()
-                messages.success(request, f"{selected_crypto} Address updated successfully.")
-            except Exception as e:
-                messages.error(request, f"Failed to update {selected_crypto} Address.")
-        else:
-            messages.error(request, f"Please provide a valid {selected_crypto} Address.")
-    else:
-        messages.error(request, "Invalid request method.")
-
-        username = request.user.username if request.user.username else "default_username"
-        return redirect(reverse("profile", args=[username]))
 
 
 @login_required
@@ -445,8 +417,6 @@ class UserProfileDetailView(DetailView):
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = timezone.now().month
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
         six_months_ago = timezone.now() - relativedelta(months=6)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
@@ -588,9 +558,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
-
         context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
         # Pull Request Leaderboard - Use Contributor model
@@ -683,9 +650,6 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
-
         year = self.request.GET.get("year")
 
         if not year:
@@ -733,9 +697,6 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.filter(user=self.request.user).first()
 
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
@@ -1087,16 +1048,6 @@ def contributor_stats_view(request):
 
     return render(request, "weekly_activity.html", context)
 
-
-@login_required
-def create_wallet(request):
-    if not request.user.is_staff:
-        return JsonResponse({"error": "Unauthorized"}, status=403)
-    existing_wallet_user_ids = Wallet.objects.values_list("user_id", flat=True)
-    users_without_wallets = User.objects.exclude(id__in=existing_wallet_user_ids)
-    wallets_to_create = [Wallet(user=user) for user in users_without_wallets]
-    Wallet.objects.bulk_create(wallets_to_create)
-    return JsonResponse(f"Created {len(wallets_to_create)} wallets", safe=False)
 
 
 def create_tokens(request):

@@ -17,9 +17,6 @@ from website.models import (
     ActivityLog,
     Adventure,
     AdventureTask,
-    BaconEarning,
-    BaconSubmission,
-    BaconToken,
     Badge,
     Bid,
     Blocked,
@@ -91,7 +88,6 @@ from website.models import (
     UserProfile,
     UserTaskProgress,
     UserTaskSubmission,
-    Wallet,
     Winner,
 )
 
@@ -119,11 +115,6 @@ class OrganizationAdminResource(resources.ModelResource):
 class OrganizationResource(resources.ModelResource):
     class Meta:
         model = Organization
-
-
-class WalletResource(resources.ModelResource):
-    class Meta:
-        model = Wallet
 
 
 class WinnerResource(resources.ModelResource):
@@ -158,10 +149,6 @@ class BidAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
-
-
-class WalletAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "current_balance", "created")
 
 
 class JoinRequestAdmin(admin.ModelAdmin):
@@ -915,7 +902,6 @@ admin.site.register(OrganizationAdmin, OrganizationUserAdmin)
 admin.site.register(Organization, OrganizationAdmins)
 admin.site.register(Job, JobAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
-admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
@@ -959,35 +945,6 @@ class ActivityLogAdmin(admin.ModelAdmin):
     list_filter = ("recorded_at", "created")
     search_fields = ("user__username", "window_title", "url")
     date_hierarchy = "recorded_at"
-
-
-class BaconEarningAdmin(admin.ModelAdmin):
-    list_display = ("user", "tokens_earned", "timestamp")
-    list_filter = ("timestamp",)
-    search_fields = ("user__username",)
-    date_hierarchy = "timestamp"
-
-
-class BaconSubmissionAdmin(admin.ModelAdmin):
-    list_display = (
-        "user",
-        "github_url",
-        "contribution_type",
-        "status",
-        "transaction_status",
-        "bacon_amount",
-        "created_at",
-    )
-    list_filter = ("status", "transaction_status", "contribution_type", "created_at")
-    search_fields = ("user__username", "github_url", "description")
-    date_hierarchy = "created_at"
-
-
-class BaconTokenAdmin(admin.ModelAdmin):
-    list_display = ("user", "amount", "contribution", "token_id", "created")
-    list_filter = ("created",)
-    search_fields = ("user__username", "token_id")
-    date_hierarchy = "created"
 
 
 class BadgeAdmin(admin.ModelAdmin):
@@ -1106,9 +1063,6 @@ class UserBadgeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ActivityLog, ActivityLogAdmin)
-admin.site.register(BaconEarning, BaconEarningAdmin)
-admin.site.register(BaconSubmission, BaconSubmissionAdmin)
-admin.site.register(BaconToken, BaconTokenAdmin)
 admin.site.register(Badge, BadgeAdmin)
 admin.site.register(Challenge, ChallengeAdmin)
 admin.site.register(DailyStatusReport, DailyStatusReportAdmin)
