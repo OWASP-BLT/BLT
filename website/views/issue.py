@@ -2055,6 +2055,7 @@ def delete_content_comment(request):
     return render(request, "comments2.html", context)
 
 
+@login_required(login_url="/accounts/login")
 def update_content_comment(request, content_pk, comment_pk):
     # Get content_type from POST for POST requests or GET for GET requests
     content_type = request.POST.get("content_type") if request.method == "POST" else request.GET.get("content_type")
@@ -2075,9 +2076,11 @@ def update_content_comment(request, content_pk, comment_pk):
     except Exception:
         raise Http404("Content does not exist")
 
-    comment = Comment.objects.filter(pk=comment_pk).first()
+    comment = get_object_or_404(Comment, pk=comment_pk)
 
-    if request.method == "POST" and isinstance(request.user, User):
+    if request.method == "POST":
+        if request.user.username != comment.author:
+            return HttpResponse("You can only edit your own comments", status=403)
         comment.text = escape(request.POST.get("comment", ""))
         comment.save()
 
