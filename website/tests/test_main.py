@@ -6,7 +6,7 @@ import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
-from django.test import Client, LiveServerTestCase, TestCase
+from django.test import Client, LiveServerTestCase, TestCase, tag
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -34,9 +34,8 @@ from ..models import (
     UserProfile,
 )
 
-os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
-
+@tag("selenium", "slow")
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
@@ -71,7 +70,6 @@ class MySeleniumTests(LiveServerTestCase):
         cls.selenium.quit()
         super(MySeleniumTests, cls).tearDownClass()
 
-    @override_settings(DEBUG=True)
     def test_signup(self):
         base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
         self.selenium.get(base_url)
@@ -131,7 +129,6 @@ class MySeleniumTests(LiveServerTestCase):
         # Test passes if we can create and verify the user
         self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
 
-    @override_settings(DEBUG=True)
     def test_login(self):
         # Email verification is now handled in setUp
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
@@ -144,7 +141,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertIn("@bugbug", body.text)
         self.assertIn("0 Points", body.text)
 
-    @override_settings(DEBUG=True, IS_TEST=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_full_url(self):
         self.selenium.set_page_load_timeout(70)
 
@@ -184,7 +181,7 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element(By.TAG_NAME, "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    @override_settings(DEBUG=True, IS_TEST=True)
+    @override_settings(IS_TEST=True)
     def test_post_bug_domain_url(self):
         self.selenium.set_page_load_timeout(70)
 
@@ -274,11 +271,12 @@ class MySeleniumTests(LiveServerTestCase):
 class HideImage(TestCase):
     def setUp(self):
         test_issue = Issue.objects.create(description="test", url="test.com")
-        test_issue.screenshot = SimpleUploadedFile(
-            name="test_image.jpg",
-            content=open("website/static/images/dummy-user.png", "rb").read(),
-            content_type="image/png",
-        )
+        with open("website/static/images/dummy-user.webp", "rb") as f:
+            test_issue.screenshot = SimpleUploadedFile(
+                name="test_image.webp",
+                content=f.read(),
+                content_type="image/webp",
+            )
         test_issue.save()
 
     def test_on_hide(self):
@@ -454,6 +452,106 @@ class LeaderboardTests(TestCase):
 
         # Check code review leaderboard
         self.assertContains(response, "Reviews: 1")  # Each user has 1 review
+
+    def test_monthly_leaderboard_excludes_bots(self):
+        """Test that bots are excluded from monthly leaderboard"""
+
+        # Create bot users with typical bot naming patterns
+        bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
+        bot2 = User.objects.create_user(username="github-actions[bot]", password="password")
+        bot3 = User.objects.create_user(username="renovate-bot", password="password")
+
+        # Create points for bot users in current month
+        current_month = timezone.now().month
+        current_year = timezone.now().year
+        Points.objects.create(user=bot1, score=100)
+        Points.objects.create(user=bot2, score=200)
+        Points.objects.create(user=bot3, score=150)
+
+        # Get the monthly leaderboard URL
+        response = self.client.get(f"/leaderboard/monthly/?month={current_month}&year={current_year}")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot usernames are NOT in the leaderboard
+        self.assertNotContains(response, "dependabot[bot]")
+        self.assertNotContains(response, "github-actions[bot]")
+        self.assertNotContains(response, "renovate-bot")
+
+        # Check that regular users are still in the leaderboard
+        self.assertContains(response, "user1")
+        self.assertContains(response, "user2")
+
+    def test_yearly_leaderboard_excludes_bots(self):
+        """Test that bots are excluded from yearly leaderboard (each month view)"""
+
+        # Create bot users
+        bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
+        bot2 = User.objects.create_user(username="copilot-bot", password="password")
+
+        # Create points for bot users in current year
+        current_year = timezone.now().year
+        Points.objects.create(user=bot1, score=500)
+        Points.objects.create(user=bot2, score=600)
+
+        # Get the yearly leaderboard URL
+        response = self.client.get(f"/leaderboard/each-month/?year={current_year}")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot usernames are NOT in the leaderboard
+        self.assertNotContains(response, "dependabot[bot]")
+        self.assertNotContains(response, "copilot-bot")
+
+        # Check that regular users can still appear
+        self.assertContains(response, "user1")
+
+    def test_global_leaderboard_excludes_bot_reviewers(self):
+        """Test that bot accounts are excluded from code review leaderboard"""
+        # Create bot contributors
+        bot_reviewer = Contributor.objects.create(
+            name="github-actions[bot]",
+            github_id=9999,
+            github_url="https://github.com/apps/github-actions",
+            avatar_url="https://avatars.githubusercontent.com/in/15368",
+            contributor_type="Bot",
+            contributions=1,
+        )
+
+        # Create a PR for the bot to review
+        pr_for_bot = GitHubIssue.objects.create(
+            user_profile=self.profile1,
+            contributor=self.contributor1,
+            repo=self.repo,
+            type="pull_request",
+            is_merged=True,
+            merged_at=timezone.now(),
+            title="Test PR for bot review",
+            state="closed",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/OWASP-BLT/BLT/pull/999",
+            issue_id=999,
+        )
+
+        # Create a review from the bot
+        bot_review = GitHubReview.objects.create(
+            reviewer_contributor=bot_reviewer,
+            state="APPROVED",
+            submitted_at=timezone.now(),
+            pull_request=pr_for_bot,
+            review_id=9999,
+            url="https://github.com/OWASP-BLT/BLT/pull/999/reviews/9999",
+        )
+
+        # Get the global leaderboard
+        response = self.client.get("/leaderboard/")
+        self.assertEqual(response.status_code, 200)
+
+        # Check that bot reviewer is NOT in the code review leaderboard
+        self.assertNotContains(response, "github-actions[bot]")
+
+        # Check that regular reviewers are still present
+        self.assertContains(response, "user1")
+        self.assertContains(response, "user2")
 
 
 class ProjectPageTest(TestCase):

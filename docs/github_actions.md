@@ -17,9 +17,9 @@ This document provides a comprehensive overview of all GitHub Actions workflows 
 
 ## Overview
 
-The OWASP BLT repository uses **27 GitHub Actions workflows** to automate nearly every aspect of the development lifecycle. These workflows help maintain high code quality, manage contributions from a global community, and ensure security best practices are followed.
+The OWASP BLT repository uses **29 GitHub Actions workflows** to automate nearly every aspect of the development lifecycle. These workflows help maintain high code quality, manage contributions from a global community, and ensure security best practices are followed.
 
-**Total Workflows**: 27
+**Total Workflows**: 29
 
 ## Why GitHub Actions Matter in the Age of AI
 
@@ -185,7 +185,7 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Makes it easy to see which PRs need author attention vs. maintainer review.
 
 #### 2.4 Add Migrations Label (`add-migrations-label.yml`)
-**Purpose**: Flag PRs containing database migrations
+**Purpose**: Flag PRs containing database migrations and validate migration sequence
 
 **Triggers**:
 - Pull request opened, synchronized, or reopened
@@ -194,8 +194,22 @@ These workflows add intelligent metadata and checks to pull requests.
 - Detects migration files in `website/migrations/` or `comments/migrations/`
 - Adds `migrations` label (yellow) for visibility
 - Removes label if migrations are removed from PR
+- **Validates migration numbers are sequential**:
+  - Extracts migration numbers from PR files (e.g., `0252` from `0252_description.py`)
+  - Fetches existing migrations from base branch via GitHub API
+  - Detects conflicts when PR migration numbers ≤ highest existing migration number
+  - Posts detailed comment with fix instructions when conflicts are found
+  - Fails the workflow check to prevent merge until resolved
+  - Auto-removes conflict comment when migrations are regenerated correctly
 
-**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files.
+**Migration Conflict Detection**:
+When a PR contains migrations with numbers that overlap existing migrations (e.g., PR has `0252_*.py` but base branch already has migrations up to `0263_*.py`), the workflow will:
+1. Post a comment explaining the conflict
+2. Provide step-by-step fix instructions (delete migrations, rebase, regenerate)
+3. Fail the workflow check to prevent accidental merge
+4. Automatically remove the warning when the issue is fixed
+
+**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files. Also prevents migration conflicts that can occur when AI generates migrations on stale branches, which could break the database migration sequence.
 
 #### 2.5 Check PR Conflicts (`check-pr-conflicts.yml`)
 **Purpose**: Detect and notify about merge conflicts
@@ -313,7 +327,23 @@ Workflows that build, test, and validate the application.
 
 **AI Relevance**: Migrations are complex. This workflow ensures they're correctly generated even if AI-assisted changes conflict with existing migrations.
 
-#### 3.3 CodeQL Security Analysis (`codeql.yml`)
+#### 3.3 Fix Poetry Lock (`fix-poetry-lock.yml`)
+**Purpose**: Automatically fix poetry.lock conflicts in PRs
+
+**Triggers**:
+- When `fix-poetry-lock` label is added
+- Manual workflow dispatch
+
+**Key Features**:
+- Runs `poetry lock --no-update` to resolve lock file conflicts
+- Does not update dependencies to newer versions
+- Commits updated poetry.lock back to PR branch
+- Comments on PR with status update
+- Automatically removes trigger label after execution
+
+**AI Relevance**: When multiple contributors (or AI tools) modify dependencies, poetry.lock conflicts are common. This workflow resolves them automatically without manual intervention.
+
+#### 3.4 CodeQL Security Analysis (`codeql.yml`)
 **Purpose**: Advanced security scanning for vulnerabilities
 
 **Triggers**:
@@ -378,6 +408,47 @@ Workflows that handle issue lifecycle and assignment.
 **Note**: This is temporary during high-backlog periods. It prevents issue overload while the team focuses on existing work.
 
 **AI Relevance**: Manages contribution flow—important when AI tools make it easy to create many issues quickly.
+
+#### 5.3 Add Last Active Label (`add-last-active-label.yml`)
+**Purpose**: Automatically label issues and PRs based on days since last human activity
+
+**Triggers**:
+- Daily schedule (midnight UTC)
+- Manual dispatch for testing
+
+**Key Features**:
+- Adds `last-active: Xd` labels to all open issues and PRs
+- Based on last **comment** timestamp (or creation date if no comments) to track real human activity
+- Ignores non-human updates like label changes to prevent false activity detection
+- Automatically removes outdated last-active labels before adding new ones
+- Creates labels with color-coded severity:
+  - 0-2 days: Green (fresh)
+  - 3-7 days: Yellow (getting old)
+  - 8-14 days: Orange (needs attention)
+  - 15+ days: Red (stale)
+- Processes both issues and pull requests
+- Runs daily to keep labels current
+
+**AI Relevance**: Helps prioritize review and maintenance efforts by surfacing items that need attention, critical for managing high-volume AI-assisted contributions.
+
+#### 5.4 Remove Last Active Label on Update (`remove-last-active-label-on-update.yml`)
+**Purpose**: Remove last-active labels when an issue or PR receives activity
+
+**Triggers**:
+- Pull request events (opened, synchronized, reopened, ready_for_review, edited)
+- Issue events (opened, reopened, edited)
+- Comment events (created, edited, deleted)
+- Review events (submitted, edited, dismissed)
+- Review comment events (created, edited, deleted)
+
+**Key Features**:
+- Automatically removes `last-active: Xd` labels when activity occurs
+- Works for both issues and pull requests
+- The scheduled `add-last-active-label.yml` workflow will re-add the correct label on its next run
+- Ensures labels accurately reflect current activity status
+- Uses GitHub API only (no code checkout for security)
+
+**AI Relevance**: Maintains accurate activity tracking as AI tools and developers interact with issues and PRs, ensuring the most active items are properly identified.
 
 ---
 
@@ -470,13 +541,21 @@ Workflows that keep the repository healthy and up-to-date.
 - Manual dispatch
 
 **Key Features**:
-- Checks all open PRs for unresolved conversations
+- Checks all open PRs for unresolved conversations using GraphQL API
+- **Proper pagination support**: Fetches all review threads across multiple pages (100 per page)
 - Only reminds if PR hasn't been updated in 24 hours
-- Skips bot-created PRs
+- Skips bot-created PRs (detects by user type, `[bot]` suffix, or known bot list)
 - Won't remind more than once per week
 - Posts friendly reminder comment tagging the author
+- **Comprehensive logging**: Tracks pagination progress and thread statistics for debugging
 
-**AI Relevance**: Keeps contributors engaged, even when they're working with AI assistance and may forget about pending discussions.
+**Technical Details**:
+- Uses GraphQL query with proper `$after` parameter for cursor-based pagination
+- Filters out outdated threads that no longer apply to current code
+- Counts resolved, unresolved, and outdated threads separately
+- Logs each page fetch and provides detailed breakdown of thread states
+
+**AI Relevance**: Keeps contributors engaged, even when they're working with AI assistance and may forget about pending discussions. Critical for ensuring AI-generated code receives proper review attention.
 
 #### 6.7 Update All PRs (`update-all-prs.yml`)
 **Purpose**: Batch update and check all open PRs
@@ -556,5 +635,5 @@ In the age of AI-powered coding, these workflows are essential for maintaining h
 ---
 
 **Last Updated**: December 2024  
-**Total Workflows**: 27  
+**Total Workflows**: 29  
 **Maintained By**: OWASP BLT Team

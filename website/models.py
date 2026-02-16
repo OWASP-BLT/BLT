@@ -11,7 +11,6 @@ from urllib.parse import parse_qs, urlparse
 import pytz
 import requests
 from annoying.fields import AutoOneToOneField
-from captcha.fields import CaptchaField
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -530,7 +529,7 @@ class Trademark(models.Model):
 def validate_image(fieldfile_obj):
     try:
         filesize = fieldfile_obj.file.size
-    except:
+    except Exception:
         filesize = fieldfile_obj.size
     megabyte_limit = 3.0
     if filesize > megabyte_limit * 1024 * 1024:
@@ -606,7 +605,6 @@ class Issue(models.Model):
     url = models.URLField()
     description = models.TextField()
     markdown_description = models.TextField(null=True, blank=True)
-    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
@@ -1279,75 +1277,6 @@ class SearchHistory(models.Model):
         return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
 
 
-class ForumCategory(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "Forum Categories"
-
-
-class ForumPost(models.Model):
-    STATUS_CHOICES = (
-        ("open", "Open"),
-        ("in_progress", "In Progress"),
-        ("completed", "Completed"),
-        ("declined", "Declined"),
-    )
-
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    description = models.TextField(max_length=1000, null=True, blank=True)
-    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
-    up_votes = models.IntegerField(null=True, blank=True, default=0)
-    down_votes = models.IntegerField(null=True, blank=True, default=0)
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    is_pinned = models.BooleanField(default=False)
-    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    organization = models.ForeignKey(
-        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
-    )
-
-    def __str__(self):
-        return f"{self.title} by {self.user}"
-
-    class Meta:
-        ordering = ["-is_pinned", "-created"]
-
-
-class ForumVote(models.Model):
-    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    up_vote = models.BooleanField(default=False)
-    down_vote = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Vote by {self.user} on {self.post.title}"
-
-
-class ForumComment(models.Model):
-    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
-
-    def __str__(self):
-        return f"Comment by {self.user} on {self.post.title}"
-
-    class Meta:
-        ordering = ["created"]
-
-
 class Contributor(models.Model):
     name = models.CharField(max_length=255)
     github_id = models.IntegerField(unique=True)
@@ -1595,10 +1524,11 @@ class Activity(models.Model):
         ("update", "Updated"),
         ("delete", "Deleted"),
         ("signup", "Signed Up"),
+        ("connected", "Connected"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPES)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
@@ -2157,6 +2087,18 @@ class GitHubIssue(models.Model):
     class Meta:
         # Make the combination of issue_id and repo unique
         unique_together = ("issue_id", "repo")
+        indexes = [
+            # Composite index for GSOC PR report queries
+            models.Index(
+                fields=["type", "is_merged", "merged_at"],
+                name="githubissue_pr_merged_idx",
+            ),
+            # Additional index for date range queries
+            models.Index(
+                fields=["merged_at"],
+                name="githubissue_merged_date_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
@@ -2322,6 +2264,38 @@ class BaconEarning(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.tokens_earned} Tokens"
+
+
+class SocialAccountReward(models.Model):
+    """
+    Permanent record of social account connection rewards.
+    Ensures each user can only be rewarded once per provider, ever.
+    Uses database unique constraint to prevent duplicate rewards even if cache is cleared.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, help_text="User who received the reward")
+    provider = models.CharField(
+        max_length=30,
+        help_text="Social provider name (e.g., github, google, facebook)",
+    )
+    rewarded_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the reward was granted")
+
+    class Meta:
+        verbose_name = "Social Account Reward"
+        verbose_name_plural = "Social Account Rewards"
+        ordering = ["-rewarded_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "provider"],
+                name="unique_user_provider_reward",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "provider"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.provider} reward at {self.rewarded_at}"
 
 
 class GitHubReview(models.Model):
@@ -2854,7 +2828,22 @@ class Hackathon(models.Model):
 
         # Group by reviewer and count reviews
         leaderboard = {}
+        seen = set()
+
         for review in reviews:
+            if review.reviewer_id:
+                # Registered user → unique ID
+                reviewer_identity = f"user_{review.reviewer_id}"
+            else:
+                # Contributor → unique ID even if names match
+                reviewer_identity = f"contrib_{review.reviewer_contributor_id}"
+
+            reviewer_key = (review.pull_request_id, reviewer_identity)
+            # Skip duplicate reviews for same PR+reviewer
+            if reviewer_key in seen:
+                continue
+            seen.add(reviewer_key)
+
             if review.reviewer:
                 # Registered user reviewer
                 user_id = review.reviewer.user.id
@@ -3017,39 +3006,6 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
-
-
-class BannedApp(models.Model):
-    APP_TYPES = (
-        ("social", "Social Media"),
-        ("messaging", "Messaging"),
-        ("gaming", "Gaming"),
-        ("streaming", "Streaming"),
-        ("other", "Other"),
-    )
-
-    country_name = models.CharField(max_length=100)
-    country_code = models.CharField(max_length=2)  # ISO 2-letter code
-    app_name = models.CharField(max_length=100)
-    app_type = models.CharField(max_length=20, choices=APP_TYPES)
-    ban_reason = models.TextField()
-    ban_date = models.DateField(default=timezone.now)
-    source_url = models.URLField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Banned App"
-        verbose_name_plural = "Banned Apps"
-        ordering = ["country_name", "app_name"]
-        indexes = [
-            models.Index(fields=["country_name"]),
-            models.Index(fields=["country_code"]),
-        ]
-
-    def __str__(self):
-        return f"{self.app_name} (Banned in {self.country_name})"
 
 
 class Labs(models.Model):
@@ -3512,3 +3468,76 @@ class StakingTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
+
+
+class SecurityIncident(models.Model):
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        INVESTIGATING = "investigating", "Investigating"
+        RESOLVED = "resolved", "Resolved"
+
+    title = models.CharField(max_length=255)
+    severity = models.CharField(
+        max_length=20,
+        choices=Severity.choices,
+        default=Severity.MEDIUM,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
+    affected_systems = models.TextField(blank=True)
+    description = models.TextField(blank=True, help_text="Detailed description of the incident")
+    reporter = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reported_incidents"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    #  NEW AUTO-FIELDS & ENHANCEMENTS
+    def __str__(self):
+        return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
+
+    def save(self, *args, **kwargs):
+        """
+        Automatically set or clear resolved_at timestamp based on status.
+        """
+        if self.status == self.Status.RESOLVED and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != self.Status.RESOLVED and self.resolved_at:
+            self.resolved_at = None
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["severity"], name="incident_severity_idx"),
+            models.Index(fields=["status"], name="incident_status_idx"),
+            models.Index(fields=["-created_at"], name="incident_created_idx"),
+        ]
+
+
+class SecurityIncidentHistory(models.Model):
+    incident = models.ForeignKey(SecurityIncident, on_delete=models.CASCADE, related_name="history")
+    field_name = models.CharField(max_length=100)
+    old_value = models.TextField(null=True, blank=True)
+    new_value = models.TextField(null=True, blank=True)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at"]
+        indexes = [
+            models.Index(
+                fields=["incident", "-changed_at"],
+                name="history_incident_changedat_idx",
+            ),
+        ]

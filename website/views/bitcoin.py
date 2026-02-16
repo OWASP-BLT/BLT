@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
@@ -40,7 +40,7 @@ def slack_escape(text):
     )
 
 
-# @login_required
+@login_required
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
     users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
@@ -86,7 +86,10 @@ def batch_send_bacon_tokens_view(request):
             return JsonResponse({"status": "error", "message": response_data.get("error", "Unknown error")})
 
     except requests.RequestException as e:
-        return JsonResponse({"status": "error", "message": str(e)})
+        logger.error(f"Request error in batch_send_bacon_tokens_view: {str(e)}", exc_info=True)
+        return JsonResponse(
+            {"status": "error", "message": "An error occurred while sending tokens. Please try again later."}
+        )
 
 
 def pending_transactions_view(request):
@@ -97,13 +100,12 @@ def pending_transactions_view(request):
     for transaction in pending_transactions:
         user = transaction.user
         btc_address = getattr(user.userprofile, "btc_address", None)
-        transactions_data = [{"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned}]
+        transactions_data.append({"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned})
 
     # If you want to return it as a JSON response:
     return JsonResponse({"pending_transactions": transactions_data})
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(login_required, name="dispatch")
 class BaconSubmissionView(View):
     def post(self, request):
@@ -280,41 +282,39 @@ def bacon_requests_view(request):
 
 
 @login_required
-@csrf_exempt
+@require_POST
 def update_submission_status(request, submission_id):
     """Allows a mentor to update the submission status and bacon amount."""
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            new_status = data.get("status")  # 'accepted' or 'declined'
-            new_bacon_amount = data.get("bacon_amount")
+    try:
+        data = json.loads(request.body)
+        new_status = data.get("status")  # 'accepted' or 'declined'
+        new_bacon_amount = data.get("bacon_amount")
 
-            submission = get_object_or_404(BaconSubmission, id=submission_id)
+        submission = get_object_or_404(BaconSubmission, id=submission_id)
 
-            # Check if the user is a mentor
-            mentor_badge = Badge.objects.filter(title="mentor").first()
-            is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+        # Check if the user is a mentor
+        mentor_badge = Badge.objects.filter(title="mentor").first()
+        is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
 
-            if not is_mentor:
-                return JsonResponse({"error": "Unauthorized"}, status=403)
+        if not is_mentor:
+            return JsonResponse({"error": "Unauthorized"}, status=403)
 
-            # Update status and bacon amount if provided
-            if new_status:
-                submission.status = new_status
-            if new_bacon_amount is not None:
-                submission.bacon_amount = new_bacon_amount
+        # Update status and bacon amount if provided
+        if new_status:
+            submission.status = new_status
+        if new_bacon_amount is not None:
+            submission.bacon_amount = new_bacon_amount
 
-            submission.save()
-            return JsonResponse(
-                {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
-            )
+        submission.save()
+        return JsonResponse(
+            {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
+        )
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)
-        except Exception as e:
-            return JsonResponse({"error": "error updating submission status"}, status=400)
-
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+    except Exception:
+        logger.exception("Error updating submission status")
+        return JsonResponse({"error": "error updating submission status"}, status=400)
 
 
 @login_required
@@ -441,7 +441,8 @@ def get_wallet_balance(request):
             return JsonResponse({"balance": balance_data, "success": True})
         else:
             return JsonResponse({"error": "Failed to fetch wallet balance"}, status=response.status_code)
-    except requests.RequestException as e:
+    except requests.RequestException:
+        logger.exception("Error fetching wallet balance")
         return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
 
 
