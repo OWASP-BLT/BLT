@@ -63,7 +63,8 @@ def add_comment(request):
             send_mail(
                 "You have been mentioned in a comment",
                 msg_plain,
-                settings.EMAIL_TO_STRING[obj.email],
+                settings.EMAIL_TO_STRING,
+                [obj.email],
                 html_message=msg_html,
             )
 
