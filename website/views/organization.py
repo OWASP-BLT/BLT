@@ -807,9 +807,15 @@ def load_more_issues(request):
     """
     AJAX handler for loading more GitHub issues with pagination support
     """
-    page = int(request.GET.get("page", 1))
+    try:
+        page = int(request.GET.get("page", 1))
+    except (ValueError, TypeError):
+        page = 1
     state = request.GET.get("state", "open")
-    per_page = int(request.GET.get("per_page", 10))
+    try:
+        per_page = int(request.GET.get("per_page", 10))
+    except (ValueError, TypeError):
+        per_page = 10
 
     # Validate inputs
     if page < 1:
