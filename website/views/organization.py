@@ -1942,8 +1942,7 @@ def update_role(request):
     if not usernames:
         return HttpResponse("success")
 
-    # Batch-fetch users and their admin records instead of querying per iteration
-    users_map = {u.username: u for u in User.objects.filter(username__in=usernames)}
+    # Batch-fetch admin records instead of querying per iteration
     admins_map = {
         a.user.username: a
         for a in OrganizationAdmin.objects.select_related("user").filter(
@@ -1958,13 +1957,26 @@ def update_role(request):
         domain_val = request.POST.get("domain@" + username, "")
         if domain_val:
             domain_pks.add(domain_val)
-    domains_map = {str(d.pk): d for d in Domain.objects.filter(pk__in=domain_pks)} if domain_pks else {}
+    domains_map = (
+        {
+            str(d.pk): d
+            for d in Domain.objects.filter(
+                pk__in=domain_pks, organization=requesting_admin.organization
+            )
+        }
+        if domain_pks
+        else {}
+    )
 
     admins_to_update = []
     for username in usernames:
         if username not in admins_map:
             continue
         admin = admins_map[username]
+
+        # Prevent admins from modifying their own account
+        if admin.user == request.user:
+            continue
         role_val = request.POST.get("role@" + username, "")
 
         if requesting_admin.role == 0:
