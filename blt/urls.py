@@ -53,7 +53,6 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
