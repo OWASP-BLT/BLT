@@ -437,6 +437,7 @@ def get_section_data(request, section_id):
 
 
 @instructor_required
+@instructor_required
 @require_POST
 def update_sections_order(request, course_id):
     """API endpoint to update the order of sections"""
