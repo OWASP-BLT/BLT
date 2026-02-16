@@ -388,11 +388,10 @@ def UpdateIssue(request):
     try:
         tokenauth = False
         if "token" in request.POST:
-            for token in Token.objects.all():
-                if request.POST["token"] == token.key:
-                    request.user = User.objects.get(id=token.user_id)
-                    tokenauth = True
-                    break
+            token = Token.objects.filter(key=request.POST["token"]).select_related("user").first()
+            if token:
+                request.user = token.user
+                tokenauth = True
     except Exception:
         logger.exception("Token authentication lookup failed in UpdateIssue")
         tokenauth = False
@@ -502,9 +501,11 @@ def delete_issue(request, id):
 def remove_user_from_issue(request, id):
     tokenauth = False
     try:
-        for token in Token.objects.all():
-            if request.POST.get("token") == token.key:
-                request.user = User.objects.get(id=token.user_id)
+        token_key = request.POST.get("token")
+        if token_key:
+            token = Token.objects.filter(key=token_key).select_related("user").first()
+            if token:
+                request.user = token.user
                 tokenauth = True
     except Exception:
         logger.exception("Token authentication lookup failed in remove_user_from_issue")
@@ -1248,9 +1249,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             elif self.request.user.is_authenticated:
                 obj.user = self.request.user
             else:
-                for token in Token.objects.all():
-                    if self.request.POST.get("token") == token.key:
-                        obj.user = User.objects.get(id=token.user_id)
+                token_key = self.request.POST.get("token")
+                if token_key:
+                    token = Token.objects.filter(key=token_key).select_related("user").first()
+                    if token:
+                        obj.user = token.user
                         tokenauth = True
 
             captcha_form = CaptchaForm(self.request.POST)
