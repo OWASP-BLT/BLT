@@ -313,6 +313,7 @@ def update_submission_status(request, submission_id):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON format"}, status=400)
     except Exception:
+        logger.exception("Error updating submission status")
         return JsonResponse({"error": "error updating submission status"}, status=400)
 
 
@@ -440,7 +441,8 @@ def get_wallet_balance(request):
             return JsonResponse({"balance": balance_data, "success": True})
         else:
             return JsonResponse({"error": "Failed to fetch wallet balance"}, status=response.status_code)
-    except requests.RequestException as e:
+    except requests.RequestException:
+        logger.exception("Error fetching wallet balance")
         return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
 
 
