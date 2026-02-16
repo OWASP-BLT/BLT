@@ -50,10 +50,7 @@ class TeamOverview(TemplateView):
 def search_users(request):
     query = request.GET.get("query", "").strip()
     if len(query) >= 2:
-        users = (
-            User.objects.filter(username__icontains=query)
-            .values("username", "userprofile__team__name")[:25]
-        )
+        users = User.objects.filter(username__icontains=query).values("username", "userprofile__team__name")[:25]
         users_list = [{"username": user["username"], "team": user["userprofile__team__name"]} for user in users]
         return JsonResponse(users_list, safe=False)
     return JsonResponse([], safe=False)
