@@ -21,6 +21,18 @@ def queue_list(request):
         messages.error(request, "You must be logged in to access this page")
         return redirect("index")
 
+    # Check if user is authorized for launch control
+    authorized_user_id = os.environ.get("Q_ID")
+    is_auth = authorized_user_id and request.user.is_authenticated
+    is_launch_authorized = is_auth and str(request.user.id) == authorized_user_id
+
+    # Allow superusers to access the page
+    is_superuser = request.user.is_superuser
+
+    if not (is_launch_authorized or is_superuser):
+        messages.error(request, "You are not authorized to access this page")
+        return redirect("index")
+
     queue_items = Queue.objects.all().order_by("-created")
 
     # Handle create operation
@@ -115,18 +127,6 @@ def queue_list(request):
                     f"Queue item was already launched. Launch timestamp updated to {current_time.strftime('%Y-%m-%d %H:%M:%S')}.",
                 )
                 return redirect("queue_list")
-
-    # Check if user is authorized for launch control
-    authorized_user_id = os.environ.get("Q_ID")
-    is_auth = authorized_user_id and request.user.is_authenticated
-    is_launch_authorized = is_auth and str(request.user.id) == authorized_user_id
-
-    # Allow superusers to access the page
-    is_superuser = request.user.is_superuser
-
-    if not (is_launch_authorized or is_superuser):
-        messages.error(request, "You are not authorized to access this page")
-        return redirect("index")
 
     # Get pending and launched items for launch control section
     pending_items = Queue.objects.filter(launched=False).order_by("-created")
