@@ -260,7 +260,10 @@ def slack_events(request):
 
         elif request.content_type == "application/json":
             # Handle Events API requests
-            data = json.loads(request.body)
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                return JsonResponse({"error": "Invalid JSON"}, status=400)
 
             # Check if this is a retry event
             is_retry = request.headers.get("X-Slack-Retry-Num")
