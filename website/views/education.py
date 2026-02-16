@@ -385,21 +385,25 @@ def edit_lecture(request, lecture_id):
 
 
 @instructor_required
+@require_POST
 def delete_lecture(request, lecture_id):
     """Delete a lecture"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
     section = lecture.section
-    course_id = section.course.id
+    lecture_title = lecture.title
 
     lecture.delete()
 
-    for i, lec in enumerate(Lecture.objects.filter(section=section), 1):
-        lec.order = i
-        lec.save()
+    if section:
+        for i, lec in enumerate(Lecture.objects.filter(section=section), 1):
+            lec.order = i
+            lec.save()
 
-    messages.success(request, f"Lecture '{lecture.title}' was deleted successfully!")
+        messages.success(request, f"Lecture '{lecture_title}' was deleted successfully!")
+        return redirect("course_content_management", course_id=section.course.id)
 
-    return redirect("course_content_management", course_id=course_id)
+    messages.success(request, f"Lecture '{lecture_title}' was deleted successfully!")
+    return redirect("instructor_dashboard")
 
 
 @instructor_required
