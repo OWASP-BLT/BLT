@@ -1647,7 +1647,7 @@ def trademark_detailview(request, slug):
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
     }
-    trademark_available_response = requests.get(trademark_available_url, headers=headers)
+    trademark_available_response = requests.get(trademark_available_url, headers=headers, timeout=10)
     ta_data = trademark_available_response.json()
 
     if trademark_available_response.status_code == 429:
@@ -1660,7 +1660,7 @@ def trademark_detailview(request, slug):
 
     if ta_data[0].get("available") == "no":
         trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
-        trademark_search_response = requests.get(trademark_search_url, headers=headers)
+        trademark_search_response = requests.get(trademark_search_url, headers=headers, timeout=10)
         ts_data = trademark_search_response.json()
         context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
