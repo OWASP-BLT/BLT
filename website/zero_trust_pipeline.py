@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import re
-import secrets
 import string
 import subprocess
 import tarfile
@@ -65,33 +64,6 @@ def _sanitize_filename(filename: str) -> str:
         filename = f"upload_{uuid.uuid4().hex[:8]}"
 
     return filename
-
-
-def _generate_secure_password(length: int = 32) -> str:
-    """
-    Generate a cryptographically secure random password..
-    """
-
-    uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"
-    lowercase = "abcdefghijkmnopqrstuvwxyz"
-    digits = "23456789"
-    special = "!@#$%^&*-_=+"
-
-    all_chars = uppercase + lowercase + digits + special
-
-    password_chars = [
-        secrets.choice(uppercase),
-        secrets.choice(lowercase),
-        secrets.choice(digits),
-        secrets.choice(special),
-    ]
-
-    password_chars.extend(secrets.choice(all_chars) for _ in range(length - 4))
-
-    password_list = list(password_chars)
-    secrets.SystemRandom().shuffle(password_list)
-
-    return "".join(password_list)
 
 
 def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[UploadedFile]) -> None:
@@ -298,79 +270,10 @@ def _encrypt_artifact_for_org(
             )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP
 
-    # Symmetric 7z with OOB password delivery
-    if preferred == OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z:
-        # Generate cryptographically secure random password
-        password = _generate_secure_password()
-
-        out = os.path.join(tmp_dir, "report_payload.tar.gz.7z")
-
-        # SECURITY TRADEOFF ANALYSIS:
-        # We must pass the password to 7z. Two options:
-        # 1. Command-line: -pPASSWORD (visible in ps, /proc, shell history)
-        # 2. Temp file: -p@file (visible on disk for ~1 second)
-        #
-        # We choose option 2 because:
-        # - Command-line exposure lasts entire process lifetime (~300s max)
-        # - Temp file exposure is <1s (create → use → delete in finally)
-        # - File has restrictive permissions (0600 default for mkdtemp)
-        # - Any user can see command-line; only root/same-user can read temp files
-        #
-        # This is the approach recommended by 7z documentation for secure password handling.
-        # For maximum security, organizations should use age or OpenPGP instead of sym_7z.
-
-        password_file = os.path.join(tmp_dir, ".7z_password")
-        try:
-            # Write password to temp file (restrictive permissions inherited from parent dir)
-            with open(password_file, "w", encoding="utf-8") as pf:
-                pf.write(password)
-
-            # Use password file instead of command-line argument
-            # The @ prefix tells 7z to read password from file
-            cmd = [
-                getattr(settings, "SEVENZ_BINARY", "7z"),
-                "a",
-                "-t7z",
-                "-mhe=on",
-                f"-p@{password_file}",
-                "-mx=9",
-                "-mhc=on",
-                "-ms=on",
-                out,
-                input_path,
-            ]
-
-            try:
-                # lgtm[py/clear-text-storage-sensitive-data]
-                # Justification: Temp file exposure (<1s) is preferable to command-line
-                # exposure (entire process lifetime). File is securely deleted in finally.
-                subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
-            except subprocess.TimeoutExpired as e:
-                logger.error(f"7z encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
-                raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
-            except subprocess.CalledProcessError as e:
-                stderr = e.stderr.decode("utf-8", errors="replace") if e.stderr else ""
-                logger.error(
-                    f"7z encryption failed for issue {issue.id}, return code: {e.returncode}, stderr: {stderr}",
-                    exc_info=True,
-                )
-                raise RuntimeError(f"Encryption failed: {stderr or 'Unknown error'}")
-        finally:
-            # Securely delete password file (overwrite then remove)
-            if os.path.exists(password_file):
-                _secure_delete_file(password_file)
-
-        # Deliver password out-of-band BEFORE returning
-        _deliver_password_oob(org_config, issue.id, password)
-
-        del password
-
-        return out, OrgEncryptionConfig.ENCRYPTION_METHOD_SYM_7Z
-
     # No valid method configured
     raise RuntimeError(
         f"Organization {org_config.organization.name} has no valid encryption method configured. "
-        f"Please configure Age, OpenPGP, or sym_7z encryption."
+        f"Please configure Age or OpenPGP encryption."
     )
 
 
@@ -422,74 +325,6 @@ Regards,
     except Exception as e:
         logger.error(f"Email delivery failed for issue {issue.id} to {org_config.contact_email}", exc_info=True)
         return "encryption_success_delivery_failed"
-
-
-def _deliver_password_oob(org_config: OrgEncryptionConfig, issue_id: int, password: str) -> None:
-    """
-    Deliver the symmetric encryption password via out-of-band email channel.
-
-    """
-    subject = f"[VULN REPORT PASSWORD] Decryption key for issue_id: {issue_id}"
-
-    body = f"""Hello {org_config.organization.name} Security Team,
-
-This email contains the decryption password for vulnerability report issue_id: {issue_id}.
-
-IMPORTANT SECURITY INSTRUCTIONS:
-1. You should have received a SEPARATE email with the encrypted .7z attachment
-2. Only proceed with decryption if BOTH emails are verified authentic
-3. Extract the archive in an isolated/sandboxed environment
-4. Delete this email immediately after use
-
-Decryption Password: {password}
-
-To decrypt the attached .7z file from the other email:
-    7z x report_payload.tar.gz.7z -p[PASSWORD_FROM_ABOVE]
-
-Replace [PASSWORD_FROM_ABOVE] with the password shown above. Do not copy/paste
-this entire command to avoid password exposure in shell history.
-
-After extracting, you will find:
-- metadata.json (issue metadata)
-- Proof-of-concept files/screenshots
-
-Please confirm receipt by replying to the original artifact email.
-
-SECURITY REMINDER:
-- Do not forward this password
-- Open attachments only in isolated environments
-- Scan all files with antivirus before analysis
-
-Regards,
-{getattr(settings, "PROJECT_NAME", "BLT")} Disclosure Service
-
----
-This password will not be stored or sent again. If lost, contact the reporter.
-"""
-
-    email = EmailMessage(
-        subject=subject,
-        body=body,
-        from_email=settings.EMAIL_TO_STRING,
-        to=[org_config.contact_email],
-    )
-
-    try:
-        email.send(fail_silently=False)
-        logger.info(
-            f"OOB password delivered for issue {issue_id} to {org_config.contact_email}",
-            extra={"issue_id": issue_id, "org": org_config.organization.name},
-        )
-    except Exception as e:
-        logger.error(
-            f"CRITICAL: OOB password delivery failed for issue {issue_id}",
-            exc_info=True,
-            extra={"issue_id": issue_id, "org": org_config.organization.name},
-        )
-        raise RuntimeError(
-            "Failed to deliver password out-of-band. Encryption was successful but "
-            "organization cannot decrypt without the password. Manual intervention required."
-        )
 
 
 def _secure_delete_path(path: str) -> None:

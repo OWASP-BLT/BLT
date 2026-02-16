@@ -3,7 +3,6 @@ import os
 import re
 import time
 import uuid
-import warnings
 from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -303,12 +302,10 @@ class Organization(models.Model):
 class OrgEncryptionConfig(models.Model):
     ENCRYPTION_METHOD_AGE = "age"
     ENCRYPTION_METHOD_OPENPGP = "openpgp"
-    ENCRYPTION_METHOD_SYM_7Z = "sym_7z"
 
     ENCRYPTION_METHOD_CHOICES = [
         (ENCRYPTION_METHOD_AGE, "age (public key)"),
         (ENCRYPTION_METHOD_OPENPGP, "OpenPGP (GnuPG)"),
-        (ENCRYPTION_METHOD_SYM_7Z, "Symmetric 7z (AES-256, OOB password)"),
     ]
 
     organization = models.OneToOneField(
@@ -357,12 +354,6 @@ class OrgEncryptionConfig(models.Model):
                 raise ValidationError(
                     {"pgp_fingerprint": 'PGP fingerprint is required when preferred method is "openpgp".'}
                 )
-        elif self.preferred_method == self.ENCRYPTION_METHOD_SYM_7Z:
-            warnings.warn(
-                "Symmetric 7z encryption is less secure than public-key methods. "
-                "Consider using age or OpenPGP for stronger zero-trust guarantees.",
-                UserWarning,
-            )
 
     def save(self, *args, **kwargs):
         """Ensure validation runs on save."""
@@ -836,7 +827,7 @@ class Issue(models.Model):
     encryption_method = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Encryption method used (e.g. age, openpgp, sym_7z).",
+        help_text="Encryption method used (e.g. age, openpgp).",
     )
     delivery_method = models.CharField(
         max_length=50,

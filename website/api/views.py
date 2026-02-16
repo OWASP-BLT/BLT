@@ -2061,6 +2061,11 @@ class ZeroTrustIssueCreateView(APIView):
                 {"error": "Zero-trust delivery is misconfigured for this organization"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if org_encryption_config.preferred_method not in ("age", "openpgp"):
+            return Response(
+                {"error": "Organization must configure age or OpenPGP public key for zero-trust delivery."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         issue = Issue.objects.create(
             user=request.user,
