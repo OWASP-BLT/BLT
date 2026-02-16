@@ -633,6 +633,25 @@ class Listbounties(TemplateView):
                 }
             )
 
+        # TEMP: mock leaderboard data for local UI testing
+        if settings.DEBUG and not leaderboard:
+            leaderboard = [
+                {
+                    "name": "Alice",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/1",
+                    "github_url": "https://github.com/alice",
+                    "issues_completed": 12,
+                    "total_earned": 60,
+                },
+                {
+                    "name": "Bob",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/2",
+                    "github_url": "https://github.com/bob",
+                    "issues_completed": 8,
+                    "total_earned": 40,
+                },
+            ]
+
         context = {
             "hunts": hunts,
             "domains": Domain.objects.values("id", "name").all(),
