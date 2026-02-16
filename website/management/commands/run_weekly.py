@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 WEEKLY_COMMANDS = [
     ("send_weekly_bug_digest", "sending weekly bug digest"),
     ("cleanup_sample_invites", "cleaning up sample invites", {"days": 7}),
+    ("delete_unverified_users", "deleting unverified users", {"days": 30}),
     ("slack_weekly_report", "sending weekly Slack report"),
 ]
 
