@@ -628,7 +628,10 @@ def search_issues(request, template="search.html"):
         }
 
     if request.user.is_authenticated:
-        context["wallet"] = Wallet.objects.get(user=request.user)
+        try:
+            context["wallet"] = Wallet.objects.get(user=request.user)
+        except Wallet.DoesNotExist:
+            context["wallet"] = None
     issues = serializers.serialize("json", context["issues"])
     issues = json.loads(issues)
     return HttpResponse(json.dumps({"issues": issues}), content_type="application/json")
@@ -1654,7 +1657,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            try:
+                context["wallet"] = Wallet.objects.get(user=self.request.user)
+            except Wallet.DoesNotExist:
+                context["wallet"] = None
         context["leaderboard"] = (
             User.objects.filter(
                 points__created__month=timezone.now().month,
@@ -1714,7 +1720,10 @@ class AllIssuesView(ListView):
         page = self.request.GET.get("page")
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            try:
+                context["wallet"] = Wallet.objects.get(user=self.request.user)
+            except Wallet.DoesNotExist:
+                context["wallet"] = None
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -1790,7 +1799,10 @@ class SpecificIssuesView(ListView):
         page = self.request.GET.get("page")
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            try:
+                context["wallet"] = Wallet.objects.get(user=self.request.user)
+            except Wallet.DoesNotExist:
+                context["wallet"] = None
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -1867,7 +1879,10 @@ class IssueView(DetailView):
             context["users_score"] = 0
 
         if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
+            try:
+                context["wallet"] = Wallet.objects.get(user=self.request.user)
+            except Wallet.DoesNotExist:
+                context["wallet"] = None
 
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()

@@ -1093,7 +1093,10 @@ class DomainDetailView(ListView):
             )
 
             if self.request.user.is_authenticated:
-                context["wallet"] = Wallet.objects.get(user=self.request.user)
+                try:
+                    context["wallet"] = Wallet.objects.get(user=self.request.user)
+                except Wallet.DoesNotExist:
+                    context["wallet"] = None
 
             # Handle pagination for open issues
             open_paginator = Paginator(open_issues, self.paginate_by)
