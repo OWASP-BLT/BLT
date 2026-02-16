@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0264_remove_forum_models"),
+        ("website", "0265_delete_bannedapp"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
