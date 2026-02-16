@@ -473,6 +473,7 @@ class HackathonPrizeCreateView(HackathonItemCreateMixin, CreateView):
 
 
 @login_required
+@login_required
 def refresh_repository_data(request, hackathon_slug, repo_id):
     """View to refresh repository data from GitHub API."""
     hackathon = get_object_or_404(Hackathon, slug=hackathon_slug)
@@ -719,6 +720,7 @@ def _process_pull_request(pr_data, hackathon, repo):
         return True  # New PR added
 
 
+@login_required
 @login_required
 def add_org_repos_to_hackathon(request, slug):
     """View to add all organization repositories to a hackathon by fetching fresh from GitHub."""
