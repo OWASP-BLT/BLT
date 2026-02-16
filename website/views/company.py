@@ -2603,6 +2603,7 @@ class OrganizationDashboardManageBughuntView(View):
         return render(request, "organization/bughunt/organization_manage_bughunts.html", context)
 
 
+@login_required(login_url="/accounts/login")
 @require_http_methods(["DELETE"])
 def delete_prize(request, prize_id, organization_id):
     if not request.user.organization_set.filter(id=organization_id).exists():
@@ -2615,6 +2616,7 @@ def delete_prize(request, prize_id, organization_id):
         return JsonResponse({"success": False, "error": "Prize not found"})
 
 
+@login_required(login_url="/accounts/login")
 @require_http_methods(["PUT"])
 def edit_prize(request, prize_id, organization_id):
     if not request.user.organization_set.filter(id=organization_id).exists():
@@ -2636,6 +2638,7 @@ def edit_prize(request, prize_id, organization_id):
     return JsonResponse({"success": True})
 
 
+@login_required(login_url="/accounts/login")
 def accept_bug(request, issue_id, reward_id=None):
     with transaction.atomic():
         issue = get_object_or_404(Issue, id=issue_id)
@@ -2665,6 +2668,7 @@ def accept_bug(request, issue_id, reward_id=None):
         return redirect("show_bughunt", pk=issue.hunt.id)
 
 
+@login_required(login_url="/accounts/login")
 @require_http_methods(["DELETE"])
 def delete_manager(request, manager_id, domain_id):
     try:
