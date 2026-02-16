@@ -430,11 +430,14 @@ def UpdateIssue(request):
             )
             subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
 
+        else:
+            return HttpResponse("invalid action")
+
+        issue.save()
         mailer = settings.EMAIL_TO_STRING
         email_to = issue.user.email
-        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
-        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
-        issue.save()
+        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html, fail_silently=True)
+        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html, fail_silently=True)
         return HttpResponse("Updated")
 
     elif request.method == "POST":
