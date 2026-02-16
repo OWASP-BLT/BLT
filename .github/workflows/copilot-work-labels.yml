@@ -1,0 +1,177 @@
+name: Copilot Work Status Labels
+
+# Automatically manage labels on PRs when Copilot starts and finishes work
+# - When a comment mentions Copilot: adds "Copilot started work" label
+# - When Copilot pushes commits: ensures "Copilot started work" label is present
+# - When Copilot's PR is closed/merged: removes "Copilot started work" and adds "Copilot finished work" label
+on:
+  pull_request_target:
+    types: [synchronize, closed]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  manage_copilot_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manage Copilot Work Labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Label names and colors
+            const STARTED_LABEL = 'Copilot started work';
+            const FINISHED_LABEL = 'Copilot finished work';
+            const STARTED_COLOR = '0366d6'; // Blue
+            const FINISHED_COLOR = '28a745'; // Green
+
+            // Check if PR is from Copilot
+            function isCopilotPR(pr) {
+              const prAuthor = pr.user.login.toLowerCase();
+              const isBotAccount =
+                (pr.user.type && pr.user.type.toLowerCase() === 'bot') ||
+                pr.user.login.toLowerCase().endsWith('[bot]');
+              return isBotAccount && (prAuthor === 'copilot' || prAuthor.startsWith('copilot-'));
+            }
+
+            // Ensure labels exist in the repository
+            async function ensureLabel(labelName, color, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  try {
+                    await github.rest.issues.createLabel({
+                      owner, repo,
+                      name: labelName,
+                      color: color,
+                      description: description
+                    });
+                    core.info(`Created label "${labelName}"`);
+                  } catch (createError) {
+                    core.warning(`Failed to create label "${labelName}": ${createError.message}`);
+                  }
+                } else {
+                  core.warning(`Error checking label "${labelName}": ${e.message}`);
+                }
+              }
+            }
+
+            // Add label to PR
+            async function addLabel(prNumber, labelName) {
+              try {
+                const { data: pr } = await github.rest.issues.get({
+                  owner, repo, issue_number: prNumber
+                });
+
+                const hasLabel = pr.labels.some(l => l.name === labelName);
+                if (hasLabel) {
+                  core.info(`PR #${prNumber} already has label "${labelName}"`);
+                  return;
+                }
+
+                await github.rest.issues.addLabels({
+                  owner, repo,
+                  issue_number: prNumber,
+                  labels: [labelName]
+                });
+                core.info(`Added label "${labelName}" to PR #${prNumber}`);
+              } catch (e) {
+                core.warning(`Failed to add label: ${e.message}`);
+              }
+            }
+
+            // Remove label from PR
+            async function removeLabel(prNumber, labelName) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo,
+                  issue_number: prNumber,
+                  name: labelName
+                });
+                core.info(`Removed label "${labelName}" from PR #${prNumber}`);
+              } catch (e) {
+                if (e.status !== 404) {
+                  core.warning(`Failed to remove label: ${e.message}`);
+                }
+              }
+            }
+
+            // Ensure labels exist
+            await ensureLabel(STARTED_LABEL, STARTED_COLOR, 'Copilot has started working on this PR');
+            await ensureLabel(FINISHED_LABEL, FINISHED_COLOR, 'Copilot has finished working on this PR');
+
+            // Handle comment events (issue_comment or pull_request_review_comment)
+            if (context.eventName === 'issue_comment' || context.eventName === 'pull_request_review_comment') {
+              const comment = context.payload.comment;
+
+              // Check if comment mentions Copilot
+              if (!comment.body || !comment.body.toLowerCase().includes('copilot')) {
+                core.info('Comment does not mention Copilot, skipping');
+                return;
+              }
+
+              // Get PR number
+              let prNumber;
+              if (context.eventName === 'issue_comment') {
+                // For issue_comment, check if it's on a PR
+                const issue = context.payload.issue;
+                if (!issue.pull_request) {
+                  core.info('Comment is on an issue, not a PR, skipping');
+                  return;
+                }
+                prNumber = issue.number;
+              } else {
+                // For pull_request_review_comment
+                prNumber = context.payload.pull_request.number;
+              }
+
+              // Add "started work" label when Copilot is mentioned
+              core.info(`Comment mentions Copilot on PR #${prNumber} - adding "started work" label`);
+              await removeLabel(prNumber, FINISHED_LABEL);
+              await addLabel(prNumber, STARTED_LABEL);
+              return;
+            }
+
+            // Handle PR events (synchronize or closed)
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No PR in context, skipping');
+              return;
+            }
+
+            const prNumber = pr.number;
+            const action = context.payload.action;
+
+            // Check if PR is from Copilot
+            if (!isCopilotPR(pr)) {
+              core.info(`PR #${prNumber} is not from Copilot (author: ${pr.user.login}), skipping`);
+              return;
+            }
+
+            // For synchronize event
+            if (action === 'synchronize') {
+              // When Copilot pushes any commit, mark work as finished
+              core.info(`Copilot pushed commits to PR #${prNumber} - adding "finished work" label`);
+              await removeLabel(prNumber, STARTED_LABEL);
+              await addLabel(prNumber, FINISHED_LABEL);
+              return;
+            }
+
+            // For closed event
+            if (action === 'closed') {
+              core.info(`Copilot PR #${prNumber} closed - adding "finished work" label`);
+              await removeLabel(prNumber, STARTED_LABEL);
+              await addLabel(prNumber, FINISHED_LABEL);
+              return;
+            }
+
