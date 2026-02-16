@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Quick test script to verify BACON token system is working.
+Quick test script to verify BACON token system is working. - move to BLT-Bacon repo
 Run with: docker-compose exec app python test_bacon_system.py
 """
 
