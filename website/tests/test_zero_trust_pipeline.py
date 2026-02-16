@@ -12,16 +12,8 @@ class ValidationFunctionTests(TestCase):
         self.assertTrue(_validate_age_recipient("age1" + "q" * 58))
 
         # Valid SSH keys with sufficiently long base64 portions
-        self.assertTrue(
-            _validate_age_recipient(
-                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAabcdefghijklmnopqrstuvwxyz"
-            )
-        )
-        self.assertTrue(
-            _validate_age_recipient(
-                "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsabcdefghijklmnopqrstuvwxyz"
-            )
-        )
+        self.assertTrue(_validate_age_recipient("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAabcdefghijklmnopqrstuvwxyz"))
+        self.assertTrue(_validate_age_recipient("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsabcdefghijklmnopqrstuvwxyz"))
 
     def test_validate_age_recipient_invalid(self):
         """Test invalid age recipients."""

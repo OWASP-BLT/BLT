@@ -115,9 +115,7 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         if file_size is None:
             raise ValueError("Unable to determine uploaded file size. Please try again with a smaller file.")
         if file_size > MAX_FILE_SIZE:
-            raise ValueError(
-                f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE / (1024*1024):.0f}MB"
-            )
+            raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE / (1024*1024):.0f}MB")
         total_size += file_size
 
     if total_size > MAX_TOTAL_SIZE:
@@ -369,32 +367,37 @@ def _secure_delete_path(path: str) -> None:
     os.rmdir(path)
 
 
-def _secure_delete_file(path: str) -> None:
+def _secure_delete_file(path: str, chunk_size: int = 1024 * 1024) -> None:
     """
-    Attempt basic secure deletion by overwriting with zeros before removal.
-
-    WARNING: This is NOT cryptographically secure deletion on modern systems:
-    - Copy-on-write filesystems (btrfs, ZFS) may preserve data
-    - SSDs with wear-leveling don't overwrite in place
-    - Encrypted filesystems already protect data at rest
-
-    This provides defense-in-depth by clearing RAM buffers and preventing
-    simple file recovery, but should not be relied upon as the sole protection.
+    Best-effort overwrite-before-delete.
+    - Overwrites in fixed-size chunks to avoid large allocations.
+    - Skips overwriting symlinks (removes the link itself).
+    - Not guaranteed on CoW filesystems or SSDs with wear-leveling.
     """
     try:
+        # If it's a symlink, just remove the link
+        if os.path.islink(path):
+            os.unlink(path)
+            return
+
         length = os.path.getsize(path)
-        with open(path, "wb") as f:
-            f.write(b"\x00" * length)
+        with open(path, "r+b", buffering=0) as f:
+            f.seek(0)
+            zero_buf = b"\x00" * min(chunk_size, 1024 * 1024)
+            remaining = length
+            while remaining > 0:
+                to_write = zero_buf if remaining >= len(zero_buf) else zero_buf[:remaining]
+                f.write(to_write)
+                remaining -= len(to_write)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except Exception:
+                pass  # fsync best-effort
         os.remove(path)
-    except FileNotFoundError:
-        # File already removed by the time we tried to overwrite/delete it.
-        logger.debug("Secure delete: file %s already removed, ignoring.", path)
     except Exception:
-        # Overwrite or initial delete failed for some other reason; log and attempt best-effort removal.
-        logger.warning("Secure delete failed for %s; attempting best-effort removal.", path, exc_info=True)
+        # Fallback: at least try to remove the file
         try:
             os.remove(path)
         except FileNotFoundError:
-            logger.debug("Secure delete fallback: file %s already removed, ignoring.", path)
-        except Exception:
-            logger.warning("Secure delete fallback removal failed for %s.", path, exc_info=True)
+            pass

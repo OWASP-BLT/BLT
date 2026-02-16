@@ -262,13 +262,12 @@ MEDIA_URL = "/media/"
 # This enables connection reuse and prevents connection exhaustion
 db_from_env = dj_database_url.config(conn_max_age=600)
 
-ZERO_TRUST_PATHS = (
-    "/api/zero-trust/issues",
-)
+ZERO_TRUST_PATHS = ("/api/zero-trust/issues",)
+
 
 def _is_zero_trust_event(event: dict) -> bool:
     req = (event or {}).get("request") or {}
-    url = (req.get("url") or "")
+    url = req.get("url") or ""
     if any(p in url for p in ZERO_TRUST_PATHS):
         return True
 
@@ -286,7 +285,8 @@ def _is_zero_trust_event(event: dict) -> bool:
             return True
 
     return False
-    
+
+
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN:
 
@@ -345,12 +345,12 @@ if SENTRY_DSN:
             # If filtering fails for any reason, prefer dropping the event over leaking data
             logging.getLogger(__name__).exception("Sentry before_send failed; dropping Zero‑Trust event")
             return None
-        
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        send_default_pii=True,              # keep PII for non‑ZT endpoints
-        before_send=_sentry_before_send,    # redact only Zero‑Trust events
+        send_default_pii=True,  # keep PII for non‑ZT endpoints
+        before_send=_sentry_before_send,  # redact only Zero‑Trust events
         traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
