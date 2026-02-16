@@ -1995,7 +1995,8 @@ def update_role(request):
         admins_to_update.append(admin)
 
     if admins_to_update:
-        OrganizationAdmin.objects.bulk_update(admins_to_update, ["role", "is_active", "domain"])
+        update_fields = ["role", "is_active", "domain"] if requesting_admin.role == 0 else ["role", "is_active"]
+        OrganizationAdmin.objects.bulk_update(admins_to_update, update_fields)
     return HttpResponse("success")
 
 
