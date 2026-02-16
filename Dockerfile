@@ -36,9 +36,9 @@ COPY pyproject.toml poetry.lock* ./
 RUN pip uninstall -y httpx || true
 RUN pip install --upgrade pip
 # Install dependencies with Poetry
-RUN poetry install --no-root --no-interaction -vvv || \
+RUN poetry install --no-root --no-interaction || \
     (echo "First attempt failed, clearing Poetry cache..." && \
-     poetry cache clear pypi --all && \
+     poetry cache clear pypi --all -n && \
      sleep 5 && \
      poetry install --no-root --no-interaction -vvv) || \
     (echo "Second attempt failed, final retry..." && \
