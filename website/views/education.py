@@ -516,67 +516,63 @@ def get_course_content(request, course_id):
 
 @require_POST
 def create_or_update_course(request):
+    user_profile = get_object_or_404(UserProfile, user=request.user)
     try:
-        if request.method == "POST":
-            title = request.POST.get("title")
-            description = request.POST.get("description")
-            level = request.POST.get("level", "BEG")
-            tag_ids = request.POST.getlist("tags")
-            thumbnail = request.FILES.get("thumbnail")
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        level = request.POST.get("level", "BEG")
+        tag_ids = request.POST.getlist("tags")
+        thumbnail = request.FILES.get("thumbnail")
 
-            if not title or not description:
-                missing_fields = []
-                if not title:
-                    missing_fields.append("Course title")
-                if not description:
-                    missing_fields.append("Course description")
-                return JsonResponse(
-                    {"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400
-                )
-            if thumbnail:
-                is_valid, error_message = validate_file_type(
-                    request,
-                    "thumbnail",
-                    allowed_extensions=["jpg", "jpeg", "png"],
-                    allowed_mime_types=["image/jpeg", "image/png"],
-                    max_size=5 * 1024 * 1024,  # 5MB
-                )
-                if not is_valid:
-                    return JsonResponse({"success": False, "message": error_message}, status=400)
-            user = request.user
-            user_profile = get_object_or_404(UserProfile, user=user)
-
-            course_id = request.POST.get("id")
-            if course_id:
-                try:
-                    course = Course.objects.get(id=course_id)
-                except Course.DoesNotExist:
-                    return JsonResponse({"success": False, "message": "Course not found"}, status=404)
-            else:
-                course = Course()
-
-            course.title = title
-            course.description = description
-            course.instructor = user_profile
-            course.level = level
-            if thumbnail:
-                course.thumbnail = thumbnail
-
-            course.save()
-
-            tags = Tag.objects.filter(id__in=tag_ids)
-            course.tags.set(tags)
-
+        if not title or not description:
+            missing_fields = []
+            if not title:
+                missing_fields.append("Course title")
+            if not description:
+                missing_fields.append("Course description")
             return JsonResponse(
-                {
-                    "success": True,
-                    "message": "Course created/updated successfully",
-                    "course_id": course.id,
-                },
-                status=201,
+                {"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400
             )
+        if thumbnail:
+            is_valid, error_message = validate_file_type(
+                request,
+                "thumbnail",
+                allowed_extensions=["jpg", "jpeg", "png"],
+                allowed_mime_types=["image/jpeg", "image/png"],
+                max_size=5 * 1024 * 1024,  # 5MB
+            )
+            if not is_valid:
+                return JsonResponse({"success": False, "message": error_message}, status=400)
+
+        course_id = request.POST.get("id")
+        if course_id:
+            try:
+                course = Course.objects.get(id=course_id)
+            except Course.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Course not found"}, status=404)
         else:
-            return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+            course = Course()
+
+        course.title = title
+        course.description = description
+        course.instructor = user_profile
+        course.level = level
+        if thumbnail:
+            course.thumbnail = thumbnail
+
+        course.save()
+
+        tags = Tag.objects.filter(id__in=tag_ids)
+        course.tags.set(tags)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Course created/updated successfully",
+                "course_id": course.id,
+            },
+            status=201,
+        )
     except Exception as e:
         logger.error(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
