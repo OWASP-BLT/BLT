@@ -123,13 +123,14 @@ $(function () {
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/issue/' + issue_id + '/comment/reply/',
             data: {
                 comment_pk: comment_id,
                 text_comment: comment,
                 issue_pk: issue_id,
                 parent_id: parent_id,
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
             },
             success: function (data) {
                 $('#target_div').html(data);

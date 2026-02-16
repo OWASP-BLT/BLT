@@ -5,9 +5,10 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.shortcuts import HttpResponse, render
+from django.shortcuts import HttpResponse, get_object_or_404, render
 from django.template.loader import render_to_string
 from django.utils.html import escape
+from django.views.decorators.http import require_POST
 
 from website.models import Issue
 
@@ -118,23 +119,29 @@ def edit_comment(request, pk):
 
 
 @login_required(login_url="/accounts/login/")
+@require_POST
 def reply_comment(request, pk):
-    if request.method == "GET":
-        parent_id = request.GET.get("parent_id")
-        show = int(parent_id)
-        parent_obj = Comment.objects.get(id=parent_id)
-        author = request.user.username
-        author_url = os.path.join("/profile/", request.user.username)
-        issue = Issue.objects.get(pk=request.GET["issue_pk"])
-        reply_text = request.GET.get("text_comment")
-        reply_text = escape(reply_text)
-        comment = Comment(author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj)
-        comment.save()
-        all_comment = Comment.objects.filter(issue=issue)
+    parent_id = request.POST.get("parent_id")
+    if not parent_id:
+        return HttpResponse("Missing parent comment ID", status=400)
+    try:
+        parent_id = int(parent_id)
+    except (ValueError, TypeError):
+        return HttpResponse("Invalid parent comment ID", status=400)
+
+    parent_obj = get_object_or_404(Comment, id=parent_id)
+    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+    author = request.user.username
+    author_url = f"/profile/{request.user.username}"
+    reply_text = request.POST.get("text_comment", "")
+    reply_text = escape(reply_text)
+    comment = Comment(author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj)
+    comment.save()
+    all_comment = Comment.objects.filter(issue=issue)
     return render(
         request,
         "comments.html",
-        {"all_comment": all_comment, "user": request.user, "show": show},
+        {"all_comment": all_comment, "user": request.user, "show": parent_id},
     )
 
 
