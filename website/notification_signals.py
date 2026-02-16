@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
-from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
+from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, User, UserBadge
 
 logger = logging.getLogger(__name__)
 
@@ -55,21 +55,6 @@ def notify_receiver_on_kudos(sender, instance, created, **kwargs):
             message += f" Comment: {instance.comment}"
 
         Notification.objects.create(user=instance.receiver, message=message, notification_type="reward", link=None)
-
-
-@receiver(post_save, sender=Post)
-def notify_users_on_post_creation(sender, instance, created, **kwargs):
-    """
-    Signal to notify users when a new Post is created.
-    """
-    if created:
-        message = f"Checkout a new post '{instance.title}' by {instance.author.username}!"
-        link = instance.get_absolute_url()
-
-        users = User.objects.exclude(username=instance.author.username)
-        for user in users:
-            Notification.objects.create(user=user, message=message, notification_type="promo", link=link)
-
 
 @receiver(post_save, sender=UserBadge)
 def notify_user_on_badge_recieved(sender, instance, created, **kwargs):

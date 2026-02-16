@@ -1421,7 +1421,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1501,9 +1501,6 @@ def home(request):
     if request.user.is_authenticated:
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
-
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1608,7 +1605,6 @@ def home(request):
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,
             "repo_stars": repo_stars,
             "top_referrals": top_referrals,
