@@ -20,12 +20,16 @@
     <div class="min-h-[calc(100vh-72px)] flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div class="w-full max-w-4xl mx-auto p-6">
             <div class="flex flex-col gap-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
-                <!-- Header Section -->
-                <div class="relative overflow-hidden bg-gradient-to-r from-red-50 to-white px-8 pt-8 pb-4">
+                <!-- Header Section - Fixed: Changed from white to dark:bg-gray-800 -->
+                <div class="relative overflow-hidden bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-700 px-8 pt-8 pb-4">
                     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div class="flex-1">
-                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-2">Trademark Search</h1>
-                            <p class="text-gray-600 dark:text-gray-400 mb-4">Search for trademark information from the USPTO database</p>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white mb-2">
+                                Trademark Search
+                            </h1>
+                            <p class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4">
+                                Search for trademark information from the USPTO database
+                            </p>
                         </div>
                         <div class="flex-shrink-0 w-32 md:w-48 transform transition-transform duration-500 hover:scale-105">
                             <img class="w-full object-contain"
@@ -46,7 +50,7 @@
                         {% csrf_token %}
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-500"
+                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white"
                                      fill="none"
                                      stroke="currentColor"
                                      viewBox="0 0 24 24"
@@ -55,16 +59,16 @@
                                     </path>
                                 </svg>
                             </div>
-                            <input class="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent text-base shadow-sm transition-all duration-300"
+                            <input class="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent text-base shadow-sm transition-all duration-300 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50"
                                    type="search"
                                    id="query"
                                    name="query"
                                    placeholder="Enter trademark name, serial number, or keyword...">
                         </div>
                         <button id="search_button"
-                                class="py-4 bg-[#e74c3c] hover:bg-red-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transform transition-all duration-300 ease-in-out hover:-translate-y-1 flex items-center justify-center gap-2"
+                                class="py-4 bg-[#e74c3c] hover:bg-red-600 hover:text-white text-white font-bold rounded-xl shadow-md hover:shadow-lg transform transition-all duration-300 ease-in-out hover:-translate-y-1 flex items-center justify-center gap-2"
                                 type="submit">
-                            <svg class="w-5 h-5"
+                            <svg class="w-5 h-5 hover:text-gray-900 dark:hover:text-white"
                                  fill="none"
                                  stroke="currentColor"
                                  viewBox="0 0 24 24"
@@ -74,8 +78,8 @@
                             </svg>
                             Search Trademarks
                         </button>
-                        <div class="flex items-center justify-center gap-2 text-center text-sm text-gray-500 dark:text-gray-500 mt-2">
-                            <svg class="w-4 h-4 text-[#e74c3c]"
+                        <div class="flex items-center justify-center gap-2 text-center text-sm text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white mt-2">
+                            <svg class="w-4 h-4 text-[#e74c3c] hover:text-gray-900 dark:hover:text-white"
                                  fill="currentColor"
                                  viewBox="0 0 20 20"
                                  xmlns="http://www.w3.org/2000/svg">

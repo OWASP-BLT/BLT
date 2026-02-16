@@ -1,10 +1,12 @@
 import concurrent.futures
 import ipaddress
 import json
+import logging
 import re
 import socket
 import time
 from calendar import monthrange
+from collections import defaultdict
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -22,7 +24,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
 from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -30,7 +32,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
@@ -44,6 +46,7 @@ from website.models import (
     Contribution,
     Contributor,
     ContributorStats,
+    GitHubIssue,
     Organization,
     Project,
     Repo,
@@ -51,6 +54,7 @@ from website.models import (
 )
 from website.utils import admin_required
 
+logger = logging.getLogger(__name__)
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
@@ -116,7 +120,7 @@ def select_contribution(request):
 
 @user_passes_test(admin_required)
 def distribute_bacon(request, contribution_id):
-    contribution = Contribution.objects.get(id=contribution_id)
+    contribution = get_object_or_404(Contribution, id=contribution_id)
     if contribution.status == "closed" and not BaconToken.objects.filter(contribution=contribution).exists():
         token = create_bacon_token(contribution.user, contribution)
         if token:
@@ -317,6 +321,97 @@ class ProjectView(FilterView):
                     projects[repo.project] = []
                 projects[repo.project].append(repo)
         context["projects"] = projects
+
+        return context
+
+
+class ProjectCompactListView(ListView):
+    """Compact spreadsheet-like view for projects with sortable columns"""
+
+    model = Project
+    template_name = "projects/project_compact_list.html"
+    context_object_name = "projects"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = Project.objects.select_related("organization").exclude(slug="")
+
+        # Aggregate repo stats at the database level to avoid N+1 queries
+        queryset = queryset.annotate(
+            repo_count=Count("repos"),
+            total_stars=Coalesce(Sum("repos__stars"), 0),
+            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_issues=Coalesce(Sum("repos__total_issues"), 0),
+        )
+
+        # Apply sorting
+        sort_by = self.request.GET.get("sort", "name")
+        order = self.request.GET.get("order", "asc")
+
+        # Handle organization sorting with explicit NULL placement
+        if sort_by == "organization":
+            if order == "desc":
+                queryset = queryset.order_by(F("organization__name").desc(nulls_last=True))
+            else:
+                queryset = queryset.order_by(F("organization__name").asc(nulls_last=True))
+        else:
+            # Map sort fields to actual model fields
+            sort_mapping = {
+                "name": "name",
+                "status": "status",
+                "repos_count": "repo_count",
+                "slack_channel": "slack_channel",
+                "slack_user_count": "slack_user_count",
+                "created": "created",
+                "modified": "modified",
+            }
+
+            field = sort_mapping.get(sort_by, "name")
+
+            if order == "desc":
+                field = f"-{field}"
+
+            queryset = queryset.order_by(field)
+
+        # Apply organization filter with validation
+        organization_id = self.request.GET.get("organization")
+        if organization_id:
+            try:
+                organization_id = int(organization_id)
+                queryset = queryset.filter(organization_id=organization_id)
+            except (ValueError, TypeError):
+                # Invalid organization_id, skip the filter
+                pass
+
+        # Apply search filter
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Build projects_with_stats from annotated queryset - no additional queries needed
+        projects_with_stats = []
+        for project in context["projects"]:
+            projects_with_stats.append(
+                {
+                    "project": project,
+                    "repo_count": project.repo_count,
+                    "total_stars": project.total_stars,
+                    "total_forks": project.total_forks,
+                    "total_issues": project.total_issues,
+                }
+            )
+
+        context["projects_with_stats"] = projects_with_stats
+        context["sort_by"] = self.request.GET.get("sort", "name")
+        context["order"] = self.request.GET.get("order", "asc")
 
         return context
 
@@ -734,6 +829,18 @@ class ProjectsDetailView(DetailView):
         response = super().get(request, *args, **kwargs)
 
         return response
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_http_methods(["POST"])
+def delete_project(request, slug):
+    """Delete a project. Only accessible by superusers."""
+    project = get_object_or_404(Project, slug=slug)
+    project_name = project.name
+    project.delete()
+    messages.success(request, f'Project "{project_name}" has been deleted successfully.')
+    return redirect("project_list")
 
 
 class RepoDetailView(DetailView):
@@ -1156,8 +1263,14 @@ class RepoDetailView(DetailView):
 
         # Calculate impact scores and enrich with contributor details
         processed_stats = []
+        # Fetch all contributors at once
+        contributor_ids = [stat["contributor"] for stat in stats_query]
+        contributors = Contributor.objects.in_bulk(contributor_ids)
+
         for stat in stats_query:
-            contributor = Contributor.objects.get(id=stat["contributor"])
+            contributor = contributors.get(stat["contributor"])
+            if not contributor:
+                continue
 
             # Calculate impact score using weighted values
             impact_score = (
@@ -1930,7 +2043,7 @@ class RepoDetailView(DetailView):
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": f"An unexpected error occurred: {str(e)}",
+                        "message": "An unexpected error occurred.",
                     },
                     status=500,
                 )
@@ -2088,3 +2201,159 @@ class RepoBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
+
+
+def gsoc_pr_report(request):
+    try:
+        current_year = timezone.now().year
+        start_year = current_year - 9  # inclusive → exactly 10 years
+
+        # Get selected year from request
+        selected_year = request.GET.get("year")
+        if selected_year:
+            try:
+                selected_year = int(selected_year)
+                # Validate year is within range
+                if selected_year < start_year or selected_year > current_year:
+                    selected_year = None
+            except (ValueError, TypeError):
+                selected_year = None
+
+        # Get all available years for the filter dropdown
+        available_years = list(range(current_year, start_year - 1, -1))  # Latest first
+
+        report_data = []
+
+        # Determine which years to process
+        if selected_year:
+            # Filter only selected year
+            years_to_process = [selected_year]
+        else:
+            # All years
+            years_to_process = range(start_year, current_year + 1)
+
+        # Build data for requested years
+        for year in years_to_process:
+            start_date = timezone.make_aware(datetime(year, 5, 1))
+            end_date = timezone.make_aware(datetime(year, 10, 1))
+
+            repos_qs = (
+                GitHubIssue.objects.filter(
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=start_date,
+                    merged_at__lt=end_date,
+                )
+                .exclude(merged_at__isnull=True)
+                # Exclude bots when contributor data exists
+                .exclude(
+                    Q(contributor__contributor_type__iexact="Bot")
+                    | Q(contributor__name__iendswith="[bot]")
+                    | Q(contributor__name__icontains="bot")
+                )
+                .values("repo__name", "repo__repo_url")
+                .annotate(
+                    pr_count=Count("id"),
+                    unique_contributors=Count("contributor", distinct=True),
+                )
+                .order_by("-pr_count")
+            )
+
+            repos = list(repos_qs)
+
+            report_data.append(
+                {
+                    "year": year,
+                    "repos": repos,  # may be empty
+                    "total_prs": sum(r["pr_count"] for r in repos),
+                }
+            )
+
+        # Calculate summary statistics based on filtered data
+        if selected_year:
+            # For single year view
+            total_years = 1
+            start_year_display = selected_year
+            end_year_display = selected_year
+        else:
+            # For all years view
+            total_years = current_year - start_year + 1
+            start_year_display = start_year
+            end_year_display = current_year
+
+        all_repos = set()
+        total_prs = 0
+        yearly_chart_data = []
+
+        def _repo_key(repo_row):
+            return repo_row.get("repo__name") or repo_row.get("repo__repo_url") or "Unknown repo"
+
+        def _repo_url(repo_row):
+            return repo_row.get("repo__repo_url") or ""
+
+        for year_block in report_data:
+            total_prs += year_block["total_prs"]
+            yearly_chart_data.append({"year": year_block["year"], "prs": year_block["total_prs"]})
+
+            for repo in year_block["repos"]:
+                all_repos.add(_repo_key(repo))
+
+        # Top repos across filtered years
+        repo_totals = defaultdict(int)
+        for year_block in report_data:
+            for repo in year_block["repos"]:
+                repo_totals[_repo_key(repo)] += repo["pr_count"]
+
+        top_repos_chart_data = [
+            {"repo": repo, "prs": count}
+            for repo, count in sorted(repo_totals.items(), key=lambda x: x[1], reverse=True)[:5]
+        ]
+
+        total_repos = len(all_repos)
+        avg_prs_per_year = round(total_prs / len(years_to_process), 2) if years_to_process else 0
+
+        # Update summary to reflect filtered data
+        summary_data = {
+            "start_year": start_year_display,
+            "end_year": end_year_display,
+            "total_years": total_years,
+            "total_repos": total_repos,
+            "total_prs": total_prs,
+            "avg_prs_per_year": avg_prs_per_year,
+        }
+
+        # Convert report_data into dict keyed by year
+        gsoc_data = {}
+        for entry in report_data:
+            repos_dict = {}
+            for repo in entry["repos"]:
+                repos_dict[_repo_key(repo)] = {
+                    "count": repo["pr_count"],
+                    "url": _repo_url(repo),
+                    "contributors": repo["unique_contributors"],
+                }
+            gsoc_data[entry["year"]] = {"repos": repos_dict, "total_prs": entry["total_prs"]}
+
+        context = {
+            "report_data": report_data,
+            "report_data_json": json.dumps(report_data),
+            "gsoc_data": gsoc_data,
+            "start_year": start_year_display,
+            "end_year": end_year_display,
+            "total_years": total_years,
+            "total_repos": total_repos,
+            "total_prs": total_prs,
+            "avg_prs_per_year": avg_prs_per_year,
+            "summary_data": json.dumps(summary_data),
+            "yearly_chart_data_json": json.dumps(yearly_chart_data),
+            "top_repos_chart_data_json": json.dumps(top_repos_chart_data),
+            "available_years": available_years,
+            "selected_year": str(selected_year) if selected_year else None,
+        }
+
+        return render(request, "projects/gsoc_pr_report.html", context)
+
+    except Exception:
+        logger.exception("Error generating GSOC PR report")
+        messages.error(request, "An error occurred while generating the report. Please try again later.")
+        return redirect("project_list")

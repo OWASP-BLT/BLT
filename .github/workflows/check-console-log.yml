@@ -119,7 +119,8 @@ jobs:
             if (violationCount > 0) {
               core.setOutput('violations_found', 'true');
               core.setOutput('violation_count', violationCount.toString());
-              core.setOutput('violations', violations);
+              // Use JSON.stringify to safely pass multi-line strings with special characters
+              core.setOutput('violations', JSON.stringify(violations));
               core.info(`Found console statements in ${violationCount} file(s)`);
             } else {
               core.setOutput('violations_found', 'false');
@@ -129,6 +130,9 @@ jobs:
       - name: Comment and label PR if violations found
         if: steps.check.outputs.violations_found == 'true'
         uses: actions/github-script@v7
+        env:
+          VIOLATIONS_JSON: ${{ steps.check.outputs.violations }}
+          VIOLATION_COUNT: ${{ steps.check.outputs.violation_count }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -137,8 +141,9 @@ jobs:
             const pr = context.payload.pull_request;
             const pull_number = pr.number;
             
-            const violations = `${{ steps.check.outputs.violations }}`;
-            const violationCount = '${{ steps.check.outputs.violation_count }}';
+            // Parse the JSON-encoded violations string from environment variable
+            const violations = JSON.parse(process.env.VIOLATIONS_JSON);
+            const violationCount = process.env.VIOLATION_COUNT;
             
             const commentMarker = '<!-- console-log-check -->';
             const commentBody = commentMarker + '\n' +

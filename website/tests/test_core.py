@@ -5,231 +5,7 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile
-
-
-class ForumTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass")
-        self.category = ForumCategory.objects.create(name="Test Category", description="Test Description")
-        self.client.login(username="testuser", password="testpass")
-
-        self.post_data = {"title": "Test Post", "category": self.category.id, "description": "Test Description"}
-
-    def test_create_and_view_forum_post(self):
-        # Create a new forum post
-        response = self.client.post(
-            reverse("add_forum_post"), data=json.dumps(self.post_data), content_type="application/json"
-        )
-
-        # Check if post was created successfully
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
-
-        # Verify post exists in database
-        post = ForumPost.objects.first()
-        self.assertIsNotNone(post)
-        self.assertEqual(post.title, self.post_data["title"])
-        self.assertEqual(post.description, self.post_data["description"])
-        self.assertEqual(post.category_id, self.post_data["category"])
-        self.assertEqual(post.user, self.user)
-
-        # View the forum page
-        response = self.client.get(reverse("view_forum"))
-
-        # Check if page loads successfully
-        self.assertEqual(response.status_code, 200)
-
-        # Check if our post is in the context
-        self.assertIn("posts", response.context)
-        self.assertIn(post, response.context["posts"])
-
-        # Check if post content is in the response
-        self.assertContains(response, self.post_data["title"])
-        self.assertContains(response, self.post_data["description"])
-
-    def test_forum_post_voting(self):
-        # Create a test post first
-        post = ForumPost.objects.create(
-            user=self.user, title="Test Post for Voting", description="Test Description", category=self.category
-        )
-
-        # Test upvoting
-        response = self.client.post(
-            reverse("vote_forum_post"),
-            data=json.dumps({"post_id": post.id, "up_vote": True, "down_vote": False}),
-            content_type="application/json",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(data["up_vote"], 1)
-        self.assertEqual(data["down_vote"], 0)
-
-        # Test downvoting
-        response = self.client.post(
-            reverse("vote_forum_post"),
-            data=json.dumps({"post_id": post.id, "up_vote": False, "down_vote": True}),
-            content_type="application/json",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
-        self.assertEqual(data["up_vote"], 0)
-        self.assertEqual(data["down_vote"], 1)
-
-        # Verify vote counts in database
-        post.refresh_from_db()
-        self.assertEqual(post.up_votes, 0)
-        self.assertEqual(post.down_votes, 1)
-
-    def test_forum_post_commenting(self):
-        # Create a test post first
-        post = ForumPost.objects.create(
-            user=self.user, title="Test Post for Comments", description="Test Description", category=self.category
-        )
-
-        # Test adding a comment
-        comment_data = {"post_id": post.id, "content": "Test comment content"}
-
-        response = self.client.post(
-            reverse("add_forum_comment"), data=json.dumps(comment_data), content_type="application/json"
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
-
-        # Verify comment exists in database
-        self.assertEqual(post.comments.count(), 1)
-        comment = post.comments.first()
-        self.assertEqual(comment.content, comment_data["content"])
-        self.assertEqual(comment.user, self.user)
-
-        # View the forum page and check if comment is displayed
-        response = self.client.get(reverse("view_forum"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, comment_data["content"])
-
-    def test_forum_post_with_repo_link(self):
-        # Create a test repo
-        from website.models import Organization, Project
-
-        organization = Organization.objects.create(name="Test Org", url="https://test.org")
-        project = Project.objects.create(name="Test Project", description="Test project desc")
-        repo = Repo.objects.create(
-            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
-        )
-
-        # Create a forum post with repo link
-        post_data = {
-            "title": "Test Post with Repo",
-            "category": self.category.id,
-            "description": "Test Description with repo link",
-            "repo": repo.id,
-        }
-
-        response = self.client.post(
-            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
-
-        # Verify post has repo link
-        post = ForumPost.objects.first()
-        self.assertIsNotNone(post.repo)
-        self.assertEqual(post.repo.id, repo.id)
-
-    def test_forum_post_with_project_link(self):
-        # Create a test project
-        from website.models import Project
-
-        project = Project.objects.create(name="Test Project", description="Test project desc")
-
-        # Create a forum post with project link
-        post_data = {
-            "title": "Test Post with Project",
-            "category": self.category.id,
-            "description": "Test Description with project link",
-            "project": project.id,
-        }
-
-        response = self.client.post(
-            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
-
-        # Verify post has project link
-        post = ForumPost.objects.first()
-        self.assertIsNotNone(post.project)
-        self.assertEqual(post.project.id, project.id)
-
-    def test_forum_post_with_organization_link(self):
-        # Create a test organization
-        from website.models import Organization
-
-        organization = Organization.objects.create(name="Test Org", url="https://test.org")
-
-        # Create a forum post with organization link
-        post_data = {
-            "title": "Test Post with Organization",
-            "category": self.category.id,
-            "description": "Test Description with organization link",
-            "organization": organization.id,
-        }
-
-        response = self.client.post(
-            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
-
-        # Verify post has organization link
-        post = ForumPost.objects.first()
-        self.assertIsNotNone(post.organization)
-        self.assertEqual(post.organization.id, organization.id)
-
-    def test_forum_post_with_all_links(self):
-        # Create test entities
-        from website.models import Organization, Project
-
-        organization = Organization.objects.create(name="Test Org", url="https://test.org")
-        project = Project.objects.create(name="Test Project", description="Test project desc")
-        repo = Repo.objects.create(
-            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
-        )
-
-        # Create a forum post with all links
-        post_data = {
-            "title": "Test Post with All Links",
-            "category": self.category.id,
-            "description": "Test Description with all links",
-            "repo": repo.id,
-            "project": project.id,
-            "organization": organization.id,
-        }
-
-        response = self.client.post(
-            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
-
-        # Verify post has all links
-        post = ForumPost.objects.first()
-        self.assertIsNotNone(post.repo)
-        self.assertIsNotNone(post.project)
-        self.assertIsNotNone(post.organization)
-        self.assertEqual(post.repo.id, repo.id)
-        self.assertEqual(post.project.id, project.id)
-        self.assertEqual(post.organization.id, organization.id)
+from website.models import Domain, GitHubIssue, Repo, UserProfile
 
 
 class TopEarnersTests(TestCase):
@@ -422,11 +198,9 @@ class DarkModeTests(TestCase):
         self.assertEqual(data["theme"], "light")
 
     def test_set_theme_invalid_method(self):
-        """Test that GET request to set-theme endpoint returns error"""
+        """Test that GET request to set-theme endpoint returns 405"""
         response = self.client.get(reverse("set_theme"))
-        self.assertEqual(response.status_code, 400)
-        data = response.json()
-        self.assertEqual(data["status"], "error")
+        self.assertEqual(response.status_code, 405)
 
     def test_dark_mode_toggle_in_base_template(self):
         """Test that dark mode toggle is present in base template"""
@@ -469,3 +243,62 @@ class StatusPageTests(TestCase):
         # Check for essential status data keys
         self.assertIn("management_commands", status)
         self.assertIn("available_commands", status)
+
+
+class SitemapTests(TestCase):
+    """Test suite for sitemap functionality"""
+
+    def setUp(self):
+        self.client = Client()
+        # Create test user and domain for sitemap
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.domain = Domain.objects.create(name="test.example.com", url="https://test.example.com")
+
+    def test_sitemap_loads(self):
+        """Test that the sitemap page loads without errors"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_sitemap_context_has_username(self):
+        """Test that sitemap provides random_username in context"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("random_username", response.context)
+        # Should be a string, not a User object
+        self.assertIsInstance(response.context["random_username"], str)
+
+    def test_sitemap_context_has_domain(self):
+        """Test that sitemap provides random_domain in context"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("random_domain", response.context)
+        # Should be a string, not a Domain object
+        self.assertIsInstance(response.context["random_domain"], str)
+
+    def test_sitemap_with_no_users(self):
+        """Test that sitemap handles case when no users exist"""
+        User.objects.all().delete()
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        # Should have fallback value
+        self.assertEqual(response.context["random_username"], "user")
+
+    def test_sitemap_with_no_domains(self):
+        """Test that sitemap handles case when no domains exist"""
+        Domain.objects.all().delete()
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        # Should have fallback value
+        self.assertEqual(response.context["random_domain"], "example.com")
+
+    def test_sitemap_template_renders_urls(self):
+        """Test that sitemap template contains profile and domain URLs"""
+        response = self.client.get(reverse("sitemap"))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # Check that profile URL is present
+        self.assertIn("profile", content)
+        # Check that domain URL is present
+        self.assertIn("domain", content)
+        # Check that follow_user URL is present
+        self.assertIn("follow", content)

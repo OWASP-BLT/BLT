@@ -8,7 +8,7 @@
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ lab.name }}</h1>
                         <p class="mt-2 text-gray-600 dark:text-gray-400">{{ lab.description }}</p>
-                        <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-500">
+                        <div class="mt-2 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                             <span class="flex items-center">
                                 <svg class="w-4 h-4 mr-1"
                                      fill="none"
@@ -49,7 +49,7 @@
                 <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
                     <div class="px-4 py-5 sm:px-6">
                         <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Lab Tasks</h3>
-                        <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-500">
+                        <p class="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
                             Complete each task to master {{ lab.name }} techniques.
                         </p>
                     </div>
@@ -58,7 +58,7 @@
                             {% for task in tasks %}
                                 <li>
                                     <a href="{% url 'task_detail' lab.id task.id %}"
-                                       class="block hover:bg-gray-50 px-4 py-4 sm:px-6">
+                                       class="block hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-4 sm:px-6">
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center">
                                                 <div class="flex-shrink-0">
@@ -86,7 +86,7 @@
                                                 </div>
                                                 <div class="ml-4">
                                                     <div class="flex items-center">
-                                                        <span class="text-sm font-medium text-gray-500 dark:text-gray-500 mr-3">{{ task.order }}.</span>
+                                                        <span class="text-sm font-medium text-gray-600 dark:text-gray-400 mr-3">{{ task.order }}.</span>
                                                         <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ task.name }}</p>
                                                         <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.task_type == 'theory' %}bg-blue-100 text-blue-800{% else %}bg-red-100 text-red-800{% endif %}">
                                                             {{ task.get_task_type_display }}
@@ -104,7 +104,7 @@
                                                         {% endif %}
                                                     </div>
                                                     {% if task.description %}
-                                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{{ task.description }}</p>
+                                                        <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ task.description }}</p>
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -123,7 +123,7 @@
                         </ul>
                     {% else %}
                         <div class="px-4 py-5 sm:px-6">
-                            <p class="text-gray-500 dark:text-gray-500">No tasks available for this lab yet.</p>
+                            <p class="text-gray-600 dark:text-gray-400">No tasks available for this lab yet.</p>
                         </div>
                     {% endif %}
                 </div>

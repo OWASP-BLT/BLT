@@ -1,22 +1,46 @@
 import json
+import logging
 import re
 from collections import defaultdict
 
 import requests
 import yaml
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
 
-from blt import settings
-from website.models import BaconEarning, BaconSubmission, Badge, UserBadge
+from blt import settings as blt_settings
+from website.models import BaconEarning, BaconSubmission, Badge, Organization, SlackIntegration, UserBadge
+
+logger = logging.getLogger(__name__)
 
 
-# @login_required
+def slack_escape(text):
+    """
+    Escape Slack markdown characters in text to prevent formatting issues.
+    Escapes: _, *, `, ~, &, <, >
+    IMPORTANT: Escape '&' first to avoid corrupting HTML entities.
+    """
+    if not text:
+        return text
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("*", "\\*")
+        .replace("_", "\\_")
+        .replace("`", "\\`")
+        .replace("~", "\\~")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
+@login_required
 def batch_send_bacon_tokens_view(request):
     # Get all users with non-zero tokens_earned
     users_with_tokens = BaconEarning.objects.filter(tokens_earned__gt=0)
@@ -39,7 +63,7 @@ def batch_send_bacon_tokens_view(request):
 
     # Payload for POST request
     payload = {"yaml_content": yaml_content}
-    ORD_SERVER_URL = settings.ORD_SERVER_URL
+    ORD_SERVER_URL = blt_settings.ORD_SERVER_URL
     try:
         # Send the request to the ORD server
         response = requests.post(
@@ -62,7 +86,10 @@ def batch_send_bacon_tokens_view(request):
             return JsonResponse({"status": "error", "message": response_data.get("error", "Unknown error")})
 
     except requests.RequestException as e:
-        return JsonResponse({"status": "error", "message": str(e)})
+        logger.error(f"Request error in batch_send_bacon_tokens_view: {str(e)}", exc_info=True)
+        return JsonResponse(
+            {"status": "error", "message": "An error occurred while sending tokens. Please try again later."}
+        )
 
 
 def pending_transactions_view(request):
@@ -73,13 +100,12 @@ def pending_transactions_view(request):
     for transaction in pending_transactions:
         user = transaction.user
         btc_address = getattr(user.userprofile, "btc_address", None)
-        transactions_data = [{"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned}]
+        transactions_data.append({"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned})
 
     # If you want to return it as a JSON response:
     return JsonResponse({"pending_transactions": transactions_data})
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(login_required, name="dispatch")
 class BaconSubmissionView(View):
     def post(self, request):
@@ -117,6 +143,106 @@ class BaconSubmissionView(View):
                 bacon_amount=bacon_amount,
                 status=status,
             )
+
+            # Send Slack notification to #project-blt-bacon channel
+            try:
+                # Find OWASP BLT organization
+                # Use exact match first, fallback to case-insensitive contains for flexibility
+                owasp_org = Organization.objects.filter(name="OWASP BLT").first()
+                if not owasp_org:
+                    owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
+
+                if owasp_org:
+                    # Get Slack integration for the organization
+                    slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
+
+                    if slack_integration and slack_integration.bot_access_token:
+                        # Get credentials from database
+                        bot_token = slack_integration.bot_access_token
+                        channel_id = slack_integration.default_channel_id
+
+                        # Create WebClient once for reuse
+                        client = WebClient(token=bot_token)
+
+                        # If no default channel ID is set, try to find #project-blt-bacon specifically
+                        # Handle pagination to ensure we check all channels
+                        if not channel_id:
+                            try:
+                                cursor = None
+                                while True:
+                                    channels_response = client.conversations_list(types="public_channel", cursor=cursor)
+                                    if channels_response.get("ok"):
+                                        for channel in channels_response.get("channels", []):
+                                            if channel.get("name") == "project-blt-bacon":
+                                                channel_id = channel.get("id")
+                                                break
+                                        if channel_id:
+                                            break
+                                        # Check for next page
+                                        cursor = channels_response.get("response_metadata", {}).get("next_cursor")
+                                        if not cursor:
+                                            break
+                                    else:
+                                        logger.warning(
+                                            "Failed to list Slack channels: %s",
+                                            channels_response.get("error"),
+                                        )
+                                        break
+                            except SlackApiError as e:
+                                logger.warning("Failed to find #project-blt-bacon channel: %s", e)
+
+                        # Send notification if we have a channel ID
+                        if channel_id:
+                            # Sanitize description for Slack markdown (escape special characters)
+                            # Slack markdown uses *, _, `, ~, <, >, & for formatting
+                            sanitized_description = description[:200]
+                            sanitized_description = slack_escape(sanitized_description)
+                            if len(description) > 200:
+                                sanitized_description += "..."
+
+                            # Escape username and other user-provided fields for Slack markdown
+                            escaped_username = slack_escape(request.user.username)
+                            escaped_type = slack_escape(contribution_type)
+                            escaped_status = slack_escape(status)
+
+                            # Build the message
+                            message = (
+                                f"*New BACON Claim Submitted!*\n\n"
+                                f"• *User:* {escaped_username}\n"
+                                f"• *Type:* {escaped_type}\n"
+                                f"• *PR:* {github_url}\n"
+                                f"• *Description:* {sanitized_description}\n"
+                                f"• *Amount:* {bacon_amount} BACON\n"
+                                f"• *Status:* {escaped_status}"
+                            )
+
+                            # Send to Slack
+                            try:
+                                client.chat_postMessage(
+                                    channel=channel_id,
+                                    text=message,
+                                    unfurl_links=False,
+                                )
+                                logger.info("Slack notification sent for submission %s", submission.id)
+                            except SlackApiError as e:
+                                logger.error(
+                                    "Failed to send Slack message to channel %s: %s",
+                                    channel_id,
+                                    e,
+                                    exc_info=True,
+                                )
+                        else:
+                            logger.warning(
+                                "Slack channel #project-blt-bacon not found and no default channel configured"
+                            )
+                    else:
+                        logger.warning("Slack integration not configured for OWASP BLT")
+                else:
+                    logger.warning("OWASP BLT organization not found")
+
+            except Exception as e:
+                # Don't fail the submission if Slack fails
+                logger.error("Failed to send Slack notification: %s", e, exc_info=True)
 
             return JsonResponse({"message": "Submission created", "submission_id": submission.id}, status=201)
 
@@ -156,41 +282,39 @@ def bacon_requests_view(request):
 
 
 @login_required
-@csrf_exempt
+@require_POST
 def update_submission_status(request, submission_id):
     """Allows a mentor to update the submission status and bacon amount."""
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            new_status = data.get("status")  # 'accepted' or 'declined'
-            new_bacon_amount = data.get("bacon_amount")
+    try:
+        data = json.loads(request.body)
+        new_status = data.get("status")  # 'accepted' or 'declined'
+        new_bacon_amount = data.get("bacon_amount")
 
-            submission = get_object_or_404(BaconSubmission, id=submission_id)
+        submission = get_object_or_404(BaconSubmission, id=submission_id)
 
-            # Check if the user is a mentor
-            mentor_badge = Badge.objects.filter(title="mentor").first()
-            is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+        # Check if the user is a mentor
+        mentor_badge = Badge.objects.filter(title="mentor").first()
+        is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
 
-            if not is_mentor:
-                return JsonResponse({"error": "Unauthorized"}, status=403)
+        if not is_mentor:
+            return JsonResponse({"error": "Unauthorized"}, status=403)
 
-            # Update status and bacon amount if provided
-            if new_status:
-                submission.status = new_status
-            if new_bacon_amount is not None:
-                submission.bacon_amount = new_bacon_amount
+        # Update status and bacon amount if provided
+        if new_status:
+            submission.status = new_status
+        if new_bacon_amount is not None:
+            submission.bacon_amount = new_bacon_amount
 
-            submission.save()
-            return JsonResponse(
-                {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
-            )
+        submission.save()
+        return JsonResponse(
+            {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
+        )
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)
-        except Exception as e:
-            return JsonResponse({"error": "error updating submission status"}, status=400)
-
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+    except Exception:
+        logger.exception("Error updating submission status")
+        return JsonResponse({"error": "error updating submission status"}, status=400)
 
 
 @login_required
@@ -230,7 +354,7 @@ def initiate_transaction(request):
                 }
 
                 # Send request to ORD server
-                ord_server_url = settings.ORD_SERVER_URL
+                ord_server_url = blt_settings.ORD_SERVER_URL
 
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
@@ -255,7 +379,7 @@ def initiate_transaction(request):
             elif network == "regtest":
                 final_payload = {"num_users": len(selected_users), "fee_rate": fee_rate, "dry_run": dry_run}
 
-                ord_server_url = settings.ORD_SERVER_URL
+                ord_server_url = blt_settings.ORD_SERVER_URL
 
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
@@ -305,7 +429,7 @@ def get_wallet_balance(request):
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
     # Fetch the wallet balance from the ORD server
-    ord_server_url = settings.ORD_SERVER_URL
+    ord_server_url = blt_settings.ORD_SERVER_URL
     if not ord_server_url:
         return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
@@ -317,7 +441,8 @@ def get_wallet_balance(request):
             return JsonResponse({"balance": balance_data, "success": True})
         else:
             return JsonResponse({"error": "Failed to fetch wallet balance"}, status=response.status_code)
-    except requests.RequestException as e:
+    except requests.RequestException:
+        logger.exception("Error fetching wallet balance")
         return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
 
 

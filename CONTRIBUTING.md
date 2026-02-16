@@ -10,6 +10,7 @@ Thank you for your interest in contributing to OWASP BLT! We welcome contributio
   - [Docker Setup (Recommended)](#docker-setup-recommended)
   - [Vagrant Setup](#vagrant-setup)
   - [Python Virtual Environment Setup](#python-virtual-environment-setup)
+  - [Populating Test Data for Local Development](#populating-test-data-for-local-development)
 - [Making Contributions](#making-contributions)
   - [Finding Issues to Work On](#finding-issues-to-work-on)
   - [Creating a Pull Request](#creating-a-pull-request)
@@ -47,18 +48,36 @@ Before you start contributing, you'll need to set up your development environmen
 
 2. Configure environment variables:
 
+   **Linux/macOS/Git Bash:**
+
    ```bash
    cp .env.example .env
+   ```
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   **Windows (CMD):**
+
+   ```cmd
+   copy .env.example .env
    ```
 
    Modify the `.env` file as per your local setup.
 
 3. Ensure LF Line Endings:
-   If you're working on a Windows machine, ensure all files use LF line endings:
+   The repository includes a `.gitattributes` file that automatically enforces LF line endings for shell scripts and configuration files. For new clones, this should handle line endings automatically.
+
+   If you're working on a Windows machine, we recommend configuring Git to work with `.gitattributes`:
 
    ```bash
    git config --global core.autocrlf input
    ```
+
+   **Windows users:** For more detailed instructions on handling line endings, including when manual conversion is needed and PowerShell/VS Code methods, see the [Setup.md](docs/Setup.md#1-ensure-lf-line-endings) documentation.
 
 4. Build and start the Docker containers:
 
@@ -67,7 +86,7 @@ Before you start contributing, you'll need to set up your development environmen
    docker-compose up
    ```
 
-5. Access the application at http://localhost:8000
+5. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Vagrant Setup
 
@@ -90,9 +109,46 @@ Before you start contributing, you'll need to set up your development environmen
    python manage.py runserver
    ```
 
-4. Access the application at http://localhost:8000
+4. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Python Virtual Environment Setup
+
+
+### Optional: Python Virtual Environment Setup using `uv`
+
+BLT can also be set up using [`uv`](https://github.com/astral-sh/uv), a fast Python package manager
+and virtual environment tool. This is an **optional** alternative to the Poetry-based setup
+described above.
+
+This option is useful for contributors who prefer faster dependency resolution and installation.
+
+#### Install `uv`
+
+> ⚠️ Note (Windows):  
+> On some Windows setups, `uv` may fail to auto-detect Python installations
+> due to registry or PATH resolution issues. In such cases, explicitly
+> specifying the Python interpreter or using Docker/Poetry is recommended.
+
+
+```bash
+pip install uv
+```
+
+#### Set up the BLT project using `uv`
+
+From the project root, run:
+
+```bash
+uv sync
+
+To start the development server:
+
+uv run python manage.py migrate
+uv run python manage.py runserver
+
+Open your browser at:
+http://localhost:8000
+
 
 1. Install Python 3.11.2 (using pyenv or another tool):
 
@@ -118,7 +174,71 @@ Before you start contributing, you'll need to set up your development environmen
    python manage.py runserver
    ```
 
-4. Access the application at http://localhost:8000
+4. Access the application at [http://localhost:8000](http://localhost:8000)
+
+### Populating Test Data for Local Development
+For faster local development and testing, the project provides a built-in Django management command to automatically populate the database with realistic sample data.
+
+#### Generate Sample Data
+
+Run the following command after migrations:
+
+   ```bash
+   python manage.py generate_sample_data
+   ```
+
+This command automatically creates:
+- Users with profiles and follow relationships
+- Organizations
+- Domains
+- Issues
+- Hunts
+- Projects
+- Repositories
+- Pull Requests
+- Reviews
+- Points & Activity records
+- Badges
+- Tags
+
+### Additional Seed Commands
+
+In addition to the main sample data generator, the project provides specialized seed commands for security labs and OWASP adventures.
+
+#### 1. Seed OWASP BLT Adventures
+
+This command populates the platform with predefined OWASP BLT adventure challenges.
+
+   ```bash
+   python manage.py seed_adventures
+   ```
+
+#### 2. Seed Security Lab Challenges
+This command seeds vulnerable security labs used for hands-on security practice, including:
+- IDOR
+- XSS
+- CSRF
+- SQL Injection
+- Other OWASP Top 10 style vulnerabilities
+
+   ```bash
+   python manage.py seed_all_security_lab
+   ```
+
+#### Important Notes
+This command clears existing data before creating sample data.
+It is intended strictly for local development and testing.
+Do not run this in production environments.
+
+#### Full Local Setup Example
+   ```bash
+   python manage.py migrate
+   python manage.py generate_sample_data
+   python manage.py createsuperuser
+   python manage.py runserver
+   ```
+
+This will give you a fully populated development environment with realistic relationships across the platform.
 
 ## Making Contributions
 
@@ -185,9 +305,11 @@ poetry run pre-commit install
 
 For JavaScript code, please follow these guidelines:
 
-- **Avoid all `console` statements**: Our CI/CD pipeline automatically checks for any `console` statements in JavaScript files (including `console.log`, `console.error`, `console.warn`, etc.). Remove them before submitting your PR.
-- The project has sufficient error tracking systems in place, so console statements are not needed.
-- For temporary debugging during development, comment out console statements before committing: `// console.log()`.
+**Avoid all console statements:** Our CI/CD pipeline automatically checks for any console statements in JavaScript files (including console.log, console.error, console.warn, etc.). Remove them before submitting your PR.
+
+The project has sufficient error tracking systems in place, so console statements are not needed.
+
+For temporary debugging during development, comment out console statements before committing: `// console.log()`.
 
 ## Testing
 
