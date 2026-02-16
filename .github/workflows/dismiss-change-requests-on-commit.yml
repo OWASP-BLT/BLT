@@ -49,11 +49,27 @@ jobs:
               const totalReviews = reviews.length;
               core.info(`Found ${totalReviews} total reviews`);
 
-              // Filter for reviews with "CHANGES_REQUESTED" state
-              const changeRequestedReviews = reviews.filter(review =>
-                review.state === 'CHANGES_REQUESTED'
-              );
+              // Build a map of the most recent review per reviewer
+              const latestReviewByUser = new Map();
+              for (const review of reviews) {
+                const login = review.user && review.user.login;
+                if (!login) continue;
 
+                const existing = latestReviewByUser.get(login);
+                if (
+                  !existing ||
+                  (review.submitted_at &&
+                    new Date(review.submitted_at) >
+                      new Date(existing.submitted_at || 0))
+                ) {
+                  latestReviewByUser.set(login, review);
+                }
+              }
+
+              // From the latest reviews, keep only those with "CHANGES_REQUESTED"
+              const changeRequestedReviews = Array.from(
+                latestReviewByUser.values(),
+              ).filter(review => review.state === 'CHANGES_REQUESTED');
               if (changeRequestedReviews.length === 0) {
                 core.info('No "changes requested" reviews to dismiss');
                 return;
