@@ -589,7 +589,7 @@ def _refresh_repository_pull_requests(hackathon, repo):
 
     while page <= max_pages:
         params["page"] = page
-        response = requests.get(api_url, headers=headers, params=params)
+        response = requests.get(api_url, headers=headers, params=params, timeout=GITHUB_API_TIMEOUT)
         response.raise_for_status()  # Raise exception for HTTP errors
 
         page_data = response.json()
