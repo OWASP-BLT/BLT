@@ -359,7 +359,9 @@ def initiate_transaction(request):
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
-                response = requests.post(f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload)
+                response = requests.post(
+                    f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload, timeout=30
+                )
                 response_data = response.json()
                 if response.status_code == 200 and "txid" in response_data:
                     txid = response_data["txid"]
@@ -384,7 +386,9 @@ def initiate_transaction(request):
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
-                response = requests.post(f"{ord_server_url}/regtest/send-bacon-tokens", json=final_payload)
+                response = requests.post(
+                    f"{ord_server_url}/regtest/send-bacon-tokens", json=final_payload, timeout=30
+                )
                 response_data = response.json()
                 if response.status_code == 200:
                     return JsonResponse(response_data)
@@ -398,6 +402,9 @@ def initiate_transaction(request):
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except requests.RequestException:
+            logger.exception("Error communicating with ORD server")
+            return JsonResponse({"error": "Failed to connect to transaction server"}, status=502)
 
     # Check if the user is a mentor
     mentor_badge = Badge.objects.filter(title="mentor").first()
@@ -434,7 +441,7 @@ def get_wallet_balance(request):
         return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
     try:
-        response = requests.get(f"{ord_server_url}/mainnet/wallet-balance")
+        response = requests.get(f"{ord_server_url}/mainnet/wallet-balance", timeout=10)
         response_data = response.json()
         if response.status_code == 200 and response_data.get("success"):
             balance_data = json.loads(response_data["balance"])
