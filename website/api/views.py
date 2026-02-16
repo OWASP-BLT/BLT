@@ -2076,11 +2076,10 @@ class ZeroTrustIssueCreateView(APIView):
         # NEW: Check org encryption config BEFORE creating the Issue
         try:
             org_encryption_config = OrgEncryptionConfig.objects.get(organization=organization)
-            # If the configuration model exposes a validation hook, use it to ensure
-            # the config is complete and usable before creating the Issue.
-            validate_method = getattr(org_encryption_config, "validate_for_zero_trust", None)
-            if callable(validate_method):
-                validate_method()
+            # Use the model's clean() method to ensure the configuration is valid
+            # before creating the Issue. This will raise ValidationError if the
+            # configuration is incomplete or unusable for zero-trust delivery.
+            org_encryption_config.clean()
         except OrgEncryptionConfig.DoesNotExist:
             return Response(
                 {"error": "Zero-trust delivery is not configured for this organization"},

@@ -42,7 +42,22 @@ def _validate_age_recipient(recipient: str) -> bool:
     if recipient.startswith("age1"):
         return bool(re.match(r"^age1[a-z0-9]{58}$", recipient))
 
-    return recipient.startswith(("ssh-ed25519 ", "ssh-rsa "))
+    # Validate SSH public keys in authorized_keys-style "type base64 [comment]" format.
+    if recipient.startswith(("ssh-ed25519 ", "ssh-rsa ")):
+        parts = recipient.split(" ", 2)
+        if len(parts) < 2:
+            return False
+        key_type, key_b64 = parts[0], parts[1]
+        if key_type not in ("ssh-ed25519", "ssh-rsa"):
+            return False
+        # Base64-encoded key: standard character set plus up to two padding '=' chars.
+        if not re.fullmatch(r"[A-Za-z0-9+/]+={0,2}", key_b64):
+            return False
+        # Require a minimum length to avoid trivially invalid keys.
+        if len(key_b64) < 16:
+            return False
+        return True
+    return False
 
 
 def _validate_pgp_fingerprint(fingerprint: str) -> bool:
@@ -268,6 +283,9 @@ def _encrypt_artifact_for_org(
                 exc_info=True,
                 extra={"stderr": e.stderr.decode("utf-8", errors="replace") if e.stderr else None},
             )
+            raise RuntimeError(
+                f"Encryption failed: {e.stderr.decode('utf-8', errors='replace') if e.stderr else 'Unknown error'}"
+            )
         return out, OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP
 
     # No valid method configured
@@ -304,9 +322,6 @@ Delivery method: email:smtp
 
 Please confirm receipt by replying to this message or by signing a short receipt
 that includes the issue_id and artifact_sha256.
-
-If you need the password for a symmetric archive, it has been delivered out-of-band
-to the contact you provided.
 
 Regards,
 {getattr(settings, "PROJECT_NAME", "BLT")} Disclosure Service

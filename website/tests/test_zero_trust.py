@@ -78,3 +78,63 @@ class ZeroTrustPipelineTests(TestCase):
 
         self.issue.refresh_from_db()
         self.assertEqual(self.issue.delivery_status, "failed")
+
+    @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
+    def test_pipeline_handles_encryption_failure_marks_issue_failed(self, mock_encrypt):
+        upload = SimpleUploadedFile(
+            "poc.txt",
+            b"SECRET EXPLOIT DATA",
+            content_type="text/plain",
+        )
+        mock_encrypt.side_effect = RuntimeError("encryption failed")
+        with self.assertRaises(Exception):
+            build_and_deliver_zero_trust_issue(self.issue, [upload])
+        self.issue.refresh_from_db()
+        self.assertEqual(self.issue.delivery_status, "failed")
+        # CharFields with blank=True persist as empty string ("") when unset.
+        self.assertFalse(self.issue.artifact_sha256)
+        self.assertEqual(self.issue.artifact_sha256, "")
+        self.assertFalse(self.issue.encryption_method)
+        self.assertEqual(self.issue.encryption_method, "")
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    @patch("website.zero_trust_pipeline.EmailMessage.send")
+    @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
+    def test_pipeline_handles_email_delivery_failure_marks_issue_failed(
+        self,
+        mock_encrypt,
+        mock_email_send,
+    ):
+        def fake_encrypt(org_config, input_path, tmp_dir, issue):
+            out = Path(tmp_dir) / "report.tar.gz.age"
+            out.write_bytes(b"encrypted-content")
+            return str(out), "age"
+
+        mock_encrypt.side_effect = fake_encrypt
+        mock_email_send.side_effect = RuntimeError("email delivery failed")
+        upload = SimpleUploadedFile(
+            "poc.txt",
+            b"SECRET EXPLOIT DATA",
+            content_type="text/plain",
+        )
+        # Email failure should NOT raise; pipeline records distinct status.
+        build_and_deliver_zero_trust_issue(self.issue, [upload])
+        self.issue.refresh_from_db()
+        self.assertEqual(self.issue.delivery_status, "encryption_success_delivery_failed")
+        # Encryption succeeded, so metadata should be present
+        self.assertTrue(self.issue.artifact_sha256)
+        self.assertEqual(self.issue.encryption_method, "age")
+
+    @patch("website.zero_trust_pipeline._encrypt_artifact_for_org")
+    def test_pipeline_handles_invalid_encryption_configuration(self, mock_encrypt):
+        # Keep DB config valid; force encrypt helper to raise as if misconfigured.
+        upload = SimpleUploadedFile(
+            "poc.txt",
+            b"SECRET EXPLOIT DATA",
+            content_type="text/plain",
+        )
+        mock_encrypt.side_effect = ValueError("Invalid encryption configuration")
+        with self.assertRaises(Exception):
+            build_and_deliver_zero_trust_issue(self.issue, [upload])
+        self.issue.refresh_from_db()
+        self.assertEqual(self.issue.delivery_status, "failed")

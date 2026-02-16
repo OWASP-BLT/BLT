@@ -1224,19 +1224,16 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
-<<<<<<< Zero_trust_feature
     path(
         "api/zero-trust/issues/",
         ZeroTrustIssueCreateView.as_view(),
         name="zero_trust_issue_create",
     ),
-=======
     path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
     path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
     path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
     path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
     path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
->>>>>>> main
 ]
 
 if settings.DEBUG:
