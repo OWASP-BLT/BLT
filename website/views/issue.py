@@ -647,18 +647,21 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
+@login_required(login_url="/accounts/login")
+@require_POST
 def change_bid_status(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            bid_id = data.get("id")
-            bid = Bid.objects.get(id=bid_id)
-            bid.status = "Selected"
-            bid.save()
-            return JsonResponse({"success": True})
-        except Bid.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Bid not found"})
-    return HttpResponse(status=405)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+    bid_id = data.get("id")
+    try:
+        bid = Bid.objects.get(id=bid_id)
+    except Bid.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Bid not found"}, status=404)
+    bid.status = "Selected"
+    bid.save()
+    return JsonResponse({"success": True})
 
 
 def get_unique_issues(request):
