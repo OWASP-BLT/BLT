@@ -514,6 +514,7 @@ def get_course_content(request, course_id):
         )
 
 
+@login_required
 @require_POST
 def create_or_update_course(request):
     try:
