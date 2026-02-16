@@ -232,7 +232,10 @@ def add_section(request, course_id):
 
     # Sanitize user input
     title = request.POST.get("title")
-    order = int(request.POST.get("order", 0))
+    try:
+        order = int(request.POST.get("order", 0))
+    except (ValueError, TypeError):
+        order = 0
 
     section = Section.objects.create(course=course, title=title, order=order)
     messages.success(request, f"Section '{title}' was added successfully!")
@@ -290,7 +293,10 @@ def add_lecture(request, section_id):
     title = request.POST.get("title")
     content_type = request.POST.get("content_type")
     description = request.POST.get("description")
-    order = int(request.POST.get("order", 0))
+    try:
+        order = int(request.POST.get("order", 0))
+    except (ValueError, TypeError):
+        order = 0
     duration = request.POST.get("duration") or None
 
     lecture = Lecture(
