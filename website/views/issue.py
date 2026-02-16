@@ -2232,10 +2232,16 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.process_issue(user, issue, created, domain)
 
 
+@login_required(login_url="/accounts/login")
 def IssueEdit(request):
     if request.method == "POST":
-        issue = Issue.objects.get(pk=request.POST.get("issue_pk"))
-        uri = request.POST.get("domain")
+        try:
+            issue = Issue.objects.get(pk=request.POST.get("issue_pk"))
+        except (Issue.DoesNotExist, ValueError, TypeError):
+            return HttpResponse("Issue not found")
+        uri = request.POST.get("domain", "")
+        if not uri:
+            return HttpResponse("Domain is required")
         link = uri.replace("www.", "")
         if request.user == issue.user or request.user.is_superuser:
             domain, created = Domain.objects.get_or_create(name=link, defaults={"url": "http://" + link})
