@@ -833,7 +833,7 @@ class Issue(models.Model):
         help_text="Delivery channel, e.g. email:smtp.",
     )
     delivery_status = models.CharField(
-        max_length=20,
+        max_length=50,
         blank=True,
         help_text="Zero-trust pipeline status: pending_build, delivered, failed, etc.",
     )

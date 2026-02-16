@@ -167,7 +167,8 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         try:
             org_config = OrgEncryptionConfig.objects.get(organization=org)
         except OrgEncryptionConfig.DoesNotExist:
-            raise RuntimeError(f"No OrgEncryptionConfig for organization {org.name}")
+            logger.error("No OrgEncryptionConfig for organization id=%s", org.id)
+            raise RuntimeError("No encryption configuration found for this organization")
 
         encrypted_path, method_used = _encrypt_artifact_for_org(org_config, tar_path, issue_tmp_dir, issue)
 
@@ -201,7 +202,14 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         raise
     finally:
         if issue_tmp_dir is not None:
-            _secure_delete_path(issue_tmp_dir)
+            try:
+                _secure_delete_path(issue_tmp_dir)
+            except Exception as cleanup_error:
+                logger.warning(
+                    "Failed to securely delete temporary issue directory %s: %s",
+                    issue_tmp_dir,
+                    cleanup_error,
+                )
 
 
 def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
@@ -248,7 +256,8 @@ def _encrypt_artifact_for_org(
     # age
     if preferred == OrgEncryptionConfig.ENCRYPTION_METHOD_AGE and org_config.age_recipient:
         if not _validate_age_recipient(org_config.age_recipient):
-            raise ValueError(f"Invalid age recipient format: {org_config.age_recipient}")
+            logger.error("Invalid age recipient format for org %s", org_config.organization.id)
+            raise ValueError("Invalid age recipient format configured for this organization")
         out = os.path.join(tmp_dir, "report_payload.tar.gz.age")
         cmd = [getattr(settings, "AGE_BINARY", "age"), "-r", org_config.age_recipient, "-o", out, input_path]
         try:
@@ -270,7 +279,8 @@ def _encrypt_artifact_for_org(
     # OpenPGP
     if preferred == OrgEncryptionConfig.ENCRYPTION_METHOD_OPENPGP and org_config.pgp_fingerprint:
         if not _validate_pgp_fingerprint(org_config.pgp_fingerprint):
-            raise ValueError(f"Invalid PGP fingerprint format: {org_config.pgp_fingerprint}")
+            logger.error("Invalid PGP fingerprint format for org %s", org_config.organization.id)
+            raise ValueError("Invalid PGP fingerprint format configured for this organization")
         out = os.path.join(tmp_dir, "report_payload.tar.gz.asc")
         cmd = [
             getattr(settings, "GPG_BINARY", "gpg"),
@@ -348,7 +358,7 @@ Regards,
         email.send(fail_silently=False)
         return "delivered"
     except Exception as e:
-        logger.error(f"Email delivery failed for issue {issue.id} to {org_config.contact_email}", exc_info=True)
+        logger.error("Email delivery failed for issue %s", issue.id, exc_info=True)
         return "encryption_success_delivery_failed"
 
 

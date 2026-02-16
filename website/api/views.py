@@ -2125,10 +2125,13 @@ class ZeroTrustIssueCreateView(APIView):
             build_and_deliver_zero_trust_issue(issue, files)
         except ValueError as e:
             issue.delivery_status = "failed"
-            issue.save(update_fields=["delivery_status"])
+            issue.save(update_fields=["delivery_status", "modified"])
+            error_msg = str(e)
+            if "recipient format" in error_msg or "fingerprint format" in error_msg:
+                error_msg = "Organization encryption configuration is invalid. Please contact the administrator."
             return Response(
                 {
-                    "error": str(e),
+                    "error": error_msg,
                     "id": issue.id,
                     "delivery_status": issue.delivery_status,
                 },
@@ -2142,7 +2145,7 @@ class ZeroTrustIssueCreateView(APIView):
                 exc_info=True,
             )
             issue.delivery_status = "failed"
-            issue.save(update_fields=["delivery_status"])
+            issue.save(update_fields=["delivery_status", "modified"])
             return Response(
                 {
                     "error": "Zero-trust submission failed",

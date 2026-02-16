@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re as _re
 import sys
 
 import dj_database_url
@@ -516,7 +517,7 @@ class SensitiveDataFilter(logging.Filter):
         for pattern in sensitive_patterns:
             if pattern in msg:
                 # Replace just the sensitive part instead of entire message
-                record.msg = record.msg.replace(pattern.upper() if pattern.isupper() else pattern, "[REDACTED]")
+                record.msg = _re.sub(_re.escape(pattern), "[REDACTED]", str(record.msg), flags=_re.IGNORECASE)
                 record.args = ()
                 return True
 
