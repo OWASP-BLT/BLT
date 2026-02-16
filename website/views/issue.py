@@ -986,7 +986,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     try:
                         decoded_file = base64.b64decode(data)
                     except TypeError:
-                        TypeError("invalid_image")
+                        raise TypeError("invalid_image")
 
                     file_name = str(uuid.uuid4())[:12]
                     extension = imghdr.what(file_name, decoded_file)
@@ -1971,7 +1971,10 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                     try:
                         decoded_file = base64.b64decode(data)
                     except TypeError:
-                        TypeError("invalid_image")
+                        issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
+                            Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                        )
+                        return render(request, template, {"hunt": hunt, "issue_list": issue_list})
 
                     file_name = str(uuid.uuid4())[:12]
                     extension = imghdr.what(file_name, decoded_file)
