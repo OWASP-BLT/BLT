@@ -1161,6 +1161,7 @@ def follow_user(request, user):
             settings.EMAIL_TO_STRING,
             [userx.email],
             html_message=msg_html,
+            fail_silently=True,
         )
 
     return HttpResponse("Success")
@@ -1770,6 +1771,7 @@ def messaging_home(request):
     return render(request, "messaging.html", {"threads": threads})
 
 
+@login_required
 def start_thread(request, user_id):
     if request.method == "POST":
         other_user = get_object_or_404(User, id=user_id)
@@ -1808,6 +1810,7 @@ def start_thread(request, user_id):
                     settings.EMAIL_TO_STRING,
                     [other_user.email],
                     html_message=msg_html,
+                    fail_silently=True,
                 )
 
         return JsonResponse({"success": True, "thread_id": thread.id})
