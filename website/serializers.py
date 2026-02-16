@@ -15,6 +15,7 @@ from website.models import (
     Project,
     Repo,
     SearchHistory,
+    SecurityIncident,
     Tag,
     TimeLog,
     Trademark,
@@ -127,10 +128,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     freshness = serializers.SerializerMethodField()
-    stars = serializers.IntegerField()
-    forks = serializers.IntegerField()
-    external_links = serializers.JSONField()
-    project_visit_count = serializers.IntegerField()
+
+    total_stars = serializers.IntegerField(read_only=True)
+    total_forks = serializers.IntegerField(read_only=True)
+
+    external_links = serializers.JSONField(required=False)
+    project_visit_count = serializers.IntegerField(required=False)
 
     class Meta:
         model = Project
@@ -303,3 +306,19 @@ class SearchHistorySerializer(serializers.ModelSerializer):
         model = SearchHistory
         fields = ["id", "query", "search_type", "timestamp", "result_count"]
         read_only_fields = ["id", "timestamp"]
+
+
+class SecurityIncidentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecurityIncident
+        fields = [
+            "id",
+            "title",
+            "description",
+            "severity",
+            "status",
+            "affected_systems",
+            "created_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["id", "created_at", "resolved_at"]

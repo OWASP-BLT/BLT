@@ -88,15 +88,15 @@
                     <div class="flex flex-wrap gap-2 ml-auto">
                         <span class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mr-2 self-center">Payment Status:</span>
                         <a href="?payment_status=all"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 dark:hover:bg-red-700 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'all' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                             All
                         </a>
                         <a href="?payment_status=paid"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'paid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 dark:bg-gray-700 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'paid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                             Paid
                         </a>
                         <a href="?payment_status=unpaid"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'unpaid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium transition duration-200 dark:bg-gray-700 dark:hover:bg-gray-900 hover:text-gray-900 dark:hover:text-white {% if current_payment_status == 'unpaid' %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200{% endif %}">
                             Unpaid
                         </a>
                     </div>

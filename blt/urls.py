@@ -27,10 +27,7 @@ from website.api.views import (
     CheckDuplicateBugApiView,
     DebugCacheInfoApiView,
     DebugClearCacheApiView,
-    DebugCollectStaticApiView,
-    DebugPanelStatusApiView,
     DebugPopulateDataApiView,
-    DebugRunMigrationsApiView,
     DebugSystemStatsApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
@@ -45,6 +42,7 @@ from website.api.views import (
     ProjectViewSet,
     PublicJobListViewSet,
     SearchHistoryApiView,
+    SecurityIncidentViewSet,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -55,7 +53,6 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -115,11 +112,8 @@ from website.views.core import (
     StatsDetailView,
     StyleGuideView,
     UploadCreate,
-    add_forum_comment,
-    add_forum_post,
     badge_list,
     check_owasp_compliance,
-    delete_forum_post,
     donate_view,
     features_view,
     find_key,
@@ -130,7 +124,6 @@ from website.views.core import (
     run_management_command,
     search,
     set_theme,
-    set_vote_status,
     sitemap,
     sponsor_view,
     stats_dashboard,
@@ -139,9 +132,7 @@ from website.views.core import (
     sync_github_projects,
     template_list,
     test_sentry,
-    view_forum,
     view_pr_analysis,
-    vote_forum_post,
     website_stats,
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
@@ -217,7 +208,6 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
-    unsave_issue,
     update_content_comment,
     vote_count,
 )
@@ -305,11 +295,18 @@ from website.views.project import (
     create_project,
     delete_project,
     distribute_bacon,
+    gsoc_pr_report,
     repo_activity_data,
     select_contribution,
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
+from website.views.security import SecurityDashboardView
+from website.views.security_incidents import (
+    SecurityIncidentCreateView,
+    SecurityIncidentDetailView,
+    SecurityIncidentUpdateView,
+)
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.slackbot import slack_landing_page
@@ -365,6 +362,7 @@ from website.views.user import (
     referral_signup,
     set_public_key,
     start_thread,
+    toggle_follow,
     update_bch_address,
     user_dashboard,
     users_view,
@@ -399,6 +397,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"jobs", JobViewSet, basename="jobs")
+router.register(r"security-incidents", SecurityIncidentViewSet, basename="securityincident")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -408,8 +407,6 @@ urlpatterns = [
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
-    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
-    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
@@ -579,13 +576,6 @@ urlpatterns = [
         name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$",
-        dislike_issue,
-        name="dislike_issue",
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",
@@ -594,13 +584,7 @@ urlpatterns = [
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
-    re_path(
-        r"^unsave_issue/(?P<issue_pk>\d+)/$",
-        unsave_issue,
-        name="unsave_issue",
-    ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
     # comment on content
@@ -1036,12 +1020,6 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("weekly-report/", weekly_report, name="weekly_report"),
-    path("forum/add/", add_forum_post, name="add_forum_post"),
-    path("forum/", view_forum, name="view_forum"),
-    path("forum/vote/", vote_forum_post, name="vote_forum_post"),
-    path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
-    path("forum/comment/", add_forum_comment, name="add_forum_comment"),
-    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
@@ -1243,6 +1221,16 @@ urlpatterns = [
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
     # Chatbot API endpoint
     path("api/chatbot/", chatbot_api, name="chatbot_api"),
+    path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
+    path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
+    path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
+    path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
+    path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
+    path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
+    path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
+    path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
+    path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 
 if settings.DEBUG:
@@ -1258,9 +1246,6 @@ if settings.DEBUG:
         path("api/debug/cache-info/", DebugCacheInfoApiView.as_view(), name="api_debug_cache_info"),
         path("api/debug/populate-data/", DebugPopulateDataApiView.as_view(), name="api_debug_populate_data"),
         path("api/debug/clear-cache/", DebugClearCacheApiView.as_view(), name="api_debug_clear_cache"),
-        path("api/debug/run-migrations/", DebugRunMigrationsApiView.as_view(), name="api_debug_run_migrations"),
-        path("api/debug/collect-static/", DebugCollectStaticApiView.as_view(), name="api_debug_collect_static"),
-        path("api/debug/status/", DebugPanelStatusApiView.as_view(), name="api_debug_panel_status"),
     ] + urlpatterns
 
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
