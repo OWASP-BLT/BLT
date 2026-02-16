@@ -662,7 +662,7 @@ def create_project(request):
 
             try:
                 # Fetch repository data
-                response = requests.get(api_url, headers=headers)
+                response = requests.get(api_url, headers=headers, timeout=10)
                 if response.status_code != 200:
                     continue
 
@@ -711,7 +711,7 @@ def create_project(request):
 
                 # Latest release
                 releases_url = f"{api_url}/releases/latest"
-                release_response = requests.get(releases_url, headers=headers)
+                release_response = requests.get(releases_url, headers=headers, timeout=10)
                 release_name = None
                 release_datetime = None
                 if release_response.status_code == 200:
@@ -903,7 +903,7 @@ class RepoDetailView(DetailView):
                 "Accept": "application/vnd.github.v3+json",
             }
 
-            response = requests.get(api_url, headers=headers)
+            response = requests.get(api_url, headers=headers, timeout=10)
             if response.status_code == 200:
                 return response.json()
             return []
@@ -924,7 +924,7 @@ class RepoDetailView(DetailView):
             results = []
             page = 1
             while True:
-                response = requests.get(f"{url}&page={page}", headers=headers)
+                response = requests.get(f"{url}&page={page}", headers=headers, timeout=10)
                 if response.status_code != 200 or not response.json():
                     break
                 results.extend(response.json())
@@ -1236,7 +1236,7 @@ class RepoDetailView(DetailView):
                     "Authorization": f"token {settings.GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json",
                 }
-                response = requests.get(f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers)
+                response = requests.get(f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers, timeout=10)
                 if response.status_code == 200:
                     repo_data = response.json()
                     start_date = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
@@ -1499,7 +1499,7 @@ class RepoDetailView(DetailView):
             api_per_page = 100
             while True:
                 paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
-                response = requests.get(paginated_url, headers=headers)
+                response = requests.get(paginated_url, headers=headers, timeout=10)
                 if response.status_code == 200:
                     page_stargazers = response.json()
                     if not page_stargazers:
@@ -1561,7 +1561,7 @@ class RepoDetailView(DetailView):
         def get_issue_count(full_name, query, headers):
             encoded_query = quote_plus(f"repo:{full_name} {query}")
             search_url = f"https://api.github.com/search/issues?q={encoded_query}"
-            resp = requests.get(search_url, headers=headers)
+            resp = requests.get(search_url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 return resp.json().get("total_count", 0)
             return 0
@@ -1595,7 +1595,7 @@ class RepoDetailView(DetailView):
                     "Authorization": f"token {github_token}",
                     "Accept": "application/vnd.github.v3+json",
                 }
-                response = requests.get(api_url, headers=headers)
+                response = requests.get(api_url, headers=headers, timeout=10)
 
                 if response.status_code == 200:
                     data = response.json()
@@ -1683,7 +1683,7 @@ class RepoDetailView(DetailView):
                     "Authorization": f"token {github_token}",
                     "Accept": "application/vnd.github.v3+json",
                 }
-                response = requests.get(api_url, headers=headers)
+                response = requests.get(api_url, headers=headers, timeout=10)
 
                 if response.status_code != 200:
                     return JsonResponse(
@@ -1711,7 +1711,7 @@ class RepoDetailView(DetailView):
                 # get the total commit
                 url = f"https://api.github.com/repos/{full_name}/commits"
                 params = {"per_page": 1, "page": 1}
-                response = requests.get(url, headers=headers, params=params)
+                response = requests.get(url, headers=headers, params=params, timeout=10)
                 if response.status_code == 200:
                     if "Link" in response.headers:
                         links = response.headers["Link"]
@@ -1748,7 +1748,7 @@ class RepoDetailView(DetailView):
                     repo.commit_count = commit_count
 
                 commits_url = f"{api_url}/commits?sha={default_branch}&per_page=1"
-                commits_response = requests.get(commits_url, headers=headers)
+                commits_response = requests.get(commits_url, headers=headers, timeout=10)
                 if commits_response.status_code == 200:
                     commit_data = commits_response.json()
                     if commit_data:
@@ -1821,7 +1821,7 @@ class RepoDetailView(DetailView):
                     "Accept": "application/vnd.github.v3+json",
                 }
 
-                response = requests.get(api_url, headers=headers)
+                response = requests.get(api_url, headers=headers, timeout=10)
                 if response.status_code != 200:
                     return JsonResponse(
                         {
@@ -1840,7 +1840,7 @@ class RepoDetailView(DetailView):
 
                 # Get latest release info
                 releases_url = f"{api_url}/releases/latest"
-                release_response = requests.get(releases_url, headers=headers)
+                release_response = requests.get(releases_url, headers=headers, timeout=10)
                 if release_response.status_code == 200:
                     release_data = release_response.json()
                     repo.release_name = release_data.get("name") or release_data.get("tag_name")
@@ -1988,7 +1988,7 @@ class RepoDetailView(DetailView):
                     "Accept": "application/vnd.github.v3+json",
                 }
 
-                response = requests.get(readme_url, headers=headers)
+                response = requests.get(readme_url, headers=headers, timeout=10)
 
                 if response.status_code == 200:
                     readme_data = response.json()
