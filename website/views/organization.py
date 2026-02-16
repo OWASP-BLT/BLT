@@ -1704,14 +1704,18 @@ def view_hunt(request, pk, template="view_hunt.html"):
 
 @login_required(login_url="/accounts/login")
 def organization_dashboard_hunt_edit(request, pk, template="organization_dashboard_hunt_edit.html"):
-    if request.method == "GET":
-        hunt = get_object_or_404(Hunt, pk=pk)
+    hunt = get_object_or_404(Hunt, pk=pk)
+    try:
         domain_admin = OrganizationAdmin.objects.get(user=request.user)
-        if not domain_admin.is_active:
+    except OrganizationAdmin.DoesNotExist:
+        return HttpResponseRedirect("/")
+    if not domain_admin.is_active:
+        return HttpResponseRedirect("/")
+    if domain_admin.role == 1:
+        if hunt.domain != domain_admin.domain:
             return HttpResponseRedirect("/")
-        if domain_admin.role == 1:
-            if hunt.domain != domain_admin.domain:
-                return HttpResponseRedirect("/")
+
+    if request.method == "GET":
         domain = []
         if domain_admin.role == 0:
             domain = Domain.objects.filter(organization=domain_admin.organization)
@@ -1721,37 +1725,39 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         context = {"hunt": hunt, "domains": domain, "hunt_form": HuntForm(initial)}
         return render(request, template, context)
     else:
-        data = {}
-        data["content"] = request.POST["content"]
-        data["start_date"] = request.POST["start_date"]
-        data["end_date"] = request.POST["end_date"]
+        data = {
+            "content": request.POST.get("content", ""),
+            "start_date": request.POST.get("start_date", ""),
+            "end_date": request.POST.get("end_date", ""),
+        }
         form = HuntForm(data)
         if not form.is_valid():
             return HttpResponse("Invalid form data")
-        hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
-        if not domain_admin.is_active:
-            return HttpResponse("Inactive domain admin")
-        if domain_admin.role == 1:
-            if hunt.domain != domain_admin.domain:
-                return HttpResponse("Domain mismatch")
-        hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+        domain_pk = request.POST.get("domain", "")
+        try:
+            hunt.domain = Domain.objects.get(pk=domain_pk.split("-")[0].replace(" ", ""))
+        except (Domain.DoesNotExist, ValueError):
+            return HttpResponse("Invalid domain")
         tzsign = 1
-        offset = request.POST["tzoffset"]
-        if int(offset) < 0:
-            offset = int(offset) * (-1)
+        offset = request.POST.get("tzoffset", "0")
+        try:
+            offset = int(offset)
+        except (ValueError, TypeError):
+            offset = 0
+        if offset < 0:
+            offset = offset * (-1)
             tzsign = -1
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         if tzsign > 0:
-            start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            start_date = start_date + timedelta(hours=offset // 60, minutes=offset % 60)
+            end_date = end_date + timedelta(hours=offset // 60, minutes=offset % 60)
         else:
-            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            start_date = start_date - timedelta(hours=offset // 60, minutes=offset % 60)
+            end_date = end_date - timedelta(hours=offset // 60, minutes=offset % 60)
         hunt.starts_on = start_date
         hunt.end_on = end_date
-        hunt.name = request.POST["name"]
+        hunt.name = request.POST.get("name", "")
         hunt.description = form.cleaned_data["content"]
         hunt.is_published = request.POST.get("publish", False) == "on"
         hunt.save()
