@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.shortcuts import HttpResponse, render
+from django.shortcuts import HttpResponse, get_object_or_404, render
 from django.template.loader import render_to_string
 from django.utils.html import escape
 
@@ -16,12 +16,11 @@ from .models import Comment
 
 @login_required(login_url="/accounts/login/")
 def add_comment(request):
-    pk = request.POST.get("issue_pk")
-    issue = Issue.objects.get(pk=pk)
     if request.method == "POST":
+        pk = request.POST.get("issue_pk")
+        issue = get_object_or_404(Issue, pk=pk)
         author = request.user.username
         author_url = os.path.join("/profile/", request.user.username)
-        issue = issue
         text = request.POST.get("text_comment")
         text = escape(text)
         user_list = []
@@ -30,7 +29,7 @@ def add_comment(request):
         new_msg = ""
         for item in temp_text:
             msg = item
-            if item[0] == "@":
+            if item and item[0] == "@":
                 if User.objects.filter(username=item[1:]).exists():
                     user = User.objects.get(username=item[1:])
                     user_list.append(user)
@@ -70,51 +69,59 @@ def add_comment(request):
         comment = Comment(author=author, author_url=author_url, issue=issue, text=new_text)
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
-    return render(
-        request,
-        "comments.html",
-        {"all_comment": all_comment, "user": request.user},
-    )
+        return render(
+            request,
+            "comments.html",
+            {"all_comment": all_comment, "user": request.user},
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
 @login_required(login_url="/accounts/login")
 def delete_comment(request):
     if request.method == "POST":
-        issue = Issue.objects.get(pk=request.POST["issue_pk"])
-        all_comment = Comment.objects.filter(issue=issue)
-        comment = Comment.objects.get(pk=int(request.POST["comment_pk"]))
-        try:
-            show = comment.parent.pk
-        except:
-            show = -1
+        issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+        comment_pk = request.POST.get("comment_pk")
+        if not comment_pk:
+            return HttpResponse("Missing comment ID", status=400)
+        comment = get_object_or_404(Comment, pk=comment_pk)
         if request.user.username != comment.author:
             return HttpResponse("Cannot delete this comment")
+        try:
+            show = comment.parent.pk
+        except (AttributeError, Comment.DoesNotExist):
+            show = -1
         comment.delete()
-    return render(
-        request,
-        "comments.html",
-        {
-            "all_comment": all_comment,
-            "user": request.user,
-            "show": show,
-        },
-    )
+        all_comment = Comment.objects.filter(issue=issue)
+        return render(
+            request,
+            "comments.html",
+            {
+                "all_comment": all_comment,
+                "user": request.user,
+                "show": show,
+            },
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
 @login_required(login_url="/accounts/login/")
 def edit_comment(request, pk):
-    if request.method == "GET":
-        issue = Issue.objects.get(pk=request.GET["issue_pk"])
-        comment = Comment.objects.get(pk=request.GET["comment_pk"])
-        comment.text = request.GET.get("text_comment")
+    if request.method == "POST":
+        issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+        comment = get_object_or_404(Comment, pk=request.POST.get("comment_pk"))
+        if request.user.username != comment.author:
+            return HttpResponse("Cannot edit this comment", status=403)
+        comment.text = request.POST.get("text_comment")
         comment.text = escape(comment.text)
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
-    return render(
-        request,
-        "comments.html",
-        {"all_comment": all_comment, "user": request.user},
-    )
+        return render(
+            request,
+            "comments.html",
+            {"all_comment": all_comment, "user": request.user},
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
 @login_required(login_url="/accounts/login/")
