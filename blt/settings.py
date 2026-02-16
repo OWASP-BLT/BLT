@@ -54,7 +54,9 @@ EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Ex
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable must be set")
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 TESTING = sys.argv[1:2] == ["test"]
@@ -313,7 +315,7 @@ if "DYNO" in os.environ:  # for Heroku
             },
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
 
@@ -328,7 +330,7 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
     # Removed DEBUG override - DEBUG should be controlled by environment variable
@@ -475,32 +477,6 @@ else:
         }
     else:
         CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
-
-if DEBUG or TESTING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-else:
-    # temp to check memory usage
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
 
 if DEBUG or TESTING:
     anon_throttle = 100000

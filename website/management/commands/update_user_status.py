@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
@@ -9,12 +11,10 @@ class Command(LoggedBaseCommand):
 
     def handle(self, *args, **options):
         # Get all users who haven't logged in for 30 days
-        inactive_threshold = timezone.now() - timezone.timedelta(days=30)
-        users = User.objects.filter(last_login__lt=inactive_threshold)
+        inactive_threshold = timezone.now() - timedelta(days=30)
+        inactive_users = User.objects.filter(last_login__lt=inactive_threshold, is_active=True)
 
-        for user in users:
-            user.is_active = False
-            user.save()
-            self.stdout.write(f"Deactivated user: {user.username}")
+        count = inactive_users.update(is_active=False)
+        self.stdout.write(f"Deactivated {count} inactive users")
 
         self.stdout.write("User status update completed")
