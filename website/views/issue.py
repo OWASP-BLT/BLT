@@ -764,24 +764,25 @@ def SaveBiddingData(request):
     return render(request, "bidding.html", {"bids": bids})
 
 
+@require_POST
 def fetch_current_bid(request):
-    if request.method == "POST":
-        unique_issue_links = Bid.objects.values_list("issue_url", flat=True).distinct()
+    try:
         data = json.loads(request.body)
-        issue_url = data.get("issue_url")
-        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
-        if bid is not None:
-            return JsonResponse(
-                {
-                    "issueLinks": list(unique_issue_links),
-                    "current_bid": bid.amount,
-                    "status": bid.status,
-                }
-            )
-        else:
-            return JsonResponse({"error": "Bid not found"}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    unique_issue_links = Bid.objects.values_list("issue_url", flat=True).distinct()
+    issue_url = data.get("issue_url")
+    bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
+    if bid is not None:
+        return JsonResponse(
+            {
+                "issueLinks": list(unique_issue_links),
+                "current_bid": bid.amount,
+                "status": bid.status,
+            }
+        )
     else:
-        return JsonResponse({"error": "Method not allowed"}, status=405)
+        return JsonResponse({"error": "Bid not found"}, status=404)
 
 
 @login_required
