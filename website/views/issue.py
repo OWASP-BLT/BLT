@@ -656,6 +656,8 @@ def change_bid_status(request):
             bid.status = "Selected"
             bid.save()
             return JsonResponse({"success": True})
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
         except Bid.DoesNotExist:
             return JsonResponse({"success": False, "error": "Bid not found"})
     return HttpResponse(status=405)
@@ -766,8 +768,11 @@ def SaveBiddingData(request):
 
 def fetch_current_bid(request):
     if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
         unique_issue_links = Bid.objects.values_list("issue_url", flat=True).distinct()
-        data = json.loads(request.body)
         issue_url = data.get("issue_url")
         bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
         if bid is not None:

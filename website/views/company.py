@@ -2625,7 +2625,10 @@ def edit_prize(request, prize_id, organization_id):
     except HuntPrize.DoesNotExist:
         return JsonResponse({"success": False, "error": "Prize not found"})
 
-    data = json.loads(request.body)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
     prize.name = data.get("prize_name", prize.name)
     prize.value = data.get("cash_value", prize.value)
     prize.no_of_eligible_projects = data.get("number_of_winning_projects", prize.no_of_eligible_projects)
