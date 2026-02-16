@@ -6,7 +6,7 @@ import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from smtplib import SMTPException
 from urllib.parse import quote_plus, urlparse
 
@@ -1414,7 +1414,7 @@ class CreateHunt(TemplateView):
                 return HttpResponse("success")
             else:
                 return HttpResponse("failed")
-        except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
+        except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError, InvalidOperation) as e:
             logger.error("Error managing organization: %s", e)
             return HttpResponse("An error occurred while processing your request.")
 
