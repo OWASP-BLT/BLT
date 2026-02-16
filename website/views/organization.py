@@ -12,6 +12,7 @@ from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -276,9 +277,7 @@ def weekly_report(request):
 
             for issue in issues:
                 report_data.append(
-                    f"Description: {issue.description}\n"
-                    f"Views: {issue.views}\n"
-                    f"Label: {issue.get_label_display()}\n\n"
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
                 )
 
             send_mail(
@@ -421,6 +420,7 @@ class DomainListView(ListView):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def subscribe_to_domains(request, pk):
     domain = Domain.objects.filter(pk=pk).first()
     if domain is None:
@@ -632,6 +632,25 @@ class Listbounties(TemplateView):
                     "total_earned": earner["issues_completed"] * BOUNTY_AMOUNT,
                 }
             )
+
+        # TEMP: mock leaderboard data for local UI testing
+        if settings.DEBUG and not leaderboard:
+            leaderboard = [
+                {
+                    "name": "Alice",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/1",
+                    "github_url": "https://github.com/alice",
+                    "issues_completed": 12,
+                    "total_earned": 60,
+                },
+                {
+                    "name": "Bob",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/2",
+                    "github_url": "https://github.com/bob",
+                    "issues_completed": 8,
+                    "total_earned": 40,
+                },
+            ]
 
         context = {
             "hunts": hunts,
@@ -1096,6 +1115,7 @@ class DomainDetailView(ListView):
             except EmptyPage:
                 closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
+            six_months_ago = timezone.now() - relativedelta(months=6)
             context.update(
                 {
                     "opened_net": open_issues,
@@ -1105,13 +1125,13 @@ class DomainDetailView(ListView):
                     "leaderboard": (
                         User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
                     ),
-                    "current_month": datetime.now().month,
+                    "current_month": timezone.now().month,
                     "domain_graph": (
                         Issue.objects.filter(
                             domain=domain,
                             hunt=None,
-                            created__month__gte=(datetime.now().month - 6),
-                            created__month__lte=datetime.now().month,
+                            created__gte=six_months_ago,
+                            created__lte=timezone.now(),
                         ).order_by("created")
                     ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
@@ -1395,7 +1415,8 @@ class CreateHunt(TemplateView):
             else:
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing organization: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required
@@ -1807,7 +1828,8 @@ def add_or_update_domain(request):
                     else:
                         return HttpResponse("Unauthorized: Only admin can create domains")
         except (OrganizationAdmin.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing domain: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required(login_url="/accounts/login")
@@ -2662,7 +2684,7 @@ def update_organization_repos(request, slug):
         organization = get_object_or_404(Organization, slug=slug)
 
         # Check if repositories were updated in the last 24 hours
-        one_day_ago = timezone.timedelta(days=1)
+        one_day_ago = timedelta(days=1)
         if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
             time_since_update = timezone.now() - organization.repos_updated_at
             hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
@@ -2981,7 +3003,8 @@ def send_message_api(request):
         return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        logger.error("Error sending message: %s", e)
+        return JsonResponse({"success": False, "error": "An internal error occurred."}, status=500)
 
 
 def room_messages_api(request, room_id):

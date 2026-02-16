@@ -419,7 +419,7 @@ class LeaderboardApiViewSet(APIView):
         year = self.request.query_params.get("year")
 
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(year, str) and not year.isdigit():
             return Response(f"Invalid query passed | Year:{year}", status=400)
@@ -963,7 +963,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             serializer.save(user=self.request.user, organization=organization)
 
         except ValidationError as e:
-            raise ParseError(detail=str(e))
+            logger.error("Validation error creating time log: %s", e)
+            raise ParseError(detail="Invalid data provided for time log.")
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the time log.")
 
@@ -1059,7 +1060,8 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
         try:
             serializer.save(user=self.request.user, recorded_at=timezone.now())
         except ValidationError as e:
-            raise ParseError(detail=str(e))
+            logger.error("Validation error creating activity log: %s", e)
+            raise ParseError(detail="Invalid data provided for activity log.")
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
 
@@ -1131,11 +1133,12 @@ class OwaspComplianceChecker(APIView):
                 "details": {"url_checked": safe_url, "recommendations": []},
             }
         except Exception as e:
+            logger.error("Error checking OWASP compliance: %s", e)
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": safe_url, "error": str(e)},
+                "details": {"url_checked": safe_url, "error": "An error occurred while checking compliance."},
             }
 
     def check_vendor_neutrality(self, url):
