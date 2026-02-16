@@ -92,6 +92,7 @@ def batch_send_bacon_tokens_view(request):
         )
 
 
+@login_required
 def pending_transactions_view(request):
     # Fetch all users with non-zero tokens_earned
     pending_transactions = BaconEarning.objects.filter(tokens_earned__gt=0)
