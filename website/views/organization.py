@@ -445,7 +445,10 @@ class DomainList(TemplateView):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        try:
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        except OrganizationAdmin.DoesNotExist:
+            return HttpResponseRedirect("/")
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         domain = []
@@ -1706,7 +1709,10 @@ def view_hunt(request, pk, template="view_hunt.html"):
 def organization_dashboard_hunt_edit(request, pk, template="organization_dashboard_hunt_edit.html"):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        try:
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        except OrganizationAdmin.DoesNotExist:
+            return HttpResponseRedirect("/")
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         if domain_admin.role == 1:
@@ -1729,7 +1735,10 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if not form.is_valid():
             return HttpResponse("Invalid form data")
         hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        try:
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        except OrganizationAdmin.DoesNotExist:
+            return HttpResponse("Unauthorized", status=403)
         if not domain_admin.is_active:
             return HttpResponse("Inactive domain admin")
         if domain_admin.role == 1:
@@ -1931,7 +1940,10 @@ def add_role(request):
 @login_required(login_url="/accounts/login")
 def update_role(request):
     if request.method == "POST":
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        try:
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        except OrganizationAdmin.DoesNotExist:
+            return HttpResponse("Unauthorized", status=403)
         if domain_admin.role == 0 and domain_admin.is_active:
             for key, value in request.POST.items():
                 if key.startswith("user@"):
