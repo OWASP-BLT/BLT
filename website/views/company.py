@@ -7,10 +7,11 @@ from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
-from django.core.exceptions import FieldError, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
@@ -39,11 +40,13 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
-from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
-from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
+from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
+
+# Slack user ID validation pattern
+SLACK_USER_ID_PATTERN = r"^U[A-Z0-9]+$"
 
 
 def validate_organization_user(func):
@@ -331,87 +334,121 @@ class OrganizationDashboardAnalyticsView(View):
         6: "Design",
         7: "Server Down",
     }
-    months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
+    months_full = [
+        "January",
+        "February",
+        "March",
+        "April",
         "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ]
 
-    def get_security_incidents_summary(self, organization):
-        # Get all security-related issues (label=4)
-        security_issues = Issue.objects.filter(
+    def _get_security_issues_queryset(self, organization):
+        """Helper method to get security issues queryset (label=4)."""
+        return Issue.objects.filter(
             domain__organization__id=organization,
             label=4,  # Security label
         )
 
-        # Calculate severity distribution
-        # Note: Check if the severity field exists - currently not defined in the Issue model
-        try:
-            severity_counts = security_issues.values("severity").annotate(count=Count("id"))
-        except FieldError:
-            # Severity field doesn't exist, provide empty list
-            severity_counts = []
+    def get_security_incidents_summary(self, organization):
+        security_issues = self._get_security_issues_queryset(organization)
+
+        # Calculate severity distribution based on CVE score ranges
+        severity_distribution = []
+        for severity_level in [9, 7, 5, 3, 1]:
+            # For severity level 9, use upper bound of 11 to include CVSS 10 scores
+            upper_bound = (severity_level + 2) if severity_level < 9 else 11
+            count = security_issues.filter(cve_score__gte=severity_level, cve_score__lt=upper_bound).count()
+            if count > 0 or severity_level == 1:
+                severity_distribution.append({"severity": severity_level, "count": count})
+
+        severity_distribution = sorted(severity_distribution, key=lambda x: x["severity"], reverse=True)
 
         # Get recent security incidents (last 30 days)
-        recent_incidents = security_issues.filter(created__gte=timezone.now() - timedelta(days=30))
+        recent_incidents_count = security_issues.filter(created__gte=timezone.now() - timedelta(days=30)).count()
 
         # Calculate average resolution time
-        resolved_issues = security_issues.filter(status="resolved")
-        resolved_issues = resolved_issues.filter(closed_date__isnull=False)
-        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+        avg_resolution_time_delta = security_issues.filter(status="resolved", closed_date__isnull=False).aggregate(
+            avg_time=Avg(F("closed_date") - F("created"))
+        )["avg_time"]
+
+        avg_resolution_time_formatted = (
+            format_timedelta(avg_resolution_time_delta) if avg_resolution_time_delta else None
+        )
 
         return {
             "total_security_issues": security_issues.count(),
-            "recent_incidents": recent_incidents.count(),
-            "severity_distribution": list(severity_counts),
-            "avg_resolution_time": avg_resolution_time,
-            "top_affected_domains": security_issues.values("domain__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5],
+            "recent_incidents": recent_incidents_count,
+            "severity_distribution": severity_distribution,
+            "avg_resolution_time": avg_resolution_time_formatted,
+            "top_affected_domains": list(
+                security_issues.values("domain__name").annotate(count=Count("id")).order_by("-count")[:5]
+            ),
         }
 
     def get_threat_intelligence(self, organization):
         """Gets threat intelligence data for the organization."""
-        security_issues = Issue.objects.filter(
-            domain__organization__id=organization,
-            label=4,  # Security label
-        )
+        security_issues = self._get_security_issues_queryset(organization)
 
-        # Get trending attack types based on issue labels/tags instead
-        attack_vectors = (
-            security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
-            .values("label")  # Use label instead of vulnerability_type
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
-        )
+        # Get trending attack types based on CVE score ranges (since all have label=4, use CVE scores)
+        # Group by CVE score ranges to show vulnerability types
+        attack_vectors = []
+        score_ranges = [
+            (9.0, 10.0, "Critical (9.0-10.0)"),
+            (7.0, 8.9, "High (7.0-8.9)"),
+            (5.0, 6.9, "Medium (5.0-6.9)"),
+            (3.0, 4.9, "Low (3.0-4.9)"),
+            (0.1, 2.9, "Very Low (0.1-2.9)"),
+        ]
 
-        # Calculate risk score (0-100)
+        recent_issues = security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
+        for min_score, max_score, label in score_ranges:
+            count = recent_issues.filter(cve_score__gte=min_score, cve_score__lte=max_score).count()
+            if count > 0:
+                attack_vectors.append({"vulnerability_type": label, "count": count})
+
+        # Sort by count descending
+        attack_vectors.sort(key=lambda x: x["count"], reverse=True)
+
+        # Calculate risk score (0-100) based on CVE scores with weighted formula
+        # Weight: Critical (9+) = 100%, High (7-8.9) = 70%, Medium (5-6.9) = 40%, Low (3-4.9) = 20%, Very Low (0-2.9) = 10%
         total_issues = security_issues.count()
-        critical_issues = security_issues.filter(cve_score__gte=8).count()  # Use cve_score instead of severity
-        risk_score = min(100, (critical_issues / total_issues * 100) if total_issues > 0 else 0)
+        if total_issues > 0:
+            # Use single queryset with annotations for efficiency
+            counts = {
+                "critical": security_issues.filter(cve_score__gte=9.0).count(),
+                "high": security_issues.filter(cve_score__gte=7.0, cve_score__lt=9.0).count(),
+                "medium": security_issues.filter(cve_score__gte=5.0, cve_score__lt=7.0).count(),
+                "low": security_issues.filter(cve_score__gte=3.0, cve_score__lt=5.0).count(),
+                "very_low": security_issues.filter(cve_score__gte=0.1, cve_score__lt=3.0).count(),
+            }
+
+            risk_score = (
+                (counts["critical"] / total_issues * 100)
+                + (counts["high"] / total_issues * 70)
+                + (counts["medium"] / total_issues * 40)
+                + (counts["low"] / total_issues * 20)
+                + (counts["very_low"] / total_issues * 10)
+            )
+            risk_score = min(100, int(risk_score))
+        else:
+            risk_score = 0
 
         return {
-            "attack_vectors": [
-                {
-                    "vulnerability_type": self.get_label_name(vector["label"]),  # Convert label to readable name
-                    "count": vector["count"],
-                }
-                for vector in attack_vectors
-            ],
-            "risk_score": int(risk_score),
-            "recent_alerts": security_issues.filter(
-                created__gte=timezone.now() - timedelta(days=7),
-                cve_score__gte=7,  # Use cve_score for severity
-            ).order_by("-created")[:5],
+            "attack_vectors": attack_vectors[:5],  # Top 5
+            "risk_score": risk_score,
+            "recent_alerts": list(
+                security_issues.filter(
+                    created__gte=timezone.now() - timedelta(days=7),
+                    cve_score__gte=7.0,  # Use cve_score for severity (7.0 and above)
+                ).order_by("-created")[:5]
+            ),
         }
 
     def get_label_name(self, label_id):
@@ -422,13 +459,15 @@ class OrganizationDashboardAnalyticsView(View):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
-        # Step 1: Retrieve all hunt IDs associated with the specified organization
-        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list("id", flat=True)
 
-        # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
-        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(total_money=Sum("rewarded"))[
-            "total_money"
-        ]
+        # Calculate total money distributed
+        # Sum all rewards from issues in the organization's domains
+        # This ensures we capture all money distributed, whether through hunts or other means
+        total_money_distributed = Issue.objects.filter(domain__organization__id=organization).aggregate(
+            total_money=Sum("rewarded")
+        )["total_money"]
+
+        # Handle None case - if no rewards exist, default to 0
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
@@ -490,89 +529,46 @@ class OrganizationDashboardAnalyticsView(View):
         for data_month in data_monthly:
             data[data_month["month"] - 1] = data_month["count"]
 
-        # Define month labels
-        months = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ]
-
         return {
-            "bug_monthly_report_labels": json.dumps(months),
+            "bug_monthly_report_labels": json.dumps(self.months_full),
             "bug_monthly_report_data": json.dumps(data),
             "max_count": max(data),
             "current_year": current_year,
         }
 
     def bug_rate_increase_descrease_weekly(self, organization, is_accepted_bugs=False):
-        # returns stats by comparing the count of past 8-15 days (1 week) activity to this (0 - 7) week.
-
+        """Returns stats comparing past 8-15 days (previous week) to 0-7 days (this week)."""
         current_date = timezone.now().date()
-        prev_week_start_date = current_date - timedelta(days=15)
-        prev_week_end_date = current_date - timedelta(days=8)
+        date_ranges = {
+            "prev": (current_date - timedelta(days=15), current_date - timedelta(days=8)),
+            "this": (current_date - timedelta(days=7), current_date),
+        }
 
-        this_week_start_date = current_date - timedelta(days=7)
-        this_week_end_date = current_date
-
+        base_query = Issue.objects.filter(domain__organization__id=organization)
         if is_accepted_bugs:
-            prev_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[prev_week_start_date, prev_week_end_date],
-                verified=True,
-            ).count()
+            base_query = base_query.filter(verified=True)
 
-            this_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[this_week_start_date, this_week_end_date],
-                verified=True,
-            ).count()
+        prev_week_issue_count = base_query.filter(created__date__range=date_ranges["prev"]).count()
 
-        else:
-            prev_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[prev_week_start_date, prev_week_end_date],
-            ).count()
+        this_week_issue_count = base_query.filter(created__date__range=date_ranges["this"]).count()
 
-            this_week_issue_count = Issue.objects.filter(
-                domain__organization__id=organization,
-                created__date__range=[this_week_start_date, this_week_end_date],
-            ).count()
-
+        # Calculate percentage increase
         if prev_week_issue_count == 0:
-            percent_increase = this_week_issue_count * 100
+            percent_increase = 100.0 if this_week_issue_count > 0 else 0.0
         else:
             percent_increase = ((this_week_issue_count - prev_week_issue_count) / prev_week_issue_count) * 100
 
         return {
-            "percent_increase": percent_increase,
-            "is_increasing": (True if (this_week_issue_count - prev_week_issue_count) >= 0 else False),
+            "percent_increase": round(abs(percent_increase), 1),
+            "is_increasing": this_week_issue_count >= prev_week_issue_count,
             "this_week_issue_count": this_week_issue_count,
         }
 
-    def get_spent_on_bugtypes(self, organization):
-        spent_on_bugtypes = (
-            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(spent=Sum("rewarded"))
-        )
-        labels = list(self.labels.values())
-        data = [0 for label in labels]  # make all labels spent 0 / init with 0
-
-        for bugtype in spent_on_bugtypes:
-            data[bugtype["label"]] = bugtype["spent"]
-
-        return {
-            "labels": json.dumps(labels),
-            "data": json.dumps(data),
-            "zipped_data": zip(labels, data),
-        }
+    def _get_user_organizations(self, user):
+        """Helper to get organizations accessible by user."""
+        if user.is_authenticated:
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+        return []
 
     def get_network_traffic_data(self, organization):
         """Collects and analyzes network traffic data for the organization."""
@@ -668,20 +664,112 @@ class OrganizationDashboardAnalyticsView(View):
             "is_traffic_increasing": week_over_week_change >= 0,
         }
 
+    def get_compliance_monitoring(self, organization):
+        """Collects compliance monitoring data for the organization."""
+        # Get all domains for the organization
+        domains = Domain.objects.filter(organization__id=organization)
+        total_domains = domains.count()
+
+        # Security.txt compliance
+        domains_with_security_txt = domains.filter(has_security_txt=True).count()
+        security_txt_compliance = (domains_with_security_txt / total_domains * 100) if total_domains > 0 else 0
+
+        # Issue resolution compliance (SLA: resolve security issues within 30 days)
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        resolved_security_issues = security_issues.filter(status="closed", closed_date__isnull=False)
+
+        # Calculate issues resolved within 30 days
+        compliant_resolutions = 0
+        for issue in resolved_security_issues:
+            if issue.closed_date and issue.created:
+                resolution_time = (issue.closed_date - issue.created).days
+                if resolution_time <= 30:
+                    compliant_resolutions += 1
+
+        total_resolved = resolved_security_issues.count()
+        resolution_compliance = (compliant_resolutions / total_resolved * 100) if total_resolved > 0 else 0
+
+        # Open security issues older than 30 days (compliance risk)
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        overdue_security_issues = security_issues.filter(
+            created__lt=thirty_days_ago, status__in=["open", "in_progress"]
+        ).count()
+
+        # Overall compliance score (weighted average)
+        # 40% security.txt, 40% resolution compliance, 20% no overdue issues
+        overdue_compliance = 100 if overdue_security_issues == 0 else max(0, 100 - (overdue_security_issues * 10))
+        overall_compliance = security_txt_compliance * 0.4 + resolution_compliance * 0.4 + overdue_compliance * 0.2
+
+        # Domain-level compliance status
+        domain_compliance = []
+        for domain in domains[:10]:  # Top 10 domains
+            domain_security_issues = security_issues.filter(domain=domain)
+            domain_overdue = domain_security_issues.filter(
+                created__lt=thirty_days_ago, status__in=["open", "in_progress"]
+            ).count()
+
+            domain_status = "compliant"
+            if domain_overdue > 5:
+                domain_status = "critical"
+            elif domain_overdue > 2:
+                domain_status = "warning"
+            elif not domain.has_security_txt:
+                domain_status = "warning"
+
+            domain_compliance.append(
+                {
+                    "name": domain.name,
+                    "has_security_txt": domain.has_security_txt,
+                    "overdue_issues": domain_overdue,
+                    "status": domain_status,
+                }
+            )
+
+        # Compliance metrics over time (last 6 months)
+        monthly_compliance = []
+        for i in range(6):
+            month_start = timezone.now() - timedelta(days=30 * (i + 1))
+            month_end = timezone.now() - timedelta(days=30 * i)
+
+            month_issues = security_issues.filter(created__gte=month_start, created__lt=month_end)
+            month_resolved = month_issues.filter(status="closed", closed_date__isnull=False)
+
+            month_compliant = 0
+            for issue in month_resolved:
+                if issue.closed_date and issue.created:
+                    resolution_time = (issue.closed_date - issue.created).days
+                    if resolution_time <= 30:
+                        month_compliant += 1
+
+            month_total = month_resolved.count()
+            month_compliance_rate = (month_compliant / month_total * 100) if month_total > 0 else 100
+
+            monthly_compliance.insert(
+                0, {"month": month_start.strftime("%b"), "compliance_rate": round(month_compliance_rate, 1)}
+            )
+
+        return {
+            "overall_compliance": round(overall_compliance, 1),
+            "security_txt_compliance": round(security_txt_compliance, 1),
+            "resolution_compliance": round(resolution_compliance, 1),
+            "total_domains": total_domains,
+            "domains_with_security_txt": domains_with_security_txt,
+            "overdue_security_issues": overdue_security_issues,
+            "total_security_issues": security_issues.count(),
+            "compliant_resolutions": compliant_resolutions,
+            "total_resolved": total_resolved,
+            "domain_compliance": domain_compliance,
+            "monthly_compliance": monthly_compliance,
+            "monthly_compliance_labels": json.dumps([m["month"] for m in monthly_compliance]),
+            "monthly_compliance_data": json.dumps([m["compliance_rate"] for m in monthly_compliance]),
+        }
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        # For authenticated users, show all organizations they have access to
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            # For unauthenticated users, don't show organization list
-            organizations = []
-
-        # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
@@ -689,7 +777,7 @@ class OrganizationDashboardAnalyticsView(View):
 
         context = {
             "organization": id,
-            "organizations": organizations,
+            "organizations": self._get_user_organizations(request.user),
             "organization_obj": organization_obj,
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
@@ -697,45 +785,48 @@ class OrganizationDashboardAnalyticsView(View):
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
-            "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
-            "network_traffic_data": self.get_network_traffic_data(id),
+            "threat_intelligence": self.get_threat_intelligence(id),
         }
-        context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
+    """View for displaying organization integrations."""
+
+    def _get_slack_integration(self, organization_id):
+        """Helper to fetch Slack integration for an organization."""
+        return (
+            SlackIntegration.objects.filter(
+                integration__organization_id=organization_id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
+
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        # For authenticated users, show organizations they have access to
-        if request.user.is_authenticated:
-            organizations = (
-                Organization.objects.values("name", "id")
-                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-                .distinct()
-            )
-        else:
-            # For unauthenticated users, don't show organization list
-            organizations = []
-
         # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
         if not organization_obj:
             messages.error(request, "Organization does not exist")
             return redirect("home")
 
-        # Get slack integration if it exists
-        slack_integration = SlackIntegration.objects.filter(
-            integration__organization_id=id,
-            integration__service_name=IntegrationServices.SLACK.value,
-        ).first()
+        # Get organizations for navigation (if authenticated)
+        organizations = []
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
 
         context = {
             "organization": id,
             "organizations": organizations,
             "organization_obj": organization_obj,
-            "slack_integration": slack_integration,
+            "slack_integration": self._get_slack_integration(id),
         }
         return render(request, "organization/dashboard/organization_integrations.html", context=context)
 
@@ -1041,7 +1132,7 @@ class AddDomainView(View):
             domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
-        organization_obj = Organization.objects.get(id=id)
+        organization_obj = get_object_or_404(Organization, id=id)
 
         domain_exist = Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"])).exists()
 
@@ -1138,7 +1229,7 @@ class AddDomainView(View):
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
-        organization_obj = Organization.objects.get(id=id)
+        organization_obj = get_object_or_404(Organization, id=id)
 
         domain_exist = (
             Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"]))
@@ -1154,7 +1245,7 @@ class AddDomainView(View):
             if is_valid_https_url(domain_data["url"]):
                 safe_url = rebuild_safe_url(domain_data["url"])
                 try:
-                    response = requests.get(safe_url, timeout=5, verify=False)
+                    response = requests.get(safe_url, timeout=5, verify=True)
                     if response.status_code != 200:
                         raise Exception
                 except requests.exceptions.RequestException:
@@ -1208,125 +1299,83 @@ class AddDomainView(View):
     @check_organization_or_manager
     def delete(self, request, id, *args, **kwargs):
         domain_id = request.POST.get("domain_id", None)
-        domain = get_object_or_404(Domain, id=domain_id)
-        if domain is None:
-            messages.error(request, "Domain not found.")
-            return redirect("organization_manage_domains", id=id)
-        domain.delete()
-        messages.success(request, "Domain deleted successfully")
+        try:
+            domain = Domain.objects.get(id=domain_id, organization__id=id)
+            domain.delete()
+            messages.success(request, "Domain deleted successfully")
+        except Domain.DoesNotExist:
+            messages.error(request, "Domain not found or you do not have permission to delete it.")
         return redirect("organization_manage_domains", id=id)
 
 
 class AddSlackIntegrationView(View):
-    @validate_organization_user
-    def get(self, request, id, *args, **kwargs):
-        slack_integration = (
+    """View for managing Slack integration configuration."""
+
+    def _get_slack_integration(self, organization_id):
+        """Helper to fetch Slack integration for an organization."""
+        return (
             SlackIntegration.objects.filter(
-                integration__organization_id=id,
+                integration__organization_id=organization_id,
                 integration__service_name=IntegrationServices.SLACK.value,
             )
             .select_related("integration")
             .first()
         )
 
-        if slack_integration:
-            bot_token = slack_integration.bot_access_token
-            app = App(token=bot_token)
-            channels_list = self.get_channel_names(app)
+    def _get_redirect_uri(self, request):
+        """Helper to construct redirect URI with proper scheme detection."""
+        # Prefer explicit server-side configuration (fully trusted)
+        configured_url = os.environ.get("SLACK_OAUTH_REDIRECT_URL")
+        if configured_url:
+            return configured_url
 
-            hours = range(24)
-            return render(
-                request,
-                "organization/dashboard/add_slack_integration.html",
-                context={
-                    "organization": id,
-                    "slack_integration": slack_integration,
-                    "channels": channels_list,
-                    "hours": hours,
-                    "welcome_message": slack_integration.welcome_message,
-                },
-            )
-
-        # Redirect to Slack OAuth flow if no integration exists
-        client_id = os.getenv("SLACK_ID_CLIENT")
-        scopes = "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands"
         host = request.get_host()
+
+        # Validate host against Django's ALLOWED_HOSTS (server-side trusted list)
+        allowed = django_settings.ALLOWED_HOSTS
+        if not any(ah == "*" or ah == host or (ah.startswith(".") and host.endswith(ah)) for ah in allowed):
+            raise ValueError(f"Host '{host}' is not in ALLOWED_HOSTS")
+
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
-        allowed_redirect_uris = [
-            f"{scheme}://{host}/oauth/slack/callback",
-        ]
+        # Only allow http or https schemes
+        if scheme not in ("http", "https"):
+            scheme = "https"
 
-        if redirect_uri not in allowed_redirect_uris:
-            raise ValueError("Invalid redirect URI")
+        # For ngrok or other tunnels, always use https
+        if "ngrok" in host or "localhost.run" in host:
+            scheme = "https"
 
-        state = urlencode({"organization_id": id})
+        return f"{scheme}://{host}/oauth/slack/callback"
 
-        auth_url = (
-            f"https://slack.com/oauth/v2/authorize"
-            f"?client_id={client_id}&scope={scopes}"
-            f"&state={state}&redirect_uri={redirect_uri}"
-        )
-
-        return redirect(auth_url)
-
-    def get_channel_names(self, app):
-        """Fetches channel names from Slack."""
+    def _fetch_slack_conversations(self, app, filter_func=None):
+        """Generic method to fetch Slack conversations with pagination."""
         cursor = None
-        channels = []
+        results = []
         try:
             while True:
                 response = app.client.conversations_list(cursor=cursor)
                 if response["ok"]:
-                    channels.extend(channel["name"] for channel in response["channels"])
+                    channels = response["channels"]
+                    if filter_func:
+                        results.extend(filter_func(channel) for channel in channels if filter_func(channel))
+                    else:
+                        results.extend(channel["name"] for channel in channels)
                 cursor = response.get("response_metadata", {}).get("next_cursor")
                 if not cursor:
                     break
         except Exception as e:
-            logger.error(f"Error fetching channels: {e}")
-        return channels
-
-    @validate_organization_user
-    def post(self, request, id, *args, **kwargs):
-        if request.POST.get("_method") == "delete":
-            return self.delete(request, id, *args, **kwargs)
-
-        slack_data = {
-            "default_channel": request.POST.get("target_channel"),
-            "daily_sizzle_timelogs_status": request.POST.get("daily_sizzle_timelogs_status"),
-            "daily_sizzle_timelogs_hour": request.POST.get("daily_sizzle_timelogs_hour"),
-            "welcome_message": request.POST.get("welcome_message"),  # Add this
-        }
-        slack_integration = (
-            SlackIntegration.objects.filter(
-                integration__organization_id=id,
-                integration__service_name=IntegrationServices.SLACK.value,
-            )
-            .select_related("integration")
-            .first()
-        )
-
-        if slack_integration:
-            app = App(token=slack_integration.bot_access_token)
-            if slack_data["default_channel"]:
-                slack_integration.default_channel_id = self.get_channel_id(app, slack_data["default_channel"])
-                slack_integration.default_channel_name = slack_data["default_channel"]
-            slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
-            slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
-            # Add welcome message
-            slack_integration.welcome_message = slack_data["welcome_message"]
-            slack_integration.save()
-
-        return redirect("organization_manage_integrations", id=id)
+            logger.error(f"Error fetching Slack conversations: {e}")
+        return results
 
     def get_channel_id(self, app, channel_name):
         """Fetches a Slack channel ID by name."""
+        channel_name = channel_name.strip("#")
         cursor = None
         try:
             while True:
                 response = app.client.conversations_list(cursor=cursor)
                 for channel in response["channels"]:
-                    if channel["name"] == channel_name.strip("#"):
+                    if channel["name"] == channel_name:
                         return channel["id"]
                 cursor = response.get("response_metadata", {}).get("next_cursor")
                 if not cursor:
@@ -1336,27 +1385,371 @@ class AddSlackIntegrationView(View):
         return None
 
     @validate_organization_user
-    def delete(self, request, id, *args, **kwargs):
-        """Deletes the Slack integration."""
-        slack_integration = (
-            SlackIntegration.objects.filter(
-                integration__organization_id=id,
-                integration__service_name=IntegrationServices.SLACK.value,
-            )
-            .select_related("integration")
-            .first()
-        )
+    def get(self, request, id, *args, **kwargs):
+        slack_integration = self._get_slack_integration(id)
 
         if slack_integration:
-            slack_integration.delete()
+            try:
+                app = App(token=slack_integration.bot_access_token)
+                channels_list = self._fetch_slack_conversations(app)
+
+                if not channels_list:
+                    messages.warning(
+                        request, "Could not fetch Slack channels. Please verify the bot token and permissions."
+                    )
+
+                return render(
+                    request,
+                    "organization/dashboard/add_slack_integration.html",
+                    context={
+                        "organization": id,
+                        "slack_integration": slack_integration,
+                        "channels": channels_list,
+                        "hours": range(24),
+                        "welcome_message": slack_integration.welcome_message,
+                    },
+                )
+            except Exception as e:
+                logger.exception(f"Error loading Slack integration page: {e}")
+                messages.error(
+                    request, "Failed to load Slack integration settings. Please try reconnecting your Slack workspace."
+                )
+                return redirect("organization_manage_integrations", id=id)
+
+        # Redirect to Slack OAuth flow if no integration exists
+        try:
+            client_id = os.getenv("SLACK_ID_CLIENT")
+            if not client_id:
+                messages.error(request, "Slack integration is not configured. Please contact the administrator.")
+                return redirect("organization_manage_integrations", id=id)
+
+            # Validate organization ID is an integer
+            if not isinstance(id, int):
+                messages.error(request, "Invalid organization ID.")
+                return redirect("home")
+
+            # Get redirect URI (validated against ALLOWED_HOSTS inside _get_redirect_uri)
+            redirect_uri = self._get_redirect_uri(request)
+
+            # Construct validated state parameter
+            state = urlencode({"organization_id": str(id)})
+
+            # Build OAuth URL using only validated components
+            from urllib.parse import urlencode as url_encode
+
+            params = url_encode(
+                {
+                    "client_id": client_id,
+                    "scope": "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands",
+                    "state": state,
+                    "redirect_uri": redirect_uri,
+                }
+            )
+
+            auth_url = f"https://slack.com/oauth/v2/authorize?{params}"
+
+            return redirect(auth_url)
+        except Exception as e:
+            logger.exception(f"Error initiating Slack OAuth: {e}")
+            messages.error(request, "Failed to initiate Slack connection. Please try again later.")
+            return redirect("organization_manage_integrations", id=id)
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        if request.POST.get("_method") == "delete":
+            return self.delete(request, id, *args, **kwargs)
+
+        slack_integration = self._get_slack_integration(id)
+
+        if not slack_integration:
+            messages.error(request, "Slack integration not found.")
+            return redirect("organization_manage_integrations", id=id)
+
+        try:
+            # Get and validate form data
+            target_channel = request.POST.get("target_channel")
+            daily_updates_enabled = request.POST.get("daily_sizzle_timelogs_status") == "on"
+            daily_update_hour = request.POST.get("daily_sizzle_timelogs_hour")
+            welcome_message = request.POST.get("welcome_message", "")
+
+            # Validate and convert hour
+            if daily_updates_enabled:
+                if not daily_update_hour:
+                    messages.error(request, "Please select an hour for daily updates.")
+                    return redirect("add_slack_integration", id=id)
+                try:
+                    daily_update_hour = int(daily_update_hour)
+                    if not 0 <= daily_update_hour <= 23:
+                        raise ValueError("Hour must be between 0 and 23")
+                except ValueError:
+                    messages.error(request, "Invalid hour selected. Please choose a value between 0 and 23.")
+                    return redirect("add_slack_integration", id=id)
+            else:
+                daily_update_hour = None
+
+            # Update channel settings if provided
+            if target_channel:
+                app = App(token=slack_integration.bot_access_token)
+                channel_id = self.get_channel_id(app, target_channel)
+                if channel_id:
+                    slack_integration.default_channel_id = channel_id
+                    slack_integration.default_channel_name = target_channel
+                else:
+                    messages.warning(
+                        request, f"Could not find channel '{target_channel}'. Please verify the channel name."
+                    )
+
+            # Update all settings
+            slack_integration.daily_updates = daily_updates_enabled
+            slack_integration.daily_update_time = daily_update_hour
+            slack_integration.welcome_message = welcome_message
+            slack_integration.save()
+
+            messages.success(request, "Slack integration updated successfully!")
+
+        except Exception as e:
+            logger.exception(f"Error updating Slack integration: {e}")
+            messages.error(request, "Failed to update Slack integration. Please try again or contact support.")
+            return redirect("add_slack_integration", id=id)
+
+        return redirect("organization_manage_integrations", id=id)
+
+    @validate_organization_user
+    def delete(self, request, id, *args, **kwargs):
+        """Deletes the Slack integration."""
+        try:
+            integration = Integration.objects.filter(
+                organization_id=id,
+                service_name=IntegrationServices.SLACK.value,
+            ).first()
+
+            if integration:
+                integration.delete()  # This will cascade delete SlackIntegration
+                messages.success(request, "Slack integration deleted successfully!")
+            else:
+                messages.warning(request, "Slack integration not found.")
+
+        except Exception as e:
+            logger.exception(f"Error deleting Slack integration: {e}")
+            messages.error(request, "Failed to delete Slack integration. Please try again.")
 
         return redirect("organization_manage_integrations", id=id)
 
 
+def _get_slack_integration_or_error(organization_id):
+    """Helper method to get Slack integration or return error response."""
+    integration = Integration.objects.filter(
+        organization_id=organization_id,
+        service_name=IntegrationServices.SLACK.value,
+    ).first()
+
+    if not integration or not hasattr(integration, "slack_integration"):
+        return None, JsonResponse(
+            {
+                "success": False,
+                "message": "Slack integration not found",
+            },
+            status=404,
+        )
+
+    slack_integration = integration.slack_integration
+
+    if not slack_integration.bot_access_token:
+        return None, JsonResponse(
+            {
+                "success": False,
+                "message": "Bot access token is missing",
+            },
+            status=400,
+        )
+
+    return slack_integration, None
+
+
+class TestSlackIntegrationView(View):
+    """Test the Slack integration by making an auth.test API call."""
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        try:
+            slack_integration, error_response = _get_slack_integration_or_error(id)
+            if error_response:
+                return error_response
+
+            # Test the connection using auth.test
+            app = App(token=slack_integration.bot_access_token)
+
+            try:
+                response = app.client.auth_test()
+
+                if response.get("ok"):
+                    team_name = response.get("team", "Unknown")
+                    bot_user = response.get("user", "Unknown")
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": f"Connected to {team_name}",
+                            "team": team_name,
+                            "bot_user": bot_user,
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "Authentication failed",
+                        },
+                        status=401,
+                    )
+            except Exception as e:
+                logger.exception(f"Slack API error during test: {e}")
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Failed to connect to Slack",
+                    },
+                    status=500,
+                )
+
+        except Exception as e:
+            logger.exception(f"Error testing Slack integration: {e}")
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "An error occurred while testing the integration",
+                },
+                status=500,
+            )
+
+
+class LookupSlackUserView(View):
+    """Lookup a Slack user by their user ID."""
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        try:
+            slack_integration, error_response = _get_slack_integration_or_error(id)
+            if error_response:
+                return error_response
+
+            # Get user ID from request
+            try:
+                data = json.loads(request.body)
+                user_id = data.get("user_id", "").strip()
+            except json.JSONDecodeError:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Invalid request format",
+                    },
+                    status=400,
+                )
+
+            if not user_id:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "User ID is required",
+                    },
+                    status=400,
+                )
+
+            # Validate user ID format (Slack user IDs start with U and are alphanumeric)
+            if not re.match(SLACK_USER_ID_PATTERN, user_id):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Invalid user ID format. Slack user IDs start with 'U' followed by alphanumeric characters.",
+                    },
+                    status=400,
+                )
+
+            # Lookup user using users.info API
+            app = App(token=slack_integration.bot_access_token)
+
+            try:
+                response = app.client.users_info(user=user_id)
+
+                if response.get("ok") and response.get("user"):
+                    user = response.get("user")
+                    profile = user.get("profile", {})
+
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "user": {
+                                "id": user.get("id"),
+                                "name": user.get("name"),
+                                "real_name": profile.get("real_name"),
+                                "email": profile.get("email"),
+                                "avatar": profile.get("image_192") or profile.get("image_72"),
+                                "timezone": user.get("tz_label"),
+                                "is_bot": user.get("is_bot", False),
+                                "is_admin": user.get("is_admin", False),
+                            },
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "User not found. Please check the user ID and try again.",
+                        },
+                        status=404,
+                    )
+            except Exception as e:
+                logger.exception(f"Slack API error during user lookup: {e}")
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Failed to lookup user in Slack workspace",
+                    },
+                    status=500,
+                )
+
+        except Exception as e:
+            logger.exception(f"Error looking up Slack user: {e}")
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "An error occurred while looking up the user",
+                },
+                status=500,
+            )
+
+
 class SlackCallbackView(View):
+    """Handles OAuth callback from Slack."""
+
+    def _get_redirect_uri(self, request):
+        """Helper to construct redirect URI with proper scheme detection."""
+        # Prefer explicit server-side configuration (fully trusted)
+        configured_url = os.environ.get("SLACK_OAUTH_REDIRECT_URL")
+        if configured_url:
+            return configured_url
+
+        host = request.get_host()
+
+        # Validate host against Django's ALLOWED_HOSTS (server-side trusted list)
+        allowed = django_settings.ALLOWED_HOSTS
+        if not any(ah == "*" or ah == host or (ah.startswith(".") and host.endswith(ah)) for ah in allowed):
+            raise ValueError(f"Host '{host}' is not in ALLOWED_HOSTS")
+
+        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        # Only allow http or https schemes
+        if scheme not in ("http", "https"):
+            scheme = "https"
+
+        # For ngrok or other tunnels, always use https
+        if "ngrok" in host or "localhost.run" in host:
+            scheme = "https"
+
+        return f"{scheme}://{host}/oauth/slack/callback"
+
     def get(self, request, *args, **kwargs):
         try:
-            # Extract parameters
+            # Validate required parameters
             code = request.GET.get("code")
             state = request.GET.get("state")
 
@@ -1368,7 +1761,7 @@ class SlackCallbackView(View):
                 logger.error("Missing 'state' parameter in OAuth callback.")
                 return HttpResponseBadRequest("Missing 'state' parameter")
 
-            # Safely parse state
+            # Parse and validate organization ID
             state_data = parse_qs(state)
             organization_id = state_data.get("organization_id", [None])[0]
 
@@ -1376,7 +1769,7 @@ class SlackCallbackView(View):
                 logger.error(f"Invalid organization_id received: {organization_id}")
                 return HttpResponseBadRequest("Invalid organization ID")
 
-            organization_id = int(organization_id)  # Convert to integer after validation
+            organization_id = int(organization_id)
 
             # Exchange code for access token
             token_data = self.exchange_code_for_token(code, request)
@@ -1385,20 +1778,25 @@ class SlackCallbackView(View):
                 logger.error(f"Invalid token data received from Slack: {token_data}")
                 return HttpResponseServerError("Failed to retrieve token from Slack")
 
-            # Store integration data in the database
-            integration = Integration.objects.create(
+            # Get or create integration
+            integration, created = Integration.objects.get_or_create(
                 organization_id=organization_id,
                 service_name=IntegrationServices.SLACK.value,
             )
-            SlackIntegration.objects.create(
+
+            # Update or create SlackIntegration
+            slack_integration, slack_created = SlackIntegration.objects.update_or_create(
                 integration=integration,
-                bot_access_token=token_data["access_token"],
-                workspace_name=token_data["team"]["id"],
+                defaults={
+                    "bot_access_token": token_data["access_token"],
+                    "workspace_name": token_data["team"]["id"],
+                },
             )
 
-            # Redirect to the organization's integration dashboard
-            dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
-            return redirect(dashboard_url)
+            action = "Created" if created else "Updated"
+            logger.info(f"{action} Slack integration for organization {organization_id}")
+
+            return redirect(reverse("organization_manage_integrations", args=[organization_id]))
 
         except Exception as e:
             logger.exception(f"Error during Slack OAuth callback: {e}")
@@ -1408,26 +1806,22 @@ class SlackCallbackView(View):
         """Exchanges OAuth code for Slack access token."""
         client_id = os.getenv("SLACK_ID_CLIENT")
         client_secret = os.getenv("SLACK_SECRET_CLIENT")
-        host = request.get_host()
-        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        redirect_uri = os.environ.get(
-            "OAUTH_REDIRECT_URL",
-            f"{request.scheme}://{request.get_host()}/oauth/slack/callback",
+        redirect_uri = self._get_redirect_uri(request)
+
+        response = requests.post(
+            "https://slack.com/api/oauth.v2.access",
+            data={
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+            },
+            timeout=10,
         )
-
-        url = "https://slack.com/api/oauth.v2.access"
-        data = {
-            "code": code,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uri": redirect_uri,
-        }
-
-        response = requests.post(url, data=data)
         token_data = response.json()
 
         if token_data.get("ok"):
-            return token_data  # Return the full token data instead of just the access token
+            return token_data
         else:
             raise Exception(f"Error exchanging code for token: {token_data.get('error')}")
 
@@ -1681,8 +2075,18 @@ class OrganizationDashboardManageRolesView(View):
             else:
                 moderator_count += 1
 
+        # Get organizations for navigation
+        organizations = []
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+
         context = {
             "organization": id,
+            "organizations": organizations,
             "organization_obj": organization_obj,
             "roles": roles_data,
             "domains": list(domains.values("id", "name")),

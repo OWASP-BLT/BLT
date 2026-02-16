@@ -24,18 +24,18 @@
             <i class="fab fa-figma text-xl"></i>
         </a>
     </div> {% endcomment %}
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <!-- Header Section -->
         <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Team Overview</h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             Manage your organization's team members and their status reports
                         </p>
                     </div>
-                    <a href="/teams/overview"
+                    <a href="{% url 'team_overview' %}"
                        class="inline-flex items-center px-4 py-2.5 bg-[#e74c3c] text-white rounded-xl font-medium hover:bg-red-700 transition-all duration-200 select-none">
                         <svg class="w-5 h-5 mr-2"
                              fill="none"
@@ -74,7 +74,7 @@
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
                             {% if team_members %}
                                 {% for member in team_members %}
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 {% if member.user_avatar %}
@@ -84,7 +84,7 @@
                                                          height="40"
                                                          class="w-10 h-10 rounded-full mr-3 border-2 border-[#e74c3c]/20 object-cover">
                                                 {% else %}
-                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                    <img src="{% static 'images/dummy-user.webp' %}"
                                                          alt="{{ member.user.username }}"
                                                          width="40"
                                                          height="40"
@@ -115,7 +115,7 @@
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <a href="/profile/{{ member.user.username }}"
-                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-all font-medium text-sm"
+                                               class="inline-flex items-center px-3 py-1.5 bg-gray-100 dark:bg-gray-700 dark:border dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all font-medium text-sm"
                                                title="View Profile">
                                                 <svg class="w-4 h-4 mr-1.5"
                                                      fill="none"
@@ -138,8 +138,8 @@
                                                 <i class="fas fa-users text-gray-400 dark:text-gray-600 text-2xl"></i>
                                             </div>
                                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Members Found</h3>
-                                            <p class="text-gray-500 dark:text-gray-500 mb-4">Start building your team by adding members</p>
-                                            <a href="/teams/overview"
+                                            <p class="text-gray-500 dark:text-gray-400 mb-4">Start building your team by adding members</p>
+                                            <a href="{% url 'team_overview' %}"
                                                class="inline-flex items-center gap-2 px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white font-medium rounded-lg transition-all duration-200">
                                                 <i class="fas fa-plus"></i>
                                                 Add First Member
@@ -161,7 +161,7 @@
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Daily Status Reports</h2>
-                        <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             Showing {{ daily_status_reports|length }} report{{ daily_status_reports|length|pluralize }} from {{ team_members|length }} member{{ team_members|length|pluralize }}
                         </p>
                     </div>
@@ -191,7 +191,7 @@
                             <i class="fas fa-user-circle text-[#e74c3c] mr-2"></i>Select Team Member
                         </label>
                         <select id="user-filter"
-                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                             <option value="">All Members</option>
                             {% for member in team_members %}<option value="{{ member.user.id }}">{{ member.user.username }}</option>{% endfor %}
                         </select>
@@ -202,14 +202,14 @@
                         </label>
                         <input type="date"
                                id="date-filter"
-                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                               class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                     </div>
                     <div id="goal-panel" class="filter-panel hidden">
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             <i class="fas fa-flag-checkered text-[#e74c3c] mr-2"></i>Goal Status
                         </label>
                         <select id="goal-filter"
-                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                                class="w-full md:w-96 px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                             <option value="">All Goals</option>
                             <option value="true">✅ Accomplished</option>
                             <option value="false">❌ Not Accomplished</option>
@@ -222,7 +222,7 @@
                         <input type="text"
                                id="task-filter"
                                placeholder="Type to search in previous work..."
-                               class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
+                               class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:border-[#e74c3c] focus:ring-2 focus:ring-[#e74c3c]/20 transition-all">
                     </div>
                 </div>
                 <!-- Reports Table -->
@@ -244,7 +244,7 @@
                                data-initial-count="{{ daily_status_reports|length }}">
                             {% if daily_status_reports %}
                                 {% for report in daily_status_reports %}
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer"
                                         onclick="toggleRow(this)">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
@@ -256,7 +256,7 @@
                                                              height="32"
                                                              class="w-8 h-8 rounded-full mr-3 object-cover">
                                                     {% else %}
-                                                        <img src="{% static 'images/dummy-user.png' %}"
+                                                        <img src="{% static 'images/dummy-user.webp' %}"
                                                              alt="{{ report.user.username }}"
                                                              width="32"
                                                              height="32"
@@ -303,17 +303,15 @@
                                 <tr>
                                     <td colspan="7" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
-                                            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                                                <svg class="w-8 h-8 text-gray-400 dark:text-gray-600"
-                                                     fill="none"
-                                                     stroke="currentColor"
-                                                     viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                                    </path>
-                                                </svg>
-                                            </div>
-                                            <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No Reports Found</h3>
-                                            <p class="text-sm text-gray-500 dark:text-gray-500">Daily status reports will appear here when submitted</p>
+                                            <svg class="w-8 h-8 text-gray-400 mb-4"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                </path>
+                                            </svg>
+                                            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">No Reports Found</h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-200">Daily status reports will appear here when submitted</p>
                                         </div>
                                     </td>
                                 </tr>

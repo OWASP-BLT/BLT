@@ -1,0 +1,372 @@
+name: Auto-Fix Pre-Commit Issues on Main
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-fix-main
+  cancel-in-progress: true
+
+jobs:
+  check-and-fix-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: |
+      !endsWith(github.actor, '[bot]') &&
+      (github.event.head_commit == null || !contains(github.event.head_commit.message || '', '🤖 Auto-fix:')
+      )
+    
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+
+      - name: Check recent auto-fix PRs (rate limit)
+        id: throttle_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RECENT_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json createdAt \
+            --jq '[.[] | select((.createdAt | fromdateiso8601) > (now - 3600))] | length')
+
+          RECENT_PRS=${RECENT_PRS:-0}
+
+          if [ "$RECENT_PRS" -ge 3 ]; then
+            echo "throttled=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Rate limit hit: $RECENT_PRS auto-fix PRs in the last hour."
+          else
+            echo "throttled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if throttled
+        if: steps.throttle_check.outputs.throttled == 'true'
+        run: |
+          echo "⚠️ Rate limit reached. Skipping auto-fix to prevent spam."
+          exit 0
+
+      - name: Check for existing auto-fix PR
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_FIX_PRS=$(gh pr list \
+            --label "automated-fix" \
+            --state open \
+            --json number \
+            --jq 'length')
+
+          if [ "$OPEN_FIX_PRS" -gt 0 ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Open auto-fix PR already exists."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if auto-fix PR already exists
+        if: steps.existing_pr.outputs.exists == 'true'
+        run: |
+          echo "⚠️ Auto-fix PR already open; skipping to avoid duplicates."
+          exit 0
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
+            ${{ runner.os }}-poetry-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.2'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies (with retry)
+        run: |
+          max_retries=3
+          delay=10
+          attempt=1
+
+          until poetry install --with dev --no-interaction; do
+            if [ "$attempt" -ge "$max_retries" ]; then
+              echo "❌ poetry install failed after $max_retries attempts"
+              exit 1
+            fi
+            echo "⚠️ poetry install failed (attempt $attempt). Retrying in $delay seconds..."
+            attempt=$((attempt+1))
+            sleep "$delay"
+          done
+
+      - name: Run pre-commit checks
+        id: precommit
+        continue-on-error: true
+        run: |
+          poetry run pre-commit run --all-files
+
+      - name: Check if fixes are needed
+        id: check_fixes
+        if: steps.precommit.outcome == 'failure'
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "fixes_needed=true" >> $GITHUB_OUTPUT
+            echo "✅ Pre-commit made auto-fixes"
+          else
+            echo "fixes_needed=false" >> $GITHUB_OUTPUT
+            echo "❌ Pre-commit failed but no auto-fixes available"
+          fi
+
+      - name: Check diff size
+        id: check_diff_size
+        if: steps.check_fixes.outputs.fixes_needed == 'true'
+        run: |
+          FILE_COUNT=$(git diff --name-only | wc -l)
+          INSERTIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= insertions?)' || echo "0")
+          DELETIONS=$(git diff --stat | tail -1 | grep -oP '\d+(?= deletions?)' || echo "0")
+          TOTAL_CHANGES=$((INSERTIONS + DELETIONS))
+
+          echo "files_changed=$FILE_COUNT" >> $GITHUB_OUTPUT
+          echo "total_changes=$TOTAL_CHANGES" >> $GITHUB_OUTPUT
+
+          if [ "${FILE_COUNT:-0}" -gt 100 ] || [ "${TOTAL_CHANGES:-0}" -gt 1000 ]; then
+            echo "too_large=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Diff too large: $FILE_COUNT files / $TOTAL_CHANGES line changes" 
+          else
+            echo "too_large=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if diff too large
+        if: steps.check_diff_size.outputs.too_large == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## ⚠️ Auto-fix Skipped: Diff Too Large" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Changed files: ${{ steps.check_diff_size.outputs.files_changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "Total changes: ${{ steps.check_diff_size.outputs.total_changes }}" >> $GITHUB_STEP_SUMMARY
+          echo "Auto-fix would modify too many files. Manual review recommended." >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+      - name: Create fix branch and commit
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
+        id: create_branch
+        run: |
+          # Get current branch name
+          CURRENT_BRANCH="${GITHUB_REF#refs/heads/}"
+          echo "📍 Current branch: $CURRENT_BRANCH"
+          
+          # Create unique branch name
+          BRANCH_NAME="fix/pre-commit-main-$(date +%Y%m%d-%H%M%S)-${{ github.run_id }}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "base_branch=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
+          echo "🌿 New branch: $BRANCH_NAME"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Create and switch to new branch
+          git checkout -b $BRANCH_NAME
+          
+          # Commit changes
+          git add -u
+          git commit -m "🤖 Auto-fix: Apply pre-commit fixes to main
+
+          This commit automatically applies formatting and linting fixes:
+          - Black code formatting
+          - isort import sorting
+          - ruff linting fixes
+          - djLint template formatting
+          
+          Generated by auto-fix-main-precommit workflow"
+          
+          # Push branch
+          git push origin $BRANCH_NAME
+          echo "✅ Branch pushed successfully"
+
+      - name: Create Pull Request
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
+        id: create_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          echo "🔄 Creating pull request..."
+
+          # Get list of changed files with better error handling
+          if CHANGED_FILES_RAW=$(git diff --name-only ${{ steps.create_branch.outputs.base_branch }}...${{ steps.create_branch.outputs.branch_name }} 2>&1); then
+            FILE_COUNT=$(echo "$CHANGED_FILES_RAW" | wc -l)
+            if [ "$FILE_COUNT" -gt 20 ]; then
+              CHANGED_FILES=$(echo "$CHANGED_FILES_RAW" | head -20)
+              CHANGED_FILES="${CHANGED_FILES}
+          ... and $((FILE_COUNT - 20)) more files"
+            else
+              CHANGED_FILES="$CHANGED_FILES_RAW"
+            fi
+            SHOW_FILES_SECTION=true
+          else
+            # If git diff fails, don't show the files section
+            echo "⚠️ Warning: Unable to retrieve changed files list"
+            SHOW_FILES_SECTION=false
+          fi
+
+          # Write PR body to a temporary file
+          PR_BODY_FILE=$(mktemp)
+          trap 'rm -f "$PR_BODY_FILE"' EXIT
+          cat > "$PR_BODY_FILE" <<EOF
+          ## 🤖 Automated Pre-Commit Fixes
+
+          This PR contains automatic formatting and linting fixes applied to the **\`main\`** branch.
+
+          ### 🔧 Changes Applied:
+          - ✅ Black code formatting
+          - ✅ isort import sorting  
+          - ✅ ruff linting fixes
+          - ✅ djLint template formatting
+
+          ### 📝 Commit that triggered this:
+          - **SHA**: \`${{ github.sha }}\`
+          - **Author**: @${{ github.actor }}
+          - **Message**: \`${COMMIT_MESSAGE}\`
+          EOF
+
+          # Only add files section if we successfully retrieved the list
+          if [ "$SHOW_FILES_SECTION" = true ]; then
+            cat >> "$PR_BODY_FILE" <<EOF
+
+          ### 📋 Files Changed:
+          \`\`\`
+          ${CHANGED_FILES}
+          \`\`\`
+          EOF
+          else
+            cat >> "$PR_BODY_FILE" <<EOF
+
+          ### 📋 Files Changed:
+          _(Unable to retrieve changed files list. Check the commit diff in the PR for details.)_
+          EOF
+          fi
+
+          cat >> "$PR_BODY_FILE" <<EOF
+
+          ### 🏷️ Labels
+          Labels applied automatically: \`automated-fix\`, \`pre-commit\`
+
+          ---
+          **⚠️ Please review these changes before merging.**
+
+          _This PR was automatically created by the auto-fix-main-precommit workflow._
+          EOF
+
+          # Create PR using the body file
+          PR_DATA=$(gh pr create \
+            --base "${{ steps.create_branch.outputs.base_branch }}" \
+            --head "${{ steps.create_branch.outputs.branch_name }}" \
+            --title "🤖 Auto-fix: Apply pre-commit fixes to main" \
+            --body-file "$PR_BODY_FILE" \
+            --json url,number)
+
+          PR_URL=$(echo "$PR_DATA" | jq -r '.url')
+          PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "✅ PR created successfully: $PR_URL"
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "📋 PR Number: #$PR_NUMBER"
+
+      - name: Comment on original commit
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.create_pr.outputs.pr_url != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
+            -f body="🤖 **Auto-fix PR Created**
+
+          Pre-commit checks detected formatting issues that were automatically fixed.
+
+          👉 **Review the fixes here**: ${{ steps.create_pr.outputs.pr_url }}
+
+          Please review and merge the PR to apply the fixes to the main branch." \
+            || echo "⚠️ Could not add comment to commit"
+
+      - name: Ensure labels exist
+        if: steps.check_fixes.outputs.fixes_needed == 'true' &&
+            steps.check_diff_size.outputs.too_large != 'true' &&
+            steps.create_pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create or update labels; --force makes these idempotent
+          gh label create "automated-fix" \
+            --color "0e8a16" \
+            --description "Automated fixes applied" \
+            --force || true
+
+          gh label create "pre-commit" \
+            --color "1d76db" \
+            --description "Pre-commit related" \
+            --force || true
+
+      - name: Add labels to PR
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true' && steps.create_pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit ${{ steps.create_pr.outputs.pr_number }} \
+            --add-label "automated-fix" \
+            --add-label "pre-commit"
+
+      - name: Summary
+        if: steps.check_fixes.outputs.fixes_needed == 'true' && steps.check_diff_size.outputs.too_large != 'true'
+        run: |
+          echo "## 🎉 Auto-fix Workflow Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Status**: Successfully created PR with auto-fixes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 **Details**:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base Branch**: \`${{ steps.create_branch.outputs.base_branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Fix Branch**: \`${{ steps.create_branch.outputs.branch_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR Number**: #${{ steps.create_pr.outputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR URL**: ${{ steps.create_pr.outputs.pr_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **Next Steps**: Review and merge the PR to apply fixes" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: steps.precommit.outcome == 'failure' &&
+            steps.check_fixes.outputs.fixes_needed == 'false'
+        run: |
+          echo "## ❌ Pre-commit Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pre-commit checks failed but no auto-fixes could be applied." >> $GITHUB_STEP_SUMMARY
+          echo "Manual intervention is required." >> $GITHUB_STEP_SUMMARY
+          echo "::error::Pre-commit checks failed but no auto-fixes could be applied. Manual intervention required."
+          exit 1
