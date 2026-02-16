@@ -15,11 +15,14 @@ class Command(LoggedBaseCommand):
             try:
                 # Convert web URL to API URL
                 api_url = project.url.replace("github.com", "api.github.com/repos")
-                response = requests.get(api_url)
+                response = requests.get(api_url, timeout=10)
                 if response.status_code == 200:
                     data = response.json()
-                    project.status = data.get("archived", False)
-                    updated_projects.append(project)
+                    is_archived = data.get("archived", False)
+                    new_status = "inactive" if is_archived else project.status
+                    if new_status != project.status:
+                        project.status = new_status
+                        updated_projects.append(project)
             except Exception as e:
                 msg = f"Error updating project {project.id}: {str(e)}"
                 self.stderr.write(msg)

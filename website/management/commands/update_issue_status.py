@@ -12,7 +12,7 @@ class Command(LoggedBaseCommand):
         updated_issues = []
         for issue in issues:
             try:
-                response = requests.get(issue.github_url)
+                response = requests.get(issue.github_url, timeout=10)
                 if response.status_code == 200:
                     data = response.json()
                     issue.status = data.get("state", "open")
