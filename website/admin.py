@@ -214,14 +214,7 @@ class IssueAdmin(admin.ModelAdmin):
         Ensure zero-trust fields are always read-only, regardless of object state.
         """
         base_readonly = list(super().get_readonly_fields(request, obj))
-        for field_name in (
-            "is_zero_trust",
-            "artifact_sha256",
-            "encryption_method",
-            "delivery_method",
-            "delivery_status",
-            "delivered_at",
-        ):
+        for field_name in self.readonly_fields:
             if field_name not in base_readonly:
                 base_readonly.append(field_name)
         return tuple(base_readonly)

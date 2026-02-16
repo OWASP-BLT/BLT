@@ -67,17 +67,25 @@ def _validate_pgp_fingerprint(fingerprint: str) -> bool:
 
 def _sanitize_filename(filename: str) -> str:
     """Sanitize uploaded filename to prevent path traversal and other issues."""
-
     filename = os.path.basename(filename)
     filename = unicodedata.normalize("NFKD", filename)
     filename = "".join(c for c in filename if c not in ("\x00", "\r", "\n"))
+
     safe_chars = string.ascii_letters + string.digits + " .-_"
     filename = "".join(c if c in safe_chars else "_" for c in filename)
     filename = filename.strip(". ")
-
     if not filename:
         filename = f"upload_{uuid.uuid4().hex[:8]}"
-
+    max_length = 255
+    if len(filename) > max_length:
+        base, ext = os.path.splitext(filename)
+        if len(ext) > 32:
+            ext = ext[:32]
+        available = max_length - len(ext)
+        if available <= 0:
+            filename = filename[:max_length]
+        else:
+            filename = base[:available] + ext
     return filename
 
 
@@ -103,10 +111,14 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
     # Validate file sizes during streaming
     total_size = 0
     for f in uploaded_files:
-        if hasattr(f, "size") and f.size:
-            if f.size > MAX_FILE_SIZE:
-                raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE / (1024*1024):.0f}MB")
-            total_size += f.size
+        file_size = getattr(f, "size", None)
+        if file_size is None:
+            raise ValueError("Unable to determine uploaded file size. Please try again with a smaller file.")
+        if file_size > MAX_FILE_SIZE:
+            raise ValueError(
+                f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE / (1024*1024):.0f}MB"
+            )
+        total_size += file_size
 
     if total_size > MAX_TOTAL_SIZE:
         raise ValueError(

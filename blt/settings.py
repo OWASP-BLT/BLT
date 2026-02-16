@@ -262,51 +262,98 @@ MEDIA_URL = "/media/"
 # This enables connection reuse and prevents connection exhaustion
 db_from_env = dj_database_url.config(conn_max_age=600)
 
+ZERO_TRUST_PATHS = (
+    "/api/zero-trust/issues",
+)
 
+def _is_zero_trust_event(event: dict) -> bool:
+    req = (event or {}).get("request") or {}
+    url = (req.get("url") or "")
+    if any(p in url for p in ZERO_TRUST_PATHS):
+        return True
+
+    # Extra safety: match by transaction name (e.g., DRF view)
+    tx = (event or {}).get("transaction") or ""
+    if "ZeroTrustIssueCreateView" in tx:
+        return True
+
+    # Breadcrumbs may contain the URL of the request even if request.url is absent
+    bc = (event or {}).get("breadcrumbs") or {}
+    for crumb in bc.get("values", []):
+        if (crumb.get("category") == "http") and any(
+            p in (crumb.get("data", {}).get("url") or "") for p in ZERO_TRUST_PATHS
+        ):
+            return True
+
+    return False
+    
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN:
 
-    def _sentry_before_send(event, hint):
+    def _sentry_before_send(event: dict, hint):
         """
-        Filter Sentry events to exclude zero-trust endpoint data.
-
-        Zero-trust submissions contain sensitive PoC files and vulnerability details
-        that must NEVER be sent to external services, including Sentry.
+        Redact PII only for Zero‑Trust submissions.
+        Keeps full diagnostics (including PII) for the rest of the application.
         """
-        # Get request URL from event
-        request_url = event.get("request", {}).get("url", "")
+        try:
+            if not _is_zero_trust_event(event):
+                return event  # leave non‑ZT events unchanged
 
-        # Block all zero-trust endpoint data
-        if "/api/zero-trust/issues" in request_url:
-            if "request" in event:
-                event["request"].pop("data", None)
-                event["request"].pop("cookies", None)
-                event["request"].pop("headers", None)
+            # 1) Strip request details (body, headers, cookies, query, env)
+            req = (event or {}).get("request")
+            if req:
+                # keep only method + a minimal URL indicator; drop the rest
+                event["request"] = {
+                    "method": req.get("method"),
+                    "url": "[REDACTED zero‑trust endpoint]",
+                }
 
-                event["request"]["_sanitized"] = (
-                    "Zero-trust endpoint data redacted. " "See server logs for issue_id reference."
-                )
+            # 2) Remove user context entirely
+            event.pop("user", None)
 
-            # Remove exception context that might contain file data
-            if "exception" in event:
-                for exc in event["exception"].get("values", []):
-                    if "stacktrace" in exc:
-                        for frame in exc["stacktrace"].get("frames", []):
+            # 3) Remove local variables from stack frames
+            exc = event.get("exception")
+            if exc:
+                for val in exc.get("values", []):
+                    st = val.get("stacktrace")
+                    if st:
+                        for frame in st.get("frames", []):
                             frame.pop("vars", None)
 
+            # 4) Sanitize breadcrumbs that may include ZT URLs/payload hints
+            bc = event.get("breadcrumbs")
+            if bc and "values" in bc:
+                redacted = []
+                for crumb in bc["values"]:
+                    if crumb.get("category") == "http":
+                        data = dict(crumb.get("data") or {})
+                        url = data.get("url", "")
+                        if any(p in url for p in ZERO_TRUST_PATHS):
+                            data["url"] = "[REDACTED zero‑trust endpoint]"
+                            # drop any other potentially sensitive fields
+                            for k in ("method", "status_code", "request_body", "headers"):
+                                data.pop(k, None)
+                            crumb["data"] = data
+                    redacted.append(crumb)
+                event["breadcrumbs"]["values"] = redacted
+
+            # 5) Optional marker to ease triage
+            event.setdefault("tags", {})["zero_trust_redacted"] = True
+
             return event
-
-        return event
-
+        except Exception:
+            # If filtering fails for any reason, prefer dropping the event over leaking data
+            logging.getLogger(__name__).exception("Sentry before_send failed; dropping Zero‑Trust event")
+            return None
+        
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        send_default_pii=False,
-        before_send=_sentry_before_send,
+        send_default_pii=True,              # keep PII for non‑ZT endpoints
+        before_send=_sentry_before_send,    # redact only Zero‑Trust events
         traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
-        release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
     )
 
 EMAIL_HOST = "localhost"

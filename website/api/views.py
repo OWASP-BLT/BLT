@@ -2109,20 +2109,31 @@ class ZeroTrustIssueCreateView(APIView):
         # signal handlers, or middleware that might modify these critical fields.
         # These should never fail in normal operation but provide early detection
         # of integrity violations in the zero-trust chain.
-        if not issue.is_hidden:
-            logger.error(
-                "Zero-trust issue invariant violated: issue.is_hidden is not True (id=%s)",
-                issue.id,
-            )
-            raise RuntimeError("Zero-trust issue must be hidden")
-        if not issue.is_zero_trust:
-            logger.error(
-                "Zero-trust issue invariant violated: issue.is_zero_trust is not True (id=%s)",
-                issue.id,
-            )
-            raise RuntimeError("Zero-trust issue must be marked as zero_trust")
         try:
+            if not issue.is_hidden:
+                logger.error(
+                    "Zero-trust issue invariant violated: issue.is_hidden is not True (id=%s)",
+                    issue.id,
+                )
+                raise RuntimeError("Zero-trust issue must be hidden")
+            if not issue.is_zero_trust:
+                logger.error(
+                    "Zero-trust issue invariant violated: issue.is_zero_trust is not True (id=%s)",
+                    issue.id,
+                )
+                raise RuntimeError("Zero-trust issue must be marked as zero_trust")
             build_and_deliver_zero_trust_issue(issue, files)
+        except ValueError as e:
+            issue.delivery_status = "failed"
+            issue.save(update_fields=["delivery_status"])
+            return Response(
+                {
+                    "error": str(e),
+                    "id": issue.id,
+                    "delivery_status": issue.delivery_status,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception:
             # Mark the issue as failed and expose its identifier so clients can track it
             logger.error(
