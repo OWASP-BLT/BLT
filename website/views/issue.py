@@ -836,13 +836,16 @@ class IssueBaseCreate(object):
             extension = filename.split(".")[-1]
             self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
 
-            reopen = default_storage.open("uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
-            django_file = File(reopen)
-            obj.screenshot.save(
-                self.request.POST.get("screenshot-hash") + ".png",
-                django_file,
-                save=True,
-            )
+            reopen = default_storage.open("uploads/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
+            try:
+                django_file = File(reopen)
+                obj.screenshot.save(
+                    self.request.POST.get("screenshot-hash") + ".png",
+                    django_file,
+                    save=True,
+                )
+            finally:
+                reopen.close()
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
