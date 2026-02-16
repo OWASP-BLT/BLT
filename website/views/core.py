@@ -736,7 +736,7 @@ def search(request, template="search.html"):
             organizations = list(
                 Organization.objects.filter(name__icontains=query).prefetch_related(
                     Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains")
-                )
+                )[:SEARCH_RESULT_LIMIT]
             )
             for org in organizations:
                 if org.prefetched_domains:
