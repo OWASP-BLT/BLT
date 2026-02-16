@@ -114,8 +114,6 @@ def handle_user_signup(request, user, **kwargs):
             pass
 
 
-
-
 @login_required
 def profile_edit(request):
     from allauth.account.models import EmailAddress
@@ -1047,7 +1045,6 @@ def contributor_stats_view(request):
     }
 
     return render(request, "weekly_activity.html", context)
-
 
 
 def create_tokens(request):
