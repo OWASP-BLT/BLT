@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 
@@ -24,6 +24,10 @@ class Command(BaseCommand):
     def handle(self, *_, **options):
         days = options["days"]
         dry_run = options["dry_run"]
+
+        if days <= 0:
+            raise CommandError("--days must be a positive integer")
+
         cutoff_date = timezone.now() - timedelta(days=days)
 
         # Find users who joined before the cutoff and have no verified email.
@@ -38,11 +42,12 @@ class Command(BaseCommand):
         )
 
         count = unverified_users.count()
+        label = "user" if count == 1 else "users"
 
         if dry_run:
             self.stdout.write(
                 self.style.WARNING(
-                    f"DRY RUN: Would delete {count} unverified users who joined more than {days} days ago"
+                    f"DRY RUN: Would delete {count} unverified {label} who joined more than {days} days ago"
                 )
             )
             if count > 0:
@@ -55,6 +60,6 @@ class Command(BaseCommand):
             unverified_users.delete()
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Successfully deleted {count} unverified users who joined more than {days} days ago"
+                    f"Successfully deleted {count} unverified {label} who joined more than {days} days ago"
                 )
             )

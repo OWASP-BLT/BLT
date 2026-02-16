@@ -4,6 +4,7 @@ from io import StringIO
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -90,6 +91,13 @@ class DeleteUnverifiedUsersCommandTest(TestCase):
         # 60-day-old user should NOT be deleted with 90-day threshold
         self.assertTrue(User.objects.filter(username="old_unverified").exists())
 
+    def test_rejects_non_positive_days(self):
+        """Should raise CommandError when --days is zero or negative."""
+        with self.assertRaises(CommandError):
+            call_command("delete_unverified_users", days=0)
+        with self.assertRaises(CommandError):
+            call_command("delete_unverified_users", days=-5)
+
     def test_deletes_users_with_no_email_record(self):
         """Users with no EmailAddress record have no verified email and should be deleted."""
         old_date = timezone.now() - timedelta(days=60)
@@ -118,7 +126,7 @@ class DeleteUnverifiedUsersCommandTest(TestCase):
         call_command("delete_unverified_users", stdout=out)
         output = out.getvalue()
         self.assertIn("Successfully deleted", output)
-        self.assertIn("1 unverified users", output)
+        self.assertIn("1 unverified user", output)
 
     def test_dry_run_shows_usernames(self):
         """Dry run should list usernames of users that would be deleted."""
