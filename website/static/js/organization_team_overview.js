@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer';
             row.onclick = () => toggleRow(row);
             
-            const avatarUrl = report.avatar_url || '/static/images/dummy-user.png';
+            const avatarUrl = report.avatar_url || '/static/images/dummy-user.webp';
             const previousWork = report.previous_work || '';
             const nextPlan = report.next_plan || '';
             const blockers = report.blockers || '';

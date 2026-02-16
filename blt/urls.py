@@ -53,7 +53,6 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -112,11 +111,8 @@ from website.views.core import (
     StatsDetailView,
     StyleGuideView,
     UploadCreate,
-    add_forum_comment,
-    add_forum_post,
     badge_list,
     check_owasp_compliance,
-    delete_forum_post,
     donate_view,
     features_view,
     find_key,
@@ -127,7 +123,6 @@ from website.views.core import (
     run_management_command,
     search,
     set_theme,
-    set_vote_status,
     sitemap,
     sponsor_view,
     stats_dashboard,
@@ -136,9 +131,7 @@ from website.views.core import (
     sync_github_projects,
     template_list,
     test_sentry,
-    view_forum,
     view_pr_analysis,
-    vote_forum_post,
     website_stats,
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
@@ -214,7 +207,6 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
-    unsave_issue,
     update_content_comment,
     vote_count,
 )
@@ -378,6 +370,7 @@ from website.views.user import (
     respond_to_request,
     set_public_key,
     start_thread,
+    toggle_follow,
     update_bch_address,
     user_dashboard,
     users_view,
@@ -422,8 +415,6 @@ urlpatterns = [
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
-    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
-    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
@@ -593,13 +584,6 @@ urlpatterns = [
         name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$",
-        dislike_issue,
-        name="dislike_issue",
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",
@@ -608,7 +592,6 @@ urlpatterns = [
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
     # Recommendation URLs
     path("recommendations/add/<str:username>/", add_recommendation, name="add_recommendation"),
@@ -1062,12 +1045,6 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("weekly-report/", weekly_report, name="weekly_report"),
-    path("forum/add/", add_forum_post, name="add_forum_post"),
-    path("forum/", view_forum, name="view_forum"),
-    path("forum/vote/", vote_forum_post, name="vote_forum_post"),
-    path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
-    path("forum/comment/", add_forum_comment, name="add_forum_comment"),
-    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
@@ -1272,6 +1249,11 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
+    path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
+    path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
+    path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
+    path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 
 if settings.DEBUG:
