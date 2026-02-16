@@ -64,7 +64,6 @@ from website.models import (
     User,
     UserBadge,
     UserProfile,
-    Wallet,
 )
 from website.utils import (
     analyze_pr_content,
@@ -844,11 +843,6 @@ def search(request, template="search.html"):
 
     # Handle authenticated user features
     if request.user.is_authenticated:
-        try:
-            context["wallet"] = Wallet.objects.get(user=request.user)
-        except Wallet.DoesNotExist:
-            context["wallet"] = None
-
         # Log search history for authenticated users - LAZY EVALUATION
         # Only calculate result count when we're actually going to log the search
         if query:

@@ -1092,9 +1092,6 @@ class DomainDetailView(ListView):
                 .order_by("-created")
             )
 
-            if self.request.user.is_authenticated:
-                context["wallet"] = Wallet.objects.get(user=self.request.user)
-
             # Handle pagination for open issues
             open_paginator = Paginator(open_issues, self.paginate_by)
             open_page = self.request.GET.get("open")

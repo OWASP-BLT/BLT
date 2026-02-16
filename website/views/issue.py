@@ -77,7 +77,6 @@ from website.models import (
     Repo,
     User,
     UserProfile,
-    Wallet,
 )
 from website.utils import (
     admin_required,
@@ -627,8 +626,6 @@ def search_issues(request, template="search.html"):
             "issues": Issue.objects.none(),
         }
 
-    if request.user.is_authenticated:
-        context["wallet"] = Wallet.objects.get(user=request.user)
     issues = serializers.serialize("json", context["issues"])
     issues = json.loads(issues)
     return HttpResponse(json.dumps({"issues": issues}), content_type="application/json")
@@ -1653,8 +1650,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = (
             User.objects.filter(
                 points__created__month=timezone.now().month,
@@ -1713,8 +1708,6 @@ class AllIssuesView(ListView):
         paginator = Paginator(self.activities, self.paginate_by)
         page = self.request.GET.get("page")
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -1789,8 +1782,6 @@ class SpecificIssuesView(ListView):
         paginator = Paginator(self.activities, self.paginate_by)
         page = self.request.GET.get("page")
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -1865,9 +1856,6 @@ class IssueView(DetailView):
         else:
             context["total_score"] = 0
             context["users_score"] = 0
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
