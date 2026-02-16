@@ -1931,36 +1931,47 @@ def add_role(request):
 @login_required(login_url="/accounts/login")
 def update_role(request):
     if request.method == "POST":
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        try:
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        except OrganizationAdmin.DoesNotExist:
+            return HttpResponse("failed")
         if domain_admin.role == 0 and domain_admin.is_active:
             for key, value in request.POST.items():
                 if key.startswith("user@"):
-                    user = User.objects.get(username=value)
-                    if domain_admin.organization.admin == request.user:
-                        pass
-                    domain_admin = OrganizationAdmin.objects.get(user=user)
-                    if request.POST["role@" + value] != "9":
-                        domain_admin.role = request.POST["role@" + value]
-                    elif request.POST["role@" + value] == "9":
-                        domain_admin.is_active = False
-                    if request.POST["domain@" + value] != "":
-                        domain_admin.domain = Domain.objects.get(pk=request.POST["domain@" + value])
+                    try:
+                        user = User.objects.get(username=value)
+                        target_admin = OrganizationAdmin.objects.get(user=user)
+                    except (User.DoesNotExist, OrganizationAdmin.DoesNotExist):
+                        continue
+                    role_value = request.POST.get("role@" + value)
+                    if role_value == "9":
+                        target_admin.is_active = False
+                    elif role_value is not None:
+                        target_admin.role = role_value
+                    domain_value = request.POST.get("domain@" + value, "")
+                    if domain_value:
+                        try:
+                            target_admin.domain = Domain.objects.get(pk=domain_value)
+                        except Domain.DoesNotExist:
+                            continue
                     else:
-                        domain_admin.domain = None
-                    domain_admin.save()
+                        target_admin.domain = None
+                    target_admin.save()
             return HttpResponse("success")
         elif domain_admin.role == 1 and domain_admin.is_active:
             for key, value in request.POST.items():
                 if key.startswith("user@"):
-                    user = User.objects.get(username=value)
-                    if domain_admin.organization.admin == request.user:
-                        pass
-                    domain_admin = OrganizationAdmin.objects.get(user=user)
-                    if request.POST["role@" + value] == "1":
-                        domain_admin.role = request.POST["role@" + value]
-                    elif request.POST["role@" + value] == "9":
-                        domain_admin.is_active = False
-                    domain_admin.save()
+                    try:
+                        user = User.objects.get(username=value)
+                        target_admin = OrganizationAdmin.objects.get(user=user)
+                    except (User.DoesNotExist, OrganizationAdmin.DoesNotExist):
+                        continue
+                    role_value = request.POST.get("role@" + value)
+                    if role_value == "1":
+                        target_admin.role = role_value
+                    elif role_value == "9":
+                        target_admin.is_active = False
+                    target_admin.save()
             return HttpResponse("success")
         else:
             return HttpResponse("failed")
