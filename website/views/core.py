@@ -775,7 +775,9 @@ def search(request, template="search.html"):
             matching_organizations = list(
                 Organization.objects.filter(tags__in=tags)
                 .distinct()
-                .prefetch_related(Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains"))[:SEARCH_RESULT_LIMIT]
+                .prefetch_related(Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains"))[
+                    :SEARCH_RESULT_LIMIT
+                ]
             )
             matching_domains = Domain.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
