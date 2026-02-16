@@ -468,19 +468,23 @@ class Joinorganization(TemplateView):
         context = {"wallet": wallet, "organization_name": organization_name}
         return render(request, self.template_name, context)
 
+    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        name = request.POST["organization"]
+        name = request.POST.get("organization", "")
         try:
             Organization.objects.get(name=name)
             return JsonResponse({"status": "Organization already exists"})
         except Organization.DoesNotExist:
-            url = request.POST["url"]
-            email = request.POST["email"]
-            product = request.POST["product"]
-            sub = Subscription.objects.get(name=product)
+            url = request.POST.get("url", "")
+            email = request.POST.get("email", "")
+            product = request.POST.get("product", "")
+            try:
+                sub = Subscription.objects.get(name=product)
+            except Subscription.DoesNotExist:
+                return JsonResponse({"error": "Invalid subscription plan"})
             if name == "" or url == "" or email == "" or product == "":
                 return JsonResponse({"error": "Empty Fields"})
-            paymentType = request.POST["paymentType"]
+            paymentType = request.POST.get("paymentType", "")
             if paymentType == "wallet":
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 if wallet.current_balance < sub.charge_per_month:
