@@ -86,7 +86,7 @@ def delete_comment(request):
             return HttpResponse("Missing comment ID", status=400)
         comment = get_object_or_404(Comment, pk=comment_pk)
         if request.user.username != comment.author:
-            return HttpResponse("Cannot delete this comment")
+            return HttpResponse("Cannot delete this comment", status=403)
         try:
             show = comment.parent.pk
         except (AttributeError, Comment.DoesNotExist):
@@ -108,12 +108,14 @@ def delete_comment(request):
 @login_required(login_url="/accounts/login/")
 def edit_comment(request, pk):
     if request.method == "POST":
-        issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+        issue = get_object_or_404(Issue, pk=pk)
         comment = get_object_or_404(Comment, pk=request.POST.get("comment_pk"))
         if request.user.username != comment.author:
             return HttpResponse("Cannot edit this comment", status=403)
-        comment.text = request.POST.get("text_comment")
-        comment.text = escape(comment.text)
+        text = request.POST.get("text_comment")
+        if not text:
+            return HttpResponse("Missing comment text", status=400)
+        comment.text = escape(text)
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
         return render(
