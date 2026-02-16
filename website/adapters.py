@@ -2,8 +2,26 @@
 Custom adapters for django-allauth to improve UX.
 """
 
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.shortcuts import resolve_url
+
+
+class CustomAccountAdapter(DefaultAccountAdapter):
+    """
+    Custom account adapter to handle email verification differently
+    for social vs regular signups.
+    """
+
+    def is_email_verification_mandatory(self, request):
+        """
+        Skip mandatory email verification for social account signups.
+        Only enforce for regular email/password signups.
+        """
+        # Check if this is a social account signup
+        if hasattr(request, "session") and "sociallogin" in request.session:
+            return False
+        return super().is_email_verification_mandatory(request)
 
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
@@ -37,3 +55,9 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         # Message is handled by BaconRewardMessageMiddleware
         # Redirect to user's profile
         return resolve_url(f"/profile/{request.user.username}/")
+
+    def is_auto_signup_allowed(self, request, sociallogin):
+        """
+        Enable auto-signup for social accounts without email verification.
+        """
+        return True
