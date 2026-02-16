@@ -803,12 +803,12 @@ urlpatterns = [
     re_path(r"^feed/rss/$", ActivityFeed(), name="activity_feed_rss"),
     re_path(
         r"^api/v1/createissues/$",
-        csrf_exempt(IssueCreate.as_view()),
+        IssueCreate.as_view(),
         name="issuecreate",
     ),
     re_path(
         r"^api/v1/search/$",
-        csrf_exempt(search_issues),
+        search_issues,
         name="search_issues",
     ),
     re_path(
@@ -818,33 +818,33 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v1/delete_issue/(?P<id>\w+)/$",
-        csrf_exempt(delete_issue),
+        delete_issue,
         name="delete_api_issue",
     ),
     re_path(
         r"^api/v1/remove_user_from_issue/(?P<id>\w+)/$",
-        csrf_exempt(remove_user_from_issue),
+        remove_user_from_issue,
         name="remove_api_user_from_issue",
     ),
     re_path(
         r"^api/v1/issue/update/$",
-        csrf_exempt(UpdateIssue),
+        UpdateIssue,
         name="update_api_issue",
     ),
     re_path(r"^api/v1/scoreboard/$", get_scoreboard, name="api_scoreboard"),
     re_path(
         r"^api/v1/terms/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
+        TemplateView.as_view(template_name="mobile_terms.html"),
         name="api_terms",
     ),
     re_path(
         r"^api/v1/about/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
+        TemplateView.as_view(template_name="mobile_about.html"),
         name="api_about",
     ),
     re_path(
         r"^api/v1/privacypolicy/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
+        TemplateView.as_view(template_name="mobile_privacy.html"),
         name="api_privacypolicy",
     ),
     re_path(
