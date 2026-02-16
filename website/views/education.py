@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
+from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag
 from website.utils import validate_file_type
 
 logger = logging.getLogger(__name__)
@@ -392,9 +392,10 @@ def delete_lecture(request, lecture_id):
     lecture.delete()
 
     if section:
-        for i, lec in enumerate(Lecture.objects.filter(section=section), 1):
+        remaining = list(Lecture.objects.filter(section=section))
+        for i, lec in enumerate(remaining, 1):
             lec.order = i
-            lec.save()
+        Lecture.objects.bulk_update(remaining, ["order"])
         messages.success(request, f"Lecture '{title}' was deleted successfully!")
         return redirect("course_content_management", course_id=section.course.id)
     else:
@@ -517,11 +518,17 @@ def get_course_content(request, course_id):
 @login_required(login_url="/accounts/login")
 @require_POST
 def create_or_update_course(request):
-    user_profile = get_object_or_404(UserProfile, user=request.user)
+    user_profile = request.user.userprofile
     try:
         title = request.POST.get("title")
         description = request.POST.get("description")
         level = request.POST.get("level", "BEG")
+        valid_levels = {code for code, _ in Course.LEVEL_CHOICES}
+        if level not in valid_levels:
+            return JsonResponse(
+                {"success": False, "message": f"Invalid level. Must be one of: {', '.join(sorted(valid_levels))}"},
+                status=400,
+            )
         tag_ids = request.POST.getlist("tags")
         thumbnail = request.FILES.get("thumbnail")
 
@@ -531,9 +538,7 @@ def create_or_update_course(request):
                 missing_fields.append("Course title")
             if not description:
                 missing_fields.append("Course description")
-            return JsonResponse(
-                {"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400
-            )
+            return JsonResponse({"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400)
         if thumbnail:
             is_valid, error_message = validate_file_type(
                 request,
