@@ -8,7 +8,7 @@
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div class="max-w-[95%] mx-auto px-4 py-8">
             <!-- Header Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-700 shadow-sm p-6 mb-8">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="flex items-center gap-4">
                         <div class="p-3 bg-[#e74c3c]/10 rounded-xl">
@@ -637,7 +637,7 @@
                 </div>
             {% endif %}
             <!-- Queue Items List -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-900">
@@ -858,6 +858,15 @@
         </div>
     </div>
     <script>
+        function isSafeImageUrl(url) {
+    try {
+        const parsed = new URL(url, window.location.origin);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Launch Control functionality
     const showLaunchControlBtn = document.getElementById('showLaunchControlBtn');
@@ -953,11 +962,12 @@ document.addEventListener('DOMContentLoaded', function() {
             editQueueId.value = id;
             editMessage.value = message;
             editCharCount.textContent = message.length;
-            
-            if (imageUrl) {
+        
+            if (imageUrl && isSafeImageUrl(imageUrl)) {
                 currentImage.src = imageUrl;
                 currentImageContainer.classList.remove('hidden');
             } else {
+                currentImage.removeAttribute('src');
                 currentImageContainer.classList.add('hidden');
             }
             
@@ -1046,11 +1056,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             viewMessage.value = message;
             
-            if (imageUrl) {
+            if (imageUrl && isSafeImageUrl(imageUrl)) {
                 viewImage.src = imageUrl;
                 viewImageContainer.classList.remove('hidden');
                 noImageText.classList.add('hidden');
             } else {
+                viewImage.removeAttribute('src');
                 viewImageContainer.classList.add('hidden');
                 noImageText.classList.remove('hidden');
             }
