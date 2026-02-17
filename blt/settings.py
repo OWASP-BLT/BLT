@@ -368,8 +368,7 @@ else:
             "NAME": ":memory:",
         }
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
@@ -479,32 +478,6 @@ else:
         CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 if DEBUG or TESTING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-else:
-    # temp to check memory usage
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
-
-if DEBUG or TESTING:
     anon_throttle = 100000
     user_throttle = 100000
 
@@ -554,7 +527,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "website.adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 # Social account settings for better UX
