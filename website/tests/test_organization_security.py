@@ -3,7 +3,9 @@ Security-focused tests for organization views, especially open redirect vulnerab
 and URL validation in forms.
 """
 import threading
+import unittest
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
@@ -636,6 +638,10 @@ class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "https://www.linkedin.com/company/testorg")
 
+    @unittest.skipIf(
+        "sqlite" in settings.DATABASES["default"]["ENGINE"].lower(),
+        "SQLite does not support concurrent writes - skipping concurrent test",
+    )
     def test_concurrent_clicks_tracked_correctly(self):
         """Test that concurrent clicks are tracked atomically using threads"""
         org = Organization.objects.create(
