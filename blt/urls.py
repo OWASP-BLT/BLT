@@ -803,7 +803,7 @@ urlpatterns = [
     re_path(r"^feed/rss/$", ActivityFeed(), name="activity_feed_rss"),
     re_path(
         r"^api/v1/createissues/$",
-        IssueCreate.as_view(),
+        csrf_exempt(IssueCreate.as_view()),
         name="issuecreate",
     ),
     re_path(
@@ -823,12 +823,12 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v1/remove_user_from_issue/(?P<id>\w+)/$",
-        remove_user_from_issue,
+        csrf_exempt(remove_user_from_issue),
         name="remove_api_user_from_issue",
     ),
     re_path(
         r"^api/v1/issue/update/$",
-        UpdateIssue,
+        csrf_exempt(UpdateIssue),
         name="update_api_issue",
     ),
     re_path(r"^api/v1/scoreboard/$", get_scoreboard, name="api_scoreboard"),
