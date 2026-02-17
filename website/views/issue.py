@@ -62,6 +62,7 @@ from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from user_agents import parse
+
 from comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
@@ -2972,16 +2973,23 @@ class GitHubIssueBadgeView(APIView):
 
     BRAND_COLOR = "#e74c3c"  # BLT red
     CACHE_TTL = 300  # 5 minutes
+
     @staticmethod
     def _cache_key(owner: str, repo_name: str, issue_id: int) -> str:
         # Safe cache key format
         return f"issue_badge:{owner}:{repo_name}:{issue_id}"
 
-    def get(self, request, owner, repo_name, issue_id):
-        repo_url = f"https://github.com/{owner}/{repo_name}"
-        cache_key = self._cache_key(owner, repo_name, issue_id)
+    def get(self, request, issue_id, owner=None, repo_name=None):
+        # Determine cache key and lookup strategy
+        if owner and repo_name:
+            repo_url = f"https://github.com/{owner}/{repo_name}"
+            cache_key = self._cache_key(owner, repo_name, issue_id)
+        else:
+            repo_url = None
+            cache_key = f"issue_badge:pk:{issue_id}"
+
         cached = cache.get(cache_key)
-        
+
         # Explicit daily‑dedup IP logging for the badge endpoint itself (not used for view count)
         try:
             user_ip = get_client_ip(request)
@@ -3001,10 +3009,15 @@ class GitHubIssueBadgeView(APIView):
             svg_content = cached
         else:
             try:
-                # Look up the GitHubIssue scoped to the specific repo
-                github_issue = GitHubIssue.objects.filter(
-                    issue_id=issue_id, type="issue", repo__repo_url=repo_url
-                ).first()
+                # Look up the GitHubIssue
+                if repo_url:
+                    # Scoped to a specific repo by owner/repo_name
+                    github_issue = GitHubIssue.objects.filter(
+                        issue_id=issue_id, type="issue", repo__repo_url=repo_url
+                    ).first()
+                else:
+                    # Lookup by pk (database primary key)
+                    github_issue = GitHubIssue.objects.filter(pk=issue_id, type="issue").first()
 
                 bounty_amount = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
 
@@ -3022,7 +3035,7 @@ class GitHubIssueBadgeView(APIView):
                 else:
                     activity_count = 0
             except Exception as e:
-                logger.error(f"Database error generating badge for {owner}/{repo_name}#{issue_id}: {e}")
+                logger.error(f"Database error generating badge for issue {issue_id}: {e}")
                 activity_count = 0
                 bounty_amount = Decimal(0)
 
