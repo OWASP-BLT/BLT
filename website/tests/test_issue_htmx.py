@@ -94,7 +94,7 @@ class IssueHTMXTests(TestCase):
     def test_like_rate_limit(self):
         """Test that like action is rate limited"""
         from django.test import override_settings
-        
+
         # Temporarily disable TESTING flag to enable rate limiting
         with override_settings(TESTING=False):
             # Make 60 requests (should succeed)
