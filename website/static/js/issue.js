@@ -683,7 +683,11 @@ function processIssueReferences() {
         
         let renderedHtml = md.render(markdownContent);
         // First set the rendered HTML (already sanitized by markdownit)
-        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml);
+        if (typeof DOMPurify !== 'undefined') {
+            bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml);
+        } else {
+            bugReportElement.textContent = markdownContent;
+        }
 
        
         // Then find and replace issue references safely using DOM methods
