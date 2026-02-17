@@ -5,6 +5,7 @@ import logging
 import os
 import re
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 from allauth.account.signals import user_signed_up
 from dateutil import parser as dateutil_parser
