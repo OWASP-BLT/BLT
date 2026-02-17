@@ -208,7 +208,6 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
-    unsave_issue,
     update_content_comment,
     vote_count,
 )
@@ -364,6 +363,7 @@ from website.views.user import (
     referral_signup,
     set_public_key,
     start_thread,
+    toggle_follow,
     update_bch_address,
     user_dashboard,
     users_view,
@@ -577,13 +577,6 @@ urlpatterns = [
         name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$",
-        dislike_issue,
-        name="dislike_issue",
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",
@@ -592,13 +585,7 @@ urlpatterns = [
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
-    re_path(
-        r"^unsave_issue/(?P<issue_pk>\d+)/$",
-        unsave_issue,
-        name="unsave_issue",
-    ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
     # comment on content
@@ -1240,6 +1227,11 @@ urlpatterns = [
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
     path("teams/member-leaderboard/", TeamMemberLeaderboardView.as_view(), name="team_member_leaderboard"),
     path("api/v1/team-member-leaderboard/", TeamMemberLeaderboardAPIView.as_view(), name="api_team_member_leaderboard"),
+    path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
+    path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
+    path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
+    path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
+    path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 
 if settings.DEBUG:

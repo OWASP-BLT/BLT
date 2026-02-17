@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -110,11 +110,27 @@ def join_requests(request):
     if request.method == "POST":
         team_id = request.POST.get("team_id")
         team = get_object_or_404(Organization, id=team_id, type="team")
+        join_request = JoinRequest.objects.filter(user=request.user, team=team).first()
+        if not join_request:
+            return redirect("team_overview")
         user_profile = request.user.userprofile
-        user_profile.team = team
-        user_profile.save()
-        team.managers.add(request.user)
-        JoinRequest.objects.filter(user=request.user, team=team).delete()
+        with transaction.atomic():
+            # Handle admin reassignment if user is switching teams
+            if user_profile.team:
+                old_team = user_profile.team
+                old_team.managers.remove(request.user)
+                if old_team.admin == request.user:
+                    new_admin = old_team.managers.first()
+                    if new_admin:
+                        old_team.admin = new_admin
+                        old_team.save()
+                    else:
+                        UserProfile.objects.filter(team=old_team).update(team=None)
+                        old_team.delete()
+            user_profile.team = team
+            user_profile.save()
+            team.managers.add(request.user)
+            join_request.delete()
         return redirect("team_overview")
 
     return render(request, "join_requests.html", {"join_requests": join_requests})
@@ -162,10 +178,10 @@ def delete_team(request):
     user_profile = request.user.userprofile
     if user_profile.team and user_profile.team.admin == request.user:
         team = user_profile.team
-        team.managers.clear()
-        team.delete()
-        user_profile.team = None
-        user_profile.save()
+        with transaction.atomic():
+            UserProfile.objects.filter(team=team).update(team=None)
+            team.managers.clear()
+            team.delete()
     return redirect("team_overview")
 
 
@@ -176,14 +192,17 @@ def leave_team(request):
     if user_profile.team:
         team = user_profile.team
         if team.admin == request.user:
-            managers = team.managers.all()
+            managers = team.managers.exclude(id=request.user.id)
             if managers.exists():
                 new_admin = managers.first()
-                team.managers.remove(new_admin)
+                team.managers.remove(request.user)
                 team.admin = new_admin
                 team.save()
             else:
-                team.delete()
+                with transaction.atomic():
+                    UserProfile.objects.filter(team=team).update(team=None)
+                    team.delete()
+                return redirect("team_overview")
         else:
             team.managers.remove(request.user)
         user_profile.team = None
@@ -260,8 +279,9 @@ class GiveKudosView(APIView):
 
             return Response({"success": True, "message": "Kudos sent successfully!"}, status=201)
 
-        except Exception as e:
-            return Response({"success": False, "error": "Unexpected error,Check The BLT usernames "}, status=400)
+        except Exception:
+            logger.exception("Unexpected error in GiveKudosView")
+            return Response({"success": False, "error": "Unexpected error, check the BLT usernames"}, status=400)
 
 
 class TeamChallenges(TemplateView):
