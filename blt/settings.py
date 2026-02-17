@@ -370,6 +370,8 @@ else:
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+# Allow users to login with either username OR email
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
 # This prevents account enumeration attacks
@@ -527,7 +529,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "website.adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 # Social account settings for better UX
