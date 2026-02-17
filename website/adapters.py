@@ -9,11 +9,16 @@ from django.shortcuts import resolve_url
 
 class CustomAccountAdapter(DefaultAccountAdapter):
     """
-    Custom account adapter to handle email verification differently
-    for social vs regular signups.
+    Custom account adapter.
+    Currently relies on settings-based configuration
+    (e.g., ACCOUNT_EMAIL_VERIFICATION and
+    SOCIALACCOUNT_EMAIL_VERIFICATION) for email behavior.
+
+    This class exists as a future extension point for
+    account-related customizations.
     """
 
-    pass  # For now, we can rely on the default behavior for regular accounts.
+    pass
 
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
