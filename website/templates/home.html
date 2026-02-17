@@ -333,18 +333,21 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if profile.avatar %}
                                                 <img src="{{ profile.avatar }}"
+                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% elif profile.user.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ profile.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% else %}
                                                 <img src="{% gravatar_url profile.user.email 50 %}"
+                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
@@ -381,18 +384,21 @@
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.userprofile.avatar %}
                                                     <img src="{{ user.userprofile.avatar }}"
+                                                         loading="lazy"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full">
                                                 {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                                     <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                         loading="lazy"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full">
                                                 {% else %}
                                                     <img src="{% gravatar_url user.email 50 %}"
+                                                         loading="lazy"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -430,6 +436,7 @@
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.contributor__avatar_url %}
                                                     <img src="{{ user.contributor__avatar_url }}"
+                                                         loading="lazy"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -437,6 +444,7 @@
                                                          onerror="this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% else %}
                                                     <img src="{% static 'images/dummy-user.webp' %}"
+                                                         loading="lazy"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -476,18 +484,21 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if invite.sender.userprofile.avatar %}
                                                 <img src="{{ invite.sender.userprofile.avatar }}"
+                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% elif invite.sender.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
+                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% else %}
                                                 <img src="{% gravatar_url invite.sender.email 50 %}"
+                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
@@ -900,6 +911,7 @@
                                 {% if bug.screenshots.all.0 %}
                                     <div class="mb-4 rounded-lg overflow-hidden">
                                         <img src="{{ bug.screenshots.all.0.image.url }}"
+                                             loading="lazy"
                                              alt="Screenshot"
                                              class="w-full h-32 object-cover"
                                              width="400"
@@ -911,12 +923,14 @@
                                         {% if bug.user %}
                                             {% if bug.user.userprofile.avatar %}
                                                 <img src="{{ bug.user.userprofile.avatar }}"
+                                                     loading="lazy"
                                                      alt="{{ bug.user.username }}"
                                                      class="w-6 h-6 rounded-full mr-2"
                                                      width="24"
                                                      height="24">
                                             {% else %}
                                                 <img src="{% gravatar_url bug.user.email 30 %}"
+                                                     loading="lazy"
                                                      alt="{{ bug.user.username }}"
                                                      class="w-6 h-6 rounded-full mr-2"
                                                      width="24"
@@ -967,6 +981,7 @@
                                 {% if post.image %}
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ post.image.url }}"
+                                             loading="lazy"
                                              alt="{{ post.title }}"
                                              width="800"
                                              height="400"
@@ -1185,11 +1200,13 @@
                         <a href="{% url 'organization_detail' slug='owasp' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/OWASP_black_logo.svg' %}"
+                                 loading="lazy"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
                                  class="block dark:hidden max-w-full max-h-full">
                             <img src="{% static 'images/OWASP_white_logo.svg' %}"
+                                 loading="lazy"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
@@ -1204,11 +1221,13 @@
                         <a href="{% url 'organization_detail' slug='sentry' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/sentry-logo.svg' %}"
+                                 loading="lazy"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
                                  class="block dark:hidden max-w-full max-h-full">
                             <img src="{% static 'images/sentry-white.png' %}"
+                                 loading="lazy"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
@@ -1223,6 +1242,7 @@
                         <a href="{% url 'organization_detail' slug='google' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/googlelogo_color_272x92dp.webp' %}"
+                                 loading="lazy"
                                  alt="Google Logo"
                                  width="272"
                                  height="92"
