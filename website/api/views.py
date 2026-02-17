@@ -2126,9 +2126,8 @@ class ZeroTrustIssueCreateView(APIView):
         except ValueError as e:
             issue.delivery_status = "failed"
             issue.save(update_fields=["delivery_status", "modified"])
-            error_msg = str(e)
-            if "recipient format" in error_msg or "fingerprint format" in error_msg:
-                error_msg = "Organization encryption configuration is invalid. Please contact the administrator."
+            error_msg = "Organization encryption configuration is invalid. Please contact the administrator."
+            logger.warning("Zero-trust validation failed for issue %s: %s", issue.id, str(e))
             return Response(
                 {
                     "error": error_msg,

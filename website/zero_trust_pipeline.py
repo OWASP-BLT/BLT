@@ -115,7 +115,9 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         if file_size is None:
             raise ValueError("Unable to determine uploaded file size. Please try again with a smaller file.")
         if file_size > MAX_FILE_SIZE:
-            raise ValueError(f"File {f.name} exceeds maximum size of {MAX_FILE_SIZE / (1024*1024):.0f}MB")
+            raise ValueError(
+                f"An uploaded file exceeds the maximum allowed size of {MAX_FILE_SIZE / (1024*1024):.0f}MB"
+            )
         total_size += file_size
 
     if total_size > MAX_TOTAL_SIZE:
@@ -261,7 +263,14 @@ def _encrypt_artifact_for_org(
         out = os.path.join(tmp_dir, "report_payload.tar.gz.age")
         cmd = [getattr(settings, "AGE_BINARY", "age"), "-r", org_config.age_recipient, "-o", out, input_path]
         try:
-            subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
+            subprocess.run(
+                cmd,
+                check=True,
+                timeout=300,
+                capture_output=True,
+                shell=False,
+                stdin=subprocess.DEVNULL,
+            )
         except subprocess.TimeoutExpired as e:
             logger.error(f"Age encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
             raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")
@@ -293,7 +302,14 @@ def _encrypt_artifact_for_org(
             input_path,
         ]
         try:
-            subprocess.run(cmd, check=True, timeout=300, capture_output=True, shell=False)
+            subprocess.run(
+                cmd,
+                check=True,
+                timeout=300,
+                capture_output=True,
+                shell=False,
+                stdin=subprocess.DEVNULL,
+            )
         except subprocess.TimeoutExpired as e:
             logger.error(f"OpenPGP encryption timed out for issue {issue.id} after {e.timeout} seconds", exc_info=True)
             raise RuntimeError(f"Encryption timed out after {e.timeout} seconds")

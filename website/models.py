@@ -701,6 +701,38 @@ class Issue(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
 
+    # --- Zero-trust fields---
+    is_zero_trust = models.BooleanField(
+        default=False,
+        help_text="If true, this issue was submitted via the zero-trust pipeline; no PoC/plaintext stored.",
+    )
+    artifact_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="SHA-256 of the encrypted disclosure artifact sent to the org.",
+        validators=[validate_sha256_if_present],
+    )
+    encryption_method = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Encryption method used (e.g. age, openpgp).",
+    )
+    delivery_method = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Delivery channel, e.g. email:smtp.",
+    )
+    delivery_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Zero-trust pipeline status: pending_build, delivered, failed, etc.",
+    )
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the encrypted artifact delivery completed.",
+    )
+
     def __unicode__(self):
         return self.description
 
@@ -809,40 +841,8 @@ class Issue(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+            models.Index(fields=["is_zero_trust"], name="issue_zero_trust_idx"),
         ]
-
-    # --- Zero-trust fields (new) ---
-    is_zero_trust = models.BooleanField(
-        default=False,
-        help_text="If true, this issue was submitted via the zero-trust pipeline; no PoC/plaintext stored.",
-    )
-    artifact_sha256 = models.CharField(
-        max_length=64,
-        blank=True,
-        help_text="SHA-256 of the encrypted disclosure artifact sent to the org.",
-        validators=[validate_sha256_if_present],
-    )
-    encryption_method = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Encryption method used (e.g. age, openpgp).",
-    )
-    delivery_method = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text="Delivery channel, e.g. email:smtp.",
-    )
-    delivery_status = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text="Zero-trust pipeline status: pending_build, delivered, failed, etc.",
-    )
-    delivered_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="When the encrypted artifact delivery completed.",
-    )
-    # --- end zero-trust fields ---
 
 
 def is_using_gcs():

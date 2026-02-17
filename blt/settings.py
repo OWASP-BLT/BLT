@@ -355,6 +355,7 @@ if SENTRY_DSN:
         traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
+        release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
     )
 
 EMAIL_HOST = "localhost"
