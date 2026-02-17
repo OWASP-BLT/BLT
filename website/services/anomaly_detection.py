@@ -56,11 +56,7 @@ def _check_new_ip(user, login_event, prior_events):
     if not login_event.ip_address:
         return
 
-    known_ips = set(
-        prior_events.exclude(ip_address__isnull=True)
-        .values_list("ip_address", flat=True)
-        .distinct()
-    )
+    known_ips = set(prior_events.exclude(ip_address__isnull=True).values_list("ip_address", flat=True).distinct())
 
     if login_event.ip_address not in known_ips:
         UserBehaviorAnomaly.objects.create(
@@ -81,11 +77,7 @@ def _check_new_user_agent(user, login_event, prior_events):
     if not login_event.user_agent:
         return
 
-    known_uas = set(
-        prior_events.exclude(user_agent="")
-        .values_list("user_agent", flat=True)
-        .distinct()
-    )
+    known_uas = set(prior_events.exclude(user_agent="").values_list("user_agent", flat=True).distinct())
 
     if login_event.user_agent not in known_uas:
         UserBehaviorAnomaly.objects.create(

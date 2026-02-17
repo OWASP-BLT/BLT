@@ -3,10 +3,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from website.models import UserBehaviorAnomaly, UserLoginEvent
-from website.services.anomaly_detection import (
-    check_failed_login_anomalies,
-    check_login_anomalies,
-)
+from website.services.anomaly_detection import check_failed_login_anomalies, check_login_anomalies
 
 
 class UserLoginEventModelTests(TestCase):
@@ -94,17 +91,13 @@ class SignalHandlerTests(TestCase):
 
     def test_login_creates_event(self):
         self.client.login(username="signaluser", password="testpass123")
-        events = UserLoginEvent.objects.filter(
-            user=self.user, event_type=UserLoginEvent.EventType.LOGIN
-        )
+        events = UserLoginEvent.objects.filter(user=self.user, event_type=UserLoginEvent.EventType.LOGIN)
         self.assertTrue(events.exists())
 
     def test_logout_creates_event(self):
         self.client.login(username="signaluser", password="testpass123")
         self.client.logout()
-        events = UserLoginEvent.objects.filter(
-            user=self.user, event_type=UserLoginEvent.EventType.LOGOUT
-        )
+        events = UserLoginEvent.objects.filter(user=self.user, event_type=UserLoginEvent.EventType.LOGOUT)
         self.assertTrue(events.exists())
 
     def test_failed_login_creates_event(self):
@@ -124,9 +117,7 @@ class SignalHandlerTests(TestCase):
         request.META["REMOTE_ADDR"] = "192.168.1.50"
         on_user_logged_in(sender=self.user.__class__, request=request, user=self.user)
 
-        event = UserLoginEvent.objects.filter(
-            user=self.user, event_type=UserLoginEvent.EventType.LOGIN
-        ).first()
+        event = UserLoginEvent.objects.filter(user=self.user, event_type=UserLoginEvent.EventType.LOGIN).first()
         self.assertIsNotNone(event)
         self.assertEqual(event.ip_address, "192.168.1.50")
 
@@ -231,9 +222,7 @@ class AnomalyDetectionTests(TestCase):
                 ip_address="192.168.1.1",
             )
 
-        last_event = UserLoginEvent.objects.filter(
-            user=self.user, event_type=UserLoginEvent.EventType.FAILED
-        ).first()
+        last_event = UserLoginEvent.objects.filter(user=self.user, event_type=UserLoginEvent.EventType.FAILED).first()
 
         # Call twice
         check_failed_login_anomalies(self.user, last_event)
@@ -249,15 +238,11 @@ class AnomalyDetectionTests(TestCase):
 class SecurityDashboardUserActivityTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.staff_user = User.objects.create_user(
-            username="staffuser", password="testpass123", is_staff=True
-        )
+        cls.staff_user = User.objects.create_user(username="staffuser", password="testpass123", is_staff=True)
         cls.superuser = User.objects.create_user(
             username="superuser", password="testpass123", is_staff=True, is_superuser=True
         )
-        cls.normal_user = User.objects.create_user(
-            username="normaluser", password="testpass123"
-        )
+        cls.normal_user = User.objects.create_user(username="normaluser", password="testpass123")
 
     def test_non_staff_denied_dashboard(self):
         self.client.login(username="normaluser", password="testpass123")
@@ -281,34 +266,26 @@ class SecurityDashboardUserActivityTests(TestCase):
 
     def test_api_returns_json_events(self):
         self.client.login(username="staffuser", password="testpass123")
-        response = self.client.get(
-            reverse("security_user_activity_api"), {"action": "events"}
-        )
+        response = self.client.get(reverse("security_user_activity_api"), {"action": "events"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("events", data)
 
     def test_api_returns_json_anomalies(self):
         self.client.login(username="staffuser", password="testpass123")
-        response = self.client.get(
-            reverse("security_user_activity_api"), {"action": "anomalies"}
-        )
+        response = self.client.get(reverse("security_user_activity_api"), {"action": "anomalies"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("anomalies", data)
 
     def test_api_denies_non_staff(self):
         self.client.login(username="normaluser", password="testpass123")
-        response = self.client.get(
-            reverse("security_user_activity_api"), {"action": "events"}
-        )
+        response = self.client.get(reverse("security_user_activity_api"), {"action": "events"})
         self.assertEqual(response.status_code, 403)
 
     def test_api_invalid_action(self):
         self.client.login(username="staffuser", password="testpass123")
-        response = self.client.get(
-            reverse("security_user_activity_api"), {"action": "invalid"}
-        )
+        response = self.client.get(reverse("security_user_activity_api"), {"action": "invalid"})
         self.assertEqual(response.status_code, 400)
 
     def test_dismiss_anomaly_requires_superuser(self):

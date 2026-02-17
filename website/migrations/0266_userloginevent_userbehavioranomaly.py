@@ -121,27 +121,19 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="userloginevent",
-            index=models.Index(
-                fields=["user", "-timestamp"], name="login_user_ts_idx"
-            ),
+            index=models.Index(fields=["user", "-timestamp"], name="login_user_ts_idx"),
         ),
         migrations.AddIndex(
             model_name="userloginevent",
-            index=models.Index(
-                fields=["event_type", "-timestamp"], name="login_type_ts_idx"
-            ),
+            index=models.Index(fields=["event_type", "-timestamp"], name="login_type_ts_idx"),
         ),
         migrations.AddIndex(
             model_name="userloginevent",
-            index=models.Index(
-                fields=["ip_address"], name="login_ip_idx"
-            ),
+            index=models.Index(fields=["ip_address"], name="login_ip_idx"),
         ),
         migrations.AddIndex(
             model_name="userbehavioranomaly",
-            index=models.Index(
-                fields=["user", "-created_at"], name="anomaly_user_ts_idx"
-            ),
+            index=models.Index(fields=["user", "-created_at"], name="anomaly_user_ts_idx"),
         ),
         migrations.AddIndex(
             model_name="userbehavioranomaly",
