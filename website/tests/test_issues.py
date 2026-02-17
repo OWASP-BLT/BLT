@@ -1,3 +1,5 @@
+import json
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -95,3 +97,50 @@ class GitHubIssueImageURLTests(TestCase):
             formatted_url = http_url
 
         self.assertEqual(formatted_url, http_url)
+
+
+@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage", IS_TEST=True)
+class IssueCreateJSONRequestTests(TestCase):
+    """Test that the IssueCreate view properly handles JSON requests without RawPostDataException"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="12345")
+        self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
+        self.client.login(username="testuser", password="12345")
+
+    def test_json_request_caches_body(self):
+        """Test that JSON requests cache the body to prevent RawPostDataException"""
+        url = reverse("report")
+        json_data = {
+            "url": "example.com",
+            "description": "Test issue",
+            "markdown_description": "Test markdown description",
+            "file": "",
+            "label": "1",
+            "token": "",
+            "type": "png",
+            "cve_id": "",
+            "cve_score": "",
+        }
+
+        # Send JSON request
+        response = self.client.post(
+            url,
+            data=json.dumps(json_data),
+            content_type="application/json",
+        )
+
+        # Should not raise RawPostDataException and should return some response
+        # (may be a validation error due to missing screenshot, but should not crash)
+        self.assertIn(response.status_code, [200, 302, 400])
+
+    def test_form_request_works_normally(self):
+        """Test that regular form submissions still work"""
+        url = reverse("report")
+
+        # This is a minimal test - actual form submission would require
+        # CAPTCHA, screenshot, and other validations
+        response = self.client.get(url)
+
+        # Should return 200 for GET request
+        self.assertEqual(response.status_code, 200)
