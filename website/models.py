@@ -3541,3 +3541,76 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+
+class UserLoginEvent(models.Model):
+    class EventType(models.TextChoices):
+        LOGIN = "login", "Login"
+        LOGOUT = "logout", "Logout"
+        FAILED = "failed", "Failed Login"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="login_events",
+    )
+    username_attempted = models.CharField(max_length=150)
+    event_type = models.CharField(max_length=10, choices=EventType.choices)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default="")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username_attempted} - {self.get_event_type_display()} at {self.timestamp}"
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "-timestamp"], name="login_user_ts_idx"),
+            models.Index(fields=["event_type", "-timestamp"], name="login_type_ts_idx"),
+            models.Index(fields=["ip_address"], name="login_ip_idx"),
+        ]
+
+
+class UserBehaviorAnomaly(models.Model):
+    class AnomalyType(models.TextChoices):
+        NEW_IP = "new_ip", "New IP Address"
+        NEW_UA = "new_ua", "New User Agent"
+        UNUSUAL_TIME = "unusual_time", "Unusual Login Time"
+        RAPID_FAILURES = "rapid_failures", "Rapid Failed Logins"
+
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="behavior_anomalies",
+    )
+    anomaly_type = models.CharField(max_length=20, choices=AnomalyType.choices)
+    severity = models.CharField(max_length=10, choices=Severity.choices)
+    description = models.TextField()
+    details = models.JSONField(default=dict, blank=True)
+    login_event = models.ForeignKey(
+        UserLoginEvent,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="anomalies",
+    )
+    is_reviewed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_anomaly_type_display()} - {self.user} ({self.get_severity_display()})"
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="anomaly_user_ts_idx"),
+            models.Index(fields=["is_reviewed", "-created_at"], name="anomaly_review_ts_idx"),
+        ]

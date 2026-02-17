@@ -1,305 +1,419 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Security Dashboard{% endblock %}
 {% block content %}
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js" integrity="sha384-TJw1v5R3zE4dBfZzQGmyJ3Xr8m0I1Zc3V9dElyj8l0mdgYcl7GmIuYHX7X9a5E8+" crossorigin="anonymous">
     </script>
+    <script src="{% static 'js/security_dashboard.js' %}"></script>
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">Security Dashboard</h1>
-        <!-- Summary Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <!-- Total Incidents -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Incidents</h2>
-                    <svg class="w-6 h-6 text-red-500"
-                         fill="none"
-                         stroke="currentColor"
-                         viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                </div>
-                <p class="text-4xl font-bold text-red-600 mt-2">{{ incident_count }}</p>
-            </div>
-            <!-- Severity Breakdown -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">By Severity</h2>
-                <div id="severity-chart" class="h-48 mb-4"></div>
-                <ul class="space-y-3">
-                    {% for s in severity_breakdown %}
-                        <li class="flex justify-between items-center">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full {% if s.severity == 'critical' %}bg-red-500 {% elif s.severity == 'high' %}bg-orange-500 {% elif s.severity == 'medium' %}bg-yellow-500 {% else %}bg-green-500{% endif %}">
-                                </span>
-                                <span class="capitalize text-gray-600 dark:text-gray-400">{{ s.severity }}</span>
-                            </div>
-                            <span class="font-semibold text-gray-900 dark:text-white">{{ s.total }}</span>
-                        </li>
-                    {% empty %}
-                        <li class="text-gray-500 dark:text-gray-400 text-center py-2">No incidents yet.</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <!-- Status Breakdown -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">By Status</h2>
-                <ul class="space-y-3">
-                    {% for s in status_breakdown %}
-                        <li class="flex justify-between items-center">
-                            <span class="capitalize text-gray-600 dark:text-gray-400">{{ s.status }}</span>
-                            <span class="font-semibold text-gray-900 dark:text-white">{{ s.total }}</span>
-                        </li>
-                    {% empty %}
-                        <li class="text-gray-500 dark:text-gray-400 text-center py-2">No incidents yet.</li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <h1 class="text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">Security Dashboard</h1>
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200 dark:border-gray-700 mb-8">
+            <button onclick="switchTab('incidents')"
+                    data-tab="incidents"
+                    class="px-6 py-3 text-sm font-medium border-b-2 border-red-500 text-red-600 focus:outline-none">
+                Incidents
+            </button>
+            <button onclick="switchTab('activity')"
+                    data-tab="activity"
+                    class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none flex items-center gap-2">
+                User Activity
+                {% if anomaly_count > 0 %}
+                    <span id="anomaly-count-badge"
+                          class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                        {{ anomaly_count }}
+                    </span>
+                {% endif %}
+            </button>
         </div>
-        <!-- Recent Security Incidents Section -->
-        <div class="mb-10">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Recent Security Incidents</h2>
-                <span class="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {{ incidents|length }} of {{ incident_count }} incidents
-                </span>
-            </div>
-            <!-- Quick Actions -->
-            <div class="flex flex-wrap gap-4 mb-6">
-                <!-- Refresh Button -->
-                <a href="{{ request.get_full_path }}"
-                   class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded shadow text-sm font-medium">🔄 Refresh</a>
-                <!-- Export CSV -->
-                <a href="{{ export_csv_url }}"
-                   class="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm font-medium">📄 Export CSV</a>
-                <!-- Add Incident (Next PR) -->
-                <!-- Add Incident -->
-                <a href="{% url 'security_incident_add' %}"
-                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition duration-200">
-                    ➕ Add Incident
-                </a>
-            </div>
-            <!-- Filters -->
-            <form method="get" class="mb-8 bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <!-- Sorting -->
-                    <div>
-                        <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Sort By</label>
-                        <select name="sort"
-                                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                            <option value="newest" {% if current_sort == "newest" %}selected{% endif %}>Newest First</option>
-                            <option value="oldest" {% if current_sort == "oldest" %}selected{% endif %}>Oldest First</option>
-                            <option value="severity_desc"
-                                    {% if current_sort == "severity_desc" %}selected{% endif %}>
-                                Severity: High → Low
-                            </option>
-                            <option value="severity_asc"
-                                    {% if current_sort == "severity_asc" %}selected{% endif %}>
-                                Severity:
-                                Low → High
-                            </option>
-                            <option value="status" {% if current_sort == "status" %}selected{% endif %}>Status</option>
-                        </select>
-                    </div>
-                    <!-- Severity Filter -->
-                    <div>
-                        <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Severity</label>
-                        <select name="severity"
-                                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                            <option value="">All Severities</option>
-                            <option value="low" {% if current_severity == "low" %}selected{% endif %}>Low</option>
-                            <option value="medium"
-                                    {% if current_severity == "medium" %}selected{% endif %}>Medium</option>
-                            <option value="high" {% if current_severity == "high" %}selected{% endif %}>High</option>
-                            <option value="critical"
-                                    {% if current_severity == "critical" %}selected{% endif %}>Critical</option>
-                        </select>
-                    </div>
-                    <!-- Status Filter -->
-                    <div>
-                        <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Status</label>
-                        <select name="status"
-                                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                            <option value="">All Status</option>
-                            <option value="open" {% if current_status == "open" %}selected{% endif %}>Open</option>
-                            <option value="investigating"
-                                    {% if current_status == "investigating" %}selected{% endif %}>
-                                Investigating
-                            </option>
-                            <option value="resolved"
-                                    {% if current_status == "resolved" %}selected{% endif %}>Resolved</option>
-                        </select>
-                    </div>
-                    <!-- Date Range Filter -->
-                    <div>
-                        <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Date Range</label>
-                        <select name="range"
-                                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                            <option value="">All Time</option>
-                            <option value="today" {% if current_range == "today" %}selected{% endif %}>Today</option>
-                            <option value="7d" {% if current_range == "7d" %}selected{% endif %}>Last 7 Days</option>
-                            <option value="30d" {% if current_range == "30d" %}selected{% endif %}>Last 30 Days</option>
-                        </select>
-                    </div>
-                </div>
-                <!-- Custom Date Range -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Start Date</label>
-                        <input type="date"
-                               name="start_date"
-                               {% if start_date %}value="{{ start_date }}"{% endif %}
-                               class="border rounded px-3 py-2 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">End Date</label>
-                        <input type="date"
-                               name="end_date"
-                               {% if end_date %}value="{{ end_date }}"{% endif %}
-                               class="border rounded px-3 py-2 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-white">
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button type="submit"
-                                class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200 font-medium">
-                            Apply Filters
-                        </button>
-                        <a href="{% url 'security_dashboard' %}"
-                           class="w-full text-dark border border-red-700 px-4 py-2 rounded-lg transition duration-200 font-medium text-center hover:bg-red-50 dark:hover:bg-red-900/20">
-                            Clear
-                        </a>
-                    </div>
-                </div>
-            </form>
-            <!-- Incidents Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {% for i in incidents %}
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white flex-1 pr-2">{{ i.title }}</h3>
-                            <span class="inline-block w-3 h-3 rounded-full flex-shrink-0 mt-1 {% if i.severity == 'low' %} bg-green-500 {% elif i.severity == 'medium' %} bg-yellow-500 {% elif i.severity == 'high' %} bg-orange-500 {% elif i.severity == 'critical' %} bg-red-600 {% endif %}">
-                            </span>
-                        </div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ i.created_at|date:"M j, Y, g:i A" }}</p>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Severity:</span>
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold capitalize {% if i.severity == 'low' %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif i.severity == 'medium' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% elif i.severity == 'high' %} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 {% elif i.severity == 'critical' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% endif %}">
-                                    {{ i.severity }}
-                                </span>
-                            </div>
-                            {% if i.affected_systems %}
-                                <div>
-                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Affected Systems:</span>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ i.affected_systems }}</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="col-span-full text-center py-12">
-                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4"
+        <!-- Incidents Panel -->
+        <div data-panel="incidents">
+            <!-- Summary Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <!-- Total Incidents -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Incidents</h2>
+                        <svg class="w-6 h-6 text-red-500"
                              fill="none"
                              stroke="currentColor"
                              viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
-                        <p class="text-gray-500 dark:text-gray-400 text-lg">No security incidents found</p>
-                        <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Try adjusting your filters or check back later</p>
                     </div>
-                {% endfor %}
+                    <p class="text-4xl font-bold text-red-600 mt-2">{{ incident_count }}</p>
+                </div>
+                <!-- Severity Breakdown -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">By Severity</h2>
+                    <div id="severity-chart" class="h-48 mb-4"></div>
+                    <ul class="space-y-3">
+                        {% for s in severity_breakdown %}
+                            <li class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full {% if s.severity == 'critical' %}bg-red-500 {% elif s.severity == 'high' %}bg-orange-500 {% elif s.severity == 'medium' %}bg-yellow-500 {% else %}bg-green-500{% endif %}">
+                                    </span>
+                                    <span class="capitalize text-gray-600 dark:text-gray-400">{{ s.severity }}</span>
+                                </div>
+                                <span class="font-semibold text-gray-900 dark:text-white">{{ s.total }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="text-gray-500 dark:text-gray-400 text-center py-2">No incidents yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <!-- Status Breakdown -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">By Status</h2>
+                    <ul class="space-y-3">
+                        {% for s in status_breakdown %}
+                            <li class="flex justify-between items-center">
+                                <span class="capitalize text-gray-600 dark:text-gray-400">{{ s.status }}</span>
+                                <span class="font-semibold text-gray-900 dark:text-white">{{ s.total }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="text-gray-500 dark:text-gray-400 text-center py-2">No incidents yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <!-- Recent Security Incidents Section -->
+            <div class="mb-10">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Recent Security Incidents</h2>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
+                        Showing {{ incidents|length }} of {{ incident_count }} incidents
+                    </span>
+                </div>
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <!-- Refresh Button -->
+                    <a href="{{ request.get_full_path }}"
+                       class="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded shadow text-sm font-medium">Refresh</a>
+                    <!-- Export CSV -->
+                    <a href="{{ export_csv_url }}"
+                       class="bg-blue-600 text-white px-4 py-2 rounded shadow text-sm font-medium">Export CSV</a>
+                    <!-- Add Incident -->
+                    <a href="{% url 'security_incident_add' %}"
+                       class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-medium transition duration-200">
+                        Add Incident
+                    </a>
+                </div>
+                <!-- Filters -->
+                <form method="get" class="mb-8 bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <!-- Sorting -->
+                        <div>
+                            <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Sort By</label>
+                            <select name="sort"
+                                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                                <option value="newest" {% if current_sort == "newest" %}selected{% endif %}>Newest First</option>
+                                <option value="oldest" {% if current_sort == "oldest" %}selected{% endif %}>Oldest First</option>
+                                <option value="severity_desc"
+                                        {% if current_sort == "severity_desc" %}selected{% endif %}>
+                                    Severity: High to Low
+                                </option>
+                                <option value="severity_asc"
+                                        {% if current_sort == "severity_asc" %}selected{% endif %}>
+                                    Severity: Low to High
+                                </option>
+                                <option value="status" {% if current_sort == "status" %}selected{% endif %}>Status</option>
+                            </select>
+                        </div>
+                        <!-- Severity Filter -->
+                        <div>
+                            <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Severity</label>
+                            <select name="severity"
+                                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                                <option value="">All Severities</option>
+                                <option value="low" {% if current_severity == "low" %}selected{% endif %}>Low</option>
+                                <option value="medium"
+                                        {% if current_severity == "medium" %}selected{% endif %}>Medium</option>
+                                <option value="high" {% if current_severity == "high" %}selected{% endif %}>High</option>
+                                <option value="critical"
+                                        {% if current_severity == "critical" %}selected{% endif %}>Critical</option>
+                            </select>
+                        </div>
+                        <!-- Status Filter -->
+                        <div>
+                            <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Status</label>
+                            <select name="status"
+                                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                                <option value="">All Status</option>
+                                <option value="open" {% if current_status == "open" %}selected{% endif %}>Open</option>
+                                <option value="investigating"
+                                        {% if current_status == "investigating" %}selected{% endif %}>
+                                    Investigating
+                                </option>
+                                <option value="resolved"
+                                        {% if current_status == "resolved" %}selected{% endif %}>Resolved</option>
+                            </select>
+                        </div>
+                        <!-- Date Range Filter -->
+                        <div>
+                            <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Date Range</label>
+                            <select name="range"
+                                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                                <option value="">All Time</option>
+                                <option value="today" {% if current_range == "today" %}selected{% endif %}>Today</option>
+                                <option value="7d" {% if current_range == "7d" %}selected{% endif %}>Last 7 Days</option>
+                                <option value="30d" {% if current_range == "30d" %}selected{% endif %}>Last 30 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Custom Date Range -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">Start Date</label>
+                            <input type="date"
+                                   name="start_date"
+                                   {% if start_date %}value="{{ start_date }}"{% endif %}
+                                   class="border rounded px-3 py-2 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-2 text-gray-700 dark:text-gray-300">End Date</label>
+                            <input type="date"
+                                   name="end_date"
+                                   {% if end_date %}value="{{ end_date }}"{% endif %}
+                                   class="border rounded px-3 py-2 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-white">
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <button type="submit"
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200 font-medium">
+                                Apply Filters
+                            </button>
+                            <a href="{% url 'security_dashboard' %}"
+                               class="w-full text-dark border border-red-700 px-4 py-2 rounded-lg transition duration-200 font-medium text-center hover:bg-red-50 dark:hover:bg-red-900/20">
+                                Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+                <!-- Incidents Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {% for i in incidents %}
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex-1 pr-2">{{ i.title }}</h3>
+                                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0 mt-1 {% if i.severity == 'low' %} bg-green-500 {% elif i.severity == 'medium' %} bg-yellow-500 {% elif i.severity == 'high' %} bg-orange-500 {% elif i.severity == 'critical' %} bg-red-600 {% endif %}">
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ i.created_at|date:"M j, Y, g:i A" }}</p>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Severity:</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold capitalize {% if i.severity == 'low' %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif i.severity == 'medium' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% elif i.severity == 'high' %} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 {% elif i.severity == 'critical' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% endif %}">
+                                        {{ i.severity }}
+                                    </span>
+                                </div>
+                                {% if i.affected_systems %}
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Affected Systems:</span>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ i.affected_systems }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-span-full text-center py-12">
+                            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <p class="text-gray-500 dark:text-gray-400 text-lg">No security incidents found</p>
+                            <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Try adjusting your filters or check back later</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Pagination -->
+            {% if page_obj.paginator.num_pages > 1 %}
+                <div class="flex justify-center items-center gap-4 mt-8 mb-12">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
+                           class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 font-medium">
+                            Previous
+                        </a>
+                    {% else %}
+                        <span class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 opacity-50 cursor-not-allowed font-medium">
+                            Previous
+                        </span>
+                    {% endif %}
+                    <span class="px-4 py-2 font-semibold text-gray-700 dark:text-gray-300">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
+                           class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 font-medium">
+                            Next
+                        </a>
+                    {% else %}
+                        <span class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 opacity-50 cursor-not-allowed font-medium">Next</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- Related Security Issues -->
+            <div class="mt-12">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Related Security Issues</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {% for issue in security_issues %}
+                        <a href="/issue/{{ issue.id }}/" class="block hover:no-underline">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <svg class="w-5 h-5 text-orange-500"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">#{{ issue.id }}</h3>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">
+                                    {% if issue.description %}
+                                        {{ issue.description|truncatechars:80 }}
+                                    {% else %}
+                                        <span class="text-gray-400">No description</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="col-span-full text-center py-8">
+                            <p class="text-gray-500 dark:text-gray-400">No related security issues found</p>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        <!-- Pagination -->
-        {% if page_obj.paginator.num_pages > 1 %}
-            <div class="flex justify-center items-center gap-4 mt-8 mb-12">
-                {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
-                       class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 font-medium">
-                        Previous
-                    </a>
-                {% else %}
-                    <span class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 opacity-50 cursor-not-allowed font-medium">
-                        Previous
-                    </span>
-                {% endif %}
-                <span class="px-4 py-2 font-semibold text-gray-700 dark:text-gray-300">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </span>
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if current_severity %}&severity={{ current_severity }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_range %}&range={{ current_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}"
-                       class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200 font-medium">
-                        Next
-                    </a>
-                {% else %}
-                    <span class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 opacity-50 cursor-not-allowed font-medium">Next</span>
-                {% endif %}
+        <!-- User Activity Panel -->
+        <div data-panel="activity" class="hidden">
+            <!-- Activity Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Successful Logins</h2>
+                    <p class="text-4xl font-bold text-green-600 mt-2">{{ login_success_count }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 30 days</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Failed Attempts</h2>
+                    <p class="text-4xl font-bold text-red-600 mt-2">{{ login_failed_count }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Last 30 days</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Unreviewed Anomalies</h2>
+                    <p class="text-4xl font-bold text-orange-600 mt-2">{{ anomaly_count }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Requires attention</p>
+                </div>
             </div>
-        {% endif %}
-        <!-- Related Security Issues -->
-        <div class="mt-12">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Related Security Issues</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {% for issue in security_issues %}
-                    <a href="/issue/{{ issue.id }}/" class="block hover:no-underline">
-                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
-                            <div class="flex items-center gap-3 mb-3">
-                                <svg class="w-5 h-5 text-orange-500"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">#{{ issue.id }}</h3>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm">
-                                {% if issue.description %}
-                                    {{ issue.description|truncatechars:80 }}
-                                {% else %}
-                                    <span class="text-gray-400">No description</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </a>
-                {% empty %}
-                    <div class="col-span-full text-center py-8">
-                        <p class="text-gray-500 dark:text-gray-400">No related security issues found</p>
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Login Success vs Failure</h3>
+                    <div id="login-pie-chart"></div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Hourly Login Distribution</h3>
+                    <div id="hourly-login-chart"></div>
+                </div>
+            </div>
+            <!-- Anomaly Alerts -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Anomaly Alerts</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Type</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">User</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Severity</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Description</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Time</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for a in anomalies %}
+                                    <tr>
+                                        <td class="px-4 py-3 capitalize text-gray-900 dark:text-white">{{ a.get_anomaly_type_display }}</td>
+                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ a.user.username }}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold {% if a.severity == 'high' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% elif a.severity == 'medium' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% endif %}">
+                                                {{ a.get_severity_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ a.description }}</td>
+                                        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ a.created_at|timesince }} ago</td>
+                                        <td class="px-4 py-3">
+                                            <button onclick="dismissAnomaly({{ a.id }}, this)"
+                                                    class="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1 rounded transition duration-200">
+                                                Dismiss
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            No unreviewed anomalies
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                {% endfor %}
+                </div>
+            </div>
+            <!-- Recent Login Events -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Recent Login Events</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">User</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Event</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">IP Address</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">User Agent</th>
+                                    <th class="px-4 py-3 text-left text-gray-700 dark:text-gray-300">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for e in recent_login_events %}
+                                    <tr>
+                                        <td class="px-4 py-3 text-gray-900 dark:text-white">{{ e.username_attempted }}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold {% if e.event_type == 'login' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% elif e.event_type == 'failed' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% endif %}">
+                                                {{ e.get_event_type_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ e.ip_address|default:"-" }}</td>
+                                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ e.user_agent|truncatechars:60 }}</td>
+                                        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ e.timestamp|timesince }} ago</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                            No login events recorded yet
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <script>
-    (function () {
-        // Parsed from context (already filtered)
-        const rawData = JSON.parse('{{ severity_chart_data|escapejs }}');
-
-        const labels = rawData.map(item => item.severity);
-        const series = rawData.map(item => item.total);
-
-        const el = document.getElementById("severity-chart");
-        if (!el || !window.ApexCharts || series.length === 0) {
-            return;
-        }
-
-        const options = {
-            chart: {
-                type: "donut",
-                height: 200
-            },
-            labels: labels.map(label => label.charAt(0).toUpperCase() + label.slice(1)),
-            series: series,
-            legend: {
-                position: "bottom"
-            },
-            dataLabels: {
-                enabled: false
-            },
-            stroke: {
-                show: false
-            }
-        };
-
-        const chart = new ApexCharts(el, options);
-        chart.render();
-    })();
+    initSecurityDashboard({
+        severityData: JSON.parse('{{ severity_chart_data|escapejs }}'),
+        loginSuccessCount: {{ login_success_count }},
+        loginFailedCount: {{ login_failed_count }},
+        hourlyLoginData: JSON.parse('{{ hourly_login_data|escapejs }}')
+    });
     </script>
 {% endblock %}

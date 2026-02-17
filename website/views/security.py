@@ -7,12 +7,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Case, Count, IntegerField, Value, When
-from django.http import HttpResponse
+from django.db.models.functions import ExtractHour
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.views import View
 from django.views.generic import TemplateView
 
-from website.models import Issue, SecurityIncident
+from website.models import Issue, SecurityIncident, UserBehaviorAnomaly, UserLoginEvent
 
 CSV_RATE_LIMIT_MAX_CALLS = 5  # max CSV downloads
 CSV_RATE_LIMIT_WINDOW = 60  # per 60 seconds
@@ -223,4 +225,110 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         params["export"] = "csv"
         context["export_csv_url"] = "?" + params.urlencode()
 
+        # User Activity data
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        context["recent_login_events"] = UserLoginEvent.objects.select_related("user").all()[:50]
+
+        context["anomalies"] = UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user")[:20]
+
+        context["anomaly_count"] = UserBehaviorAnomaly.objects.filter(is_reviewed=False).count()
+
+        context["login_success_count"] = UserLoginEvent.objects.filter(
+            event_type=UserLoginEvent.EventType.LOGIN,
+            timestamp__gte=thirty_days_ago,
+        ).count()
+
+        context["login_failed_count"] = UserLoginEvent.objects.filter(
+            event_type=UserLoginEvent.EventType.FAILED,
+            timestamp__gte=thirty_days_ago,
+        ).count()
+
+        # Hourly login distribution (last 30 days)
+        hourly_data = list(
+            UserLoginEvent.objects.filter(
+                event_type=UserLoginEvent.EventType.LOGIN,
+                timestamp__gte=thirty_days_ago,
+            )
+            .annotate(hour=ExtractHour("timestamp"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("hour")
+        )
+        context["hourly_login_data"] = json.dumps(hourly_data)
+
+        # Anomaly type breakdown for chart
+        anomaly_breakdown = list(
+            UserBehaviorAnomaly.objects.filter(is_reviewed=False)
+            .values("anomaly_type")
+            .annotate(count=Count("id"))
+        )
+        context["anomaly_chart_data"] = json.dumps(anomaly_breakdown)
+
         return context
+
+
+class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """API for user activity data: login events, anomalies, and dismiss workflow."""
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def get(self, request, *args, **kwargs):
+        action = request.GET.get("action")
+
+        if action == "events":
+            return self._get_events()
+        elif action == "anomalies":
+            return self._get_anomalies()
+        elif action == "dismiss_anomaly":
+            return self._dismiss_anomaly(request)
+
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    def _get_events(self):
+        events = UserLoginEvent.objects.select_related("user").all()[:50]
+        data = [
+            {
+                "id": e.id,
+                "username": e.username_attempted,
+                "event_type": e.event_type,
+                "ip_address": e.ip_address,
+                "user_agent": (e.user_agent[:100] + "...") if len(e.user_agent) > 100 else e.user_agent,
+                "timestamp": e.timestamp.isoformat(),
+            }
+            for e in events
+        ]
+        return JsonResponse({"events": data})
+
+    def _get_anomalies(self):
+        anomalies = UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user")[:20]
+        data = [
+            {
+                "id": a.id,
+                "user": a.user.username,
+                "anomaly_type": a.anomaly_type,
+                "severity": a.severity,
+                "description": a.description,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in anomalies
+        ]
+        return JsonResponse({"anomalies": data})
+
+    def _dismiss_anomaly(self, request):
+        if not request.user.is_superuser:
+            return JsonResponse({"error": "Forbidden"}, status=403)
+
+        anomaly_id = request.GET.get("id")
+        if not anomaly_id:
+            return JsonResponse({"error": "Missing anomaly id"}, status=400)
+
+        try:
+            anomaly = UserBehaviorAnomaly.objects.get(pk=int(anomaly_id))
+        except (UserBehaviorAnomaly.DoesNotExist, ValueError):
+            return JsonResponse({"error": "Anomaly not found"}, status=404)
+
+        anomaly.is_reviewed = True
+        anomaly.save(update_fields=["is_reviewed"])
+        return JsonResponse({"status": "dismissed"})

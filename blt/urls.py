@@ -300,7 +300,7 @@ from website.views.project import (
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
-from website.views.security import SecurityDashboardView
+from website.views.security import SecurityDashboardView, UserActivityApiView
 from website.views.security_incidents import (
     SecurityIncidentCreateView,
     SecurityIncidentDetailView,
@@ -1220,6 +1220,7 @@ urlpatterns = [
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
     path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
     path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
+    path("security/api/user-activity/", UserActivityApiView.as_view(), name="security_user_activity_api"),
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
