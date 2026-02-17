@@ -272,8 +272,8 @@ class TestPasswordResetUnknownEmail(APITestCase):
         # But NO email should actually be sent for non-existent accounts
         self.assertEqual(len(mail.outbox), 0, "No email should be sent for unknown accounts")
 
-        print("✓ Correct: No email sent for unknown account")
-        print("✓ Response still returns 200 OK (doesn't leak account existence)")
+        print("[OK] Correct: No email sent for unknown account")
+        print("[OK] Response still returns 200 OK (doesn't leak account existence)")
 
     def test_password_reset_known_email_sends_email(self):
         """Test password reset with known email - should send email"""
@@ -299,4 +299,4 @@ class TestPasswordResetUnknownEmail(APITestCase):
         # Email SHOULD be sent for existing accounts
         self.assertEqual(len(mail.outbox), 1, "Email should be sent for known accounts")
 
-        print("✓ Correct: Email sent for known account")
+        print("[OK] Correct: Email sent for known account")
