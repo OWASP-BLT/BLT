@@ -313,8 +313,9 @@ if "DYNO" in os.environ:  # for Heroku
             },
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
-        },
+    "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+},
+
     }
 
     GS_FILE_OVERWRITE = False
@@ -328,8 +329,9 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
-        },
+    "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+},
+
     }
     # Removed DEBUG override - DEBUG should be controlled by environment variable
 
@@ -389,6 +391,8 @@ if DEBUG:
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"
+# Enable long-term caching for static files (1 year)
+WHITENOISE_MAX_AGE = 31536000  # 1 year in seconds
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "website", "static"),)
 
