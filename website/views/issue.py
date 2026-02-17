@@ -62,6 +62,66 @@ from comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
+
+# Rate limiting constants following existing patterns
+REPORT_RATE_LIMIT_MAX_CALLS = 5  # max reports per user
+REPORT_RATE_LIMIT_WINDOW = 3600  # per 3600 seconds (1 hour)
+UPDATE_RATE_LIMIT_MAX_CALLS = 30  # max updates per admin
+UPDATE_RATE_LIMIT_WINDOW = 60  # per 60 seconds (1 minute)
+
+
+def is_report_rate_limited(user_id):
+    """
+    Rate limit issue reports per user using atomic cache operations.
+    Following the pattern from website/views/security.py
+    """
+    from django.core.cache import cache
+
+    key = f"report_limit_{user_id}"
+
+    # Atomic operation: returns True only if key was newly created
+    # and sets initial count=1 with TTL.
+    added = cache.add(key, 1, REPORT_RATE_LIMIT_WINDOW)
+    if added:
+        return False  # first request in window
+
+    # Key exists, increment atomically
+    try:
+        count = cache.incr(key)
+    except ValueError:
+        # Extremely rare: key expired between add() and incr()
+        cache.set(key, 1, REPORT_RATE_LIMIT_WINDOW)
+        return False
+
+    return count > REPORT_RATE_LIMIT_MAX_CALLS
+
+
+def is_update_rate_limited(user_id):
+    """
+    Rate limit report status updates per admin user.
+    Following the pattern from website/views/security.py
+    """
+    from django.core.cache import cache
+
+    key = f"update_limit_{user_id}"
+
+    # Atomic operation: returns True only if key was newly created
+    # and sets initial count=1 with TTL.
+    added = cache.add(key, 1, UPDATE_RATE_LIMIT_WINDOW)
+    if added:
+        return False  # first request in window
+
+    # Key exists, increment atomically
+    try:
+        count = cache.incr(key)
+    except ValueError:
+        # Extremely rare: key expired between add() and incr()
+        cache.set(key, 1, UPDATE_RATE_LIMIT_WINDOW)
+        return False
+
+    return count > UPDATE_RATE_LIMIT_MAX_CALLS
+
+
 from website.models import (
     IP,
     Activity,
@@ -379,6 +439,221 @@ def resolve(request, id):
             return JsonResponse({"status": "ok", "issue_status": issue.status})
     else:
         return HttpResponseForbidden("not logged in or superuser or issue user")
+
+
+@login_required(login_url="/accounts/login")
+def report_issue(request, id):
+    """Allow users to report suspicious issues"""
+    issue = get_object_or_404(Issue, id=id)
+
+    # Prevent users from reporting their own issues
+    if request.user == issue.user:
+        return JsonResponse({"status": "error", "message": "You cannot report your own issue"}, status=400)
+
+    # Rate limiting check
+    if is_report_rate_limited(request.user.id):
+        return JsonResponse(
+            {"status": "error", "message": "Rate limit exceeded. You can only report 5 issues per hour."}, status=429
+        )
+
+    if request.method == "POST":
+        from django.db import IntegrityError, transaction
+
+        from website.models import IssueReport
+
+        # Check if user already reported this issue
+        existing_report = IssueReport.objects.filter(reporter=request.user, reported_issue=issue).first()
+        if existing_report:
+            return JsonResponse({"status": "error", "message": "You have already reported this issue"}, status=400)
+
+        reason = request.POST.get("reason", "other")
+
+        # Validate reason against allowed choices
+        valid_reasons = [choice[0] for choice in IssueReport.REPORT_REASONS]
+        if reason not in valid_reasons:
+            return JsonResponse({"status": "error", "message": "Invalid reason provided"}, status=400)
+
+        description = escape(request.POST.get("description", "").strip())
+
+        if not description:
+            return JsonResponse({"status": "error", "message": "Please provide a description"}, status=400)
+
+        # Create the report with IntegrityError handling and transaction safety
+        try:
+            with transaction.atomic():
+                report = IssueReport.objects.create(
+                    reporter=request.user, reported_issue=issue, reason=reason, description=description
+                )
+                return JsonResponse(
+                    {"status": "success", "message": "Issue reported successfully. Admins will review it."}
+                )
+        except IntegrityError:
+            # This handles the unique_together constraint violation
+            logger.warning(f"User {request.user.username} attempted to report issue {issue.id} multiple times")
+            return JsonResponse({"status": "error", "message": "You have already reported this issue"}, status=400)
+        except Exception as e:
+            logger.error(f"Unexpected error creating report for issue {issue.id} by user {request.user.username}: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An unexpected error occurred. Please try again."}, status=500
+            )
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+@login_required(login_url="/accounts/login")
+def view_issue_reports(request):
+    """Admin view to see all issue reports"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Permission denied")
+
+    from website.models import IssueReport
+
+    # Optimize query with select_related and prefetch_related
+    reports_queryset = (
+        IssueReport.objects.select_related("reporter", "reported_issue__domain", "reviewed_by")
+        .prefetch_related("reported_issue__user")
+        .order_by("-created")
+    )
+
+    # Add filtering by status
+    status_filter = request.GET.get("status")
+    if status_filter and status_filter in dict(IssueReport.STATUS_CHOICES):
+        reports_queryset = reports_queryset.filter(status=status_filter)
+
+    # Add filtering by reason
+    reason_filter = request.GET.get("reason")
+    if reason_filter and reason_filter in dict(IssueReport.REPORT_REASONS):
+        reports_queryset = reports_queryset.filter(reason=reason_filter)
+
+    # Add search functionality
+    search_query = request.GET.get("search")
+    if search_query:
+        reports_queryset = reports_queryset.filter(
+            Q(description__icontains=search_query)
+            | Q(reported_issue__description__icontains=search_query)
+            | Q(reporter__username__icontains=search_query)
+        )
+
+    # Get pending count efficiently (separate query to avoid affecting pagination)
+    pending_count = IssueReport.objects.filter(status="pending").count()
+
+    # Add pagination
+    paginator = Paginator(reports_queryset, 20)  # 20 reports per page
+    page_number = request.GET.get("page")
+
+    try:
+        reports = paginator.page(page_number)
+    except PageNotAnInteger:
+        reports = paginator.page(1)
+    except EmptyPage:
+        reports = paginator.page(paginator.num_pages)
+
+    context = {
+        "reports": reports,
+        "page_obj": reports,
+        "paginator": paginator,
+        "is_paginated": paginator.num_pages > 1,
+        "pending_count": pending_count,
+        "status_choices": IssueReport.STATUS_CHOICES,
+        "reason_choices": IssueReport.REPORT_REASONS,
+        "current_status": status_filter,
+        "current_reason": reason_filter,
+        "search_query": search_query,
+    }
+
+    return render(request, "admin/issue_reports.html", context)
+
+
+@login_required(login_url="/accounts/login")
+def update_report_status(request, report_id):
+    """Admin endpoint to update report status"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Permission denied")
+
+    # Rate limiting check for admins
+    if is_update_rate_limited(request.user.id):
+        return JsonResponse(
+            {"status": "error", "message": "Rate limit exceeded. You can only update 30 reports per minute."},
+            status=429,
+        )
+
+    from website.models import IssueReport
+
+    report = get_object_or_404(IssueReport, id=report_id)
+
+    if request.method == "POST":
+        from django.db import transaction
+
+        status = request.POST.get("status")
+        admin_notes = escape(request.POST.get("admin_notes", ""))
+
+        if status in dict(IssueReport.STATUS_CHOICES):
+            try:
+                with transaction.atomic():
+                    report.status = status
+                    report.admin_notes = admin_notes
+                    report.reviewed_by = request.user
+                    report.reviewed_at = timezone.now()
+                    report.save()
+
+                    return JsonResponse({"status": "success", "message": "Report updated successfully"})
+            except Exception as e:
+                logger.error(f"Error updating report {report_id}: {e}")
+                return JsonResponse({"status": "error", "message": "Failed to update report"}, status=500)
+
+        return JsonResponse({"status": "error", "message": "Invalid status"}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+
+def get_issue_reports_count(issue):
+    """Helper function to get report count for an issue"""
+    from website.models import IssueReport
+
+    return IssueReport.objects.filter(reported_issue=issue).count()
+
+
+def get_issue_pending_reports_count(issue):
+    """Helper function to get pending report count for an issue"""
+    from website.models import IssueReport
+
+    return IssueReport.objects.filter(reported_issue=issue, status="pending").count()
+
+
+@login_required(login_url="/accounts/login")
+def view_issue_specific_reports(request, issue_id):
+    """View reports for a specific issue"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Permission denied")
+
+    from website.models import IssueReport
+
+    issue = get_object_or_404(Issue.objects.select_related("domain", "user"), id=issue_id)
+    reports_queryset = (
+        IssueReport.objects.filter(reported_issue=issue).select_related("reporter", "reviewed_by").order_by("-created")
+    )
+
+    # Add pagination for issues with many reports
+    paginator = Paginator(reports_queryset, 10)  # 10 reports per page
+    page_number = request.GET.get("page")
+
+    try:
+        reports = paginator.page(page_number)
+    except PageNotAnInteger:
+        reports = paginator.page(1)
+    except EmptyPage:
+        reports = paginator.page(paginator.num_pages)
+
+    context = {
+        "issue": issue,
+        "reports": reports,
+        "page_obj": reports,
+        "paginator": paginator,
+        "is_paginated": paginator.num_pages > 1,
+        "pending_count": reports_queryset.filter(status="pending").count(),
+    }
+
+    return render(request, "admin/issue_specific_reports.html", context)
 
 
 def UpdateIssue(request):
@@ -1916,6 +2191,11 @@ class IssueView(DetailView):
         context["flagers"] = (
             UserProfile.objects.filter(issue_flaged=self.object).select_related("user").order_by("-id")[:20]
         )
+
+        # Add report counts for admins
+        if self.request.user.is_authenticated and (self.request.user.is_superuser or self.request.user.is_staff):
+            context["reports_count"] = get_issue_reports_count(self.object)
+            context["pending_reports_count"] = get_issue_pending_reports_count(self.object)
 
         return context
 

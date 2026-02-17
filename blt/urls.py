@@ -201,6 +201,7 @@ from website.views.issue import (
     page_vote,
     refresh_gsoc_project,
     remove_user_from_issue,
+    report_issue,
     resolve,
     save_issue,
     search_issues,
@@ -208,6 +209,9 @@ from website.views.issue import (
     submit_bug,
     submit_pr,
     update_content_comment,
+    update_report_status,
+    view_issue_reports,
+    view_issue_specific_reports,
     vote_count,
 )
 from website.views.organization import (
@@ -576,6 +580,10 @@ urlpatterns = [
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
+    path("report_issue/<int:id>/", report_issue, name="report_issue"),
+    path("issue-reports/", view_issue_reports, name="view_issue_reports"),
+    path("issue-reports/<int:report_id>/update/", update_report_status, name="update_report_status"),
+    path("issue/<int:issue_id>/reports/", view_issue_specific_reports, name="view_issue_specific_reports"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",
         create_github_issue,
