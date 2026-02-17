@@ -13,13 +13,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
     for social vs regular signups.
     """
 
-    def is_email_verification_mandatory(self, request):
-        """
-        Skip mandatory email verification for social account signups.
-        Only enforce for regular email/password signups.
-        """
-        # Check if the signup is coming from a social account flow
-        return super().is_email_verification_mandatory(request)
+    pass  # For now, we can rely on the default behavior for regular accounts.
 
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
