@@ -8,12 +8,18 @@ from website.models import UserBehaviorAnomaly, UserLoginEvent
 
 logger = logging.getLogger(__name__)
 
-# Configurable thresholds via Django settings
-ANOMALY_IP_LOOKBACK_DAYS = getattr(settings, "ANOMALY_IP_LOOKBACK_DAYS", 30)
-ANOMALY_UNUSUAL_HOUR_START = getattr(settings, "ANOMALY_UNUSUAL_HOUR_START", 1)
-ANOMALY_UNUSUAL_HOUR_END = getattr(settings, "ANOMALY_UNUSUAL_HOUR_END", 5)
-ANOMALY_RAPID_FAILURE_COUNT = getattr(settings, "ANOMALY_RAPID_FAILURE_COUNT", 5)
-ANOMALY_RAPID_FAILURE_WINDOW_MINUTES = getattr(settings, "ANOMALY_RAPID_FAILURE_WINDOW_MINUTES", 15)
+# Default thresholds (read live from settings inside functions for @override_settings support)
+_DEFAULTS = {
+    "ANOMALY_IP_LOOKBACK_DAYS": 30,
+    "ANOMALY_UNUSUAL_HOUR_START": 1,
+    "ANOMALY_UNUSUAL_HOUR_END": 5,
+    "ANOMALY_RAPID_FAILURE_COUNT": 5,
+    "ANOMALY_RAPID_FAILURE_WINDOW_MINUTES": 15,
+}
+
+
+def _setting(name):
+    return getattr(settings, name, _DEFAULTS[name])
 
 
 def check_login_anomalies(user, login_event):
@@ -21,7 +27,7 @@ def check_login_anomalies(user, login_event):
     if user is None:
         return
 
-    cutoff = timezone.now() - timedelta(days=ANOMALY_IP_LOOKBACK_DAYS)
+    cutoff = timezone.now() - timedelta(days=_setting("ANOMALY_IP_LOOKBACK_DAYS"))
     prior_events = UserLoginEvent.objects.filter(
         user=user,
         event_type=UserLoginEvent.EventType.LOGIN,
@@ -97,7 +103,9 @@ def _check_new_user_agent(user, login_event, prior_events):
 def _check_unusual_time(user, login_event):
     """Flag logins during unusual hours (UTC)."""
     hour = login_event.timestamp.hour
-    if ANOMALY_UNUSUAL_HOUR_START <= hour < ANOMALY_UNUSUAL_HOUR_END:
+    start = _setting("ANOMALY_UNUSUAL_HOUR_START")
+    end = _setting("ANOMALY_UNUSUAL_HOUR_END")
+    if start <= hour < end:
         UserBehaviorAnomaly.objects.create(
             user=user,
             anomaly_type=UserBehaviorAnomaly.AnomalyType.UNUSUAL_TIME,
@@ -112,7 +120,9 @@ def _check_unusual_time(user, login_event):
 
 def _check_rapid_failures(user, failed_event):
     """Flag accounts with many failed login attempts in a short window."""
-    window_start = timezone.now() - timedelta(minutes=ANOMALY_RAPID_FAILURE_WINDOW_MINUTES)
+    window_minutes = _setting("ANOMALY_RAPID_FAILURE_WINDOW_MINUTES")
+    failure_threshold = _setting("ANOMALY_RAPID_FAILURE_COUNT")
+    window_start = timezone.now() - timedelta(minutes=window_minutes)
 
     recent_failures = UserLoginEvent.objects.filter(
         user=user,
@@ -120,7 +130,7 @@ def _check_rapid_failures(user, failed_event):
         timestamp__gte=window_start,
     ).count()
 
-    if recent_failures < ANOMALY_RAPID_FAILURE_COUNT:
+    if recent_failures < failure_threshold:
         return
 
     # Deduplicate: don't create another alert if one already exists in this window
@@ -137,10 +147,10 @@ def _check_rapid_failures(user, failed_event):
         user=user,
         anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
         severity=UserBehaviorAnomaly.Severity.HIGH,
-        description=f"{recent_failures} failed login attempts in {ANOMALY_RAPID_FAILURE_WINDOW_MINUTES} minutes",
+        description=f"{recent_failures} failed login attempts in {window_minutes} minutes",
         details={
             "failure_count": recent_failures,
-            "window_minutes": ANOMALY_RAPID_FAILURE_WINDOW_MINUTES,
+            "window_minutes": window_minutes,
             "ip_address": failed_event.ip_address,
         },
         login_event=failed_event,

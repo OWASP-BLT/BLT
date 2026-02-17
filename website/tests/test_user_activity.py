@@ -1,10 +1,6 @@
-from datetime import timedelta
-from unittest.mock import patch
-
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
 
 from website.models import UserBehaviorAnomaly, UserLoginEvent
 from website.services.anomaly_detection import (
@@ -180,10 +176,11 @@ class AnomalyDetectionTests(TestCase):
 
     def test_unusual_time_detected(self):
         self._create_login_event()
-        # Create event at 3 AM UTC
         unusual_event = self._create_login_event()
-        unusual_event.timestamp = unusual_event.timestamp.replace(hour=3)
-        unusual_event.save()
+        # auto_now_add fields can't be overridden via .save(); use queryset update
+        forced_time = unusual_event.timestamp.replace(hour=3)
+        UserLoginEvent.objects.filter(pk=unusual_event.pk).update(timestamp=forced_time)
+        unusual_event.refresh_from_db()
 
         check_login_anomalies(self.user, unusual_event)
 
