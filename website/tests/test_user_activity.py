@@ -116,13 +116,19 @@ class SignalHandlerTests(TestCase):
         self.assertTrue(events.exists())
 
     def test_ip_captured_on_login(self):
-        self.client.login(username="signaluser", password="testpass123")
+        # Call the signal handler directly with a real request to test IP extraction.
+        # client.login() creates a bare HttpRequest without REMOTE_ADDR.
+        from website.user_activity_signals import on_user_logged_in
+
+        request = self.factory.get("/")
+        request.META["REMOTE_ADDR"] = "192.168.1.50"
+        on_user_logged_in(sender=self.user.__class__, request=request, user=self.user)
+
         event = UserLoginEvent.objects.filter(
             user=self.user, event_type=UserLoginEvent.EventType.LOGIN
         ).first()
         self.assertIsNotNone(event)
-        # Django test client uses 127.0.0.1 by default
-        self.assertEqual(event.ip_address, "127.0.0.1")
+        self.assertEqual(event.ip_address, "192.168.1.50")
 
 
 class AnomalyDetectionTests(TestCase):
