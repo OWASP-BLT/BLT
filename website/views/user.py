@@ -58,7 +58,6 @@ from website.models import (
     Repo,
     Tag,
     Thread,
-    User,
     UserBadge,
     UserProfile,
     Wallet,
@@ -1534,23 +1533,24 @@ def _extract_bounty_from_labels(labels):
     """
     Extract the total bounty amount in USD from GitHub issue labels.
 
-    Matches labels like "$5", "$10", "$100", "$1,000", "$50.00", etc.
-    Returns the sum of all matching dollar labels as a Decimal.
+    Matches amounts like "$5", "$10", "$100", "$1,000", "$50.00" even when embedded
+    in labels (e.g., "bounty: $50"). Returns Decimal total, or None if no amount found.
     """
-    from decimal import Decimal, InvalidOperation
 
     total = Decimal("0.00")
-    dollar_pattern = re.compile(r"^\$([\d,]+(?:\.\d{1,2})?)$")
+    found_any = False
+    dollar_pattern = re.compile(r"\$\s*([\d,]+(?:\.\d{1,2})?)")
     for label in labels:
         label_name = label.get("name", "") if isinstance(label, dict) else str(label)
-        match = dollar_pattern.match(label_name.strip())
+        match = dollar_pattern.search(label_name)
         if match:
             try:
                 amount = Decimal(match.group(1).replace(",", ""))
                 total += amount
+                found_any = True
             except InvalidOperation:
                 continue
-    return total
+    return total if found_any else None
 
 
 def handle_issue_event(payload):
@@ -1609,7 +1609,17 @@ def handle_issue_event(payload):
             if action in ("opened", "labeled", "unlabeled"):
                 labels = issue_data.get("labels", [])
                 amount = _extract_bounty_from_labels(labels)
-                github_issue.p2p_amount_usd = amount if amount else None
+                previous = github_issue.p2p_amount_usd
+                github_issue.p2p_amount_usd = amount if amount is not None else None
+                # Invalidate badge cache if bounty changed
+                try:
+                    if previous != github_issue.p2p_amount_usd:
+                        parts = (repo.repo_url or "").rstrip("/").split("/")
+                        owner, repo_name = parts[-2], parts[-1]
+                        cache_key = f"issue_badge:{owner}:{repo_name}:{github_issue.issue_id}"
+                        cache.delete(cache_key)
+                except Exception as e:
+                    logger.warning(f"Failed to invalidate badge cache for bounty update: {e}")
 
             github_issue.save()
             logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
@@ -1641,8 +1651,16 @@ def handle_issue_event(payload):
                         updated_at=updated_at,
                         url=issue_html_url or "",
                         repo=repo,
-                        p2p_amount_usd=bounty or None,
+                        p2p_amount_usd=bounty if bounty is not None else None,
                     )
+                    # Invalidate badge cache in case it was primed
+                    try:
+                        parts = (repo.repo_url or "").rstrip("/").split("/")
+                        owner, repo_name = parts[-2], parts[-1]
+                        cache_key = f"issue_badge:{owner}:{repo_name}:{issue_id}"
+                        cache.delete(cache_key)
+                    except Exception as e:
+                        logger.warning(f"Failed to invalidate badge cache after create: {e}")
                     logger.info(f"Created GitHubIssue {issue_id} in repo {repo_full_name}")
                 except Exception as e:
                     logger.error(f"Error creating GitHubIssue: {e}")

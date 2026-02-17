@@ -62,8 +62,6 @@ from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from user_agents import parse
-
-from blt import settings
 from comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
@@ -2974,14 +2972,30 @@ class GitHubIssueBadgeView(APIView):
 
     BRAND_COLOR = "#e74c3c"  # BLT red
     CACHE_TTL = 300  # 5 minutes
+    @staticmethod
+    def _cache_key(owner: str, repo_name: str, issue_id: int) -> str:
+        # Safe cache key format
+        return f"issue_badge:{owner}:{repo_name}:{issue_id}"
 
     def get(self, request, owner, repo_name, issue_id):
         repo_url = f"https://github.com/{owner}/{repo_name}"
-        cache_key = "issue_badge_" + "\x00".join([owner, repo_name, str(issue_id)])
+        cache_key = self._cache_key(owner, repo_name, issue_id)
         cached = cache.get(cache_key)
-
-        # IP tracking is handled by the ip_restrict middleware;
-        # no need to duplicate it here.
+        
+        # Explicit daily‑dedup IP logging for the badge endpoint itself (not used for view count)
+        try:
+            user_ip = get_client_ip(request)
+            today = timezone.now().date()
+            if not IP.objects.filter(address=user_ip, path=request.path, created__date=today).exists():
+                IP.objects.create(
+                    address=user_ip,
+                    path=request.path,
+                    count=1,
+                    agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                    referer=request.META.get("HTTP_REFERER", "")[:255] or None,
+                )
+        except Exception as e:
+            logger.error(f"Error tracking IP for badge endpoint: {e}")
 
         if cached:
             svg_content = cached
@@ -3018,7 +3032,8 @@ class GitHubIssueBadgeView(APIView):
         # ETag for conditional requests (RFC 7232: ETag values must be quoted)
         etag = f'"{hashlib.md5(svg_content.encode()).hexdigest()}"'
         if_none_match = request.META.get("HTTP_IF_NONE_MATCH", "")
-        if etag in (tag.strip() for tag in if_none_match.split(",")):
+        client_etags = {tag.strip() for tag in if_none_match.split(",")}
+        if etag in client_etags:
             return HttpResponse(status=304)
 
         response = HttpResponse(svg_content, content_type="image/svg+xml")
@@ -3053,7 +3068,7 @@ class GitHubIssueBadgeView(APIView):
         h = 20
 
         label_bg = "#555"
-        brand = "#e74c3c"  # BLT red for the value sections
+        brand = GitHubIssueBadgeView.BRAND_COLOR  # BLT red for the value sections
         bounty_bg = "#e74c3c" if bounty_amount > 0 else "#9f9f9f"
 
         bx = views_total + gap  # bounty group x-offset
