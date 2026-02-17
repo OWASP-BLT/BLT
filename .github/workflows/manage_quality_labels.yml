@@ -1,0 +1,89 @@
+name: Manage Quality Labels (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      quality_labels:
+        description: 'Array of quality label names'
+        required: false
+        type: string
+        default: '["quality: high", "quality: medium", "quality: low"]'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  manage_quality_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Conflicting Quality Labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let itemNumber;
+            let itemType;
+            
+            if (context.payload.pull_request) {
+              itemNumber = context.payload.pull_request.number;
+              itemType = 'PR';
+            } else if (context.payload.issue) {
+              itemNumber = context.payload.issue.number;
+              itemType = context.payload.issue.pull_request ? 'PR' : 'Issue';
+            } else {
+              core.info('No pull_request or issue in context. Skipping.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            const qualityLabels = JSON.parse('${{ inputs.quality_labels }}');
+            const newLabel = context.payload.label.name;
+            
+            if (!qualityLabels.includes(newLabel)) {
+              core.info(`Label "${newLabel}" is not a quality label. Skipping.`);
+              return;
+            }
+            
+            core.info(`Quality label "${newLabel}" added to ${itemType} #${itemNumber}`);
+            core.info('Checking for conflicting quality labels to remove...');
+
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
+              owner, 
+              repo, 
+              issue_number: itemNumber, 
+              per_page: 100 
+            });
+            
+            const conflictingLabels = current
+              .map(l => l.name)
+              .filter(name => qualityLabels.includes(name) && name !== newLabel);
+            
+            if (conflictingLabels.length === 0) {
+              core.info('No conflicting quality labels found.');
+              return;
+            }
+            
+            let removedCount = 0;
+            for (const labelName of conflictingLabels) {
+              try {
+                await github.rest.issues.removeLabel({ 
+                  owner, 
+                  repo, 
+                  issue_number: itemNumber, 
+                  name: labelName
+                });
+                core.info(`  Removed label: ${labelName}`);
+                removedCount++;
+              } catch (err) {
+                if (err.status !== 404) {
+                  core.warning(`  Failed to remove label ${labelName}: ${err.message}`);
+                }
+              }
+            }
+            
+            core.info(`✅ Successfully removed ${removedCount} conflicting quality label(s) from ${itemType} #${itemNumber}`);
+            core.info(`Active quality label: ${newLabel}`);
