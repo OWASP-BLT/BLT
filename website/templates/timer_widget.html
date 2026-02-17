@@ -1,0 +1,59 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/timer.css' %}">
+<!-- Timer Widget Component -->
+<div class="timer-widget" id="timer-widget">
+    <div class="timer-container">
+        <div class="timer-header">
+            <h3>Issue Timer</h3>
+            <span class="timer-status hidden" id="timer-info"></span>
+        </div>
+        <div class="timer-display-container">
+            <div class="timer-display" id="timer-display">00:00:00</div>
+        </div>
+        <div class="timer-form" id="timer-form">
+            <div class="form-group">
+                <label for="github-issue-url">GitHub Issue URL (optional)</label>
+                <input type="url"
+                       id="github-issue-url"
+                       class="form-control"
+                       placeholder="https://github.com/owner/repo/issues/123">
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="github-repo">Repository</label>
+                    <input type="text"
+                           id="github-repo"
+                           class="form-control"
+                           placeholder="owner/repo">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="github-issue-number">Issue #</label>
+                    <input type="number"
+                           id="github-issue-number"
+                           class="form-control"
+                           placeholder="123">
+                </div>
+            </div>
+        </div>
+        <div class="timer-controls">
+            <button id="start-timer-btn" class="btn btn-success" title="Start Timer">
+                <i class="fas fa-play"></i> Start
+            </button>
+            <button id="pause-timer-btn"
+                    class="btn btn-warning hidden"
+                    title="Pause Timer">
+                <i class="fas fa-pause"></i> Pause
+            </button>
+            <button id="resume-timer-btn"
+                    class="btn btn-info hidden"
+                    title="Resume Timer">
+                <i class="fas fa-play"></i> Resume
+            </button>
+            <button id="stop-timer-btn" class="btn btn-danger hidden" title="Stop Timer">
+                <i class="fas fa-stop"></i> Stop
+            </button>
+        </div>
+        <div id="timer-notification" class="notification hidden"></div>
+    </div>
+</div>
+<script src="{% static 'js/timer.js' %}"></script>

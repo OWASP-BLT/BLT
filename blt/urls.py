@@ -331,6 +331,7 @@ from website.views.teams import (
     leave_team,
     search_users,
 )
+from website.views.timer_webhook import github_timer_webhook
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
@@ -877,6 +878,12 @@ urlpatterns = [
         OrganizationDashboardAnalyticsView.as_view(),
         name="organization_analytics",
     ),
+    # Commented out - OrganizationDashboardVulnerabilityManagementView doesn't exist yet
+    # path(
+    #     "organization/<int:id>/dashboard/vulnerability-management/",
+    #     OrganizationDashboardVulnerabilityManagementView.as_view(),
+    #     name="organization_vulnerability_management",
+    # ),
     path(
         "organization/<int:id>/dashboard/integrations/",
         OrganizationDashboardIntegrations.as_view(),
@@ -1066,6 +1073,7 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
+    path("api/github-timer-webhook/", github_timer_webhook, name="github-timer-webhook"),
     # blog urls
     path("blog/", PostListView.as_view(), name="post_list"),
     path("blog/new/", PostCreateView.as_view(), name="post_form"),

@@ -20,7 +20,7 @@ let prize_array = [];
             if (!list_prize_container) {
                 list_prize_container = document.getElementById("list-prize-container");
                 if (!list_prize_container) {
-                    console.error('[add_prize] Could not find list-prize-container element');
+                    // Prize container not found
                     alert('Error: Prize container not found. Please refresh the page.');
                     return;
                 }
@@ -39,7 +39,7 @@ let prize_array = [];
             // Check if all elements exist
             for (const [key, element] of Object.entries(elements)) {
                 if (!element) {
-                    console.error(`[add_prize] Could not find element: ${key}`);
+                    // Form element not found
                     alert(`Error: Form element '${key}' not found. Please refresh the page.`);
                     return;
                 }
@@ -104,7 +104,7 @@ let prize_array = [];
             alert("Prize added successfully!");
             
         } catch (error) {
-            console.error('[add_prize] Error:', error);
+            // Error adding prize
             alert('An error occurred while adding the prize. Please check the console for details.');
         }
     }
@@ -236,7 +236,7 @@ function remove_prize(prize_id) {
         try {
             const bughuntForm = document.getElementById("add_bughunt_form");
             if (!bughuntForm) {
-                console.error('[PublishBughunt] Form not found');
+                // Form not found
                 alert('Error: Form not found. Please refresh the page.');
                 return;
             }
@@ -257,7 +257,7 @@ function remove_prize(prize_id) {
             // Check if CSRF token exists
             const csrfToken = bughuntForm.querySelector('input[name="csrfmiddlewaretoken"]');
             if (!csrfToken) {
-                console.error('[PublishBughunt] CSRF token not found in form');
+                // CSRF token not found
                 alert('CSRF token missing. Please refresh the page and try again.');
                 return;
             }
@@ -286,7 +286,7 @@ function remove_prize(prize_id) {
         bughuntForm.submit();
             
         } catch (error) {
-            console.error('[PublishBughunt] Error:', error);
+            // Error submitting form
             alert('An error occurred while submitting the form. Please check the console for details.');
         }
     }
@@ -304,7 +304,7 @@ function remove_prize(prize_id) {
         const previewDiv = document.getElementById("previewLogoDiv");
         
         if (!fileInput || !previewDiv) {
-            console.error('[displayLogoPreview] Required elements not found');
+            // Required elements not found
             return;
         }
 
@@ -398,7 +398,7 @@ function removePrize(event, prizeId, organizationId) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        // Network error occurred
             alert("Network error occurred while deleting the prize. Please check your connection and try again.");
         })
         .finally(() => {
@@ -509,7 +509,7 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
          }
 
         if (!preview || !defaultIcon || !removeButton) {
-            console.error('One or more required elements not found');
+            // Required elements not found
             return;
         }
 
@@ -556,7 +556,7 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
             }
             
             reader.onerror = function() {
-                console.error('Error reading file');
+                // Error reading file
                 if (errorDiv) {
                     errorDiv.textContent = 'Error reading the file. Please try again.';
                     errorDiv.style.display = 'block';
@@ -579,7 +579,7 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
          const errorDiv = document.getElementById(errorDivId);
 
         if (!input || !preview || !defaultIcon || !removeButton) {
-            console.error('One or more required elements not found');
+            // Required elements not found
             return;
         }
         

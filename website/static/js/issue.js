@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displaySuggestions(filteredIssues, append);
         }
     } catch (error) {
-        console.error('Error fetching issues:', error);
+        // Error fetching issues - silently handle
         if (!append) {
             hideSuggestionBox();
         } else {
