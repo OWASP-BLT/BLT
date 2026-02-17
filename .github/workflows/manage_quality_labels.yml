@@ -5,7 +5,6 @@ on:
     types: [labeled]
 
 permissions:
-  contents: read
   pull-requests: write
   issues: write
 
@@ -27,9 +26,6 @@ jobs:
             if (context.payload.pull_request) {
               itemNumber = context.payload.pull_request.number;
               itemType = 'PR';
-            } else if (context.payload.issue) {
-              itemNumber = context.payload.issue.number;
-              itemType = context.payload.issue.pull_request ? 'PR' : 'Issue';
             } else {
               core.info('No pull_request or issue in context. Skipping.');
               return;
