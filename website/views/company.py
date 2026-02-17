@@ -23,10 +23,12 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
+from website.decorators import ratelimit
 from website.forms import OrganizationProfileForm
 from website.models import (
     DailyStatusReport,
@@ -871,6 +873,8 @@ class OrganizationSocialRedirectView(View):
     """
     Tracks social media clicks and redirects to the actual social media URL.
     Usage: /organization/<org_id>/social/<platform>/
+
+    Rate limited to prevent bot-driven inflation of click metrics.
     """
 
     # Allowed domains for each platform to prevent open redirect attacks
@@ -881,6 +885,7 @@ class OrganizationSocialRedirectView(View):
         "github": ["github.com"],
     }
 
+    @method_decorator(ratelimit(key="ip", rate="20/m", method="ALL"))
     def get(self, request, org_id, platform):
         # Validate platform - derive from ALLOWED_DOMAINS for single source of truth
         valid_platforms = list(self.ALLOWED_DOMAINS.keys())
@@ -925,6 +930,7 @@ class OrganizationSocialRedirectView(View):
 
         # Increment the click counter atomically to prevent race conditions
         # Add retry logic to handle SQLite database locking in concurrent scenarios
+        # Note: Click counting is non-critical, so failures won't prevent redirect
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -949,9 +955,21 @@ class OrganizationSocialRedirectView(View):
                     continue
                 # Log the error but don't fail the redirect - click counting is non-critical
                 logger.warning(
-                    "Failed to update social clicks for organization %s on platform %s",
+                    "Failed to update social clicks for organization %s on platform %s: %s",
                     org_id,
                     platform,
+                    str(e),
+                    exc_info=True,
+                )
+                break  # Exit retry loop and continue with redirect
+            except Exception as e:
+                # Catch all other database errors (IntegrityError, DatabaseError, etc.)
+                # to ensure redirect always works even if click tracking fails
+                logger.warning(
+                    "Unexpected error updating social clicks for organization %s on platform %s: %s",
+                    org_id,
+                    platform,
+                    str(e),
                     exc_info=True,
                 )
                 break  # Exit retry loop and continue with redirect

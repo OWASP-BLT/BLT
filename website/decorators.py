@@ -64,6 +64,12 @@ def ratelimit(key="user", rate="20/m", method="POST"):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
+            # Skip rate limiting in test mode
+            from django.conf import settings
+            
+            if settings.TESTING:
+                return view_func(request, *args, **kwargs)
+            
             # Check if method matches
             if method != "ALL" and request.method != method:
                 return view_func(request, *args, **kwargs)

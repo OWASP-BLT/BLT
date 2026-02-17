@@ -397,6 +397,212 @@
                         </div>
                     </div>
                 </div>
+                <!-- Project Leaderboard Tab Section -->
+                <div class="mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                        <div class="border-b border-gray-200 dark:border-gray-700">
+                            <nav class="flex" aria-label="Tabs">
+                                {% if is_owasp %}
+                                    <button onclick="switchOrgTab('leaderboard')"
+                                            id="tab-button-leaderboard"
+                                            class="org-tab-button active text-[#e74c3c] border-[#e74c3c] whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
+                                            aria-current="page">
+                                        <i class="fas fa-trophy mr-2"></i>Projects Leaderboard
+                                    </button>
+                                {% else %}
+                                    <button onclick="switchOrgTab('repositories')"
+                                            id="tab-button-repositories"
+                                            class="org-tab-button active text-[#e74c3c] border-[#e74c3c] whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
+                                            aria-current="page">
+                                        <i class="fas fa-code-branch mr-2"></i>Repositories
+                                    </button>
+                                {% endif %}
+                            </nav>
+                        </div>
+                        <!-- Projects Leaderboard Tab Content (for OWASP) -->
+                        {% if is_owasp %}
+                            <div id="org-tab-leaderboard" class="org-tab-content p-6">
+                                <div class="mb-6">
+                                    <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Project Statistics & Leaderboard</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Comprehensive GitHub statistics for all OWASP projects</p>
+                                </div>
+                                <!-- Summary Cards -->
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                                    <div class="bg-[#e74c3c] text-white rounded-lg p-4">
+                                        <div class="text-2xl font-bold">{{ organization.projects.count }}</div>
+                                        <div class="text-sm opacity-90">Projects</div>
+                                    </div>
+                                    <div class="bg-[#c0392b] text-white rounded-lg p-4">
+                                        <div class="text-2xl font-bold">{{ org_total_stars|default:0 }}</div>
+                                        <div class="text-sm opacity-90">Stars</div>
+                                    </div>
+                                    <div class="bg-[#e74c3c] text-white rounded-lg p-4">
+                                        <div class="text-2xl font-bold">{{ org_total_forks|default:0 }}</div>
+                                        <div class="text-sm opacity-90">Forks</div>
+                                    </div>
+                                    <div class="bg-[#c0392b] text-white rounded-lg p-4">
+                                        <div class="text-2xl font-bold">{{ org_total_issues|default:0 }}</div>
+                                        <div class="text-sm opacity-90">Issues</div>
+                                    </div>
+                                    <div class="bg-[#e74c3c] text-white rounded-lg p-4">
+                                        <div class="text-2xl font-bold">{{ org_total_contributors|default:0 }}</div>
+                                        <div class="text-sm opacity-90">Contributors</div>
+                                    </div>
+                                    <div class="bg-[#c0392b] text-white rounded-lg p-4">
+                                        <div class="text-2xl font-bold">{{ org_total_commits|default:0 }}</div>
+                                        <div class="text-sm opacity-90">Commits</div>
+                                    </div>
+                                </div>
+                                <!-- Top Projects List -->
+                                <div class="mb-4">
+                                    <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Top Projects by Activity</h4>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {% for project_data in top_projects %}
+                                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg transition-shadow">
+                                            <div class="flex items-start mb-3">
+                                                <div class="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-3">
+                                                    {% if project_data.project.logo %}
+                                                        <img src="{{ project_data.project.logo.url }}"
+                                                             alt="{{ project_data.project.name }}"
+                                                             width="40"
+                                                             height="40"
+                                                             class="w-10 h-10 rounded-full object-cover">
+                                                    {% else %}
+                                                        <i class="fas fa-code text-blue-600 dark:text-blue-400"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <h5 class="text-base font-semibold text-gray-900 dark:text-white truncate mb-1">{{ project_data.project.name }}</h5>
+                                                    {% if project_data.project.status %}
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                                            {{ project_data.project.get_status_display }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                                                {% if project_data.project.description %}
+                                                    {{ project_data.project.description|truncatewords:15 }}
+                                                {% else %}
+                                                    OWASP Project
+                                                {% endif %}
+                                            </p>
+                                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                                <div class="text-center">
+                                                    <div class="flex items-center justify-center mb-1">
+                                                        <i class="fas fa-code-branch text-[#e74c3c]"></i>
+                                                    </div>
+                                                    <div class="text-lg font-bold text-gray-900 dark:text-white">{{ project_data.total_prs|default:0 }}</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400">PRs</div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <div class="flex items-center justify-center mb-1">
+                                                        <i class="fas fa-users text-[#e74c3c]"></i>
+                                                    </div>
+                                                    <div class="text-lg font-bold text-gray-900 dark:text-white">{{ project_data.total_contributors|default:0 }}</div>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400">Contributors</div>
+                                                </div>
+                                            </div>
+                                            <a href="{% url 'project_detail' project_data.project.slug %}"
+                                               class="block w-full text-center px-4 py-2 bg-[#e74c3c] text-white rounded hover:bg-[#c0392b] transition text-sm font-medium">
+                                                View Details <i class="fas fa-arrow-right ml-1"></i>
+                                            </a>
+                                        </div>
+                                    {% empty %}
+                                        <div class="col-span-3 text-center py-8 text-gray-500 dark:text-gray-400">
+                                            No projects found for this organization.
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-6 text-center">
+                                    <a href="{% url 'project_leaderboard' %}"
+                                       class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition font-medium">
+                                        View Full Leaderboard <i class="fas fa-external-link-alt ml-2"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Repositories Tab Content (for non-OWASP organizations) -->
+                            <div id="org-tab-repositories" class="org-tab-content p-6">
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Organization Repositories</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">View repositories and their statistics for this organization.</p>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                        <thead class="bg-gray-50 dark:bg-gray-700">
+                                            <tr>
+                                                <th scope="col"
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Repository
+                                                </th>
+                                                <th scope="col"
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Stars
+                                                </th>
+                                                <th scope="col"
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Forks
+                                                </th>
+                                                <th scope="col"
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Contributors
+                                                </th>
+                                                <th scope="col"
+                                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                    Language
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                            {% for repo in organization.repos.all %}
+                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <div class="flex items-center">
+                                                            <i class="fab fa-github text-gray-500 dark:text-gray-400 mr-2"></i>
+                                                            <a href="{{ repo.url }}"
+                                                               target="_blank"
+                                                               rel="noopener noreferrer"
+                                                               class="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                                                                {{ repo.name }}
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="text-gray-900 dark:text-white font-medium">{{ repo.stars|default:"0" }}</span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="text-gray-900 dark:text-white font-medium">{{ repo.forks|default:"0" }}</span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span class="text-gray-900 dark:text-white font-medium">{{ repo.contributor_count|default:"0" }}</span>
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap">
+                                                        {% if repo.language %}
+                                                            <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                                                                {{ repo.language }}
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="text-gray-400 dark:text-gray-500">—</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="5"
+                                                        class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                                        No repositories found for this organization.
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
                 <!-- Tags -->
                 {% if organization.tags.all %}
                     <div class="mb-8">

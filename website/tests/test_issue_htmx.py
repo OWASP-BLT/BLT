@@ -93,21 +93,25 @@ class IssueHTMXTests(TestCase):
 
     def test_like_rate_limit(self):
         """Test that like action is rate limited"""
-        # Make 60 requests (should succeed)
-        for _ in range(60):
+        from django.test import override_settings
+        
+        # Temporarily disable TESTING flag to enable rate limiting
+        with override_settings(TESTING=False):
+            # Make 60 requests (should succeed)
+            for _ in range(60):
+                response = self.client.post(
+                    reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+                    HTTP_HX_REQUEST="true",
+                )
+                self.assertEqual(response.status_code, 200)
+
+            # 61st request should be rate limited
             response = self.client.post(
                 reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
                 HTTP_HX_REQUEST="true",
             )
-            self.assertEqual(response.status_code, 200)
-
-        # 61st request should be rate limited
-        response = self.client.post(
-            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
-            HTTP_HX_REQUEST="true",
-        )
-        self.assertEqual(response.status_code, 429)
-        self.assertIn(b"Rate limit exceeded", response.content)
+            self.assertEqual(response.status_code, 429)
+            self.assertIn(b"Rate limit exceeded", response.content)
 
     def test_like_nonexistent_issue(self):
         """Test that liking a non-existent issue returns 404"""
