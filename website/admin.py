@@ -594,6 +594,7 @@ class ContributionAdmin(admin.ModelAdmin):
     search_fields = ["title", "description", "user__username"]
     date_hierarchy = "created"
 
+
 class GitHubIssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",

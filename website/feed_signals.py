@@ -20,7 +20,7 @@ from .models import (
 )
 from .utils import analyze_contribution
 
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
 
 # Default BACON rewards for different contribution types
 DEFAULT_BACON_REWARDS = {

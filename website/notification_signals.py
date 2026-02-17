@@ -56,6 +56,7 @@ def notify_receiver_on_kudos(sender, instance, created, **kwargs):
 
         Notification.objects.create(user=instance.receiver, message=message, notification_type="reward", link=None)
 
+
 @receiver(post_save, sender=UserBadge)
 def notify_user_on_badge_recieved(sender, instance, created, **kwargs):
     """

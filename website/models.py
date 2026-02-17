@@ -1788,6 +1788,7 @@ class UserTaskSubmission(models.Model):
         if self.approved:
             self.progress.check_completion()
 
+
 class PRAnalysisReport(models.Model):
     pr_link = models.URLField()
     issue_link = models.URLField()
@@ -1798,6 +1799,7 @@ class PRAnalysisReport(models.Model):
 
     def __str__(self):
         return self.pr_link
+
 
 class Repo(models.Model):
     organization = models.ForeignKey(
