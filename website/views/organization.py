@@ -18,12 +18,14 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Count, F, Prefetch, Q, Sum, Window
+from django.db.models.functions import RowNumber
 from django.db import transaction
-from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
     HttpResponse,
@@ -2576,6 +2578,17 @@ class OrganizationDetailView(DetailView):
             }
         )
 
+        org_ct = ContentType.objects.get_for_model(Organization)
+        context["repo_refresh_activities"] = (
+            Activity.objects.filter(
+                content_type=org_ct,
+                object_id=organization.id,
+                title="GitHub repositories refreshed",
+            )
+            .select_related("user")
+            .order_by("-timestamp")[:25]
+        )
+
         return context
 
 
@@ -2583,15 +2596,18 @@ class OrganizationListView(ListView):
     model = Organization
     template_name = "organization/organization_list.html"
     context_object_name = "organizations"
-    paginate_by = 100
+    paginate_by = 30
 
     def get_queryset(self):
+        # Instead of using Window functions (which SQLite doesn't support),
+        # we'll fetch the top repos in the get_context_data method using Python logic
         queryset = (
             Organization.objects.prefetch_related(
                 "domain_set",
                 "projects",
                 "projects__repos",
-                "repos",
+                "repos",  # Prefetch all repos for Python-side filtering
+                "managers",
                 "tags",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
@@ -2608,15 +2624,50 @@ class OrganizationListView(ListView):
                 open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
                 closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
+                repo_count=Count("repos", distinct=True),
+                manager_count=Count("managers", distinct=True),
             )
             .select_related("admin")
-            .order_by("-created")
         )
 
         # Filter by tag if provided in the URL
         tag_slug = self.request.GET.get("tag")
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
+
+        sort_param = (self.request.GET.get("sort") or "-created").strip()
+        valid_sort_fields = {
+            "name": "name",
+            "-name": "-name",
+            "created": "created",
+            "-created": "-created",
+            "updated": "modified",
+            "-updated": "-modified",
+            "domains": "domain_count",
+            "-domains": "-domain_count",
+            "projects": "project_count",
+            "-projects": "-project_count",
+            "repos": "repo_count",
+            "-repos": "-repo_count",
+            "issues": "total_issues",
+            "-issues": "-total_issues",
+            "open_issues": "open_issues",
+            "-open_issues": "-open_issues",
+            "closed_issues": "closed_issues",
+            "-closed_issues": "-closed_issues",
+            "points": "team_points",
+            "-points": "-team_points",
+            "trademarks": "trademark_count",
+            "-trademarks": "-trademark_count",
+            "managers": "manager_count",
+            "-managers": "-manager_count",
+            "active": "is_active",
+            "-active": "-is_active",
+            "type": "type",
+            "-type": "-type",
+        }
+
+        queryset = queryset.order_by(valid_sort_fields.get(sort_param, "-created"))
 
         return queryset
 
@@ -2646,12 +2697,22 @@ class OrganizationListView(ListView):
         context["recently_viewed"] = recently_viewed
 
         # Get most popular organizations by counting their view paths for today only
+        # Simplified approach to avoid N+1 while remaining database-agnostic
         today = timezone.now().date()
+        
+        # Since we need counts for specific pages and the queryset is paginated,
+        # we'll only count for organizations in the current page to minimize queries
+        current_page_orgs = context["organizations"]
         orgs_with_views = []
-        for org in self.get_queryset():
-            view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
+        
+        for org in current_page_orgs:
+            # This is acceptable since we're only doing it for the current page (typically 30 items)
+            view_count = IP.objects.filter(
+                path=f"/organization/{org.slug}/", 
+                created__date=today
+            ).count()
             orgs_with_views.append((org, view_count))
-
+        
         # Sort by view count and get top 5
         most_popular = [org for org, _ in sorted(orgs_with_views, key=lambda x: x[1], reverse=True)[:5]]
         context["most_popular"] = most_popular
@@ -2671,8 +2732,28 @@ class OrganizationListView(ListView):
         if tag_slug:
             context["selected_tag"] = Tag.objects.filter(slug=tag_slug).first()
 
-        # Add top testers for each domain
+        context["sort"] = self.request.GET.get("sort", "-created")
+
+        # Add top testers for each domain and compute top_repos in Python
+        # (avoiding Window functions for SQLite compatibility)
         for org in context["organizations"]:
+            # Compute top 3 repos per org in Python
+            all_repos = list(org.repos.all())
+            # Sort by stars (desc), then by id (desc)
+            sorted_repos = sorted(all_repos, key=lambda r: (-r.stars, -r.id))
+            org.top_repos = sorted_repos[:3]
+            
+            # Validate GitHub URL for safe display
+            org.is_valid_github_url = False
+            if org.source_code:
+                try:
+                    parsed = urlparse(org.source_code)
+                    if parsed.scheme in ('http', 'https') and parsed.hostname:
+                        hostname = parsed.hostname.lower()
+                        org.is_valid_github_url = (hostname == 'github.com' or hostname.endswith('.github.com'))
+                except Exception:
+                    org.is_valid_github_url = False
+            
             for domain in org.domain_set.all():
                 domain.top_testers = (
                     User.objects.filter(issue__domain=domain)
@@ -2680,6 +2761,270 @@ class OrganizationListView(ListView):
                     .order_by("-issue_count")[:1]
                 )
 
+        return context
+
+
+@require_POST
+def refresh_organization_repos_api(request, org_id):
+    """Refresh an organization's GitHub repositories.
+
+    Visible to everyone in UI, but requires authentication to execute.
+    Returns JSON suitable for fetch().
+    """
+
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Authentication required.",
+            },
+            status=401,
+        )
+
+    organization = get_object_or_404(Organization, id=org_id)
+
+    # Authorization: only staff/superuser or org admin/manager can refresh repos
+    user = request.user
+    if not (
+        user.is_staff
+        or user.is_superuser
+        or organization.admin == user
+        or organization.managers.filter(id=user.id).exists()
+    ):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "You don't have permission to refresh this organization's repositories.",
+            },
+            status=403,
+        )
+
+    # Simple throttling: avoid repeated refreshes within 24 hours.
+    one_day_ago = timezone.timedelta(days=1)
+    if organization.repos_updated_at and (timezone.now() - organization.repos_updated_at) < one_day_ago:
+        time_since_update = timezone.now() - organization.repos_updated_at
+        hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
+        return JsonResponse(
+            {
+                "success": False,
+                "error": f"Repositories were updated recently. Please wait {int(hours_remaining)} hours before refreshing again.",
+            },
+            status=429,
+        )
+
+    # Determine GitHub org name.
+    github_org_name = organization.github_org
+    if not github_org_name and organization.source_code:
+        match = re.match(r"https?://github\.com/([^/]+)/?.*", organization.source_code)
+        if match:
+            github_org_name = match.group(1)
+
+    if not github_org_name:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "No GitHub organization configured for this organization.",
+            },
+            status=400,
+        )
+
+    if not getattr(settings, "GITHUB_TOKEN", None):
+        logger.error("GitHub API token not configured")
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "GitHub API token not configured. Please contact an administrator.",
+            },
+            status=500,
+        )
+
+    headers = {
+        "Authorization": f"token {settings.GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    page = 1
+    per_page = 100
+    timeout = 15
+    repos_fetched = 0
+    repos_created = 0
+    repos_updated = 0
+
+    try:
+        while True:
+            repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
+            response = requests.get(
+                repos_api_url,
+                params={"page": page, "per_page": per_page, "type": "public"},
+                headers=headers,
+                timeout=timeout,
+            )
+
+            if response.status_code == 404:
+                return JsonResponse(
+                    {"success": False, "error": f"GitHub organization '{github_org_name}' not found."},
+                    status=404,
+                )
+            if response.status_code == 401:
+                return JsonResponse(
+                    {"success": False, "error": "GitHub authentication failed. Please contact an administrator."},
+                    status=502,
+                )
+            if response.status_code == 403:
+                message = "GitHub API access forbidden."
+                if "rate limit" in (response.text or "").lower():
+                    message = "GitHub API rate limit exceeded. Please try again later."
+                return JsonResponse({"success": False, "error": message}, status=429)
+            if response.status_code != 200:
+                return JsonResponse(
+                    {"success": False, "error": "Unable to fetch repositories from GitHub. Please try again later."},
+                    status=502,
+                )
+
+            repos_data = response.json()
+            if not repos_data:
+                break
+
+            for repo_data in repos_data:
+                repos_fetched += 1
+                repo, created = Repo.objects.update_or_create(
+                    repo_url=repo_data["html_url"],
+                    defaults={
+                        "name": repo_data.get("name", "Unknown"),
+                        "description": repo_data.get("description") or "",
+                        "primary_language": repo_data.get("language") or "",
+                        "organization": organization,
+                        "stars": repo_data.get("stargazers_count", 0),
+                        "forks": repo_data.get("forks_count", 0),
+                        "open_issues": repo_data.get("open_issues_count", 0),
+                        "watchers": repo_data.get("watchers_count", 0),
+                        "is_archived": repo_data.get("archived", False),
+                        "size": repo_data.get("size", 0),
+                    },
+                )
+                if created:
+                    repos_created += 1
+                else:
+                    repos_updated += 1
+
+                if repo_data.get("topics"):
+                    for topic in repo_data["topics"]:
+                        tag_slug = slugify(topic)
+                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
+                        repo.tags.add(tag)
+
+            page += 1
+            time.sleep(0.2)
+
+    except requests.exceptions.RequestException:
+        logger.exception("Network error while refreshing GitHub repos")
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Network error while fetching repositories from GitHub. Please try again later.",
+            },
+            status=502,
+        )
+    except Exception:
+        logger.exception("Unexpected error while refreshing GitHub repos")
+        return JsonResponse(
+            {"success": False, "error": "An unexpected error occurred. Please try again later."},
+            status=500,
+        )
+
+    organization.repos_updated_at = timezone.now()
+    organization.save(update_fields=["repos_updated_at"])
+
+    # Record activity
+    org_ct = ContentType.objects.get_for_model(Organization)
+    Activity.objects.create(
+        user=request.user,
+        action_type="update",
+        title="GitHub repositories refreshed",
+        description=f"Refreshed GitHub repositories for {organization.name}.",
+        url=reverse("organization_detail", kwargs={"slug": organization.slug}),
+        content_type=org_ct,
+        object_id=organization.id,
+    )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "repos_fetched": repos_fetched,
+            "repos_created": repos_created,
+            "repos_updated": repos_updated,
+        }
+    )
+
+
+class OrganizationListModeView(ListView):
+    model = Organization
+    template_name = "organization/organization_list_mode.html"
+    context_object_name = "organizations"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = (
+            Organization.objects.select_related("admin")
+            .prefetch_related("tags", "managers")
+            .annotate(
+                domain_count=Count("domain", distinct=True),
+                repo_count=Count("repos", distinct=True),
+                project_count=Count("projects", distinct=True),
+                total_issues=Count("domain__issue", distinct=True),
+                open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
+                closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
+                manager_count=Count("managers", distinct=True),
+                tag_count=Count("tags", distinct=True),
+            )
+        )
+
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+
+        sort_param = (self.request.GET.get("sort") or "-created").strip()
+        valid_sort_fields = {
+            "name": "name",
+            "-name": "-name",
+            "created": "created",
+            "-created": "-created",
+            "updated": "modified",
+            "-updated": "-modified",
+            "domains": "domain_count",
+            "-domains": "-domain_count",
+            "projects": "project_count",
+            "-projects": "-project_count",
+            "repos": "repo_count",
+            "-repos": "-repo_count",
+            "issues": "total_issues",
+            "-issues": "-total_issues",
+            "open_issues": "open_issues",
+            "-open_issues": "-open_issues",
+            "closed_issues": "closed_issues",
+            "-closed_issues": "-closed_issues",
+            "points": "team_points",
+            "-points": "-team_points",
+            "trademarks": "trademark_count",
+            "-trademarks": "-trademark_count",
+            "managers": "manager_count",
+            "-managers": "-manager_count",
+            "tags": "tag_count",
+            "-tags": "-tag_count",
+            "active": "is_active",
+            "-active": "-is_active",
+            "type": "type",
+            "-type": "-type",
+        }
+
+        return queryset.order_by(valid_sort_fields.get(sort_param, "-created"))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sort"] = self.request.GET.get("sort", "-created")
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            context["selected_tag"] = Tag.objects.filter(slug=tag_slug).first()
         return context
 
 

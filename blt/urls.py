@@ -223,6 +223,7 @@ from website.views.organization import (
     Listbounties,
     OngoingHunts,
     OrganizationDetailView,
+    OrganizationListModeView,
     OrganizationListView,
     OrganizationSettings,
     PreviousHunts,
@@ -259,6 +260,7 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    refresh_organization_repos_api,
     room_messages_api,
     send_message_api,
     sizzle,
@@ -1004,6 +1006,7 @@ urlpatterns = [
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("organizations/list/", OrganizationListModeView.as_view(), name="organizations_list_mode"),
     path("map/", MapView.as_view(), name="map"),
     path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
@@ -1142,6 +1145,9 @@ urlpatterns = [
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
     path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
+    path(
+        "api/organization/<int:org_id>/refresh/", refresh_organization_repos_api, name="refresh_organization_repos_api"
+    ),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
