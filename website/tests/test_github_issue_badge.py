@@ -166,7 +166,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_counts_detail_page_views(self):
         """View count in badge is based on detail-page IP records, not badge hits."""
-        detail_path = f"/github-issues/{self.issue.pk}/"
+        detail_path = reverse("github_issue_detail", kwargs={"pk": self.issue.pk})
         # Seed 3 unique detail-page visits
         for i in range(3):
             IP.objects.create(
@@ -187,7 +187,7 @@ class GitHubIssueBadgeTests(TestCase):
     # ------------------------------------------------------------------
     def test_badge_excludes_old_views(self):
         """IP records older than 30 days are excluded from the view count."""
-        detail_path = f"/github-issues/{self.issue.pk}/"
+        detail_path = reverse("github_issue_detail", kwargs={"pk": self.issue.pk})
         # Recent visit
         IP.objects.create(
             address="10.0.0.1",

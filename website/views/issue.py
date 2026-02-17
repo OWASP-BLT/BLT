@@ -2840,7 +2840,7 @@ class GitHubIssuesView(ListView):
 
                 # Create the GitHub issue
                 new_issue = GitHubIssue(
-                    issue_id=issue_data["number"],
+                    issue_id=issue_data["id"],
                     title=issue_data["title"],
                     body=issue_data.get("body", ""),
                     state=issue_data["state"],
@@ -3029,7 +3029,7 @@ class GitHubIssueBadgeView(APIView):
                     activity_count = (
                         IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
                         .values("address")
-                        .annotate(address_count=Count("address"))
+                        .distinct()
                         .count()
                     )
                 else:
@@ -3047,7 +3047,10 @@ class GitHubIssueBadgeView(APIView):
         if_none_match = request.META.get("HTTP_IF_NONE_MATCH", "")
         client_etags = {tag.strip() for tag in if_none_match.split(",")}
         if etag in client_etags:
-            return HttpResponse(status=304)
+            not_modified_response = HttpResponse(status=304)
+            not_modified_response["Cache-Control"] = f"public, max-age={self.CACHE_TTL}"
+            not_modified_response["ETag"] = etag
+            return not_modified_response
 
         response = HttpResponse(svg_content, content_type="image/svg+xml")
         response["Cache-Control"] = f"public, max-age={self.CACHE_TTL}"

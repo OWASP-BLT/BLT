@@ -1568,7 +1568,11 @@ def handle_issue_event(payload):
     logger.debug(f"GitHub issue event: {action}")
 
     # Extract issue details
-    issue_id = issue_data.get("number")
+    # IMPORTANT: Use issue "number" (the per-repo #123 visible in URLs), NOT
+    # issue "id" (GitHub's globally-unique internal integer).  The badge route
+    # and all DB lookups for issues key on (issue_number, repo), so every code
+    # path in this handler must use the same canonical value.
+    issue_number = issue_data.get("number")
     issue_state = issue_data.get("state")
     issue_html_url = issue_data.get("html_url")
 
@@ -1576,7 +1580,7 @@ def handle_issue_event(payload):
     repo_full_name = repo_data.get("full_name")  # e.g. - "owner/repo"
     repo_html_url = repo_data.get("html_url")
 
-    if not issue_id or not repo_html_url:
+    if not issue_number or not repo_html_url:
         logger.warning("Issue event missing required data")
         return JsonResponse({"status": "error", "message": "Missing required data"}, status=400)
 
@@ -1593,7 +1597,7 @@ def handle_issue_event(payload):
     if repo:
         # Find and update the GitHubIssue record
         try:
-            github_issue = GitHubIssue.objects.get(issue_id=issue_id, repo=repo, type="issue")
+            github_issue = GitHubIssue.objects.get(issue_id=issue_number, repo=repo, type="issue")
 
             # Update the issue state
             github_issue.state = issue_state
@@ -1617,13 +1621,13 @@ def handle_issue_event(payload):
                     if previous != github_issue.p2p_amount_usd:
                         parts = (repo.repo_url or "").rstrip("/").split("/")
                         owner, repo_name = parts[-2], parts[-1]
-                        cache_key = f"issue_badge:{owner}:{repo_name}:{github_issue.issue_id}"
-                        cache.delete(cache_key)
+                        cache.delete(f"issue_badge:{owner}:{repo_name}:{github_issue.issue_id}")
+                        cache.delete(f"issue_badge:pk:{github_issue.pk}")
                 except Exception as e:
                     logger.warning(f"Failed to invalidate badge cache for bounty update: {e}")
 
             github_issue.save()
-            logger.info(f"Updated GitHubIssue {issue_id} in repo {repo_full_name} to state: {issue_state}")
+            logger.info(f"Updated GitHubIssue #{issue_number} in repo {repo_full_name} to state: {issue_state}")
         except GitHubIssue.DoesNotExist:
             # If the issue doesn't exist yet and this is an opened event, create it
             if action == "opened":
@@ -1643,7 +1647,7 @@ def handle_issue_event(payload):
                     )
 
                     github_issue = GitHubIssue.objects.create(
-                        issue_id=issue_id,
+                        issue_id=issue_number,
                         title=issue_data.get("title", ""),
                         body=issue_data.get("body", ""),
                         state=issue_state or "open",
@@ -1658,15 +1662,15 @@ def handle_issue_event(payload):
                     try:
                         parts = (repo.repo_url or "").rstrip("/").split("/")
                         owner, repo_name = parts[-2], parts[-1]
-                        cache_key = f"issue_badge:{owner}:{repo_name}:{issue_id}"
-                        cache.delete(cache_key)
+                        cache.delete(f"issue_badge:{owner}:{repo_name}:{issue_number}")
+                        cache.delete(f"issue_badge:pk:{github_issue.pk}")
                     except Exception as e:
                         logger.warning(f"Failed to invalidate badge cache after create: {e}")
-                    logger.info(f"Created GitHubIssue {issue_id} in repo {repo_full_name}")
+                    logger.info(f"Created GitHubIssue #{issue_number} in repo {repo_full_name}")
                 except Exception as e:
                     logger.error(f"Error creating GitHubIssue: {e}")
             else:
-                logger.info(f"GitHubIssue {issue_id} not found in BLT for repo {repo_full_name}")
+                logger.info(f"GitHubIssue #{issue_number} not found in BLT for repo {repo_full_name}")
         except Exception as e:
             logger.error(f"Error updating GitHubIssue: {e}")
 
