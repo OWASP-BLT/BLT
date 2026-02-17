@@ -124,7 +124,7 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
             raise ValueError(
                 f"Total upload size {total_size / (1024*1024):.1f}MB exceeds maximum {MAX_TOTAL_SIZE / (1024*1024):.0f}MB"
             )
-        os.makedirs(REPORT_TMP_DIR, exist_ok=True)
+        os.makedirs(REPORT_TMP_DIR, mode=0o700, exist_ok=True)
         # Use mkdtemp to avoid UUID collisions and ensure a fresh directory
         issue_tmp_dir = tempfile.mkdtemp(prefix=f"issue_{issue.id}_", dir=REPORT_TMP_DIR)
 
@@ -231,15 +231,19 @@ def _build_tar_artifact(issue: Issue, file_paths, output_tar: str) -> None:
         "note": "Zero-trust issue. Metadata only; full details in attached files.",
     }
     meta_path = os.path.join(os.path.dirname(output_tar), "metadata.json")
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
-
-    with tarfile.open(output_tar, "w:gz") as tar:
-        tar.add(meta_path, arcname="metadata.json")
-        for p in file_paths:
-            tar.add(p, arcname=os.path.basename(p))
-
-    os.remove(meta_path)
+    try:
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+        with tarfile.open(output_tar, "w:gz") as tar:
+            tar.add(meta_path, arcname="metadata.json")
+            for p in file_paths:
+                tar.add(p, arcname=os.path.basename(p))
+    finally:
+        try:
+            if os.path.exists(meta_path):
+                os.remove(meta_path)
+        except OSError:
+            logger.warning("Failed to remove temporary metadata file %s", meta_path, exc_info=True)
 
 
 def _encrypt_artifact_for_org(

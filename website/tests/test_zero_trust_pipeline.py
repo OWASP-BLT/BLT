@@ -9,7 +9,7 @@ class ValidationFunctionTests(TestCase):
     def test_validate_age_recipient_valid(self):
         """Test valid age recipients."""
         # Valid age1 format (age1 + 58 chars)
-        self.assertTrue(_validate_age_recipient("age1" + "q" * 58))
+        self.assertTrue(_validate_age_recipient("age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"))
 
         # Valid SSH keys with sufficiently long base64 portions
         self.assertTrue(_validate_age_recipient("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAabcdefghijklmnopqrstuvwxyz"))

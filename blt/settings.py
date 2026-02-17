@@ -308,7 +308,15 @@ if SENTRY_DSN:
                     "method": req.get("method"),
                     "url": "[REDACTED zero‑trust endpoint]",
                 }
+            # Also redact exception messages and top-level message for Zero-Trust events
+            exc = event.get("exception")
+            if exc:
+                for val in exc.get("values", []):
+                    val["value"] = "[REDACTED zero-trust error details]"
 
+            # Sentry's top-level "message" can echo exception text; redact it as well.
+            if "message" in event:
+                event["message"] = "[REDACTED zero-trust event]"
             # 2) Remove user context entirely
             event.pop("user", None)
 
