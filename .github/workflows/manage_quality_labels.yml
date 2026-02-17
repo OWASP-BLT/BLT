@@ -1,8 +1,6 @@
 name: Manage Quality Labels
 
 on:
-  issues:
-    types: [labeled]
   pull_request_target:
     types: [labeled]
 
@@ -14,6 +12,9 @@ permissions:
 jobs:
   manage_quality_labels:
     runs-on: ubuntu-latest
+    concurrency:
+      group: quality-labels-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
     steps:
       - name: Remove Conflicting Quality Labels
         uses: actions/github-script@v7
