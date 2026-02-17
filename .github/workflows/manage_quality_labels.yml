@@ -1,13 +1,8 @@
-name: Manage Quality Labels (Reusable)
+name: Manage Quality Labels
 
 on:
-  workflow_call:
-    inputs:
-      quality_labels:
-        description: 'Array of quality label names'
-        required: false
-        type: string
-        default: '["quality: high", "quality: medium", "quality: low"]'
+  pull_request_target:
+    types: [labeled]
 
 permissions:
   contents: read
@@ -40,7 +35,9 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             
-            const qualityLabels = JSON.parse('${{ inputs.quality_labels }}');
+            // Define quality labels (note: using "quality: " prefix based on your repo's label format)
+            const qualityLabels = ['quality: high', 'quality: medium', 'quality: low'];
+            
             const newLabel = context.payload.label.name;
             
             if (!qualityLabels.includes(newLabel)) {
