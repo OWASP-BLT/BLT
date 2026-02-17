@@ -62,6 +62,8 @@ from website.models import (
     UserProfile,
     Wallet,
 )
+from website.services.ai_spam_detection import AISpamDetectionService
+from website.views.constants import SPAM_CONFIDENCE_THRESHOLD_GENERAL
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +150,12 @@ def update_bch_address(request):
 def profile_edit(request):
     from allauth.account.models import EmailAddress
 
-    Tag.objects.get_or_create(name="GSOC")
+    # Ensure GSOC tag exists (safely handle if already exists with different case)
+    try:
+        Tag.objects.get_or_create(name="GSOC")
+    except Exception:
+        pass
+
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     # Get the user's current email BEFORE changes
@@ -159,6 +166,18 @@ def profile_edit(request):
 
         if form.is_valid():
             new_email = form.cleaned_data["email"]
+            # NEW: Spam detection for profile bio/description
+            spam_detector = AISpamDetectionService()
+            bio_content = form.cleaned_data.get("description", "")
+            role = form.cleaned_data.get("role", "")
+
+            if bio_content:
+                spam_result = spam_detector.detect_spam(
+                    f"Bio content: {bio_content}, Role: {role}", content_type="user"
+                )
+                if spam_result["is_spam"] and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_GENERAL:
+                    messages.error(request, f"Profile update flagged: {spam_result['reason']}")
+                    return render(request, "profile_edit.html", {"form": form})
 
             # Check email uniqueness
             if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():

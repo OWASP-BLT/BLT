@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import traceback
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -11,6 +12,7 @@ from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
@@ -27,6 +29,7 @@ from slack_bolt import App
 from website.models import (
     DailyStatusReport,
     Domain,
+    FlaggedContent,
     Hunt,
     HuntPrize,
     Integration,
@@ -34,13 +37,17 @@ from website.models import (
     InviteOrganization,
     Issue,
     IssueScreenshot,
+    ModerationAction,
     Organization,
     OrganizationAdmin,
     Points,
     SlackIntegration,
     Winner,
 )
+from website.services.ai_spam_detection import AISpamDetectionService
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
+
+from .constants import SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -203,6 +210,15 @@ class RegisterOrganizationView(View):
         else:
             logo_path = None
 
+        spam_detector = AISpamDetectionService()
+        user_generated_content_parts = [organization_name]
+        for optional_field in ("description", "about", "notes"):
+            if optional_field in data and data.get(optional_field):
+                user_generated_content_parts.append(str(data.get(optional_field, "")))
+        content_for_spam = "\n".join(part for part in user_generated_content_parts if part).strip()
+
+        spam_result = spam_detector.detect_spam(content=content_for_spam, content_type="organization")
+
         try:
             with transaction.atomic():
                 organization = Organization.objects.create(
@@ -215,7 +231,6 @@ class RegisterOrganizationView(View):
                     logo=logo_path,
                     is_active=True,
                 )
-
                 manager_emails = data.get("email", "").split(",")
                 managers = User.objects.filter(email__in=manager_emails)
                 organization.managers.set(managers)
@@ -275,7 +290,43 @@ class RegisterOrganizationView(View):
                 else:
                     request.session.pop("org_ref", None)
 
-                messages.success(request, success_message)
+                # Check for spam AFTER organization is created (OUTSIDE referral logic)
+                if (
+                    spam_result["is_spam"]
+                    and spam_result["confidence"] > SPAM_CONFIDENCE_THRESHOLD_ORGANIZATION_PROFILE
+                ):
+                    logger.warning(f"Spam organization detected: OrgID:{organization.id} OrgName:{organization.name}")
+
+                    # Set organization as inactive (Organization model doesn't have is_hidden field)
+                    organization.is_active = False
+                    organization.save()
+
+                    # Create FlaggedContent entry using GenericForeignKey
+                    org_content_type = ContentType.objects.get_for_model(Organization)
+                    flagged_content = FlaggedContent.objects.create(
+                        content_type=org_content_type,
+                        object_id=organization.id,
+                        reporter=None,  # Auto-detected by AI
+                        reason=spam_result.get("category") or "other",
+                        spam_score=float(spam_result.get("confidence", 0.0) or 0.0),
+                        detection_details=str(spam_result.get("reason", "") or ""),
+                        status="pending",
+                    )
+
+                    # Create moderation action audit trail
+                    ModerationAction.objects.create(
+                        flagged_content=flagged_content,
+                        action="flagged",
+                        notes=f"AI spam detection - Confidence: {spam_result['confidence']:.2%}",
+                    )
+
+                    messages.warning(
+                        request,
+                        f"Your organization registration has been submitted but flagged for moderator review. Reason: {spam_result['reason']}",
+                    )
+                    logger.info(f"Created FlaggedContent entry for Organization #{organization.id}")
+                else:
+                    messages.success(request, success_message)
 
         except ValidationError as e:
             # Construct a more specific error message based on validation errors
@@ -309,6 +360,9 @@ class RegisterOrganizationView(View):
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
         except Exception as e:
+            error_details = traceback.format_exc()
+            logger.error(f"Failed to create organization: {e}\n{error_details}")
+
             if "value too long" in str(e):
                 messages.error(
                     request,
@@ -911,8 +965,6 @@ class OrganizationDashboardTeamOverviewView(View):
 
                 reports = DailyStatusReport.objects.filter(user__in=team_member_users).order_by("-date")
 
-                logger.info(f"Total reports before filter: {reports.count()}")
-
                 if filter_type == "user" and filter_value:
                     reports = reports.filter(user_id=filter_value)
                 elif filter_type == "date" and filter_value:
@@ -921,8 +973,6 @@ class OrganizationDashboardTeamOverviewView(View):
                     reports = reports.filter(goal_accomplished=filter_value == "true")
                 elif filter_type == "task" and filter_value:
                     reports = reports.filter(previous_work__icontains=filter_value)
-
-                logger.info(f"Reports after filter: {reports.count()}")
 
                 data = []
                 for report in reports:

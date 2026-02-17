@@ -69,16 +69,19 @@ from website.models import (
     Blocked,
     DailyStats,
     Domain,
+    FlaggedContent,
     GitHubIssue,
     Hunt,
     Issue,
     IssueScreenshot,
+    ModerationAction,
     Points,
     Repo,
     User,
     UserProfile,
     Wallet,
 )
+from website.services.ai_spam_detection import AISpamDetectionService
 from website.utils import (
     admin_required,
     get_client_ip,
@@ -91,7 +94,7 @@ from website.utils import (
     validate_screenshot_hash,
 )
 
-from .constants import GSOC25_PROJECTS
+from .constants import GSOC25_PROJECTS, SPAM_CONFIDENCE_THRESHOLD_GENERAL
 
 logger = logging.getLogger(__name__)
 
@@ -1120,6 +1123,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # Combine fields to check
         text_to_check = f"{description} {markdown_description}"
 
+        # Run AI spam detection
+        spam_detector = AISpamDetectionService()
+        spam_result = spam_detector.detect_spam(content=text_to_check, content_type="issue")
+
+        # Store spam result in form instance for later use
+        form.instance._spam_detection_result = spam_result
+
         # Check for profanity
         if profanity.contains_profanity(text_to_check):
             Blocked.objects.create(
@@ -1128,8 +1138,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 user_agent_string=self.request.META.get("HTTP_USER_AGENT", ""),
                 count=1,
             )
-
-            # Prevent  form submission
+            # Prevent form submission
             messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
 
@@ -1241,6 +1250,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         )
             tokenauth = False
             obj = form.save(commit=False)
+
+            # CRITICAL: Transfer spam detection result from form.instance to obj
+            # form.save(commit=False) creates a NEW instance, losing the _spam_detection_result
+            # that was set on form.instance in form_valid()
+            if hasattr(form.instance, "_spam_detection_result"):
+                obj._spam_detection_result = form.instance._spam_detection_result
+
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
@@ -1265,9 +1281,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             clean_domain_no_www = clean_domain.replace("www.", "")
-
-            # Debug logging to help identify the issue
-            logger.info(f"Bug creation - Looking for domain: netloc={clean_domain}, no_www={clean_domain_no_www}")
 
             # Try multiple domain lookup strategies to match domain creation logic
             domain = None
@@ -1492,7 +1505,62 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+
+            # Check if this issue was flagged as spam
+            spam_result = getattr(obj, "_spam_detection_result", None)
+            if (
+                spam_result
+                and spam_result["is_spam"]
+                and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL
+            ):
+                # Mark issue as hidden (pending moderator review)
+                obj.is_hidden = True
+
+            # Initial save to get ID
             obj.save()
+
+            # Create FlaggedContent entry if spam was detected
+            if (
+                spam_result
+                and spam_result["is_spam"]
+                and spam_result["confidence"] >= SPAM_CONFIDENCE_THRESHOLD_GENERAL
+            ):
+                from django.contrib.contenttypes.models import ContentType
+
+                # Map spam category to reason choice
+                category_to_reason = {
+                    "promotional": "promotional",
+                    "malicious": "malicious",
+                    "low_quality": "low_quality",
+                    "duplicate": "duplicate",
+                    "social_engineering": "social_engineering",
+                }
+                reason = category_to_reason.get(spam_result.get("category", "other"), "other")
+
+                # Create flagged content entry
+                flagged = FlaggedContent.objects.create(
+                    content_type=ContentType.objects.get_for_model(Issue),
+                    object_id=obj.id,
+                    reporter=None,  # System-flagged (AI detected)
+                    reason=reason,
+                    spam_score=spam_result["confidence"],
+                    spam_categories=[spam_result.get("category", "unknown")],
+                    detection_details=spam_result.get("reason", "AI detected potential spam"),
+                    status="pending",
+                )
+
+                ModerationAction.objects.create(
+                    flagged_content=flagged,
+                    action="flagged",
+                    performed_by=None,  # System action
+                    notes=f"AI spam detection - Confidence: {spam_result['confidence']:.2%}",
+                )
+
+                messages.warning(
+                    self.request,
+                    f"Your issue has been submitted but flagged for moderator review due to potential spam indicators. "
+                    f"It will be reviewed shortly and made visible if approved. Reason: {spam_result['reason']}",
+                )
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
                 Points.objects.create(
@@ -1543,6 +1611,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             team_members_id = [member_id for member_id in team_members_id if member_id is not None]
             obj.team_members.set(team_members_id)
 
+            # team_members.set() handles saving the through-table, not obj itself
+            # but we call save() again to be sure all fields are consistent
             obj.save()
 
             if not report_anonymous:
