@@ -104,32 +104,27 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
     MAX_TOTAL_SIZE = getattr(settings, "ZERO_TRUST_MAX_TOTAL_SIZE", 100 * 1024 * 1024)  # 100MB
     MAX_FILES_COUNT = getattr(settings, "ZERO_TRUST_MAX_FILES", 10)
 
-    # Validate file count
-    if len(uploaded_files) > MAX_FILES_COUNT:
-        raise ValueError(f"Maximum {MAX_FILES_COUNT} files allowed")
-
-    # Validate file sizes during streaming
-    total_size = 0
-    for f in uploaded_files:
-        file_size = getattr(f, "size", None)
-        if file_size is None:
-            raise ValueError("Unable to determine uploaded file size. Please try again with a smaller file.")
-        if file_size > MAX_FILE_SIZE:
-            raise ValueError(
-                f"An uploaded file exceeds the maximum allowed size of {MAX_FILE_SIZE / (1024*1024):.0f}MB"
-            )
-        total_size += file_size
-
-    if total_size > MAX_TOTAL_SIZE:
-        raise ValueError(
-            f"Total upload size {total_size / (1024*1024):.1f}MB exceeds maximum {MAX_TOTAL_SIZE / (1024*1024):.0f}MB"
-        )
-
-    os.makedirs(REPORT_TMP_DIR, exist_ok=True)
-
     issue_tmp_dir = None
-
     try:
+        # Validate file count
+        if len(uploaded_files) > MAX_FILES_COUNT:
+            raise ValueError(f"Maximum {MAX_FILES_COUNT} files allowed")
+        # Validate file sizes during streaming
+        total_size = 0
+        for f in uploaded_files:
+            file_size = getattr(f, "size", None)
+            if file_size is None:
+                raise ValueError("Unable to determine uploaded file size. Please try again with a smaller file.")
+            if file_size > MAX_FILE_SIZE:
+                raise ValueError(
+                    f"An uploaded file exceeds the maximum allowed size of {MAX_FILE_SIZE / (1024*1024):.0f}MB"
+                )
+            total_size += file_size
+        if total_size > MAX_TOTAL_SIZE:
+            raise ValueError(
+                f"Total upload size {total_size / (1024*1024):.1f}MB exceeds maximum {MAX_TOTAL_SIZE / (1024*1024):.0f}MB"
+            )
+        os.makedirs(REPORT_TMP_DIR, exist_ok=True)
         # Use mkdtemp to avoid UUID collisions and ensure a fresh directory
         issue_tmp_dir = tempfile.mkdtemp(prefix=f"issue_{issue.id}_", dir=REPORT_TMP_DIR)
 
