@@ -126,18 +126,13 @@ class IssueCreateJSONRequestTests(TestCase):
         # Send JSON request - should not raise RawPostDataException
         # The request will fail validation (missing screenshot, etc.) but
         # the important thing is it doesn't crash with RawPostDataException
-        try:
-            response = self.client.post(
-                url,
-                data=json.dumps(json_data),
-                content_type="application/json",
-            )
-            # If we get here, no RawPostDataException was raised
-            self.assertIsNotNone(response)
-        except Exception as e:
-            # Fail if we get RawPostDataException
-            self.assertNotIn("RawPostDataException", str(type(e).__name__))
-            self.assertNotIn("cannot access body after reading", str(e).lower())
+        response = self.client.post(
+            url,
+            data=json.dumps(json_data),
+            content_type="application/json",
+        )
+        # If we get here, no RawPostDataException was raised
+        self.assertIsNotNone(response)
 
     def test_form_request_works_normally(self):
         """Test that regular form submissions still work"""

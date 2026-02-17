@@ -974,17 +974,23 @@ class IssueCreate(IssueBaseCreate, CreateView):
             # Check if we have a cached body (JSON request)
             if hasattr(self.request, "_cached_body"):
                 json_data = json.loads(self.request._cached_body)
-                if not self.request.GET._mutable:
-                    self.request.POST._mutable = True
-                self.request.POST["url"] = json_data["url"]
-                self.request.POST["description"] = json_data["description"]
-                self.request.POST["markdown_description"] = json_data["markdown_description"]
-                self.request.POST["file"] = json_data["file"]
-                self.request.POST["label"] = json_data["label"]
-                self.request.POST["token"] = json_data["token"]
-                self.request.POST["type"] = json_data["type"]
-                self.request.POST["cve_id"] = json_data["cve_id"]
-                self.request.POST["cve_score"] = json_data["cve_score"]
+                post_data = self.request.POST
+                original_mutable = getattr(post_data, "_mutable", None)
+                if original_mutable is not None and original_mutable is False:
+                    post_data._mutable = True
+                try:
+                    post_data["url"] = json_data["url"]
+                    post_data["description"] = json_data["description"]
+                    post_data["markdown_description"] = json_data["markdown_description"]
+                    post_data["file"] = json_data["file"]
+                    post_data["label"] = json_data["label"]
+                    post_data["token"] = json_data["token"]
+                    post_data["type"] = json_data["type"]
+                    post_data["cve_id"] = json_data["cve_id"]
+                    post_data["cve_score"] = json_data["cve_score"]
+                finally:
+                    if original_mutable is not None:
+                        post_data._mutable = original_mutable
 
                 if self.request.POST.get("file"):
                     if isinstance(self.request.POST.get("file"), six.string_types):
@@ -1000,8 +1006,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                         try:
                             decoded_file = base64.b64decode(data)
-                        except TypeError:
-                            TypeError("invalid_image")
+                        except TypeError as exc:
+                            logger.error("Failed to decode base64 image data", exc_info=True)
+                            raise ValueError("invalid_image") from exc
 
                         file_name = str(uuid.uuid4())[:12]
                         extension = imghdr.what(file_name, decoded_file)
