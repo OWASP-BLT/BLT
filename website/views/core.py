@@ -62,6 +62,7 @@ from website.models import (
     SlackBotActivity,
     Tag,
     User,
+    ChatBotLog,
     UserBadge,
     UserProfile,
     Wallet,
@@ -75,7 +76,7 @@ from website.utils import (
     validate_file_type,
 )
 
-# from website.bot import conversation_chain, is_api_key_valid, load_vector_store
+from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
@@ -967,90 +968,90 @@ def search(request, template="search.html"):
     return render(request, template, context)
 
 
-# @api_view(["POST"])
-# def chatbot_conversation(request):
-#     try:
-#         today = datetime.now(timezone.utc).date()
-#         rate_limit_key = f"global_daily_requests_{today}"
-#         request_count = cache.get(rate_limit_key, 0)
+@api_view(["POST"])
+def chatbot_conversation(request):
+    try:
+        today = datetime.now(timezone.utc).date()
+        rate_limit_key = f"global_daily_requests_{today}"
+        request_count = cache.get(rate_limit_key, 0)
 
-#         if request_count >= DAILY_REQUEST_LIMIT:
-#             return Response(
-#                 {"error": "Daily request limit exceeded."},
-#                 status=status.HTTP_429_TOO_MANY_REQUESTS,
-#             )
+        if request_count >= DAILY_REQUEST_LIMIT:
+            return Response(
+                {"error": "Daily request limit exceeded."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
-#         question = request.data.get("question", "")
-#         if not question:
-#             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
-#         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-#         if not check_api:
-#             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
-#             return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+        question = request.data.get("question", "")
+        if not question:
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+        check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+        if not check_api:
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
+            return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
-#         if not question or not isinstance(question, str):
-#             ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
-#             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+        if not question or not isinstance(question, str):
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
-#         global vector_store
-#         if not vector_store:
-#             try:
-#                 vector_store = load_vector_store()
-#             except FileNotFoundError as e:
-#                 ChatBotLog.objects.create(
-#                     question=question, answer="Error: Vector store not found {e}"
-#                 )
-#                 return Response(
-#                     {"error": "Vector store not found"},
-#                     status=status.HTTP_400_BAD_REQUEST,
-#                 )
-#             except Exception as e:
-#                 ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-#                 return Response(
-#                     {"error": "Error loading vector store"},
-#                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#                 )
-#             finally:
-#                 if not vector_store:
-#                     ChatBotLog.objects.create(
-#                         question=question, answer="Error: Vector store not loaded"
-#                     )
-#                     return Response(
-#                         {"error": "Vector store not loaded"},
-#                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#                     )
+        global vector_store
+        if not vector_store:
+            try:
+                vector_store = load_vector_store()
+            except FileNotFoundError as e:
+                ChatBotLog.objects.create(
+                    question=question, answer=f"Error: Vector store not found {e}"
+                )
+                return Response(
+                    {"error": "Vector store not found"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception as e:
+                ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+                return Response(
+                    {"error": "Error loading vector store"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            finally:
+                if not vector_store:
+                    ChatBotLog.objects.create(
+                        question=question, answer="Error: Vector store not loaded"
+                    )
+                    return Response(
+                        {"error": "Vector store not loaded"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
 
-#         if question.lower() == "exit":
-#             if "buffer" in request.session:
-#                 del request.session["buffer"]
-#             return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+        if question.lower() == "exit":
+            if "buffer" in request.session:
+                del request.session["buffer"]
+            return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
-#         crc, memory = conversation_chain(vector_store)
-#         if "buffer" in request.session:
-#             memory.buffer = request.session["buffer"]
+        crc, memory = conversation_chain(vector_store)
+        if "buffer" in request.session:
+            memory.buffer = request.session["buffer"]
 
-#         try:
-#             response = crc.invoke({"question": question})
-#         except Exception as e:
-#             ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-#             return Response(
-#                 {"error": "An internal error has occurred."},
-#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             )
-#         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
-#         request.session["buffer"] = memory.buffer
+        try:
+            response = crc.invoke({"question": question})
+        except Exception as e:
+            ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+            return Response(
+                {"error": "An internal error has occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+        request.session["buffer"] = memory.buffer
 
-#         ChatBotLog.objects.create(question=question, answer=response["answer"])
-#         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+        ChatBotLog.objects.create(question=question, answer=response["answer"])
+        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
-#     except Exception as e:
-#         ChatBotLog.objects.create(
-#             question=request.data.get("question", ""), answer=f"Error: {str(e)}"
-#         )
-#         return Response(
-#             {"error": "An internal error has occurred."},
-#             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#         )
+    except Exception as e:
+        ChatBotLog.objects.create(
+            question=request.data.get("question", ""), answer=f"Error: {str(e)}"
+        )
+        return Response(
+            {"error": "An internal error has occurred."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 class GoogleLogin(SocialLoginView):
