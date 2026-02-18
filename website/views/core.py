@@ -41,11 +41,17 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
+from langchain_core.messages import messages_from_dict, messages_to_dict
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
+from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
     IP,
     Activity,
     Badge,
+    ChatBotLog,
     DailyStats,
     Domain,
     Hunt,
@@ -74,8 +80,6 @@ from website.utils import (
     save_analysis_report,
     validate_file_type,
 )
-
-# from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
@@ -967,90 +971,93 @@ def search(request, template="search.html"):
     return render(request, template, context)
 
 
-# @api_view(["POST"])
-# def chatbot_conversation(request):
-#     try:
-#         today = datetime.now(timezone.utc).date()
-#         rate_limit_key = f"global_daily_requests_{today}"
-#         request_count = cache.get(rate_limit_key, 0)
+@api_view(["POST"])
+def chatbot_conversation(request):
+    try:
+        today = timezone.now().date()
+        rate_limit_key = f"global_daily_requests_{today}"
+        request_count = cache.get(rate_limit_key, 0)
 
-#         if request_count >= DAILY_REQUEST_LIMIT:
-#             return Response(
-#                 {"error": "Daily request limit exceeded."},
-#                 status=status.HTTP_429_TOO_MANY_REQUESTS,
-#             )
+        if request_count >= DAILY_REQUEST_LIMIT:
+            return Response(
+                {"error": "Daily request limit exceeded."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
 
-#         question = request.data.get("question", "")
-#         if not question:
-#             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
-#         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-#         if not check_api:
-#             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
-#             return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+        question = request.data.get("question", "")
+        if not question or not isinstance(question, str):
+            ChatBotLog.objects.create(question=str(question) if question else "", answer="Error: Invalid question")
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
-#         if not question or not isinstance(question, str):
-#             ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
-#             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+        # Cache API key validation to avoid expensive calls on every request
+        api_key = os.getenv("OPENAI_API_KEY")
+        cache_key_api = f"openai_api_key_valid_{hash(api_key)}"
+        is_valid = cache.get(cache_key_api)
 
-#         global vector_store
-#         if not vector_store:
-#             try:
-#                 vector_store = load_vector_store()
-#             except FileNotFoundError as e:
-#                 ChatBotLog.objects.create(
-#                     question=question, answer="Error: Vector store not found {e}"
-#                 )
-#                 return Response(
-#                     {"error": "Vector store not found"},
-#                     status=status.HTTP_400_BAD_REQUEST,
-#                 )
-#             except Exception as e:
-#                 ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-#                 return Response(
-#                     {"error": "Error loading vector store"},
-#                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#                 )
-#             finally:
-#                 if not vector_store:
-#                     ChatBotLog.objects.create(
-#                         question=question, answer="Error: Vector store not loaded"
-#                     )
-#                     return Response(
-#                         {"error": "Vector store not loaded"},
-#                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#                     )
+        if is_valid is None:
+            is_valid = is_api_key_valid(api_key)
+            cache.set(cache_key_api, is_valid, timeout=86400)  # Cache for 24 hours
 
-#         if question.lower() == "exit":
-#             if "buffer" in request.session:
-#                 del request.session["buffer"]
-#             return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+        if not is_valid:
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
+            return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
-#         crc, memory = conversation_chain(vector_store)
-#         if "buffer" in request.session:
-#             memory.buffer = request.session["buffer"]
+        global vector_store
+        if not vector_store:
+            try:
+                vector_store = load_vector_store()
+            except Exception as e:
+                ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+                return Response(
+                    {"error": "Error loading vector store"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
-#         try:
-#             response = crc.invoke({"question": question})
-#         except Exception as e:
-#             ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-#             return Response(
-#                 {"error": "An internal error has occurred."},
-#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             )
-#         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
-#         request.session["buffer"] = memory.buffer
+            if not vector_store:
+                ChatBotLog.objects.create(question=question, answer="Error: Vector store not loaded")
+                return Response(
+                    {"error": "Vector store not loaded"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
-#         ChatBotLog.objects.create(question=question, answer=response["answer"])
-#         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+        if question.lower() == "exit":
+            if "buffer" in request.session:
+                del request.session["buffer"]
+            return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
-#     except Exception as e:
-#         ChatBotLog.objects.create(
-#             question=request.data.get("question", ""), answer=f"Error: {str(e)}"
-#         )
-#         return Response(
-#             {"error": "An internal error has occurred."},
-#             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#         )
+        crc, memory = conversation_chain(vector_store)
+        if "buffer" in request.session:
+            try:
+                # Deserialize the session buffer (list of dicts) back to messages
+                memory.chat_memory.messages = messages_from_dict(request.session["buffer"])
+            except Exception as e:
+                logger.error(f"Error deserializing chat history: {e}")
+                # Reset history if deserialization fails
+                if "buffer" in request.session:
+                    del request.session["buffer"]
+
+        try:
+            response = crc({"question": question})
+        except Exception as e:
+            ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+            return Response(
+                {"error": "An internal error has occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+
+        # Serialize messages to dicts for session storage
+        request.session["buffer"] = messages_to_dict(memory.chat_memory.messages)
+
+        ChatBotLog.objects.create(question=question, answer=response["answer"])
+        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=f"Error: {str(e)}")
+        return Response(
+            {"error": "An internal error has occurred."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 class GoogleLogin(SocialLoginView):
