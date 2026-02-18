@@ -1,12 +1,5 @@
 {% extends "base.html" %}
 {% load static %}
-{% block style %}
-    <style>
-        .page-container {
-            min-height: calc(var(--vh, 1vh) * 100 - 70px);
-        }
-    </style>
-{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="page-container bg-gray-50 dark:bg-gray-900 py-8">
