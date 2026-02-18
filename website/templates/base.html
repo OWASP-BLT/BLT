@@ -70,7 +70,9 @@
         <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans"
               rel="stylesheet">
         <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
-        <link href="{% static 'css/viewport-fixes.css' %}" rel="stylesheet" type="text/css">
+        <link href="{% static 'css/viewport-fixes.css' %}"
+              rel="stylesheet"
+              type="text/css">
         <link href="{% static 'css/text-slider.css' %}"
               rel="stylesheet"
               type="text/css">
@@ -204,10 +206,7 @@
         <div class="w-full h-[50px]"></div>
         <!-- Accessibility: Skip link above allows keyboard navigation -->
         <!-- Main content starts here -->
-        <div id="main-content"
-             role="main"
-             tabindex="-1"
-             class="flex-1 pb-[80px]">
+        <div id="main-content" role="main" tabindex="-1" class="flex-1 pb-[80px]">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
