@@ -669,7 +669,7 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "website.adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 # Social account settings for better UX
