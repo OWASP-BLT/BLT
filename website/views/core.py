@@ -1037,7 +1037,7 @@ def chatbot_conversation(request):
                     del request.session["buffer"]
 
         try:
-            response = crc.invoke({"question": question})
+            response = crc({"question": question})
         except Exception as e:
             ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
             return Response(
