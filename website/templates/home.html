@@ -970,6 +970,57 @@
                 </div>
             </div>
         </section>
+        <!-- Latest Blog Posts Section -->
+        <section class="py-12 bg-gray-50 dark:bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Latest Blog Posts</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    {% for article in devto_articles %}
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                            {% if article.cover_image %}
+                                <div class="w-full h-48 overflow-hidden">
+                                    <img src="{{ article.cover_image }}"
+                                         alt="{{ article.title }}"
+                                         width="800"
+                                         height="450"
+                                         loading="lazy"
+                                         class="w-full h-full object-cover">
+                                </div>
+                            {% endif %}
+                            <div class="p-6">
+                                <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">{{ article.title }}</h3>
+                                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-user"></i>
+                                        {{ article.user.name }}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-calendar"></i>
+                                        {{ article.published_at|slice:":10" }}
+                                    </span>
+                                </div>
+                                <p class="text-gray-700 dark:text-gray-300 mb-4">{{ article.description|truncatewords:25 }}</p>
+                                <a href="{{ article.url }}"
+                                   target="_blank"
+                                   class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more →</a>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-gray-500 dark:text-gray-500 text-center col-span-2">No blog posts available.</p>
+                    {% endfor %}
+                </div>
+                {% if devto_articles %}
+                    <div class="text-center">
+                        <a href="https://dev.to/owaspblt"
+                           target="_blank"
+                           class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors shadow-md">
+                            <i class="fas fa-book-open mr-2"></i>
+                            View Our Latest Blogs
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
         <!-- Tools for Organizations Section -->
         <section class="py-12 bg-gray-50 dark:bg-gray-900">
             <div class="max-w-7xl mx-auto px-4">
