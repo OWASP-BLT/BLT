@@ -42,10 +42,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
+from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
     IP,
     Activity,
     Badge,
+    ChatBotLog,
     DailyStats,
     Domain,
     Hunt,
@@ -62,7 +64,6 @@ from website.models import (
     SlackBotActivity,
     Tag,
     User,
-    ChatBotLog,
     UserBadge,
     UserProfile,
     Wallet,
@@ -75,8 +76,6 @@ from website.utils import (
     save_analysis_report,
     validate_file_type,
 )
-
-from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
@@ -998,9 +997,7 @@ def chatbot_conversation(request):
             try:
                 vector_store = load_vector_store()
             except FileNotFoundError as e:
-                ChatBotLog.objects.create(
-                    question=question, answer=f"Error: Vector store not found {e}"
-                )
+                ChatBotLog.objects.create(question=question, answer=f"Error: Vector store not found {e}")
                 return Response(
                     {"error": "Vector store not found"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1013,9 +1010,7 @@ def chatbot_conversation(request):
                 )
             finally:
                 if not vector_store:
-                    ChatBotLog.objects.create(
-                        question=question, answer="Error: Vector store not loaded"
-                    )
+                    ChatBotLog.objects.create(question=question, answer="Error: Vector store not loaded")
                     return Response(
                         {"error": "Vector store not loaded"},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1045,9 +1040,7 @@ def chatbot_conversation(request):
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        ChatBotLog.objects.create(
-            question=request.data.get("question", ""), answer=f"Error: {str(e)}"
-        )
+        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=f"Error: {str(e)}")
         return Response(
             {"error": "An internal error has occurred."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
