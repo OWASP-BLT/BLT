@@ -1029,9 +1029,7 @@ urlpatterns = [
         update_bch_address,
         name="update_bch_address",
     ),
-    path(
-        "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
-    ),
+    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
