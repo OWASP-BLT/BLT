@@ -2,21 +2,29 @@
 {% load static %}
 {% block title %}Security Dashboard{% endblock %}
 {% block content %}
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js" integrity="sha384-TJw1v5R3zE4dBfZzQGmyJ3Xr8m0I1Zc3V9dElyj8l0mdgYcl7GmIuYHX7X9a5E8+" crossorigin="anonymous">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js"></script>
     <script src="{% static 'js/security_dashboard.js' %}"></script>
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">Security Dashboard</h1>
         <!-- Tab Navigation -->
-        <div class="flex border-b border-gray-200 dark:border-gray-700 mb-8">
+        <div class="flex border-b border-gray-200 dark:border-gray-700 mb-8"
+             role="tablist">
             <button onclick="switchTab('incidents')"
                     data-tab="incidents"
+                    id="tab-incidents"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="panel-incidents"
                     class="px-6 py-3 text-sm font-medium border-b-2 border-red-500 text-red-600 focus:outline-none">
                 Incidents
             </button>
             <button onclick="switchTab('activity')"
                     data-tab="activity"
+                    id="tab-activity"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-activity"
                     class="px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none flex items-center gap-2">
                 User Activity
                 {% if anomaly_count > 0 %}
@@ -28,7 +36,10 @@
             </button>
         </div>
         <!-- Incidents Panel -->
-        <div data-panel="incidents">
+        <div data-panel="incidents"
+             id="panel-incidents"
+             role="tabpanel"
+             aria-labelledby="tab-incidents">
             <!-- Summary Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <!-- Total Incidents -->
@@ -260,7 +271,8 @@
                 <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Related Security Issues</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {% for issue in security_issues %}
-                        <a href="/issue/{{ issue.id }}/" class="block hover:no-underline">
+                        <a href="{% url 'issue_view' issue.id %}"
+                           class="block hover:no-underline">
                             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5 hover:shadow-xl transition duration-200 border border-gray-200 dark:border-gray-700">
                                 <div class="flex items-center gap-3 mb-3">
                                     <svg class="w-5 h-5 text-orange-500"
@@ -289,7 +301,11 @@
             </div>
         </div>
         <!-- User Activity Panel -->
-        <div data-panel="activity" class="hidden">
+        <div data-panel="activity"
+             id="panel-activity"
+             role="tabpanel"
+             aria-labelledby="tab-activity"
+             class="hidden">
             <!-- Activity Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
@@ -410,12 +426,14 @@
             </div>
         </div>
     </div>
+    {{ severity_chart_data|json_script:"severity-data" }}
+    {{ hourly_login_data|json_script:"hourly-login-data" }}
     <script>
     initSecurityDashboard({
-        severityData: JSON.parse('{{ severity_chart_data|escapejs }}'),
+        severityData: JSON.parse(document.getElementById('severity-data').textContent),
         loginSuccessCount: {{ login_success_count }},
         loginFailedCount: {{ login_failed_count }},
-        hourlyLoginData: JSON.parse('{{ hourly_login_data|escapejs }}')
+        hourlyLoginData: JSON.parse(document.getElementById('hourly-login-data').textContent)
     });
     </script>
 {% endblock %}

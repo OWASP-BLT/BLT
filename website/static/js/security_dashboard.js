@@ -3,6 +3,9 @@
  * Requires ApexCharts to be loaded before this script.
  */
 
+var _activityChartsInitialized = false;
+var _dashboardConfig = null;
+
 function switchTab(tabName) {
     var panels = document.querySelectorAll("[data-panel]");
     var tabs = document.querySelectorAll("[data-tab]");
@@ -25,6 +28,13 @@ function switchTab(tabName) {
     if (activeTab) {
         activeTab.classList.remove("border-transparent", "text-gray-500");
         activeTab.classList.add("border-red-500", "text-red-600");
+    }
+
+    // Lazy-init activity charts on first switch to avoid rendering in hidden tab
+    if (tabName === "activity" && !_activityChartsInitialized && _dashboardConfig) {
+        _activityChartsInitialized = true;
+        initLoginPieChart(_dashboardConfig.loginSuccessCount, _dashboardConfig.loginFailedCount);
+        initHourlyChart(_dashboardConfig.hourlyLoginData);
     }
 }
 
@@ -104,12 +114,33 @@ function initHourlyChart(hourlyData) {
 }
 
 function dismissAnomaly(anomalyId, buttonEl) {
-    var url = "/security/api/user-activity/?action=dismiss_anomaly&id=" + anomalyId;
+    var csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
+    if (!csrfToken) {
+        // Fallback: read from cookie
+        var cookies = document.cookie.split(";");
+        for (var i = 0; i < cookies.length; i++) {
+            var c = cookies[i].trim();
+            if (c.indexOf("csrftoken=") === 0) {
+                csrfToken = c.substring("csrftoken=".length);
+                break;
+            }
+        }
+    } else {
+        csrfToken = csrfToken.value;
+    }
 
-    fetch(url, {
-        method: "GET",
-        headers: { "X-Requested-With": "XMLHttpRequest" },
+    var formData = new FormData();
+    formData.append("action", "dismiss_anomaly");
+    formData.append("id", anomalyId);
+
+    fetch("/security/api/user-activity/", {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": csrfToken,
+        },
         credentials: "same-origin",
+        body: formData,
     })
         .then(function (response) {
             return response.json();
@@ -134,7 +165,7 @@ function dismissAnomaly(anomalyId, buttonEl) {
 }
 
 function initSecurityDashboard(config) {
+    _dashboardConfig = config;
     initSeverityChart(config.severityData);
-    initLoginPieChart(config.loginSuccessCount, config.loginFailedCount);
-    initHourlyChart(config.hourlyLoginData);
+    // Activity charts are lazy-initialized on first tab switch
 }

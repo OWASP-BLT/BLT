@@ -297,7 +297,7 @@ class SecurityDashboardUserActivityTests(TestCase):
         )
 
         self.client.login(username="staffuser", password="testpass123")
-        response = self.client.get(
+        response = self.client.post(
             reverse("security_user_activity_api"),
             {"action": "dismiss_anomaly", "id": anomaly.id},
         )
@@ -312,7 +312,7 @@ class SecurityDashboardUserActivityTests(TestCase):
         )
 
         self.client.login(username="superuser", password="testpass123")
-        response = self.client.get(
+        response = self.client.post(
             reverse("security_user_activity_api"),
             {"action": "dismiss_anomaly", "id": anomaly.id},
         )

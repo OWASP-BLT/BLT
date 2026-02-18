@@ -279,9 +279,13 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             return self._get_events()
         elif action == "anomalies":
             return self._get_anomalies()
-        elif action == "dismiss_anomaly":
-            return self._dismiss_anomaly(request)
 
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        if action == "dismiss_anomaly":
+            return self._dismiss_anomaly(request)
         return JsonResponse({"error": "Invalid action"}, status=400)
 
     def _get_events(self):
@@ -318,7 +322,7 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         if not request.user.is_superuser:
             return JsonResponse({"error": "Forbidden"}, status=403)
 
-        anomaly_id = request.GET.get("id")
+        anomaly_id = request.POST.get("id")
         if not anomaly_id:
             return JsonResponse({"error": "Missing anomaly id"}, status=400)
 

@@ -97,7 +97,13 @@ def _check_unusual_time(user, login_event):
     hour = login_event.timestamp.hour
     start = _setting("ANOMALY_UNUSUAL_HOUR_START")
     end = _setting("ANOMALY_UNUSUAL_HOUR_END")
-    if start <= hour < end:
+    if start <= end:
+        is_unusual = start <= hour < end
+    else:
+        # Wrap-around case (e.g., 22–6 means 22,23,0,1,2,3,4,5)
+        is_unusual = hour >= start or hour < end
+
+    if is_unusual:
         UserBehaviorAnomaly.objects.create(
             user=user,
             anomaly_type=UserBehaviorAnomaly.AnomalyType.UNUSUAL_TIME,
@@ -125,25 +131,19 @@ def _check_rapid_failures(user, failed_event):
     if recent_failures < failure_threshold:
         return
 
-    # Deduplicate: don't create another alert if one already exists in this window
-    existing = UserBehaviorAnomaly.objects.filter(
+    # Atomic dedup: get_or_create avoids TOCTOU race between exists() and create()
+    _, created = UserBehaviorAnomaly.objects.get_or_create(
         user=user,
         anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
         created_at__gte=window_start,
-    ).exists()
-
-    if existing:
-        return
-
-    UserBehaviorAnomaly.objects.create(
-        user=user,
-        anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
-        severity=UserBehaviorAnomaly.Severity.HIGH,
-        description=f"{recent_failures} failed login attempts in {window_minutes} minutes",
-        details={
-            "failure_count": recent_failures,
-            "window_minutes": window_minutes,
-            "ip_address": failed_event.ip_address,
+        defaults={
+            "severity": UserBehaviorAnomaly.Severity.HIGH,
+            "description": f"{recent_failures} failed login attempts in {window_minutes} minutes",
+            "details": {
+                "failure_count": recent_failures,
+                "window_minutes": window_minutes,
+                "ip_address": failed_event.ip_address,
+            },
+            "login_event": failed_event,
         },
-        login_event=failed_event,
     )

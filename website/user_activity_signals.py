@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
 from django.dispatch import receiver
 
@@ -10,12 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 def _get_client_ip(request):
-    """Extract client IP, respecting X-Forwarded-For for proxied requests."""
+    """Extract client IP, respecting X-Forwarded-For only behind trusted proxies."""
     if request is None:
         return None
-    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
+    if getattr(settings, "USE_X_FORWARDED_FOR", False):
+        forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR")
 
 
