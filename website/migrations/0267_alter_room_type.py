@@ -13,7 +13,7 @@ def backwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0265_delete_bannedapp"),
+        ("website", "0266_alter_usertasksubmission_proof_url_delete_post"),
     ]
 
     operations = [
