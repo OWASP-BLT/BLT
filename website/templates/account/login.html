@@ -18,13 +18,7 @@
 {% block og_description %}
     Log in to your account to access the gamified crowd-sourced QA testing and vulnerability disclosure platform. Test websites, apps, git repositories, and more.
 {% endblock og_description %}
-{% block style %}
-    <style>
-        .auth-container {
-            min-height: calc(var(--vh, 1vh) * 100 - 70px);
-        }
-    </style>
-{% endblock style %}
+
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
     {% get_providers as socialaccount_providers %}
