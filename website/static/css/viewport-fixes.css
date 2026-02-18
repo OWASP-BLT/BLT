@@ -11,7 +11,8 @@
 }
 /* Reminder settings page container */
 .page-container {
-    min-height: calc(var(--vh, 1vh) * 100 - var(--footer-height, 80px));
+    min-height: calc(100dvh - var(--footer-height, 80px));
+}
 }
 
 /* Fix for time input - scoped to reminder settings page */
