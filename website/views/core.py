@@ -41,6 +41,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
@@ -970,7 +973,7 @@ def search(request, template="search.html"):
 @api_view(["POST"])
 def chatbot_conversation(request):
     try:
-        today = datetime.now(timezone.utc).date()
+        today = timezone.now().date()
         rate_limit_key = f"global_daily_requests_{today}"
         request_count = cache.get(rate_limit_key, 0)
 
@@ -981,40 +984,32 @@ def chatbot_conversation(request):
             )
 
         question = request.data.get("question", "")
-        if not question:
+        if not question or not isinstance(question, str):
+            ChatBotLog.objects.create(question=str(question) if question else "", answer="Error: Invalid question")
             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+
         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
         if not check_api:
             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
             return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not question or not isinstance(question, str):
-            ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
-            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
-
         global vector_store
         if not vector_store:
             try:
                 vector_store = load_vector_store()
-            except FileNotFoundError as e:
-                ChatBotLog.objects.create(question=question, answer=f"Error: Vector store not found {e}")
-                return Response(
-                    {"error": "Vector store not found"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
             except Exception as e:
                 ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
                 return Response(
                     {"error": "Error loading vector store"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-            finally:
-                if not vector_store:
-                    ChatBotLog.objects.create(question=question, answer="Error: Vector store not loaded")
-                    return Response(
-                        {"error": "Vector store not loaded"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
+
+            if not vector_store:
+                ChatBotLog.objects.create(question=question, answer="Error: Vector store not loaded")
+                return Response(
+                    {"error": "Vector store not loaded"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
         if question.lower() == "exit":
             if "buffer" in request.session:
