@@ -116,6 +116,7 @@ function initHourlyChart(hourlyData) {
 }
 
 function dismissAnomaly(anomalyId, buttonEl) {
+    buttonEl.disabled = true;
     var csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (!csrfToken) {
         // Fallback: read from cookie
@@ -162,7 +163,7 @@ function dismissAnomaly(anomalyId, buttonEl) {
                     if (current > 1) {
                         badge.textContent = current - 1;
                     } else {
-                        badge.textContent = "0";
+                        badge.remove();
                     }
                 }
             }

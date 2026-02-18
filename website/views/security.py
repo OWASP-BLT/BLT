@@ -228,9 +228,11 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         # User Activity data
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
-        context["recent_login_events"] = UserLoginEvent.objects.select_related("user").all()[:50]
+        context["recent_login_events"] = UserLoginEvent.objects.select_related("user").order_by("-timestamp")[:50]
 
-        context["anomalies"] = UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user")[:20]
+        context["anomalies"] = (
+            UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user").order_by("-created_at")[:20]
+        )
 
         context["anomaly_count"] = UserBehaviorAnomaly.objects.filter(is_reviewed=False).count()
 
@@ -283,7 +285,7 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"error": "Invalid action"}, status=400)
 
     def _get_events(self):
-        events = UserLoginEvent.objects.select_related("user").all()[:50]
+        events = UserLoginEvent.objects.select_related("user").order_by("-timestamp")[:50]
         data = [
             {
                 "id": e.id,
@@ -298,7 +300,9 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"events": data})
 
     def _get_anomalies(self):
-        anomalies = UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user")[:20]
+        anomalies = (
+            UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user").order_by("-created_at")[:20]
+        )
         data = [
             {
                 "id": a.id,
