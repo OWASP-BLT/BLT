@@ -941,8 +941,8 @@
 <!-- Chatbot -->
 <div class="bg-gray-100 dark:bg-gray-900 chat-Zindex z-[9999] transition-colors">
     <div id="chatbot"
-         class="fixed bottom-3 right-3 max-w-[calc(100vw-24px)] w-full sm:max-w-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[min(520px,calc(100vh-100px))] overflow-hidden hidden transition-colors">
-        <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
+         class="fixed bottom-3 right-3 max-w-[calc(100vw-24px)] w-full sm:max-w-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[min(520px,calc(calc(var(--vh,1vh)*100)-100px))] overflow-hidden hidden transition-colors"
+          <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
             <h3 class="text-lg sm:text-xl font-bold">Chat with BLT Bot</h3>
             <button id="closeChatbot" class="text-white text-2xl">×</button>
         </div>
