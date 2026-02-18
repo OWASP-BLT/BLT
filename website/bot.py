@@ -19,10 +19,10 @@ from website.models import ChatBotLog
 load_dotenv(find_dotenv(), override=True)
 
 
-def log_chat(message):
+def logger(message):
     # Placeholder for chat log database logic.
     # Replace this with actual database logging in your Django model.
-    print(f"LOG: {message}")
+    pass
 
 
 def is_api_key_valid(api_key):
@@ -202,4 +202,3 @@ def conversation_chain(vector_store):
     )
     log_chat("Created conversational retrieval chain")
     return crc, memory
-
