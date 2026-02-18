@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import secrets
+import time
 from functools import wraps
 
 import requests
@@ -140,10 +141,11 @@ def timed_bounty(request):
                 f"Bounty duration {duration_hours:.1f} hours exceeds maximum {MAX_DURATION_HOURS} hours "
                 f"for issue #{issue_number}"
             )
+            max_days = MAX_DURATION_HOURS / 24
             return JsonResponse(
                 {
                     "status": "error",
-                    "message": f"Bounty duration exceeds maximum of {MAX_DURATION_HOURS} hours (30 days)",
+                    "message": f"Bounty duration exceeds maximum of {MAX_DURATION_HOURS} hours ({max_days:g} days)",
                 },
                 status=400,
             )
@@ -300,14 +302,37 @@ def bounty_payout(request):
 
         if not transaction_id:
             logger.error(f"Failed to process GitHub Sponsors payment for issue #{issue_number}")
-            # Optionally clear payment_pending if set
-            try:
-                with transaction.atomic():
-                    github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
-                    github_issue.payment_pending = False
-                    github_issue.save(update_fields=["payment_pending"])
-            except Exception:
-                logger.exception("Failed to clear payment_pending after payment failure")
+            # Reset payment_pending with retries to avoid permanently locking the bounty
+            max_cleanup_retries = 3
+            cleanup_success = False
+            for attempt in range(1, max_cleanup_retries + 1):
+                try:
+                    with transaction.atomic():
+                        github_issue = GitHubIssue.objects.select_for_update().get(
+                            issue_id=issue_number, repo=repo
+                        )
+                        github_issue.payment_pending = False
+                        github_issue.save(update_fields=["payment_pending"])
+                    cleanup_success = True
+                    break
+                except Exception:
+                    logger.exception(
+                        "Attempt %d/%d: Failed to clear payment_pending for issue #%s",
+                        attempt,
+                        max_cleanup_retries,
+                        issue_number,
+                    )
+                    if attempt < max_cleanup_retries:
+                        time.sleep(0.5 * attempt)
+            if not cleanup_success:
+                logger.critical(
+                    "MANUAL INTERVENTION REQUIRED: payment_pending is stuck True for "
+                    "issue #%s in %s/%s after payment failure. All %d cleanup attempts failed.",
+                    issue_number,
+                    owner_name,
+                    repo_name,
+                    max_cleanup_retries,
+                )
             return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
 
         logger.info(
