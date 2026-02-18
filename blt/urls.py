@@ -62,7 +62,6 @@ from website.views.bitcoin import (
     pending_transactions_view,
     update_submission_status,
 )
-from website.views.bounty import bounty_payout
 from website.views.bounty import bounty_payout, timed_bounty
 from website.views.company import (
     AddDomainView,
