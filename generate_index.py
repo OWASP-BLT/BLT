@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -8,6 +9,8 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 def generate_index():
@@ -41,6 +44,12 @@ def generate_index():
 
     db_folder = Path("faiss_index")
     db.save_local(db_folder)
+    logger.info(
+        "Index saved locally to %s. Note: This script saves to local filesystem. "
+        "For production, ensure 'faiss_index' directory is uploaded to your storage backend "
+        "(e.g., S3/GCS) as expected by website/bot.py.",
+        db_folder,
+    )
 
 
 if __name__ == "__main__":

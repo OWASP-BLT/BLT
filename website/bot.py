@@ -1,3 +1,4 @@
+import logging
 import tempfile
 from pathlib import Path
 
@@ -7,22 +8,22 @@ from django.core.files.storage import default_storage
 from dotenv import find_dotenv, load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationSummaryMemory
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, Docx2txtLoader, PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import OpenAI
 
 from website.models import ChatBotLog
 
 load_dotenv(find_dotenv(), override=True)
 
+logger = logging.getLogger(__name__)
 
-def logger(message):
-    # Placeholder for chat log database logic.
-    # Replace this with actual database logging in your Django model.
-    pass
+
+def log_chat(message):
+    logger.info(message)
 
 
 def is_api_key_valid(api_key):

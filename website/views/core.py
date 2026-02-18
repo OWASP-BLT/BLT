@@ -41,6 +41,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
+from langchain_core.messages import messages_from_dict, messages_to_dict
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -988,8 +989,16 @@ def chatbot_conversation(request):
             ChatBotLog.objects.create(question=str(question) if question else "", answer="Error: Invalid question")
             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
-        check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-        if not check_api:
+        # Cache API key validation to avoid expensive calls on every request
+        api_key = os.getenv("OPENAI_API_KEY")
+        cache_key_api = f"openai_api_key_valid_{hash(api_key)}"
+        is_valid = cache.get(cache_key_api)
+
+        if is_valid is None:
+            is_valid = is_api_key_valid(api_key)
+            cache.set(cache_key_api, is_valid, timeout=86400)  # Cache for 24 hours
+
+        if not is_valid:
             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
             return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1018,7 +1027,14 @@ def chatbot_conversation(request):
 
         crc, memory = conversation_chain(vector_store)
         if "buffer" in request.session:
-            memory.buffer = request.session["buffer"]
+            try:
+                # Deserialize the session buffer (list of dicts) back to messages
+                memory.chat_memory.messages = messages_from_dict(request.session["buffer"])
+            except Exception as e:
+                logger.error(f"Error deserializing chat history: {e}")
+                # Reset history if deserialization fails
+                if "buffer" in request.session:
+                    del request.session["buffer"]
 
         try:
             response = crc.invoke({"question": question})
@@ -1029,7 +1045,9 @@ def chatbot_conversation(request):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
-        request.session["buffer"] = memory.buffer
+
+        # Serialize messages to dicts for session storage
+        request.session["buffer"] = messages_to_dict(memory.chat_memory.messages)
 
         ChatBotLog.objects.create(question=question, answer=response["answer"])
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)

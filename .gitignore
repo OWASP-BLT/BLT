@@ -19,6 +19,7 @@ requirements.txt
 *.exe
 .vs
 .qodo
+*-cwd
 ssl
 ansible/inventory.yml
 google-credentials.json
