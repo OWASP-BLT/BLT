@@ -21,7 +21,7 @@
             </title>
             <!-- Description Meta Tag -->
             <meta name="description"
-                  content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out.{% endblock description %}">
+                  content="{% block description %}{% env 'PROJECT_NAME' %} is a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Discover organizations, repositories, and projects to test. Report bugs, earn rewards, and collaborate with our community. We embrace AI-powered tools for efficient testing and development.{% endblock description %}">
             <!-- Keywords Meta Tag -->
             <meta name="keywords"
                   content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy{% endblock keywords %}">
@@ -35,7 +35,7 @@
             <meta property="og:image"
                   content="{% block og_image %}{% endblock og_image %}" />
             <meta property="og:description"
-                  content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out.{% endblock og_description %}" />
+                  content="{% block og_description %}{% env 'PROJECT_NAME' %} is a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more. Discover organizations, repositories, and projects to test. Report bugs, earn rewards, and collaborate with our community. We embrace AI-powered tools for efficient testing and development.{% endblock og_description %}" />
             <meta property="og:type" content="website" />
             <!-- Leaflet CSS here -->
             <link rel="stylesheet"
@@ -49,10 +49,6 @@
             <!-- Fullscreen Control CSS -->
             <link rel="stylesheet"
                   href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
-            <!-- HTMX for interactive UI updates -->
-            <script src="https://unpkg.com/htmx.org@1.9.10"
-                    integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
-                    crossorigin="anonymous"></script>
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -99,14 +95,75 @@
                 darkMode: 'class',
             }
         </script>
+        <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    });
+        </script>
         <!-- Apply dark mode immediately to prevent white flash -->
         <script>
             (function() {
                 const savedTheme = localStorage.getItem("theme");
+                
+                // Use saved user preference if it exists
                 if (savedTheme === "dark") {
                     document.documentElement.classList.add("dark");
                 }
+                else if (savedTheme === "light") {
+                    document.documentElement.classList.remove("dark");
+                }
+                // No saved preference, check system preference
+                else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add("dark");
+                }
             })();
+        </script>
+        <!-- HTMX Global Configuration -->
+        <script>
+             document.addEventListener('DOMContentLoaded', function() {
+                // Show loading indicator during requests
+                document.body.addEventListener('htmx:beforeRequest', function(event) {
+                    const target = event.detail.target;
+                    if (target && target.style && document.contains(target)) {
+                        target.style.opacity = '0.6';
+                        target.style.pointerEvents = 'none';
+                    }
+                });
+                // Show toast notifications for HTMX responses
+                document.body.addEventListener('htmx:afterRequest', function(event) {
+                    const xhr = event.detail.xhr;
+                    const target = event.detail.target;
+        
+                    // Restore loading state
+                    if (target && target.style && document.contains(target)) {
+                        target.style.opacity = '1';
+                        target.style.pointerEvents = 'auto';
+                    }
+                    // Guard against missing xhr (network failures)
+                    if (!xhr) return;
+                    
+                    // Only parse JSON if response is JSON
+                    if (xhr.getResponseHeader('Content-Type')?.includes('application/json')) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (xhr.status === 200 && response.message) {
+                                if (window.createMessage) {
+                                    window.createMessage(response.message, 'success', 3000);
+                                }
+                            } else if (xhr.status >= 400) {
+                                if (window.createMessage) {
+                                    window.createMessage(response.error || 'An error occurred', 'error', 5000);
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse JSON response:', e);
+                        }
+                    }
+                });
+            });
+                
         </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
@@ -125,16 +182,26 @@
         {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+        <!-- Skip to main content link for keyboard users -->
+        <a href="#main-content"
+           onclick="setTimeout(function(){document.getElementById('main-content').focus()}, 100)"
+           class="fixed -top-20 left-1/2 -translate-x-1/2 bg-red-800 text-white px-8 py-4 rounded-lg shadow-2xl z-[99999] focus:top-20 transition-all duration-300 font-bold text-lg border-4 border-white">
+            Skip to main content
+        </a>
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
+        <!-- Accessibility: Skip link above allows keyboard navigation -->
         <!-- Main content starts here -->
-        <main class="min-h-screen pb-[70px] mt-[20px]">
+        <div id="main-content"
+             role="main"
+             tabindex="-1"
+             class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
-        </main>
+        </div>
         <div class="pb-[50px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
@@ -217,6 +284,17 @@
         </script>
         {% block extra_js %}
         {% endblock extra_js %}
+        <!-- HTMX for interactive UI updates -->
+        <script src="https://unpkg.com/htmx.org@1.9.10"
+                integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+                crossorigin="anonymous"></script>
+        <!-- HTMX extensions for better UX -->
+        <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/loading-states.js"
+                integrity="sha384-v04dReCP6N+wBCc+JjDUHyvkWJPO5jyzXxNdZHF/HZVyMXhh2USfi3UvCfiPwmmB"
+                crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"
+                integrity="sha384-nRnAvEUI7N/XvvowiMiq7oEI04gOXMCqD3Bidvedw+YNbj7zTQACPlRI3Jt3vYM4"
+                crossorigin="anonymous"></script>
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/ui.js' %}"></script>
         {% block after_js %}
@@ -256,7 +334,7 @@
             });
             $('input[name="screenshot"]').on('change', function() {
                 var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
-                $(this).parent().find('span').html(file);
+                $(this).parent().find('span').text(file);
             });
         });
         /* eslint-enable */
@@ -387,13 +465,17 @@
                             if (data.success) {
                                 hideModal(); // Hide the modal on successful submission
                                 localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
-                                alert('Your report has been submitted successfully!');
+                                if (window.createMessage) {
+                                    window.createMessage('Your report has been submitted successfully!', 'success', 3000);
+                                }
                             } else {
                                 throw new Error(data.error || 'Submission failed');
                             }
                         })
                         .catch(error => {
-                            alert(`There was an error submitting your report: ${error.message}. Please try again.`);
+                            if (window.createMessage) {
+                                window.createMessage(`There was an error submitting your report: ${error.message}. Please try again.`, 'error', 5000);
+                            }
                         })
                         .finally(() => {
                             // Re-enable the submit button and reset its text
@@ -412,5 +494,7 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
         <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
         <script src="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.js"></script>
+        <!-- include the Back to Top button -->
+        {% include "includes/back_to_top.html" %}
     </body>
 </html>

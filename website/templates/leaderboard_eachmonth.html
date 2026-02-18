@@ -69,18 +69,21 @@
                                         <div class="mb-4 relative">
                                             {% if month.user.userprofile.avatar %}
                                                 <img src="{{ month.user.userprofile.avatar }}"
+                                                     loading="lazy"
                                                      class="w-20 h-20 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                      alt="{{ month.user.username }}"
                                                      width="80"
                                                      height="80">
                                             {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                     loading="lazy"
                                                      class="w-20 h-20 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                      alt="{{ month.user.username }}"
                                                      width="80"
                                                      height="80">
                                             {% else %}
                                                 <img src="{% gravatar_url month.user.email 50 %}"
+                                                     loading="lazy"
                                                      class="w-20 h-20 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                                      alt="{{ month.user.username }}"
                                                      width="80"

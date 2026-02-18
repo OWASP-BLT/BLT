@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import smtplib
 import sys
 import uuid
@@ -75,7 +74,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -391,7 +390,7 @@ class LeaderboardApiViewSet(APIView):
 
             try:
                 date = datetime(int(year), int(month), 1)
-            except:
+            except (ValueError, OverflowError):
                 return Response("Invalid month or year passed", status=400)
 
         queryset = global_leaderboard.get_leaderboard(month, year, api=True)
@@ -419,7 +418,7 @@ class LeaderboardApiViewSet(APIView):
         year = self.request.query_params.get("year")
 
         if not year:
-            year = datetime.now().year
+            year = timezone.now().year
 
         if isinstance(year, str) and not year.isdigit():
             return Response(f"Invalid query passed | Year:{year}", status=400)
@@ -963,7 +962,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             serializer.save(user=self.request.user, organization=organization)
 
         except ValidationError as e:
-            raise ParseError(detail=str(e))
+            logger.error("Validation error creating time log: %s", e)
+            raise ParseError(detail="Invalid data provided for time log.")
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the time log.")
 
@@ -979,7 +979,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             self.perform_create(serializer)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while starting the time log."},
@@ -1002,7 +1002,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             timelog.save()
             return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while stopping the time log."},
@@ -1059,7 +1059,8 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
         try:
             serializer.save(user=self.request.user, recorded_at=timezone.now())
         except ValidationError as e:
-            raise ParseError(detail=str(e))
+            logger.error("Validation error creating activity log: %s", e)
+            raise ParseError(detail="Invalid data provided for activity log.")
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
 
@@ -1092,16 +1093,33 @@ class OwaspComplianceChecker(APIView):
 
     def check_website_compliance(self, url):
         """Check website-related compliance criteria"""
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check for OWASP mention
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            # Check for project page link (strict hostname check)
+            owasp_links = []
+            for a in soup.find_all("a"):
+                href = a.get("href")
+                if not href:
+                    continue
+                netloc = urlparse(href).netloc.lower()
+                if netloc.endswith("owasp.org"):
+                    owasp_links.append(a)
+
             has_project_link = len(owasp_links) > 0
 
             # Check for up-to-date info
@@ -1111,32 +1129,43 @@ class OwaspComplianceChecker(APIView):
                 "has_owasp_mention": has_owasp_mention,
                 "has_project_link": has_project_link,
                 "has_dates": has_dates,
-                "details": {"url_checked": url, "recommendations": []},
+                "details": {"url_checked": safe_url, "recommendations": []},
             }
         except Exception as e:
+            logger.error("Error checking OWASP compliance: %s", e)
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": url, "error": str(e)},
+                "details": {"url_checked": safe_url, "error": "An error occurred while checking compliance."},
             }
 
     def check_vendor_neutrality(self, url):
         """Check vendor neutrality compliance"""
+        # Sanitize incoming URL
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "URL rejected for safety"},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Look for common paywall terms
             paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
             content = soup.get_text().lower()
             has_paywall_indicators = any(term in content for term in paywall_terms)
 
-            return {"possible_paywall": has_paywall_indicators, "details": {"url_checked": url, "recommendations": []}}
+            return {
+                "possible_paywall": has_paywall_indicators,
+                "details": {"url_checked": safe_url, "recommendations": []},
+            }
         except Exception:
             return {
                 "possible_paywall": None,
-                "details": {"url_checked": url, "error": "Unable to check vendor neutrality"},
+                "details": {"url_checked": safe_url, "error": "Unable to check vendor neutrality"},
             }
 
     def post(self, request, *args, **kwargs):
@@ -1950,21 +1979,18 @@ class DebugPopulateDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            # Load initial data fixture from a resolved path and fail gracefully if missing
-            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
-            if not os.path.exists(fixture_path):
-                return Response(
-                    {"success": False, "error": "Fixture file not found"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+            call_command(
+                "generate_sample_data",
+                preserve_user_id=[request.user.id],
+                preserve_superusers=True,
+                verbosity=0,
+            )
 
-            call_command("loaddata", fixture_path, verbosity=0)
-
-            return Response({"success": True, "message": "Test data populated successfully"})
+            return Response({"success": True, "message": "Sample data populated successfully"})
         except Exception as e:
-            logger.error("Error populating test data: %s", e, exc_info=True)
+            logger.error("Error populating sample data: %s", e, exc_info=True)
             return Response(
-                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                {"success": False, "error": "Failed to populate sample data. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
