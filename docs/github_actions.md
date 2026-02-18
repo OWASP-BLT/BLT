@@ -154,10 +154,11 @@ These workflows add intelligent metadata and checks to pull requests.
 **Purpose**: Track unresolved review conversations on PRs and notify developers
 
 **Triggers**:
-- Pull request events (opened, synchronized, reopened, ready_for_review, edited)
+- Pull request events (opened, synchronize, reopened, ready_for_review, edited)
 - Issue comments (created, edited, deleted)
 - Pull request reviews (submitted, edited, dismissed)
 - Pull request review comments (created, edited, deleted)
+- Pull request review threads (resolved, unresolved)
 
 **Key Features**:
 - Counts unresolved, non-outdated conversations using GraphQL pagination
@@ -171,15 +172,16 @@ These workflows add intelligent metadata and checks to pull requests.
   - Comment provides clear action items for developers
   - Comment is automatically updated when conversation count changes
   - Comment is removed when all conversations are resolved
-- Updates in real-time as conversations are resolved
+- Updates in real-time as conversations are resolved or added
 - Uses unique marker (`<!-- unresolved-conversations-notification -->`) to manage notification comment
+- Uses pagination to reliably find notification comment even on PRs with >100 comments
 
 **Developer Experience**:
 When conversations are added to a PR, developers immediately receive:
 1. A color-coded label showing the count
-2. A pinned notification comment with:
+2. A notification comment with:
    - Clear description of what needs attention
-   - Action items (review, address, mark as resolved)
+   - Action items (review, address, mark as resolved or ask maintainer)
    - Link to where conversations can be found
 
 **AI Relevance**: Helps track review progress on AI-generated PRs which may need more iterations. Provides immediate, actionable feedback to developers about pending discussions.
