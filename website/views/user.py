@@ -1646,17 +1646,19 @@ def handle_issue_event(payload):
                         field_name="issue.updated_at",
                     )
 
-                    github_issue = GitHubIssue.objects.create(
+                    github_issue, created = GitHubIssue.objects.get_or_create(
                         issue_id=issue_number,
-                        title=issue_data.get("title", ""),
-                        body=issue_data.get("body", ""),
-                        state=issue_state or "open",
-                        type="issue",
-                        created_at=created_at,
-                        updated_at=updated_at,
-                        url=issue_html_url or "",
                         repo=repo,
-                        p2p_amount_usd=bounty if bounty is not None else None,
+                        defaults={
+                            "title": issue_data.get("title", ""),
+                            "body": issue_data.get("body", ""),
+                            "state": issue_state or "open",
+                            "type": "issue",
+                            "created_at": created_at,
+                            "updated_at": updated_at,
+                            "url": issue_html_url or "",
+                            "p2p_amount_usd": bounty if bounty is not None else None,
+                        },
                     )
                     # Invalidate badge cache in case it was primed
                     try:
@@ -1666,7 +1668,13 @@ def handle_issue_event(payload):
                         cache.delete(f"issue_badge:pk:{github_issue.pk}")
                     except Exception as e:
                         logger.warning(f"Failed to invalidate badge cache after create: {e}")
-                    logger.info(f"Created GitHubIssue #{issue_number} in repo {repo_full_name}")
+                    if created:
+                        logger.info(f"Created GitHubIssue #{issue_number} in repo {repo_full_name}")
+                    else:
+                        logger.info(
+                            f"GitHubIssue #{issue_number} already existed in repo {repo_full_name} "
+                            f"(duplicate webhook event)"
+                        )
                 except Exception as e:
                     logger.error(f"Error creating GitHubIssue: {e}")
             else:

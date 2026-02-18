@@ -25,8 +25,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
-from django.core.exceptions import ValidationError
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -60,6 +60,7 @@ from django.views.generic.edit import CreateView
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from user_agents import parse
 
@@ -2971,6 +2972,9 @@ class GitHubIssueBadgeView(APIView):
     - No GitHub API calls; all data read from the database
     """
 
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     BRAND_COLOR = "#e74c3c"  # BLT red
     CACHE_TTL = 300  # 5 minutes
 
@@ -3028,9 +3032,9 @@ class GitHubIssueBadgeView(APIView):
                 if detail_path:
                     activity_count = (
                         IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
-                        .values("address")
-                        .distinct()
-                        .count()
+                        .aggregate(unique_visitors=Count("address", distinct=True))
+                        .get("unique_visitors")
+                        or 0
                     )
                 else:
                     activity_count = 0
