@@ -1431,11 +1431,21 @@ def fetch_devto_articles():
         response = requests.get(DEVTO_API_URL, timeout=5)
         response.raise_for_status()
 
-        # 2 articles on home-page
-        articles = response.json()[:2]
+        try:
+            data = response.json()
+        except ValueError as e:  # catches JSONDecodeError safely
+            logger.error(f"Dev.to JSON decode error: {e}")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        if not isinstance(data, list):
+            logger.error("Dev.to API returned unexpected format")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        articles = data[:2]
 
         cache.set(cache_key, articles, 60 * 10)
-
         return articles
 
     except requests.RequestException as e:
