@@ -28,7 +28,7 @@
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
     {% get_providers as socialaccount_providers %}
-    <div class="auth-container flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-800">
+    <div class="auth-container flex items-center justify-center w-full p-4 bg-gray-100 dark:bg-gray-800 overflow-auto">
         <div class="flex flex-col overflow-hidden bg-white dark:bg-gray-800 rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
             <!-- Left Side (Branding and Info) -->
             <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
