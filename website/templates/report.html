@@ -305,12 +305,13 @@
                                    class="block text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                                 {% trans "CVE ID" %}
                             </label>
-                            <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full">
+                            <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full relative">
                                 <input class="flex-1 placeholder:text-base text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 transition-shadow duration-200 min-w-0 bg-white dark:bg-gray-900"
                                        type="text"
                                        placeholder="CVE-XXXX-XXXX"
                                        id="cve_id_input"
                                        name="cve_id"
+                                       autocomplete="off"
                                        pattern="CVE-\d{4}-\d{4,7}"
                                        title="Please enter a valid CVE ID format (e.g. CVE-2024-1234)">
                                 <button type="button"
@@ -440,6 +441,177 @@
             return false;
         }
     }
+
+    // CVE Autocomplete functionality
+    (function() {
+        const cveInput = document.getElementById('cve_id_input');
+        if (!cveInput) return;
+
+        let autocompleteBox = null;
+        let debounceTimer = null;
+        let selectedIndex = -1;
+        let suggestions = [];
+        let lastQuery = '';  // Track the latest query to prevent stale results
+        let requestId = 0;   // Unique ID for each request
+
+        function createAutocompleteBox() {
+            if (autocompleteBox) return autocompleteBox;
+            autocompleteBox = document.createElement('div');
+            autocompleteBox.id = 'cve_autocomplete_box';
+            autocompleteBox.className = 'absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto';
+            autocompleteBox.style.display = 'none';
+            // Add ARIA attributes for accessibility
+            autocompleteBox.setAttribute('role', 'listbox');
+            autocompleteBox.setAttribute('aria-label', 'CVE ID suggestions');
+            cveInput.parentElement.style.position = 'relative';
+            cveInput.parentElement.appendChild(autocompleteBox);
+            cveInput.setAttribute('role', 'combobox');
+            cveInput.setAttribute('aria-autocomplete', 'list');
+            cveInput.setAttribute('aria-controls', 'cve_autocomplete_box');
+            cveInput.setAttribute('aria-expanded', 'false');
+            return autocompleteBox;
+        }
+
+        function hideAutocomplete() {
+            if (autocompleteBox) {
+                autocompleteBox.style.display = 'none';
+                cveInput.setAttribute('aria-expanded', 'false');
+            }
+            selectedIndex = -1;
+            suggestions = [];
+        }
+
+        function showSuggestions(results, forQuery) {
+            // Validate that this response matches the current query (prevent race condition)
+            if (forQuery !== lastQuery) {
+                return; // Ignore stale response
+            }
+            
+            if (!autocompleteBox) createAutocompleteBox();
+            if (results.length === 0) {
+                hideAutocomplete();
+                return;
+            }
+
+            suggestions = results;
+            // Clear existing content
+            autocompleteBox.innerHTML = '';
+            
+            // Create elements safely using textContent to prevent XSS
+            results.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = `px-4 py-2 cursor-pointer hover:bg-[#e74c3c] hover:text-white dark:hover:bg-[#c0392b] ${index === selectedIndex ? 'bg-[#e74c3c] text-white dark:bg-[#c0392b]' : 'text-gray-900 dark:text-gray-100'}`;
+                div.setAttribute('data-index', index);
+                div.setAttribute('role', 'option'); // Add ARIA role for accessibility
+                div.setAttribute('id', `cve-option-${index}`);
+                div.textContent = item.text; // Use textContent instead of innerHTML to prevent XSS
+                div.addEventListener('click', function() {
+                    selectSuggestion(index);
+                });
+                autocompleteBox.appendChild(div);
+            });
+
+            autocompleteBox.style.display = 'block';
+            cveInput.setAttribute('aria-expanded', 'true');
+        }
+
+        function selectSuggestion(index) {
+            if (index >= 0 && index < suggestions.length) {
+                cveInput.value = suggestions[index].text;
+                cveInput.style.borderColor = 'green';
+                hideAutocomplete();
+                validateCVE();
+            }
+        }
+
+        async function fetchCVESuggestions(query) {
+            if (query.length < 3) {
+                hideAutocomplete();
+                return;
+            }
+
+            // Track this request to prevent race conditions
+            const currentRequestId = ++requestId;
+            lastQuery = query;
+
+            try {
+                const response = await fetch(`/api/v1/cve/autocomplete/?q=${encodeURIComponent(query)}`);
+                if (!response.ok) throw new Error('API request failed');
+                const data = await response.json();
+                
+                // Only process if this is still the latest request
+                if (currentRequestId === requestId) {
+                    showSuggestions(data.results || [], query);
+                }
+            } catch (error) {
+                console.error('Error fetching CVE suggestions:', error);
+                if (currentRequestId === requestId) {
+                    hideAutocomplete();
+                }
+            }
+        }
+
+        cveInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim().toUpperCase();
+            
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            if (query.length >= 3) {
+                debounceTimer = setTimeout(() => {
+                    fetchCVESuggestions(query);
+                }, 300);
+            } else {
+                hideAutocomplete();
+            }
+        });
+
+        cveInput.addEventListener('keydown', function(e) {
+            if (!autocompleteBox || autocompleteBox.style.display === 'none') return;
+
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+                    updateSelection();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    updateSelection();
+                    break;
+                case 'Enter':
+                    if (selectedIndex >= 0) {
+                        e.preventDefault();
+                        selectSuggestion(selectedIndex);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    hideAutocomplete();
+                    break;
+            }
+        });
+
+        function updateSelection() {
+            if (!autocompleteBox) return;
+            autocompleteBox.querySelectorAll('div[data-index]').forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.className = 'px-4 py-2 cursor-pointer bg-[#e74c3c] text-white dark:bg-[#c0392b]';
+                } else {
+                    item.className = 'px-4 py-2 cursor-pointer hover:bg-[#e74c3c] hover:text-white dark:hover:bg-[#c0392b] text-gray-900 dark:text-gray-100';
+                }
+            });
+        }
+
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (autocompleteBox && !cveInput.contains(e.target) && !autocompleteBox.contains(e.target)) {
+                hideAutocomplete();
+            }
+        });
+    })();
     const screenshots = document.getElementById('screenshots');
     let manage_div = document.getElementById("files_manage");
 
