@@ -73,7 +73,7 @@ pyjwt = {extras = ["crypto"], version = "^2.0.0"}
 tblib = "^3.2.2"
 langchain = "^0.3.27"
 langchain-openai = "^1.1.10"
-langchain-community = "^0.4.1"
+langchain-community = "^0.3.0"
 pypdf = "^6.7.1"
 docx2txt = "^0.9"
 tiktoken = "^0.9.0"
