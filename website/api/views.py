@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import smtplib
 import sys
 import uuid
@@ -391,7 +390,7 @@ class LeaderboardApiViewSet(APIView):
 
             try:
                 date = datetime(int(year), int(month), 1)
-            except:
+            except (ValueError, OverflowError):
                 return Response("Invalid month or year passed", status=400)
 
         queryset = global_leaderboard.get_leaderboard(month, year, api=True)
@@ -1980,21 +1979,18 @@ class DebugPopulateDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            # Load initial data fixture from a resolved path and fail gracefully if missing
-            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
-            if not os.path.exists(fixture_path):
-                return Response(
-                    {"success": False, "error": "Fixture file not found"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+            call_command(
+                "generate_sample_data",
+                preserve_user_id=[request.user.id],
+                preserve_superusers=True,
+                verbosity=0,
+            )
 
-            call_command("loaddata", fixture_path, verbosity=0)
-
-            return Response({"success": True, "message": "Test data populated successfully"})
+            return Response({"success": True, "message": "Sample data populated successfully"})
         except Exception as e:
-            logger.error("Error populating test data: %s", e, exc_info=True)
+            logger.error("Error populating sample data: %s", e, exc_info=True)
             return Response(
-                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                {"success": False, "error": "Failed to populate sample data. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

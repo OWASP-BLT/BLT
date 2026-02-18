@@ -1754,7 +1754,7 @@ class UserTaskSubmission(models.Model):
 
     progress = models.ForeignKey(UserAdventureProgress, on_delete=models.CASCADE, related_name="task_submissions")
     task = models.ForeignKey(AdventureTask, on_delete=models.CASCADE, related_name="submissions")
-    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, blog post, or other evidence")
+    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, or other evidence")
     notes = models.TextField(blank=True, help_text="Additional notes or explanation")
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -1789,26 +1789,6 @@ class UserTaskSubmission(models.Model):
             self.progress.check_completion()
 
 
-class Post(models.Model):
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True, max_length=255)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to="blog_posts")
-    comments = GenericRelation("comments.Comment")
-
-    class Meta:
-        db_table = "blog_post"
-
-    def __str__(self):
-        return self.title
-
-    def get_absolute_url(self):
-        return reverse("post_detail", kwargs={"slug": self.slug})
-
-
 class PRAnalysisReport(models.Model):
     pr_link = models.URLField()
     issue_link = models.URLField()
@@ -1819,15 +1799,6 @@ class PRAnalysisReport(models.Model):
 
     def __str__(self):
         return self.pr_link
-
-
-@receiver(post_save, sender=Post)
-def verify_file_upload(sender, instance, **kwargs):
-    from django.core.files.storage import default_storage
-
-    if instance.image:
-        if not default_storage.exists(instance.image.name):
-            raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
 class Repo(models.Model):
