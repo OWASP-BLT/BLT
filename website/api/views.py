@@ -1,10 +1,10 @@
 import json
 import logging
-import os
 import smtplib
 import sys
 import uuid
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -19,7 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
@@ -75,7 +75,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -179,6 +179,60 @@ class IssueViewSet(viewsets.ModelViewSet):
         if domain_url:
             queryset = queryset.filter(domain__url=domain_url)
 
+        cve_id = self.request.GET.get("cve_id")
+        if cve_id:
+            # Normalize CVE ID to match stored format (uppercase, trimmed)
+            # Use case-insensitive matching to handle both normalized and unnormalized data
+            from website.cache.cve_cache import normalize_cve_id
+
+            normalized_cve_id = normalize_cve_id(cve_id)
+            if normalized_cve_id:
+                # Use case-insensitive matching to handle existing unnormalized data
+                queryset = queryset.filter(cve_id__iexact=normalized_cve_id)
+
+        # Parse and validate CVE score filters (Decimal to avoid binary rounding)
+        cve_score_min = self.request.GET.get("cve_score_min")
+        cve_score_max = self.request.GET.get("cve_score_max")
+        parsed_min = None
+        parsed_max = None
+
+        # Parse cve_score_min
+        if cve_score_min:
+            try:
+                parsed_min = Decimal(cve_score_min)
+                if parsed_min < Decimal("0") or parsed_min > Decimal("10"):
+                    logger.warning("Invalid cve_score_min value: %s (must be 0-10)", cve_score_min)
+                    parsed_min = None
+            except (InvalidOperation, TypeError):
+                logger.warning("Invalid cve_score_min value: %s (not a number)", cve_score_min)
+
+        # Parse cve_score_max
+        if cve_score_max:
+            try:
+                parsed_max = Decimal(cve_score_max)
+                if parsed_max < Decimal("0") or parsed_max > Decimal("10"):
+                    logger.warning("Invalid cve_score_max value: %s (must be 0-10)", cve_score_max)
+                    parsed_max = None
+            except (InvalidOperation, TypeError):
+                logger.warning("Invalid cve_score_max value: %s (not a number)", cve_score_max)
+
+        # Validate range BEFORE applying filters
+        if parsed_min is not None and parsed_max is not None:
+            if parsed_min > parsed_max:
+                logger.warning(
+                    "Invalid score range: min (%s) > max (%s), ignoring both filters",
+                    parsed_min,
+                    parsed_max,
+                )
+                parsed_min = None
+                parsed_max = None
+
+        # Apply filters only if valid (Decimal values for exact comparison)
+        if parsed_min is not None:
+            queryset = queryset.filter(cve_score__gte=parsed_min)
+        if parsed_max is not None:
+            queryset = queryset.filter(cve_score__lte=parsed_max)
+
         return queryset
 
     def get_issue_info(self, request, issue):
@@ -255,10 +309,75 @@ class IssueViewSet(viewsets.ModelViewSet):
         elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        data = super().create(request, *args, **kwargs).data
+        # Wrap super().create() to catch model-level ValidationError from Issue.save()
+        try:
+            data = super().create(request, *args, **kwargs).data
+        except ValidationError as e:
+            # Convert model-level ValidationError to HTTP 400 Bad Request
+            # Extract user-friendly message without exposing stack traces
+            if hasattr(e, "message_dict"):
+                # Multiple field errors
+                error_message = "; ".join([f"{k}: {', '.join(v)}" for k, v in e.message_dict.items()])
+            elif hasattr(e, "messages"):
+                # List of error messages
+                error_message = "; ".join(e.messages)
+            else:
+                # Fallback to generic message to avoid exposing internal details
+                error_message = (
+                    "The CVE ID format is invalid. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits)"
+                )
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
         issue = Issue.objects.filter(id=data["id"]).first()
 
-        if tags:
+        # STEP 1: Fetch CVE data OUTSIDE transaction (before any DB locks)
+        cve_updates = {}
+        if issue and issue.cve_id:
+            from website.views.issue import normalize_and_populate_cve_score
+
+            try:
+                # Create a temporary issue instance to fetch CVE data without DB operations
+                temp_issue = Issue(cve_id=issue.cve_id, cve_score=issue.cve_score)
+                # This will normalize and fetch the score via network/cache
+                normalize_and_populate_cve_score(temp_issue)
+
+                # Store the updates to apply later
+                cve_updates = {"cve_id": temp_issue.cve_id, "cve_score": temp_issue.cve_score}
+            except ValidationError as e:
+                logger.warning(f"CVE validation failed: {e}")
+                # Don't clear valid CVE ID - just skip score fetch
+                cve_updates = {}
+            except Exception as e:
+                logger.error(f"Error fetching CVE score: {e}")
+                # Continue without CVE score - don't fail the entire creation
+
+        # STEP 2: Apply CVE updates inside transaction (DB operations only, no network I/O)
+        if cve_updates:
+            with transaction.atomic():
+                try:
+                    issue_locked = Issue.objects.select_for_update().get(pk=issue.pk)
+
+                    # Apply CVE updates
+                    update_fields = []
+                    if "cve_id" in cve_updates and issue_locked.cve_id != cve_updates["cve_id"]:
+                        issue_locked.cve_id = cve_updates["cve_id"]
+                        update_fields.append("cve_id")
+                    if "cve_score" in cve_updates and issue_locked.cve_score != cve_updates["cve_score"]:
+                        issue_locked.cve_score = cve_updates["cve_score"]
+                        update_fields.append("cve_score")
+
+                    if update_fields:
+                        issue_locked.save(update_fields=update_fields)
+                        # Refresh the issue object to get updated values
+                        issue = issue_locked
+                except Issue.DoesNotExist:
+                    logger.error(f"Issue {issue.pk} not found after creation")
+                    # Continue anyway - issue was created successfully
+                except Exception as e:
+                    logger.error(f"Error updating CVE data in transaction: {e}")
+                    # Continue - issue exists, just without CVE score
+
+        if tags and issue:
             issue.tags.add(*tags)
 
         for screenshot in self.request.FILES.getlist("screenshots"):
@@ -391,7 +510,7 @@ class LeaderboardApiViewSet(APIView):
 
             try:
                 date = datetime(int(year), int(month), 1)
-            except:
+            except (ValueError, OverflowError):
                 return Response("Invalid month or year passed", status=400)
 
         queryset = global_leaderboard.get_leaderboard(month, year, api=True)
@@ -962,9 +1081,9 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             # Save the TimeLog with the user and organization (if found, or None)
             serializer.save(user=self.request.user, organization=organization)
 
-        except ValidationError as e:
-            raise ParseError(detail=str(e))
-        except Exception as e:
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
             raise ParseError(detail="An unexpected error occurred while creating the time log.")
 
     @action(detail=False, methods=["post"])
@@ -979,7 +1098,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             self.perform_create(serializer)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while starting the time log."},
@@ -1002,7 +1121,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             timelog.save()
             return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while stopping the time log."},
@@ -1058,9 +1177,9 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         try:
             serializer.save(user=self.request.user, recorded_at=timezone.now())
-        except ValidationError as e:
-            raise ParseError(detail=str(e))
-        except Exception as e:
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
 
 
@@ -1092,16 +1211,33 @@ class OwaspComplianceChecker(APIView):
 
     def check_website_compliance(self, url):
         """Check website-related compliance criteria"""
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check for OWASP mention
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            # Check for project page link (strict hostname check)
+            owasp_links = []
+            for a in soup.find_all("a"):
+                href = a.get("href")
+                if not href:
+                    continue
+                netloc = urlparse(href).netloc.lower()
+                if netloc.endswith("owasp.org"):
+                    owasp_links.append(a)
+
             has_project_link = len(owasp_links) > 0
 
             # Check for up-to-date info
@@ -1111,32 +1247,42 @@ class OwaspComplianceChecker(APIView):
                 "has_owasp_mention": has_owasp_mention,
                 "has_project_link": has_project_link,
                 "has_dates": has_dates,
-                "details": {"url_checked": url, "recommendations": []},
+                "details": {"url_checked": safe_url, "recommendations": []},
             }
-        except Exception as e:
+        except Exception:
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": url, "error": str(e)},
+                "details": {"url_checked": safe_url, "error": "Compliance check failed."},
             }
 
     def check_vendor_neutrality(self, url):
         """Check vendor neutrality compliance"""
+        # Sanitize incoming URL
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "URL rejected for safety"},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Look for common paywall terms
             paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
             content = soup.get_text().lower()
             has_paywall_indicators = any(term in content for term in paywall_terms)
 
-            return {"possible_paywall": has_paywall_indicators, "details": {"url_checked": url, "recommendations": []}}
+            return {
+                "possible_paywall": has_paywall_indicators,
+                "details": {"url_checked": safe_url, "recommendations": []},
+            }
         except Exception:
             return {
                 "possible_paywall": None,
-                "details": {"url_checked": url, "error": "Unable to check vendor neutrality"},
+                "details": {"url_checked": safe_url, "error": "Unable to check vendor neutrality"},
             }
 
     def post(self, request, *args, **kwargs):
@@ -1950,21 +2096,18 @@ class DebugPopulateDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            # Load initial data fixture from a resolved path and fail gracefully if missing
-            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
-            if not os.path.exists(fixture_path):
-                return Response(
-                    {"success": False, "error": "Fixture file not found"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+            call_command(
+                "generate_sample_data",
+                preserve_user_id=[request.user.id],
+                preserve_superusers=True,
+                verbosity=0,
+            )
 
-            call_command("loaddata", fixture_path, verbosity=0)
-
-            return Response({"success": True, "message": "Test data populated successfully"})
+            return Response({"success": True, "message": "Sample data populated successfully"})
         except Exception as e:
-            logger.error("Error populating test data: %s", e, exc_info=True)
+            logger.error("Error populating sample data: %s", e, exc_info=True)
             return Response(
-                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                {"success": False, "error": "Failed to populate sample data. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

@@ -1,7 +1,7 @@
 # Stage 1: Build stage
 FROM python:3.11.2 AS builder
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
 # Install system dependencies
@@ -36,15 +36,21 @@ COPY pyproject.toml poetry.lock* ./
 RUN pip uninstall -y httpx || true
 RUN pip install --upgrade pip
 # Install dependencies with Poetry
-RUN poetry install --no-root --no-interaction
-
+RUN poetry install --no-root --no-interaction || \
+    (echo "First attempt failed, clearing Poetry cache..." && \
+     poetry cache clear pypi --all -n && \
+     sleep 5 && \
+     poetry install --no-root --no-interaction -vvv) || \
+    (echo "Second attempt failed, final retry..." && \
+     sleep 10 && \
+     poetry install --no-root --no-interaction -vvv)
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
 
 # Stage 2: Runtime stage
 FROM python:3.11.2-slim
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /blt
 
 # Copy only necessary files from builder stage
