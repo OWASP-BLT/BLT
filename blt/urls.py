@@ -201,6 +201,7 @@ from website.views.issue import (
     refresh_gsoc_project,
     remove_user_from_issue,
     resolve,
+    review_queue,
     save_issue,
     search_issues,
     select_bid,
@@ -1184,6 +1185,7 @@ urlpatterns = [
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
     path("queue/<int:queue_id>/update-txid/", update_txid, name="queue_update_txid"),
+    path("review/queue/", review_queue, name="review_queue"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
     # Chat room API endpoints
     path("api/send-message/", send_message_api, name="send_message_api"),
