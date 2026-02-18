@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0266_add_cve_indexes"),
         ("website", "0266_alter_usertasksubmission_proof_url_delete_post"),
