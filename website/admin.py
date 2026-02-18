@@ -63,7 +63,6 @@ from website.models import (
     OsshDiscussionChannel,
     Payment,
     Points,
-    Post,
     PRAnalysisReport,
     Project,
     Queue,
@@ -597,11 +596,6 @@ class ContributionAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
 
 
-class PostAdmin(admin.ModelAdmin):
-    list_display = ("title", "author", "created_at", "image")
-    prepopulated_fields = {"slug": ("title",)}
-
-
 class GitHubIssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -962,7 +956,6 @@ admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
-admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
