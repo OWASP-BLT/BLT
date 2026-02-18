@@ -1424,16 +1424,15 @@ def fetch_devto_articles():
     cache_key = "devto_articles"
 
     cached_articles = cache.get(cache_key)
-    if cached_articles:
+    if cached_articles is not None:
         return cached_articles
 
     try:
         response = requests.get(DEVTO_API_URL, timeout=5)
         response.raise_for_status()
-        articles = response.json()
 
         # 2 articles on home-page
-        articles = articles[:2]
+        articles = response.json()[:2]
 
         cache.set(cache_key, articles, 60 * 10)
 
@@ -1441,6 +1440,7 @@ def fetch_devto_articles():
 
     except requests.RequestException as e:
         logger.error(f"Dev.to fetch error: {e}")
+        cache.set(cache_key, [], 60 * 2)
         return []
 
 
