@@ -889,16 +889,17 @@ def search(request, template="search.html"):
                         result_count = 0
 
                         # Get result counts from context if available
+                        # Use len() instead of .count() on sliced querysets:
+                        # .count() on a sliced queryset first evaluates the slice and then counts,
+                        # making it redundant and potentially slower than just using len().
                         try:
                             if search_type == "all" or not search_type:
                                 # Sum counts from all search results
                                 for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
                                     if key in context:
                                         items = context[key]
-                                        if hasattr(items, "count"):
-                                            result_count += items.count()
-                                        elif isinstance(items, list):
-                                            result_count += len(items)
+                                        # Use len() which works for both lists and sliced querysets
+                                        result_count += len(items)
 
                             elif search_type == "tags":
                                 # Sum counts for tag search
@@ -911,10 +912,8 @@ def search(request, template="search.html"):
                                 ]:
                                     if key in context:
                                         items = context[key]
-                                        if hasattr(items, "count"):
-                                            result_count += items.count()
-                                        elif isinstance(items, list):
-                                            result_count += len(items)
+                                        # Use len() which works for both lists and sliced querysets
+                                        result_count += len(items)
 
                             else:
                                 # Map search types to their context keys
@@ -931,10 +930,8 @@ def search(request, template="search.html"):
                                 key = type_to_key.get(search_type, search_type)
                                 items = context.get(key)
                                 if items:
-                                    if hasattr(items, "count"):
-                                        result_count = items.count()
-                                    elif isinstance(items, list):
-                                        result_count = len(items)
+                                    # Use len() which works for both lists and sliced querysets
+                                    result_count = len(items)
 
                         except Exception:
                             logger.exception("Error calculating result count")
