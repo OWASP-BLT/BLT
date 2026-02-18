@@ -328,7 +328,38 @@ def bounty_payout(request):
             logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name} after payment")
             return JsonResponse({"status": "error", "message": "Issue not found after payment"}, status=404)
         except Exception:
-            logger.exception("Failed to record sponsors_tx_id after payment")
+            logger.exception(
+                "Failed to record sponsors_tx_id after payment. "
+                "Payment was sent successfully - transaction_id=%s, amount=%s, recipient=%s, issue=#%s",
+                transaction_id,
+                bounty_amount,
+                contributor_username,
+                issue_number,
+            )
+            # Attempt to recover: reset payment_pending and store the transaction ID
+            # so the issue is not permanently stuck.
+            try:
+                with transaction.atomic():
+                    gi = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
+                    gi.sponsors_tx_id = transaction_id
+                    if hasattr(gi, "payment_pending"):
+                        gi.payment_pending = False
+                    gi.save(update_fields=["sponsors_tx_id", "payment_pending"])
+                logger.info(
+                    "Recovery succeeded: recorded transaction_id=%s for issue #%s",
+                    transaction_id,
+                    issue_number,
+                )
+            except Exception:
+                logger.critical(
+                    "MANUAL INTERVENTION REQUIRED: Payment sent but could not record "
+                    "transaction_id=%s for issue #%s in %s/%s. payment_pending is stuck True.",
+                    transaction_id,
+                    issue_number,
+                    owner_name,
+                    repo_name,
+                    exc_info=True,
+                )
             return JsonResponse({"status": "error", "message": "Failed to record payment"}, status=500)
 
         # Add comment and labels to GitHub issue
