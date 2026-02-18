@@ -7,7 +7,8 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0265_delete_bannedapp"),
+        ("website", "0266_add_cve_indexes"),
+        ("website", "0266_alter_usertasksubmission_proof_url_delete_post"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
