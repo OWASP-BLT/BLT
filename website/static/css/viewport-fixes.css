@@ -5,11 +5,10 @@
 
 /* Auth container - fixes mobile viewport height */
 .auth-container {
-    min-height: calc(var(--vh, 1vh) * 100 - var(--footer-height, 80px));
+    min-height: calc(100dvh - var(--footer-height, 80px));
     overflow: auto;
     width: 100%;
 }
-
 /* Reminder settings page container */
 .page-container {
     min-height: calc(var(--vh, 1vh) * 100 - var(--footer-height, 80px));
