@@ -165,6 +165,17 @@
             });
                 
         </script>
+        <!-- Fix for mobile browser viewport height (handles address bar show/hide) -->
+        <script>
+            (function() {
+                function setVh() {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', vh + 'px');
+                }
+                setVh();
+                window.addEventListener('resize', setVh);
+            })();
+        </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
@@ -195,15 +206,12 @@
         <div id="main-content"
              role="main"
              tabindex="-1"
-             class="min-h-screen pb-[70px] mt-[20px]">
+             class="flex-1">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
-        </div>
-        <div class="pb-[50px]">
-            <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
         {% block scripts %}
         {% endblock scripts %}
