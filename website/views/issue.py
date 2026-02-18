@@ -2056,11 +2056,7 @@ class IssueView(DetailView):
             if not request.user.is_authenticated:
                 raise Http404("Issue not found")
 
-            allowed = (
-                request.user.is_superuser
-                or request.user == self.object.user
-                or request.user.is_staff
-            )
+            allowed = request.user.is_superuser or request.user == self.object.user or request.user.is_staff
 
             if not allowed:
                 raise Http404("Issue not found")
@@ -2076,18 +2072,12 @@ class IssueView(DetailView):
 
         try:
             if request.user.is_authenticated:
-                if not IP.objects.filter(
-                    user=request.user.username,
-                    issuenumber=self.object.id
-                ).exists():
+                if not IP.objects.filter(user=request.user.username, issuenumber=self.object.id).exists():
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                if not IP.objects.filter(
-                    address=get_client_ip(request),
-                    issuenumber=self.object.id
-                ).exists():
+                if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
