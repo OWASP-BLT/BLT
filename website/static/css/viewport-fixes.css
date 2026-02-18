@@ -10,40 +10,40 @@
     min-height: calc(var(--vh, 1vh) * 100 - 70px);
 }
 
-/* Fix for time input in dark mode */
-input[type="time"] {
+/* Fix for time input - scoped to reminder settings page */
+.page-container input[type="time"] {
     background-color: white;
     color: #374151;
     border: 1px solid #d1d5db;
 }
 
-.dark input[type="time"] {
+.dark .page-container input[type="time"] {
     background-color: #111827;
     color: #e5e7eb;
     border-color: #374151;
 }
 
-.dark input[type="time"]:hover,
-.dark input[type="time"]:focus {
+.dark .page-container input[type="time"]:hover,
+.dark .page-container input[type="time"]:focus {
     color: #f9fafb;
     border-color: #4b5563;
 }
 
-/* Fix for select elements in dark mode */
-select {
+/* Fix for select elements - scoped to reminder settings page */
+.page-container select {
     background-color: white;
     color: #374151;
     border: 1px solid #d1d5db;
 }
 
-.dark select {
+.dark .page-container select {
     background-color: #111827;
     color: #e5e7eb;
     border-color: #374151;
 }
 
-.dark select:hover,
-.dark select:focus {
+.dark .page-container select:hover,
+.dark .page-container select:focus {
     color: #f9fafb;
     border-color: #4b5563;
 }
