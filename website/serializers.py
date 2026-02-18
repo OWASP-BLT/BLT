@@ -323,8 +323,13 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "resolved_at"]
 
-    def validate_severity(self, value):
-        return value.lower()
+    def to_internal_value(self, data):
+        data = data.copy()
 
-    def validate_status(self, value):
-        return value.lower()
+        if "severity" in data and isinstance(data["severity"], str):
+            data["severity"] = data["severity"].lower()
+
+        if "status" in data and isinstance(data["status"], str):
+            data["status"] = data["status"].lower()
+
+        return super().to_internal_value(data)
