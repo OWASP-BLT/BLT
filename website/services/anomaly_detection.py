@@ -131,19 +131,23 @@ def _check_rapid_failures(user, failed_event):
     if recent_failures < failure_threshold:
         return
 
-    # Atomic dedup: get_or_create avoids TOCTOU race between exists() and create()
-    _, created = UserBehaviorAnomaly.objects.get_or_create(
+    # Dedup: skip if an alert already exists in the current window
+    existing = UserBehaviorAnomaly.objects.filter(
         user=user,
         anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
         created_at__gte=window_start,
-        defaults={
-            "severity": UserBehaviorAnomaly.Severity.HIGH,
-            "description": f"{recent_failures} failed login attempts in {window_minutes} minutes",
-            "details": {
+    ).first()
+
+    if existing is None:
+        UserBehaviorAnomaly.objects.create(
+            user=user,
+            anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
+            severity=UserBehaviorAnomaly.Severity.HIGH,
+            description=f"{recent_failures} failed login attempts in {window_minutes} minutes",
+            details={
                 "failure_count": recent_failures,
                 "window_minutes": window_minutes,
                 "ip_address": failed_event.ip_address,
             },
-            "login_event": failed_event,
-        },
-    )
+            login_event=failed_event,
+        )

@@ -335,6 +335,10 @@
                     <div id="hourly-login-chart"></div>
                 </div>
             </div>
+            <!-- Hidden CSRF token for dismiss POST -->
+            <form id="csrf-form" class="hidden">
+                {% csrf_token %}
+            </form>
             <!-- Anomaly Alerts -->
             <div class="mb-10">
                 <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Anomaly Alerts</h2>
@@ -364,10 +368,12 @@
                                         <td class="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ a.description }}</td>
                                         <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ a.created_at|timesince }} ago</td>
                                         <td class="px-4 py-3">
-                                            <button onclick="dismissAnomaly({{ a.id }}, this)"
-                                                    class="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1 rounded transition duration-200">
-                                                Dismiss
-                                            </button>
+                                            {% if request.user.is_superuser %}
+                                                <button onclick="dismissAnomaly({{ a.id }}, this)"
+                                                        class="text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1 rounded transition duration-200">
+                                                    Dismiss
+                                                </button>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% empty %}

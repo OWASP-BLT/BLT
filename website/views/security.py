@@ -257,12 +257,6 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         )
         context["hourly_login_data"] = json.dumps(hourly_data)
 
-        # Anomaly type breakdown for chart
-        anomaly_breakdown = list(
-            UserBehaviorAnomaly.objects.filter(is_reviewed=False).values("anomaly_type").annotate(count=Count("id"))
-        )
-        context["anomaly_chart_data"] = json.dumps(anomaly_breakdown)
-
         return context
 
 

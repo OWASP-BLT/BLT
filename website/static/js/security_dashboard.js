@@ -17,6 +17,7 @@ function switchTab(tabName) {
     for (i = 0; i < tabs.length; i++) {
         tabs[i].classList.remove("border-red-500", "text-red-600");
         tabs[i].classList.add("border-transparent", "text-gray-500");
+        tabs[i].setAttribute("aria-selected", "false");
     }
 
     var activePanel = document.querySelector('[data-panel="' + tabName + '"]');
@@ -28,6 +29,7 @@ function switchTab(tabName) {
     if (activeTab) {
         activeTab.classList.remove("border-transparent", "text-gray-500");
         activeTab.classList.add("border-red-500", "text-red-600");
+        activeTab.setAttribute("aria-selected", "true");
     }
 
     // Lazy-init activity charts on first switch to avoid rendering in hidden tab
@@ -143,6 +145,9 @@ function dismissAnomaly(anomalyId, buttonEl) {
         body: formData,
     })
         .then(function (response) {
+            if (!response.ok) {
+                throw new Error("Server returned " + response.status);
+            }
             return response.json();
         })
         .then(function (data) {
@@ -161,6 +166,9 @@ function dismissAnomaly(anomalyId, buttonEl) {
                     }
                 }
             }
+        })
+        .catch(function () {
+            buttonEl.disabled = false;
         });
 }
 
