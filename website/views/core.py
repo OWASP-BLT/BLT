@@ -1417,11 +1417,48 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+DEVTO_API_URL = "https://dev.to/api/articles?username=owaspblt&per_page=2"
+
+
+def fetch_devto_articles():
+    cache_key = "devto_articles"
+
+    cached_articles = cache.get(cache_key)
+    if cached_articles is not None:
+        return cached_articles
+
+    try:
+        response = requests.get(DEVTO_API_URL, timeout=5)
+        response.raise_for_status()
+
+        try:
+            data = response.json()
+        except ValueError as e:  # catches JSONDecodeError safely
+            logger.error(f"Dev.to JSON decode error: {e}")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        if not isinstance(data, list):
+            logger.error("Dev.to API returned unexpected format")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        articles = data[:2]
+
+        cache.set(cache_key, articles, 60 * 10)
+        return articles
+
+    except requests.RequestException as e:
+        logger.error(f"Dev.to fetch error: {e}")
+        cache.set(cache_key, [], 60 * 2)
+        return []
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1501,9 +1538,6 @@ def home(request):
     if request.user.is_authenticated:
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
-
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1595,6 +1629,8 @@ def home(request):
             "db_connections": len(connection.queries),
         }
 
+    devto_articles = fetch_devto_articles()
+
     return render(
         request,
         "home.html",
@@ -1602,13 +1638,13 @@ def home(request):
             "last_commit": last_commit,
             "current_year": timezone.now().year,
             "current_time": current_time,  # Add current time for month display
+            "devto_articles": devto_articles,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,
             "repo_stars": repo_stars,
             "top_referrals": top_referrals,
