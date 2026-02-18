@@ -190,5 +190,79 @@ jobs:
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
 
+            // Add a comment to notify the developer if there are unresolved conversations
+            if (count > 0) {
+              // Check if we already posted a notification comment
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+                per_page: 100,
+              });
+              
+              // Find our notification comment (using a unique marker)
+              const notificationMarker = '<!-- unresolved-conversations-notification -->';
+              const existingNotification = comments.find(comment => 
+                comment.body && comment.body.includes(notificationMarker) && comment.user.login === 'github-actions[bot]'
+              );
+              
+              const conversationWord = count === 1 ? 'conversation' : 'conversations';
+              const commentBody = notificationMarker + '\n' +
+                '## 💬 Unresolved Conversations Detected\n\n' +
+                `This pull request currently has **${count} unresolved ${conversationWord}** that need to be addressed.\n\n` +
+                '### Action Required\n' +
+                '- Review the pending discussions in the "Files changed" tab\n' +
+                '- Address or respond to each conversation\n' +
+                '- Mark conversations as resolved once they are addressed\n\n' +
+                'The label on this PR will automatically update as conversations are resolved. Thank you! 🙏';
+              
+              if (!existingNotification) {
+                // Post a new notification comment
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  body: commentBody,
+                });
+                core.info(`Posted notification comment for ${count} unresolved ${conversationWord}`);
+              } else {
+                // Update the existing notification comment if the count changed
+                const currentCount = existingNotification.body.match(/\*\*(\d+) unresolved/);
+                if (!currentCount || parseInt(currentCount[1]) !== count) {
+                  await github.rest.issues.updateComment({
+                    owner,
+                    repo,
+                    comment_id: existingNotification.id,
+                    body: commentBody,
+                  });
+                  core.info(`Updated notification comment with new count: ${count} unresolved ${conversationWord}`);
+                } else {
+                  core.info(`Notification comment already exists with correct count (${count})`);
+                }
+              }
+            } else if (count === 0) {
+              // If all conversations are resolved, remove the notification comment
+              const { data: comments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: pull_number,
+                per_page: 100,
+              });
+              
+              const notificationMarker = '<!-- unresolved-conversations-notification -->';
+              const existingNotification = comments.find(comment => 
+                comment.body && comment.body.includes(notificationMarker) && comment.user.login === 'github-actions[bot]'
+              );
+              
+              if (existingNotification) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: existingNotification.id,
+                });
+                core.info(`Removed notification comment as all conversations are resolved`);
+              }
+            }
+
             // Log the count for transparency
             core.info(`PR #${pull_number} has ${count} unresolved conversation(s) (out of ${allThreads.length} total review threads).`);
