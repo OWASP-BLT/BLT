@@ -329,6 +329,85 @@ class BountyPayoutTestCase(TestCase):
         mock_payment.assert_not_called()
 
     @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
+    def test_bounty_payout_blocked_when_payment_pending(self):
+        """Test that a second payout attempt is blocked while payment_pending is True."""
+        self.issue.payment_pending = True
+        self.issue.save()
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 202)
+        response_data = response.json()
+        self.assertEqual(response_data["status"], "warning")
+        self.assertIn("already in progress", response_data["message"])
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_payment_pending_cleared_after_success(self, mock_payment):
+        """Test that payment_pending is False after a successful payment."""
+        mock_payment.return_value = "SPONSORSHIP_OK"
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.issue.refresh_from_db()
+        self.assertFalse(self.issue.payment_pending)
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_payment_pending_cleared_after_failure(self, mock_payment):
+        """Test that payment_pending is reset to False when payment processing fails."""
+        mock_payment.return_value = None
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.issue.refresh_from_db()
+        self.assertFalse(self.issue.payment_pending)
+
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
     @patch("website.views.bounty.process_github_sponsors_payment")
     def test_bounty_payout_timed_missing_expiry(self, mock_payment):
         payload = {

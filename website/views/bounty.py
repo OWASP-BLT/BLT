@@ -304,9 +304,8 @@ def bounty_payout(request):
             try:
                 with transaction.atomic():
                     github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
-                    if hasattr(github_issue, "payment_pending"):
-                        github_issue.payment_pending = False
-                        github_issue.save(update_fields=["payment_pending"])
+                    github_issue.payment_pending = False
+                    github_issue.save(update_fields=["payment_pending"])
             except Exception:
                 logger.exception("Failed to clear payment_pending after payment failure")
             return JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
@@ -321,8 +320,7 @@ def bounty_payout(request):
             with transaction.atomic():
                 github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
                 github_issue.sponsors_tx_id = transaction_id
-                if hasattr(github_issue, "payment_pending"):
-                    github_issue.payment_pending = False
+                github_issue.payment_pending = False
                 github_issue.save()
         except GitHubIssue.DoesNotExist:
             logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name} after payment")
@@ -342,8 +340,7 @@ def bounty_payout(request):
                 with transaction.atomic():
                     gi = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
                     gi.sponsors_tx_id = transaction_id
-                    if hasattr(gi, "payment_pending"):
-                        gi.payment_pending = False
+                    gi.payment_pending = False
                     gi.save(update_fields=["sponsors_tx_id", "payment_pending"])
                 logger.info(
                     "Recovery succeeded: recorded transaction_id=%s for issue #%s",
