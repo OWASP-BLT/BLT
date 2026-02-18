@@ -59,13 +59,14 @@
                                 <div class="flex-shrink-0">
                                     <svg class="h-5 w-5 text-red-500 dark:text-red-300"
                                          viewBox="0 0 20 20"
-                                         fill="currentColor">
+                                         fill="currentColor"
+                                         aria-hidden="true">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                     </svg>
                                 </div>
                                 <div class="ml-3">
                                     <p class="text-sm font-medium">
-                                        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
                                     </p>
                                 </div>
                             </div>
@@ -79,7 +80,9 @@
                     <!-- Username/Email Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="id_login"
-                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username or Email</label>
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">
+                            {% trans "Username or Email" %}
+                        </label>
                         <input autofocus
                                id="id_login"
                                name="login"
