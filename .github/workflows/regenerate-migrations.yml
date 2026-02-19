@@ -10,6 +10,10 @@ name: Regenerate Django Migrations
 # copies MODEL FILES from the PR branch. It does NOT execute any code from the
 # PR directly. The makemigrations command runs against trusted base code with
 # only the model definitions updated from the PR.
+#
+# WARNING: Django model files CAN contain arbitrary Python that executes on import.
+# The collaborator permission check below ensures only trusted maintainers can
+# trigger this workflow, mitigating the risk of malicious model file content.
 
 on:
   workflow_dispatch:
@@ -31,6 +35,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Verify the label was added by a repository collaborator with write access
+      # This prevents exploitation if a non-collaborator somehow triggers the workflow
+      - name: Verify actor has write permission
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.eventName === 'pull_request_target') {
+              const { data: permissionLevel } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.actor,
+              });
+              const permission = permissionLevel.permission;
+              if (permission !== 'admin' && permission !== 'write') {
+                core.setFailed(`Actor ${context.actor} does not have write permission (has: ${permission}). Only collaborators with write access can trigger migration regeneration.`);
+              } else {
+                core.info(`Actor ${context.actor} has ${permission} permission - authorized.`);
+              }
+            }
+
       # First, checkout the BASE branch (trusted code)
       - name: Checkout base branch (trusted)
         uses: actions/checkout@v4
@@ -106,13 +130,23 @@ jobs:
             echo "EOF" >> $GITHUB_ENV
           fi
 
-      # Safely copy only model files from PR (no arbitrary code execution)
+      # Copy only model files from PR (validated paths only)
       - name: Copy model files from PR
         if: env.CHANGED_MODELS != ''
         run: |
           echo "Copying model files from PR branch..."
           echo "$CHANGED_MODELS" | while read -r file; do
             if [ -n "$file" ]; then
+              # Validate the file path: must be a .py file under website/ or comments/ models
+              # Reject paths with directory traversal or unexpected characters
+              if echo "$file" | grep -qE '^\.\.' || echo "$file" | grep -qF '/../'; then
+                echo "REJECTED (path traversal detected): $file"
+                continue
+              fi
+              if ! echo "$file" | grep -qE '^(website|comments)/models[^/]*\.py$'; then
+                echo "REJECTED (not a valid model file path): $file"
+                continue
+              fi
               echo "Copying: $file"
               git show "$PR_SHA:$file" > "$file" 2>/dev/null || true
             fi
