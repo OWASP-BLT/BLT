@@ -4,7 +4,6 @@ Enhanced test coverage for OSSH repository links feature (Issue #86).
 Provides comprehensive testing for:
 - Repository link validation and display
 - URL handling and edge cases
-- Template rendering with repository links
 - Project relationship link display
 """
 
