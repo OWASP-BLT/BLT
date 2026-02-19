@@ -196,7 +196,7 @@ class Command(LoggedBaseCommand):
         try:
             # Get repository data
             url = f"https://api.github.com/repos/{owner}/{repo_name}"
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
 
             repo_data = response.json()
@@ -265,7 +265,7 @@ class Command(LoggedBaseCommand):
             )
 
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
 
                 data = response.json()
@@ -326,7 +326,7 @@ class Command(LoggedBaseCommand):
             self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
 
                 data = response.json()
