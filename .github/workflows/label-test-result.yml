@@ -108,14 +108,23 @@ jobs:
             // Delete any previous test failure comments
             const testFailureMarker = '<!-- test-failure-comment -->';
             try {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
+              let allComments = [];
+              let page = 1;
+              let fetched;
+              do {
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                  page,
+                });
+                allComments = allComments.concat(comments);
+                fetched = comments.length;
+                page += 1;
+              } while (fetched === 100);
 
-              const existingComments = comments.filter(comment =>
+              const existingComments = allComments.filter(comment =>
                 comment.body && comment.body.includes(testFailureMarker)
               );
 
@@ -213,14 +222,23 @@ jobs:
 
             const testFailureMarker = '<!-- test-failure-comment -->';
             try {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
+              let allComments = [];
+              let page = 1;
+              let fetched;
+              do {
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                  page,
+                });
+                allComments = allComments.concat(comments);
+                fetched = comments.length;
+                page += 1;
+              } while (fetched === 100);
 
-              const existingComments = comments.filter(comment =>
+              const existingComments = allComments.filter(comment =>
                 comment.body && comment.body.includes(testFailureMarker)
               );
 
