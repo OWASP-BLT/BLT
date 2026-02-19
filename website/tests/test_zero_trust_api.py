@@ -13,7 +13,11 @@ class ZeroTrustAPITests(APITestCase):
         self.token, _ = Token.objects.get_or_create(user=self.user)
 
         self.org = Organization.objects.create(name="API Org")
-        self.domain = Domain.objects.create(organization=self.org, url="https://api.example.com")
+        self.domain = Domain.objects.create(
+            organization=self.org,
+            name="api.example.com",
+            url="https://api.example.com",
+        )
 
         OrgEncryptionConfig.objects.create(
             organization=self.org,

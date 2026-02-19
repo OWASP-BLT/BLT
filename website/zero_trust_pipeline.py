@@ -177,7 +177,11 @@ def build_and_deliver_zero_trust_issue(issue: Issue, uploaded_files: List[Upload
         issue.encryption_method = method_used
         issue.delivery_method = "email:smtp"
         issue.delivery_status = delivery_status
-        issue.delivered_at = timezone.now()
+        # Only set delivered_at when delivery does not appear to have failed
+        if delivery_status is not None and "failed" in str(delivery_status).lower():
+            issue.delivered_at = None
+        else:
+            issue.delivered_at = timezone.now()
         issue.save(
             update_fields=[
                 "artifact_sha256",

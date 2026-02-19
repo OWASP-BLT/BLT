@@ -19,7 +19,11 @@ class ZeroTrustPipelineTests(TestCase):
 
         self.org = Organization.objects.create(name="Test Org")
 
-        self.domain = Domain.objects.create(organization=self.org, url="https://example.com")
+        self.domain = Domain.objects.create(
+            organization=self.org,
+            name="Example Domain",
+            url="https://example.com",
+        )
 
         # We mock _encrypt_artifact_for_org anyway, so we don't need real age binary
         self.enc = OrgEncryptionConfig.objects.create(
