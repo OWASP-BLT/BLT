@@ -17,12 +17,6 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
   push:
     branches:
       - main
@@ -91,8 +85,6 @@ jobs:
   pre-commit:
     name: Run pre-commit
     # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
-    # Skip on pull_request to avoid duplicate runs (pull_request_target handles PR checks)
-    if: github.event_name != 'pull_request'
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -368,9 +360,6 @@ jobs:
 
   test:
     name: Run Tests
-    # Only run on pull_request and push (safe: no elevated permissions)
-    # Never run on pull_request_target or workflow_run to prevent cache poisoning
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
     needs: setup
     runs-on: ubuntu-latest
     env:
@@ -439,9 +428,7 @@ jobs:
   label-test-result:
     name: Label Test Result
     needs: test
-    # Run on pull_request (where test job actually runs) to label PRs
-    # For fork PRs, labeling may fail gracefully due to permissions (already handled)
-    if: always() && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target')
+    if: always() && github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -762,9 +749,6 @@ jobs:
             core.info(`Test exit code: ${testExitCode}`)
 
   docker-test:
-    # Only run on pull_request and push (safe: no elevated permissions)
-    # Never run on pull_request_target or workflow_run to prevent cache poisoning
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
