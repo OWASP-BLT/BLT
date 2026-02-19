@@ -81,6 +81,17 @@ class RepositoryLinksEnhancementTests(TestCase):
         self.assertIsNotNone(complete_result)
         self.assertEqual(complete_result["repo"].project.name, "Test Project")
 
+    def test_select_related_optimization(self):
+        """Test that repo_recommender uses select_related to avoid N+1 queries"""
+        user_tags = [("python", 10), ("django", 5)]
+        language_weights = {"Python": 8}
+
+        with self.assertNumQueries(1):
+            recommended = repo_recommender(user_tags, language_weights)
+            for item in recommended:
+                if item["repo"].project:
+                    _ = item["repo"].project.name
+
     def test_repo_recommender_handles_missing_homepage(self):
         """Test recommender handles empty homepage URLs gracefully"""
         user_tags = [("python", 10)]
@@ -88,7 +99,9 @@ class RepositoryLinksEnhancementTests(TestCase):
 
         recommended = repo_recommender(user_tags, language_weights)
 
-        has_partial = any(item["repo"].id == self.repo_partial.id for item in recommended)
+        has_partial = any(
+            item["repo"].id == self.repo_partial.id for item in recommended
+        )
         self.assertTrue(has_partial)
 
     def test_repo_recommender_handles_null_project(self):
@@ -102,7 +115,9 @@ class RepositoryLinksEnhancementTests(TestCase):
             (item for item in recommended if item["repo"].id == self.repo_no_project.id),
             None,
         )
-        self.assertIsNotNone(no_project_result, "repo with null project should be recommended")
+        self.assertIsNotNone(
+            no_project_result, "repo with null project should be recommended"
+        )
         self.assertIsNone(no_project_result["repo"].project)
 
     def test_all_repos_have_required_url(self):
@@ -183,7 +198,10 @@ class RepositoryLinksEnhancementTests(TestCase):
             self.assertIsNotNone(item["reasoning"])
             self.assertNotEqual(item["reasoning"], "")
             reasoning_lower = item["reasoning"].lower()
-            self.assertTrue("matching tags" in reasoning_lower or "matching language" in reasoning_lower)
+            self.assertTrue(
+                "matching tags" in reasoning_lower
+                or "matching language" in reasoning_lower
+            )
 
 
 class RepositoryLinksEdgeCasesTests(TestCase):
