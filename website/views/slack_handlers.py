@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import hmac
 import json
@@ -1157,6 +1158,9 @@ def slack_commands(request):
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error reporting bug. Please try again."})
 
+        elif command == "/contributors":
+            project_name = request.POST.get("text", "").strip()
+            return get_contributors_info(workspace_client, user_id, project_name, activity)
         elif command == "/sweep":
             # Post project status update to #project-sweeper channel
             return post_project_sweep_update(workspace_client, user_id, activity, team_id)
@@ -3020,3 +3024,418 @@ def handle_committee_pagination(action, body, client):
     except Exception as e:
         logger.error(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
+
+
+# Simple per-user rate limit (seconds)
+contributor_rate_limit = {}  # {user_id: last_used_timestamp}
+RATE_LIMIT_SECONDS = 30
+
+
+def get_contributors_info(workspace_client, user_id, project_name, activity):
+    """Handle contributors information command"""
+    try:
+        last_used = contributor_rate_limit.get(user_id, 0)
+        now = time.time()
+
+        # Evict stale entries periodically
+        if len(contributor_rate_limit) > 1000:
+            stale = [k for k, v in contributor_rate_limit.items() if now - v > RATE_LIMIT_SECONDS]
+            for k in stale:
+                del contributor_rate_limit[k]
+
+        if now - last_used < RATE_LIMIT_SECONDS:
+            wait = int(RATE_LIMIT_SECONDS - (now - last_used))
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": f"⏱️ Please wait {wait}s before using /contributors again."}
+            )
+        # Update usage timestamp
+        contributor_rate_limit[user_id] = now
+
+        # Send immediate response
+        response = JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": "🔍 Fetching contributor information... I'll send you the results in a DM shortly!",
+            }
+        )
+
+        # Process the request in a background thread
+        def process_contributors():
+            try:
+                headers = get_github_headers()
+                if not GITHUB_TOKEN:
+                    activity.success = False
+                    activity.error_message = "GitHub API token not configured"
+                    activity.save()
+                    send_dm(
+                        workspace_client,
+                        user_id,
+                        "Error",
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                                },
+                            }
+                        ],
+                    )
+                    return
+
+                if project_name:
+                    # Show contributors for a specific project
+                    fetch_project_contributors(workspace_client, user_id, project_name, headers, activity)
+                else:
+                    # Show contributors across all projects
+                    fetch_all_contributors(workspace_client, user_id, headers, activity)
+
+            except Exception as e:
+                logger.error(f"Error processing contributors: {str(e)}")
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                send_dm(
+                    workspace_client,
+                    user_id,
+                    "Error",
+                    [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "❌ An error occurred while fetching contributor information.",
+                            },
+                        }
+                    ],
+                )
+
+        thread = threading.Thread(target=process_contributors)
+        thread.daemon = True
+        thread.start()
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Error in get_contributors_info: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while fetching contributor information."}
+        )
+
+
+def fetch_project_contributors(workspace_client, user_id, project_name, headers, activity):
+    """Fetch contributors for a specific project"""
+    try:
+        # Search for the project in OWASP organization
+        search_url = "https://api.github.com/search/repositories"
+        params = {"q": f"{project_name} org:OWASP", "sort": "stars", "order": "desc", "per_page": 1}
+
+        response = requests.get(search_url, headers=headers, params=params, timeout=10)
+
+        if response.status_code != 200:
+            activity.success = False
+            activity.error_message = f"GitHub search failed: {response.status_code}"
+            activity.save()
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"❌ Failed to find project '{project_name}'."},
+                    }
+                ],
+            )
+            return
+
+        repos = response.json().get("items", [])
+        if not repos:
+            activity.success = False
+            activity.error_message = f"No project found: {project_name}"
+            activity.save()
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"❌ No project found matching '{project_name}'."},
+                    }
+                ],
+            )
+            return
+
+        repo = repos[0]
+        owner_repo = repo["full_name"]
+
+        # Fetch contributors for the project
+        contributors_url = f"https://api.github.com/repos/{owner_repo}/contributors"
+        contributors_params = {"per_page": 100}
+        contributors_response = requests.get(contributors_url, headers=headers, params=contributors_params, timeout=10)
+
+        if contributors_response.status_code != 200:
+            activity.success = False
+            activity.error_message = f"Failed to fetch contributors for {repo['name']}"
+            activity.save()
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"❌ Failed to fetch contributors for '{repo['name']}'."},
+                    }
+                ],
+            )
+            return
+
+        contributors = contributors_response.json()
+
+        # Filter out bots if possible
+        human_contributors = [c for c in contributors if c.get("type") == "User"]
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"👥 Contributors for {repo['name']}", "emoji": True},
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"Contributors shown: {len(human_contributors)} (max 100) | Repository: <{repo['html_url']}|{repo['full_name']}>",
+                    }
+                ],
+            },
+            {"type": "divider"},
+        ]
+
+        # Show top contributors (limit to 20 for readability)
+        for idx, contributor in enumerate(human_contributors[:20], start=1):
+            block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*{idx}. <{contributor['html_url']}|{contributor['login']}>*\n"
+                        f"📊 Contributions: {contributor['contributions']}"
+                    ),
+                },
+            }
+            if contributor.get("avatar_url"):
+                block["accessory"] = {
+                    "type": "image",
+                    "image_url": contributor["avatar_url"],
+                    "alt_text": f"Avatar for {contributor['login']}",
+                }
+            blocks.append(block)
+
+        if len(human_contributors) > 20:
+            blocks.append(
+                {
+                    "type": "context",
+                    "elements": [
+                        {"type": "mrkdwn", "text": f"_Showing top 20 of {len(human_contributors)} contributors_"}
+                    ],
+                }
+            )
+
+        send_dm(workspace_client, user_id, f"Contributors for {repo['name']}", blocks)
+        activity.success = True
+        activity.save()
+
+    except Exception as e:
+        logger.error(f"Error fetching project contributors: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        send_dm(
+            workspace_client,
+            user_id,
+            "Error",
+            [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "❌ An unexpected error occurred while fetching contributors."},
+                }
+            ],
+        )
+    return
+
+
+def fetch_all_contributors(workspace_client, user_id, headers, activity):
+    """Fetch contributors across all OWASP projects"""
+    try:
+        # Get all OWASP repositories
+        all_repos = get_all_owasp_repos()
+
+        if not all_repos:
+            activity.success = False
+            activity.error_message = "Failed to fetch OWASP repositories"
+            activity.save()
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [{"type": "section", "text": {"type": "mrkdwn", "text": "❌ Failed to fetch OWASP repositories."}}],
+            )
+            return
+
+        # Aggregate contributors from all projects
+        all_contributors = {}
+
+        # Process a sample of repositories to avoid rate limiting (top 10 by stars)
+        sorted_repos = sorted(all_repos, key=lambda x: x.get("stargazers_count", 0), reverse=True)[:10]
+
+        start_time = time.time()
+        processed_repos = 0
+        rate_limit_hit = False
+        rate_limit_reset_time = None
+
+        for repo in sorted_repos:
+            if time.time() - start_time > 30:  # 30s timeout
+                logger.warning("Timeout fetching contributors")
+                break
+            try:
+                contributors_url = f"https://api.github.com/repos/{repo['full_name']}/contributors"
+                contributors_params = {"per_page": 30}  # Get top 30 from each repo
+                contributors_response = requests.get(
+                    contributors_url, headers=headers, params=contributors_params, timeout=10
+                )
+
+                if contributors_response.status_code == 200:
+                    contributors = contributors_response.json()
+                    for contributor in contributors:
+                        if contributor.get("type") == "User":
+                            login = contributor["login"]
+                            if login not in all_contributors:
+                                all_contributors[login] = {
+                                    "login": login,
+                                    "avatar_url": contributor.get("avatar_url"),
+                                    "html_url": contributor.get("html_url"),
+                                    "total_contributions": 0,
+                                    "projects": [],
+                                }
+                            all_contributors[login]["total_contributions"] += contributor["contributions"]
+                            all_contributors[login]["projects"].append(
+                                {"name": repo["name"], "contributions": contributor["contributions"]}
+                            )
+                    processed_repos += 1
+                elif contributors_response.status_code == 403:
+                    rate_limit_hit = True
+                    reset_timestamp = contributors_response.headers.get("X-RateLimit-Reset")
+                    if reset_timestamp:
+                        rate_limit_reset_time = int(reset_timestamp)
+                    logger.warning("GitHub rate limit hit while fetching contributors")
+                    break  # Stop further processing, send partial results
+
+                # Small delay to avoid rate limiting
+                time.sleep(0.1)
+
+            except Exception as e:
+                logger.error(f"Error fetching contributors for {repo['name']}: {str(e)}")
+                continue
+
+        # Sort contributors by total contributions
+        sorted_contributors = sorted(all_contributors.values(), key=lambda x: x["total_contributions"], reverse=True)
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "👥 Top OWASP Contributors", "emoji": True},
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"Aggregated from top {processed_repos} of {len(sorted_repos)} OWASP projects by stars",
+                    }
+                ],
+            },
+            {"type": "divider"},
+        ]
+
+        # Show top 20 contributors
+        for idx, contributor in enumerate(sorted_contributors[:20], start=1):
+            project_list = ", ".join([f"{p['name']} ({p['contributions']})" for p in contributor["projects"][:3]])
+            if len(contributor["projects"]) > 3:
+                project_list += f" and {len(contributor['projects']) - 3} more"
+
+            block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*{idx}. <{contributor['html_url']}|{contributor['login']}>*\n"
+                        f"📊 Total Contributions: {contributor['total_contributions']}\n"
+                        f"🔨 Projects: {project_list}"
+                    ),
+                },
+            }
+            if contributor.get("avatar_url"):
+                block["accessory"] = {
+                    "type": "image",
+                    "image_url": contributor["avatar_url"],
+                    "alt_text": f"Avatar for {contributor['login']}",
+                }
+            blocks.append(block)
+
+        if rate_limit_hit:
+            footer_text = "⚠️ *Partial results:* GitHub API rate limit reached."
+
+            if rate_limit_reset_time:
+                reset_dt = datetime.datetime.fromtimestamp(rate_limit_reset_time, tz=datetime.timezone.utc)
+                now = timezone.now()
+                minutes_until = max(1, int((reset_dt - now).total_seconds() / 60))
+                footer_text += f" Full results available in ~{minutes_until} minutes."
+            else:
+                footer_text += " Please try again shortly."
+
+            blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": footer_text}]})
+
+        blocks.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "💡 *Tip:* Use `/contributors <project-name>` to see contributors for a specific project (e.g., `/contributors juice-shop`)",
+                        }
+                    ],
+                },
+            ]
+        )
+
+        send_dm(workspace_client, user_id, "Top OWASP Contributors", blocks)
+        activity.success = bool(sorted_contributors)
+        if not sorted_contributors:
+            activity.error_message = "No contributor data retrieved"
+        activity.save()
+
+    except Exception as e:
+        logger.error(f"Error fetching all contributors: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        send_dm(
+            workspace_client,
+            user_id,
+            "Error",
+            [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "❌ An unexpected error occurred while fetching contributors."},
+                }
+            ],
+        )
+    return
