@@ -3588,6 +3588,7 @@ class UserLoginEvent(models.Model):
             models.Index(fields=["event_type", "-timestamp"], name="login_type_ts_idx"),
             models.Index(fields=["ip_address"], name="login_ip_idx"),
             models.Index(fields=["organization", "-timestamp"], name="login_org_ts_idx"),
+            models.Index(fields=["organization", "event_type", "-timestamp"], name="login_org_type_ts_idx"),
         ]
 
 
@@ -3605,7 +3606,9 @@ class UserBehaviorAnomaly(models.Model):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="behavior_anomalies",
     )
     organization = models.ForeignKey(
@@ -3630,7 +3633,7 @@ class UserBehaviorAnomaly(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.get_anomaly_type_display()} - {self.user} ({self.get_severity_display()})"
+        return f"{self.get_anomaly_type_display()} - {self.user or 'deleted user'} ({self.get_severity_display()})"
 
     class Meta:
         ordering = ["-created_at"]

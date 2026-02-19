@@ -291,8 +291,8 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
                 "id": e.id,
                 "username": e.username_attempted,
                 "event_type": e.event_type,
-                "ip_address": e.ip_address,
-                "user_agent": (e.user_agent[:100] + "...") if len(e.user_agent) > 100 else e.user_agent,
+                "ip_address": e.ip_address or "",
+                "user_agent": (e.user_agent or "")[:100],
                 "timestamp": e.timestamp.isoformat(),
             }
             for e in events

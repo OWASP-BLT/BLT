@@ -3181,7 +3181,7 @@ class OrganizationSecurityApiView(View):
                     "id": a.id,
                     "username": a.user.username if a.user else "",
                     "anomaly_type": a.get_anomaly_type_display(),
-                    "severity": a.severity,
+                    "severity": a.get_severity_display(),
                     "description": a.description,
                     "created_at": a.created_at.isoformat(),
                 }
