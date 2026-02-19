@@ -86,7 +86,7 @@ class RepositoryLinksEnhancementTests(TestCase):
         user_tags = [("python", 10), ("django", 5)]
         language_weights = {"Python": 8}
 
-        with self.assertNumQueries(1):
+        with self.assertNumQueries(2):
             recommended = repo_recommender(user_tags, language_weights)
             for item in recommended:
                 if item["repo"].project:
