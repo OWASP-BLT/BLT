@@ -187,6 +187,7 @@ from website.views.issue import (
     change_bid_status,
     comment_on_content,
     create_github_issue,
+    cve_autocomplete,
     delete_content_comment,
     delete_issue,
     dislike_issue,
@@ -811,6 +812,11 @@ urlpatterns = [
         r"^api/v1/search/$",
         csrf_exempt(search_issues),
         name="search_issues",
+    ),
+    re_path(
+        r"^api/v1/cve/autocomplete/$",
+        csrf_exempt(cve_autocomplete),
+        name="cve_autocomplete",
     ),
     re_path(
         r"^api/v1/delete_issue/(?P<id>\w+)/$",

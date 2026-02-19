@@ -9,7 +9,6 @@ from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
 import pytz
-import requests
 from annoying.fields import AutoOneToOneField
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -30,6 +29,8 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+
+from website.cache.cve_cache import get_cached_cve_score, normalize_cve_id
 
 logger = logging.getLogger(__name__)
 
@@ -621,8 +622,8 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
-    cve_id = models.CharField(max_length=16, null=True, blank=True)
-    cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+    cve_id = models.CharField(max_length=20, null=True, blank=True)
+    cve_score = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
 
@@ -668,21 +669,50 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
+    def clean(self):
+        """Validate model fields."""
+        super().clean()
+        if self.cve_id:
+            # Use normalize_cve_id() for consistent validation
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                # normalize_cve_id returns empty string for invalid CVE IDs
+                raise ValidationError(f"Invalid CVE ID format: {self.cve_id}")
+
+    def save(self, *args, **kwargs):
+        """
+        Override save() to validate and normalize CVE ID on every save.
+        Only validates CVE-specific fields, not all model fields.
+        """
+        # Validate and normalize CVE ID if present
+        if self.cve_id:
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                # normalize_cve_id returns empty string for invalid CVE IDs
+                raise ValidationError(f"Invalid CVE ID format: {self.cve_id}")
+            # Update to normalized form (uppercase, trimmed)
+            if normalized != self.cve_id:
+                self.cve_id = normalized
+                # Ensure normalized value is persisted when update_fields is used
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None and "cve_id" not in update_fields:
+                    kwargs["update_fields"] = list(update_fields) + ["cve_id"]
+
+        # Call parent save() to persist the instance
+        super().save(*args, **kwargs)
+
     def get_cve_score(self):
-        if self.cve_id is None:
+        """
+        Get CVE score from cache/API.
+        Returns None for empty, None, or invalid CVE IDs.
+        """
+        if not self.cve_id:
             return None
-        try:
-            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
-            response = requests.get(url).json()
-            results = response["resultsPerPage"]
-            if results != 0:
-                metrics = response["vulnerabilities"][0]["cve"]["metrics"]
-                if metrics:
-                    cvss_metric_v = next(iter(metrics))
-                    return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
-        except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
+        # normalize_cve_id handles empty strings and invalid formats
+        normalized = normalize_cve_id(self.cve_id)
+        if not normalized:
             return None
+        return get_cached_cve_score(normalized)
 
     def get_cve_severity(self):
         """
@@ -734,6 +764,8 @@ class Issue(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+            models.Index(fields=["cve_id"], name="issue_cve_id_idx"),
+            models.Index(fields=["cve_score"], name="issue_cve_score_idx"),
         ]
 
 
