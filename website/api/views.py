@@ -513,19 +513,38 @@ class LeaderboardApiViewSet(APIView):
                 return Response("Invalid month or year passed", status=400)
 
         queryset = global_leaderboard.get_leaderboard(month, year, api=True)
+
+        # Batch-fetch all user IDs to avoid N+1 queries
+        user_ids = [each["id"] for each in queryset]
+
+        # Single query for all scores
+        scores_map = {}
+        for row in Points.objects.filter(user__in=user_ids).values("user").annotate(total_score=Sum("score")):
+            scores_map[row["user"]] = {"total_score": row["total_score"]}
+
+        # Single query for all profiles
+        profiles_map = {}
+        for p in UserProfile.objects.filter(user__in=user_ids).values(
+            "user_id", "user_avatar", "title", "follows", "issue_saved"
+        ):
+            profiles_map[p["user_id"]] = p
+
         users = []
         rank_user = 1
         for each in queryset:
-            temp = {}
-            temp["rank"] = rank_user
-            temp["id"] = each["id"]
-            temp["User"] = each["username"]
-            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
-            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
-            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
-            temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
-            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
-            rank_user = rank_user + 1
+            uid = each["id"]
+            profile = profiles_map.get(uid, {})
+            temp = {
+                "rank": rank_user,
+                "id": uid,
+                "User": each["username"],
+                "score": scores_map.get(uid, {"total_score": 0}),
+                "image": {"user_avatar": profile.get("user_avatar", "")},
+                "title_type": {"title": profile.get("title", 0)},
+                "follows": {"follows": profile.get("follows")},
+                "savedissue": {"issue_saved": profile.get("issue_saved")},
+            }
+            rank_user += 1
             users.append(temp)
 
         page = paginator.paginate_queryset(users, request)
@@ -950,9 +969,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
-        if hasattr(Project, "contributors"):
-            projects_qs = projects_qs.prefetch_related("contributors")
-
         projects = projects_qs.filter(
             Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
         ).distinct()
