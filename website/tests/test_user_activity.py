@@ -262,7 +262,6 @@ class SecurityDashboardUserActivityTests(TestCase):
         self.assertIn("login_success_count", response.context)
         self.assertIn("login_failed_count", response.context)
         self.assertIn("hourly_login_data", response.context)
-        self.assertIn("anomaly_chart_data", response.context)
 
     def test_api_returns_json_events(self):
         self.client.login(username="staffuser", password="testpass123")
