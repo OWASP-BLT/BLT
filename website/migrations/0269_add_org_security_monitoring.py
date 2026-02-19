@@ -1,10 +1,12 @@
 import django.db.models.deletion
+from django.conf import settings
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0268_userloginevent_userbehavioranomaly"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -49,6 +51,21 @@ class Migration(migrations.Migration):
                 to="website.organization",
             ),
         ),
+        migrations.AlterModelOptions(
+            name="userbehavioranomaly",
+            options={"ordering": ["-created_at"], "verbose_name_plural": "User behavior anomalies"},
+        ),
+        migrations.AlterField(
+            model_name="userbehavioranomaly",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="behavior_anomalies",
+                to=settings.AUTH_USER_MODEL,
+            ),
+        ),
         migrations.AddIndex(
             model_name="securityincident",
             index=models.Index(
@@ -61,6 +78,13 @@ class Migration(migrations.Migration):
             index=models.Index(
                 fields=["organization", "-timestamp"],
                 name="login_org_ts_idx",
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="userloginevent",
+            index=models.Index(
+                fields=["organization", "event_type", "-timestamp"],
+                name="login_org_type_ts_idx",
             ),
         ),
         migrations.AddIndex(
