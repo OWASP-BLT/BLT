@@ -22,36 +22,41 @@ def _setting(name):
     return getattr(settings, name, _DEFAULTS[name])
 
 
-def check_login_anomalies(user, login_event):
+def check_login_anomalies(user, login_event, organization=None):
     """Run anomaly checks after a successful login."""
     if user is None:
         return
 
     cutoff = timezone.now() - timedelta(days=_setting("ANOMALY_IP_LOOKBACK_DAYS"))
-    prior_events = UserLoginEvent.objects.filter(
-        user=user,
-        event_type=UserLoginEvent.EventType.LOGIN,
-        timestamp__gte=cutoff,
-    ).exclude(pk=login_event.pk)
+    prior_events = (
+        UserLoginEvent.objects.filter(
+            user=user,
+            event_type=UserLoginEvent.EventType.LOGIN,
+            timestamp__gte=cutoff,
+            organization=organization,
+        )
+        .exclude(pk=login_event.pk)
+        .order_by("-timestamp")
+    )
 
     # Only run checks if the user has prior login history
     if not prior_events.exists():
         return
 
-    _check_new_ip(user, login_event, prior_events)
-    _check_new_user_agent(user, login_event, prior_events)
-    _check_unusual_time(user, login_event)
+    _check_new_ip(user, login_event, prior_events, organization=organization)
+    _check_new_user_agent(user, login_event, prior_events, organization=organization)
+    _check_unusual_time(user, login_event, organization=organization)
 
 
-def check_failed_login_anomalies(user, failed_event):
+def check_failed_login_anomalies(user, failed_event, organization=None):
     """Run anomaly checks after a failed login attempt."""
     if user is None:
         return
 
-    _check_rapid_failures(user, failed_event)
+    _check_rapid_failures(user, failed_event, organization=organization)
 
 
-def _check_new_ip(user, login_event, prior_events):
+def _check_new_ip(user, login_event, prior_events, organization=None):
     """Flag logins from an IP address not seen in the lookback window."""
     if not login_event.ip_address:
         return
@@ -61,6 +66,7 @@ def _check_new_ip(user, login_event, prior_events):
     if login_event.ip_address not in known_ips:
         UserBehaviorAnomaly.objects.create(
             user=user,
+            organization=organization,
             anomaly_type=UserBehaviorAnomaly.AnomalyType.NEW_IP,
             severity=UserBehaviorAnomaly.Severity.MEDIUM,
             description=f"Login from new IP address: {login_event.ip_address}",
@@ -72,7 +78,7 @@ def _check_new_ip(user, login_event, prior_events):
         )
 
 
-def _check_new_user_agent(user, login_event, prior_events):
+def _check_new_user_agent(user, login_event, prior_events, organization=None):
     """Flag logins from a user agent string not seen before."""
     if not login_event.user_agent:
         return
@@ -82,6 +88,7 @@ def _check_new_user_agent(user, login_event, prior_events):
     if login_event.user_agent not in known_uas:
         UserBehaviorAnomaly.objects.create(
             user=user,
+            organization=organization,
             anomaly_type=UserBehaviorAnomaly.AnomalyType.NEW_UA,
             severity=UserBehaviorAnomaly.Severity.LOW,
             description="Login from new device or browser",
@@ -92,7 +99,7 @@ def _check_new_user_agent(user, login_event, prior_events):
         )
 
 
-def _check_unusual_time(user, login_event):
+def _check_unusual_time(user, login_event, organization=None):
     """Flag logins during unusual hours (UTC)."""
     hour = login_event.timestamp.hour
     start = _setting("ANOMALY_UNUSUAL_HOUR_START")
@@ -100,12 +107,13 @@ def _check_unusual_time(user, login_event):
     if start <= end:
         is_unusual = start <= hour < end
     else:
-        # Wrap-around case (e.g., 22–6 means 22,23,0,1,2,3,4,5)
+        # Wrap-around case (e.g., 22-6 means 22,23,0,1,2,3,4,5)
         is_unusual = hour >= start or hour < end
 
     if is_unusual:
         UserBehaviorAnomaly.objects.create(
             user=user,
+            organization=organization,
             anomaly_type=UserBehaviorAnomaly.AnomalyType.UNUSUAL_TIME,
             severity=UserBehaviorAnomaly.Severity.LOW,
             description=f"Login at unusual hour: {hour}:00 UTC",
@@ -116,31 +124,42 @@ def _check_unusual_time(user, login_event):
         )
 
 
-def _check_rapid_failures(user, failed_event):
+def _check_rapid_failures(user, failed_event, organization=None):
     """Flag accounts with many failed login attempts in a short window."""
     window_minutes = _setting("ANOMALY_RAPID_FAILURE_WINDOW_MINUTES")
     failure_threshold = _setting("ANOMALY_RAPID_FAILURE_COUNT")
     window_start = timezone.now() - timedelta(minutes=window_minutes)
 
-    recent_failures = UserLoginEvent.objects.filter(
-        user=user,
-        event_type=UserLoginEvent.EventType.FAILED,
-        timestamp__gte=window_start,
-    ).count()
+    recent_failures = (
+        UserLoginEvent.objects.filter(
+            user=user,
+            event_type=UserLoginEvent.EventType.FAILED,
+            timestamp__gte=window_start,
+            organization=organization,
+        )
+        .order_by("-timestamp")
+        .count()
+    )
 
     if recent_failures < failure_threshold:
         return
 
     # Dedup: skip if an alert already exists in the current window
-    existing = UserBehaviorAnomaly.objects.filter(
-        user=user,
-        anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
-        created_at__gte=window_start,
-    ).first()
+    existing = (
+        UserBehaviorAnomaly.objects.filter(
+            user=user,
+            anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
+            created_at__gte=window_start,
+            organization=organization,
+        )
+        .order_by("-created_at")
+        .first()
+    )
 
     if existing is None:
         UserBehaviorAnomaly.objects.create(
             user=user,
+            organization=organization,
             anomaly_type=UserBehaviorAnomaly.AnomalyType.RAPID_FAILURES,
             severity=UserBehaviorAnomaly.Severity.HIGH,
             description=f"{recent_failures} failed login attempts in {window_minutes} minutes",

@@ -38,6 +38,8 @@ from website.models import (
     OrganizationAdmin,
     Points,
     SlackIntegration,
+    UserBehaviorAnomaly,
+    UserLoginEvent,
     Winner,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
@@ -3039,3 +3041,173 @@ def job_detail(request, pk):
     }
 
     return render(request, "jobs/job_detail.html", context)
+
+
+class OrganizationSecurityDashboardView(View):
+    """Org-scoped security monitoring dashboard."""
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        org = Organization.objects.filter(id=id).first()
+        if not org:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers=request.user) | Q(admin=request.user))
+            .distinct()
+            .order_by("name")
+        )
+
+        if not org.security_monitoring_enabled:
+            context = {
+                "organization": int(id),
+                "organizations": organizations,
+                "organization_obj": org,
+                "monitoring_disabled": True,
+            }
+            return render(request, "organization/dashboard/organization_security.html", context)
+
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        # Org-scoped security issues (via domains); remove ordering for aggregate use
+        security_issues = Issue.objects.filter(domain__organization__id=id, label=4).order_by()
+
+        # Org-scoped login events and anomalies
+        login_events = (
+            UserLoginEvent.objects.filter(organization_id=id).select_related("user").order_by("-timestamp")[:30]
+        )
+        anomaly_count = UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=False).count()
+        anomalies = (
+            UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=False)
+            .select_related("user")
+            .order_by("-created_at")[:15]
+        )
+
+        login_success = UserLoginEvent.objects.filter(
+            organization_id=id, event_type="login", timestamp__gte=thirty_days_ago
+        ).count()
+        login_failed = UserLoginEvent.objects.filter(
+            organization_id=id, event_type="failed", timestamp__gte=thirty_days_ago
+        ).count()
+
+        # Hourly login distribution
+        hourly_data = list(
+            UserLoginEvent.objects.filter(
+                organization_id=id,
+                event_type="login",
+                timestamp__gte=thirty_days_ago,
+            )
+            .annotate(hour=ExtractHour("timestamp"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("hour")
+        )
+
+        # Severity breakdown from security issues (CVE score ranges)
+        severity_ranges = [
+            (9.0, 11.0, "Critical"),
+            (7.0, 9.0, "High"),
+            (5.0, 7.0, "Medium"),
+            (3.0, 5.0, "Low"),
+        ]
+        severity_labels = [label for _, _, label in severity_ranges]
+        severity_counts = [
+            security_issues.filter(cve_score__gte=min_s, cve_score__lt=max_s).count()
+            for min_s, max_s, _ in severity_ranges
+        ]
+
+        # Risk score (weighted formula from analytics view)
+        total_issues = security_issues.count()
+        if total_issues > 0:
+            risk_weights = {"critical": 100, "high": 70, "medium": 40, "low": 20}
+            counts = dict(zip(risk_weights.keys(), severity_counts))
+            risk_score = sum(counts[level] / total_issues * weight for level, weight in risk_weights.items())
+            risk_score = min(100, int(risk_score))
+        else:
+            risk_score = 0
+
+        context = {
+            "organization": int(id),
+            "organizations": organizations,
+            "organization_obj": org,
+            "monitoring_disabled": False,
+            "login_events": login_events,
+            "anomalies": anomalies,
+            "anomaly_count": anomaly_count,
+            "login_success_count": login_success,
+            "login_failed_count": login_failed,
+            "hourly_login_data": hourly_data,
+            "severity_labels": severity_labels,
+            "severity_counts": severity_counts,
+            "risk_score": risk_score,
+            "total_security_issues": total_issues,
+            "recent_incidents_count": security_issues.filter(created__gte=thirty_days_ago).count(),
+        }
+        return render(request, "organization/dashboard/organization_security.html", context)
+
+
+class OrganizationSecurityApiView(View):
+    """Org-scoped security API for events, anomalies, and dismiss actions."""
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        action = request.GET.get("action")
+        if action == "events":
+            events = (
+                UserLoginEvent.objects.filter(organization_id=id).select_related("user").order_by("-timestamp")[:50]
+            )
+            data = [
+                {
+                    "id": e.id,
+                    "username": e.username_attempted,
+                    "event_type": e.event_type,
+                    "ip_address": e.ip_address or "",
+                    "user_agent": (e.user_agent or "")[:100],
+                    "timestamp": e.timestamp.isoformat(),
+                }
+                for e in events
+            ]
+            return JsonResponse({"events": data})
+        elif action == "anomalies":
+            anomalies = (
+                UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=False)
+                .select_related("user")
+                .order_by("-created_at")[:30]
+            )
+            data = [
+                {
+                    "id": a.id,
+                    "username": a.user.username if a.user else "",
+                    "anomaly_type": a.get_anomaly_type_display(),
+                    "severity": a.severity,
+                    "description": a.description,
+                    "created_at": a.created_at.isoformat(),
+                }
+                for a in anomalies
+            ]
+            return JsonResponse({"anomalies": data})
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        action = request.POST.get("action")
+        if action == "dismiss_anomaly":
+            org = Organization.objects.filter(id=id).first()
+            if not org or not org.is_admin(request.user):
+                return JsonResponse({"error": "Only org admin can dismiss anomalies"}, status=403)
+            anomaly_id = request.POST.get("anomaly_id")
+            if not anomaly_id:
+                return JsonResponse({"error": "anomaly_id is required"}, status=400)
+            try:
+                anomaly_id = int(anomaly_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Invalid anomaly_id"}, status=400)
+            anomaly = UserBehaviorAnomaly.objects.filter(id=anomaly_id, organization_id=id).first()
+            if not anomaly:
+                return JsonResponse({"error": "Anomaly not found"}, status=404)
+            anomaly.is_reviewed = True
+            anomaly.save(update_fields=["is_reviewed"])
+            return JsonResponse({"status": "dismissed"})
+        return JsonResponse({"error": "Invalid action"}, status=400)
