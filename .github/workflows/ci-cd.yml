@@ -453,7 +453,10 @@ jobs:
           retention-days: 1
       - name: Save test result for label workflow
         if: always() && github.event_name == 'pull_request'
-        run: echo "${{ steps.run-tests.outputs.exit_code }}" > test-result.txt
+        run: |
+          EXIT_CODE="${{ steps.run-tests.outputs.exit_code }}"
+          # If exit_code is empty (e.g. step was cancelled/timed out), use sentinel value
+          echo "${EXIT_CODE:-cancelled}" > test-result.txt
       - name: Upload test result
         if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
