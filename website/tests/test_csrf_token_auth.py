@@ -115,6 +115,7 @@ class SessionAuthCSRFTest(TestCase):
         self.assertEqual(response.status_code, 403, msg="Token auth should not bypass CSRF on delete_issue")
 
     def test_session_auth_with_csrf_succeeds(self):
+        """Session-authenticated request with CSRF token should succeed."""
         client = Client(enforce_csrf_checks=True)
         client.login(username="testuser", password="testpass123")
 
@@ -125,6 +126,4 @@ class SessionAuthCSRFTest(TestCase):
         csrf_token = csrf_cookie.value
 
         response = client.post(f"/api/v1/delete_issue/{self.issue.id}/", {}, HTTP_X_CSRFTOKEN=csrf_token)
-
-        self.assertNotEqual(response.status_code, 403)
-        self.assertNotEqual(response.status_code, 401)
+        self.assertIn(response.status_code, [200, 204, 302])
