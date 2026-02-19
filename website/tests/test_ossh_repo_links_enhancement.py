@@ -21,6 +21,7 @@ class RepositoryLinksEnhancementTests(TestCase):
         # Create tags
         self.tag_python = Tag.objects.create(name="python")
         self.tag_django = Tag.objects.create(name="django")
+        self.tag_unique = Tag.objects.create(name="unique")
 
         # Create project
         self.project = Project.objects.create(
@@ -138,7 +139,7 @@ class RepositoryLinksEnhancementTests(TestCase):
 
     def test_results_sorted_by_relevance(self):
         """Test results are properly sorted by relevance score"""
-        # repo_high matches both tags = higher score
+        # repo_high matches unique high-weight tag = strictly highest score
         repo_high = Repo.objects.create(
             name="High Score Repo",
             repo_url="https://github.com/test/high-score",
@@ -146,7 +147,7 @@ class RepositoryLinksEnhancementTests(TestCase):
             primary_language="Python",
             stars=10,
         )
-        repo_high.tags.add(self.tag_python, self.tag_django)
+        repo_high.tags.add(self.tag_python, self.tag_django, self.tag_unique)
 
         # repo_low matches only one tag = lower score
         repo_low = Repo.objects.create(
@@ -158,12 +159,17 @@ class RepositoryLinksEnhancementTests(TestCase):
         )
         repo_low.tags.add(self.tag_python)
 
-        user_tags = [("python", 10), ("django", 8)]
+        user_tags = [("python", 10), ("django", 8), ("unique", 20)]
         language_weights = {"Python": 5}
 
         recommended = repo_recommender(user_tags, language_weights)
 
-        # Verify descending order
+        # Verify strictly descending order for top pair
+        self.assertGreater(
+            recommended[0]["relevance_score"],
+            recommended[1]["relevance_score"],
+        )
+        # Verify full list is in descending order
         for i in range(len(recommended) - 1):
             self.assertGreaterEqual(
                 recommended[i]["relevance_score"],
