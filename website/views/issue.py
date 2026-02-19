@@ -2081,8 +2081,9 @@ class IssueView(DetailView):
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-        except Exception as e:
-            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
+        except Exception:
+            logger.exception("Error tracking IP view for issue %s", self.object.id)
+
 
         return super().get(request, *args, **kwargs)
 
