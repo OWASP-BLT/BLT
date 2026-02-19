@@ -63,7 +63,6 @@ from website.views.bitcoin import (
     pending_transactions_view,
     update_submission_status,
 )
-from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
@@ -187,6 +186,7 @@ from website.views.issue import (
     change_bid_status,
     comment_on_content,
     create_github_issue,
+    cve_autocomplete,
     delete_content_comment,
     delete_issue,
     dislike_issue,
@@ -812,6 +812,11 @@ urlpatterns = [
         name="search_issues",
     ),
     re_path(
+        r"^api/v1/cve/autocomplete/$",
+        csrf_exempt(cve_autocomplete),
+        name="cve_autocomplete",
+    ),
+    re_path(
         r"^api/v1/delete_issue/(?P<id>\w+)/$",
         csrf_exempt(delete_issue),
         name="delete_api_issue",
@@ -1066,12 +1071,6 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
-    # blog urls
-    path("blog/", PostListView.as_view(), name="post_list"),
-    path("blog/new/", PostCreateView.as_view(), name="post_form"),
-    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
-    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
-    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
     path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),
