@@ -161,6 +161,7 @@ class Command(LoggedBaseCommand):
 
         Note: Network calls are intentionally kept outside of database transactions
         to avoid holding connections open during unpredictable I/O operations.
+        Only updates the last_updated timestamp if all operations succeed.
         """
         self.stdout.write(f"Updating repository: {repo.name}")
 
@@ -168,24 +169,30 @@ class Command(LoggedBaseCommand):
         parsed = urlparse(repo.repo_url)
         # parsed.netloc will be something like "github.com"
 
-        if parsed.netloc == "github.com":
-            path = parsed.path.strip("/")  # e.g. "owner/repo"
-            parts = path.split("/")
-            if len(parts) >= 2:
-                owner, repo_name = parts[-2], parts[-1]
-                self.update_repo_data(repo, owner, repo_name)
-                if not skip_issues:
-                    self.fetch_issues_and_prs(repo, owner, repo_name)
+        try:
+            if parsed.netloc == "github.com":
+                path = parsed.path.strip("/")  # e.g. "owner/repo"
+                parts = path.split("/")
+                if len(parts) >= 2:
+                    owner, repo_name = parts[-2], parts[-1]
+                    self.update_repo_data(repo, owner, repo_name)
+                    if not skip_issues:
+                        self.fetch_issues_and_prs(repo, owner, repo_name)
+                else:
+                    self.stdout.write("Invalid GitHub URL format.")
+                    return
             else:
-                self.stdout.write("Invalid GitHub URL format.")
-        else:
-            self.stdout.write("Not a GitHub URL.")
+                self.stdout.write("Not a GitHub URL.")
+                return
 
-        # Update the last_updated timestamp
-        repo.last_updated = timezone.now()
-        repo.save(update_fields=["last_updated"])
+            # Update the last_updated timestamp only after successful update
+            repo.last_updated = timezone.now()
+            repo.save(update_fields=["last_updated"])
 
-        self.stdout.write(self.style.SUCCESS(f"Successfully updated {repo.name}"))
+            self.stdout.write(self.style.SUCCESS(f"Successfully updated {repo.name}"))
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to update repository {repo.name}: {e}")
+            self.stdout.write(self.style.ERROR(f"Failed to update {repo.name} - data remains stale: {e}"))
 
     def update_repo_data(self, repo, owner, repo_name):
         """
@@ -215,7 +222,7 @@ class Command(LoggedBaseCommand):
                 description = description[:252] + "..."
             repo.description = description
 
-            repo.primary_language = repo_data.get("language", "")
+            repo.primary_language = repo_data.get("language") or ""
             repo.is_archived = repo_data.get("archived", False)
 
             # Update last commit date if available
@@ -229,6 +236,7 @@ class Command(LoggedBaseCommand):
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching repository data for {owner}/{repo_name}: {e}")
+            raise
 
     def fetch_issues_and_prs(self, repo, owner, repo_name):
         """
@@ -298,7 +306,7 @@ class Command(LoggedBaseCommand):
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error fetching issues for {owner}/{repo_name}: {e}")
-                break
+                raise
 
         return issues
 
@@ -311,9 +319,6 @@ class Command(LoggedBaseCommand):
         page = 1
         per_page = 100
 
-        # Calculate date one year ago for filtering
-        one_year_ago = (timezone.now() - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
-
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
@@ -322,7 +327,6 @@ class Command(LoggedBaseCommand):
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
                 f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
-                f"&since={one_year_ago}"
             )
 
             self.stdout.write(f"Fetching PRs from: {url}")
@@ -360,7 +364,7 @@ class Command(LoggedBaseCommand):
 
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error fetching closed PRs for {owner}/{repo_name}: {e}")
-                break
+                raise
 
         self.stdout.write(f"Total PRs fetched: {len(prs)}")
         return prs
