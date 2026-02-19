@@ -94,4 +94,20 @@ class Migration(migrations.Migration):
                 name="anomaly_org_ts_idx",
             ),
         ),
+        migrations.AddField(
+            model_name="userbehavioranomaly",
+            name="reviewed_at",
+            field=models.DateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name="userbehavioranomaly",
+            name="reviewed_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reviewed_anomalies",
+                to=settings.AUTH_USER_MODEL,
+            ),
+        ),
     ]
