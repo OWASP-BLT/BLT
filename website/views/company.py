@@ -3208,6 +3208,8 @@ class OrganizationSecurityApiView(View):
             if not anomaly:
                 return JsonResponse({"error": "Anomaly not found"}, status=404)
             anomaly.is_reviewed = True
-            anomaly.save(update_fields=["is_reviewed"])
+            anomaly.reviewed_at = timezone.now()
+            anomaly.reviewed_by = request.user
+            anomaly.save(update_fields=["is_reviewed", "reviewed_at", "reviewed_by"])
             return JsonResponse({"status": "dismissed"})
         return JsonResponse({"error": "Invalid action"}, status=400)

@@ -1,8 +1,12 @@
 import datetime
+from datetime import timedelta
+from io import StringIO
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from website.models import UserBehaviorAnomaly, UserLoginEvent
 from website.services.anomaly_detection import check_failed_login_anomalies, check_login_anomalies
@@ -345,3 +349,124 @@ class SecurityDashboardUserActivityTests(TestCase):
             {"action": "dismiss_anomaly"},
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_dismiss_sets_reviewed_at_and_reviewed_by(self):
+        anomaly = UserBehaviorAnomaly.objects.create(
+            user=self.staff_user,
+            anomaly_type=UserBehaviorAnomaly.AnomalyType.NEW_IP,
+            severity=UserBehaviorAnomaly.Severity.MEDIUM,
+            description="Audit trail test",
+        )
+
+        self.client.login(username="superuser", password="testpass123")
+        self.client.post(
+            reverse("security_user_activity_api"),
+            {"action": "dismiss_anomaly", "anomaly_id": anomaly.id},
+        )
+        anomaly.refresh_from_db()
+        self.assertTrue(anomaly.is_reviewed)
+        self.assertIsNotNone(anomaly.reviewed_at)
+        self.assertEqual(anomaly.reviewed_by, self.superuser)
+
+
+class PIIAnonymizationTests(TestCase):
+    def test_user_delete_anonymizes_login_events(self):
+        user = User.objects.create_user(username="piiuser", password="testpass123")
+        UserLoginEvent.objects.create(
+            user=user,
+            username_attempted="piiuser",
+            event_type=UserLoginEvent.EventType.LOGIN,
+            ip_address="10.0.0.1",
+            user_agent="SecretBrowser/1.0",
+        )
+        UserLoginEvent.objects.create(
+            user=user,
+            username_attempted="piiuser",
+            event_type=UserLoginEvent.EventType.FAILED,
+            ip_address="10.0.0.2",
+            user_agent="AnotherBrowser/2.0",
+        )
+
+        user.delete()
+
+        events = UserLoginEvent.objects.filter(username_attempted="[deleted]")
+        self.assertEqual(events.count(), 2)
+        for event in events:
+            self.assertIsNone(event.ip_address)
+            self.assertEqual(event.user_agent, "")
+            self.assertIsNone(event.user)
+
+    def test_unrelated_user_events_not_affected(self):
+        user1 = User.objects.create_user(username="user1", password="testpass123")
+        user2 = User.objects.create_user(username="user2", password="testpass123")
+        UserLoginEvent.objects.create(
+            user=user1,
+            username_attempted="user1",
+            event_type=UserLoginEvent.EventType.LOGIN,
+            ip_address="10.0.0.1",
+        )
+        UserLoginEvent.objects.create(
+            user=user2,
+            username_attempted="user2",
+            event_type=UserLoginEvent.EventType.LOGIN,
+            ip_address="10.0.0.2",
+        )
+
+        user1.delete()
+
+        # user2's event should be untouched
+        event = UserLoginEvent.objects.get(username_attempted="user2")
+        self.assertEqual(event.ip_address, "10.0.0.2")
+
+
+class PurgeOldLoginEventsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="purgeuser", password="testpass123")
+
+    def _create_old_event(self, days_ago):
+        event = UserLoginEvent.objects.create(
+            user=self.user,
+            username_attempted="purgeuser",
+            event_type=UserLoginEvent.EventType.LOGIN,
+        )
+        old_time = timezone.now() - timedelta(days=days_ago)
+        UserLoginEvent.objects.filter(pk=event.pk).update(timestamp=old_time)
+        return event
+
+    def test_purge_deletes_old_events(self):
+        self._create_old_event(days_ago=100)
+        self._create_old_event(days_ago=95)
+        recent = UserLoginEvent.objects.create(
+            user=self.user,
+            username_attempted="purgeuser",
+            event_type=UserLoginEvent.EventType.LOGIN,
+        )
+
+        out = StringIO()
+        call_command("purge_old_login_events", "--days=90", stdout=out)
+
+        self.assertEqual(UserLoginEvent.objects.count(), 1)
+        self.assertEqual(UserLoginEvent.objects.first().pk, recent.pk)
+        self.assertIn("Deleted 2", out.getvalue())
+
+    def test_dry_run_does_not_delete(self):
+        self._create_old_event(days_ago=100)
+
+        out = StringIO()
+        call_command("purge_old_login_events", "--days=90", "--dry-run", stdout=out)
+
+        self.assertEqual(UserLoginEvent.objects.count(), 1)
+        self.assertIn("DRY RUN", out.getvalue())
+
+    def test_no_events_to_purge(self):
+        UserLoginEvent.objects.create(
+            user=self.user,
+            username_attempted="purgeuser",
+            event_type=UserLoginEvent.EventType.LOGIN,
+        )
+
+        out = StringIO()
+        call_command("purge_old_login_events", "--days=90", stdout=out)
+
+        self.assertEqual(UserLoginEvent.objects.count(), 1)
+        self.assertIn("No login events", out.getvalue())

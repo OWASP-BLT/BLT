@@ -1,8 +1,10 @@
 import logging
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
 from django.db.models import Q
+from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 from website.models import Organization, UserLoginEvent
@@ -137,3 +139,17 @@ def on_user_login_failed(sender, credentials, request, **kwargs):
         check_failed_login_anomalies(user, event)
     except Exception:
         logger.exception("Error recording failed login event")
+
+
+def anonymize_login_events_on_user_delete(sender, instance, **kwargs):
+    """Anonymize PII in login events when a user is deleted (GDPR compliance)."""
+    UserLoginEvent.objects.filter(user=instance).update(
+        username_attempted="[deleted]",
+        ip_address=None,
+        user_agent="",
+    )
+
+
+# Connect pre_delete to the User model.
+# Safe because this module is imported during AppConfig.ready().
+pre_delete.connect(anonymize_login_events_on_user_delete, sender=get_user_model())

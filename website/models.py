@@ -3630,6 +3630,14 @@ class UserBehaviorAnomaly(models.Model):
         related_name="anomalies",
     )
     is_reviewed = models.BooleanField(default=False)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_anomalies",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
