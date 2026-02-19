@@ -18,10 +18,18 @@ from .models import Comment
 def add_comment(request):
     if request.method == "POST":
         pk = request.POST.get("issue_pk")
+        if not pk:
+            return HttpResponse("Missing issue ID", status=400)
+        try:
+            pk = int(pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid issue ID", status=400)
         issue = get_object_or_404(Issue, pk=pk)
         author = request.user.username
         author_url = os.path.join("/profile/", request.user.username)
         text = request.POST.get("text_comment")
+        if not text:
+            return HttpResponse("Missing comment text", status=400)
         text = escape(text)
         user_list = []
         temp_text = text.split()
@@ -80,7 +88,14 @@ def add_comment(request):
 @login_required(login_url="/accounts/login")
 def delete_comment(request):
     if request.method == "POST":
-        issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+        issue_pk = request.POST.get("issue_pk")
+        if not issue_pk:
+            return HttpResponse("Missing issue ID", status=400)
+        try:
+            issue_pk = int(issue_pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid issue ID", status=400)
+        issue = get_object_or_404(Issue, pk=issue_pk)
         comment_pk = request.POST.get("comment_pk")
         if not comment_pk:
             return HttpResponse("Missing comment ID", status=400)
@@ -88,7 +103,7 @@ def delete_comment(request):
             comment_pk = int(comment_pk)
         except (ValueError, TypeError):
             return HttpResponse("Invalid comment ID", status=400)
-        comment = get_object_or_404(Comment, pk=comment_pk)
+        comment = get_object_or_404(Comment, pk=comment_pk, issue=issue)
         if request.user.username != comment.author:
             return HttpResponse("Cannot delete this comment", status=403)
         try:
@@ -120,7 +135,7 @@ def edit_comment(request, pk):
             comment_pk = int(comment_pk)
         except (ValueError, TypeError):
             return HttpResponse("Invalid comment ID", status=400)
-        comment = get_object_or_404(Comment, pk=comment_pk)
+        comment = get_object_or_404(Comment, pk=comment_pk, issue=issue)
         if request.user.username != comment.author:
             return HttpResponse("Cannot edit this comment", status=403)
         text = request.POST.get("text_comment")
