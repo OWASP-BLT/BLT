@@ -230,11 +230,9 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
 
         context["recent_login_events"] = UserLoginEvent.objects.select_related("user").order_by("-timestamp")[:50]
 
-        context["anomalies"] = (
-            UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user").order_by("-created_at")[:20]
-        )
-
-        context["anomaly_count"] = UserBehaviorAnomaly.objects.filter(is_reviewed=False).count()
+        unreviewed_anomalies = UserBehaviorAnomaly.objects.filter(is_reviewed=False)
+        context["anomaly_count"] = unreviewed_anomalies.count()
+        context["anomalies"] = unreviewed_anomalies.select_related("user").order_by("-created_at")[:20]
 
         context["login_success_count"] = UserLoginEvent.objects.filter(
             event_type=UserLoginEvent.EventType.LOGIN,
@@ -290,7 +288,7 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             {
                 "id": e.id,
                 "username": e.username_attempted,
-                "event_type": e.event_type,
+                "event_type": e.get_event_type_display(),
                 "ip_address": e.ip_address or "",
                 "user_agent": (e.user_agent or "")[:100],
                 "timestamp": e.timestamp.isoformat(),
@@ -306,7 +304,7 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         data = [
             {
                 "id": a.id,
-                "user": a.user.username,
+                "user": a.user.username if a.user else "",
                 "anomaly_type": a.get_anomaly_type_display(),
                 "severity": a.get_severity_display(),
                 "description": a.description,
@@ -320,9 +318,9 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         if not request.user.is_superuser:
             return JsonResponse({"error": "Forbidden"}, status=403)
 
-        anomaly_id = request.POST.get("id")
+        anomaly_id = request.POST.get("anomaly_id") or request.POST.get("id")
         if not anomaly_id:
-            return JsonResponse({"error": "Missing anomaly id"}, status=400)
+            return JsonResponse({"error": "anomaly_id is required"}, status=400)
 
         try:
             anomaly = UserBehaviorAnomaly.objects.get(pk=int(anomaly_id))

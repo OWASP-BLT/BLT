@@ -3162,7 +3162,7 @@ class OrganizationSecurityApiView(View):
                 {
                     "id": e.id,
                     "username": e.username_attempted,
-                    "event_type": e.event_type,
+                    "event_type": e.get_event_type_display(),
                     "ip_address": e.ip_address or "",
                     "user_agent": (e.user_agent or "")[:100],
                     "timestamp": e.timestamp.isoformat(),

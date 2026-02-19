@@ -134,7 +134,7 @@ function dismissAnomaly(anomalyId, buttonEl) {
 
     var formData = new FormData();
     formData.append("action", "dismiss_anomaly");
-    formData.append("id", anomalyId);
+    formData.append("anomaly_id", anomalyId);
 
     fetch("/security/api/user-activity/", {
         method: "POST",
