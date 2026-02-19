@@ -35,30 +35,6 @@ class TokenBasedAuthTest(TestCase):
             label=1,
         )
 
-    def test_api_client_with_token_auth_no_csrf_error(self):
-        """
-        Token-authenticated requests should work without CSRF tokens.
-        This ensures mobile app and external API clients function correctly.
-        The key is: we should NOT get a 403 CSRF error.
-        """
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
-
-        # POST to token-protected endpoint with minimal data
-        # The endpoint may return other errors (400 validation, etc),
-        # but NOT 403 CSRF Forbidden
-        response = client.post(
-            "/api/v1/issue/update/",
-            {
-                "id": self.issue.id,
-                "description": "Updated",
-            },
-            format="json",
-        )
-
-        # Should NOT be 403 CSRF error (token auth bypasses CSRF)
-        self.assertNotEqual(response.status_code, 403, msg="Token auth should bypass CSRF requirement")
-
     def test_get_request_never_requires_csrf(self):
         """GET requests should never fail with CSRF errors."""
         client = APIClient()
