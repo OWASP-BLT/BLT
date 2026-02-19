@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
@@ -175,7 +177,8 @@ class AnomalyDetectionTests(TestCase):
         self._create_login_event()
         unusual_event = self._create_login_event()
         # auto_now_add fields can't be overridden via .save(); use queryset update
-        forced_time = unusual_event.timestamp.replace(hour=3)
+        # Force hour=3 UTC to trigger the 1-5 AM anomaly window
+        forced_time = unusual_event.timestamp.astimezone(datetime.timezone.utc).replace(hour=3)
         UserLoginEvent.objects.filter(pk=unusual_event.pk).update(timestamp=forced_time)
         unusual_event.refresh_from_db()
 
@@ -318,3 +321,27 @@ class SecurityDashboardUserActivityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         anomaly.refresh_from_db()
         self.assertTrue(anomaly.is_reviewed)
+
+    def test_dismiss_anomaly_invalid_id(self):
+        self.client.login(username="superuser", password="testpass123")
+        response = self.client.post(
+            reverse("security_user_activity_api"),
+            {"action": "dismiss_anomaly", "anomaly_id": "abc"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_dismiss_anomaly_not_found(self):
+        self.client.login(username="superuser", password="testpass123")
+        response = self.client.post(
+            reverse("security_user_activity_api"),
+            {"action": "dismiss_anomaly", "anomaly_id": "99999"},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_dismiss_anomaly_missing_id(self):
+        self.client.login(username="superuser", password="testpass123")
+        response = self.client.post(
+            reverse("security_user_activity_api"),
+            {"action": "dismiss_anomaly"},
+        )
+        self.assertEqual(response.status_code, 400)

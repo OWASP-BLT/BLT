@@ -228,11 +228,13 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         # User Activity data
         thirty_days_ago = timezone.now() - timedelta(days=30)
 
-        context["recent_login_events"] = UserLoginEvent.objects.select_related("user").order_by("-timestamp")[:50]
+        context["recent_login_events"] = UserLoginEvent.objects.select_related("user").order_by("-timestamp", "-pk")[
+            :50
+        ]
 
         unreviewed_anomalies = UserBehaviorAnomaly.objects.filter(is_reviewed=False)
         context["anomaly_count"] = unreviewed_anomalies.count()
-        context["anomalies"] = unreviewed_anomalies.select_related("user").order_by("-created_at")[:20]
+        context["anomalies"] = unreviewed_anomalies.select_related("user").order_by("-created_at", "-pk")[:20]
 
         login_counts = UserLoginEvent.objects.filter(timestamp__gte=thirty_days_ago).aggregate(
             login_count=Count("id", filter=Q(event_type=UserLoginEvent.EventType.LOGIN)),
@@ -280,7 +282,7 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"error": "Invalid action"}, status=400)
 
     def _get_events(self):
-        events = UserLoginEvent.objects.order_by("-timestamp")[:50]
+        events = UserLoginEvent.objects.order_by("-timestamp", "-pk")[:50]
         data = [
             {
                 "id": e.id,
@@ -296,7 +298,9 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def _get_anomalies(self):
         anomalies = (
-            UserBehaviorAnomaly.objects.filter(is_reviewed=False).select_related("user").order_by("-created_at")[:20]
+            UserBehaviorAnomaly.objects.filter(is_reviewed=False)
+            .select_related("user")
+            .order_by("-created_at", "-pk")[:20]
         )
         data = [
             {
@@ -312,6 +316,10 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"anomalies": data})
 
     def _dismiss_anomaly(self, request):
+        """Unrestricted superuser endpoint: dismiss any anomaly across all orgs.
+
+        Org-scoped dismissals are handled by OrganizationSecurityApiView.
+        """
         if not request.user.is_superuser:
             return JsonResponse({"error": "Forbidden"}, status=403)
 
