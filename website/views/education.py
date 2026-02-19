@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag
+from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,9 @@ def edit_course(request, course_id):
     template = "education/dashboard_edit_course.html"
     tags = Tag.objects.all()
     course = get_object_or_404(Course, id=course_id)
+    if course.instructor != request.user.userprofile:
+        messages.error(request, "You do not have permission to edit this course.")
+        return redirect("instructor_dashboard")
     context = {"course": course, "tags": tags}
     return render(request, template, context)
 
@@ -518,7 +521,7 @@ def get_course_content(request, course_id):
 @login_required(login_url="/accounts/login")
 @require_POST
 def create_or_update_course(request):
-    user_profile = request.user.userprofile
+    user_profile = get_object_or_404(UserProfile, user=request.user)
     try:
         title = request.POST.get("title")
         description = request.POST.get("description")
@@ -538,7 +541,10 @@ def create_or_update_course(request):
                 missing_fields.append("Course title")
             if not description:
                 missing_fields.append("Course description")
-            return JsonResponse({"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400)
+            verb = "is" if len(missing_fields) == 1 else "are"
+            return JsonResponse(
+                {"success": False, "message": f"{', '.join(missing_fields)} {verb} required"}, status=400
+            )
         if thumbnail:
             is_valid, error_message = validate_file_type(
                 request,
