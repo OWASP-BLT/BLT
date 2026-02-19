@@ -2452,13 +2452,19 @@ def join_room(request, room_id):
     return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
-@login_required(login_url="/accounts/login")
 @require_POST
 def delete_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
 
-    # Check if the user is the admin or the anonymous creator
+    # Admin can always delete
     is_admin = request.user.is_authenticated and room.admin == request.user
+
+    # Explicitly handle anonymous users without session
+    if request.user.is_anonymous and not request.session.session_key:
+        messages.error(request, "Your session has expired. You can no longer delete this room.")
+        return redirect("rooms_list")
+
+    # Anonymous creator check (only if session exists)
     is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
 
     if not (is_admin or is_anon_creator):
