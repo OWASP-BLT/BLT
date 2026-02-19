@@ -87,7 +87,9 @@ class RepositoryLinksEnhancementTests(TestCase):
 
         recommended = repo_recommender(user_tags, language_weights)
 
-        has_partial = any(item["repo"].id == self.repo_partial.id for item in recommended)
+        has_partial = any(
+            item["repo"].id == self.repo_partial.id for item in recommended
+        )
         self.assertTrue(has_partial)
 
     def test_repo_recommender_handles_null_project(self):
@@ -96,7 +98,15 @@ class RepositoryLinksEnhancementTests(TestCase):
         language_weights = {"JavaScript": 4}
 
         recommended = repo_recommender(user_tags, language_weights)
-        self.assertIsInstance(recommended, list)
+
+        no_project_result = next(
+            (item for item in recommended if item["repo"].id == self.repo_no_project.id),
+            None,
+        )
+        self.assertIsNotNone(
+            no_project_result, "repo with null project should be recommended"
+        )
+        self.assertIsNone(no_project_result["repo"].project)
 
     def test_all_repos_have_required_url(self):
         """Test that all recommended repos have valid repo_url"""
@@ -171,7 +181,10 @@ class RepositoryLinksEnhancementTests(TestCase):
             self.assertIsNotNone(item["reasoning"])
             self.assertNotEqual(item["reasoning"], "")
             reasoning_lower = item["reasoning"].lower()
-            self.assertTrue("matching tags" in reasoning_lower or "matching language" in reasoning_lower)
+            self.assertTrue(
+                "matching tags" in reasoning_lower
+                or "matching language" in reasoning_lower
+            )
 
 
 class RepositoryLinksEdgeCasesTests(TestCase):
