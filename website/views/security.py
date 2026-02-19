@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Case, Count, IntegerField, Value, When
+from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.db.models.functions import ExtractHour
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -234,15 +234,12 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context["anomaly_count"] = unreviewed_anomalies.count()
         context["anomalies"] = unreviewed_anomalies.select_related("user").order_by("-created_at")[:20]
 
-        context["login_success_count"] = UserLoginEvent.objects.filter(
-            event_type=UserLoginEvent.EventType.LOGIN,
-            timestamp__gte=thirty_days_ago,
-        ).count()
-
-        context["login_failed_count"] = UserLoginEvent.objects.filter(
-            event_type=UserLoginEvent.EventType.FAILED,
-            timestamp__gte=thirty_days_ago,
-        ).count()
+        login_counts = UserLoginEvent.objects.filter(timestamp__gte=thirty_days_ago).aggregate(
+            login_count=Count("id", filter=Q(event_type=UserLoginEvent.EventType.LOGIN)),
+            failed_count=Count("id", filter=Q(event_type=UserLoginEvent.EventType.FAILED)),
+        )
+        context["login_success_count"] = login_counts["login_count"]
+        context["login_failed_count"] = login_counts["failed_count"]
 
         # Hourly login distribution (last 30 days)
         hourly_data = list(
@@ -283,7 +280,7 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"error": "Invalid action"}, status=400)
 
     def _get_events(self):
-        events = UserLoginEvent.objects.select_related("user").order_by("-timestamp")[:50]
+        events = UserLoginEvent.objects.order_by("-timestamp")[:50]
         data = [
             {
                 "id": e.id,
@@ -323,8 +320,13 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({"error": "anomaly_id is required"}, status=400)
 
         try:
-            anomaly = UserBehaviorAnomaly.objects.get(pk=int(anomaly_id))
-        except (UserBehaviorAnomaly.DoesNotExist, ValueError):
+            anomaly_pk = int(anomaly_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "Invalid anomaly_id"}, status=400)
+
+        try:
+            anomaly = UserBehaviorAnomaly.objects.get(pk=anomaly_pk)
+        except UserBehaviorAnomaly.DoesNotExist:
             return JsonResponse({"error": "Anomaly not found"}, status=404)
 
         anomaly.is_reviewed = True

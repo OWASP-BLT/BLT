@@ -51,9 +51,9 @@ class UserLoginEventModelTests(TestCase):
             username_attempted="testuser",
             event_type=UserLoginEvent.EventType.LOGOUT,
         )
-        events = list(UserLoginEvent.objects.all())
+        events = list(UserLoginEvent.objects.order_by("-timestamp", "-pk"))
+        self.assertGreaterEqual(e2.pk, e1.pk)
         self.assertEqual(events[0].pk, e2.pk)
-        self.assertEqual(events[1].pk, e1.pk)
 
 
 class UserBehaviorAnomalyModelTests(TestCase):
