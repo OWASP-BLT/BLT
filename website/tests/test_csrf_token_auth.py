@@ -76,6 +76,7 @@ class SessionAuthCSRFTest(TestCase):
     def setUp(self):
         """Set up test user and login."""
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.token, _ = Token.objects.get_or_create(user=self.user)
         self.domain = Domain.objects.create(name="example.com", url="example.com")
         self.issue = Issue.objects.create(
             url="https://example.com/test",
@@ -100,6 +101,18 @@ class SessionAuthCSRFTest(TestCase):
 
         # Should fail with 403 CSRF error (this is correct behavior)
         self.assertEqual(response.status_code, 403, msg="Session auth without CSRF token should fail with 403")
+
+    def test_token_header_does_not_bypass_csrf_on_delete(self):
+        """Token auth headers should not bypass CSRF on session-only endpoints."""
+        client = Client(enforce_csrf_checks=True)
+
+        response = client.post(
+            f"/api/v1/delete_issue/{self.issue.id}/",
+            {},
+            HTTP_AUTHORIZATION=f"Token {self.token.key}",
+        )
+
+        self.assertEqual(response.status_code, 403, msg="Token auth should not bypass CSRF on delete_issue")
 
     def test_session_auth_with_csrf_succeeds(self):
         client = Client(enforce_csrf_checks=True)
