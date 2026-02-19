@@ -155,10 +155,12 @@ class Command(LoggedBaseCommand):
         # No issue activity found
         return None
 
-    @transaction.atomic
     def update_repository(self, repo, skip_issues=False):
         """
         Update the repository data from GitHub.
+        
+        Note: Network calls are intentionally kept outside of database transactions
+        to avoid holding connections open during unpredictable I/O operations.
         """
         self.stdout.write(f"Updating repository: {repo.name}")
 
