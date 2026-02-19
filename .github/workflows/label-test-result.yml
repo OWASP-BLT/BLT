@@ -74,7 +74,7 @@ jobs:
               exit 0
             fi
             if ! echo "$TEST_RESULT" | grep -qE '^[0-9]+$'; then
-              echo "::error::Test result is not numeric: '$TEST_RESULT'"
+              echo "::error::Test result is not numeric: '$TEST_RESULT' (job may have been cancelled)"
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -142,6 +142,9 @@ jobs:
             const lines = testOutput.split('\n');
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
+            // SECURITY: Sanitize triple backticks to prevent breaking out of the code fence
+            // Artifacts from fork PRs could contain crafted output to inject markdown/HTML
+            const sanitizedOutput = last100Lines.replace(/`{3,}/g, '` ` `');
 
             const message = `${testFailureMarker}
             ## ❌ Tests failed
@@ -168,7 +171,7 @@ jobs:
             <summary>Test output${truncated ? ' (last 100 lines)' : ''}</summary>
 
             \`\`\`text
-            ${last100Lines}
+            ${sanitizedOutput}
             \`\`\`
 
             </details>
