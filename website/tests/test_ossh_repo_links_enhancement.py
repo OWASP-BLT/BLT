@@ -9,7 +9,7 @@ Provides comprehensive testing for:
 
 from django.test import TestCase
 
-from website.models import Repo, Tag, Project
+from website.models import Project, Repo, Tag
 from website.views.ossh import repo_recommender
 
 
@@ -87,9 +87,7 @@ class RepositoryLinksEnhancementTests(TestCase):
 
         recommended = repo_recommender(user_tags, language_weights)
 
-        has_partial = any(
-            item["repo"].id == self.repo_partial.id for item in recommended
-        )
+        has_partial = any(item["repo"].id == self.repo_partial.id for item in recommended)
         self.assertTrue(has_partial)
 
     def test_repo_recommender_handles_null_project(self):
@@ -173,10 +171,7 @@ class RepositoryLinksEnhancementTests(TestCase):
             self.assertIsNotNone(item["reasoning"])
             self.assertNotEqual(item["reasoning"], "")
             reasoning_lower = item["reasoning"].lower()
-            self.assertTrue(
-                "matching tags" in reasoning_lower
-                or "matching language" in reasoning_lower
-            )
+            self.assertTrue("matching tags" in reasoning_lower or "matching language" in reasoning_lower)
 
 
 class RepositoryLinksEdgeCasesTests(TestCase):
