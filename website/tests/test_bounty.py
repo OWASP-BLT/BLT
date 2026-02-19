@@ -407,6 +407,41 @@ class BountyPayoutTestCase(TestCase):
         self.issue.refresh_from_db()
         self.assertFalse(self.issue.payment_pending)
 
+    @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345", "GITHUB_TOKEN": "test_github_token"})
+    @patch("website.views.bounty.process_github_sponsors_payment")
+    def test_bounty_payout_stale_expiry_cleared_for_non_timed(self, mock_payment):
+        """Test that a stale bounty_expiry_date is cleared when the bounty is no longer timed.
+
+        Scenario: A label is changed from "$5 24" (timed) to "$5" (non-timed).
+        The old bounty_expiry_date should not block payout.
+        """
+        mock_payment.return_value = "SPONSORSHIP_ID_STALE"
+        # Simulate stale expiry date from a previously-timed bounty that has passed
+        self.issue.bounty_expiry_date = timezone.now() - timedelta(hours=1)
+        self.issue.save()
+
+        payload = {
+            "issue_number": 123,
+            "repo": "TestRepo",
+            "owner": "TestOrg",
+            "contributor_username": "testuser",
+            "pr_number": 456,
+            "bounty_amount": 5000,
+            "is_timed_bounty": False,
+        }
+
+        response = self.client.post(
+            "/bounty_payout/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            HTTP_X_BLT_API_TOKEN=self.api_token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mock_payment.assert_called_once()
+        self.issue.refresh_from_db()
+        self.assertIsNone(self.issue.bounty_expiry_date)
+
     @patch.dict(os.environ, {"BLT_API_TOKEN": "test_token_12345"})
     @patch("website.views.bounty.process_github_sponsors_payment")
     def test_bounty_payout_timed_missing_expiry(self, mock_payment):

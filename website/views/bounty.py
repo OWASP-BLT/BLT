@@ -255,14 +255,21 @@ def bounty_payout(request):
                 if is_timed_bounty and github_issue.bounty_expiry_date is None:
                     logger.warning(f"Timed bounty expiry date not set for issue #{issue_number}")
                     return JsonResponse({"status": "error", "message": "Timed bounty expiry date not set"}, status=400)
-                # Only enforce expiry if bounty_expiry_date is set (timed bounty)
-                if github_issue.bounty_expiry_date is not None:
+
+                # Only enforce expiry when the current label is a timed bounty.
+                if is_timed_bounty and github_issue.bounty_expiry_date is not None:
                     now = timezone.now()
                     if now > github_issue.bounty_expiry_date:
                         logger.info(
                             f"Bounty for issue #{issue_number} expired at {github_issue.bounty_expiry_date.isoformat()}"
                         )
                         return JsonResponse({"status": "error", "message": "Bounty expired"}, status=400)
+                elif not is_timed_bounty and github_issue.bounty_expiry_date is not None:
+                    logger.info(
+                        f"Clearing stale bounty_expiry_date for non-timed bounty issue #{issue_number}"
+                    )
+                    github_issue.bounty_expiry_date = None
+                    github_issue.save(update_fields=["bounty_expiry_date"])
 
                 # Check for duplicate payment or in-progress payment
                 if github_issue.sponsors_tx_id:
@@ -308,9 +315,7 @@ def bounty_payout(request):
             for attempt in range(1, max_cleanup_retries + 1):
                 try:
                     with transaction.atomic():
-                        github_issue = GitHubIssue.objects.select_for_update().get(
-                            issue_id=issue_number, repo=repo
-                        )
+                        github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
                         github_issue.payment_pending = False
                         github_issue.save(update_fields=["payment_pending"])
                     cleanup_success = True
