@@ -7,7 +7,8 @@ Provides comprehensive testing for:
 - Project relationship link display
 """
 
-from django.test import TestCase, Client
+from django.test import TestCase
+
 from website.models import Repo, Tag, Project
 from website.views.ossh import repo_recommender
 
@@ -17,8 +18,6 @@ class RepositoryLinksEnhancementTests(TestCase):
 
     def setUp(self):
         """Set up test data"""
-        self.client = Client()
-
         # Create tags
         self.tag_python = Tag.objects.create(name="python")
         self.tag_django = Tag.objects.create(name="django")
