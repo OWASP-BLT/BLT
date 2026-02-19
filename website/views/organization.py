@@ -6,7 +6,7 @@ import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from smtplib import SMTPException
 from urllib.parse import quote_plus, urlparse
 
@@ -474,7 +474,7 @@ class Joinorganization(TemplateView):
         email = request.POST.get("email", "").strip()
         product = request.POST.get("product", "").strip()
         if not all([name, url, email, product]):
-            return JsonResponse({"error": "Empty Fields"})
+            return JsonResponse({"error": "Empty Fields"}, status=400)
         try:
             Organization.objects.get(name=name)
             return JsonResponse({"status": "Organization already exists"})
@@ -482,7 +482,7 @@ class Joinorganization(TemplateView):
             try:
                 sub = Subscription.objects.get(name=product)
             except Subscription.DoesNotExist:
-                return JsonResponse({"error": "Invalid subscription plan"})
+                return JsonResponse({"error": "Invalid subscription plan"}, status=400)
             paymentType = request.POST.get("paymentType", "")
             if paymentType == "wallet":
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
@@ -492,7 +492,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = rebuild_safe_url(request.POST["url"])
+                organization.url = rebuild_safe_url(url)
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -512,7 +512,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = rebuild_safe_url(request.POST["url"])
+                organization.url = rebuild_safe_url(url)
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -1365,12 +1365,11 @@ class CreateHunt(TemplateView):
             if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == domain_pk)) or domain_admin.role == 0:
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 try:
-                    total_amount = (
-                        Decimal(request.POST.get("prize_winner", "0"))
-                        + Decimal(request.POST.get("prize_runner", "0"))
-                        + Decimal(request.POST.get("prize_second_runner", "0"))
-                    )
-                except Exception:
+                    prize_winner = Decimal(request.POST.get("prize_winner", "0"))
+                    prize_runner = Decimal(request.POST.get("prize_runner", "0"))
+                    prize_second_runner = Decimal(request.POST.get("prize_second_runner", "0"))
+                    total_amount = prize_winner + prize_runner + prize_second_runner
+                except (InvalidOperation, TypeError):
                     return HttpResponse("Invalid prize amounts")
                 if total_amount > wallet.current_balance:
                     return HttpResponse("Insufficient balance")
@@ -1391,7 +1390,6 @@ class CreateHunt(TemplateView):
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
                         return HttpResponse("Domain mismatch")
-                hunt.domain = Domain.objects.get(pk=domain_pk)
                 tzsign = 1
                 offset = request.POST.get("tzoffset", "0")
                 try:
@@ -1410,9 +1408,9 @@ class CreateHunt(TemplateView):
                     start_date = start_date - timedelta(hours=int(offset_int / 60), minutes=int(offset_int % 60))
                     end_date = end_date - timedelta(hours=int(offset_int / 60), minutes=int(offset_int % 60))
                 hunt.starts_on = start_date
-                hunt.prize_winner = Decimal(request.POST.get("prize_winner", "0"))
-                hunt.prize_runner = Decimal(request.POST.get("prize_runner", "0"))
-                hunt.prize_second_runner = Decimal(request.POST.get("prize_second_runner", "0"))
+                hunt.prize_winner = prize_winner
+                hunt.prize_runner = prize_runner
+                hunt.prize_second_runner = prize_second_runner
                 hunt.end_on = end_date
                 hunt.name = request.POST.get("name", "")
                 hunt.description = form.cleaned_data["content"]
@@ -1660,14 +1658,15 @@ def trademark_detailview(request, slug):
         "x-rapidapi-key": settings.USPTO_API,
     }
     trademark_available_response = requests.get(trademark_available_url, headers=headers)
+
+    if trademark_available_response.status_code == 429:
+        error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+
     try:
         ta_data = trademark_available_response.json()
     except (ValueError, requests.exceptions.JSONDecodeError):
         error_message = "Failed to parse response from USPTO API."
-        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
-
-    if trademark_available_response.status_code == 429:
-        error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
         return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
 
     if not isinstance(ta_data, list) or len(ta_data) == 0:
