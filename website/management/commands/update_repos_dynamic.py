@@ -158,7 +158,7 @@ class Command(LoggedBaseCommand):
     def update_repository(self, repo, skip_issues=False):
         """
         Update the repository data from GitHub.
-        
+
         Note: Network calls are intentionally kept outside of database transactions
         to avoid holding connections open during unpredictable I/O operations.
         """
