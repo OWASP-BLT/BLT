@@ -307,8 +307,8 @@ class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
             {
                 "id": a.id,
                 "user": a.user.username,
-                "anomaly_type": a.anomaly_type,
-                "severity": a.severity,
+                "anomaly_type": a.get_anomaly_type_display(),
+                "severity": a.get_severity_display(),
                 "description": a.description,
                 "created_at": a.created_at.isoformat(),
             }

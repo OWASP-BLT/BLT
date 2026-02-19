@@ -3119,11 +3119,11 @@ class OrganizationSecurityDashboardView(View):
         ]
 
         # Risk score (weighted formula from analytics view)
-        total_issues = security_issues.count()
-        if total_issues > 0:
+        scored_total = sum(severity_counts)
+        if scored_total > 0:
             risk_weights = {"critical": 100, "high": 70, "medium": 40, "low": 20}
             counts = dict(zip(risk_weights.keys(), severity_counts))
-            risk_score = sum(counts[level] / total_issues * weight for level, weight in risk_weights.items())
+            risk_score = sum(counts[level] / scored_total * weight for level, weight in risk_weights.items())
             risk_score = min(100, int(risk_score))
         else:
             risk_score = 0
@@ -3142,7 +3142,7 @@ class OrganizationSecurityDashboardView(View):
             "severity_labels": severity_labels,
             "severity_counts": severity_counts,
             "risk_score": risk_score,
-            "total_security_issues": total_issues,
+            "total_security_issues": security_issues.count(),
             "recent_incidents_count": security_issues.filter(created__gte=thirty_days_ago).count(),
         }
         return render(request, "organization/dashboard/organization_security.html", context)

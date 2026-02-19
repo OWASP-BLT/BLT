@@ -3491,7 +3491,7 @@ class SecurityIncident(models.Model):
     title = models.CharField(max_length=255)
     organization = models.ForeignKey(
         "Organization",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="security_incidents",
         null=True,
         blank=True,
