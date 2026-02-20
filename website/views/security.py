@@ -6,13 +6,15 @@ from datetime import timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Case, Count, IntegerField, Value, When
-from django.http import HttpResponse
+from django.db.models import Case, Count, IntegerField, Q, Value, When
+from django.db.models.functions import ExtractHour
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.views import View
 from django.views.generic import TemplateView
 
-from website.models import Issue, SecurityIncident
+from website.models import Issue, SecurityIncident, UserBehaviorAnomaly, UserLoginEvent
 
 CSV_RATE_LIMIT_MAX_CALLS = 5  # max CSV downloads
 CSV_RATE_LIMIT_WINDOW = 60  # per 60 seconds
@@ -223,4 +225,120 @@ class SecurityDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         params["export"] = "csv"
         context["export_csv_url"] = "?" + params.urlencode()
 
+        # User Activity data
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        context["recent_login_events"] = UserLoginEvent.objects.select_related("user").order_by("-timestamp", "-pk")[
+            :50
+        ]
+
+        unreviewed_anomalies = UserBehaviorAnomaly.objects.filter(is_reviewed=False)
+        context["anomaly_count"] = unreviewed_anomalies.count()
+        context["anomalies"] = unreviewed_anomalies.select_related("user").order_by("-created_at", "-pk")[:20]
+
+        login_counts = UserLoginEvent.objects.filter(timestamp__gte=thirty_days_ago).aggregate(
+            login_count=Count("id", filter=Q(event_type=UserLoginEvent.EventType.LOGIN)),
+            failed_count=Count("id", filter=Q(event_type=UserLoginEvent.EventType.FAILED)),
+        )
+        context["login_success_count"] = login_counts["login_count"]
+        context["login_failed_count"] = login_counts["failed_count"]
+
+        # Hourly login distribution (last 30 days)
+        hourly_data = list(
+            UserLoginEvent.objects.filter(
+                event_type=UserLoginEvent.EventType.LOGIN,
+                timestamp__gte=thirty_days_ago,
+            )
+            .annotate(hour=ExtractHour("timestamp"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("hour")
+        )
+        context["hourly_login_data"] = json.dumps(hourly_data)
+
         return context
+
+
+class UserActivityApiView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """API for user activity data: login events, anomalies, and dismiss workflow."""
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def get(self, request, *args, **kwargs):
+        action = request.GET.get("action")
+
+        if action == "events":
+            return self._get_events()
+        elif action == "anomalies":
+            return self._get_anomalies()
+
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        if action == "dismiss_anomaly":
+            return self._dismiss_anomaly(request)
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    def _get_events(self):
+        events = UserLoginEvent.objects.order_by("-timestamp", "-pk")[:50]
+        data = [
+            {
+                "id": e.id,
+                "username": e.username_attempted,
+                "event_type": e.get_event_type_display(),
+                "ip_address": e.ip_address or "",
+                "user_agent": (e.user_agent or "")[:100],
+                "timestamp": e.timestamp.isoformat(),
+            }
+            for e in events
+        ]
+        return JsonResponse({"events": data})
+
+    def _get_anomalies(self):
+        anomalies = (
+            UserBehaviorAnomaly.objects.filter(is_reviewed=False)
+            .select_related("user")
+            .order_by("-created_at", "-pk")[:20]
+        )
+        data = [
+            {
+                "id": a.id,
+                "user": a.user.username if a.user else "",
+                "anomaly_type": a.get_anomaly_type_display(),
+                "severity": a.get_severity_display(),
+                "description": a.description,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in anomalies
+        ]
+        return JsonResponse({"anomalies": data})
+
+    def _dismiss_anomaly(self, request):
+        """Unrestricted superuser endpoint: dismiss any anomaly across all orgs.
+
+        Org-scoped dismissals are handled by OrganizationSecurityApiView.
+        """
+        if not request.user.is_superuser:
+            return JsonResponse({"error": "Forbidden"}, status=403)
+
+        anomaly_id = request.POST.get("anomaly_id") or request.POST.get("id")
+        if not anomaly_id:
+            return JsonResponse({"error": "anomaly_id is required"}, status=400)
+
+        try:
+            anomaly_pk = int(anomaly_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"error": "Invalid anomaly_id"}, status=400)
+
+        try:
+            anomaly = UserBehaviorAnomaly.objects.get(pk=anomaly_pk)
+        except UserBehaviorAnomaly.DoesNotExist:
+            return JsonResponse({"error": "Anomaly not found"}, status=404)
+
+        anomaly.is_reviewed = True
+        anomaly.reviewed_at = timezone.now()
+        anomaly.reviewed_by = request.user
+        anomaly.save(update_fields=["is_reviewed", "reviewed_at", "reviewed_by"])
+        return JsonResponse({"status": "dismissed"})

@@ -1,0 +1,280 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Security Monitoring | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Monitor your organization's security posture with login activity tracking, anomaly detection, and vulnerability insights.
+{% endblock description %}
+{% block body %}
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <!-- Header -->
+        <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Security Monitoring</h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Monitor login activity, detect anomalies, and track vulnerabilities for {{ organization_obj.name }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if monitoring_disabled %}
+            <!-- Monitoring Disabled State -->
+            <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-12">
+                <div class="max-w-lg mx-auto text-center">
+                    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-gray-400 text-2xl" aria-hidden="true"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Security Monitoring is Disabled</h2>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">
+                        Enable security monitoring in your organization settings to start tracking login activity and detecting anomalies.
+                    </p>
+                    <p class="text-sm text-gray-400 dark:text-gray-500">Contact your organization admin to enable this feature.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-4"
+                 id="security-dashboard"
+                 data-org-id="{{ organization }}">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Security Issues</p>
+                                <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">{{ total_security_issues }}</p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ recent_incidents_count }} in last 30 days</p>
+                            </div>
+                            <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-exclamation-triangle text-[#e74c3c] text-xl"
+                                   aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Active Anomalies</p>
+                                <p class="text-3xl font-bold {% if anomaly_count > 0 %}text-amber-600{% else %}text-gray-900 dark:text-gray-100{% endif %}">
+                                    {{ anomaly_count }}
+                                </p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Unreviewed alerts</p>
+                            </div>
+                            <div class="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-bell text-amber-500 text-xl" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Successful Logins</p>
+                                <p class="text-3xl font-bold text-green-600">{{ login_success_count }}</p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Last 30 days</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-check-circle text-green-500 text-xl"
+                                   aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Failed Logins</p>
+                                <p class="text-3xl font-bold {% if login_failed_count > 0 %}text-[#e74c3c]{% else %}text-gray-900 dark:text-gray-100{% endif %}">
+                                    {{ login_failed_count }}
+                                </p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Last 30 days</p>
+                            </div>
+                            <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-times-circle text-[#e74c3c] text-xl"
+                                   aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <!-- Risk Score -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Risk Score</h3>
+                        <div class="flex items-center justify-center">
+                            <div class="relative w-32 h-32">
+                                <canvas id="riskGaugeChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-2xl font-bold {% if risk_score >= 70 %}text-[#e74c3c]{% elif risk_score >= 40 %}text-amber-500{% else %}text-green-500{% endif %}">
+                                        {{ risk_score }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
+                            {% if risk_score >= 70 %}
+                                High Risk
+                            {% elif risk_score >= 40 %}
+                                Medium Risk
+                            {% else %}
+                                Low Risk
+                            {% endif %}
+                        </p>
+                    </div>
+                    <!-- Severity Breakdown -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Issue Severity</h3>
+                        <div class="relative h-48">
+                            <canvas id="severityChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Hourly Login Distribution -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Login Activity (Hourly)</h3>
+                        <div class="relative h-48">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tables Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Recent Login Events -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Recent Login Events</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            User
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            Type
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            IP
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            Time
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for event in login_events %}
+                                        <tr class="border-b border-gray-100 dark:border-gray-700/50">
+                                            <td class="py-2 px-2 text-gray-900 dark:text-gray-100">{{ event.username_attempted }}</td>
+                                            <td class="py-2 px-2">
+                                                {% if event.event_type == "login" %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Login</span>
+                                                {% elif event.event_type == "failed" %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Failed</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400">Logout</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="py-2 px-2 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ event.ip_address|default:"-" }}</td>
+                                            <td class="py-2 px-2 text-gray-500 dark:text-gray-400 text-xs">{{ event.timestamp|timesince }} ago</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="py-6 text-center text-gray-400 dark:text-gray-500">No login events recorded yet</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Active Anomalies -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                            Active Anomalies
+                            {% if anomaly_count > 0 %}
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                                    {{ anomaly_count }}
+                                </span>
+                            {% endif %}
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            User
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            Type
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            Severity
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-2 px-2 text-gray-500 dark:text-gray-400 font-medium">
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="anomalies-tbody">
+                                    {% for anomaly in anomalies %}
+                                        <tr class="border-b border-gray-100 dark:border-gray-700/50"
+                                            id="anomaly-row-{{ anomaly.id }}">
+                                            <td class="py-2 px-2 text-gray-900 dark:text-gray-100">{{ anomaly.user.username }}</td>
+                                            <td class="py-2 px-2 text-gray-500 dark:text-gray-400 text-xs">{{ anomaly.get_anomaly_type_display }}</td>
+                                            <td class="py-2 px-2">
+                                                {% if anomaly.severity == "high" %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">High</span>
+                                                {% elif anomaly.severity == "medium" %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Medium</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Low</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="py-2 px-2">
+                                                <button onclick="dismissAnomaly({{ organization }}, {{ anomaly.id }}, this)"
+                                                        class="text-xs text-gray-500 hover:text-[#e74c3c] dark:text-gray-400 dark:hover:text-[#e74c3c] transition-colors"
+                                                        title="Dismiss this anomaly">
+                                                    <i class="fas fa-times"></i> Dismiss
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="py-6 text-center text-gray-400 dark:text-gray-500">No active anomalies</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock body %}
+{% block scripts %}
+    {% if not monitoring_disabled %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        {{ hourly_login_data|json_script:"hourly-login-data" }}
+        {{ severity_labels|json_script:"severity-labels" }}
+        {{ severity_counts|json_script:"severity-counts" }}
+        <script>
+            var ORG_SECURITY_CONFIG = {
+                orgId: {{ organization }},
+                hourlyData: JSON.parse(document.getElementById('hourly-login-data').textContent),
+                severityLabels: JSON.parse(document.getElementById('severity-labels').textContent),
+                severityCounts: JSON.parse(document.getElementById('severity-counts').textContent),
+                riskScore: {{ risk_score }},
+                csrfToken: '{{ csrf_token }}'
+            };
+        </script>
+        <script src="{% static 'js/organization_security.js' %}"></script>
+    {% endif %}
+{% endblock scripts %}

@@ -221,6 +221,9 @@ class Organization(models.Model):
     check_ins_enabled = models.BooleanField(
         default=False, help_text="Indicates if the organization has check-ins enabled"
     )
+    security_monitoring_enabled = models.BooleanField(
+        default=False, help_text="Enable security monitoring for this organization"
+    )
 
     # Address fields
     address_line_1 = models.CharField(
@@ -3561,6 +3564,13 @@ class SecurityIncident(models.Model):
         RESOLVED = "resolved", "Resolved"
 
     title = models.CharField(max_length=255)
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="security_incidents",
+        null=True,
+        blank=True,
+    )
     severity = models.CharField(
         max_length=20,
         choices=Severity.choices,
@@ -3579,19 +3589,14 @@ class SecurityIncident(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
 
-    #  NEW AUTO-FIELDS & ENHANCEMENTS
     def __str__(self):
         return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
 
     def save(self, *args, **kwargs):
-        """
-        Automatically set or clear resolved_at timestamp based on status.
-        """
         if self.status == self.Status.RESOLVED and not self.resolved_at:
             self.resolved_at = timezone.now()
         elif self.status != self.Status.RESOLVED and self.resolved_at:
             self.resolved_at = None
-
         super().save(*args, **kwargs)
 
     class Meta:
@@ -3600,6 +3605,7 @@ class SecurityIncident(models.Model):
             models.Index(fields=["severity"], name="incident_severity_idx"),
             models.Index(fields=["status"], name="incident_status_idx"),
             models.Index(fields=["-created_at"], name="incident_created_idx"),
+            models.Index(fields=["organization", "-created_at"], name="incident_org_created_idx"),
         ]
 
 
@@ -3618,4 +3624,105 @@ class SecurityIncidentHistory(models.Model):
                 fields=["incident", "-changed_at"],
                 name="history_incident_changedat_idx",
             ),
+        ]
+
+
+class UserLoginEvent(models.Model):
+    class EventType(models.TextChoices):
+        LOGIN = "login", "Login"
+        LOGOUT = "logout", "Logout"
+        FAILED = "failed", "Failed Login"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="login_events",
+    )
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="org_login_events",
+        null=True,
+        blank=True,
+    )
+    username_attempted = models.CharField(max_length=150)
+    event_type = models.CharField(max_length=10, choices=EventType.choices)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default="")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username_attempted} - {self.get_event_type_display()} at {self.timestamp}"
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "-timestamp"], name="login_user_ts_idx"),
+            models.Index(fields=["event_type", "-timestamp"], name="login_type_ts_idx"),
+            models.Index(fields=["ip_address"], name="login_ip_idx"),
+            models.Index(fields=["organization", "-timestamp"], name="login_org_ts_idx"),
+            models.Index(fields=["organization", "event_type", "-timestamp"], name="login_org_type_ts_idx"),
+        ]
+
+
+class UserBehaviorAnomaly(models.Model):
+    class AnomalyType(models.TextChoices):
+        NEW_IP = "new_ip", "New IP Address"
+        NEW_UA = "new_ua", "New User Agent"
+        UNUSUAL_TIME = "unusual_time", "Unusual Login Time"
+        RAPID_FAILURES = "rapid_failures", "Rapid Failed Logins"
+
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="behavior_anomalies",
+    )
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="org_behavior_anomalies",
+        null=True,
+        blank=True,
+    )
+    anomaly_type = models.CharField(max_length=20, choices=AnomalyType.choices)
+    severity = models.CharField(max_length=10, choices=Severity.choices)
+    description = models.TextField()
+    details = models.JSONField(default=dict, blank=True)
+    login_event = models.ForeignKey(
+        UserLoginEvent,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="anomalies",
+    )
+    is_reviewed = models.BooleanField(default=False)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_anomalies",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_anomaly_type_display()} - {self.user or 'deleted user'} ({self.get_severity_display()})"
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "User behavior anomalies"
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="anomaly_user_ts_idx"),
+            models.Index(fields=["is_reviewed", "-created_at"], name="anomaly_review_ts_idx"),
+            models.Index(fields=["organization", "-created_at"], name="anomaly_org_ts_idx"),
         ]
