@@ -34,6 +34,7 @@ class ProjectAggregationTestCase(TestCase):
 
         Repo.objects.create(
             project=self.project_with_repos,
+            name="django",
             repo_url="https://github.com/django/django",
             stars=50000,
             forks=20000,
@@ -41,6 +42,7 @@ class ProjectAggregationTestCase(TestCase):
 
         Repo.objects.create(
             project=self.project_with_repos,
+            name="channels",
             repo_url="https://github.com/django/channels",
             stars=5000,
             forks=1000,
@@ -52,6 +54,7 @@ class ProjectAggregationTestCase(TestCase):
 
         Repo.objects.create(
             project=self.project_low_counts,
+            name="small",
             repo_url="https://github.com/user/small",
             stars=10,
             forks=2,
@@ -140,7 +143,11 @@ class ProjectAggregationTestCase(TestCase):
         """Verify stars/forks are properly aggregated from multiple repos"""
         # Create another repo for the first project
         Repo.objects.create(
-            project=self.project_with_repos, repo_url="https://github.com/django/asgiref", stars=1000, forks=200
+            project=self.project_with_repos,
+            name="asgiref",
+            repo_url="https://github.com/django/asgiref",
+            stars=1000,
+            forks=200,
         )
         # New total: 56000 stars, 21200 forks
 

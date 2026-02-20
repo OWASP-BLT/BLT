@@ -1,7 +1,6 @@
 import ipaddress
 import json
 import logging
-import os
 import re
 import time
 from collections import defaultdict
@@ -22,7 +21,7 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -68,10 +67,12 @@ from website.models import (
     TimeLog,
     Trademark,
     UserBadge,
+    UserDailyChallenge,
     Wallet,
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
+from website.services.daily_challenge_service import DailyChallengeService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title, rebuild_safe_url, validate_file_type
 
 logger = logging.getLogger(__name__)
@@ -1286,6 +1287,8 @@ class InboundParseWebhookView(View):
         Args:
             events: List of SendGrid webhook event dictionaries
         """
+        import os
+
         try:
             slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
 
@@ -1468,36 +1471,231 @@ def sizzle_daily_log(request):
             return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
 
         if request.method == "POST":
-            previous_work = request.POST.get("previous_work")
-            next_plan = request.POST.get("next_plan")
-            blockers = request.POST.get("blockers")
-            goal_accomplished = request.POST.get("goal_accomplished") == "on"
+            previous_work = request.POST.get("previous_work", "").strip()
+            next_plan = request.POST.get("next_plan", "").strip()
+
+            # Server-side validation for required fields
+            if not previous_work or not next_plan:
+                return JsonResponse(
+                    {"success": False, "message": "Previous work and next plan are required."},
+                    status=400,
+                )
+
+            # Validate max length to prevent DoS attacks
+            MAX_FIELD_LENGTH = 10000  # Reasonable limit for text fields
+            if len(previous_work) > MAX_FIELD_LENGTH:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": f"Previous work field exceeds maximum length of {MAX_FIELD_LENGTH} characters.",
+                    },
+                    status=400,
+                )
+            if len(next_plan) > MAX_FIELD_LENGTH:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": f"Next plan field exceeds maximum length of {MAX_FIELD_LENGTH} characters.",
+                    },
+                    status=400,
+                )
+
+            blockers_type = request.POST.get("blockers")
+            blockers_other = request.POST.get("blockers_other", "")
+            # Combine blockers: if "other" selected, require blockers_other to be non-empty
+            if blockers_type == "other":
+                blockers_other_trimmed = blockers_other.strip()
+                if not blockers_other_trimmed:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "Please provide a description when selecting 'Other' for blockers.",
+                        },
+                        status=400,
+                    )
+                # Validate max length to prevent DoS attacks
+                if len(blockers_other_trimmed) > MAX_FIELD_LENGTH:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": f"Blockers description is too long; maximum {MAX_FIELD_LENGTH} characters.",
+                        },
+                        status=400,
+                    )
+                blockers = blockers_other_trimmed
+            elif blockers_type == "no_blockers":
+                blockers = "no blockers"
+            elif blockers_type:
+                blockers = blockers_type
+            else:
+                # Server-side validation: blockers is required
+                return JsonResponse(
+                    {"success": False, "message": "Blockers field is required."},
+                    status=400,
+                )
+            # Handle goal_accomplished as radio button (yes/no) - require explicit selection
+            goal_accomplished_value = request.POST.get("goal_accomplished")
+            if goal_accomplished_value not in ["yes", "no"]:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Goal accomplished field is required. Please select 'Yes' or 'No'.",
+                    },
+                    status=400,
+                )
+            goal_accomplished = goal_accomplished_value == "yes"
             current_mood = request.POST.get("feeling")
+            # Validate mood field
+            if not current_mood or not current_mood.strip():
+                return JsonResponse(
+                    {"success": False, "message": "Mood selection is required."},
+                    status=400,
+                )
+            # Log only non-sensitive metadata to avoid PII/secrets in logs
             logger.debug(
-                f"Status: previous_work={previous_work}, next_plan={next_plan}, blockers={blockers}, goal_accomplished={goal_accomplished}, current_mood={current_mood}"
+                f"Check-in submission: previous_work_length={len(previous_work) if previous_work else 0}, "
+                f"next_plan_length={len(next_plan) if next_plan else 0}, "
+                f"blockers_type={blockers_type}, "
+                f"blockers_length={len(blockers) if blockers else 0}, "
+                f"goal_accomplished={goal_accomplished}, "
+                f"current_mood={current_mood}"
             )
 
-            DailyStatusReport.objects.create(
+            # Use get_or_create to handle concurrent submissions gracefully
+            today = now().date()
+            try:
+                daily_status, created = DailyStatusReport.objects.get_or_create(
+                    user=request.user,
+                    date=today,
+                    defaults={
+                        "previous_work": previous_work,
+                        "next_plan": next_plan,
+                        "blockers": blockers,
+                        "goal_accomplished": goal_accomplished,
+                        "current_mood": current_mood,
+                    },
+                )
+
+                if not created:
+                    # Record already exists (concurrent submission or duplicate)
+                    logger.info(
+                        f"Check-in already exists for user {request.user.username} on {today}. Returning 400 to client."
+                    )
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "You have already submitted a check-in for today. Please submit again tomorrow.",
+                        },
+                        status=400,
+                    )
+
+                logger.info(f"Created new check-in for user {request.user.username} on {today}")
+            except IntegrityError as e:
+                # Concurrent insert raised IntegrityError (unique constraint violation)
+                logger.warning(
+                    f"IntegrityError creating daily status report for user {request.user.username} on {today}: {e}",
+                    exc_info=True,
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "You have already submitted a check-in for today. Please submit again tomorrow.",
+                    },
+                    status=400,
+                )
+            except Exception as e:
+                # Unexpected database error (not a duplicate)
+                logger.error(
+                    f"Unexpected error creating daily status report for user {request.user.username}: {e}",
+                    exc_info=True,
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "An error occurred while submitting your check-in. Please try again.",
+                    },
+                    status=500,
+                )
+
+            # Check and complete daily challenges
+            completed_challenges_data = []
+            total_points_awarded = 0
+            try:
+                completed_challenges = DailyChallengeService.check_and_complete_challenges(
+                    request.user,
+                    daily_status,
+                )
+
+                if completed_challenges:
+                    # Get details of completed challenges using timezone-aware today
+                    # Get challenge titles to filter at DB level
+                    challenge_titles = list(completed_challenges)
+
+                    user_challenges = (
+                        UserDailyChallenge.objects.filter(
+                            user=request.user,
+                            challenge_date=today,
+                            status="completed",
+                            challenge__title__in=challenge_titles,
+                        )
+                        .select_related("challenge")
+                        .order_by("-completed_at")
+                    )
+
+                    for uc in user_challenges:
+                        completed_challenges_data.append(
+                            {
+                                "title": uc.challenge.title,
+                                "points": uc.points_awarded,
+                                "description": uc.challenge.description,
+                            }
+                        )
+                        total_points_awarded += uc.points_awarded
+
+            except Exception as e:
+                logger.error("Error checking challenges", exc_info=True)
+
+            # Set next_challenge_at to CHALLENGE_RESET_HOURS from now for today's challenges
+            # This must be done AFTER challenge assignment/completion to ensure all challenges are updated.
+            # Include both "assigned" and "completed" statuses because:
+            # - Assigned challenges need next_challenge_at set for when they complete
+            # - Completed challenges need next_challenge_at set to enforce 24-hour cooldown
+            # Note: Using timezone-aware now() + timedelta ensures DST transitions are handled correctly.
+            # During DST shifts, the actual elapsed time may differ slightly (23-25 hours), but this is
+            # acceptable as both timestamps remain in the same timezone context for accurate comparison.
+            from website.services.daily_challenge_service import CHALLENGE_RESET_HOURS
+
+            next_challenge_time = now() + timedelta(hours=CHALLENGE_RESET_HOURS)
+            UserDailyChallenge.objects.filter(
                 user=request.user,
-                date=now().date(),
-                previous_work=previous_work,
-                next_plan=next_plan,
-                blockers=blockers,
-                goal_accomplished=goal_accomplished,
-                current_mood=current_mood,
-            )
+                challenge_date=today,
+                status__in=["assigned", "completed"],
+            ).update(next_challenge_at=next_challenge_time)
 
-            messages.success(request, "Daily status report submitted successfully.")
             return JsonResponse(
                 {
-                    "success": "true",
+                    "success": True,
                     "message": "Daily status report submitted successfully.",
+                    "completed_challenges": completed_challenges_data,
+                    "total_points": total_points_awarded,
                 }
             )
 
     except Exception as e:
-        messages.error(request, f"An error occurred: {e}")
-        return redirect("sizzle")
+        # Log full exception details for debugging, but don't expose to users
+        logger.error(
+            f"Unexpected error in sizzle_daily_log for user {request.user.username if request.user.is_authenticated else 'anonymous'}: {e}",
+            exc_info=True,
+        )
+        # Return appropriate response based on request method
+        if request.method == "POST":
+            return JsonResponse(
+                {"success": False, "message": "An error occurred while processing your request. Please try again."},
+                status=500,
+            )
+        else:
+            messages.error(request, "An error occurred. Please try again.")
+            return redirect("sizzle")
 
     return HttpResponseBadRequest("Invalid request method.")
 
@@ -2271,23 +2469,89 @@ def truncate_text(text, length=15):
 
 @login_required
 def add_sizzle_checkIN(request):
-    # Fetch yesterday's report
-    yesterday = now().date() - timedelta(days=1)
-    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
+    try:
+        # Fetch yesterday's report
+        yesterday = now().date() - timedelta(days=1)
+        yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
-    # Fetch the last check-in (most recent) for the user only if no yesterday report
-    last_checkin = None
-    if not yesterday_report:
-        last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
+        # Check if user already submitted check-in today
+        today = now().date()
+        today_checkin = DailyStatusReport.objects.filter(user=request.user, date=today).first()
 
-    # Fetch all check-ins for the user, ordered by date
-    all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+        # Fetch the last check-in (most recent) for the user only if no yesterday report
+        last_checkin = None
+        if not yesterday_report:
+            last_checkin = DailyStatusReport.objects.filter(user=request.user).order_by("-date").first()
 
-    return render(
-        request,
-        "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report, "last_checkin": last_checkin, "all_checkins": all_checkins},
-    )
+        # Fetch all check-ins for the user, ordered by date
+        all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+
+        # Get active challenges for display
+        active_challenges = []
+        completed_challenges_today = []
+        next_challenge_at = None
+        if request.user.is_authenticated:
+            try:
+                today = now().date()
+                active_challenges = DailyChallengeService.get_active_challenges_for_user(
+                    request.user,
+                    today,
+                )
+
+                # Get completed challenges for today
+                completed_challenges_today = (
+                    UserDailyChallenge.objects.filter(
+                        user=request.user,
+                        challenge_date=today,
+                        status="completed",
+                    )
+                    .select_related("challenge")
+                    .order_by("-completed_at")
+                )
+
+                # Get next challenge time (24 hours from last check-in)
+                # Always calculate next challenge time if there's a last check-in
+                last_checkin_for_timer = (
+                    DailyStatusReport.objects.filter(user=request.user).order_by("-created").first()
+                )
+                if last_checkin_for_timer:
+                    from website.services.daily_challenge_service import CHALLENGE_RESET_HOURS
+
+                    next_challenge_at = last_checkin_for_timer.created + timedelta(hours=CHALLENGE_RESET_HOURS)
+                else:
+                    # If no check-in, check if there's a next_challenge_at set
+                    # Scope to today's challenge to avoid returning challenges from previous days
+                    today = now().date()
+                    current_challenge = UserDailyChallenge.objects.filter(
+                        user=request.user,
+                        challenge_date=today,
+                        status="assigned",
+                    ).first()
+                    if current_challenge and current_challenge.next_challenge_at:
+                        next_challenge_at = current_challenge.next_challenge_at
+                    else:
+                        # No check-in yet, set next_challenge_at to None (timer won't show)
+                        next_challenge_at = None
+            except Exception as e:
+                logger.error(f"Error loading challenges in add_sizzle_checkIN: {e}", exc_info=True)
+                # Continue with empty challenges if there's an error
+
+        return render(
+            request,
+            "sizzle/add_sizzle_checkin.html",
+            {
+                "yesterday_report": yesterday_report,
+                "last_checkin": last_checkin,
+                "all_checkins": all_checkins,
+                "active_challenges": active_challenges,
+                "completed_challenges_today": completed_challenges_today,
+                "next_challenge_at": next_challenge_at,
+                "today_checkin": today_checkin,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error in add_sizzle_checkIN view: {e}", exc_info=True)
+        raise
 
 
 def checkIN(request):
