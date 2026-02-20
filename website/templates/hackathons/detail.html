@@ -386,6 +386,7 @@
                                                 {% if entry.is_contributor %}
                                                     {% if entry.contributor.avatar_url %}
                                                         <img src="{{ entry.contributor.avatar_url }}"
+                                                             loading="lazy"
                                                              alt="{{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -398,6 +399,7 @@
                                                 {% else %}
                                                     {% if entry.user.userprofile.user_avatar %}
                                                         <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                             loading="lazy"
                                                              alt="{{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -465,6 +467,7 @@
                                                 {% if entry.is_contributor %}
                                                     {% if entry.contributor.avatar_url %}
                                                         <img src="{{ entry.contributor.avatar_url }}"
+                                                             loading="lazy"
                                                              alt="Avatar for {{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -478,6 +481,7 @@
                                                 {% else %}
                                                     {% if entry.user.userprofile.user_avatar %}
                                                         <img src="{{ entry.user.userprofile.user_avatar.url }}"
+                                                             loading="lazy"
                                                              alt="Avatar for {{ entry.user.username }}"
                                                              class="w-8 h-8 rounded-full object-cover"
                                                              width="32"
@@ -555,6 +559,7 @@
                                                class="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition">
                                                 {% if sponsor.logo %}
                                                     <img src="{{ sponsor.logo.url }}"
+                                                         loading="lazy"
                                                          alt="{{ sponsor.organization.name }}"
                                                          width="48"
                                                          height="48"
