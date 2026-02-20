@@ -1,0 +1,74 @@
+name: Manage Quality Labels
+
+on:
+  issues:
+    types: [labeled]
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  manage_quality_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove conflicting quality labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let itemNumber
+            let itemType
+
+            if (context.payload.pull_request) {
+              itemNumber = context.payload.pull_request.number
+              itemType = 'PR'
+            } else if (context.payload.issue) {
+              itemNumber = context.payload.issue.number
+              itemType = 'Issue'
+            } else {
+              return
+            }
+
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+
+            const qualityLabels = [
+              'quality: high',
+              'quality: medium',
+              'quality: low'
+            ]
+
+            const newLabel = context.payload.label.name
+
+            if (!qualityLabels.includes(newLabel)) {
+              return
+            }
+
+            const labels = await github.paginate(
+              github.rest.issues.listLabelsOnIssue,
+              {
+                owner,
+                repo,
+                issue_number: itemNumber,
+                per_page: 100
+              }
+            )
+
+
+            for (const label of labels) {
+              if (
+                qualityLabels.includes(label.name) &&
+                label.name !== newLabel
+              ) {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: itemNumber,
+                  name: label.name
+                })
+              }
+            }
