@@ -2886,19 +2886,26 @@ class GitHubIssueDetailView(DetailView):
         try:
             user_ip = get_client_ip(request)
             today = timezone.now().date()
-            existing = IP.objects.filter(
-                address=user_ip,
-                path=request.path,
-                created__date=today,
-            ).first()
-            if not existing:
-                IP.objects.create(
-                    address=user_ip,
-                    path=request.path,
-                    count=1,
-                    agent=request.META.get("HTTP_USER_AGENT", "")[:255],
-                    referer=request.META.get("HTTP_REFERER", "")[:255] if request.META.get("HTTP_REFERER") else None,
+            with transaction.atomic():
+                existing = (
+                    IP.objects.select_for_update()
+                    .filter(
+                        address=user_ip,
+                        path=request.path,
+                        created__date=today,
+                    )
+                    .first()
                 )
+                if not existing:
+                    IP.objects.create(
+                        address=user_ip,
+                        path=request.path,
+                        count=1,
+                        agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                        referer=request.META.get("HTTP_REFERER", "")[:255]
+                        if request.META.get("HTTP_REFERER")
+                        else None,
+                    )
         except Exception as e:
             logger.error(f"Error tracking IP view for GitHubIssue: {e}")
         return response
@@ -2955,13 +2962,13 @@ class GitHubIssueDetailView(DetailView):
 
 class GitHubIssueBadgeView(APIView):
     """
-    Dynamic SVG badge for a GitHub issue showing:
-    - 30-day unique page views (from IP model, detail-page visits only)
-    - Current bounty amount in USD (from GitHubIssue.p2p_amount_usd)
+    Rich SVG badge card for a GitHub issue showing repo-level stats:
+    - Active Bounties, Total Bounty, Contributors
+    - Total Bounty Pool, Top Bounty, Stars
+    - Open Issues, Views (30d), Time Left (since last update)
 
     Design:
-    - Brand-colored (#e74c3c) shields.io-style SVG badge
-    - Responsive width based on content
+    - Dark card with BLT red (#e74c3c) accent, 3x3 stat grid
     - 5-minute cache TTL with ETag support for conditional requests
 
     Analytics rules:
@@ -2980,32 +2987,107 @@ class GitHubIssueBadgeView(APIView):
 
     @staticmethod
     def _cache_key(owner: str, repo_name: str, issue_id: int) -> str:
-        # Safe cache key format
         return f"issue_badge:{owner}:{repo_name}:{issue_id}"
+
+    def _collect_stats(self, issue_id, owner=None, repo_name=None):
+        """Gather all stats needed for the badge from the database."""
+        repo_url = f"https://github.com/{owner}/{repo_name}" if owner and repo_name else None
+
+        # Look up the GitHubIssue
+        if repo_url:
+            github_issue = GitHubIssue.objects.filter(issue_id=issue_id, type="issue", repo__repo_url=repo_url).first()
+        else:
+            github_issue = GitHubIssue.objects.filter(pk=issue_id, type="issue").first()
+
+        repo = github_issue.repo if github_issue else None
+
+        # Issue-specific bounty
+        issue_bounty = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
+
+        # Repo-level stats
+        if repo:
+            stars = repo.stars or 0
+            contributor_count = repo.contributor_count or 0
+            open_issues = repo.open_issues or 0
+
+            # Bounty stats across all issues in this repo
+            bounty_qs = GitHubIssue.objects.filter(repo=repo, type="issue", p2p_amount_usd__gt=0)
+            active_bounties = bounty_qs.filter(state="open").count()
+            agg = bounty_qs.aggregate(
+                total_pool=Sum("p2p_amount_usd"),
+                top_bounty=Max("p2p_amount_usd"),
+            )
+            total_bounty_pool = agg["total_pool"] or Decimal(0)
+            top_bounty = agg["top_bounty"] or Decimal(0)
+        else:
+            stars = 0
+            contributor_count = 0
+            open_issues = 0
+            active_bounties = 0
+            total_bounty_pool = Decimal(0)
+            top_bounty = Decimal(0)
+
+        # 30-day unique views from the issue DETAIL page
+        detail_path = reverse("github_issue_detail", kwargs={"pk": github_issue.pk}) if github_issue else None
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        if detail_path:
+            views_30d = (
+                IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
+                .aggregate(uv=Count("address", distinct=True))
+                .get("uv")
+                or 0
+            )
+        else:
+            views_30d = 0
+
+        # Time left: days since last update on the issue
+        if github_issue and github_issue.updated_at:
+            delta = timezone.now() - github_issue.updated_at
+            days = delta.days
+            hours = delta.seconds // 3600
+            time_left = f"{days}d {hours}h" if days else f"{hours}h"
+        else:
+            time_left = "N/A"
+
+        return {
+            "active_bounties": active_bounties,
+            "total_bounty": issue_bounty,
+            "contributors": contributor_count,
+            "total_bounty_pool": total_bounty_pool,
+            "top_bounty": top_bounty,
+            "stars": stars,
+            "open_issues": open_issues,
+            "views_30d": views_30d,
+            "time_left": time_left,
+        }
 
     def get(self, request, issue_id, owner=None, repo_name=None):
         # Determine cache key and lookup strategy
         if owner and repo_name:
-            repo_url = f"https://github.com/{owner}/{repo_name}"
             cache_key = self._cache_key(owner, repo_name, issue_id)
         else:
-            repo_url = None
             cache_key = f"issue_badge:pk:{issue_id}"
 
         cached = cache.get(cache_key)
 
-        # Explicit daily‑dedup IP logging for the badge endpoint itself (not used for view count)
+        # Explicit daily-dedup IP logging for the badge endpoint itself
         try:
             user_ip = get_client_ip(request)
             today = timezone.now().date()
-            if not IP.objects.filter(address=user_ip, path=request.path, created__date=today).exists():
-                IP.objects.create(
-                    address=user_ip,
-                    path=request.path,
-                    count=1,
-                    agent=request.META.get("HTTP_USER_AGENT", "")[:255],
-                    referer=request.META.get("HTTP_REFERER", "")[:255] or None,
+            with transaction.atomic():
+                existing = (
+                    IP.objects.select_for_update()
+                    .filter(address=user_ip, path=request.path, created__date=today)
+                    .first()
                 )
+                if not existing:
+                    IP.objects.create(
+                        address=user_ip,
+                        path=request.path,
+                        count=1,
+                        agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                        referer=request.META.get("HTTP_REFERER", "")[:255] or None,
+                    )
         except Exception as e:
             logger.error(f"Error tracking IP for badge endpoint: {e}")
 
@@ -3013,40 +3095,25 @@ class GitHubIssueBadgeView(APIView):
             svg_content = cached
         else:
             try:
-                # Look up the GitHubIssue
-                if repo_url:
-                    # Scoped to a specific repo by owner/repo_name
-                    github_issue = GitHubIssue.objects.filter(
-                        issue_id=issue_id, type="issue", repo__repo_url=repo_url
-                    ).first()
-                else:
-                    # Lookup by pk (database primary key)
-                    github_issue = GitHubIssue.objects.filter(pk=issue_id, type="issue").first()
-
-                bounty_amount = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
-
-                # Compute 30-day unique views from the issue DETAIL page
-                detail_path = reverse("github_issue_detail", kwargs={"pk": github_issue.pk}) if github_issue else None
-                thirty_days_ago = timezone.now() - timedelta(days=30)
-
-                if detail_path:
-                    activity_count = (
-                        IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
-                        .aggregate(unique_visitors=Count("address", distinct=True))
-                        .get("unique_visitors")
-                        or 0
-                    )
-                else:
-                    activity_count = 0
+                stats = self._collect_stats(issue_id, owner, repo_name)
             except Exception as e:
                 logger.error(f"Database error generating badge for issue {issue_id}: {e}")
-                activity_count = 0
-                bounty_amount = Decimal(0)
+                stats = {
+                    "active_bounties": 0,
+                    "total_bounty": Decimal(0),
+                    "contributors": 0,
+                    "total_bounty_pool": Decimal(0),
+                    "top_bounty": Decimal(0),
+                    "stars": 0,
+                    "open_issues": 0,
+                    "views_30d": 0,
+                    "time_left": "N/A",
+                }
 
-            svg_content = self._generate_badge_svg(activity_count, bounty_amount)
+            svg_content = self._generate_badge_svg(stats)
             cache.set(cache_key, svg_content, self.CACHE_TTL)
 
-        # ETag for conditional requests (RFC 7232: ETag values must be quoted)
+        # ETag for conditional requests
         etag = f'"{hashlib.md5(svg_content.encode()).hexdigest()}"'
         if_none_match = request.META.get("HTTP_IF_NONE_MATCH", "")
         client_etags = {tag.strip() for tag in if_none_match.split(",")}
@@ -3062,78 +3129,175 @@ class GitHubIssueBadgeView(APIView):
         return response
 
     @staticmethod
-    def _generate_badge_svg(activity_count, bounty_amount):
+    def _fmt_number(n):
+        """Format a number with commas (e.g. 1500 -> 1,500)."""
+        if isinstance(n, Decimal):
+            return f"{n:,.0f}"
+        return f"{n:,}"
+
+    @staticmethod
+    def _generate_badge_svg(stats):
         """
-        Generate a shields.io-style SVG badge with BLT brand color (#e74c3c).
-        Responsive width computed from label/value text lengths.
+        Generate a rich, card-style SVG badge in BLT's dark theme with red (#e74c3c) accent.
+        Displays a 3x3 grid of repo/issue statistics.
         """
-        views_label = "views / 30d"
-        views_value = str(activity_count)
-        bounty_label = "bounty"
-        bounty_value = f"${bounty_amount:.2f}" if bounty_amount > 0 else "$0.00"
 
-        # Character-width approximation for Verdana 11px
-        char_width = 6.5
-        padding = 10
+        # Card dimensions
+        card_w = 580
+        card_h = 210
+        header_h = 42
+        row_h = 46
+        col_w = card_w // 3
+        grid_y = header_h
+        border_r = 10
 
-        vl_w = int(len(views_label) * char_width + padding * 2)
-        vv_w = int(len(views_value) * char_width + padding * 2)
-        bl_w = int(len(bounty_label) * char_width + padding * 2)
-        bv_w = int(len(bounty_value) * char_width + padding * 2)
+        # Colors
+        bg = "#1a1a2e"
+        header_bg = "#e74c3c"
+        row_bg_1 = "#16213e"
+        row_bg_2 = "#0f3460"
+        border_color = "#e74c3c"
+        text_color = "#ffffff"
+        label_color = "#c0c0c0"
+        accent = "#e74c3c"
+        accent_green = "#2ecc71"
+        accent_gold = "#f1c40f"
 
-        views_total = vl_w + vv_w
-        bounty_total = bl_w + bv_w
-        gap = 4
-        total_width = views_total + gap + bounty_total
-        h = 20
+        # Format values
+        active_bounties = GitHubIssueBadgeView._fmt_number(stats["active_bounties"])
+        total_bounty = f"${stats['total_bounty']:,.0f}"
+        contributors = GitHubIssueBadgeView._fmt_number(stats["contributors"])
+        total_pool = f"${stats['total_bounty_pool']:,.0f}"
+        top_bounty = f"${stats['top_bounty']:,.0f}"
+        star_count = GitHubIssueBadgeView._fmt_number(stats["stars"])
+        open_issues = GitHubIssueBadgeView._fmt_number(stats["open_issues"])
+        views_30d = GitHubIssueBadgeView._fmt_number(stats["views_30d"])
+        time_left = stats["time_left"]
 
-        label_bg = "#555"
-        brand = GitHubIssueBadgeView.BRAND_COLOR  # BLT red for the value sections
-        bounty_bg = "#e74c3c" if bounty_amount > 0 else "#9f9f9f"
+        # Grid data: (icon, label, value, value_color) per cell
+        grid = [
+            # Row 1
+            [
+                ("\U0001F3AF", "Active Bounties", active_bounties, text_color),
+                ("\U0001F4B0", "Total Bounty", total_bounty, accent_green),
+                ("\U0001F465", "Contributors", contributors, text_color),
+            ],
+            # Row 2
+            [
+                ("\U0001F4B5", "Bounty Pool", total_pool, accent_gold),
+                ("\U0001F3C6", "Top Bounty", top_bounty, accent),
+                ("\u2B50", "Stars", star_count, accent_gold),
+            ],
+            # Row 3
+            [
+                ("\U0001F41B", "Open Issues", open_issues, text_color),
+                ("\U0001F4C8", "Views / 30d", views_30d, text_color),
+                ("\u23F0", "Last Activity", time_left, accent_green),
+            ],
+        ]
 
-        bx = views_total + gap  # bounty group x-offset
-
-        return (
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{h}">'
-            f'<linearGradient id="s" x2="0" y2="100%">'
-            f'<stop offset="0" stop-color="#bbb" stop-opacity=".1"/>'
-            f'<stop offset="1" stop-opacity=".1"/>'
-            f"</linearGradient>"
-            f'<clipPath id="r">'
-            f'<rect width="{total_width}" height="{h}" rx="3" fill="#fff"/>'
-            f"</clipPath>"
-            f'<g clip-path="url(#r)">'
-            # views segment
-            f'<rect width="{vl_w}" height="{h}" fill="{label_bg}"/>'
-            f'<rect x="{vl_w}" width="{vv_w}" height="{h}" fill="{brand}"/>'
-            # bounty segment
-            f'<rect x="{bx}" width="{bl_w}" height="{h}" fill="{label_bg}"/>'
-            f'<rect x="{bx + bl_w}" width="{bv_w}" height="{h}" fill="{bounty_bg}"/>'
-            # gradient overlay
-            f'<rect width="{total_width}" height="{h}" fill="url(#s)"/>'
-            f"</g>"
-            f'<g fill="#fff" text-anchor="middle" '
-            f'font-family="Verdana,Geneva,DejaVu Sans,sans-serif" '
-            f'font-size="11" text-rendering="geometricPrecision">'
-            # views label
-            f'<text x="{vl_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
-            f"{views_label}</text>"
-            f'<text x="{vl_w / 2}" y="13">{views_label}</text>'
-            # views value
-            f'<text x="{vl_w + vv_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
-            f"{views_value}</text>"
-            f'<text x="{vl_w + vv_w / 2}" y="13">{views_value}</text>'
-            # bounty label
-            f'<text x="{bx + bl_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
-            f"{bounty_label}</text>"
-            f'<text x="{bx + bl_w / 2}" y="13">{bounty_label}</text>'
-            # bounty value
-            f'<text x="{bx + bl_w + bv_w / 2}" y="14" fill="#010101" fill-opacity=".3">'
-            f"{bounty_value}</text>"
-            f'<text x="{bx + bl_w + bv_w / 2}" y="13">{bounty_value}</text>'
-            f"</g>"
-            f"</svg>"
+        # Build SVG
+        svg_parts = []
+        svg_parts.append(
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{card_w}" height="{card_h}" '
+            f'viewBox="0 0 {card_w} {card_h}">'
         )
+
+        # Defs: rounded clip path
+        svg_parts.append(
+            f"<defs>"
+            f'<clipPath id="card-clip">'
+            f'<rect width="{card_w}" height="{card_h}" rx="{border_r}"/>'
+            f"</clipPath>"
+            f"</defs>"
+        )
+
+        # Card group with clip
+        svg_parts.append('<g clip-path="url(#card-clip)">')
+
+        # Background
+        svg_parts.append(f'<rect width="{card_w}" height="{card_h}" fill="{bg}"/>')
+
+        # Header bar
+        svg_parts.append(f'<rect width="{card_w}" height="{header_h}" fill="{header_bg}"/>')
+
+        # Header text
+        svg_parts.append(
+            f'<text x="{card_w // 2}" y="{header_h // 2 + 6}" '
+            f'text-anchor="middle" font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+            f'font-size="18" font-weight="bold" fill="{text_color}" '
+            f'letter-spacing="2">BLT BOUNTY INFORMATION</text>'
+        )
+
+        # Grid rows
+        for row_idx, row in enumerate(grid):
+            ry = grid_y + row_idx * row_h
+            row_bg = row_bg_1 if row_idx % 2 == 0 else row_bg_2
+
+            # Row background
+            svg_parts.append(f'<rect y="{ry}" width="{card_w}" height="{row_h}" fill="{row_bg}"/>')
+
+            # Subtle row separator line
+            svg_parts.append(
+                f'<line x1="0" y1="{ry}" x2="{card_w}" y2="{ry}" '
+                f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
+            )
+
+            for col_idx, (icon, label, value, val_color) in enumerate(row):
+                cx = col_idx * col_w + col_w // 2  # center x of cell
+
+                # Column separator lines (vertical)
+                if col_idx > 0:
+                    lx = col_idx * col_w
+                    svg_parts.append(
+                        f'<line x1="{lx}" y1="{ry}" x2="{lx}" y2="{ry + row_h}" '
+                        f'stroke="{border_color}" stroke-opacity="0.2" stroke-width="0.5"/>'
+                    )
+
+                # Icon + label (top line of cell)
+                label_y = ry + 19
+                svg_parts.append(
+                    f'<text x="{cx}" y="{label_y}" text-anchor="middle" '
+                    f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+                    f'font-size="12" fill="{label_color}">'
+                    f"{icon} {label}</text>"
+                )
+
+                # Value (bottom line of cell)
+                value_y = ry + 37
+                svg_parts.append(
+                    f'<text x="{cx}" y="{value_y}" text-anchor="middle" '
+                    f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+                    f'font-size="16" font-weight="bold" fill="{val_color}">'
+                    f"{value}</text>"
+                )
+
+        # Bottom separator line
+        svg_parts.append(
+            f'<line x1="0" y1="{grid_y + 3 * row_h}" x2="{card_w}" y2="{grid_y + 3 * row_h}" '
+            f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
+        )
+
+        # Card border (rounded)
+        svg_parts.append(
+            f'<rect width="{card_w}" height="{card_h}" rx="{border_r}" '
+            f'fill="none" stroke="{border_color}" stroke-width="2"/>'
+        )
+
+        svg_parts.append("</g>")
+
+        # Footer: subtle "Powered by BLT" outside clip to stay in bounds
+        footer_y = card_h - 4
+        svg_parts.append(
+            f'<text x="{card_w // 2}" y="{footer_y}" text-anchor="middle" '
+            f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+            f'font-size="9" fill="{label_color}" opacity="0.6">'
+            f"Powered by OWASP BLT</text>"
+        )
+
+        svg_parts.append("</svg>")
+
+        return "\n".join(svg_parts)
 
 
 @login_required(login_url="/accounts/login")
