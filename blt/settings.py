@@ -344,10 +344,16 @@ else:
     # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
+# NOTE: SQLite is used for local development and testing only.
+# For production deployments, use PostgreSQL as recommended in the project documentation.
+# SQLite is not designed for high-concurrency write scenarios.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "OPTIONS": {
+            "timeout": 20,  # Increase timeout for concurrent operations
+        },
     }
 }
 
