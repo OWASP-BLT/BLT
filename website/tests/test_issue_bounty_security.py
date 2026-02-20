@@ -80,7 +80,8 @@ class UpdateIssueSecurityTest(TestCase):
         response = self.client.post("/issue/update/", {"issue_pk": self.issue1.pk, "action": "close"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content.decode(), "Updated")
+        data = response.json()
+        self.assertEqual(data["status"], "success")
 
         # Verify issue was modified
         self.issue1.refresh_from_db()

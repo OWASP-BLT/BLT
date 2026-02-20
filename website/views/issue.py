@@ -419,7 +419,11 @@ def UpdateIssue(request):
 
     action = request.POST.get("action")
     if action not in ["close", "open"]:
-        logger.warning(f"UpdateIssue called with invalid action={action} by user={request.user.id} issue={issue_pk}")
+        # Sanitize action for logging to prevent log injection
+        sanitized_action = repr(action)[:100]
+        logger.warning(
+            f"UpdateIssue called with invalid action={sanitized_action} by user={request.user.id} issue={issue_pk}"
+        )
         return HttpResponseBadRequest("Invalid action")
 
     # Get domain name safely (domain can be null)
@@ -472,9 +476,11 @@ def UpdateIssue(request):
     except Exception:
         logger.exception(f"Failed to send email notification for issue {issue.id}")
 
-    logger.info(f"Issue {issue.id} {action}ed by user={request.user.id} ({request.user.username})")
+    # Proper past tense for logging
+    past_action = "closed" if action == "close" else "opened"
+    logger.info(f"Issue {issue.id} {past_action} by user={request.user.id} ({request.user.username})")
 
-    return HttpResponse("Updated")
+    return JsonResponse({"status": "success", "message": "Issue updated successfully"})
 
 
 def newhome(request, template="bugs_list.html"):
@@ -542,13 +548,15 @@ def remove_user_from_issue(request, id):
     Remove user from an issue.
 
     Security: Requires authentication and proper authorization.
+    Prevents IDOR by checking authorization before retrieval.
     """
-    issue = get_object_or_404(Issue, id=id)
-
-    # Authorization check
-    if not (request.user.is_superuser or request.user == issue.user):
-        messages.error(request, "Permission denied")
-        return safe_redirect_request(request)
+    # Authorization check: Only allow access to issues the user owns or is superuser
+    # This prevents IDOR vulnerability by checking authorization before retrieval
+    if request.user.is_superuser:
+        issue = get_object_or_404(Issue, id=id)
+    else:
+        # Regular users can only remove themselves from their own issues
+        issue = get_object_or_404(Issue, id=id, user=request.user)
 
     issue.remove_user()
 
