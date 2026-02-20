@@ -1,17 +1,30 @@
 name: CI/CD Optimized
 
 # SECURITY NOTES:
-# - pull_request: Used for test/docker-test jobs that don't need write permissions
-# - pull_request_target: Used for pre-commit job to enable commenting/labeling on forked PRs
+# - pull_request: Used for test/docker-test jobs that execute untrusted code
+#   but don't need write permissions. This prevents cache poisoning attacks.
+# - pull_request_target: Used ONLY for pre-commit job which needs write permissions to
+#   comment/label on forked PRs. No untrusted dependency installation happens in this context.
 #   When using pull_request_target, we explicitly checkout the PR head to run checks on the actual PR code
 #   WARNING: This allows execution of pre-commit hooks from forked PRs. The hooks are defined in
 #   .pre-commit-config.yaml which could be modified by the fork. However, this is necessary to
 #   validate PR code and is consistent with the repository's pre-commit-fix.yaml workflow.
 #   Maintainers should review PRs for malicious pre-commit hook modifications.
+# - Jobs that install dependencies (poetry install, pip install) MUST NOT run on
+#   pull_request_target or workflow_run triggers to prevent cache poisoning.
+# - Test result labeling is handled by a separate workflow (label-test-result.yml)
+#   triggered via workflow_run after this workflow completes. This gives it write
+#   permissions without executing untrusted code.
 
 on:
   #merge_group:
   pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  pull_request:
     types:
       - opened
       - synchronize
@@ -37,7 +50,8 @@ permissions:
 
 concurrency:
   cancel-in-progress: false
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Include event_name to prevent pull_request and pull_request_target from blocking each other
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
   setup:
@@ -85,6 +99,9 @@ jobs:
   pre-commit:
     name: Run pre-commit
     # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
+    # Explicitly exclude pull_request (pull_request_target handles PR checks) and workflow_run
+    # (workflow_run has no PR context and would run against main, not the PR code)
+    if: github.event_name == 'pull_request_target' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: setup
     runs-on: ubuntu-latest
     permissions: 
@@ -361,6 +378,9 @@ jobs:
   test:
     name: Run Tests
     needs: setup
+    # Only run on pull_request, push, and workflow_dispatch (safe: no elevated permissions)
+    # Never run on pull_request_target or workflow_run to prevent cache poisoning
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       SECRET_KEY: ci-test-secret-key
@@ -421,334 +441,37 @@ jobs:
           name: test-output
           path: test-output.txt
           retention-days: 1
+      - name: Save PR number
+        if: always() && github.event_name == 'pull_request'
+        run: echo "${{ github.event.pull_request.number }}" > pr-number.txt
+      - name: Upload PR number
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-number
+          path: pr-number.txt
+          retention-days: 1
+      - name: Save test result for label workflow
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          EXIT_CODE="${{ steps.run-tests.outputs.exit_code }}"
+          # If exit_code is empty (e.g. step was cancelled/timed out), use sentinel value
+          echo "${EXIT_CODE:-cancelled}" > test-result.txt
+      - name: Upload test result
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-result
+          path: test-result.txt
+          retention-days: 1
       - name: Fail the job if tests failed
         if: steps.run-tests.outputs.exit_code != '0'
         run: exit 1
 
-  label-test-result:
-    name: Label Test Result
-    needs: test
-    if: always() && github.event_name == 'pull_request_target'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-      actions: read
-    steps:
-      - name: Download test output
-        if: always()
-        uses: actions/download-artifact@v4.1.3
-        with:
-          name: test-output
-          path: .
-        continue-on-error: true
-      - name: Comment on PR if tests failed
-        if: needs.test.outputs.test_result != '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const pull_number = context.issue.number;
-            
-            if (!pull_number) {
-              core.warning('No pull request number found in context. Skipping comment.');
-              return;
-            }
-            
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            
-            // Delete any previous test failure comments
-            const testFailureMarker = '<!-- test-failure-comment -->';
-            try {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
-              
-              const existingComments = comments.filter(comment => 
-                comment.body && comment.body.includes(testFailureMarker)
-              );
-              
-              for (const comment of existingComments) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: comment.id,
-                });
-                core.info(`Deleted previous test failure comment #${comment.id} from PR #${pull_number}`);
-              }
-            } catch (error) {
-              core.warning(`Could not delete previous comments: ${error.message}`);
-            }
-            
-            let testOutput = 'Test output not available.';
-            try {
-              testOutput = fs.readFileSync('test-output.txt', 'utf8');
-            } catch (e) {
-              core.warning(`Could not read test output: ${e.message}`);
-            }
-            
-            // Get last 100 lines of output
-            const lines = testOutput.split('\n');
-            const last100Lines = lines.slice(-100).join('\n');
-            const truncated = lines.length > 100;
-            
-            const message = `${testFailureMarker}
-            ## ❌ Tests failed
-            
-            The Django tests found issues that need to be fixed. Please review the test output below and fix the failing tests.
-            
-            ### How to run tests locally
-            
-            \`\`\`bash
-            # Install dependencies
-            poetry install --with dev
-            
-            # Run all tests
-            poetry run python manage.py test
-            
-            # Run tests with verbose output
-            poetry run python manage.py test -v 3
-            
-            # Run a specific test
-            poetry run python manage.py test app.tests.TestClass.test_method
-            \`\`\`
-            
-            <details>
-            <summary>Test output${truncated ? ' (last 100 lines)' : ''}</summary>
-            
-            \`\`\`text
-            ${last100Lines}
-            \`\`\`
-            
-            </details>
-            
-            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`;
-            
-            try {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: pull_number,
-                body: message
-              });
-              core.info(`Added test failure comment to PR #${pull_number}`);
-            } catch (error) {
-              if (error.status === 403) {
-                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
-              } else {
-                throw error;
-              }
-            }
-      - name: Remove test failure comment if tests passed
-        if: needs.test.outputs.test_result == '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pull_number = context.issue.number;
-            
-            if (!pull_number) {
-              core.warning('No pull request number found in context. Skipping comment removal.');
-              return;
-            }
-            
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            
-            // Delete any previous test failure comments
-            const testFailureMarker = '<!-- test-failure-comment -->';
-            try {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner,
-                repo,
-                issue_number: pull_number,
-                per_page: 100,
-              });
-              
-              const existingComments = comments.filter(comment => 
-                comment.body && comment.body.includes(testFailureMarker)
-              );
-              
-              for (const comment of existingComments) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: comment.id,
-                });
-                core.info(`Deleted test failure comment #${comment.id} from PR #${pull_number} (tests now passing)`);
-              }
-            } catch (error) {
-              core.warning(`Could not delete previous comments: ${error.message}`);
-            }
-      - name: Add test status label
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const pull_number = context.issue.number;
-            
-            // Validate PR context exists
-            if (!pull_number) {
-              core.warning('No pull request number found in context. Skipping label.');
-              return;
-            }
-            
-            core.info(`Processing test result label for PR #${pull_number}`);
-            
-            // Determine label based on test exit code
-            const testExitCode = '${{ needs.test.outputs.test_result }}';
-            core.info(`Test exit code from job output: ${testExitCode}`);
-            
-            // Try to extract test counts from test output
-            let totalTests = 0;
-            let failedTests = 0;
-            let skippedTests = 0;
-            let passedTests = 0;
-            
-            try {
-              const testOutput = fs.readFileSync('test-output.txt', 'utf8');
-              
-              // Match "Ran X test(s)" pattern to get total test count
-              const totalMatch = testOutput.match(/Ran (\d+) tests? in/);
-              if (totalMatch && totalMatch[1]) {
-                totalTests = parseInt(totalMatch[1], 10);
-                core.info(`Total tests: ${totalTests}`);
-              }
-              
-              // Match FAILED line to extract failures, errors, and skipped counts
-              // Examples: "FAILED (failures=1)" or "FAILED (failures=1, errors=2, skipped=3)"
-              const failedMatch = testOutput.match(/FAILED \((.*?)\)/);
-              if (failedMatch) {
-                const failureDetails = failedMatch[1];
-                
-                // Extract failures count
-                const failuresMatch = failureDetails.match(/failures=(\d+)/);
-                if (failuresMatch) {
-                  failedTests += parseInt(failuresMatch[1], 10);
-                }
-                
-                // Extract errors count (also considered failures)
-                const errorsMatch = failureDetails.match(/errors=(\d+)/);
-                if (errorsMatch) {
-                  failedTests += parseInt(errorsMatch[1], 10);
-                }
-                
-                // Extract skipped count
-                const skippedMatch = failureDetails.match(/skipped=(\d+)/);
-                if (skippedMatch) {
-                  skippedTests = parseInt(skippedMatch[1], 10);
-                }
-              } else {
-                // Check for OK status (all tests passed or passed with skipped)
-                if (/\bOK\b/.test(testOutput)) {
-                  // Check for skipped tests in OK line: "OK (skipped=2)"
-                  const okSkippedMatch = testOutput.match(/OK \(skipped=(\d+)\)/);
-                  if (okSkippedMatch) {
-                    skippedTests = parseInt(okSkippedMatch[1], 10);
-                  }
-                }
-              }
-              
-              // Calculate passed tests (ensure non-negative)
-              passedTests = Math.max(0, totalTests - failedTests - skippedTests);
-              
-              core.info(`Parsed test results - Total: ${totalTests}, Failed: ${failedTests}, Skipped: ${skippedTests}, Passed: ${passedTests}`);
-            } catch (e) {
-              core.warning(`Could not read or parse test output: ${e.message}`);
-            }
-            
-            // Build label with test counts in format: "tests: P:# F:# S:#"
-            // Use stable label format to avoid creating many repository labels
-            let newLabel;
-            if (totalTests > 0) {
-              newLabel = `tests: P:${passedTests} F:${failedTests} S:${skippedTests}`;
-            } else {
-              // Fallback if we couldn't parse counts
-              newLabel = testExitCode === '0' ? 'tests: passed' : 'tests: failed';
-            }
-            
-            const labelColor = testExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
-            const description = testExitCode === '0' ? 'Django tests passed' : 'Django tests failed';
-            
-            // Get current labels on the PR
-            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
-              owner, 
-              repo, 
-              issue_number: pull_number, 
-              per_page: 100 
-            });
-            const currentNames = new Set(current.map(l => l.name));
-            
-            // Remove any existing test labels
-            const testRegex = /^tests:/i;
-            for (const name of currentNames) {
-              if (testRegex.test(name) && name !== newLabel) {
-                try {
-                  await github.rest.issues.removeLabel({ 
-                    owner, 
-                    repo, 
-                    issue_number: pull_number, 
-                    name 
-                  });
-                  core.info(`Removed label ${name}`);
-                } catch (err) {
-                  core.warning(`Failed to remove label ${name}: ${err.message}`);
-                }
-              }
-            }
-            
-            // Ensure the new label exists (create if missing)
-            async function ensureLabelExists(labelName) {
-              try {
-                await github.rest.issues.getLabel({ owner, repo, name: labelName });
-              } catch (e) {
-                if (e.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner,
-                    repo,
-                    name: labelName,
-                    color: labelColor,
-                    description: description,
-                  });
-                  core.info(`Created label ${labelName}`);
-                } else {
-                  throw e;
-                }
-              }
-            }
-            
-            await ensureLabelExists(newLabel);
-            
-            // Add the label if it isn't already present
-            if (!currentNames.has(newLabel)) {
-              try {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: pull_number, 
-                  labels: [newLabel] 
-                });
-                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
-              } catch (error) {
-                if (error.status === 403) {
-                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
-                } else {
-                  throw error;
-                }
-              }
-            } else {
-              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
-            }
-            
-            core.info(`Test exit code: ${testExitCode}`)
-
   docker-test:
+    # Only run on pull_request, push, and workflow_dispatch (safe: no elevated permissions)
+    # Never run on pull_request_target or workflow_run to prevent cache poisoning
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
