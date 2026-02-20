@@ -948,6 +948,8 @@ class UserProfile(models.Model):
     #  fields for visit tracking
     daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
     last_visit_day = models.DateField(null=True, blank=True, help_text="Last day the user visited")
+    monthly_visit_count = models.PositiveIntegerField(default=0, help_text="Count of visits in current month")
+    last_monthly_visit = models.DateField(null=True, blank=True, help_text="Last day of monthly visit tracking")
 
     # SendGrid webhook fields
     email_status = models.CharField(
@@ -1015,6 +1017,7 @@ class UserProfile(models.Model):
     def update_visit_counter(self):
         """
         Update daily visit counter if last visit was on a different day.
+        Also updates monthly visit counter for current month.
 
         Note: This method uses atomic database updates and does not refresh
         the instance. Call refresh_from_db() after this method if you need
@@ -1036,18 +1039,49 @@ class UserProfile(models.Model):
             # Called outside transaction context, proceed normally
             pass
 
+        # Check if we need to reset monthly counter (new month)
+        reset_monthly = not self.last_monthly_visit or (
+            (today.year, today.month) != (self.last_monthly_visit.year, self.last_monthly_visit.month)
+        )
+
         # Use atomic database operations to avoid transaction errors
         # If no previous visit or last visit was on a different day
         if not self.last_visit_day or today > self.last_visit_day:
-            # Update both daily count, last visit day, and general visit count in one atomic operation
-            UserProfile.objects.filter(pk=self.pk).update(
-                daily_visit_count=F("daily_visit_count") + 1,
-                last_visit_day=today,
-                visit_count=F("visit_count") + 1,
-            )
+            # Update daily count, last visit day, general visit count, and monthly count
+            update_fields = {
+                "daily_visit_count": F("daily_visit_count") + 1,
+                "last_visit_day": today,
+                "visit_count": F("visit_count") + 1,
+            }
+
+            # Only update monthly fields if needed
+            if reset_monthly:
+                # Reset monthly counter for new month
+                update_fields["monthly_visit_count"] = 1
+                update_fields["last_monthly_visit"] = today
+            else:
+                # Increment monthly counter
+                update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
+                update_fields["last_monthly_visit"] = today
+
+            UserProfile.objects.filter(pk=self.pk).update(**update_fields)
         else:
-            # Only increment the general visit_count
-            UserProfile.objects.filter(pk=self.pk).update(visit_count=F("visit_count") + 1)
+            # Only increment the general visit_count and monthly count (if needed)
+            update_fields = {
+                "visit_count": F("visit_count") + 1,
+            }
+
+            # Only update monthly fields if needed
+            if reset_monthly:
+                update_fields["monthly_visit_count"] = 1
+                update_fields["last_monthly_visit"] = today
+            elif self.last_monthly_visit != today:
+                # Handle edge case where monthly tracking is out of sync with daily tracking
+                # (e.g., from data migration or if monthly tracking was added after daily tracking started)
+                update_fields["monthly_visit_count"] = F("monthly_visit_count") + 1
+                update_fields["last_monthly_visit"] = today
+
+            UserProfile.objects.filter(pk=self.pk).update(**update_fields)
 
         return None
 
