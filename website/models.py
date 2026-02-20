@@ -50,6 +50,16 @@ def validate_btc_address(value):
     # Additional validation for the rest of the address could be added here
 
 
+def validate_sha256_if_present(value):
+    """Validate SHA-256 format only if value is non-empty."""
+    if value:  # Only validate non-empty strings
+        if not re.match(r"^[A-Fa-f0-9]{64}$", value):
+            raise ValidationError(
+                "artifact_sha256 must be exactly 64 hexadecimal characters.",
+                code="invalid_sha256",
+            )
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -287,6 +297,71 @@ class Organization(models.Model):
                 counter += 1
 
         super().save(*args, **kwargs)
+
+
+class OrgEncryptionConfig(models.Model):
+    ENCRYPTION_METHOD_AGE = "age"
+    ENCRYPTION_METHOD_OPENPGP = "openpgp"
+
+    ENCRYPTION_METHOD_CHOICES = [
+        (ENCRYPTION_METHOD_AGE, "age (public key)"),
+        (ENCRYPTION_METHOD_OPENPGP, "OpenPGP (GnuPG)"),
+    ]
+
+    organization = models.OneToOneField(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="encryption_config",
+    )
+    contact_email = models.EmailField(
+        help_text="Disclosure contact for this organization (receives encrypted artifacts)."
+    )
+    preferred_method = models.CharField(
+        max_length=20,
+        choices=ENCRYPTION_METHOD_CHOICES,
+        default=ENCRYPTION_METHOD_AGE,
+    )
+
+    # Public key info
+    age_recipient = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="age recipient string (e.g. age1...) if using age.",
+    )
+    pgp_fingerprint = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="OpenPGP key fingerprint if using GnuPG.",
+    )
+    pgp_key_text = models.TextField(
+        blank=True,
+        help_text="Optional ASCII-armored public key text.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_verified_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        """Validate that required fields are present for the selected encryption method."""
+
+        if self.preferred_method == self.ENCRYPTION_METHOD_AGE:
+            if not self.age_recipient:
+                raise ValidationError({"age_recipient": 'Age recipient is required when preferred method is "age".'})
+
+        elif self.preferred_method == self.ENCRYPTION_METHOD_OPENPGP:
+            if not self.pgp_fingerprint:
+                raise ValidationError(
+                    {"pgp_fingerprint": 'PGP fingerprint is required when preferred method is "openpgp".'}
+                )
+
+    def save(self, *args, **kwargs):
+        """Ensure validation runs on save."""
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"OrgEncryptionConfig({self.organization.name})"
 
 
 class JoinRequest(models.Model):
@@ -627,6 +702,38 @@ class Issue(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
 
+    # --- Zero-trust fields---
+    is_zero_trust = models.BooleanField(
+        default=False,
+        help_text="If true, this issue was submitted via the zero-trust pipeline; no PoC/plaintext stored.",
+    )
+    artifact_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="SHA-256 of the encrypted disclosure artifact sent to the org.",
+        validators=[validate_sha256_if_present],
+    )
+    encryption_method = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Encryption method used (e.g. age, openpgp).",
+    )
+    delivery_method = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Delivery channel, e.g. email:smtp.",
+    )
+    delivery_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Zero-trust pipeline status: pending_build, delivered, failed, etc.",
+    )
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the encrypted artifact delivery completed.",
+    )
+
     def __unicode__(self):
         return self.description
 
@@ -764,6 +871,7 @@ class Issue(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+            models.Index(fields=["is_zero_trust"], name="issue_zero_trust_idx"),
             models.Index(fields=["cve_id"], name="issue_cve_id_idx"),
             models.Index(fields=["cve_score"], name="issue_cve_score_idx"),
         ]
