@@ -649,7 +649,7 @@ urlpatterns = [
     re_path(r"^accounts/profile/", profile, name="account_profile"),
     path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
     re_path(
-        r"^remove_user_from_issue/(?P<id>\w+)/$",
+        r"^remove_user_from_issue/(?P<issue_id>\w+)/$",
         remove_user_from_issue,
         name="remove_user_from_issue",
     ),
@@ -822,7 +822,7 @@ urlpatterns = [
         name="delete_api_issue",
     ),
     re_path(
-        r"^api/v1/remove_user_from_issue/(?P<id>\w+)/$",
+        r"^api/v1/remove_user_from_issue/(?P<issue_id>\w+)/$",
         csrf_exempt(remove_user_from_issue),
         name="remove_api_user_from_issue",
     ),

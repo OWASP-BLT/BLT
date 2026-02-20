@@ -238,6 +238,7 @@ class BountyPayoutSecurityTest(TestCase):
             "contributor_username": "testuser",
             "pr_number": 456,
             "bounty_amount": 5000,
+            "timestamp": int(time.time()),
         }
 
         response = self.client.post(
@@ -351,4 +352,4 @@ if __name__ == "__main__":
 
     TestRunner = get_runner(settings)
     test_runner = TestRunner()
-    failures = test_runner.run_tests(["test_security_fixes"])
+    failures = test_runner.run_tests(["website.tests.test_issue_bounty_security"])

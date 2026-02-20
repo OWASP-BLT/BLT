@@ -393,7 +393,8 @@ def UpdateIssue(request):
     - Requires authentication via login_required decorator
     - Validates issue ownership before retrieval
     - Proper authorization checks
-    - CSRF protection via require_POST
+    - CSRF protection via Django's CsrfViewMiddleware (for session-authenticated requests)
+    - HTTP method restriction via require_POST decorator
     """
     issue_pk = request.POST.get("issue_pk")
     if not issue_pk:
@@ -543,7 +544,7 @@ def delete_issue(request, id):
 
 @require_POST
 @login_required(login_url="/accounts/login")
-def remove_user_from_issue(request, id):
+def remove_user_from_issue(request, issue_id):
     """
     Remove user from an issue.
 
@@ -553,16 +554,16 @@ def remove_user_from_issue(request, id):
     # Authorization check: Only allow access to issues the user owns or is superuser
     # This prevents IDOR vulnerability by checking authorization before retrieval
     if request.user.is_superuser:
-        issue = get_object_or_404(Issue, id=id)
+        issue = get_object_or_404(Issue, id=issue_id)
     else:
         # Regular users can only remove themselves from their own issues
-        issue = get_object_or_404(Issue, id=id, user=request.user)
+        issue = get_object_or_404(Issue, id=issue_id, user=request.user)
 
     issue.remove_user()
 
     # Remove user from corresponding activity object that was created
     issue_activity = Activity.objects.filter(
-        content_type=ContentType.objects.get_for_model(Issue), object_id=id
+        content_type=ContentType.objects.get_for_model(Issue), object_id=issue_id
     ).first()
 
     # Have to define a default anonymous user since the not null constraint fails
@@ -572,7 +573,7 @@ def remove_user_from_issue(request, id):
         issue_activity.save()
 
     messages.success(request, "User removed from the issue")
-    logger.info(f"User removed from issue {id} by user={request.user.id}")
+    logger.info(f"User removed from issue {issue_id} by user={request.user.id}")
 
     return safe_redirect_request(request)
 
