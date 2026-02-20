@@ -11,7 +11,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
@@ -29,6 +29,7 @@ from website.api.views import (
     DebugClearCacheApiView,
     DebugPopulateDataApiView,
     DebugSystemStatsApiView,
+    DeleteIssueApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -647,7 +648,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
-    path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
+    path("delete_issue/<int:id>/", delete_issue, name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,
@@ -817,8 +818,8 @@ urlpatterns = [
         name="cve_autocomplete",
     ),
     re_path(
-        r"^api/v1/delete_issue/(?P<id>\w+)/$",
-        delete_issue,
+        r"^api/v1/delete_issue/(?P<id>\d+)/$",
+        DeleteIssueApiView.as_view(),
         name="delete_api_issue",
     ),
     re_path(

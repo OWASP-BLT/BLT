@@ -18,22 +18,8 @@ from website.models import Domain, Issue
 User = get_user_model()
 
 
-class TokenBasedAuthTest(TestCase):
-    """Test that token-based API endpoints work without CSRF requirements."""
-
-    def setUp(self):
-        """Set up test user and token."""
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
-        self.token, _ = Token.objects.get_or_create(user=self.user)
-
-        self.domain = Domain.objects.create(name="example.com", url="example.com")
-        self.issue = Issue.objects.create(
-            url="https://example.com/test",
-            description="Test vulnerability",
-            domain=self.domain,
-            user=self.user,
-            label=1,
-        )
+class GetRequestNoCsrfTest(TestCase):
+    """Test that GET requests never require CSRF."""
 
     def test_get_request_never_requires_csrf(self):
         """GET requests should never fail with CSRF errors."""
@@ -46,11 +32,44 @@ class TokenBasedAuthTest(TestCase):
         self.assertNotEqual(response.status_code, 403, msg="GET requests should not fail with CSRF error")
 
 
-class SessionAuthCSRFTest(TestCase):
-    """Test that session-authenticated endpoints now enforce CSRF properly."""
+class SessionAuthWebViewTest(TestCase):
+    """Test that session-authenticated web view endpoints enforce CSRF properly."""
 
     def setUp(self):
-        """Set up test user and login."""
+        """Set up test user and issue."""
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+        self.domain = Domain.objects.create(name="example.com", url="example.com")
+        self.issue = Issue.objects.create(
+            url="https://example.com/test",
+            description="Test vulnerability",
+            domain=self.domain,
+            user=self.user,
+            label=1,
+        )
+
+    def test_session_auth_without_csrf_fails_on_web_view(self):
+        """
+        Session-authenticated DELETE requests without CSRF tokens should fail with 403.
+        This tests the web view endpoint: DELETE /delete_issue/<id>/
+        This is the security improvement: CSRF protection is now enforced.
+        """
+        client = Client(enforce_csrf_checks=True)
+
+        # Login with session
+        client.login(username="testuser", password="testpass123")
+
+        # Attempt DELETE without CSRF token on web view endpoint
+        response = client.post(f"/delete_issue/{self.issue.id}/", {})
+
+        # Should fail with 403 CSRF error (this is correct behavior)
+        self.assertEqual(response.status_code, 403, msg="Session auth without CSRF token should fail with 403")
+
+
+class TokenAuthApiViewTest(TestCase):
+    """Test that token-authenticated API endpoints work without CSRF."""
+
+    def setUp(self):
+        """Set up test user, token, and issue."""
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
         self.token, _ = Token.objects.get_or_create(user=self.user)
         self.domain = Domain.objects.create(name="example.com", url="example.com")
@@ -62,44 +81,25 @@ class SessionAuthCSRFTest(TestCase):
             label=1,
         )
 
-    def test_session_auth_without_csrf_fails(self):
+    def test_token_delete_succeeds_on_api_view(self):
         """
-        Session-authenticated requests without CSRF tokens should fail with 403.
-        This is the security improvement: CSRF protection is now enforced.
+        Token-authenticated DELETE requests should succeed without CSRF tokens.
+        This tests the API endpoint: DELETE /api/v1/delete_issue/<id>/
+        Token auth must work without CSRF for mobile app compatibility.
         """
-        client = Client(enforce_csrf_checks=True)
+        client = APIClient()
 
-        # Login with session
-        client.login(username="testuser", password="testpass123")
-
-        # Attempt POST without CSRF token
-        response = client.post(f"/api/v1/delete_issue/{self.issue.id}/", {})
-
-        # Should fail with 403 CSRF error (this is correct behavior)
-        self.assertEqual(response.status_code, 403, msg="Session auth without CSRF token should fail with 403")
-
-    def test_token_header_does_not_bypass_csrf_on_delete(self):
-        """Token auth headers should not bypass CSRF on session-only endpoints."""
-        client = Client(enforce_csrf_checks=True)
-
-        response = client.post(
+        # DELETE with token auth, no CSRF token
+        response = client.delete(
             f"/api/v1/delete_issue/{self.issue.id}/",
-            {},
             HTTP_AUTHORIZATION=f"Token {self.token.key}",
         )
 
-        self.assertEqual(response.status_code, 403, msg="Token auth should not bypass CSRF on delete_issue")
+        # Should succeed with 200 OK
+        self.assertEqual(response.status_code, 200, msg="Token-authenticated DELETE should succeed")
 
-    def test_session_auth_with_csrf_succeeds(self):
-        """Session-authenticated request with CSRF token should succeed."""
-        client = Client(enforce_csrf_checks=True)
-        client.login(username="testuser", password="testpass123")
-
-        # get CSRF token
-        response = client.get("/", follow=True)
-        csrf_cookie = response.cookies.get("csrftoken")
-        self.assertIsNotNone(csrf_cookie, "CSRF token cookie not set in response")
-        csrf_token = csrf_cookie.value
-
-        response = client.post(f"/api/v1/delete_issue/{self.issue.id}/", {}, HTTP_X_CSRFTOKEN=csrf_token)
-        self.assertIn(response.status_code, [200, 204, 302])
+        # Verify the issue is actually deleted
+        self.assertFalse(
+            Issue.objects.filter(id=self.issue.id).exists(),
+            msg="Issue should be deleted after successful DELETE request",
+        )

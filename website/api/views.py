@@ -476,6 +476,36 @@ class FlagIssueApiView(APIView):
             return Response({"issue": "flagged"})
 
 
+class DeleteIssueApiView(APIView):
+    """
+    API endpoint for deleting issues via token authentication.
+    Requires token authentication and proper permissions.
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id):
+        issue = get_object_or_404(Issue, id=id)
+
+        # Check permissions: only superuser or issue owner can delete
+        if not (request.user.is_superuser or request.user == issue.user):
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # Delete screenshots and issue
+            IssueScreenshot.objects.filter(issue=issue).delete()
+            issue.delete()
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except Issue.DoesNotExist:
+            return Response({"status": "error", "message": "Issue not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.exception("Error deleting issue: %s", e)
+            return Response(
+                {"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class UserScoreApiView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
