@@ -63,7 +63,6 @@ from website.views.bitcoin import (
     pending_transactions_view,
     update_submission_status,
 )
-from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
@@ -187,6 +186,7 @@ from website.views.issue import (
     change_bid_status,
     comment_on_content,
     create_github_issue,
+    cve_autocomplete,
     delete_content_comment,
     delete_issue,
     dislike_issue,
@@ -207,7 +207,6 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
-    unsave_issue,
     update_content_comment,
     vote_count,
 )
@@ -362,6 +361,7 @@ from website.views.user import (
     referral_signup,
     set_public_key,
     start_thread,
+    toggle_follow,
     update_bch_address,
     user_dashboard,
     users_view,
@@ -575,13 +575,6 @@ urlpatterns = [
         name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$",
-        dislike_issue,
-        name="dislike_issue",
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",
@@ -590,13 +583,7 @@ urlpatterns = [
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
-    re_path(
-        r"^unsave_issue/(?P<issue_pk>\d+)/$",
-        unsave_issue,
-        name="unsave_issue",
-    ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
     # comment on content
@@ -823,6 +810,11 @@ urlpatterns = [
         r"^api/v1/search/$",
         csrf_exempt(search_issues),
         name="search_issues",
+    ),
+    re_path(
+        r"^api/v1/cve/autocomplete/$",
+        csrf_exempt(cve_autocomplete),
+        name="cve_autocomplete",
     ),
     re_path(
         r"^api/v1/delete_issue/(?P<id>\w+)/$",
@@ -1079,12 +1071,6 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
-    # blog urls
-    path("blog/", PostListView.as_view(), name="post_list"),
-    path("blog/new/", PostCreateView.as_view(), name="post_form"),
-    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
-    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
-    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
     path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),
@@ -1236,6 +1222,11 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
+    path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
+    path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
+    path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
+    path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 
 if settings.DEBUG:
