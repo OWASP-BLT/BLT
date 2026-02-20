@@ -302,6 +302,9 @@ def _handle_team_join(user_id, request):
         try:
             slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
             activity.workspace_name = slack_integration.integration.organization.name
+            if not isinstance(activity.details, dict):
+                activity.details = {}
+            activity.details["slack_integration_id"] = slack_integration.id
             activity.save()
 
             # If integration exists and has welcome message
