@@ -3165,10 +3165,10 @@ class GitHubIssueBadgeView(APIView):
 
         # Format values
         active_bounties = GitHubIssueBadgeView._fmt_number(stats["active_bounties"])
-        total_bounty = f"${stats['total_bounty']:,.0f}"
+        total_bounty = f"${stats['total_bounty']:,.2f}"
         contributors = GitHubIssueBadgeView._fmt_number(stats["contributors"])
-        total_pool = f"${stats['total_bounty_pool']:,.0f}"
-        top_bounty = f"${stats['top_bounty']:,.0f}"
+        total_pool = f"${stats['total_bounty_pool']:,.2f}"
+        top_bounty = f"${stats['top_bounty']:,.2f}"
         star_count = GitHubIssueBadgeView._fmt_number(stats["stars"])
         open_issues = GitHubIssueBadgeView._fmt_number(stats["open_issues"])
         views_30d = GitHubIssueBadgeView._fmt_number(stats["views_30d"])
