@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         start_time = time.time()
 
-        qs = Project.objects.only("id")
+        qs = Project.objects.only("id").order_by("id")
         total = qs.count()
 
         processed = 0

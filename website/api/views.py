@@ -857,7 +857,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             else:
                 contributors_data = []
 
-            project_info = ProjectSerializer(project).data
+            project_info = ProjectSerializer(project, context={"request": self.request}).data
             project_info["contributors"] = contributors_data
             output.append(project_info)
 
@@ -875,14 +875,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         freshness = request.query_params.get("freshness")
         if freshness is not None:
             try:
-                freshness_val = float(freshness)
-                if not 0 <= freshness_val <= 100:
+                freshness_val = Decimal(freshness)
+                if not Decimal("0") <= freshness_val <= Decimal("100"):
                     return Response(
                         {"error": "Invalid 'freshness' parameter: must be between 0 and 100"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 projects = projects.filter(freshness__gte=freshness_val)
-            except (ValueError, TypeError):
+            except (InvalidOperation, TypeError):
                 return Response(
                     {"error": "Invalid 'freshness' parameter: must be a valid number"},
                     status=status.HTTP_400_BAD_REQUEST,

@@ -1357,7 +1357,13 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    freshness = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, db_index=True)
+    freshness = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.0,
+        db_index=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
 
     def calculate_freshness(self):
         """
@@ -1387,7 +1393,7 @@ class Project(models.Model):
                 # Consistency bonus: commits in 3+ distinct weeks of the last 12 weeks
                 weeks_active_last_quarter = sum(1 for w in stats[40:52] if w > 0)
                 if weeks_active_last_quarter >= 3:
-                    repo_score = min(repo_score + 0.1, 1.0)
+                    repo_score += 0.1
 
             # 2. Fallback to last_commit_date if no stats or stats don't show recent activity
             if repo_score == 0 and repo.last_commit_date:
