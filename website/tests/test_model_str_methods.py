@@ -4,6 +4,7 @@ Tests for model __str__ methods.
 This test file ensures that all models have properly functioning __str__ methods
 that return readable strings for the Django admin and debugging purposes.
 """
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -11,11 +12,11 @@ from django.test import TestCase
 from django.utils import timezone
 
 from website.models import (
+    IP,
     Bid,
     Contribution,
     Domain,
     Hunt,
-    IP,
     Issue,
     IssueScreenshot,
     JoinRequest,
@@ -111,8 +112,10 @@ class ModelStrMethodTests(TestCase):
         hunt = Hunt.objects.create(
             name="Test Hunt",
             domain=self.domain,
+            url="https://test-hunt.com",
+            plan="free",
             starts_on=timezone.now(),
-            end_on=timezone.now() + timezone.timedelta(days=7),
+            end_on=timezone.now() + timedelta(days=7),
         )
         winner = Winner.objects.create(
             hunt=hunt,
@@ -127,8 +130,10 @@ class ModelStrMethodTests(TestCase):
         hunt = Hunt.objects.create(
             name="Test Hunt 2",
             domain=self.domain,
+            url="https://test-hunt-2.com",
+            plan="free",
             starts_on=timezone.now(),
-            end_on=timezone.now() + timezone.timedelta(days=7),
+            end_on=timezone.now() + timedelta(days=7),
         )
         winner = Winner.objects.create(
             hunt=hunt,
@@ -270,6 +275,7 @@ class ModelStrMethodTests(TestCase):
         project = Project.objects.create(
             name="Test Project",
             slug="test-project",
+            description="A test project for contributions",
         )
         contribution = Contribution.objects.create(
             user=self.user,
@@ -289,6 +295,7 @@ class ModelStrMethodTests(TestCase):
         project = Project.objects.create(
             name="Test Project 2",
             slug="test-project-2",
+            description="Another test project",
         )
         long_title = "A" * 100  # Very long title
         contribution = Contribution.objects.create(

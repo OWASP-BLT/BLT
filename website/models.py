@@ -1200,7 +1200,7 @@ class OrganizationAdmin(models.Model):
     def __str__(self):
         username = self.user.username if self.user else "Unknown"
         org_name = self.organization.name if self.organization else "Unknown Org"
-        role_name = "Admin" if self.role == 0 else "Moderator"
+        role_name = self.get_role_display() or "Unknown"
         return f"{username} - {role_name} of {org_name}"
 
 
