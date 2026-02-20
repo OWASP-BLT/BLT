@@ -22,6 +22,7 @@ from django.core.management import call_command
 from django.db import connection, transaction
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import filters, status, viewsets
@@ -297,7 +298,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                     tags = [item for sublist in tags for item in sublist]
 
                 del request.data["tags"]
-        except (ValueError, MultiValueDictKeyError) as e:
+        except ValueError as e:
             return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             request.data._mutable = False
@@ -497,12 +498,11 @@ class DeleteIssueApiView(APIView):
             IssueScreenshot.objects.filter(issue=issue).delete()
             issue.delete()
             return Response({"status": "success"}, status=status.HTTP_200_OK)
-        except Issue.DoesNotExist:
-            return Response({"status": "error", "message": "Issue not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.exception("Error deleting issue: %s", e)
             return Response(
-                {"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"status": "error", "message": "An unexpected error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
