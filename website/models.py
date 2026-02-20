@@ -3548,6 +3548,38 @@ class StakingTransaction(models.Model):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount} BACON"
 
 
+class DomainVerificationCode(models.Model):
+    """Model to store verification codes for domain manager linking"""
+
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name="verification_codes")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="domain_verification_requests")
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Domain Verification Code"
+        verbose_name_plural = "Domain Verification Codes"
+        indexes = [
+            models.Index(fields=["domain", "user", "is_used"], name="domain_verify_lookup_idx"),
+            models.Index(fields=["expires_at"], name="domain_verify_expires_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.domain.name} - {self.user.username} - {self.code}"
+
+    def is_valid(self):
+        """Check if code is still valid (not expired and not used)"""
+        return not self.is_used and timezone.now() < self.expires_at
+
+    def mark_as_used(self):
+        """Mark the code as used"""
+        self.is_used = True
+        self.used_at = timezone.now()
+        self.save()
 class SecurityIncident(models.Model):
     class Severity(models.TextChoices):
         LOW = "low", "Low"

@@ -95,7 +95,9 @@ from website.views.company import (
     edit_prize,
     job_detail,
     public_job_list,
+    request_domain_access,
     toggle_job_status,
+    verify_domain_access,
 )
 from website.views.core import (
     CustomSocialAccountDisconnectView,
@@ -951,6 +953,16 @@ urlpatterns = [
         "organization/domain/<int:pk>/",
         login_required(DomainView.as_view()),
         name="view_domain",
+    ),
+    path(
+        "organization/domain/<int:pk>/request-access/",
+        request_domain_access,
+        name="request_domain_access",
+    ),
+    path(
+        "organization/domain/<int:pk>/verify-access/",
+        verify_domain_access,
+        name="verify_domain_access",
     ),
     path(
         "organization/delete_prize/<int:prize_id>/<int:organization_id>",
