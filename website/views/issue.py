@@ -422,6 +422,9 @@ def UpdateIssue(request):
         logger.warning(f"UpdateIssue called with invalid action={action} by user={request.user.id} issue={issue_pk}")
         return HttpResponseBadRequest("Invalid action")
 
+    # Get domain name safely (domain can be null)
+    domain_name = issue.domain.name if issue.domain else "Unknown Domain"
+
     # Perform the update
     if action == "close":
         issue.status = "closed"
@@ -431,14 +434,14 @@ def UpdateIssue(request):
         msg_plain = msg_html = render_to_string(
             "email/bug_updated.html",
             {
-                "domain": issue.domain.name,
+                "domain": domain_name,
                 "name": issue.user.username if issue.user else "Anonymous",
                 "id": issue.id,
                 "username": request.user.username,
                 "action": "closed",
             },
         )
-        subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
+        subject = domain_name + " bug # " + str(issue.id) + " closed by " + request.user.username
 
     elif action == "open":
         issue.status = "open"
@@ -447,14 +450,14 @@ def UpdateIssue(request):
         msg_plain = msg_html = render_to_string(
             "email/bug_updated.html",
             {
-                "domain": issue.domain.name,
-                "name": issue.domain.email.split("@")[0] if issue.domain.email else "Admin",
+                "domain": domain_name,
+                "name": issue.domain.email.split("@")[0] if (issue.domain and issue.domain.email) else "Admin",
                 "id": issue.id,
                 "username": request.user.username,
                 "action": "opened",
             },
         )
-        subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
+        subject = domain_name + " bug # " + str(issue.id) + " opened by " + request.user.username
 
     # Save the issue
     issue.save()
