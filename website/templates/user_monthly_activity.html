@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load gravatar %}
+{% load static %}
+{% block title %}
+    {{ profile_user.username }} - {{ month_name }} {{ year }} Activity
+{% endblock title %}
+{% block description %}
+    View {{ profile_user.username }}'s bug reports and points earned during {{ month_name }} {{ year }}.
+{% endblock description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-6">
+                        <div class="flex-shrink-0">
+                            {% if profile_user.userprofile.avatar %}
+                                <img src="{{ profile_user.userprofile.avatar }}"
+                                     class="w-20 h-20 rounded-full object-cover ring-4 ring-[#e74c3c] ring-offset-2"
+                                     alt="{{ profile_user.username }}"
+                                     width="80"
+                                     height="80">
+                            {% elif profile_user.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{ profile_user.socialaccount_set.all.0.get_avatar_url }}"
+                                     class="w-20 h-20 rounded-full object-cover ring-4 ring-[#e74c3c] ring-offset-2"
+                                     alt="{{ profile_user.username }}"
+                                     width="80"
+                                     height="80">
+                            {% else %}
+                                <img src="{% gravatar_url profile_user.email 80 %}"
+                                     class="w-20 h-20 rounded-full object-cover ring-4 ring-[#e74c3c] ring-offset-2"
+                                     alt="{{ profile_user.username }}"
+                                     width="80"
+                                     height="80">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-3">
+                                <a href="{% url 'profile' slug=profile_user.username %}"
+                                   class="hover:text-[#e74c3c] transition-colors">{{ profile_user.username }}</a>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if profile_user.userprofile.get_title_display == 'GOLD' %}bg-yellow-100 text-yellow-800{% elif profile_user.userprofile.get_title_display == 'SILVER' %}bg-gray-100 text-gray-800{% elif profile_user.userprofile.get_title_display == 'BRONZE' %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {{ profile_user.userprofile.get_title_display }}
+                                </span>
+                            </h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-2">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="font-medium">{{ month_name }} {{ year }}</span>
+                                Activity Report
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{% url 'leaderboard_specific_month' %}?month={{ month }}&year={{ year }}"
+                       class="px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-lg transition-colors duration-200 flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Leaderboard
+                    </a>
+                </div>
+            </div>
+            <!-- Stats Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-[#e74c3c]/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-star text-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Total Points</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ total_score }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bug text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Issues Reported</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ issue_count }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-list text-2xl text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Point Entries</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ paginator.count }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Points List -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Points Breakdown</h2>
+                </div>
+                {% if not points_list %}
+                    <div class="p-8 text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                            <i class="fas fa-inbox text-gray-400 dark:text-gray-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Activity Found</h3>
+                        <p class="text-gray-500 dark:text-gray-500">No points were earned during this month.</p>
+                    </div>
+                {% else %}
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for point in points_list %}
+                            <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            {% if point.issue %}
+                                                <a href="{% url 'issue_view' pk=point.issue.id %}"
+                                                   class="text-lg font-medium text-[#e74c3c] hover:text-[#c0392b] transition-colors">
+                                                    <i class="fas fa-bug mr-1"></i>
+                                                    {{ point.issue.description|truncatewords:15 }}
+                                                </a>
+                                                {% if point.issue.label %}
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if point.issue.label == '0' %}bg-gray-100 text-gray-800{% elif point.issue.label == '1' %}bg-blue-100 text-blue-800{% elif point.issue.label == '2' %}bg-green-100 text-green-800{% elif point.issue.label == '3' %}bg-yellow-100 text-yellow-800{% elif point.issue.label == '4' %}bg-orange-100 text-orange-800{% elif point.issue.label == '5' %}bg-red-100 text-red-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                                                        {% if point.issue.label == '0' %}
+                                                            General
+                                                        {% elif point.issue.label == '1' %}
+                                                            Number Error
+                                                        {% elif point.issue.label == '2' %}
+                                                            Functional
+                                                        {% elif point.issue.label == '3' %}
+                                                            Performance
+                                                        {% elif point.issue.label == '4' %}
+                                                            Security
+                                                        {% elif point.issue.label == '5' %}
+                                                            Typo
+                                                        {% else %}
+                                                            Design
+                                                        {% endif %}
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-lg font-medium text-gray-700 dark:text-gray-300">
+                                                    <i class="fas fa-certificate mr-1"></i>
+                                                    {% if point.reason %}
+                                                        {{ point.reason }}
+                                                    {% else %}
+                                                        Other Activity
+                                                    {% endif %}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                            {% if point.domain %}
+                                                <span class="flex items-center gap-1">
+                                                    <i class="fas fa-globe"></i>
+                                                    <a href="{% url 'domain' slug=point.domain.name %}"
+                                                       class="hover:text-[#e74c3c]">{{ point.domain.name }}</a>
+                                                </span>
+                                            {% endif %}
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-clock"></i>
+                                                {{ point.created|date:"M d, Y H:i" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 ml-4">
+                                        <span class="inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold {% if point.score > 0 %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                            {% if point.score > 0 %}+{% endif %}
+                                            {{ point.score }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </div>
+                                <div class="flex gap-2">
+                                    {% if page_obj.has_previous %}
+                                        <a href="?month={{ month }}&year={{ year }}&page={{ page_obj.previous_page_number }}"
+                                           class="px-4 py-2 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">Previous</a>
+                                    {% endif %}
+                                    {% if page_obj.has_next %}
+                                        <a href="?month={{ month }}&year={{ year }}&page={{ page_obj.next_page_number }}"
+                                           class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors">Next</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}

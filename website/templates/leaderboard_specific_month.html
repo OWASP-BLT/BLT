@@ -124,7 +124,11 @@
                                             </span>
                                         </div>
                                         <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-sm text-gray-500 dark:text-gray-500">{{ leader.total_score }} Points</span>
+                                            <a href="{% url 'user_monthly_activity' username=leader.username %}?month={{ request.GET.month|default:current_month }}&year={{ request.GET.year|default:current_year }}"
+                                               class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium transition-colors">
+                                                {{ leader.total_score }} Points
+                                                <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                                            </a>
                                             {% if leader.amount %}
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
                                                     <i class="fas fa-dollar-sign mr-1"></i>

@@ -338,6 +338,7 @@ from website.views.user import (
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
+    UserMonthlyActivityView,
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
@@ -614,6 +615,11 @@ urlpatterns = [
         r"^leaderboard/each-month/$",
         EachmonthLeaderboardView.as_view(),
         name="leaderboard_eachmonth",
+    ),
+    re_path(
+        r"^leaderboard/user/(?P<username>[^/]+)/$",
+        UserMonthlyActivityView.as_view(),
+        name="user_monthly_activity",
     ),
     re_path(
         r"^api/v1/issue/like/(?P<id>\w+)/$",
