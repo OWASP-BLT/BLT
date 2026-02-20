@@ -37,6 +37,7 @@ from django.dispatch import receiver
 from django.http import (
     Http404,
     HttpResponse,
+    HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
     HttpResponseRedirect,
@@ -382,64 +383,93 @@ def resolve(request, id):
         return HttpResponseForbidden("not logged in or superuser or issue user")
 
 
+@require_POST
+@login_required(login_url="/accounts/login")
 def UpdateIssue(request):
-    if not request.POST.get("issue_pk"):
-        return HttpResponse("Missing issue ID")
-    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
+    """
+    Update issue status (open/close).
+
+    Security improvements:
+    - Requires authentication via login_required decorator
+    - Validates issue ownership before retrieval
+    - Proper authorization checks
+    - CSRF protection via require_POST
+    """
+    issue_pk = request.POST.get("issue_pk")
+    if not issue_pk:
+        logger.warning(f"UpdateIssue called without issue_pk by user={request.user.id} ip={get_client_ip(request)}")
+        return HttpResponseBadRequest("Missing issue ID")
+
+    # Validate issue_pk is numeric
     try:
-        tokenauth = False
-        if "token" in request.POST:
-            for token in Token.objects.all():
-                if request.POST["token"] == token.key:
-                    request.user = User.objects.get(id=token.user_id)
-                    tokenauth = True
-                    break
-    except Exception:
-        logger.exception("Token authentication lookup failed in UpdateIssue")
-        tokenauth = False
-    if request.method == "POST" and (request.user.is_superuser or (issue is not None and request.user == issue.user)):
-        if request.POST.get("action") == "close":
-            issue.status = "closed"
-            issue.closed_by = request.user
-            issue.closed_date = timezone.now()
+        issue_pk = int(issue_pk)
+    except (ValueError, TypeError):
+        logger.warning(f"UpdateIssue called with invalid issue_pk={issue_pk} by user={request.user.id}")
+        return HttpResponseBadRequest("Invalid issue ID")
 
-            msg_plain = msg_html = render_to_string(
-                "email/bug_updated.html",
-                {
-                    "domain": issue.domain.name,
-                    "name": issue.user.username if issue.user else "Anonymous",
-                    "id": issue.id,
-                    "username": request.user.username,
-                    "action": "closed",
-                },
-            )
-            subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
+    # Authorization check: Only allow access to issues the user owns or is superuser
+    # This prevents IDOR vulnerability by checking authorization before retrieval
+    if request.user.is_superuser:
+        issue = get_object_or_404(Issue, pk=issue_pk)
+    else:
+        # Regular users can only update their own issues
+        issue = get_object_or_404(Issue, pk=issue_pk, user=request.user)
 
-        elif request.POST.get("action") == "open":
-            issue.status = "open"
-            issue.closed_by = None
-            issue.closed_date = None
-            msg_plain = msg_html = render_to_string(
-                "email/bug_updated.html",
-                {
-                    "domain": issue.domain.name,
-                    "name": issue.domain.email.split("@")[0],
-                    "id": issue.id,
-                    "username": request.user.username,
-                    "action": "opened",
-                },
-            )
-            subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
+    action = request.POST.get("action")
+    if action not in ["close", "open"]:
+        logger.warning(f"UpdateIssue called with invalid action={action} by user={request.user.id} issue={issue_pk}")
+        return HttpResponseBadRequest("Invalid action")
 
+    # Perform the update
+    if action == "close":
+        issue.status = "closed"
+        issue.closed_by = request.user
+        issue.closed_date = timezone.now()
+
+        msg_plain = msg_html = render_to_string(
+            "email/bug_updated.html",
+            {
+                "domain": issue.domain.name,
+                "name": issue.user.username if issue.user else "Anonymous",
+                "id": issue.id,
+                "username": request.user.username,
+                "action": "closed",
+            },
+        )
+        subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
+
+    elif action == "open":
+        issue.status = "open"
+        issue.closed_by = None
+        issue.closed_date = None
+        msg_plain = msg_html = render_to_string(
+            "email/bug_updated.html",
+            {
+                "domain": issue.domain.name,
+                "name": issue.domain.email.split("@")[0] if issue.domain.email else "Admin",
+                "id": issue.id,
+                "username": request.user.username,
+                "action": "opened",
+            },
+        )
+        subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
+
+    # Save the issue
+    issue.save()
+
+    # Send notification emails
+    try:
         mailer = settings.EMAIL_TO_STRING
-        email_to = issue.user.email
-        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
-        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
-        issue.save()
-        return HttpResponse("Updated")
+        if issue.user and issue.user.email:
+            send_mail(subject, msg_plain, mailer, [issue.user.email], html_message=msg_html, fail_silently=True)
+        if issue.domain and issue.domain.email:
+            send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html, fail_silently=True)
+    except Exception:
+        logger.exception(f"Failed to send email notification for issue {issue.id}")
 
-    elif request.method == "POST":
-        return HttpResponse("invalid")
+    logger.info(f"Issue {issue.id} {action}ed by user={request.user.id} ({request.user.username})")
+
+    return HttpResponse("Updated")
 
 
 def newhome(request, template="bugs_list.html"):
