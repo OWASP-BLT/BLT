@@ -252,8 +252,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Define commit message for consistency
-          COMMIT_MSG="Regenerate Django migrations
+          # Stage the migration files and model files
+          git add website/migrations/ comments/migrations/
+          git add website/models*.py comments/models*.py 2>/dev/null || true
+
+          git commit -m "Regenerate Django migrations
 
           Triggered by: $TRIGGER_TYPE
           PR: #$PR_NUMBER"
