@@ -60,16 +60,16 @@
                             <div class="messages-container h-48 overflow-y-auto mb-4 space-y-2 scroll-smooth"
                                  id="messages-{{ room.id }}">
                                 {% for message in room.recent_messages %}
-                                    <div class="message p-2 rounded-lg {% if message.user == request.user %}bg-red-50 ml-auto{% else %}bg-gray-50{% endif %} max-w-[80%]">
-                                        <p class="text-sm font-medium">{{ message.username }}</p>
-                                        <p class="text-sm text-gray-700 dark:text-gray-300">{{ message.content }}</p>
-                                        <span class="text-xs text-gray-500 dark:text-gray-500">{{ message.timestamp|naturaltime }}</span>
+                                    <div class="message p-2 rounded-lg {% if message.user == request.user %}bg-red-50 dark:bg-red-900/40 ml-auto{% else %}bg-gray-50 dark:bg-gray-700{% endif %} max-w-[80%]">
+                                        <p class="text-sm font-medium text-gray-900 dark:text-gray-200">{{ message.username }}</p>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-wrap">{{ message.content|urlize }}</p>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ message.timestamp|naturaltime }}</span>
                                     </div>
                                 {% endfor %}
                             </div>
                             <form class="quick-chat-form flex gap-2" data-room-id="{{ room.id }}">
                                 <input type="text"
-                                       class="flex-1 rounded-lg border-gray-300 dark:border-gray-600 focus:border-red-500 focus:ring-red-500 bg-white dark:bg-gray-900"
+                                       class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:border-red-500 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                                        placeholder="Type a message..."
                                        name="message">
                                 <button type="submit"
@@ -499,19 +499,19 @@
             // Add messages in reverse order (newest last)
             messages.reverse().forEach((message) => {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `message p-2 rounded-lg ${
-                    message.username === '{{ request.user.username }}' ? 'bg-red-50 ml-auto' : 'bg-gray-50'
-                } max-w-[80%]`;
+                const isUser = message.username === '{{ request.user.username }}';
+                const bgClass = isUser ? 'bg-red-50 dark:bg-red-900/40 ml-auto' : 'bg-gray-50 dark:bg-gray-700';
+    
+                messageDiv.className = `message p-2 rounded-lg ${bgClass} max-w-[80%]`;
                 
                 messageDiv.innerHTML = `
-                    <p class="text-sm font-medium">${escapeHtml(message.username)}</p>
-                    <p class="text-sm text-gray-700 dark:text-gray-300">${escapeHtml(message.content)}</p>
-                    <span class="text-xs text-gray-500 dark:text-gray-500">${message.timestamp_display}</span>
+            <p class="text-sm font-medium">${escapeHtml(message.username)}</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300 break-words whitespace-pre-wrap">${formatMessageWithLinks(message.content)}</p>
+            <span class="text-xs text-gray-500 dark:text-gray-500">${message.timestamp_display}</span>
                 `;
-                
+
                 messagesContainer.appendChild(messageDiv);
-            });
-            
+            }); 
             // Scroll to the bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -546,6 +546,14 @@
                 chatSocket.close();
             }
         });
+
+        function formatMessageWithLinks(content) {
+            let safeContent = escapeHtml(content);
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return safeContent.replace(urlRegex, function(url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-600 underline break-all">${url}</a>`;
+            });
+        }
     </script>
 {% endblock content %}
 {% block extra_js %}
