@@ -2044,39 +2044,47 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        ipdetails = IP()
         try:
-            id = int(self.kwargs["slug"])
+            issue_id = int(self.kwargs["slug"])
         except ValueError:
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
-        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user.username if self.request.user.is_authenticated else None
+        self.object = get_object_or_404(Issue, id=issue_id)
+
+        # 🔒 Private / hidden issue protection
+        if self.object.is_hidden:
+            if not request.user.is_authenticated:
+                raise Http404("Issue not found")
+
+            allowed = request.user.is_superuser or request.user == self.object.user or request.user.is_staff
+
+            if not allowed:
+                raise Http404("Issue not found")
+
+        # ✅ Only reach here if allowed
+        ipdetails = IP()
+        ipdetails.user = request.user.username if request.user.is_authenticated else None
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
-        ipdetails.agent = request.META["HTTP_USER_AGENT"]
-        ipdetails.referer = request.META.get("HTTP_REFERER", None)
+        ipdetails.agent = request.META.get("HTTP_USER_AGENT")
+        ipdetails.referer = request.META.get("HTTP_REFERER")
 
         try:
-            if self.request.user.is_authenticated:
-                # Check if IP record already exists for this authenticated user and issue
-                if not IP.objects.filter(user=self.request.user.username, issuenumber=self.object.id).exists():
-                    # First time this user is viewing this issue
+            if request.user.is_authenticated:
+                if not IP.objects.filter(user=request.user.username, issuenumber=self.object.id).exists():
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
             else:
-                # Check if IP record already exists for this address and issue
                 if not IP.objects.filter(address=get_client_ip(request), issuenumber=self.object.id).exists():
-                    # First time this IP is viewing this issue
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-        except Exception as e:
-            logger.error(f"Error tracking IP view for issue {self.object.id}: {e}")
-            pass  # Continue loading the page even if view tracking fails
-        return super(IssueView, self).get(request, *args, **kwargs)
+        except Exception:
+            logger.exception("Error tracking IP view for issue %s", self.object.id)
+
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(IssueView, self).get_context_data(**kwargs)
