@@ -50,7 +50,6 @@ class Command(LoggedBaseCommand):
         skip_issues = options.get("skip_issues", False)
         now = timezone.now()
 
-        # If a specific repo ID is provided, only update that repo
         if repo_id:
             try:
                 repo = Repo.objects.get(id=repo_id)
@@ -66,10 +65,8 @@ class Command(LoggedBaseCommand):
                 self.stdout.write(self.style.ERROR(f"Failed to update repository ID {repo_id}: {e}"))
                 return
 
-        # Otherwise, get all repositories
         repos = Repo.objects.all()
         total_repos = repos.count()
-
         updated_count = 0
         skipped_count = 0
 
@@ -146,9 +143,14 @@ class Command(LoggedBaseCommand):
                 if not success:
                     raise RuntimeError(f"Failed to fetch metadata for {repo.name}")
 
+                # New method from main
+                self.fetch_participation_stats(repo, owner, repo_name)
+
                 # Update Issues (Optional)
                 if not skip_issues:
-                    self.fetch_issues_and_prs(repo, owner, repo_name)
+                    issues_success = self.fetch_issues_and_prs(repo, owner, repo_name)
+                    if not issues_success:
+                        raise RuntimeError(f"Failed to fetch issues or PRs for {repo.name}")
             else:
                 raise RuntimeError(f"Invalid GitHub URL format for {repo.name}")
         else:
@@ -200,7 +202,6 @@ class Command(LoggedBaseCommand):
             )
             return True
 
-        # HERE IS S3DFX-CYBER'S FIX COMBINED PERFECTLY
         except (requests.exceptions.RequestException, ValueError) as e:
             logger.error(f"Error fetching repository data for {owner}/{repo_name}: {e}")
             return False
@@ -208,13 +209,43 @@ class Command(LoggedBaseCommand):
             logger.error(f"Unexpected error fetching repository data for {owner}/{repo_name}: {e}")
             return False
 
+    def fetch_participation_stats(self, repo, owner, repo_name):
+        headers = {"Accept": "application/vnd.github.v3+json"}
+        if settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        url = f"https://api.github.com/repos/{owner}/{repo_name}/stats/participation"
+
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 202:
+                self.stdout.write(f"Participation stats for {repo.name} are being computed (202).")
+                return
+
+            response.raise_for_status()
+            data = response.json()
+
+            participation = data.get("all", [])
+
+            if participation:
+                repo.participation_stats = participation
+                repo.save(update_fields=["participation_stats"])
+                self.stdout.write(self.style.SUCCESS(f"Successfully updated participation stats for {repo.name}"))
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching participation stats for {owner}/{repo_name}: {e}")
+            self.stdout.write(self.style.WARNING(f"Failed to fetch participation stats for {repo.name}"))
+
     def fetch_issues_and_prs(self, repo, owner, repo_name):
         dollar_issues = self.fetch_dollar_issues(owner, repo_name)
         closed_prs = self.fetch_closed_prs(owner, repo_name)
-        self.save_issues_and_prs(repo, dollar_issues, closed_prs)
+        success = self.save_issues_and_prs(repo, dollar_issues, closed_prs)
 
-        msg = f"Found {len(dollar_issues)} issues with $ tags and {len(closed_prs)} closed PRs"
-        self.stdout.write(self.style.SUCCESS(msg))
+        if success:
+            msg = f"Found {len(dollar_issues)} issues with $ tags and {len(closed_prs)} closed PRs"
+            self.stdout.write(self.style.SUCCESS(msg))
+
+        return success
 
     def fetch_dollar_issues(self, owner, repo_name):
         issues = []
@@ -297,6 +328,7 @@ class Command(LoggedBaseCommand):
         return prs
 
     def save_issues_and_prs(self, repo, dollar_issues, closed_prs):
+        success = True
         for issue in dollar_issues:
             try:
                 with transaction.atomic():
@@ -325,6 +357,7 @@ class Command(LoggedBaseCommand):
                     )
             except Exception as e:
                 logger.error(f"Error saving issue #{issue['number']}: {e}")
+                success = False
 
         for pr in closed_prs:
             try:
@@ -359,3 +392,6 @@ class Command(LoggedBaseCommand):
                     )
             except Exception as e:
                 logger.error(f"Error saving PR #{pr['number']}: {e}")
+                success = False
+
+        return success
