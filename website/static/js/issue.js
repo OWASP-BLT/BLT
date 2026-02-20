@@ -95,13 +95,17 @@ $(function () {
         var issue_id = $('#issue_pk').val();
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
+        var csrftoken = $("[name=csrfmiddlewaretoken]").val();
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/issue/' + issue_id + '/comment/edit/',
             data: {
                 comment_pk: comment_id,
                 text_comment: comment,
                 issue_pk: issue_id,
+            },
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
             },
             success: function (data) {
                 $('#target_div').html(data);
@@ -122,14 +126,18 @@ $(function () {
         var issue_id = $('#issue_pk').val();
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
+        var csrftoken = $("[name=csrfmiddlewaretoken]").val();
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/issue/' + issue_id + '/comment/reply/',
             data: {
                 comment_pk: comment_id,
                 text_comment: comment,
                 issue_pk: issue_id,
                 parent_id: parent_id,
+            },
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
             },
             success: function (data) {
                 $('#target_div').html(data);
