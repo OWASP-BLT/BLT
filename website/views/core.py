@@ -32,15 +32,14 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -80,6 +79,7 @@ from website.utils import (
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+SEARCH_RESULT_LIMIT = 20  # Max results per category in search views
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -612,17 +612,31 @@ def search(request, template="search.html"):
 
         # Handle type='all' - search ALL models
         if stype == "all":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[:SEARCH_RESULT_LIMIT]
                 )
             else:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
-            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)[:SEARCH_RESULT_LIMIT]
+                )
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:SEARCH_RESULT_LIMIT]
+            users = (
+                User.objects.filter(username__icontains=query)
+                .exclude(is_superuser=True)
+                .order_by("-points")[0:SEARCH_RESULT_LIMIT]
+            )
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
 
             context = {
                 "request": request,
@@ -638,13 +652,17 @@ def search(request, template="search.html"):
 
         elif stype == "issues":
             if request.user.is_authenticated:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[0:20]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:SEARCH_RESULT_LIMIT]
+                )
             else:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
-                    0:20
-                ]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)[0:SEARCH_RESULT_LIMIT]
+                )
 
             context = {
                 "request": request,
@@ -658,17 +676,21 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
+                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:SEARCH_RESULT_LIMIT],
             }
 
         elif stype == "users":
             users = (
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
-                .order_by("-total_score")[0:20]
+                .prefetch_related(Prefetch("user__userbadge_set", queryset=UserBadge.objects.all(), to_attr="badges"))
+                .select_related("user")
+                .order_by("-total_score")[0:SEARCH_RESULT_LIMIT]
             )
+            # Attach badges from prefetched data to each profile for template access
+            users = list(users)
             for userprofile in users:
-                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+                userprofile.badges = userprofile.user.badges
             context = {
                 "request": request,
                 "query": query,
@@ -691,13 +713,17 @@ def search(request, template="search.html"):
                     label_values.append(value)
 
             issues_base_qs = (
-                Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
+                Issue.objects.filter(label__in=label_values, hunt=None).select_related("user", "domain")
+                if label_values
+                else Issue.objects.none()
             )
 
             if request.user.is_authenticated:
-                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
+                    0:SEARCH_RESULT_LIMIT
+                ]
             else:
-                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:SEARCH_RESULT_LIMIT]
 
             context = {
                 "request": request,
@@ -707,11 +733,16 @@ def search(request, template="search.html"):
             }
 
         elif stype == "organizations":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = list(
+                Organization.objects.filter(name__icontains=query).prefetch_related(
+                    Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains")
+                )[:SEARCH_RESULT_LIMIT]
+            )
             for org in organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
+                if org.prefetched_domains:
+                    org.absolute_url = org.prefetched_domains[0].get_absolute_url()
+                else:
+                    org.absolute_url = ""
             context = {
                 "request": request,
                 "query": query,
@@ -724,7 +755,9 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                    :SEARCH_RESULT_LIMIT
+                ],
             }
 
         elif stype == "repos":
@@ -732,27 +765,42 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                    :SEARCH_RESULT_LIMIT
+                ],
             }
 
         elif stype == "tags":
             tags = Tag.objects.filter(name__icontains=query)
-            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-            matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+            matching_organizations = list(
+                Organization.objects.filter(tags__in=tags)
+                .distinct()
+                .prefetch_related(Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains"))[
+                    :SEARCH_RESULT_LIMIT
+                ]
+            )
+            matching_domains = Domain.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 matching_issues = (
                     Issue.objects.filter(tags__in=tags)
+                    .select_related("user", "domain")
                     .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-                    .distinct()
+                    .distinct()[:SEARCH_RESULT_LIMIT]
                 )
             else:
-                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()
-            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-            matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+                matching_issues = (
+                    Issue.objects.filter(tags__in=tags)
+                    .select_related("user", "domain")
+                    .exclude(is_hidden=True)
+                    .distinct()[:SEARCH_RESULT_LIMIT]
+                )
+            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
+            matching_repos = Repo.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             for org in matching_organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
+                if org.prefetched_domains:
+                    org.absolute_url = org.prefetched_domains[0].get_absolute_url()
+                else:
+                    org.absolute_url = ""
             context = {
                 "request": request,
                 "query": query,
@@ -770,7 +818,7 @@ def search(request, template="search.html"):
                 "request": request,
                 "query": query,
                 "type": stype,
-                "repos": Repo.objects.filter(primary_language__icontains=query),
+                "repos": Repo.objects.filter(primary_language__icontains=query)[:SEARCH_RESULT_LIMIT],
             }
 
         has_results = False
@@ -1385,11 +1433,48 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+DEVTO_API_URL = "https://dev.to/api/articles?username=owaspblt&per_page=2"
+
+
+def fetch_devto_articles():
+    cache_key = "devto_articles"
+
+    cached_articles = cache.get(cache_key)
+    if cached_articles is not None:
+        return cached_articles
+
+    try:
+        response = requests.get(DEVTO_API_URL, timeout=5)
+        response.raise_for_status()
+
+        try:
+            data = response.json()
+        except ValueError as e:  # catches JSONDecodeError safely
+            logger.error(f"Dev.to JSON decode error: {e}")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        if not isinstance(data, list):
+            logger.error("Dev.to API returned unexpected format")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        articles = data[:2]
+
+        cache.set(cache_key, articles, 60 * 10)
+        return articles
+
+    except requests.RequestException as e:
+        logger.error(f"Dev.to fetch error: {e}")
+        cache.set(cache_key, [], 60 * 2)
+        return []
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1469,9 +1554,6 @@ def home(request):
     if request.user.is_authenticated:
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
-
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1563,6 +1645,8 @@ def home(request):
             "db_connections": len(connection.queries),
         }
 
+    devto_articles = fetch_devto_articles()
+
     return render(
         request,
         "home.html",
@@ -1570,13 +1654,13 @@ def home(request):
             "last_commit": last_commit,
             "current_year": timezone.now().year,
             "current_time": current_time,  # Add current time for month display
+            "devto_articles": devto_articles,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,
             "repo_stars": repo_stars,
             "top_referrals": top_referrals,
@@ -1895,7 +1979,7 @@ def management_commands(request):
     available_commands = []
 
     # Get the date 30 days ago for stats
-    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     # Get sort parameter from request
     sort_param = request.GET.get("sort", "name")
@@ -2000,7 +2084,7 @@ def management_commands(request):
 
             # Generate all dates in the 30-day range
             for i in range(30):
-                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date = (timezone.now() - timedelta(days=29 - i)).date()
                 date_range.append(date)
                 date_values[date.isoformat()] = 0
 
@@ -2120,11 +2204,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
@@ -2996,28 +3080,19 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
+@require_POST
 def set_theme(request):
     """View to save user's theme preference"""
-    if request.method == "POST":
-        try:
-            import json
+    try:
+        import json
 
-            data = json.loads(request.body)
-            theme = data.get("theme", "light")
+        data = json.loads(request.body)
+        theme = data.get("theme", "light")
 
-            # Save theme in session
-            request.session["theme"] = theme
+        # Save theme in session
+        request.session["theme"] = theme
 
-            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
-            # if request.user.is_authenticated:
-            #     profile = request.user.userprofile
-            #     profile.theme_preference = theme
-            #     profile.save()
-
-            return JsonResponse({"status": "success", "theme": theme})
-        except Exception as e:
-            logging.exception("Error occurred while setting theme")
-            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+        return JsonResponse({"status": "success", "theme": theme})
+    except Exception:
+        logging.exception("Error occurred while setting theme")
+        return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)

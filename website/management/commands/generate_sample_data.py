@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.db import models, transaction
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
@@ -21,6 +22,7 @@ from website.models import (
     Repo,
     Tag,
     UserBadge,
+    UserProfile,
 )
 
 
@@ -64,29 +66,93 @@ def random_sentence(word_count=6):
 class Command(LoggedBaseCommand):
     help = "Generate sample data for testing"
 
-    def clear_existing_data(self):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--preserve-superusers",
+            action="store_true",
+            help="Preserve existing superuser accounts.",
+        )
+        parser.add_argument(
+            "--preserve-user-id",
+            action="append",
+            type=int,
+            default=None,
+            help="User ID to preserve (can be provided multiple times).",
+        )
+
+    def clear_existing_data(self, preserve_user_ids=None, preserve_superusers=False):
         """Clear all existing data from the models we're generating"""
-        self.stdout.write("Clearing existing data...")
+        with transaction.atomic():
+            self.stdout.write("Clearing existing data...")
 
-        # First delete models that depend on other models
-        Activity.objects.all().delete()
-        Points.objects.all().delete()
-        Issue.objects.all().delete()
-        Hunt.objects.all().delete()
-        Repo.objects.all().delete()
-        Project.objects.all().delete()
-        GitHubIssue.objects.all().delete()
-        GitHubReview.objects.all().delete()
-        Domain.objects.all().delete()
-        UserBadge.objects.all().delete()
-        Badge.objects.all().delete()
-        Tag.objects.all().delete()
+            preserve_user_ids = {user_id for user_id in (preserve_user_ids or []) if user_id}
+            if preserve_superusers:
+                preserve_user_ids.update(User.objects.filter(is_superuser=True).values_list("id", flat=True))
 
-        # Delete users (cascades to profiles)
-        User.objects.all().delete()
+            if preserve_user_ids:
+                preserved_users = User.objects.filter(id__in=preserve_user_ids)
+                preserved_profiles = UserProfile.objects.filter(user__in=preserved_users)
+                preserved_orgs = Organization.objects.filter(
+                    models.Q(admin__in=preserved_users) | models.Q(managers__in=preserved_users)
+                ).distinct()
+                preserved_domains = Domain.objects.filter(
+                    models.Q(organization__in=preserved_orgs) | models.Q(managers__in=preserved_users)
+                ).distinct()
+                preserved_hunts = Hunt.objects.filter(domain__in=preserved_domains)
+                preserved_projects = Project.objects.filter(organization__in=preserved_orgs)
+                preserved_repos = Repo.objects.filter(
+                    models.Q(organization__in=preserved_orgs) | models.Q(project__in=preserved_projects)
+                ).distinct()
+                preserved_issues = Issue.objects.filter(
+                    models.Q(user__in=preserved_users)
+                    | models.Q(team_members__in=preserved_users)
+                    | models.Q(domain__in=preserved_domains)
+                    | models.Q(hunt__in=preserved_hunts)
+                ).distinct()
+                preserved_gh_issues = GitHubIssue.objects.filter(
+                    models.Q(user_profile__in=preserved_profiles) | models.Q(repo__in=preserved_repos)
+                ).distinct()
+                preserved_reviews = GitHubReview.objects.filter(
+                    models.Q(reviewer__in=preserved_profiles) | models.Q(pull_request__in=preserved_gh_issues)
+                ).distinct()
 
-        # Finally delete organizations
-        Organization.objects.all().delete()
+                Activity.objects.exclude(user__in=preserved_users).delete()
+                Points.objects.exclude(
+                    models.Q(user__in=preserved_users)
+                    | models.Q(issue__in=preserved_issues)
+                    | models.Q(domain__in=preserved_domains)
+                ).delete()
+                GitHubReview.objects.exclude(id__in=preserved_reviews).delete()
+                GitHubIssue.objects.exclude(id__in=preserved_gh_issues).delete()
+                Issue.objects.exclude(id__in=preserved_issues).delete()
+                Hunt.objects.exclude(id__in=preserved_hunts).delete()
+                Repo.objects.exclude(id__in=preserved_repos).delete()
+                Project.objects.exclude(id__in=preserved_projects).delete()
+                Domain.objects.exclude(id__in=preserved_domains).delete()
+                UserBadge.objects.exclude(user__in=preserved_users).delete()
+                Organization.objects.exclude(id__in=preserved_orgs).delete()
+                User.objects.exclude(id__in=preserve_user_ids).delete()
+                return
+
+            # First delete models that depend on other models
+            Activity.objects.all().delete()
+            Points.objects.all().delete()
+            Issue.objects.all().delete()
+            Hunt.objects.all().delete()
+            Repo.objects.all().delete()
+            Project.objects.all().delete()
+            GitHubIssue.objects.all().delete()
+            GitHubReview.objects.all().delete()
+            Domain.objects.all().delete()
+            UserBadge.objects.all().delete()
+            Badge.objects.all().delete()
+            Tag.objects.all().delete()
+
+            # Delete organizations before users to avoid redundant cascades
+            Organization.objects.all().delete()
+
+            # Delete all users (cascades to profiles). Preservation handled in the branch above.
+            User.objects.all().delete()
 
     def create_users(self, count):
         users = []
@@ -214,7 +280,7 @@ class Command(LoggedBaseCommand):
             reviews.append(review)
         return reviews
 
-    def create_hunts(self, users, count=10):
+    def create_hunts(self, domains, count=10):
         hunts = []
         for i in range(count):
             created_date = timezone.now() - timedelta(days=random.randint(1, 90))
@@ -228,7 +294,7 @@ class Command(LoggedBaseCommand):
                 starts_on=starts_on,
                 end_on=end_on,
                 url=f"https://hunt-{i+1}.example.com",
-                domain=random.choice(Domain.objects.all()),
+                domain=random.choice(domains),
                 plan="free",
                 is_published=True,
             )
@@ -293,7 +359,10 @@ class Command(LoggedBaseCommand):
     def create_badges(self, count=10):
         badges = []
         for i in range(count):
-            badge = Badge.objects.create(title=f"Badge {i+1}", description=random_sentence(), type="automatic")
+            badge, _ = Badge.objects.get_or_create(
+                title=f"Badge {i+1}",
+                defaults={"description": random_sentence(), "type": "automatic"},
+            )
             badges.append(badge)
         return badges
 
@@ -311,23 +380,12 @@ class Command(LoggedBaseCommand):
     def create_tags(self, count=20):
         tags = []
         for i in range(count):
-            tag = Tag.objects.create(name=f"tag_{i+1}")
+            tag, _ = Tag.objects.get_or_create(name=f"tag_{i+1}")
             tags.append(tag)
         return tags
 
-    def create_repos(self, organizations, count=30):
+    def create_repos(self, projects, count=30):
         repos = []
-        projects = []
-
-        # First create projects
-        for i in range(count // 2):  # Create half as many projects as repos
-            project = Project.objects.create(
-                name=f"Project {i+1}",
-                description=random_sentence(),
-                organization=random.choice(organizations),
-                url=f"https://project-{i+1}.example.com",
-            )
-            projects.append(project)
 
         # Then create repos
         for i in range(count):
@@ -355,50 +413,60 @@ class Command(LoggedBaseCommand):
         return repos
 
     def handle(self, *args, **options):
-        self.stdout.write("Generating sample data...")
+        with transaction.atomic():
+            self.stdout.write("Generating sample data...")
 
-        self.clear_existing_data()
+            preserve_user_ids = {user_id for user_id in (options.get("preserve_user_id") or []) if user_id}
+            preserve_superusers = bool(options.get("preserve_superusers"))
 
-        self.stdout.write("Creating sample users...")
-        users = self.create_users(10)
+            self.clear_existing_data(
+                preserve_user_ids=preserve_user_ids,
+                preserve_superusers=preserve_superusers,
+            )
 
-        self.stdout.write("Creating organizations...")
-        organizations = self.create_organizations(5)
+            self.stdout.write("Creating sample users...")
+            users = self.create_users(10)
+            if preserve_user_ids:
+                preserved_users = list(User.objects.filter(id__in=preserve_user_ids))
+                users.extend([user for user in preserved_users if user not in users])
 
-        self.stdout.write("Creating domains...")
-        domains = self.create_domains(organizations, 20)
+            self.stdout.write("Creating organizations...")
+            organizations = self.create_organizations(5)
 
-        self.stdout.write("Creating issues...")
-        self.create_issues(users, domains, 50)
+            self.stdout.write("Creating domains...")
+            domains = self.create_domains(organizations, 20)
 
-        self.stdout.write("Creating hunts...")
-        self.create_hunts(users, 10)
+            self.stdout.write("Creating issues...")
+            self.create_issues(users, domains, 50)
 
-        self.stdout.write("Creating projects...")
-        self.create_projects(organizations, 15)
+            self.stdout.write("Creating hunts...")
+            self.create_hunts(domains, 10)
 
-        self.stdout.write("Creating points...")
-        self.create_points(users, 100)
+            self.stdout.write("Creating projects...")
+            projects = self.create_projects(organizations, 15)
 
-        self.stdout.write("Creating activities...")
-        self.create_activities(users, 200)
+            self.stdout.write("Creating points...")
+            self.create_points(users, 100)
 
-        self.stdout.write("Creating badges...")
-        badges = self.create_badges(10)
+            self.stdout.write("Creating activities...")
+            self.create_activities(users, 200)
 
-        self.stdout.write("Assigning badges to users...")
-        self.assign_badges(users, badges)
+            self.stdout.write("Creating badges...")
+            badges = self.create_badges(10)
 
-        self.stdout.write("Creating tags...")
-        self.create_tags(20)
+            self.stdout.write("Assigning badges to users...")
+            self.assign_badges(users, badges)
 
-        self.stdout.write("Creating repos...")
-        repos = self.create_repos(organizations, 30)
+            self.stdout.write("Creating tags...")
+            self.create_tags(20)
 
-        self.stdout.write("Creating PRs...")
-        pull_requests = self.create_pull_requests(users, repos, 30)
+            self.stdout.write("Creating repos...")
+            repos = self.create_repos(projects, 30)
 
-        self.stdout.write("Creating Reviews...")
-        self.create_reviews(users, pull_requests, 90)
+            self.stdout.write("Creating PRs...")
+            pull_requests = self.create_pull_requests(users, repos, 30)
 
-        self.stdout.write(self.style.SUCCESS("Done!"))
+            self.stdout.write("Creating Reviews...")
+            self.create_reviews(users, pull_requests, 90)
+
+            self.stdout.write(self.style.SUCCESS("Done!"))

@@ -21,7 +21,6 @@ from website.models import (
     BaconSubmission,
     BaconToken,
     Badge,
-    BannedApp,
     Bid,
     Blocked,
     Challenge,
@@ -63,7 +62,6 @@ from website.models import (
     OsshDiscussionChannel,
     Payment,
     Points,
-    Post,
     PRAnalysisReport,
     Project,
     Queue,
@@ -597,11 +595,6 @@ class ContributionAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
 
 
-class PostAdmin(admin.ModelAdmin):
-    list_display = ("title", "author", "created_at", "image")
-    prepopulated_fields = {"slug": ("title",)}
-
-
 class GitHubIssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -934,7 +927,6 @@ admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
-admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
@@ -1127,21 +1119,6 @@ admin.site.register(StakingPool, StakingPoolAdmin)
 admin.site.register(StakingTransaction, StakingTransactionAdmin)
 admin.site.register(Thread, ThreadAdmin)
 admin.site.register(UserBadge, UserBadgeAdmin)
-
-
-@admin.register(BannedApp)
-class BannedAppAdmin(admin.ModelAdmin):
-    list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
-    list_filter = ("app_type", "is_active", "ban_date")
-    search_fields = ("country_name", "country_code", "app_name", "ban_reason")
-    date_hierarchy = "ban_date"
-    ordering = ("country_name", "app_name")
-
-    fieldsets = (
-        ("App Information", {"fields": ("app_name", "app_type")}),
-        ("Country Information", {"fields": ("country_name", "country_code")}),
-        ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
-    )
 
 
 class AdventureTaskInline(admin.TabularInline):
