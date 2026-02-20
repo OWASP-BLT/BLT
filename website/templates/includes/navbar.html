@@ -122,21 +122,11 @@
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
-                        {% if request.user.userprofile.avatar %}
-                            <img src="{{ request.user.userprofile.avatar }}"
-                                 class="h-[30px] w-[30px] rounded-full"
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="h-[30px] w-[30px] rounded-full"
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% else %}
-                            {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
-                        {% endif %}
+                       <img src="{{ request.user.userprofile.avatar }}"
+                           class="h-[30px] w-[30px] rounded-sm"
+                           alt="User Avatar"
+                           width="30"
+                           height="30">
                         <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
                         <i class="fa fa-caret-down text-red-500"></i>
                     </span>
