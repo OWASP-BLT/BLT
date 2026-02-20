@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from website.models import GitHubIssue, Repo
+from website.utils import get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -72,21 +73,32 @@ def bounty_payout(request):
             logger.error("Neither BLT_WEBHOOK_SECRET nor BLT_API_TOKEN is configured")
             return JsonResponse({"status": "error", "message": "Server configuration error"}, status=500)
 
+        # Track which auth method was used
+        used_hmac_auth = False
+
         # Validate request signature (preferred method)
         signature_header = request.headers.get("X-BLT-Signature")
         if webhook_secret and signature_header:
             if not verify_webhook_signature(request.body, signature_header, webhook_secret):
-                logger.warning(f"Invalid webhook signature from IP: {request.META.get('REMOTE_ADDR')}")
+                logger.warning(f"Invalid webhook signature from IP: {get_client_ip(request)}")
                 return JsonResponse({"status": "error", "message": "Invalid signature"}, status=403)
             logger.debug("Webhook signature validated successfully")
+            used_hmac_auth = True
 
         # Fallback to API token validation (for backward compatibility)
         elif api_token:
             received_token = request.headers.get("X-BLT-API-TOKEN")
             if not received_token or not secrets.compare_digest(received_token, api_token):
-                logger.warning(f"Invalid or missing API token from IP: {request.META.get('REMOTE_ADDR')}")
+                logger.warning(f"Invalid or missing API token from IP: {get_client_ip(request)}")
                 return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
             logger.debug("API token validated successfully")
+
+            # Warn if using token fallback when HMAC is available
+            if webhook_secret:
+                logger.warning(
+                    f"API token fallback used while HMAC is configured from IP: {get_client_ip(request)}. "
+                    "Consider migrating to HMAC signature authentication."
+                )
 
         else:
             logger.error("No valid authentication method available")
@@ -99,8 +111,17 @@ def bounty_payout(request):
             logger.error("Invalid JSON in request body")
             return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
 
-        # Validate timestamp to prevent replay attacks (if provided)
+        # Validate timestamp - MANDATORY for HMAC, optional for API token
         timestamp = data.get("timestamp")
+        if used_hmac_auth:
+            # Timestamp is required for HMAC authentication
+            if not timestamp:
+                logger.warning("Request timestamp missing for HMAC authentication")
+                return JsonResponse(
+                    {"status": "error", "message": "Timestamp required for HMAC authentication"}, status=400
+                )
+
+        # Validate timestamp format and window if provided
         if timestamp:
             try:
                 request_time = int(timestamp)

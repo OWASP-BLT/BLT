@@ -404,7 +404,9 @@ def UpdateIssue(request):
     try:
         issue_pk = int(issue_pk)
     except (ValueError, TypeError):
-        logger.warning(f"UpdateIssue called with invalid issue_pk={issue_pk} by user={request.user.id}")
+        # Sanitize issue_pk for logging to prevent log injection
+        sanitized_pk = repr(issue_pk)[:100]  # Use repr() and limit to 100 chars
+        logger.warning(f"UpdateIssue called with invalid issue_pk={sanitized_pk} by user={request.user.id}")
         return HttpResponseBadRequest("Invalid issue ID")
 
     # Authorization check: Only allow access to issues the user owns or is superuser
@@ -530,36 +532,38 @@ def delete_issue(request, id):
         return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
 
+@require_POST
+@login_required(login_url="/accounts/login")
 def remove_user_from_issue(request, id):
-    tokenauth = False
-    try:
-        for token in Token.objects.all():
-            if request.POST.get("token") == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Exception:
-        logger.exception("Token authentication lookup failed in remove_user_from_issue")
+    """
+    Remove user from an issue.
 
+    Security: Requires authentication and proper authorization.
+    """
     issue = get_object_or_404(Issue, id=id)
-    if request.user.is_superuser or request.user == issue.user:
-        issue.remove_user()
-        # Remove user from corresponding activity object that was created
-        issue_activity = Activity.objects.filter(
-            content_type=ContentType.objects.get_for_model(Issue), object_id=id
-        ).first()
-        # Have to define a default anonymous user since the not null constraint fails
-        anonymous_user = User.objects.get_or_create(username="anonymous")[0]
-        if issue_activity:
-            issue_activity.user = anonymous_user
-            issue_activity.save()
-        messages.success(request, "User removed from the issue")
-        if tokenauth:
-            return JsonResponse("User removed from the issue", safe=False)
-        else:
-            return safe_redirect_request(request)
-    else:
+
+    # Authorization check
+    if not (request.user.is_superuser or request.user == issue.user):
         messages.error(request, "Permission denied")
         return safe_redirect_request(request)
+
+    issue.remove_user()
+
+    # Remove user from corresponding activity object that was created
+    issue_activity = Activity.objects.filter(
+        content_type=ContentType.objects.get_for_model(Issue), object_id=id
+    ).first()
+
+    # Have to define a default anonymous user since the not null constraint fails
+    anonymous_user = User.objects.get_or_create(username="anonymous")[0]
+    if issue_activity:
+        issue_activity.user = anonymous_user
+        issue_activity.save()
+
+    messages.success(request, "User removed from the issue")
+    logger.info(f"User removed from issue {id} by user={request.user.id}")
+
+    return safe_redirect_request(request)
 
 
 def normalize_and_populate_cve_score(issue_obj):

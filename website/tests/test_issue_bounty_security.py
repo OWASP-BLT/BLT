@@ -6,7 +6,7 @@ Tests for:
 2. UpdateIssue function - Fixed IDOR vulnerability  
 3. bounty_payout function - Added HMAC signature validation
 
-Run with: python manage.py test test_security_fixes
+Run with: python manage.py test website.tests.test_issue_bounty_security
 """
 
 import hashlib
