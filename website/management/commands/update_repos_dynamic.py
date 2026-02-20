@@ -182,7 +182,7 @@ class Command(LoggedBaseCommand):
                     # This prevents infinite retry loops if fetch_issues_and_prs fails
                     repo.last_updated = timezone.now()
                     repo.save(update_fields=["last_updated"])
-                    
+
                     self.fetch_participation_stats(repo, owner, repo_name)
 
                     if not skip_issues:
