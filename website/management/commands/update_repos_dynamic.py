@@ -171,7 +171,11 @@ class Command(LoggedBaseCommand):
             parts = path.split("/")
             if len(parts) >= 2:
                 owner, repo_name = parts[-2], parts[-1]
-                # TODO: add your GitHub fetch/update logic here
+                self.update_repo_data(repo, owner, repo_name)
+                self.fetch_participation_stats(repo, owner, repo_name)
+
+                if not skip_issues:
+                    self.fetch_issues_and_prs(repo, owner, repo_name)
             else:
                 self.stdout.write("Invalid GitHub URL format.")
         else:
@@ -225,6 +229,38 @@ class Command(LoggedBaseCommand):
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching repository data for {owner}/{repo_name}: {e}")
+
+    def fetch_participation_stats(self, repo, owner, repo_name):
+        """
+        Fetch weekly commit participation stats for a repository (last 52 weeks).
+        """
+        headers = {"Accept": "application/vnd.github.v3+json"}
+        if settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        url = f"https://api.github.com/repos/{owner}/{repo_name}/stats/participation"
+
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 202:
+                # Stats are being computed, we'll get them next time
+                self.stdout.write(f"Participation stats for {repo.name} are being computed (202).")
+                return
+
+            response.raise_for_status()
+            data = response.json()
+
+            # The 'all' array contains commit counts for all contributors
+            participation = data.get("all", [])
+
+            if participation:
+                repo.participation_stats = participation
+                repo.save(update_fields=["participation_stats"])
+                self.stdout.write(self.style.SUCCESS(f"Successfully updated participation stats for {repo.name}"))
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching participation stats for {owner}/{repo_name}: {e}")
+            self.stdout.write(self.style.WARNING(f"Failed to fetch participation stats for {repo.name}"))
 
     def fetch_issues_and_prs(self, repo, owner, repo_name):
         """

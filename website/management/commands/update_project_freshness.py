@@ -1,5 +1,4 @@
 import time
-from datetime import date
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -32,14 +31,7 @@ class Command(BaseCommand):
                         project = Project.objects.select_for_update().get(pk=project_id)
 
                         project.freshness = project.calculate_freshness()
-                        # Update freshness history (ensure list exists)
-                        history = project.freshness_history or []
-                        history.append({"date": date.today().isoformat(), "score": float(project.freshness)})
-
-                        # Keep only last 12 entries
-                        project.freshness_history = history[-12:]
-
-                        project.save(update_fields=["freshness", "freshness_history"])
+                        project.save(update_fields=["freshness"])
                         processed += 1
 
                 except Exception as e:

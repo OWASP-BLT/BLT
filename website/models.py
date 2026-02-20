@@ -19,7 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F, Q
+from django.db.models import Count, F
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -1358,53 +1358,54 @@ class Project(models.Model):
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
     freshness = models.DecimalField(max_digits=5, decimal_places=2, default=0.0, db_index=True)
-    # Store last 12 freshness scores with timestamps
-    freshness_history = models.JSONField(
-        default=list, blank=True, help_text="Last 12 freshness scores with timestamps for sparkline chart"
-    )  # Format: [{"date": "2026-01-15", "score": 85.5}, {"date": "2026-01-16", "score": 87.2}, ...]
 
     def calculate_freshness(self):
         """
-        Calculate freshness using a Bumper-style activity decay model,
-        based on GitHub commit recency.
+        Calculate freshness using a Bumper-style activity decay model.
+        Prioritizes the 52-week participation stats for more granular recency
+        and consistency checks.
         """
-        now = timezone.now()
+        active_repos = self.repos.filter(is_archived=False)
+        total_raw_score = 0
 
-        last_7_days = now - timedelta(days=7)
-        last_30_days = now - timedelta(days=30)
-        last_90_days = now - timedelta(days=90)
+        for repo in active_repos:
+            repo_score = 0
+            stats = repo.participation_stats
 
-        counts = self.repos.filter(
-            is_archived=False,
-            last_commit_date__isnull=False,
-        ).aggregate(
-            active_7=Count(
-                "id",
-                filter=Q(last_commit_date__gte=last_7_days),
-            ),
-            active_30=Count(
-                "id",
-                filter=Q(
-                    last_commit_date__lt=last_7_days,
-                    last_commit_date__gte=last_30_days,
-                ),
-            ),
-            active_90=Count(
-                "id",
-                filter=Q(
-                    last_commit_date__lt=last_30_days,
-                    last_commit_date__gte=last_90_days,
-                ),
-            ),
-        )
+            # 1. Use 52-week stats if available (more robust)
+            if isinstance(stats, list) and len(stats) == 52:
+                # Last week (index 51)
+                if stats[51] > 0:
+                    repo_score = 1.0
+                # Last 4 weeks (30 days)
+                elif sum(stats[48:52]) > 0:
+                    repo_score = 0.6
+                # Last 12 weeks (90 days)
+                elif sum(stats[40:52]) > 0:
+                    repo_score = 0.3
 
-        raw_score = counts["active_7"] * 1.0 + counts["active_30"] * 0.6 + counts["active_90"] * 0.3
+                # Consistency bonus: commits in 3+ distinct weeks of the last 12 weeks
+                weeks_active_last_quarter = sum(1 for w in stats[40:52] if w > 0)
+                if weeks_active_last_quarter >= 3:
+                    repo_score = min(repo_score + 0.1, 1.0)
 
-        if raw_score == 0:
+            # 2. Fallback to last_commit_date if no stats or stats don't show recent activity
+            if repo_score == 0 and repo.last_commit_date:
+                now = timezone.now()
+                if repo.last_commit_date >= now - timedelta(days=7):
+                    repo_score = 1.0
+                elif repo.last_commit_date >= now - timedelta(days=30):
+                    repo_score = 0.6
+                elif repo.last_commit_date >= now - timedelta(days=90):
+                    repo_score = 0.3
+
+            total_raw_score += repo_score
+
+        if total_raw_score == 0:
             return Decimal("0.00")
 
         MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
-        freshness = min((raw_score / MAX_SCORE) * 100, 100)
+        freshness = min((total_raw_score / MAX_SCORE) * 100, 100)
 
         return Decimal(str(round(freshness, 2)))
 
@@ -1436,6 +1437,23 @@ class Project(models.Model):
             self.slug = f"project-{int(time.time())}"
 
         super(Project, self).save(*args, **kwargs)
+
+    def get_participation_stats(self):
+        """
+        Calculates the aggregate 52-week activity for the project
+        by summing participation stats of its active repositories.
+        """
+        repos = self.repos.filter(is_archived=False)
+        # GitHub participation stats 'all' array has 52 entries
+        total_stats = [0] * 52
+
+        for repo in repos:
+            stats = repo.participation_stats
+            if isinstance(stats, list) and len(stats) == 52:
+                for i in range(52):
+                    total_stats[i] += stats[i]
+
+        return total_stats
 
     def __str__(self):
         return self.name
@@ -1929,6 +1947,7 @@ class Repo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
     last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
+    participation_stats = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
