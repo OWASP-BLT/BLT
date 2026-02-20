@@ -987,6 +987,14 @@ class UserProfile(models.Model):
     public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    leaderboard_score = models.IntegerField(default=0, db_index=True)
+
+    def update_leaderboard_score(self):
+        """Simple score: recent check-ins + streak"""
+        cutoff_date = timezone.now().date() - timedelta(days=30)
+        recent = DailyStatusReport.objects.filter(user=self.user, date__gte=cutoff_date).count()
+        self.leaderboard_score = recent + (self.current_streak * 2)
+        self.save(update_fields=["leaderboard_score"])
 
     def check_team_membership(self):
         return self.team is not None
@@ -1102,6 +1110,8 @@ class UserProfile(models.Model):
                 # Update last check-in and save
                 self.last_check_in = check_in_date
                 self.save()
+
+                self.update_leaderboard_score()
 
                 self.award_streak_badges()
 
