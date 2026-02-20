@@ -161,7 +161,8 @@ class Command(LoggedBaseCommand):
 
         Note: Network calls are intentionally kept outside of database transactions
         to avoid holding connections open during unpredictable I/O operations.
-        Only updates the last_updated timestamp if all operations succeed.
+        Updates the last_updated timestamp after repository metadata is successfully fetched,
+        even if issue/PR fetching fails. This prevents infinite retry loops and excessive API calls.
         """
         self.stdout.write(f"Updating repository: {repo.name}")
 
@@ -176,23 +177,25 @@ class Command(LoggedBaseCommand):
                 if len(parts) >= 2:
                     owner, repo_name = parts[-2], parts[-1]
                     self.update_repo_data(repo, owner, repo_name)
+
+                    # Update the last_updated timestamp after repository metadata is successfully updated
+                    # This prevents infinite retry loops if fetch_issues_and_prs fails
+                    repo.last_updated = timezone.now()
+                    repo.save(update_fields=["last_updated"])
+
                     if not skip_issues:
                         self.fetch_issues_and_prs(repo, owner, repo_name)
+
+                    self.stdout.write(self.style.SUCCESS(f"Successfully updated {repo.name}"))
                 else:
                     self.stdout.write("Invalid GitHub URL format.")
                     return
             else:
                 self.stdout.write("Not a GitHub URL.")
                 return
-
-            # Update the last_updated timestamp only after successful update
-            repo.last_updated = timezone.now()
-            repo.save(update_fields=["last_updated"])
-
-            self.stdout.write(self.style.SUCCESS(f"Successfully updated {repo.name}"))
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to update repository {repo.name}: {e}")
-            self.stdout.write(self.style.ERROR(f"Failed to update {repo.name} - data remains stale: {e}"))
+            self.stdout.write(self.style.ERROR(f"Failed to update {repo.name}: {e}"))
 
     def update_repo_data(self, repo, owner, repo_name):
         """
@@ -217,7 +220,7 @@ class Command(LoggedBaseCommand):
             repo.watchers = repo_data.get("watchers_count", 0)
 
             # Truncate description if it's too long to prevent database errors
-            description = repo_data.get("description", "")
+            description = repo_data.get("description") or ""
             if description and len(description) > 255:
                 description = description[:252] + "..."
             repo.description = description
