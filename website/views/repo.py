@@ -315,10 +315,140 @@ class RepoDetailView(DetailView):
             return response.json()
         return []
 
+    def fetch_github_projects(self, repo):
+        """
+        Fetch GitHub Projects (v2) linked to the repository using GraphQL API.
+        Returns a list of projects with their summaries, status, and linked issues.
+        """
+        try:
+            # Extract owner and repo name from repo_url
+            repo_path = repo.repo_url.split("github.com/")[-1]
+
+            # Validate repo path format
+            if "/" not in repo_path:
+                logger.warning(f"Invalid repository URL format: {repo.repo_url}")
+                return []
+
+            parts = repo_path.split("/")
+            if len(parts) < 2:
+                logger.warning(f"Invalid repository path format: {repo_path}")
+                return []
+
+            owner = parts[0]
+            repo_name = parts[1].rstrip("/").removesuffix(".git")
+
+            # GraphQL query to fetch projects
+            # Fetch first 10 items to display, limiting API overhead
+            query = """
+            query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                    projectsV2(first: 10) {
+                        nodes {
+                            id
+                            title
+                            shortDescription
+                            url
+                            public
+                            closed
+                            number
+                            items(first: 10) {
+                                totalCount
+                                nodes {
+                                    id
+                                    type
+                                    content {
+                                        ... on Issue {
+                                            number
+                                            title
+                                            url
+                                            state
+                                        }
+                                        ... on PullRequest {
+                                            number
+                                            title
+                                            url
+                                            state
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            """
+
+            headers = {
+                "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
+                "Content-Type": "application/json",
+            }
+
+            variables = {"owner": owner, "repo": repo_name}
+
+            response = requests.post(
+                "https://api.github.com/graphql",
+                headers=headers,
+                json={"query": query, "variables": variables},
+                timeout=10,
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if "errors" in data:
+                    logger.error(f"GraphQL errors: {data['errors']}")
+                    return []
+                if "data" in data and data["data"] and "repository" in data["data"]:
+                    projects = data["data"]["repository"]["projectsV2"]["nodes"]
+
+                    # Process projects to add status and issue counts
+                    processed_projects = []
+                    for project in projects:
+                        items = project.get("items", {})
+                        total_items = items.get("totalCount", 0)
+
+                        # Count issues and PRs
+                        issues = []
+                        for item in items.get("nodes", []):
+                            content = item.get("content")
+                            if content:
+                                issues.append(
+                                    {
+                                        "number": content.get("number"),
+                                        "title": content.get("title"),
+                                        "url": content.get("url"),
+                                        "state": content.get("state"),
+                                        "type": item.get("type"),
+                                    }
+                                )
+
+                        processed_project = {
+                            "id": project.get("id"),
+                            "title": project.get("title"),
+                            "description": project.get("shortDescription", ""),
+                            "url": project.get("url"),
+                            "is_public": project.get("public", False),
+                            "is_closed": project.get("closed", False),
+                            "number": project.get("number"),
+                            "total_items": total_items,
+                            "issues": issues,  # Already limited by GraphQL query
+                            "status": "Closed" if project.get("closed") else "Open",
+                        }
+                        processed_projects.append(processed_project)
+
+                    return processed_projects
+
+            logger.warning(f"Failed to fetch GitHub projects for {owner}/{repo_name}: {response.status_code}")
+            return []
+
+        except Exception as e:
+            logger.error(f"Error fetching GitHub projects: {str(e)}")
+            return []
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
         context["milestones"] = self.fetch_github_milestones(repo)
+        context["github_projects"] = self.fetch_github_projects(repo)
 
         # Add breadcrumbs
         breadcrumbs = [
@@ -387,7 +517,7 @@ def add_repo(request):
         match = re.match(r"^(?:https?://)?github\.com/([^/]+)/([^/]+)/?$", repo_url)
         if not match:
             error_msg = (
-                "Invalid GitHub repository URL. " "Please provide a URL in the format: https://github.com/owner/repo"
+                "Invalid GitHub repository URL. Please provide a URL in the format: https://github.com/owner/repo"
             )
             return JsonResponse(
                 {"status": "error", "message": error_msg},
