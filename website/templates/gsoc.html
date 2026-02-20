@@ -16,10 +16,8 @@
 {% block og_description %}
     Learn about the Google Summer of Code (GSoC) program, its benefits, and its partnership with OWASP {% env 'PROJECT_NAME' %}.
 {% endblock og_description %}
+{% endblock og_description %}
 {% block extra_head %}
-{% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/gsoc.css' %}">
-{% endblock extra_head %}
 {% endblock extra_head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
