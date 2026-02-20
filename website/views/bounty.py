@@ -1,7 +1,10 @@
+import hashlib
+import hmac
 import json
 import logging
 import os
 import secrets
+import time
 
 import requests
 from django.http import JsonResponse
@@ -9,28 +12,97 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from website.models import GitHubIssue, Repo
+from website.utils import get_client_ip
 
 logger = logging.getLogger(__name__)
+
+
+def verify_webhook_signature(request_body, signature_header, secret):
+    """
+    Verify HMAC-SHA256 signature for webhook requests.
+
+    Args:
+        request_body: Raw request body bytes
+        signature_header: Signature from request header (format: "sha256=<hex>")
+        secret: Webhook secret key
+
+    Returns:
+        bool: True if signature is valid, False otherwise
+    """
+    if not signature_header or not secret:
+        return False
+
+    # Extract the signature from header (format: "sha256=<hex>")
+    try:
+        algorithm, signature = signature_header.split("=", 1)
+        if algorithm != "sha256":
+            logger.warning(f"Unsupported signature algorithm: {algorithm}")
+            return False
+    except ValueError:
+        logger.warning(f"Invalid signature header format: {signature_header}")
+        return False
+
+    # Compute expected signature
+    expected_signature = hmac.new(secret.encode("utf-8"), request_body, hashlib.sha256).hexdigest()
+
+    # Use constant-time comparison to prevent timing attacks
+    return secrets.compare_digest(signature, expected_signature)
 
 
 @csrf_exempt
 @require_POST
 def bounty_payout(request):
     """
-    Minimal working version: Handle bounty payout webhook from GitHub Action.
+    Handle bounty payout webhook from GitHub Action.
     Processes payment and updates issue with comment and labels.
+
+    Security improvements:
+    - HMAC-SHA256 signature validation (preferred method)
+    - Fallback to API token validation for backward compatibility
+    - Timestamp validation to prevent replay attacks
+    - Comprehensive input validation
+    - Idempotency check for duplicate payments
     """
     try:
-        # Validate API token using constant-time comparison
-        expected_token = os.environ.get("BLT_API_TOKEN")
-        if not expected_token:
-            logger.error("BLT_API_TOKEN environment variable is missing")
+        # Get webhook secret for signature validation
+        webhook_secret = os.environ.get("BLT_WEBHOOK_SECRET")
+        api_token = os.environ.get("BLT_API_TOKEN")
+
+        # Require at least one authentication method
+        if not webhook_secret and not api_token:
+            logger.error("Neither BLT_WEBHOOK_SECRET nor BLT_API_TOKEN is configured")
             return JsonResponse({"status": "error", "message": "Server configuration error"}, status=500)
 
-        received_token = request.headers.get("X-BLT-API-TOKEN")
-        if not received_token or not secrets.compare_digest(received_token, expected_token):
-            logger.warning("Invalid or missing API token")
-            return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+        # Track which auth method was used
+        used_hmac_auth = False
+
+        # Validate request signature (preferred method)
+        signature_header = request.headers.get("X-BLT-Signature")
+        if webhook_secret and signature_header:
+            if not verify_webhook_signature(request.body, signature_header, webhook_secret):
+                logger.warning(f"Invalid webhook signature from IP: {get_client_ip(request)}")
+                return JsonResponse({"status": "error", "message": "Invalid signature"}, status=403)
+            logger.debug("Webhook signature validated successfully")
+            used_hmac_auth = True
+
+        # Fallback to API token validation (for backward compatibility)
+        elif api_token:
+            received_token = request.headers.get("X-BLT-API-TOKEN")
+            if not received_token or not secrets.compare_digest(received_token, api_token):
+                logger.warning(f"Invalid or missing API token from IP: {get_client_ip(request)}")
+                return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+            logger.debug("API token validated successfully")
+
+            # Warn if using token fallback when HMAC is available
+            if webhook_secret:
+                logger.warning(
+                    f"API token fallback used while HMAC is configured from IP: {get_client_ip(request)}. "
+                    "Consider migrating to HMAC signature authentication."
+                )
+
+        else:
+            logger.error("No valid authentication method available")
+            return JsonResponse({"status": "error", "message": "Authentication required"}, status=403)
 
         # Parse and validate request data
         try:
@@ -39,24 +111,60 @@ def bounty_payout(request):
             logger.error("Invalid JSON in request body")
             return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
 
+        # Validate timestamp - MANDATORY for HMAC, optional for API token
+        timestamp = data.get("timestamp")
+        if used_hmac_auth:
+            # Timestamp is required for HMAC authentication
+            if not timestamp:
+                logger.warning("Request timestamp missing for HMAC authentication")
+                return JsonResponse(
+                    {"status": "error", "message": "Timestamp required for HMAC authentication"}, status=400
+                )
+
+        # Validate timestamp format and window if provided
+        if timestamp:
+            try:
+                request_time = int(timestamp)
+                current_time = int(time.time())
+                # Allow 5 minute window for clock skew
+                if abs(current_time - request_time) > 300:
+                    logger.warning(f"Request timestamp outside acceptable window: {timestamp}")
+                    return JsonResponse({"status": "error", "message": "Request timestamp invalid"}, status=400)
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid timestamp format: {timestamp}")
+                return JsonResponse({"status": "error", "message": "Invalid timestamp"}, status=400)
+
         # Extract required fields
         required_fields = ["issue_number", "repo", "owner", "contributor_username", "pr_number", "bounty_amount"]
-        if not all(field in data for field in required_fields):
-            logger.warning(f"Missing required fields in request: {data}")
-            return JsonResponse({"status": "error", "message": "Missing required fields"}, status=400)
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            logger.warning(f"Missing required fields: {missing_fields}")
+            return JsonResponse(
+                {"status": "error", "message": f"Missing required fields: {', '.join(missing_fields)}"}, status=400
+            )
 
         # Validate numeric fields
         try:
             issue_number = int(data["issue_number"])
             pr_number = int(data["pr_number"])
             bounty_amount = int(data["bounty_amount"])
-        except (ValueError, TypeError):
-            logger.warning("Invalid numeric fields in request")
+
+            # Validate positive values
+            if issue_number <= 0 or pr_number <= 0 or bounty_amount <= 0:
+                raise ValueError("Numeric fields must be positive")
+
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid numeric fields: {e}")
             return JsonResponse({"status": "error", "message": "Invalid numeric fields"}, status=400)
 
         repo_name = data["repo"]
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]
+
+        # Validate string fields are not empty
+        if not all([repo_name, owner_name, contributor_username]):
+            logger.warning("Empty string fields in request")
+            return JsonResponse({"status": "error", "message": "String fields cannot be empty"}, status=400)
 
         # Look up repository and issue
         repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
@@ -69,7 +177,7 @@ def bounty_payout(request):
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        # Check for duplicate payment
+        # Check for duplicate payment (idempotency)
         if github_issue.sponsors_tx_id:
             logger.info(f"Payment already processed for issue #{issue_number}")
             return JsonResponse(
