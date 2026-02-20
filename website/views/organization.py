@@ -159,25 +159,91 @@ def organization_dashboard(request, template="index_organization.html"):
 @login_required(login_url="/accounts/login")
 def admin_organization_dashboard(request, template="admin_dashboard_organization.html"):
     user = request.user
+    
+    # Check if user is active
+    if not user.is_active:
+        return HttpResponseRedirect("/")
+    
+    # Get organizations the user can manage
     if user.is_superuser:
-        if not user.is_active:
-            return HttpResponseRedirect("/")
-        organization = Organization.objects.all()
-        context = {"organizations": organization}
-        return render(request, template, context)
+        # Superusers can see all organizations
+        organizations_qs = Organization.objects.all().select_related('admin', 'subscription')
     else:
+        # Regular users can only see organizations they admin or manage
+        organizations_qs = Organization.objects.filter(Q(admin=user) | Q(managers=user)).distinct().select_related('admin', 'subscription')
+    
+    # Evaluate queryset once to avoid N+1 queries
+    organizations_list = list(organizations_qs)
+    
+    # If user has no organizations, redirect to home
+    if not organizations_list:
+        messages.info(request, "You don't have access to any organizations.")
         return redirect("/")
+    
+    # Handle organization switching via query parameter
+    selected_org_id = request.GET.get('switch_to')
+    selected_organization = None
+    
+    if selected_org_id:
+        # Validate that the org ID is a valid integer
+        try:
+            selected_org_pk = int(selected_org_id)
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid organization selected.")
+        else:
+            # Find organization in the already-fetched list
+            selected_organization = next((org for org in organizations_list if org.pk == selected_org_pk), None)
+            if selected_organization:
+                request.session['selected_organization_id'] = selected_organization.pk
+                # Django messages framework auto-escapes HTML in templates
+                messages.success(request, "Switched to " + str(selected_organization.name))
+                return redirect('admin_organization_dashboard')
+            else:
+                messages.error(request, "Invalid organization selected.")
+    
+    # Get current selected organization from session or use first one
+    if not selected_organization:
+        selected_organization_id = request.session.get('selected_organization_id')
+        if selected_organization_id:
+            # Find organization in the already-fetched list
+            selected_organization = next((org for org in organizations_list if org.pk == selected_organization_id), None)
+            if not selected_organization:
+                # If the stored org is no longer accessible, use the first one
+                selected_organization = organizations_list[0]
+                request.session['selected_organization_id'] = selected_organization.pk
+        else:
+            # No selection in session, use the first organization
+            selected_organization = organizations_list[0]
+            request.session['selected_organization_id'] = selected_organization.pk
+    
+    # Calculate count from the already-fetched list
+    organizations_count = len(organizations_list)
+    
+    context = {
+        "organizations": organizations_list,
+        "selected_organization": selected_organization,
+        "user_can_manage_multiple": organizations_count > 1,
+        "organizations_count": organizations_count,
+    }
+    return render(request, template, context)
 
 
 @login_required(login_url="/accounts/login")
 def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_organization_detail.html"):
     user = request.user
-    if user.is_superuser:
-        if not user.is_active:
-            return HttpResponseRedirect("/")
-        organization = get_object_or_404(Organization, pk=pk)
+    
+    # Check if user is active
+    if not user.is_active:
+        return HttpResponseRedirect("/")
+    
+    # Get the organization
+    organization = get_object_or_404(Organization, pk=pk)
+    
+    # Check if user has access to this organization
+    if user.is_superuser or organization.is_admin(user) or organization.is_manager(user):
         return render(request, template, {"organization": organization})
     else:
+        messages.error(request, "You don't have permission to access this organization.")
         return redirect("/")
 
 
