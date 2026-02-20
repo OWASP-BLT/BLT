@@ -4,7 +4,244 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
+from website.models import Contributor, ForumCategory, ForumPost, GitHubIssue, Repo, UserProfile, Domain
+
+class ForumTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.category = ForumCategory.objects.create(name="Test Category", description="Test Description")
+        self.client.login(username="testuser", password="testpass")
+
+        self.post_data = {"title": "Test Post", "category": self.category.id, "description": "Test Description"}
+
+    def test_create_and_view_forum_post(self):
+        # Create a new forum post
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(self.post_data), content_type="application/json"
+        )
+
+        # Check if post was created successfully
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
+
+        # Verify post exists in database
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post)
+        self.assertEqual(post.title, self.post_data["title"])
+        self.assertEqual(post.description, self.post_data["description"])
+        self.assertEqual(post.category_id, self.post_data["category"])
+        self.assertEqual(post.user, self.user)
+
+        # View the forum page
+        response = self.client.get(reverse("view_forum"))
+
+        # Check if page loads successfully
+        self.assertEqual(response.status_code, 200)
+
+        # Check if our post is in the context
+        self.assertIn("posts", response.context)
+        self.assertIn(post, response.context["posts"])
+
+        # Check if post content is in the response
+        self.assertContains(response, self.post_data["title"])
+        self.assertContains(response, self.post_data["description"])
+
+    def test_forum_post_voting(self):
+        # Create a test post first
+        post = ForumPost.objects.create(
+            user=self.user, title="Test Post for Voting", description="Test Description", category=self.category
+        )
+
+        # Test upvoting
+        response = self.client.post(
+            reverse("vote_forum_post"),
+            data=json.dumps({"post_id": post.id, "up_vote": True, "down_vote": False}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["up_vote"], 1)
+        self.assertEqual(data["down_vote"], 0)
+
+        # Test downvoting
+        response = self.client.post(
+            reverse("vote_forum_post"),
+            data=json.dumps({"post_id": post.id, "up_vote": False, "down_vote": True}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["up_vote"], 0)
+        self.assertEqual(data["down_vote"], 1)
+
+        # Verify vote counts in database
+        post.refresh_from_db()
+        self.assertEqual(post.up_votes, 0)
+        self.assertEqual(post.down_votes, 1)
+
+    def test_forum_post_commenting(self):
+        # Create a test post first
+        post = ForumPost.objects.create(
+            user=self.user, title="Test Post for Comments", description="Test Description", category=self.category
+        )
+
+        # Test adding a comment
+        comment_data = {"post_id": post.id, "content": "Test comment content"}
+
+        response = self.client.post(
+            reverse("add_forum_comment"), data=json.dumps(comment_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("comment_id", data)
+
+        # Verify comment exists in database
+        self.assertEqual(post.comments.count(), 1)
+        comment = post.comments.first()
+        self.assertEqual(comment.content, comment_data["content"])
+        self.assertEqual(comment.user, self.user)
+
+        # View the forum page and check if comment is displayed
+        response = self.client.get(reverse("view_forum"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, comment_data["content"])
+
+    def test_forum_post_with_repo_link(self):
+        # Create a test repo
+        from website.models import Organization, Project
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+        repo = Repo.objects.create(
+            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
+        )
+
+        # Create a forum post with repo link
+        post_data = {
+            "title": "Test Post with Repo",
+            "category": self.category.id,
+            "description": "Test Description with repo link",
+            "repo": repo.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
+
+        # Verify post has repo link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.repo)
+        self.assertEqual(post.repo.id, repo.id)
+
+    def test_forum_post_with_project_link(self):
+        # Create a test project
+        from website.models import Project
+
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+
+        # Create a forum post with project link
+        post_data = {
+            "title": "Test Post with Project",
+            "category": self.category.id,
+            "description": "Test Description with project link",
+            "project": project.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
+
+        # Verify post has project link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.project)
+        self.assertEqual(post.project.id, project.id)
+
+    def test_forum_post_with_organization_link(self):
+        # Create a test organization
+        from website.models import Organization
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+
+        # Create a forum post with organization link
+        post_data = {
+            "title": "Test Post with Organization",
+            "category": self.category.id,
+            "description": "Test Description with organization link",
+            "organization": organization.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
+
+        # Verify post has organization link
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.organization)
+        self.assertEqual(post.organization.id, organization.id)
+
+    def test_forum_post_with_all_links(self):
+        # Create test entities
+        from website.models import Organization, Project
+
+        organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        project = Project.objects.create(name="Test Project", description="Test project desc")
+        repo = Repo.objects.create(
+            name="Test Repo", description="Test repo desc", repo_url="https://github.com/test/repo"
+        )
+
+        # Create a forum post with all links
+        post_data = {
+            "title": "Test Post with All Links",
+            "category": self.category.id,
+            "description": "Test Description with all links",
+            "repo": repo.id,
+            "project": project.id,
+            "organization": organization.id,
+        }
+
+        response = self.client.post(
+            reverse("add_forum_post"), data=json.dumps(post_data), content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("post_id", data)
+
+        # Verify post has all links
+        post = ForumPost.objects.first()
+        self.assertIsNotNone(post.repo)
+        self.assertIsNotNone(post.project)
+        self.assertIsNotNone(post.organization)
+        self.assertEqual(post.repo.id, repo.id)
+        self.assertEqual(post.project.id, project.id)
+        self.assertEqual(post.organization.id, organization.id)
 from website.models import Domain, GitHubIssue, Repo, UserProfile
 
 
@@ -245,6 +482,192 @@ class StatusPageTests(TestCase):
         self.assertIn("available_commands", status)
 
 
+class TopEarnersTests(TestCase):
+    """Test suite for top earners calculation on homepage"""
+
+    def setUp(self):
+        self.client = Client()
+
+        # Create test repository
+        self.repo = Repo.objects.create(
+            name="TestRepo", repo_url="https://github.com/test/repo", description="Test repository"
+        )
+
+        # Create test contributors
+        self.contributor1 = Contributor.objects.create(
+            name="testuser1",
+            github_id=12345,
+            github_url="https://github.com/testuser1",
+            avatar_url="https://avatars.githubusercontent.com/u/12345",
+            contributor_type="User",
+            contributions=10,
+        )
+
+        self.contributor2 = Contributor.objects.create(
+            name="testuser2",
+            github_id=67890,
+            github_url="https://github.com/testuser2",
+            avatar_url="https://avatars.githubusercontent.com/u/67890",
+            contributor_type="User",
+            contributions=5,
+        )
+
+        # Create test issues with $5 label
+        self.issue1 = GitHubIssue.objects.create(
+            issue_id=1,
+            title="Test Issue 1",
+            state="closed",
+            type="issue",
+            has_dollar_tag=True,  # $5 label
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/issues/1",
+            repo=self.repo,
+        )
+
+        self.issue2 = GitHubIssue.objects.create(
+            issue_id=2,
+            title="Test Issue 2",
+            state="closed",
+            type="issue",
+            has_dollar_tag=True,  # $5 label
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/issues/2",
+            repo=self.repo,
+        )
+
+        # Create test PRs linked to issues
+        self.pr1 = GitHubIssue.objects.create(
+            issue_id=101,
+            title="Test PR 1",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/101",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+
+        self.pr2 = GitHubIssue.objects.create(
+            issue_id=102,
+            title="Test PR 2",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/102",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+
+        self.pr3 = GitHubIssue.objects.create(
+            issue_id=103,
+            title="Test PR 3",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/103",
+            repo=self.repo,
+            contributor=self.contributor2,
+        )
+
+        # Link PRs to issues (contributor1 has 2 PRs, contributor2 has 1 PR)
+        self.pr1.linked_issues.add(self.issue1)
+        self.pr2.linked_issues.add(self.issue2)
+        self.pr3.linked_issues.add(self.issue2)
+
+    def test_top_earners_calculation(self):
+        """Test that top earners are calculated correctly based on $5 issues and linked PRs"""
+        response = self.client.get(reverse("index"))
+        self.assertEqual(response.status_code, 200)
+
+        # Check if top_earners is in context
+        self.assertIn("top_earners", response.context)
+        top_earners = response.context["top_earners"]
+
+        # Should have 2 earners
+        self.assertEqual(len(top_earners), 2)
+
+        # contributor1 should be first with $10 (2 PRs × $5)
+        self.assertEqual(top_earners[0].user.username, "testuser1")
+        self.assertEqual(float(top_earners[0].total_earnings), 10.0)
+
+        # contributor2 should be second with $5 (1 PR × $5)
+        self.assertEqual(top_earners[1].user.username, "testuser2")
+        self.assertEqual(float(top_earners[1].total_earnings), 5.0)
+
+    def test_top_earners_only_counts_merged_prs(self):
+        """Test that only merged PRs are counted for earnings"""
+        # Create an unmerged PR linked to a $5 issue
+        unmerged_pr = GitHubIssue.objects.create(
+            issue_id=104,
+            title="Test PR 4 (not merged)",
+            state="open",
+            type="pull_request",
+            is_merged=False,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/pull/104",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+        unmerged_pr.linked_issues.add(self.issue1)
+
+        response = self.client.get(reverse("index"))
+        top_earners = response.context["top_earners"]
+
+        # contributor1 should still have $10 (only 2 merged PRs counted)
+        contributor1_earnings = next((e for e in top_earners if e.user.username == "testuser1"), None)
+        self.assertIsNotNone(contributor1_earnings)
+        self.assertEqual(float(contributor1_earnings.total_earnings), 10.0)
+
+    def test_top_earners_only_counts_dollar_five_issues(self):
+        """Test that only issues with $5 label are counted"""
+        # Create an issue without $5 label
+        non_dollar_issue = GitHubIssue.objects.create(
+            issue_id=3,
+            title="Test Issue 3 (no $5 label)",
+            state="closed",
+            type="issue",
+            has_dollar_tag=False,  # No $5 label
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url="https://github.com/test/repo/issues/3",
+            repo=self.repo,
+        )
+
+        # Create a PR linked to the non-$5 issue
+        pr_for_non_dollar = GitHubIssue.objects.create(
+            issue_id=105,
+            title="Test PR 5",
+            state="closed",
+            type="pull_request",
+            is_merged=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            merged_at=timezone.now(),
+            url="https://github.com/test/repo/pull/105",
+            repo=self.repo,
+            contributor=self.contributor1,
+        )
+        pr_for_non_dollar.linked_issues.add(non_dollar_issue)
+
+        response = self.client.get(reverse("index"))
+        top_earners = response.context["top_earners"]
+
+        # contributor1 should still have $10 (only $5 labeled issues counted)
+        contributor1_earnings = next((e for e in top_earners if e.user.username == "testuser1"), None)
+        self.assertIsNotNone(contributor1_earnings)
+        self.assertEqual(float(contributor1_earnings.total_earnings), 10.0)
 class SitemapTests(TestCase):
     """Test suite for sitemap functionality"""
 
