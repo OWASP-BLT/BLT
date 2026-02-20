@@ -57,13 +57,19 @@
                                name="{{ redirect_field_name }}"
                                value="{{ redirect_field_value }}" />
                     {% endif %}
-                    <!-- Username Field -->
+                    {% if form.non_field_errors %}
+                        <div class="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-md border border-red-200">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    <!-- Username/Email Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="id_login"
-                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username</label>
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">Username or Email</label>
                         <input autofocus
                                id="id_login"
                                name="login"
+                               placeholder="Enter username or email"
                                value="{{ form.login.value|default:'' }}"
                                class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
                         <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>
