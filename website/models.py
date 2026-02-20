@@ -1357,6 +1357,63 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    freshness = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.0,
+        db_index=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
+    def calculate_freshness(self):
+        """
+        Calculate freshness using a Bumper-style activity decay model.
+        Prioritizes the 52-week participation stats for more granular recency
+        and consistency checks.
+        """
+        active_repos = self.repos.filter(is_archived=False)
+        total_raw_score = 0
+
+        for repo in active_repos:
+            repo_score = 0
+            stats = repo.participation_stats
+
+            # 1. Use 52-week stats if available (more robust)
+            if isinstance(stats, list) and len(stats) == 52:
+                # Last week (index 51)
+                if stats[51] > 0:
+                    repo_score = 1.0
+                # Last 4 weeks (30 days)
+                elif sum(stats[48:52]) > 0:
+                    repo_score = 0.6
+                # Last 12 weeks (90 days)
+                elif sum(stats[40:52]) > 0:
+                    repo_score = 0.3
+
+                # Consistency bonus: commits in 3+ distinct weeks of the last 12 weeks
+                weeks_active_last_quarter = sum(1 for w in stats[40:52] if w > 0)
+                if weeks_active_last_quarter >= 3:
+                    repo_score += 0.1
+
+            # 2. Fallback to last_commit_date if no stats or stats don't show recent activity
+            if repo_score == 0 and repo.last_commit_date:
+                now = timezone.now()
+                if repo.last_commit_date >= now - timedelta(days=7):
+                    repo_score = 1.0
+                elif repo.last_commit_date >= now - timedelta(days=30):
+                    repo_score = 0.6
+                elif repo.last_commit_date >= now - timedelta(days=90):
+                    repo_score = 0.3
+
+            total_raw_score += repo_score
+
+        if total_raw_score == 0:
+            return Decimal("0.00")
+
+        MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
+        freshness = min((total_raw_score / MAX_SCORE) * 100, 100)
+
+        return Decimal(str(round(freshness, 2)))
 
     def save(self, *args, **kwargs):
         # Always ensure a valid slug exists before saving
@@ -1386,6 +1443,23 @@ class Project(models.Model):
             self.slug = f"project-{int(time.time())}"
 
         super(Project, self).save(*args, **kwargs)
+
+    def get_participation_stats(self):
+        """
+        Calculates the aggregate 52-week activity for the project
+        by summing participation stats of its active repositories.
+        """
+        repos = self.repos.filter(is_archived=False)
+        # GitHub participation stats 'all' array has 52 entries
+        total_stats = [0] * 52
+
+        for repo in repos:
+            stats = repo.participation_stats
+            if isinstance(stats, list) and len(stats) == 52:
+                for i in range(52):
+                    total_stats[i] += stats[i]
+
+        return total_stats
 
     def __str__(self):
         return self.name
@@ -1879,6 +1953,7 @@ class Repo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
     last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
+    participation_stats = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1996,7 +2071,7 @@ class Room(models.Model):
     ROOM_TYPES = [
         ("project", "Project"),
         ("bug", "Bug"),
-        ("org", "Organization"),
+        ("organization", "Organization"),
         ("custom", "Custom"),
     ]
 
