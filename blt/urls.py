@@ -1040,7 +1040,7 @@ urlpatterns = [
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
-        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
+        ProjectViewSet.as_view({"get": "list"}),
         name="projects_api",
     ),
     path(
