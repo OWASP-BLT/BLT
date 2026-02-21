@@ -173,37 +173,35 @@ def study_course(request, course_id):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def mark_lecture_complete(request):
     """API endpoint to mark a lecture as completed"""
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            lecture_id = data.get("lecture_id")
+    try:
+        data = json.loads(request.body)
+        lecture_id = data.get("lecture_id")
 
-            if not lecture_id:
-                return JsonResponse({"success": False, "error": "Lecture ID is required"})
+        if not lecture_id:
+            return JsonResponse({"success": False, "error": "Lecture ID is required"})
 
-            lecture = get_object_or_404(Lecture, id=lecture_id)
-            userprofile = request.user.userprofile
+        lecture = get_object_or_404(Lecture, id=lecture_id)
+        userprofile = request.user.userprofile
 
-            course = lecture.section.course
-            enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
-            if not enrollment:
-                return JsonResponse({"success": False, "error": "You are not enrolled in this course."})
+        course = lecture.section.course
+        enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
+        if not enrollment:
+            return JsonResponse({"success": False, "error": "You are not enrolled in this course."})
 
-            lecture_status, created = LectureStatus.objects.update_or_create(
-                student=userprofile, lecture=lecture, defaults={"status": "COMPLETED"}
-            )
+        lecture_status, created = LectureStatus.objects.update_or_create(
+            student=userprofile, lecture=lecture, defaults={"status": "COMPLETED"}
+        )
 
-            progress = enrollment.calculate_progress()
+        progress = enrollment.calculate_progress()
 
-            return JsonResponse({"success": True, "status": "COMPLETED", "progress": progress})
+        return JsonResponse({"success": True, "status": "COMPLETED", "progress": progress})
 
-        except Exception as e:
-            logger.error(f"Error: {str(e)}")
-            return JsonResponse({"status": "error", "message": "An error occurred, please try again later"}, status=400)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"})
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return JsonResponse({"status": "error", "message": "An error occurred, please try again later"}, status=400)
 
 
 @instructor_required
