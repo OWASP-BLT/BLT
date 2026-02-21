@@ -766,6 +766,8 @@ class Issue(models.Model):
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
             models.Index(fields=["cve_id"], name="issue_cve_id_idx"),
             models.Index(fields=["cve_score"], name="issue_cve_score_idx"),
+            models.Index(fields=["status"], name="issue_status_idx"),
+            models.Index(fields=["label"], name="issue_label_idx"),
         ]
 
 
