@@ -5,6 +5,7 @@ from website.models import (
     ActivityLog,
     Contributor,
     Domain,
+    GitHubWebhookConfig,
     Hunt,
     HuntPrize,
     Issue,
@@ -322,3 +323,27 @@ class SecurityIncidentSerializer(serializers.ModelSerializer):
             "resolved_at",
         ]
         read_only_fields = ["id", "created_at", "resolved_at"]
+
+
+class GitHubWebhookConfigSerializer(serializers.ModelSerializer):
+    webhook_secret = serializers.CharField(
+        write_only=True, required=False, allow_blank=True, help_text="Leave blank to use global webhook secret"
+    )
+    has_custom_secret = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GitHubWebhookConfig
+        fields = [
+            "id",
+            "stats_recalc_enabled",
+            "webhook_secret",
+            "has_custom_secret",
+            "last_webhook_received",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "last_webhook_received", "created_at", "updated_at"]
+
+    def get_has_custom_secret(self, obj):
+        """Indicate if a custom secret exists without exposing it."""
+        return bool(obj.webhook_secret)

@@ -35,6 +35,7 @@ from website.models import (
     Enrollment,
     GitHubIssue,
     GitHubReview,
+    GitHubWebhookConfig,
     Hackathon,
     HackathonPrize,
     HackathonSponsor,
@@ -1203,4 +1204,18 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
+    )
+
+
+@admin.register(GitHubWebhookConfig)
+class GitHubWebhookConfigAdmin(admin.ModelAdmin):
+    list_display = ["project", "stats_recalc_enabled", "last_webhook_received", "updated_at"]
+    list_filter = ["stats_recalc_enabled"]
+    search_fields = ["project__name"]
+    readonly_fields = ["last_webhook_received", "created_at", "updated_at"]
+
+    fieldsets = (
+        ("Project", {"fields": ("project",)}),
+        ("Configuration", {"fields": ("stats_recalc_enabled", "webhook_secret")}),
+        ("Status", {"fields": ("last_webhook_received", "created_at", "updated_at"), "classes": ("collapse",)}),
     )

@@ -3619,3 +3619,33 @@ class SecurityIncidentHistory(models.Model):
                 name="history_incident_changedat_idx",
             ),
         ]
+
+
+class GitHubWebhookConfig(models.Model):
+    """Configuration for GitHub webhook integration per project."""
+
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="github_webhook_config",
+        help_text="Project associated with this webhook configuration",
+    )
+    webhook_secret = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Optional project-specific webhook secret. Leave blank to use global secret.",
+    )
+    stats_recalc_enabled = models.BooleanField(
+        default=False, help_text="Enable automatic contributor stats recalculation on webhook events"
+    )
+    last_webhook_received = models.DateTimeField(null=True, blank=True, help_text="Timestamp of last webhook received")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "GitHub Webhook Configuration"
+        verbose_name_plural = "GitHub Webhook Configurations"
+
+    def __str__(self):
+        return f"Webhook Config for {self.project.name}"
