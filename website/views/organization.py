@@ -484,6 +484,9 @@ class Joinorganization(TemplateView):
             except Subscription.DoesNotExist:
                 return JsonResponse({"error": "Invalid subscription plan"}, status=400)
             paymentType = request.POST.get("paymentType", "")
+            safe_url = rebuild_safe_url(url)
+            if not safe_url:
+                return JsonResponse({"error": "Invalid or unsafe URL"}, status=400)
             if paymentType == "wallet":
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 if wallet.current_balance < sub.charge_per_month:
@@ -492,7 +495,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = rebuild_safe_url(url)
+                organization.url = safe_url
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -512,7 +515,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = rebuild_safe_url(url)
+                organization.url = safe_url
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -1402,11 +1405,11 @@ class CreateHunt(TemplateView):
                 start_date = form.cleaned_data["start_date"]
                 end_date = form.cleaned_data["end_date"]
                 if tzsign > 0:
-                    start_date = start_date + timedelta(hours=int(offset_int / 60), minutes=int(offset_int % 60))
-                    end_date = end_date + timedelta(hours=int(offset_int / 60), minutes=int(offset_int % 60))
+                    start_date = start_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+                    end_date = end_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
                 else:
-                    start_date = start_date - timedelta(hours=int(offset_int / 60), minutes=int(offset_int % 60))
-                    end_date = end_date - timedelta(hours=int(offset_int / 60), minutes=int(offset_int % 60))
+                    start_date = start_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+                    end_date = end_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
                 hunt.starts_on = start_date
                 hunt.prize_winner = prize_winner
                 hunt.prize_runner = prize_runner
@@ -1416,10 +1419,7 @@ class CreateHunt(TemplateView):
                 hunt.description = form.cleaned_data["content"]
                 wallet.withdraw(total_amount)
                 wallet.save()
-                try:
-                    hunt.is_published = request.POST.get("publish", False) == "on"
-                except KeyError:
-                    hunt.is_published = False
+                hunt.is_published = request.POST.get("publish", False) == "on"
                 hunt.save()
                 return HttpResponse("success")
             else:
@@ -1665,7 +1665,7 @@ def trademark_detailview(request, slug):
 
     try:
         ta_data = trademark_available_response.json()
-    except (ValueError, requests.exceptions.JSONDecodeError):
+    except ValueError:
         error_message = "Failed to parse response from USPTO API."
         return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
 
@@ -1678,7 +1678,7 @@ def trademark_detailview(request, slug):
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
         try:
             ts_data = trademark_search_response.json()
-        except (ValueError, requests.exceptions.JSONDecodeError):
+        except ValueError:
             ts_data = {}
         context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
@@ -1740,9 +1740,9 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         return render(request, template, context)
     else:
         data = {}
-        data["content"] = request.POST["content"]
-        data["start_date"] = request.POST["start_date"]
-        data["end_date"] = request.POST["end_date"]
+        data["content"] = request.POST.get("content", "")
+        data["start_date"] = request.POST.get("start_date", "")
+        data["end_date"] = request.POST.get("end_date", "")
         form = HuntForm(data)
         if not form.is_valid():
             return HttpResponse("Invalid form data")
@@ -1753,23 +1753,30 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if domain_admin.role == 1:
             if hunt.domain != domain_admin.domain:
                 return HttpResponse("Domain mismatch")
-        hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+        try:
+            domain_pk = request.POST.get("domain", "").split("-")[0].replace(" ", "")
+            hunt.domain = Domain.objects.get(pk=domain_pk)
+        except (ValueError, Domain.DoesNotExist):
+            return HttpResponse("Invalid domain")
         tzsign = 1
-        offset = request.POST["tzoffset"]
-        if int(offset) < 0:
-            offset = int(offset) * (-1)
+        try:
+            tz_raw = int(request.POST.get("tzoffset", "0"))
+        except ValueError:
+            tz_raw = 0
+        offset_int = abs(tz_raw)
+        if tz_raw < 0:
             tzsign = -1
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         if tzsign > 0:
-            start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            start_date = start_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+            end_date = end_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
         else:
-            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            start_date = start_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+            end_date = end_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
         hunt.starts_on = start_date
         hunt.end_on = end_date
-        hunt.name = request.POST["name"]
+        hunt.name = request.POST.get("name", "")
         hunt.description = form.cleaned_data["content"]
         hunt.is_published = request.POST.get("publish", False) == "on"
         hunt.save()
