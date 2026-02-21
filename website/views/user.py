@@ -47,6 +47,7 @@ from website.models import (
     Domain,
     GitHubIssue,
     GitHubReview,
+    GitHubWebhookConfig,
     Hunt,
     InviteFriend,
     Issue,
@@ -98,6 +99,35 @@ def extract_github_username(github_url):
         return username
 
     return None
+
+
+def get_project_webhook_config(repo):
+    """
+    Get the webhook configuration for a repository's project.
+    """
+    if not repo or not repo.project:
+        return None
+
+    try:
+        return GitHubWebhookConfig.objects.get(project=repo.project)
+    except GitHubWebhookConfig.DoesNotExist:
+        return None
+
+
+def validate_project_webhook_signature(request, webhook_config):
+    """
+    Validate webhook signature using project-specific or global secret.
+    """
+    signature_header = request.headers.get("X-Hub-Signature-256", "")
+
+    # Try project-specific secret first
+    if webhook_config and webhook_config.webhook_secret:
+        if validate_github_signature(request.body, webhook_config.webhook_secret, signature_header):
+            return True
+
+    # Fall back to global secret
+    global_secret = getattr(settings, "GITHUB_WEBHOOK_SECRET", "")
+    return validate_github_signature(request.body, global_secret, signature_header)
 
 
 @receiver(user_signed_up)
@@ -1306,6 +1336,42 @@ def safe_parse_github_datetime(value, *, default=None, field_name=""):
         return default
 
 
+def maybe_trigger_stats_recalculation(repo, webhook_config):
+    """
+    Trigger stats recalculation if enabled and not recently triggered.
+    """
+    if not webhook_config or not webhook_config.stats_recalc_enabled:
+        return False
+
+    if not repo or not repo.project:
+        return False
+
+    # Deduplicate: only trigger if last webhook was more than 5 minutes ago
+    now = timezone.now()
+    if webhook_config.last_webhook_received:
+        time_since_last = (now - webhook_config.last_webhook_received).total_seconds()
+        if time_since_last < 300:  # 5 minutes
+            logger.info(
+                f"Skipping stats recalculation for project {repo.project.id}, "
+                f"last webhook received {time_since_last:.0f}s ago"
+            )
+            return False
+
+    # Update last webhook received timestamp
+    webhook_config.last_webhook_received = now
+    webhook_config.save(update_fields=["last_webhook_received"])
+
+    # Queue the stats update in a background thread
+    # Use the async version to avoid blocking the webhook response
+    from website.tasks import trigger_project_stats_update_async
+
+    trigger_project_stats_update_async(repo.project.id)
+
+    logger.info(f"Triggered stats recalculation for project {repo.project.id}")
+
+    return True
+
+
 @csrf_exempt
 def github_webhook(request):
     """
@@ -1343,6 +1409,24 @@ def github_webhook(request):
                 status=400,
             )
 
+        # Get repository from payload
+        repository = payload.get("repository", {})
+        repo_url = repository.get("html_url")
+
+        # Lookup repo and webhook config
+        repo = None
+        if repo_url:
+            try:
+                repo = Repo.objects.get(repo_url=repo_url)
+            except Repo.DoesNotExist:
+                pass
+
+        webhook_config = get_project_webhook_config(repo)
+
+        # Validate signature
+        if not validate_project_webhook_signature(request, webhook_config):
+            logger.warning("Invalid webhook signature")
+            return JsonResponse({"error": "Invalid signature"}, status=403)
         event_type = request.headers.get("X-GitHub-Event", "")
 
         event_handlers = {
@@ -1509,6 +1593,18 @@ def handle_pull_request_event(payload):
         pr_user_instance = pr_user_profile.user
         assign_github_badge(pr_user_instance, "First PR Merged")
 
+    if action in ["opened", "closed", "merged"]:
+        repository = payload.get("repository", {})
+        repo_url = repository.get("html_url")
+
+        if repo_url:
+            try:
+                repo = Repo.objects.get(repo_url=repo_url)
+                webhook_config = get_project_webhook_config(repo)
+                maybe_trigger_stats_recalculation(repo, webhook_config)
+            except Repo.DoesNotExist:
+                pass
+
     return JsonResponse({"status": "success"}, status=200)
 
 
@@ -1518,6 +1614,17 @@ def handle_push_event(payload):
         pusher_user = pusher_profile.user
         if payload.get("commits"):
             assign_github_badge(pusher_user, "First Commit")
+    repository = payload.get("repository", {})
+    repo_url = repository.get("html_url")
+
+    if repo_url:
+        try:
+            repo = Repo.objects.get(repo_url=repo_url)
+            webhook_config = get_project_webhook_config(repo)
+            maybe_trigger_stats_recalculation(repo, webhook_config)
+        except Repo.DoesNotExist:
+            pass
+
     return JsonResponse({"status": "success"}, status=200)
 
 

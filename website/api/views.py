@@ -38,6 +38,7 @@ from website.models import (
     ActivityLog,
     Contributor,
     Domain,
+    GitHubWebhookConfig,
     Hunt,
     HuntPrize,
     InviteFriend,
@@ -62,6 +63,7 @@ from website.serializers import (
     BugHuntSerializer,
     ContributorSerializer,
     DomainSerializer,
+    GitHubWebhookConfigSerializer,
     IssueSerializer,
     JobPublicSerializer,
     JobSerializer,
@@ -2074,3 +2076,79 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ProjectWebhookConfigView(APIView):
+    """
+    API endpoint for managing GitHub webhook configuration for a project.
+
+    GET: Retrieve current configuration
+    PUT: Create or update configuration
+    DELETE: Remove configuration
+    """
+
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_project(self, project_id, user):
+        """Validate user has access to the project."""
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return None, Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has permission (organization admin or manager)
+        if project.organization:
+            # FIXED: Match the actual Organization model structure
+            is_authorized = (
+                project.organization.admin == user or project.organization.managers.filter(id=user.id).exists()
+            )
+
+            if not is_authorized:
+                return None, Response(
+                    {"error": "You do not have permission to access this project"}, status=status.HTTP_403_FORBIDDEN
+                )
+
+        return project, None
+
+    def get(self, request, project_id):
+        """Retrieve webhook configuration for a project."""
+        project, error_response = self.get_project(project_id, request.user)
+        if error_response:
+            return error_response
+
+        try:
+            config = GitHubWebhookConfig.objects.get(project=project)
+            serializer = GitHubWebhookConfigSerializer(config)
+            return Response(serializer.data)
+        except GitHubWebhookConfig.DoesNotExist:
+            # Return default values
+            return Response({"stats_recalc_enabled": False, "has_custom_secret": False, "last_webhook_received": None})
+
+    def put(self, request, project_id):
+        """Create or update webhook configuration."""
+        project, error_response = self.get_project(project_id, request.user)
+        if error_response:
+            return error_response
+
+        config, created = GitHubWebhookConfig.objects.get_or_create(project=project)
+        serializer = GitHubWebhookConfigSerializer(config, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, project_id):
+        """Delete webhook configuration."""
+        project, error_response = self.get_project(project_id, request.user)
+        if error_response:
+            return error_response
+
+        try:
+            config = GitHubWebhookConfig.objects.get(project=project)
+            config.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except GitHubWebhookConfig.DoesNotExist:
+            return Response({"error": "Webhook configuration not found"}, status=status.HTTP_404_NOT_FOUND)
