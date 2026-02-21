@@ -371,6 +371,8 @@ else:
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 # Security: Do not send emails to unknown accounts during password reset
 # This prevents account enumeration attacks
