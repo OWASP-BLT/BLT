@@ -78,6 +78,24 @@ from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_int(value, default, min_value=0, max_value=None):
+    """
+    Safely parse integer query parameters with bounds checking.
+    Returns default if parsing fails or value is out of bounds.
+    """
+    try:
+        value = int(value)
+        if value < min_value:
+            return default
+        if max_value is not None:
+            return min(value, max_value)
+        return value
+    except (TypeError, ValueError):
+        return default
+
+
 # API's
 
 
@@ -392,42 +410,48 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         return Response(self.get_issue_info(request, issue))
 
-    @action(detail=False, methods=["get"], url_path="triage-search")
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="triage-search",
+        permission_classes=[IsAuthenticated],
+    )
     def triage_search(self, request):
         """
         Dedicated search endpoint for triage workflows.
-        Supports:
+        Requires authentication. Supports:
         - q: keyword search in description
-        - status: filter by issue status
-        - security_only: filter label=4 (Security)
-        - limit, offset pagination
+        - security_only: filter to security labels only
+        - limit, offset pagination (with bounds)
         """
 
         q = request.query_params.get("q")
-        status_param = request.query_params.get("status")
         security_only = request.query_params.get("security_only")
-        limit = int(request.query_params.get("limit", 10))
-        offset = int(request.query_params.get("offset", 0))
-
-        limit = min(limit, 50)  # safety cap
+        limit = _safe_int(request.query_params.get("limit"), default=10, min_value=1, max_value=50)
+        offset = _safe_int(request.query_params.get("offset"), default=0, min_value=0)
 
         queryset = self.get_queryset()
 
         if q:
             queryset = queryset.filter(Q(description__icontains=q))
 
-        if status_param:
-            queryset = queryset.filter(status=status_param)
-
         if security_only == "true":
-            queryset = queryset.filter(label=4)
+            # Filter to security issues only
+            security_label = next(
+                (key for key, value in Issue.labels if value == "Security"), None
+            )
+            if security_label is not None:
+                queryset = queryset.filter(label=security_label)
 
         total = queryset.count()
         results = queryset[offset : offset + limit]
 
         serializer = self.get_serializer(results, many=True)
 
-        return Response({"total": total, "limit": limit, "offset": offset, "results": serializer.data})
+        # Intentionally returns lean serializer output for triage workflows.
+        return Response(
+            {"total": total, "limit": limit, "offset": offset, "results": serializer.data}
+        )
 
 
 class LikeIssueApiView(APIView):
