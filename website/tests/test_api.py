@@ -338,6 +338,8 @@ class TeamLeaderboardAPITest(APITestCase):
         self.assertGreater(len(response.data["results"]), 0)
         member = response.data["results"][0]
         self.assertIn("leaderboard_score", member)
+
+
 class ProjectFreshnessFilteringTestCase(APITestCase):
     """Test cases for Project API freshness filtering"""
 
