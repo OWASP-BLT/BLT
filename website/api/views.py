@@ -24,7 +24,6 @@ from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.text import slugify
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
@@ -2080,13 +2079,14 @@ class DebugClearCacheApiView(APIView):
 
 class TeamMemberLeaderboardAPIView(generics.ListAPIView):
     serializer_class = TeamMemberLeaderboardSerializer
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
         team = self.request.user.userprofile.team
         if not team:
-            logger.info(f"User {self.request.user.id} has no team; returning empty leaderboard.")
+            logger.info("User %s has no team; returning empty leaderboard.", self.request.user.id)
             return UserProfile.objects.none()
 
         return (
