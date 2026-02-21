@@ -38,6 +38,7 @@ from website.models import (
     OrganizationAdmin,
     Points,
     SlackIntegration,
+    UserActivity,
     Winner,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
@@ -788,7 +789,77 @@ class OrganizationDashboardAnalyticsView(View):
             "security_incidents_summary": self.get_security_incidents_summary(id),
             "threat_intelligence": self.get_threat_intelligence(id),
         }
+        # Add user behavior analytics to context
+        context["user_behavior"] = self.get_user_behavior_analytics(organization_obj)
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+    def get_user_behavior_analytics(self, organization):
+        now = timezone.now()
+        thirty_days_ago = now - timedelta(days=30)
+        seven_days_ago = now - timedelta(days=7)
+
+        # Base queryset reused everywhere (30d window)
+        activities = UserActivity.objects.filter(
+            organization=organization,
+            timestamp__gte=thirty_days_ago,
+        )
+
+        # ✅ 1 query instead of two separate .count() calls
+        summary = activities.aggregate(
+            total_activities=Count("id"),
+            active_users_count=Count("user", distinct=True),
+        )
+        total_activities = summary["total_activities"]
+        active_users_count = summary["active_users_count"]
+
+        # Top users (1 query)
+        top_users = (
+            activities.values("user__username").annotate(activity_count=Count("id")).order_by("-activity_count")[:5]
+        )
+        top_users_list = [{"username": u["user__username"], "count": u["activity_count"]} for u in top_users]
+
+        # Breakdown (1 query)
+        type_map = dict(UserActivity.ACTIVITY_TYPES)
+        activity_breakdown = activities.values("activity_type").annotate(count=Count("id")).order_by("-count")[:5]
+        activity_breakdown_list = [
+            {
+                "type": a["activity_type"],
+                "type_display": type_map.get(a["activity_type"], a["activity_type"]),
+                "count": a["count"],
+            }
+            for a in activity_breakdown
+        ]
+
+        # Peak hours (1 query)
+        peak_hours = (
+            activities.annotate(hour=ExtractHour("timestamp"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]  # Top 10 hours
+        )
+        peak_hours_list = [{"hour": h["hour"], "count": h["count"]} for h in peak_hours]
+
+        # ✅ Reuse base queryset for last 7 days (1 query)
+        weekly_trend = (
+            activities.filter(timestamp__gte=seven_days_ago)
+            .annotate(day=TruncDay("timestamp"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+        weekly_trend_list = [{"date": d["day"].date().isoformat(), "count": d["count"]} for d in weekly_trend]
+
+        engagement_rate = round(total_activities / active_users_count, 2) if active_users_count else 0
+
+        return {
+            "active_users_count": active_users_count,
+            "total_activities": total_activities,
+            "engagement_rate": engagement_rate,
+            "top_users": top_users_list,
+            "activity_breakdown": activity_breakdown_list,
+            "peak_hours": peak_hours_list,
+            "weekly_trend": weekly_trend_list,
+        }
 
 
 class OrganizationDashboardIntegrations(View):
