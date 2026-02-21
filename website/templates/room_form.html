@@ -1,20 +1,155 @@
 {% extends "base.html" %}
-{% block title %}
-    Create Room
-{% endblock title %}
+{% load humanize %}
+{% block title %}Create Room{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Create Room</h1>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <div class="mt-4">
-                <button type="submit"
-                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Create</button>
+    <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-10">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Room</h1>
                 <a href="{% url 'rooms_list' %}"
-                   class="bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Cancel</a>
+                   class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition"
+                   aria-label="Close form safely">✕</a>
             </div>
-        </form>
+            <!-- Form -->
+            <form method="post"
+                  action="{% url 'room_create' %}"
+                  class="space-y-5"
+                  autocomplete="off"
+                  novalidate>
+                {% csrf_token %}
+                <!-- Room Name -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Room Name</label>
+                    <input type="text"
+                           name="{{ form.name.name|escape }}"
+                           id="{{ form.name.id_for_label|escape }}"
+                           value="{{ form.name.value|default:''|escape }}"
+                           maxlength="100"
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
+                           required
+                           pattern="[A-Za-z0-9 _-]+"
+                           title="Room name can include letters, numbers, spaces, underscores, or hyphens.">
+                    {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0|escape }}</p>{% endif %}
+                </div>
+                <!-- Room Type -->
+                <div>
+                    <label for="{{ form.type.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Room Type</label>
+                    <select id="{{ form.type.id_for_label|escape }}"
+                            name="{{ form.type.name|escape }}"
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
+                            required>
+                        <option value="">Select a type</option>
+                        <option value="project"
+                                {% if form.type.value == 'project' %}selected{% endif %}>Project</option>
+                        <option value="bug" {% if form.type.value == 'bug' %}selected{% endif %}>Bug</option>
+                        <option value="organization"
+                                {% if form.type.value == 'organization' %}selected{% endif %}>Organization</option>
+                        <option value="custom"
+                                {% if form.type.value == 'custom' %}selected{% endif %}>Custom</option>
+                    </select>
+                    {% if form.type.errors %}<p class="mt-1 text-sm text-red-600">{{ form.type.errors.0|escape }}</p>{% endif %}
+                </div>
+                <!-- Custom Type -->
+                <div id="custom_type_container" class="hidden">
+                    <label for="{{ form.custom_type.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Type</label>
+                    <input type="text"
+                           name="{{ form.custom_type.name|escape }}"
+                           id="{{ form.custom_type.id_for_label|escape }}"
+                           value="{{ form.custom_type.value|default:''|escape }}"
+                           maxlength="50"
+                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900">
+                    {% if form.custom_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.custom_type.errors.0|escape }}</p>
+                    {% endif %}
+                </div>
+                <!-- Description -->
+                <div>
+                    <label for="{{ form.description.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                    <textarea name="{{ form.description.name|escape }}"
+                              id="{{ form.description.id_for_label|escape }}"
+                              rows="4"
+                              maxlength="500"
+                              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900"
+                              placeholder="Describe this room..."
+                              required>{{ form.description.value|default_if_none:''|escape }}</textarea>
+                    {% if form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0|escape }}</p>
+                    {% endif %}
+                </div>
+                <!-- Captcha -->
+                {% if form.captcha %}
+                    <div class="mt-4">
+                        <label for="{{ form.captcha.id_for_label|escape }}"
+                               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Verification
+                        </label>
+                        <div class="captcha flex items-center gap-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+                            {{ form.captcha }}
+                            <a href="{% url 'room_create' %}"
+                               class="text-red-500 hover:text-red-600 transition duration-200"
+                               title="Reload captcha securely"
+                               rel="noopener noreferrer"
+                               aria-label="Reload captcha image safely">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     viewBox="0 0 256 256"
+                                     class="w-4 h-4 md:w-5 md:h-5"
+                                     role="img"
+                                     focusable="false">
+                                    <rect width="256" height="256" fill="none" />
+                                    <polyline points="168 96 216 96 216 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
+                                    <path d="M216,96,187.72,67.72A88,88,0,0,0,64,67" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
+                                    <polyline points="88 160 40 160 40 208" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
+                                    <path d="M40,160l28.28,28.28A88,88,0,0,0,192,189" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
+                                </svg>
+                            </a>
+                        </div>
+                        {% if form.captcha.errors %}<p class="mt-1 text-sm text-red-600">{{ form.captcha.errors.0|escape }}</p>{% endif %}
+                    </div>
+                {% endif %}
+                <!-- Buttons -->
+                <div class="flex justify-end gap-3 pt-6">
+                    <a href="{% url 'rooms_list' %}"
+                       class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                       aria-label="Cancel and return safely">Cancel</a>
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition"
+                            aria-label="Create Room">Create Room</button>
+                </div>
+            </form>
+        </div>
     </div>
-{% endblock content %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('{{ form.type.id_for_label|escapejs }}');
+    const customContainer = document.getElementById('custom_type_container');
+    function toggleCustomField() {
+        customContainer.classList.toggle('hidden', typeSelect.value !== 'custom');
+    }
+    typeSelect.addEventListener('change', toggleCustomField);
+    toggleCustomField();
+});
+
+function refreshCaptcha(event) {
+    if (event) event.preventDefault();
+
+    fetch("/captcha/refresh/", { headers: { "Accept": "application/json" }, credentials: "same-origin" })
+        .then(res => res.json())
+        .then(data => {
+            const img = document.querySelector(".captcha img");
+            const hiddenInput = document.querySelector('input[name="captcha_0"]');
+            if (img && hiddenInput && data.image_url && data.key) {
+                img.src = data.image_url;
+                hiddenInput.value = data.key;
+            }
+        })
+        .catch(err => console.error("Captcha refresh failed:", err));
+}
+
+    </script>
+{% endblock %}

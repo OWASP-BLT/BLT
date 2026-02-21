@@ -483,7 +483,7 @@ def status_page(request):
                 "last_activity": last_activity.created if last_activity else None,
                 "recent_activities": list(
                     SlackBotActivity.objects.filter(created__gte=last_24h)
-                    .values("activity_type", "workspace_name", "created", "success")
+                    .values("activity_type", "workspace_name", "created", "success", "details")
                     .order_by("-created")[:5]
                 ),
                 "activity_types": {
