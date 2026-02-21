@@ -392,6 +392,43 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         return Response(self.get_issue_info(request, issue))
 
+    @action(detail=False, methods=["get"], url_path="triage-search")
+    def triage_search(self, request):
+        """
+        Dedicated search endpoint for triage workflows.
+        Supports:
+        - q: keyword search in description
+        - status: filter by issue status
+        - security_only: filter label=4 (Security)
+        - limit, offset pagination
+        """
+
+        q = request.query_params.get("q")
+        status_param = request.query_params.get("status")
+        security_only = request.query_params.get("security_only")
+        limit = int(request.query_params.get("limit", 10))
+        offset = int(request.query_params.get("offset", 0))
+
+        limit = min(limit, 50)  # safety cap
+
+        queryset = self.get_queryset()
+
+        if q:
+            queryset = queryset.filter(Q(description__icontains=q))
+
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        if security_only == "true":
+            queryset = queryset.filter(label=4)
+
+        total = queryset.count()
+        results = queryset[offset : offset + limit]
+
+        serializer = self.get_serializer(results, many=True)
+
+        return Response({"total": total, "limit": limit, "offset": offset, "results": serializer.data})
+
 
 class LikeIssueApiView(APIView):
     authentication_classes = [TokenAuthentication]
