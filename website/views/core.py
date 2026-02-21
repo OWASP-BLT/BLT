@@ -32,7 +32,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.validators import validate_email
 from django.db import DatabaseError, IntegrityError, connection, models, transaction
-from django.db.models import Avg, Case, Count, DecimalField, F, Q, Sum, Value, When
+from django.db.models import Avg, Case, Count, DecimalField, F, Prefetch, Q, Sum, Value, When
 from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
@@ -483,7 +483,7 @@ def status_page(request):
                 "last_activity": last_activity.created if last_activity else None,
                 "recent_activities": list(
                     SlackBotActivity.objects.filter(created__gte=last_24h)
-                    .values("activity_type", "workspace_name", "created", "success")
+                    .values("activity_type", "workspace_name", "created", "success", "details")
                     .order_by("-created")[:5]
                 ),
                 "activity_types": {
@@ -683,10 +683,14 @@ def search(request, template="search.html"):
             users = (
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
+                .prefetch_related(Prefetch("user__userbadge_set", queryset=UserBadge.objects.all(), to_attr="badges"))
+                .select_related("user")
                 .order_by("-total_score")[0:SEARCH_RESULT_LIMIT]
             )
+            # Attach badges from prefetched data to each profile for template access
+            users = list(users)
             for userprofile in users:
-                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+                userprofile.badges = userprofile.user.badges
             context = {
                 "request": request,
                 "query": query,
@@ -729,11 +733,16 @@ def search(request, template="search.html"):
             }
 
         elif stype == "organizations":
-            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
+            organizations = list(
+                Organization.objects.filter(name__icontains=query).prefetch_related(
+                    Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains")
+                )[:SEARCH_RESULT_LIMIT]
+            )
             for org in organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
+                if org.prefetched_domains:
+                    org.absolute_url = org.prefetched_domains[0].get_absolute_url()
+                else:
+                    org.absolute_url = ""
             context = {
                 "request": request,
                 "query": query,
@@ -763,7 +772,13 @@ def search(request, template="search.html"):
 
         elif stype == "tags":
             tags = Tag.objects.filter(name__icontains=query)
-            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
+            matching_organizations = list(
+                Organization.objects.filter(tags__in=tags)
+                .distinct()
+                .prefetch_related(Prefetch("domain_set", queryset=Domain.objects.all(), to_attr="prefetched_domains"))[
+                    :SEARCH_RESULT_LIMIT
+                ]
+            )
             matching_domains = Domain.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 matching_issues = (
@@ -782,9 +797,10 @@ def search(request, template="search.html"):
             matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             matching_repos = Repo.objects.filter(tags__in=tags).distinct()[:SEARCH_RESULT_LIMIT]
             for org in matching_organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
+                if org.prefetched_domains:
+                    org.absolute_url = org.prefetched_domains[0].get_absolute_url()
+                else:
+                    org.absolute_url = ""
             context = {
                 "request": request,
                 "query": query,
@@ -1417,11 +1433,48 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+DEVTO_API_URL = "https://dev.to/api/articles?username=owaspblt&per_page=2"
+
+
+def fetch_devto_articles():
+    cache_key = "devto_articles"
+
+    cached_articles = cache.get(cache_key)
+    if cached_articles is not None:
+        return cached_articles
+
+    try:
+        response = requests.get(DEVTO_API_URL, timeout=5)
+        response.raise_for_status()
+
+        try:
+            data = response.json()
+        except ValueError as e:  # catches JSONDecodeError safely
+            logger.error(f"Dev.to JSON decode error: {e}")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        if not isinstance(data, list):
+            logger.error("Dev.to API returned unexpected format")
+            cache.set(cache_key, [], 60 * 2)
+            return []
+
+        articles = data[:2]
+
+        cache.set(cache_key, articles, 60 * 10)
+        return articles
+
+    except requests.RequestException as e:
+        logger.error(f"Dev.to fetch error: {e}")
+        cache.set(cache_key, [], 60 * 2)
+        return []
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1501,9 +1554,6 @@ def home(request):
     if request.user.is_authenticated:
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
-
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1595,6 +1645,8 @@ def home(request):
             "db_connections": len(connection.queries),
         }
 
+    devto_articles = fetch_devto_articles()
+
     return render(
         request,
         "home.html",
@@ -1602,13 +1654,13 @@ def home(request):
             "last_commit": last_commit,
             "current_year": timezone.now().year,
             "current_time": current_time,  # Add current time for month display
+            "devto_articles": devto_articles,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,
             "repo_stars": repo_stars,
             "top_referrals": top_referrals,
