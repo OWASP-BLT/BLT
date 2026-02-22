@@ -1,0 +1,80 @@
+<div class="bg-gray-100 dark:bg-gray-900 chat-Zindex z-[9999] transition-colors">
+    <div id="chatbot"
+         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[520px] overflow-hidden hidden transition-colors">
+        <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
+            <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
+            <!-- ADDED aria-label -->
+            <button id="closeChatbot"
+                    aria-label="Close chatbot"
+                    class="text-white text-2xl">×</button>
+        </div>
+        <div class="p-4">
+            <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-2 text-red-700 dark:text-red-300">
+                <p class="text-base">We respond instantly!</p>
+            </div>
+            <div id="chat-log"
+                 class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative transition-colors">
+                <div id="loading"
+                     class="hidden absolute bottom-1 left-1 flex items-center justify-center bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg">
+                    <svg class="animate-spin h-5 w-5 text-red-600"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span class="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+                </div>
+            </div>
+            <!-- Quick Commands -->
+            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
+                <button aria-label="Use help command"
+                        class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/help">/help</button>
+                <button aria-label="View stats"
+                        class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/stats">/stats</button>
+                <button aria-label="Learn about bidding system"
+                        class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/bid">/bid</button>
+                <button aria-label="Learn about bacon tokens"
+                        class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/bacon">/bacon</button>
+            </div>
+            <div class="flex flex-row gap-4 items-center mt-1 w-full"
+                 id="chat-message-input-container">
+                <!-- ADDED aria-label -->
+                <input id="chat-message-input"
+                       aria-label="Chat message"
+                       type="text"
+                       class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 placeholder:text-base rounded-lg dark:text-black"
+                       placeholder="Enter your message...">
+                <div class="flex flex-row gap-2 items-center shrink-0">
+                    <button id="chat-message-submit"
+                            aria-label="Send message"
+                            class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg">Send</button>
+                    <button id="chat-message-clear"
+                            aria-label="Clear chat"
+                            class="bg-gray-300 dark:bg-gray-600 hover:bg-gray-200 text-black dark:text-white p-2 rounded-lg">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- IMPORTANT FIX: Change div → button for accessibility -->
+    <button id="chatIcon"
+            aria-label="Open chatbot"
+            class="fixed bottom-3 right-2 bg-red-600 rounded-full p-3 w-[55px] h-[55px] flex items-center justify-center cursor-pointer shadow-lg hover:opacity-80 transition-opacity">
+        <svg class="w-10 h-10 text-white"
+             aria-hidden="true"
+             xmlns="http://www.w3.org/2000/svg"
+             width="24"
+             height="24"
+             fill="currentColor"
+             viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M3.559 4.544c.355-.35.834-.544 1.33-.544H19.11c.496 0 .975.194 1.33.544.356.35.559.829.559 1.331v9.25c0 .502-.203.981-.559 1.331-.355.35-.834.544-1.33.544H15.5l-2.7 3.6a1 1 0 0 1-1.6 0L8.5 17H4.889c-.496 0-.975-.194-1.33-.544A1.868 1.868 0 0 1 3 15.125v-9.25c0-.502.203-.981.559-1.331ZM7.556 7.5a1 1 0 1 0 0 2h8a1 1 0 0 0 0-2h-8Zm0 3.5a1 1 0 1 0 0 2H12a1 1 0 1 0 0-2H7.556Z" clip-rule="evenodd" />
+        </svg>
+    </button>
+</div>

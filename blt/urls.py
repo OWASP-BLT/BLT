@@ -63,6 +63,7 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.bounty import bounty_payout
+from website.views.chatbot_api import chatbot_api
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -1213,6 +1214,8 @@ urlpatterns = [
     path("api/v1/bugs/check-duplicate/", CheckDuplicateBugApiView.as_view(), name="api_check_duplicate_bug"),
     path("api/v1/bugs/find-similar/", FindSimilarBugsApiView.as_view(), name="api_find_similar_bugs"),
     path("api/v1/search-history/", SearchHistoryApiView.as_view(), name="search_history_api"),
+    # Chatbot API endpoint
+    path("api/chatbot/", chatbot_api, name="chatbot_api"),
     path("gsoc/pr-report/", gsoc_pr_report, name="gsoc_pr_report"),
     path("security/dashboard/", SecurityDashboardView.as_view(), name="security_dashboard"),
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
