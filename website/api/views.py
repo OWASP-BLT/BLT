@@ -437,9 +437,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         if security_only == "true":
             # Filter to security issues only
-            security_label = next(
-                (key for key, value in Issue.labels if value == "Security"), None
-            )
+            security_label = next((key for key, value in Issue.labels if value == "Security"), None)
             if security_label is not None:
                 queryset = queryset.filter(label=security_label)
 
@@ -449,9 +447,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(results, many=True)
 
         # Intentionally returns lean serializer output for triage workflows.
-        return Response(
-            {"total": total, "limit": limit, "offset": offset, "results": serializer.data}
-        )
+        return Response({"total": total, "limit": limit, "offset": offset, "results": serializer.data})
 
 
 class LikeIssueApiView(APIView):
