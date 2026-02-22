@@ -7,7 +7,7 @@
     </h4>
     <div class="flex justify-start items-center px-3 py-2 rounded-full border border-gray-300 dark:border-gray-600 w-full shadow-sm">
         <img class="w-[50px] rounded-full h-[50px] object-cover"
-             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.webp' %}{% endif %}"
              alt="User Profile Logo"
              width="32px"
              height="32px">
@@ -78,7 +78,7 @@
                 {% if browser_family %}
                     {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                         <img class="w-12 h-12 rounded-lg object-cover shadow-sm"
-                             src="{% static_safe image_static 'img/browser-logos/default/browser_64x64.png' %}"
+                             src="{% static_safe image_static 'img/browser-logos/default/browser_64x64.webp' %}"
                              alt="Browser Logo"
                              width="48"
                              height="48">
