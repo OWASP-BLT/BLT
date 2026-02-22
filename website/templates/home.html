@@ -243,7 +243,10 @@
                                             <div class="flex justify-between items-start gap-2">
                                                 <div class="min-w-0">
                                                     <p class="font-medium text-gray-900 dark:text-white truncate">{{ job.title }}</p>
-                                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ job.organization_name }}{% if job.location %} · {{ job.location }}{% endif %}</p>
+                                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                        {{ job.organization_name }}
+                                                        {% if job.location %}· {{ job.location }}{% endif %}
+                                                    </p>
                                                     {% if job.job_type %}
                                                         <span class="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-red-50 dark:bg-red-900/30 text-[#e74c3c]">{{ job.job_type }}</span>
                                                     {% endif %}
@@ -289,9 +292,7 @@
                                                     {% if seeker.headline %}
                                                         <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ seeker.headline }}</p>
                                                     {% endif %}
-                                                    {% if seeker.location %}
-                                                        <p class="text-xs text-gray-500 dark:text-gray-500">{{ seeker.location }}</p>
-                                                    {% endif %}
+                                                    {% if seeker.location %}<p class="text-xs text-gray-500 dark:text-gray-500">{{ seeker.location }}</p>{% endif %}
                                                 </div>
                                                 {% if seeker.profile_url %}
                                                     <a href="{{ seeker.profile_url }}"
