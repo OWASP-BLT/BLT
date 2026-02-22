@@ -7,6 +7,7 @@ import unittest
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
@@ -505,6 +506,8 @@ class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
     """Test OrganizationSocialRedirectView security against open redirect attacks"""
 
     def setUp(self):
+        # Clear cache to reset rate limiting between tests
+        cache.clear()
         self.client = Client()
         self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
 

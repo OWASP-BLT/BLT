@@ -892,6 +892,45 @@ class OrganizationSocialRedirectView(View):
         if platform not in valid_platforms:
             return HttpResponseBadRequest("Invalid social platform")
 
+        # Get organization (outside retry loop since this is required for redirect)
+        try:
+            organization = Organization.objects.get(id=org_id)
+        except Organization.DoesNotExist as exc:
+            raise Http404("Organization not found") from exc
+
+        # Get the actual URL based on platform
+        url_mapping = {
+            "twitter": organization.twitter,
+            "facebook": organization.facebook,
+            "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
+            "linkedin": organization.linkedin,
+        }
+
+        target_url = url_mapping.get(platform)
+
+        if not target_url:
+            messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
+            return redirect("organization_analytics", id=org_id)
+
+        # Validate target URL domain to prevent open redirect attacks
+        parsed = urlparse(target_url)
+
+        # Validate scheme
+        if parsed.scheme not in ["http", "https"]:
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
+            return redirect("organization_analytics", id=org_id)
+
+        hostname = (parsed.hostname or "").lower()
+        allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
+
+        # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
+        if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured")
+            return redirect("organization_analytics", id=org_id)
+
+        # Strip query parameters and fragments before redirect to prevent parameter injection attacks
+        clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+
         # Increment the click counter atomically to prevent race conditions
         # Add retry logic to handle SQLite database locking in concurrent scenarios
         # Note: Click counting is non-critical, so failures won't prevent redirect
@@ -899,44 +938,11 @@ class OrganizationSocialRedirectView(View):
         for attempt in range(max_retries):
             try:
                 with transaction.atomic():
-                    # Lock the row to ensure atomic update (single query with select_for_update)
-                    try:
-                        organization = Organization.objects.select_for_update().get(id=org_id)
-                    except Organization.DoesNotExist as exc:
-                        raise Http404("Organization not found") from exc
-
-                    # Get the actual URL based on platform
-                    url_mapping = {
-                        "twitter": organization.twitter,
-                        "facebook": organization.facebook,
-                        "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
-                        "linkedin": organization.linkedin,
-                    }
-
-                    target_url = url_mapping.get(platform)
-
-                    if not target_url:
-                        messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
-                        return redirect("organization_analytics", id=org_id)
-
-                    # Validate target URL domain to prevent open redirect attacks
-                    parsed = urlparse(target_url)
-
-                    # Validate scheme
-                    if parsed.scheme not in ["http", "https"]:
-                        messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
-                        return redirect("organization_analytics", id=org_id)
-
-                    hostname = (parsed.hostname or "").lower()
-                    allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
-
-                    # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
-                    if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
-                        messages.error(request, f"Invalid {platform.capitalize()} URL configured")
-                        return redirect("organization_analytics", id=org_id)
+                    # Lock the row to ensure atomic update
+                    org_for_update = Organization.objects.select_for_update().get(id=org_id)
 
                     # Get current clicks dict (handle None case)
-                    clicks = organization.social_clicks or {}
+                    clicks = org_for_update.social_clicks or {}
 
                     # Increment the counter for this platform
                     clicks[platform] = clicks.get(platform, 0) + 1
@@ -944,9 +950,6 @@ class OrganizationSocialRedirectView(View):
                     # Use atomic database update to prevent race conditions
                     # This ensures the JSON update happens at the database level
                     Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
-
-                    # Strip query parameters and fragments before redirect to prevent parameter injection attacks
-                    clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
 
                 break  # Success, exit retry loop
             except OperationalError as e:
