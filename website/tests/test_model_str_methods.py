@@ -282,7 +282,8 @@ class ModelStrMethodTests(TestCase):
         )
         result = str(bid)
         self.assertIn("testuser", result)
-        self.assertIn("0.5", result)
+        # BCH amount should appear in the string representation
+        self.assertTrue("0.5" in result or "0.50" in result, f"Amount not found in: {result}")
         self.assertIn("BCH", result)
         self.assertIn("Open", result)
 

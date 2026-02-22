@@ -173,6 +173,7 @@ class JoinRequestAdmin(admin.ModelAdmin):
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id", "wallet", "value", "active")
+    list_select_related = ("wallet", "wallet__user")
 
 
 class ImageInline(admin.TabularInline):
