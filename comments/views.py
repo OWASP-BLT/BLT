@@ -85,7 +85,7 @@ def delete_comment(request):
         comment = Comment.objects.get(pk=int(request.POST["comment_pk"]))
         try:
             show = comment.parent.pk
-        except:
+        except Exception as e:
             show = -1
         if request.user.username != comment.author:
             return HttpResponse("Cannot delete this comment")
