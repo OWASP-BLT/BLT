@@ -501,6 +501,29 @@ class OrganizationProfileFormSecurityTests(TestCase):
         self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
         self.assertEqual(form.cleaned_data["linkedin"], "https://linkedin.com/company/testorg")
 
+    def test_matrix_url_preserves_fragment(self):
+        """Test that Matrix URL fragments are preserved (room/user info is in fragment)"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://matrix.to/#/@user:matrix.org",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        # Fragment should be preserved for Matrix URLs
+        self.assertEqual(form.cleaned_data["matrix_url"], "https://matrix.to/#/@user:matrix.org")
+
+    def test_matrix_url_without_fragment(self):
+        """Test that Matrix URLs without fragments work correctly"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "matrix_url": "https://matrix.org/docs",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["matrix_url"], "https://matrix.org/docs")
+
 
 class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
     """Test OrganizationSocialRedirectView security against open redirect attacks"""

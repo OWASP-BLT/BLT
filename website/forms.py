@@ -629,7 +629,15 @@ class OrganizationProfileForm(forms.ModelForm):
                 raise forms.ValidationError(f"{platform_name} URL must be from {allowed_str} domain")
 
             # Normalize URL: rebuild without query params, lowercase hostname, no trailing slash
-            normalized_url = f"{parsed.scheme}://{hostname}{parsed.path.rstrip('/')}"
+            # Preserve fragments for Matrix URLs (room/user info is in fragment e.g., #/@user:matrix.org)
+            path = parsed.path.rstrip("/")
+            if platform_name == "Matrix" and parsed.fragment:
+                # For Matrix URLs, preserve the path separator before fragment
+                # e.g., https://matrix.to/#/@user:matrix.org
+                path = parsed.path  # Keep original path including trailing /
+                normalized_url = f"{parsed.scheme}://{hostname}{path}#{parsed.fragment}"
+            else:
+                normalized_url = f"{parsed.scheme}://{hostname}{path}"
             return normalized_url
         return url
 

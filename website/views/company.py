@@ -892,11 +892,71 @@ class OrganizationSocialRedirectView(View):
         if platform not in valid_platforms:
             return HttpResponseBadRequest("Invalid social platform")
 
-        # Get organization (outside retry loop since this is required for redirect)
-        try:
-            organization = Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist as exc:
-            raise Http404("Organization not found") from exc
+        # Increment the click counter atomically to prevent race conditions
+        # Add retry logic to handle SQLite database locking in concurrent scenarios
+        # Note: Click counting is non-critical, so failures won't prevent redirect
+        max_retries = 3
+        organization = None
+        for attempt in range(max_retries):
+            try:
+                with transaction.atomic():
+                    # Lock the row to ensure atomic update and validate organization exists
+                    # This combines validation + locking into a single query
+                    try:
+                        organization = Organization.objects.select_for_update().get(id=org_id)
+                    except Organization.DoesNotExist as exc:
+                        raise Http404("Organization not found") from exc
+
+                    # Get current clicks dict (handle None case)
+                    clicks = organization.social_clicks or {}
+
+                    # Increment the counter for this platform
+                    clicks[platform] = clicks.get(platform, 0) + 1
+
+                    # Use atomic database update to prevent race conditions
+                    # This ensures the JSON update happens at the database level
+                    Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
+
+                break  # Success, exit retry loop
+            except Http404:
+                raise  # Re-raise 404 immediately, don't retry
+            except OperationalError as e:
+                if "database is locked" in str(e) and attempt < max_retries - 1:
+                    # Exponential backoff: wait longer with each retry
+                    time.sleep(0.1 * (attempt + 1))
+                    continue
+                # Log the error but don't fail the redirect - click counting is non-critical
+                logger.warning(
+                    "Failed to update social clicks for organization %s on platform %s: %s",
+                    org_id,
+                    platform,
+                    str(e),
+                    exc_info=True,
+                )
+                # Need to fetch organization for redirect if click update failed
+                if organization is None:
+                    try:
+                        organization = Organization.objects.get(id=org_id)
+                    except Organization.DoesNotExist as exc:
+                        raise Http404("Organization not found") from exc
+                break  # Exit retry loop and continue with redirect
+            except Exception as e:
+                # Catch all other database errors (IntegrityError, DatabaseError, etc.)
+                # to ensure redirect always works even if click tracking fails
+                logger.warning(
+                    "Unexpected error updating social clicks for organization %s on platform %s: %s",
+                    org_id,
+                    platform,
+                    str(e),
+                    exc_info=True,
+                )
+                # Need to fetch organization for redirect if click update failed
+                if organization is None:
+                    try:
+                        organization = Organization.objects.get(id=org_id)
+                    except Organization.DoesNotExist as exc:
+                        raise Http404("Organization not found") from exc
+                break  # Exit retry loop and continue with redirect
 
         # Get the actual URL based on platform
         url_mapping = {
@@ -930,53 +990,6 @@ class OrganizationSocialRedirectView(View):
 
         # Strip query parameters and fragments before redirect to prevent parameter injection attacks
         clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
-
-        # Increment the click counter atomically to prevent race conditions
-        # Add retry logic to handle SQLite database locking in concurrent scenarios
-        # Note: Click counting is non-critical, so failures won't prevent redirect
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                with transaction.atomic():
-                    # Lock the row to ensure atomic update
-                    org_for_update = Organization.objects.select_for_update().get(id=org_id)
-
-                    # Get current clicks dict (handle None case)
-                    clicks = org_for_update.social_clicks or {}
-
-                    # Increment the counter for this platform
-                    clicks[platform] = clicks.get(platform, 0) + 1
-
-                    # Use atomic database update to prevent race conditions
-                    # This ensures the JSON update happens at the database level
-                    Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
-
-                break  # Success, exit retry loop
-            except OperationalError as e:
-                if "database is locked" in str(e) and attempt < max_retries - 1:
-                    # Exponential backoff: wait longer with each retry
-                    time.sleep(0.1 * (attempt + 1))
-                    continue
-                # Log the error but don't fail the redirect - click counting is non-critical
-                logger.warning(
-                    "Failed to update social clicks for organization %s on platform %s: %s",
-                    org_id,
-                    platform,
-                    str(e),
-                    exc_info=True,
-                )
-                break  # Exit retry loop and continue with redirect
-            except Exception as e:
-                # Catch all other database errors (IntegrityError, DatabaseError, etc.)
-                # to ensure redirect always works even if click tracking fails
-                logger.warning(
-                    "Unexpected error updating social clicks for organization %s on platform %s: %s",
-                    org_id,
-                    platform,
-                    str(e),
-                    exc_info=True,
-                )
-                break  # Exit retry loop and continue with redirect
 
         # Redirect to the sanitized social media URL (query params already stripped)
         return redirect(clean_url)
