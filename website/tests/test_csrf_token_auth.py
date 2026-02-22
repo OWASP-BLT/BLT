@@ -9,6 +9,7 @@ Key behaviors verified:
 """
 
 from django.contrib.auth import get_user_model
+from django.middleware.csrf import get_token
 from django.test import Client, TestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -63,6 +64,33 @@ class SessionAuthWebViewTest(TestCase):
 
         # Should fail with 403 CSRF error (this is correct behavior)
         self.assertEqual(response.status_code, 403, msg="Session auth without CSRF token should fail with 403")
+
+    def test_session_auth_with_csrf_succeeds_on_web_view(self):
+        """
+        Session-authenticated DELETE requests with CSRF tokens should succeed.
+        This tests the web view endpoint: DELETE /delete_issue/<id>/
+        """
+        client = Client(enforce_csrf_checks=True)
+
+        # Login with session
+        client.login(username="testuser", password="testpass123")
+
+        # Generate and set CSRF token for this session
+        response = client.get("/")
+        csrf_token = get_token(response.wsgi_request)
+        client.cookies["csrftoken"] = csrf_token
+
+        response = client.post(
+            f"/delete_issue/{self.issue.id}/",
+            {},
+            HTTP_X_CSRFTOKEN=csrf_token,
+        )
+
+        self.assertEqual(response.status_code, 200, msg="Session auth with CSRF token should succeed")
+        self.assertFalse(
+            Issue.objects.filter(id=self.issue.id).exists(),
+            msg="Issue should be deleted after CSRF-protected request",
+        )
 
 
 class TokenAuthApiViewTest(TestCase):
