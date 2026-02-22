@@ -9,7 +9,6 @@ from django.urls import reverse
 
 from website.models import Post
 
-
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 
 
