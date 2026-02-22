@@ -153,6 +153,17 @@ class ModelStrMethodTests(TestCase):
         self.assertIn("192.168.1.1", result)
         self.assertIn("42", result)
 
+    def test_ip_str_none_address(self):
+        """Test IP __str__ method with None address."""
+        ip = IP.objects.create(
+            address=None,
+            count=10,
+            path="/api/test",
+        )
+        result = str(ip)
+        self.assertIn("Unknown", result)
+        self.assertIn("10", result)
+
     def test_organization_admin_str(self):
         """Test OrganizationAdmin __str__ method."""
         org_admin = OrganizationAdmin.objects.create(
@@ -217,6 +228,20 @@ class ModelStrMethodTests(TestCase):
         self.assertIn("10.00", result)
         self.assertNotIn("+-", result)  # No double sign
         self.assertNotIn("$-", result)  # Dollar sign should not precede minus
+
+    def test_transaction_str_zero_value(self):
+        """Test Transaction __str__ method for zero value."""
+        wallet = Wallet.objects.create(
+            user=self.user,
+            current_balance=Decimal("100.00"),
+        )
+        transaction = Transaction.objects.create(
+            wallet=wallet,
+            value=Decimal("0.00"),
+            running_balance=Decimal("100.00"),
+        )
+        result = str(transaction)
+        self.assertIn("+$0.00", result)  # Zero should be treated as positive
 
     def test_payment_str_active(self):
         """Test Payment __str__ method for active payment."""
