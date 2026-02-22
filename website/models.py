@@ -1182,7 +1182,7 @@ class IP(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.address} ({self.count} hits)"
+        return f"{self.address or 'Unknown'} ({self.count} hits)"
 
 
 class OrganizationAdmin(models.Model):
@@ -1238,8 +1238,8 @@ class Transaction(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        sign = "+" if self.value >= 0 else ""
-        return f"{sign}${self.value} ({self.wallet.user.username})"
+        sign = "+" if self.value >= 0 else "-"
+        return f"{sign}${abs(self.value)} ({self.wallet_id})"
 
 
 class Payment(models.Model):

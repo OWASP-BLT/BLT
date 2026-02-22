@@ -212,8 +212,11 @@ class ModelStrMethodTests(TestCase):
             running_balance=Decimal("90.00"),
         )
         result = str(transaction)
-        self.assertIn("-10.00", result)
+        # Check proper currency formatting: -$10.00 (not $-10.00)
+        self.assertTrue(result.startswith("-$"), f"Expected '-$' prefix, got: {result}")
+        self.assertIn("10.00", result)
         self.assertNotIn("+-", result)  # No double sign
+        self.assertNotIn("$-", result)  # Dollar sign should not precede minus
 
     def test_payment_str_active(self):
         """Test Payment __str__ method for active payment."""
