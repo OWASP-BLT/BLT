@@ -627,6 +627,10 @@ class OrganizationProfileForm(forms.ModelForm):
             if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
                 allowed_str = " or ".join(allowed_domains)
                 raise forms.ValidationError(f"{platform_name} URL must be from {allowed_str} domain")
+
+            # Normalize URL: rebuild without query params, lowercase hostname, no trailing slash
+            normalized_url = f"{parsed.scheme}://{hostname}{parsed.path.rstrip('/')}"
+            return normalized_url
         return url
 
     def clean_twitter(self):

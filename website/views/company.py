@@ -6,7 +6,7 @@ import time
 import uuid
 from datetime import datetime, timedelta
 from typing import ClassVar
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
 from django.conf import settings as django_settings
@@ -879,8 +879,8 @@ class OrganizationSocialRedirectView(View):
 
     # Allowed domains for each platform to prevent open redirect attacks
     ALLOWED_DOMAINS: ClassVar[dict[str, list[str]]] = {
-        "twitter": ["twitter.com", "x.com"],
-        "facebook": ["facebook.com", "fb.com"],
+        "twitter": ["twitter.com", "x.com", "mobile.twitter.com"],
+        "facebook": ["facebook.com", "fb.com", "m.facebook.com"],
         "linkedin": ["linkedin.com"],
         "github": ["github.com"],
     }
@@ -892,42 +892,6 @@ class OrganizationSocialRedirectView(View):
         if platform not in valid_platforms:
             return HttpResponseBadRequest("Invalid social platform")
 
-        # Get organization
-        try:
-            organization = Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist as exc:
-            raise Http404("Organization not found") from exc
-
-        # Get the actual URL based on platform
-        url_mapping = {
-            "twitter": organization.twitter,
-            "facebook": organization.facebook,
-            "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
-            "linkedin": organization.linkedin,
-        }
-
-        target_url = url_mapping.get(platform)
-
-        if not target_url:
-            messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
-            return redirect("organization_analytics", id=org_id)
-
-        # Validate target URL domain to prevent open redirect attacks
-        parsed = urlparse(target_url)
-
-        # Validate scheme
-        if parsed.scheme not in ["http", "https"]:
-            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
-            return redirect("organization_analytics", id=org_id)
-
-        hostname = (parsed.hostname or "").lower()
-        allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
-
-        # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
-        if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
-            messages.error(request, f"Invalid {platform.capitalize()} URL configured")
-            return redirect("organization_analytics", id=org_id)
-
         # Increment the click counter atomically to prevent race conditions
         # Add retry logic to handle SQLite database locking in concurrent scenarios
         # Note: Click counting is non-critical, so failures won't prevent redirect
@@ -935,8 +899,41 @@ class OrganizationSocialRedirectView(View):
         for attempt in range(max_retries):
             try:
                 with transaction.atomic():
-                    # Lock the row to ensure atomic update
-                    organization = Organization.objects.select_for_update().get(id=org_id)
+                    # Lock the row to ensure atomic update (single query with select_for_update)
+                    try:
+                        organization = Organization.objects.select_for_update().get(id=org_id)
+                    except Organization.DoesNotExist as exc:
+                        raise Http404("Organization not found") from exc
+
+                    # Get the actual URL based on platform
+                    url_mapping = {
+                        "twitter": organization.twitter,
+                        "facebook": organization.facebook,
+                        "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
+                        "linkedin": organization.linkedin,
+                    }
+
+                    target_url = url_mapping.get(platform)
+
+                    if not target_url:
+                        messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
+                        return redirect("organization_analytics", id=org_id)
+
+                    # Validate target URL domain to prevent open redirect attacks
+                    parsed = urlparse(target_url)
+
+                    # Validate scheme
+                    if parsed.scheme not in ["http", "https"]:
+                        messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
+                        return redirect("organization_analytics", id=org_id)
+
+                    hostname = (parsed.hostname or "").lower()
+                    allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
+
+                    # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
+                    if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
+                        messages.error(request, f"Invalid {platform.capitalize()} URL configured")
+                        return redirect("organization_analytics", id=org_id)
 
                     # Get current clicks dict (handle None case)
                     clicks = organization.social_clicks or {}
@@ -947,6 +944,10 @@ class OrganizationSocialRedirectView(View):
                     # Use atomic database update to prevent race conditions
                     # This ensures the JSON update happens at the database level
                     Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
+
+                    # Strip query parameters and fragments before redirect to prevent parameter injection attacks
+                    clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+
                 break  # Success, exit retry loop
             except OperationalError as e:
                 if "database is locked" in str(e) and attempt < max_retries - 1:
@@ -974,8 +975,8 @@ class OrganizationSocialRedirectView(View):
                 )
                 break  # Exit retry loop and continue with redirect
 
-        # Redirect to the actual social media URL
-        return redirect(target_url)
+        # Redirect to the sanitized social media URL (query params already stripped)
+        return redirect(clean_url)
 
 
 class OrganizationProfileEditView(View):

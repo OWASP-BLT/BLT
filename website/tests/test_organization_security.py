@@ -467,6 +467,39 @@ class OrganizationProfileFormSecurityTests(TestCase):
         form = OrganizationProfileForm(data=form_data, instance=self.organization)
         self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
 
+    def test_url_normalization_removes_trailing_slash(self):
+        """Test that trailing slashes are removed during URL normalization"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "twitter": "https://twitter.com/testorg/",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["twitter"], "https://twitter.com/testorg")
+
+    def test_url_normalization_removes_query_params(self):
+        """Test that query parameters are stripped during URL normalization"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "facebook": "https://facebook.com/testorg?ref=123&tracking=abc",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["facebook"], "https://facebook.com/testorg")
+
+    def test_url_normalization_lowercases_hostname(self):
+        """Test that hostname is lowercased during URL normalization"""
+        form_data = {
+            "name": "Test Org",
+            "url": "https://test-org.com",
+            "linkedin": "https://LINKEDIN.COM/company/testorg",
+        }
+        form = OrganizationProfileForm(data=form_data, instance=self.organization)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        self.assertEqual(form.cleaned_data["linkedin"], "https://linkedin.com/company/testorg")
+
 
 class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
     """Test OrganizationSocialRedirectView security against open redirect attacks"""
@@ -637,6 +670,44 @@ class OrganizationSocialRedirectSecurityTests(TransactionTestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "https://www.linkedin.com/company/testorg")
+
+    def test_query_parameter_stripped_from_redirect(self):
+        """Test that query parameters are stripped to prevent parameter injection attacks"""
+        org = Organization.objects.create(
+            name="Query Test Org",
+            slug="query-test",
+            url="https://query-test.com",
+            twitter="https://twitter.com/company?redirect=https://evil.com&malicious=param",
+            social_clicks={},
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "twitter"})
+        response = self.client.get(url)
+
+        # Should redirect without query parameters
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://twitter.com/company")
+        self.assertNotIn("redirect=", response.url)
+        self.assertNotIn("malicious=", response.url)
+        self.assertNotIn("evil.com", response.url)
+
+    def test_fragment_stripped_from_redirect(self):
+        """Test that URL fragments are stripped from redirects"""
+        org = Organization.objects.create(
+            name="Fragment Test Org",
+            slug="fragment-test",
+            url="https://fragment-test.com",
+            facebook="https://facebook.com/company#malicious-anchor",
+            social_clicks={},
+        )
+
+        url = reverse("organization_social_redirect", kwargs={"org_id": org.id, "platform": "facebook"})
+        response = self.client.get(url)
+
+        # Should redirect without fragment
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "https://facebook.com/company")
+        self.assertNotIn("#", response.url)
 
     @unittest.skipIf(
         "sqlite" in settings.DATABASES["default"]["ENGINE"].lower(),
