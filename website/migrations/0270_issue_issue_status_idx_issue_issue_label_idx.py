@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0269_alter_project_freshness_alter_room_type"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
