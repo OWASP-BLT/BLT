@@ -63,7 +63,6 @@ from website.serializers import (
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
-    JobPublicSerializer,
     JobSerializer,
     OrganizationSerializer,
     ProjectSerializer,
@@ -1348,67 +1347,6 @@ class JobViewSet(viewsets.ModelViewSet):
         job = self.get_object()
         job.increment_views()
         return Response({"views_count": job.views_count})
-
-
-class PublicJobListViewSet(APIView):
-    """
-    Public API endpoint for job listings
-    Returns only public and active jobs
-    No authentication required
-    """
-
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        """
-        Get all public jobs with optional filters
-        Query parameters:
-        - q: Search query (title, description, location)
-        - job_type: Filter by job type
-        - location: Filter by location
-        - organization: Filter by organization ID
-        """
-        from django.utils import timezone
-
-        # Filter by public, active status, and not expired
-        jobs = (
-            Job.objects.filter(is_public=True, status="active")
-            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
-            .select_related("organization")
-        )
-
-        # Search
-        search_query = request.GET.get("q", "")
-        if search_query:
-            jobs = jobs.filter(
-                Q(title__icontains=search_query)
-                | Q(description__icontains=search_query)
-                | Q(location__icontains=search_query)
-                | Q(organization__name__icontains=search_query)
-            )
-
-        # Filter by job type
-        job_type = request.GET.get("job_type", "")
-        if job_type:
-            jobs = jobs.filter(job_type=job_type)
-
-        # Filter by location
-        location = request.GET.get("location", "")
-        if location:
-            jobs = jobs.filter(location__icontains=location)
-
-        # Filter by organization
-        org_id = request.GET.get("organization", "")
-        if org_id:
-            jobs = jobs.filter(organization_id=org_id)
-
-        # Pagination
-        paginator = PageNumberPagination()
-        paginator.page_size = 20
-        paginated_jobs = paginator.paginate_queryset(jobs, request)
-
-        serializer = JobPublicSerializer(paginated_jobs, many=True)
-        return paginator.get_paginated_response(serializer.data)
 
 
 class OrganizationJobStatsViewSet(APIView):
