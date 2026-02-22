@@ -98,6 +98,30 @@ class IssueSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class IssueTriageSerializer(serializers.ModelSerializer):
+    """
+    Lean serializer for triage workflows.
+    Exposes only essential fields to minimize response payload
+    and improve performance for triage-specific endpoints.
+    """
+
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Issue
+        fields = [
+            "id",
+            "title",
+            "description",
+            "status",
+            "label",
+            "user",
+            "created",
+            "updated",
+            "cve_id",
+        ]
+
+
 class DomainSerializer(serializers.ModelSerializer):
     """
     Serializer for Domain Model

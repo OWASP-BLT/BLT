@@ -63,6 +63,7 @@ from website.serializers import (
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    IssueTriageSerializer,
     JobPublicSerializer,
     JobSerializer,
     OrganizationSerializer,
@@ -421,11 +422,13 @@ class IssueViewSet(viewsets.ModelViewSet):
         Dedicated search endpoint for triage workflows.
         Requires authentication. Supports:
         - q: keyword search in description
+        - status: filter by issue status
         - security_only: filter to security labels only
         - limit, offset pagination (with bounds)
         """
 
         q = request.query_params.get("q")
+        status = request.query_params.get("status")
         security_only = request.query_params.get("security_only")
         limit = _safe_int(request.query_params.get("limit"), default=10, min_value=1, max_value=50)
         offset = _safe_int(request.query_params.get("offset"), default=0, min_value=0)
@@ -435,11 +438,19 @@ class IssueViewSet(viewsets.ModelViewSet):
         if q:
             queryset = queryset.filter(Q(description__icontains=q))
 
+        if status:
+            queryset = queryset.filter(status=status)
+
         if security_only == "true":
             # Filter to security issues only
             security_label = next((key for key, value in Issue.labels if value == "Security"), None)
             if security_label is not None:
                 queryset = queryset.filter(label=security_label)
+
+        # Optimize queryset to prevent N+1 queries
+        queryset = queryset.select_related("user", "domain", "hunt", "closed_by").prefetch_related(
+            "screenshots", "tags", "team_members"
+        )
 
         # Explicit ordering for predictable pagination
         queryset = queryset.order_by("-created")
@@ -447,9 +458,9 @@ class IssueViewSet(viewsets.ModelViewSet):
         total = queryset.count()
         results = queryset[offset : offset + limit]
 
-        serializer = self.get_serializer(results, many=True)
+        serializer = IssueTriageSerializer(results, many=True)
 
-        # Intentionally returns lean serializer output for triage workflows.
+        # Returns lean serializer output optimized for triage workflows.
         return Response({"total": total, "limit": limit, "offset": offset, "results": serializer.data})
 
 
