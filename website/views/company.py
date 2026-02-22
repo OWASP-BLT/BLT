@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
@@ -1131,7 +1132,7 @@ class AddDomainView(View):
             domain_data["name"] = domain_data["name"].strip()
 
         managers_list = request.POST.getlist("user")
-        organization_obj = Organization.objects.get(id=id)
+        organization_obj = get_object_or_404(Organization, id=id)
 
         domain_exist = Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"])).exists()
 
@@ -1228,7 +1229,7 @@ class AddDomainView(View):
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
-        organization_obj = Organization.objects.get(id=id)
+        organization_obj = get_object_or_404(Organization, id=id)
 
         domain_exist = (
             Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"]))
@@ -1323,14 +1324,28 @@ class AddSlackIntegrationView(View):
 
     def _get_redirect_uri(self, request):
         """Helper to construct redirect URI with proper scheme detection."""
+        # Prefer explicit server-side configuration (fully trusted)
+        configured_url = os.environ.get("SLACK_OAUTH_REDIRECT_URL")
+        if configured_url:
+            return configured_url
+
         host = request.get_host()
+
+        # Validate host against Django's ALLOWED_HOSTS (server-side trusted list)
+        allowed = django_settings.ALLOWED_HOSTS
+        if not any(ah == "*" or ah == host or (ah.startswith(".") and host.endswith(ah)) for ah in allowed):
+            raise ValueError(f"Host '{host}' is not in ALLOWED_HOSTS")
+
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        # Only allow http or https schemes
+        if scheme not in ("http", "https"):
+            scheme = "https"
 
         # For ngrok or other tunnels, always use https
         if "ngrok" in host or "localhost.run" in host:
             scheme = "https"
 
-        return os.environ.get("SLACK_OAUTH_REDIRECT_URL", f"{scheme}://{host}/oauth/slack/callback")
+        return f"{scheme}://{host}/oauth/slack/callback"
 
     def _fetch_slack_conversations(self, app, filter_func=None):
         """Generic method to fetch Slack conversations with pagination."""
@@ -1413,19 +1428,8 @@ class AddSlackIntegrationView(View):
                 messages.error(request, "Invalid organization ID.")
                 return redirect("home")
 
-            # Get and validate redirect URI
+            # Get redirect URI (validated against ALLOWED_HOSTS inside _get_redirect_uri)
             redirect_uri = self._get_redirect_uri(request)
-
-            # Validate redirect_uri is from our domain
-            parsed_uri = urlparse(redirect_uri)
-            allowed_hosts = [request.get_host()]
-            if os.getenv("ALLOWED_HOSTS"):
-                allowed_hosts.extend(os.getenv("ALLOWED_HOSTS").split(","))
-
-            if parsed_uri.netloc not in allowed_hosts:
-                logger.error(f"Invalid redirect URI host: {parsed_uri.netloc}")
-                messages.error(request, "Invalid redirect configuration.")
-                return redirect("organization_manage_integrations", id=id)
 
             # Construct validated state parameter
             state = urlencode({"organization_id": str(id)})
@@ -1720,14 +1724,28 @@ class SlackCallbackView(View):
 
     def _get_redirect_uri(self, request):
         """Helper to construct redirect URI with proper scheme detection."""
+        # Prefer explicit server-side configuration (fully trusted)
+        configured_url = os.environ.get("SLACK_OAUTH_REDIRECT_URL")
+        if configured_url:
+            return configured_url
+
         host = request.get_host()
+
+        # Validate host against Django's ALLOWED_HOSTS (server-side trusted list)
+        allowed = django_settings.ALLOWED_HOSTS
+        if not any(ah == "*" or ah == host or (ah.startswith(".") and host.endswith(ah)) for ah in allowed):
+            raise ValueError(f"Host '{host}' is not in ALLOWED_HOSTS")
+
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        # Only allow http or https schemes
+        if scheme not in ("http", "https"):
+            scheme = "https"
 
         # For ngrok or other tunnels, always use https
         if "ngrok" in host or "localhost.run" in host:
             scheme = "https"
 
-        return os.environ.get("SLACK_OAUTH_REDIRECT_URL", f"{scheme}://{host}/oauth/slack/callback")
+        return f"{scheme}://{host}/oauth/slack/callback"
 
     def get(self, request, *args, **kwargs):
         try:
@@ -2944,80 +2962,3 @@ def toggle_job_status(request, id, job_id):
     job.save(update_fields=["status"])
 
     return JsonResponse({"success": True, "status": job.status})
-
-
-def public_job_list(request):
-    """Public view showing all active public jobs"""
-    from django.utils import timezone
-
-    from website.models import Job
-
-    # Get all public and active jobs that haven't expired
-    jobs = (
-        Job.objects.filter(is_public=True, status="active")
-        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
-        .select_related("organization")
-        .order_by("-created_at")
-    )
-
-    # Search functionality
-    search_query = request.GET.get("q", "")
-    if search_query:
-        jobs = jobs.filter(
-            Q(title__icontains=search_query)
-            | Q(description__icontains=search_query)
-            | Q(location__icontains=search_query)
-            | Q(organization__name__icontains=search_query)
-        )
-
-    # Filter by job type
-    job_type = request.GET.get("type", "")
-    if job_type:
-        jobs = jobs.filter(job_type=job_type)
-
-    # Filter by location
-    location = request.GET.get("location", "")
-    if location:
-        jobs = jobs.filter(location__icontains=location)
-
-    context = {
-        "jobs": jobs,
-        "search_query": search_query,
-        "job_type_filter": job_type,
-        "location_filter": location,
-    }
-
-    return render(request, "jobs/public_job_list.html", context)
-
-
-def job_detail(request, pk):
-    """Public view for a single job posting; org members can see all their jobs"""
-    from django.http import Http404
-
-    from website.models import Job
-
-    job = get_object_or_404(Job, pk=pk)
-
-    # Check if user is org member (admin or manager)
-    is_org_member = False
-    if request.user.is_authenticated:
-        is_org_member = (
-            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
-        )
-
-    # Public users can only see active, public, non-expired jobs
-    if not is_org_member:
-        from django.utils import timezone
-
-        is_expired = job.expires_at and job.expires_at < timezone.now()
-        if not job.is_public or job.status != "active" or is_expired:
-            raise Http404("Job not found")
-
-    # Increment view count
-    job.increment_views()
-
-    context = {
-        "job": job,
-    }
-
-    return render(request, "jobs/job_detail.html", context)
