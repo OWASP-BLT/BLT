@@ -45,11 +45,11 @@ from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
+from sizzle.models import DailyStatusReport
 from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
     IP,
     Activity,
-    DailyStatusReport,
     Domain,
     GitHubIssue,
     Hunt,
@@ -1497,7 +1497,7 @@ def sizzle_daily_log(request):
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
-        return redirect("sizzle")
+        return redirect("sizzle:index")
 
     return HttpResponseBadRequest("Invalid request method.")
 

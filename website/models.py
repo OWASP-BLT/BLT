@@ -1579,27 +1579,12 @@ class TimeLog(models.Model):
 class ActivityLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
     window_title = models.CharField(max_length=255)
-    url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
+    url = models.URLField(null=True, blank=True)
     recorded_at = models.DateTimeField(auto_now_add=True)
     created = models.DateTimeField(default=timezone.now, editable=False)
 
     def __str__(self):
         return f"ActivityLog by {self.user.username} at {self.recorded_at}"
-
-
-class DailyStatusReport(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateField()
-    previous_work = models.TextField()
-    next_plan = models.TextField()
-    blockers = models.TextField()
-    goal_accomplished = models.BooleanField(default=False)
-    current_mood = models.CharField(max_length=50, default="Happy 😊")
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Daily Status Report by {self.user.username} on {self.date}"
-
 
 class IpReport(models.Model):
     IP_TYPE_CHOICES = [

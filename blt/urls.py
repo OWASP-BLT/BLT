@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
@@ -261,7 +261,6 @@ from website.views.organization import (
     organization_hunt_results,
     room_messages_api,
     send_message_api,
-    sizzle,
     sizzle_daily_log,
     sizzle_docs,
     slack_channels_list,
@@ -402,6 +401,8 @@ handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
 urlpatterns = [
+    path("sizzle-alias/", RedirectView.as_view(pattern_name="sizzle:index"), name="sizzle"),
+    path("sizzle/", include("sizzle.urls")),
     path("simulation/", dashboard, name="simulation_dashboard"),
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
@@ -1053,19 +1054,14 @@ urlpatterns = [
         TagApiViewset.as_view({"get": "list", "post": "create"}),
         name="tags-api",
     ),
-    path("sizzle/", sizzle, name="sizzle"),
-    path("check-in/", checkIN, name="checkIN"),
-    path("add-sizzle-checkin/", add_sizzle_checkIN, name="add_sizzle_checkin"),
-    path("check-in/<int:report_id>/", checkIN_detail, name="checkIN_detail"),
-    path("sizzle-docs/", sizzle_docs, name="sizzle-docs"),
+    path("check-in/", RedirectView.as_view(pattern_name="sizzle:checkin", permanent=False)),
+    path("check-in/<int:report_id>/", RedirectView.as_view(pattern_name="sizzle:checkin_detail", permanent=False)),
+    path("add-sizzle-checkin/", RedirectView.as_view(pattern_name="sizzle:add_sizzle_checkin", permanent=False)),
+    path("sizzle-docs/", RedirectView.as_view(pattern_name="sizzle:docs", permanent=False)),
+    path("sizzle-daily-log/", RedirectView.as_view(pattern_name="sizzle:sizzle_daily_log", permanent=False)),
     path("api/timelogsreport/", TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", TimeLogListView, name="time_logs"),
-    path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
-    path(
-        "user-sizzle-report/<str:username>/",
-        user_sizzle_report,
-        name="user_sizzle_report",
-    ),
+    path("user-sizzle-report/<str:username>/", RedirectView.as_view(pattern_name="sizzle:user_sizzle_report", permanent=False)),
     path("submit-roadmap-pr/", submit_roadmap_pr, name="submit-roadmap-pr"),
     path("view-pr-analysis/", view_pr_analysis, name="view_pr_analysis"),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),

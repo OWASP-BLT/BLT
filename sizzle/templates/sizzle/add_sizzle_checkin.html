@@ -121,7 +121,6 @@
                     </div>
                 </form>
             </div>
-            <!-- Check-ins Summary Table -->
             <div class="mt-12">
                 <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white mb-6">
                     Your Check-in History
@@ -145,9 +144,9 @@
                                     </td>
                                     <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
                                         {% if checkin.goal_accomplished %}
-                                            <span class="text-green-600 hover:text-gray-900 dark:hover:text-white">✅ Yes</span>
+                                            <span class="text-green-600">✅ Yes</span>
                                         {% else %}
-                                            <span class="text-red-600 hover:text-gray-900 dark:hover:text-white">❌ No</span>
+                                            <span class="text-red-600">❌ No</span>
                                         {% endif %}
                                     </td>
                                     <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white">
@@ -162,10 +161,7 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5"
-                                        class="py-3 px-4 text-center text-gray-500 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white">
-                                        No check-ins found.
-                                    </td>
+                                    <td colspan="5" class="py-3 px-4 text-center text-gray-500">No check-ins found.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -174,54 +170,44 @@
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const textarea = document.getElementById('feeling_card');
-            const emojiTrigger = document.getElementById('emoji-trigger');
-            const emojiPicker = document.getElementById('emoji-picker');
-            const container = document.querySelector('.emoji-picker-container');
+    document.addEventListener('DOMContentLoaded', () => {
+        const textarea = document.getElementById('feeling_card');
+        const emojiTrigger = document.getElementById('emoji-trigger');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const container = document.querySelector('.emoji-picker-container');
+        const previousWorkTextarea = document.getElementById('previous_work_card');
 
-            emojiTrigger.addEventListener('click', () => {
-                emojiPicker.classList.toggle('hidden');
-            });
-
-            document.addEventListener('click', (event) => {
-                if (!container.contains(event.target)) {
-                    emojiPicker.classList.add('hidden');
-                }
-            });
-
-            emojiPicker.addEventListener('emoji-click', (event) => {
-                const emoji = event.detail.emoji.unicode;
-                textarea.value += emoji;
+        if (emojiTrigger && emojiPicker) {
+            emojiTrigger.addEventListener('click', () => emojiPicker.classList.toggle('hidden'));
+            document.addEventListener('click', (e) => { if (!container.contains(e.target)) emojiPicker.classList.add('hidden'); });
+            emojiPicker.addEventListener('emoji-click', (e) => {
+                textarea.value += e.detail.emoji.unicode;
                 textarea.focus();
             });
+        }
 
-            {% if yesterday_report %}
-            // Fill from previous check-in button functionality
-            const fillFromPreviousBtn = document.getElementById('fillFromPreviousBtn');
-            if (fillFromPreviousBtn) {
-                fillFromPreviousBtn.addEventListener('click', () => {
-                    const previousWorkTextarea = document.getElementById('previous_work_card');
-                    previousWorkTextarea.value = "{{ yesterday_report.next_plan|escapejs }}";
-                    previousWorkTextarea.focus();
-                });
-            }
-            {% endif %}
+        {% if yesterday_report %}
+        const fillFromPreviousBtn = document.getElementById('fillFromPreviousBtn');
+        if (fillFromPreviousBtn) {
+            fillFromPreviousBtn.addEventListener('click', () => {
+                previousWorkTextarea.value = "{{ yesterday_report.next_plan|default:''|escapejs }}";
+                previousWorkTextarea.focus();
+            });
+        }
+        {% endif %}
 
-            {% if last_checkin %}
-            // Fill from last check-in button functionality (when no yesterday report)
-            const fillFromLastCheckinBtn = document.getElementById('fillFromLastCheckinBtn');
-            if (fillFromLastCheckinBtn) {
-                fillFromLastCheckinBtn.addEventListener('click', () => {
-                    const previousWorkTextarea = document.getElementById('previous_work_card');
-                    previousWorkTextarea.value = "{{ last_checkin.next_plan|escapejs }}";
-                    previousWorkTextarea.focus();
-                });
-            }
-            {% endif %}
-        });
+        {% if last_checkin %}
+        const fillFromLastCheckinBtn = document.getElementById('fillFromLastCheckinBtn');
+        if (fillFromLastCheckinBtn) {
+            fillFromLastCheckinBtn.addEventListener('click', () => {
+                previousWorkTextarea.value = "{{ last_checkin.next_plan|default:''|escapejs }}";
+                previousWorkTextarea.focus();
+            });
+        }
+        {% endif %}
+    });
     </script>
 {% endblock content %}

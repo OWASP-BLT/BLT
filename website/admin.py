@@ -30,7 +30,6 @@ from website.models import (
     ContributorStats,
     Course,
     DailyStats,
-    DailyStatusReport,
     Domain,
     Enrollment,
     GitHubIssue,
@@ -995,11 +994,11 @@ class ChallengeAdmin(admin.ModelAdmin):
     search_fields = ("title", "description")
 
 
-class DailyStatusReportAdmin(admin.ModelAdmin):
-    list_display = ("user", "date", "goal_accomplished", "current_mood", "created")
-    list_filter = ("date", "goal_accomplished", "current_mood")
-    search_fields = ("user__username", "previous_work", "next_plan")
-    date_hierarchy = "date"
+# class DailyStatusReportAdmin(admin.ModelAdmin):
+#     list_display = ("user", "date", "goal_accomplished", "current_mood", "created")
+#     list_filter = ("date", "goal_accomplished", "current_mood")
+#     search_fields = ("user__username", "previous_work", "next_plan")
+#     date_hierarchy = "date"
 
 
 class HackathonAdmin(admin.ModelAdmin):
@@ -1104,7 +1103,7 @@ admin.site.register(BaconSubmission, BaconSubmissionAdmin)
 admin.site.register(BaconToken, BaconTokenAdmin)
 admin.site.register(Badge, BadgeAdmin)
 admin.site.register(Challenge, ChallengeAdmin)
-admin.site.register(DailyStatusReport, DailyStatusReportAdmin)
+# admin.site.register(DailyStatusReport, DailyStatusReportAdmin)
 admin.site.register(Hackathon, HackathonAdmin)
 admin.site.register(HackathonPrize, HackathonPrizeAdmin)
 admin.site.register(HackathonSponsor, HackathonSponsorAdmin)

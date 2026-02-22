@@ -7,7 +7,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.timezone import now
 
-from website.models import DailyStatusReport, Domain, Issue, Organization
+from sizzle.models import DailyStatusReport
+from website.models import Domain, Issue, Organization
 from website.views.organization import BountyPayoutsView
 
 
@@ -215,7 +216,7 @@ class SizzleCheckInViewTests(TestCase):
 
     def test_add_sizzle_checkin_view_loads(self):
         """Test that the add sizzle check-in view loads correctly"""
-        response = self.client.get(reverse("add_sizzle_checkin"))
+        response = self.client.get(reverse("sizzle:add_sizzle_checkin"), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "What did you work on previously?")
 
@@ -231,14 +232,14 @@ class SizzleCheckInViewTests(TestCase):
             blockers="No blockers",
         )
 
-        response = self.client.get(reverse("add_sizzle_checkin"))
+        response = self.client.get(reverse("sizzle:add_sizzle_checkin"), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Fill from Previous Check-in")
         self.assertContains(response, "fillFromPreviousBtn")
 
     def test_fill_from_previous_button_not_shown_without_any_checkins(self):
         """Test that no Fill button is shown when there are no check-ins at all"""
-        response = self.client.get(reverse("add_sizzle_checkin"))
+        response = self.client.get(reverse("sizzle:add_sizzle_checkin"), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No previous check-ins available")
         self.assertNotContains(response, "fillFromLastCheckinBtn")
@@ -256,9 +257,10 @@ class SizzleCheckInViewTests(TestCase):
             blockers="No blockers",
         )
 
-        response = self.client.get(reverse("add_sizzle_checkin"))
+        response = self.client.get(reverse("sizzle:add_sizzle_checkin"), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No report available for yesterday")
         self.assertContains(response, "Last check-in was on")
         self.assertContains(response, "Fill from Last Check-in")
         self.assertContains(response, "fillFromLastCheckinBtn")
+  

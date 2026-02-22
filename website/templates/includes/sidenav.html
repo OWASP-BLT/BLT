@@ -1,7 +1,6 @@
 {% load static %}
 {% load i18n %}
 {% load custom_tags %}
-<!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -13,9 +12,7 @@
 <div class="sidebar fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[10000] w-full max-w-[350px] min-w-[280px] max-[360px]:max-w-[90vw] max-[360px]:min-w-[240px] shadow-lg dark:shadow-gray-800">
     <div class="h-full flex flex-col justify-between overflow-hidden">
         <div class="overflow-y-auto flex-grow py-2 scrollbar-none">
-            <!-- Main Navigation -->
             <nav class="px-2 space-y-2 mb-8 mt-2">
-                <!-- Dashboard Section -->
                 {% if '/organization/' in request.path %}
                     <div class="flex flex-col gap-1">
                         <div class="px-2 py-2">
@@ -88,7 +85,6 @@
                         {% endif %}
                     </div>
                 {% endif %}
-                <!--Organization-->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] dark:text-[#e74c3c] font-semibold uppercase tracking-wider">{% trans "Organizations" %}</span>
@@ -100,7 +96,6 @@
                         </div>
                         <span class="truncate">{% trans "Organizations" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="{% url 'register_organization' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'register_organization' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -158,16 +153,16 @@
                             </div>
                             <span class="truncate">{% trans "Issues" %}</span>
                         </a>
-                        <a href="{% url 'sizzle' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'sizzle' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'sizzle' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <a href="{% url 'sizzle:index' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.app_name == 'sizzle' and request.resolver_match.url_name == 'index' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.app_name == 'sizzle' and request.resolver_match.url_name == 'index' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-fire"></i>
                             </div>
                             <span class="truncate">{% trans "Time Logs" %}</span>
                         </a>
-                        <a href="{% url 'checkIN' %}"
-                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'checkIN' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
-                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.url_name == 'checkIN' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                        <a href="{% url 'sizzle:checkin' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.app_name == 'sizzle' and request.resolver_match.url_name == 'sizzle:checkin' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.resolver_match.app_name == 'sizzle' and request.resolver_match.url_name == 'sizzle:checkin' %}text-[#e74c3c] dark:text-[#e74c3c]{% else %}text-gray-500 dark:text-gray-400 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                                 <i class="fas fa-user-check"></i>
                             </div>
                             <span class="truncate">{% trans "Check-In" %}</span>
@@ -202,7 +197,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- Projects Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Projects" %}</span>
@@ -214,7 +208,6 @@
                         </div>
                         <span class="truncate">{% trans "Projects" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="{% url 'repo_list' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'repo_list' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -260,7 +253,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- Users Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Users" %}</span>
@@ -272,7 +264,6 @@
                         </div>
                         <span class="truncate">{% trans "Users" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="{% url 'messaging' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'messaging' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -339,7 +330,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- Teams Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Teams" %}</span>
@@ -351,7 +341,6 @@
                         </div>
                         <span class="truncate">{% trans "Teams" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="{% url 'team_challenges' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'team_challenges' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -369,7 +358,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- About Us Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "About Us" %}</span>
@@ -381,7 +369,6 @@
                         </div>
                         <span class="truncate">{% trans "About Us" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="{% url 'features' %}"
                            class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.resolver_match.url_name == 'features' %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -415,7 +402,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- Contribute Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Contribute" %}</span>
@@ -427,7 +413,6 @@
                         </div>
                         <span class="truncate">{% trans "Contribute" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="https://github.com/OWASP-BLT/BLT/blob/main/CONTRIBUTING.md"
                            target="_blank"
@@ -496,7 +481,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- GitHub Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "GitHub" %}</span>
@@ -510,7 +494,6 @@
                         </div>
                         <span class="truncate">{% trans "GitHub" %}</span>
                     </a>
-                    <!-- Submenu -->
                     <div class="ml-8 mt-1 space-y-1">
                         <a href="https://github.com/OWASP-BLT/BLT/"
                            target="_blank"
@@ -568,7 +551,6 @@
                         </a>
                     </div>
                 </div>
-                <!-- Communication Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Communication" %}</span>
@@ -604,7 +586,6 @@
                         <span class="truncate">{% trans "Banned Apps" %}</span>
                     </a>
                 </div>
-                <!-- Apps Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Apps" %}</span>
@@ -626,7 +607,6 @@
                         <span class="truncate">{% trans "Chrome Extension" %}</span>
                     </a>
                 </div>
-                <!-- Social Links Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Social Links" %}</span>
@@ -668,7 +648,6 @@
                         <span class="truncate">{% trans "Slack" %}</span>
                     </a>
                 </div>
-                <!-- Footer Links Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Site Info" %}</span>
@@ -716,7 +695,6 @@
                         <span class="truncate">{% trans "Website Stats" %}</span>
                     </a>
                 </div>
-                <!-- Terms Section -->
                 <div>
                     <div class="px-2 py-2">
                         <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Legal" %}</span>
@@ -729,7 +707,6 @@
                         <span class="truncate">{% trans "Terms" %}</span>
                     </a>
                 </div>
-                <!-- Language selector -->
                 <div class="px-2 py-2">
                     <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Language" %}</span>
                 </div>
@@ -756,7 +733,6 @@
                         </div>
                     </div>
                 </form>
-                <!-- Design Link -->
                 <div class="px-2 py-2">
                     <span class="text-sm text-[#e74c3c] font-medium uppercase tracking-wider">{% trans "Resources" %}</span>
                 </div>
@@ -769,7 +745,6 @@
                     </div>
                     <span class="truncate">{% trans "Design" %}</span>
                 </a>
-                <!-- Style Guide Link -->
                 <a href="{% url 'style_guide' %}"
                    class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if '/style-guide/' in request.path %}bg-[#feeae9] text-[#e74c3c] dark:bg-red-900/30 dark:text-[#e74c3c]{% else %}text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c]{% endif %} transition-all duration-200">
                     <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md {% if '/style-guide/' in request.path %}bg-[#fde0dd] text-[#e74c3c] dark:bg-red-900/50 dark:text-[#e74c3c]{% else %}bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-[#fde0dd] dark:group-hover:bg-red-900/50 group-hover:text-[#e74c3c] dark:group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
@@ -777,7 +752,6 @@
                     </div>
                     <span class="truncate">{% trans "Style Guide" %}</span>
                 </a>
-                <!-- Edit Link -->
                 {% get_current_template as current_template %}
                 <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
                    class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-all duration-200"

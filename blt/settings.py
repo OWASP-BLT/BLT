@@ -71,6 +71,7 @@ SCOUT_NAME = PROJECT_NAME
 
 INSTALLED_APPS = (
     # "scout_apm.django",
+    "sizzle.apps.SizzleConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -370,7 +371,6 @@ else:
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
@@ -532,7 +532,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 ACCOUNT_ADAPTER = "website.adapters.CustomAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
-
+ACCOUNT_EMAIL_REQUIRED = True
 # Social account settings for better UX
 SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create account without extra form
 SOCIALACCOUNT_QUERY_EMAIL = False  # Don't ask for email if we already have it from provider

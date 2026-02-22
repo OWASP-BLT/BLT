@@ -12,7 +12,7 @@
         <form id="checkInForm"
               class="modal-form"
               method="post"
-              action="{% url 'sizzle_daily_log' %}"
+              action="{% url 'sizzle:sizzle_daily_log' %}"
               {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
             {% csrf_token %}
             <div class="form-group">

@@ -24,8 +24,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
+from sizzle.models import DailyStatusReport
 from website.models import (
-    DailyStatusReport,
     Domain,
     Hunt,
     HuntPrize,

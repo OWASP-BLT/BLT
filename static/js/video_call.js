@@ -36,7 +36,7 @@ async function updateConnectionInfo(pc) {
                 p2pText.textContent = 'P2P: Checking...';
             }
         } catch (error) {
-            console.error('Error getting connection stats:', error);
+            // console.error('Error getting connection stats:', error);
             p2pDot.className = 'w-2 h-2 rounded-full bg-red-500';
             p2pText.textContent = 'P2P: Status Unknown';
         }

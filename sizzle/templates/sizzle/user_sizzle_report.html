@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    {{ user.username }}'s Sizzle Report
+{% endblock title %}
+{% block description %}
+    View the Sizzle report for {{ user.username }}. Track daily activities, issue titles, durations, and start times for an overview of their work progress.
+{% endblock description %}
+{% block keywords %}
+    Sizzle Report, {{ user.username }}'s Report, Time Tracking, Work Progress, Issue Titles, Daily Activities
+{% endblock keywords %}
+{% block og_title %}
+    {{ user.username }}'s Sizzle Report - Track Work Progress
+{% endblock og_title %}
+{% block og_description %}
+    Access the Sizzle report for {{ user.username }} to track daily activities, issue titles, durations, and start times. Get an overview of their work progress and time management.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container">
+        <h1>{{ user.username }}'s Sizzle Report</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th nowrap>Date</th>
+                    <th>Issue Title</th>
+                    <th nowrap>Duration</th>
+                    <th nowrap>Start Time</th>
+                    <th nowrap>End Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in response_data %}
+                    <tr>
+                        <td nowrap>{{ log.date }}</td>
+                        <td>{{ log.issue_title }}</td>
+                        <td nowrap>{{ log.duration }}</td>
+                        <td nowrap>{{ log.start_time }}</td>
+                        <td nowrap>{{ log.end_time }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <canvas id="timeLogChart"></canvas>
+    </div>
+    <script>
+        {% comment %} 
+        // this seems to have a syntax issue
+        const ctx = document.getElementById('timeLogChart').getContext('2d');
+        const labels = {{ response_data|json_script:"labels" }};
+        const data = {{ response_data|json_script:"data" }};
+        const timeLogChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Duration (minutes)',
+                    data: data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+}); {% endcomment %}
+    </script>
+{% endblock content %}

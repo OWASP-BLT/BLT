@@ -37,7 +37,7 @@
                 {% endif %}
             </div>
             <div class="flex space-x-10 items-center mb-8 mt-8">
-                <a href="{% url 'sizzle-docs' %}"
+                <a href="{% url 'sizzle:docs' %}"
                    class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                     Sizzle Docs
                 </a>
@@ -127,7 +127,7 @@
                                 {% for user in leaderboard %}
                                     <tr>
                                         <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">
-                                            <a href="{% url 'user_sizzle_report' user.username %}"
+                                            <a href="{% url 'sizzle:user_sizzle_report' username=user.username %}"
                                                class="text-blue-500 hover:underline">{{ user.username }}</a>
                                         </td>
                                         <td class="py-3 px-4 border-b border-gray-200 dark:border-gray-700">{{ user.formatted_duration }}</td>
