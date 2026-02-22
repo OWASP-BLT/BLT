@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block head %}
+    Verify Domain Access
+{% endblock head %}
+{% block description %}
+    Enter the verification code sent to the domain email to gain management access.
+{% endblock description %}
+{% block keywords %}
+    domain verification, domain management, verification code
+{% endblock keywords %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+                <div class="px-6 py-8">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-gray-100">Verify Domain Access</h2>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Enter the verification code sent to <span class="font-semibold">{{ domain.email }}</span>
+                        </p>
+                    </div>
+                    <form method="POST" action="{% url 'verify_domain_access' domain.id %}">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <label for="verification_code"
+                                   class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Verification Code</label>
+                            <input type="text"
+                                   name="verification_code"
+                                   id="verification_code"
+                                   maxlength="6"
+                                   pattern="\d{6}"
+                                   placeholder="Enter 6-digit code"
+                                   required
+                                   class="w-full px-4 py-3 text-center text-2xl tracking-widest border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                                   autocomplete="off" />
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">The code will expire in 15 minutes</p>
+                        </div>
+                        <div class="flex flex-col space-y-3">
+                            <button type="submit"
+                                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                                Verify Code
+                            </button>
+                            <a href="{% url 'view_domain' domain.id %}"
+                               class="w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                    <div class="mt-6">
+                        <form method="POST" action="{% url 'request_domain_access' domain.id %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="w-full text-center text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">
+                                Didn't receive the code? Request a new one
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4">
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        <p class="font-semibold mb-2">About Domain Management</p>
+                        <p class="text-xs">
+                            By verifying your access, you'll be able to manage this domain, including viewing all reported bugs, managing bug hunters, and configuring domain settings.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
