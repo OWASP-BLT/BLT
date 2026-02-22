@@ -23,15 +23,6 @@
                             class="inline-flex items-center justify-center p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] rounded-lg hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
                         <i class="fa fa-bars md:text-xl text-lg" aria-hidden="true"></i>
                     </button>
-                    <!-- Mega Menu Toggle -->
-                    <button id="mega-menu-button"
-                            aria-expanded="false"
-                            aria-controls="mega-menu"
-                            aria-label="Open mega menu"
-                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-[#e74c3c] dark:text-[#e74c3c] border-2 border-[#e74c3c] dark:border-[#e74c3c] hover:bg-red-500 dark:hover:bg-red-600 hover:text-white dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
-                        <span class="sr-only">Open menu</span>
-                        <i class="fa fa-th-large md:text-xl text-lg" aria-hidden="true"></i>
-                    </button>
                 </div>
                 <!-- Logo -->
                 <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
@@ -1650,52 +1641,4 @@
         });
     });
 
-</script>
-<!-- Add this script before the closing body tag -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const megaMenuButton = document.getElementById('mega-menu-button');
-    const megaMenu = document.querySelector('.mega-menu');
-    let isMenuOpen = false;
-
-    // Toggle menu on button click
-    megaMenuButton.addEventListener('click', function(e) {
-        e.stopPropagation();
-        isMenuOpen = !isMenuOpen;
-        megaMenu.classList.toggle('hidden');
-        
-        // Update button aria attributes
-        megaMenuButton.setAttribute('aria-expanded', isMenuOpen);
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-        if (isMenuOpen && !megaMenu.contains(e.target) && e.target !== megaMenuButton) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-    });
-
-    // Close menu on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && isMenuOpen) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-    });
-
-    // Close menu on scroll
-    let lastScrollPosition = window.pageYOffset;
-    window.addEventListener('scroll', function() {
-        const currentScrollPosition = window.pageYOffset;
-        if (isMenuOpen && Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
-            megaMenu.classList.add('hidden');
-            isMenuOpen = false;
-            megaMenuButton.setAttribute('aria-expanded', 'false');
-        }
-        lastScrollPosition = currentScrollPosition;
-    });
-});
 </script>
