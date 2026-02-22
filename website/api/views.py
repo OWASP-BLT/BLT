@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import smtplib
@@ -16,6 +17,7 @@ from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
@@ -1705,6 +1707,96 @@ class FindSimilarBugsApiView(APIView):
             )
 
 
+# Maximum length for issue description submitted via chatbot
+CHATBOT_DESCRIPTION_MAX_LENGTH = 500
+
+
+class ChatbotReportIssueView(APIView):
+    """
+    API endpoint for reporting issues via the chatbot.
+    Supports anonymous issue reporting with optional screenshot.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        url = request.data.get("url", "")
+        description = request.data.get("description", "")
+        screenshot_data = request.data.get("screenshot", "")
+        anonymous = request.data.get("anonymous", False)
+
+        # Validate required fields
+        if not description:
+            return Response({"success": False, "error": "Description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not url:
+            return Response({"success": False, "error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not screenshot_data or not screenshot_data.startswith("data:image"):
+            return Response({"success": False, "error": "Screenshot is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Clean and validate URL
+            if not url.startswith(("http://", "https://")):
+                url = "https://" + url
+
+            parsed_url = urlparse(url)
+
+            # Build clean URL preserving path and query string
+            clean_url = parsed_url.netloc.replace("www.", "")
+            if parsed_url.path:
+                clean_url += parsed_url.path
+            if parsed_url.query:
+                clean_url += "?" + parsed_url.query
+            if parsed_url.fragment:
+                clean_url += "#" + parsed_url.fragment
+
+            # Find or create domain
+            domain_name = parsed_url.netloc.replace("www.", "").lower()
+            domain = Domain.objects.filter(Q(name__iexact=domain_name) | Q(url__icontains=domain_name)).first()
+
+            # Create issue
+            issue = Issue(
+                url=clean_url,
+                description=description[:CHATBOT_DESCRIPTION_MAX_LENGTH],
+                domain=domain,
+                label=0,  # General
+            )
+
+            # Set user if authenticated and not anonymous
+            if request.user.is_authenticated and not anonymous:
+                issue.user = request.user
+            else:
+                # Get IP for anonymous reports
+                x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(",")[0].strip()
+                else:
+                    ip = request.META.get("REMOTE_ADDR")
+                issue.reporter_ip_address = ip
+
+            # Handle screenshot (required)
+            try:
+                # Parse base64 image data
+                format_info, base64_data = screenshot_data.split(";base64,")
+                image_data = base64.b64decode(base64_data)
+
+                # Generate unique filename with full UUID for uniqueness
+                file_name = f"chatbot_screenshot_{uuid.uuid4().hex}.png"
+
+                # Save screenshot
+                issue.screenshot.save(file_name, ContentFile(image_data), save=False)
+            except Exception as e:
+                logger.warning(f"Failed to process screenshot: {e}")
+                return Response(
+                    {"success": False, "error": "Failed to process screenshot"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            issue.save()
+
+            # Return success response
+            issue_url = f"/issue/{issue.id}/"
 def _is_local_host(host: str, db_name: str | None = None) -> bool:
     """
     Determine if a request host represents a local environment.
@@ -1880,6 +1972,19 @@ class DebugSystemStatsApiView(APIView):
             return Response(
                 {
                     "success": True,
+                    "issue_id": issue.id,
+                    "issue_url": issue_url,
+                    "message": "Issue reported successfully",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.error(f"Error creating chatbot issue report: {e}", exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to create issue report"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
                     "data": {
                         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
                         "django_version": django.get_version(),
