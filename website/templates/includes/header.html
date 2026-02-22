@@ -943,17 +943,17 @@
 <!-- Chatbot -->
 <div class="bg-gray-100 dark:bg-gray-900 chat-Zindex z-[9999] transition-colors">
     <div id="chatbot"
-         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[520px] overflow-hidden hidden transition-colors">
+         class="fixed bottom-3 right-3 max-w-[calc(100vw-24px)] w-full sm:max-w-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[min(520px,calc(var(--vh,1vh)*100_-_100px))] overflow-hidden hidden transition-colors">
         <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
-            <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
+            <h3 class="text-lg sm:text-xl font-bold">Chat with BLT Bot</h3>
             <button id="closeChatbot" class="text-white text-2xl">×</button>
         </div>
-        <div class="p-4">
-            <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-2 text-red-700 dark:text-red-300">
-                <p class="text-base">We respond instantly!</p>
+        <div class="p-3 sm:p-4 flex flex-col h-[calc(100%-52px)]">
+            <div class="bg-red-100 dark:bg-red-900/30 p-2 sm:p-3 rounded-lg mb-2 text-red-700 dark:text-red-300">
+                <p class="text-sm sm:text-base">We respond instantly!</p>
             </div>
             <div id="chat-log"
-                 class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative transition-colors">
+                 class="bg-gray-100 dark:bg-gray-700 p-2 sm:p-3 rounded-lg flex-1 min-h-0 overflow-y-auto relative transition-colors">
                 <div id="loading"
                      class="hidden absolute bottom-1 left-1 flex items-center justify-center bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg">
                     <svg class="animate-spin h-5 w-5 text-red-600"
@@ -968,27 +968,29 @@
                 </div>
             </div>
             <!-- Quick Command Buttons -->
-            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+            <div id="quick-commands" class="flex flex-wrap gap-1 sm:gap-2 mb-2 mt-2">
+                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-2 sm:px-4 py-1 text-sm sm:text-base rounded-lg"
                         data-command="/help">/help</button>
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-2 sm:px-4 py-1 text-sm sm:text-base rounded-lg"
                         data-command="/stats">/stats</button>
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-2 sm:px-4 py-1 text-sm sm:text-base rounded-lg"
                         data-command="/bid">/bid</button>
-                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                <button class="quick-command bg-gray-500 dark:bg-gray-400 hover:bg-gray-600 text-white px-2 sm:px-4 py-1 text-sm sm:text-base rounded-lg"
                         data-command="/bacon">/bacon</button>
             </div>
-            <div class="flex flex-row gap-4 items-center mt-1 w-full"
+            <div class="flex flex-row gap-2 sm:gap-4 items-center mt-1 w-full"
                  id="chat-message-input-container">
                 <input id="chat-message-input"
                        type="text"
-                       class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 placeholder:text-base rounded-lg dark:text-black"
+                       class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 placeholder:text-sm sm:placeholder:text-base text-sm sm:text-base rounded-lg dark:text-black"
                        placeholder="Enter your message...">
-                <div class="flex flex-row gap-2 items-center shrink-0">
+                <div class="flex flex-row gap-1 sm:gap-2 items-center shrink-0">
                     <button id="chat-message-submit"
-                            class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg">Send</button>
+                            class="bg-red-600 hover:bg-red-500 text-white p-2 text-sm sm:text-base rounded-lg">
+                        Send
+                    </button>
                     <button id="chat-message-clear"
-                            class="bg-gray-300 dark:bg-gray-600 hover:bg-gray-200 text-black dark:text-white p-2 rounded-lg">
+                            class="bg-gray-300 dark:bg-gray-600 hover:bg-gray-200 text-black dark:text-white p-2 text-sm sm:text-base rounded-lg">
                         Clear
                     </button>
                 </div>
@@ -1475,17 +1477,16 @@
                 }
         
                 const notifications = data.notifications;
-        
 
                 notificationList.innerHTML = "";
 
                 const unreadNotifications = notifications.filter(notification => !notification.is_read);
                 if (unreadNotifications.length > 0) {
                     unreadCount.textContent = unreadNotifications.length;
-                    unreadCount.classList.remove("hidden"); 
+                    unreadCount.classList.remove("hidden");
                 } else {
-                    unreadCount.textContent = ""; 
-                    unreadCount.classList.add("hidden"); 
+                    unreadCount.textContent = "";
+                    unreadCount.classList.add("hidden");
                 }
 
                 if (notifications.length === 0) {
@@ -1497,8 +1498,8 @@
                     const notificationItem = document.createElement("div");
                     notificationItem.classList.add(
                         "flex", "items-start", "gap-3", "p-3", "rounded-lg", "hover:bg-gray-100", "transition-colors", "dark:bg-gray-700",
-                        !notification.is_read ? "bg-gray-50" : "bg-white", 
-                        !notification.is_read ? "font-semibold" : "font-normal" 
+                        !notification.is_read ? "bg-gray-50" : "bg-white",
+                        !notification.is_read ? "font-semibold" : "font-normal"
                     );
 
                     if (notification.link) {
@@ -1528,7 +1529,7 @@
                     button.addEventListener("click", function (e) {
                         e.stopPropagation();
                         const notificationId = this.getAttribute("data-notification-id");
-                        deleteNotification(notificationId, this.closest("div")); 
+                        deleteNotification(notificationId, this.closest("div"));
                     });
                 });
             } catch (error) {
@@ -1586,7 +1587,7 @@
                     method: "DELETE",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}",
-                        "Content-Type": "application/json", 
+                        "Content-Type": "application/json",
                     },
                     credentials: "include",
                 });
@@ -1595,7 +1596,7 @@
                     throw new Error(`Failed to delete notification: ${response.statusText}`);
                 }
         
-                const data = await response.json(); 
+                const data = await response.json();
                 if (data.status === "success") {
                     notificationElement.remove();
         
@@ -1632,7 +1633,7 @@
                     .then(data => {
                         if (data.status === "success") {
                             unreadCount.textContent = "";
-                            unreadCount.classList.add("hidden"); 
+                            unreadCount.classList.add("hidden");
                             document.querySelectorAll(".bg-gray-50").forEach(el => {
                                 el.classList.remove("bg-gray-50", "font-semibold");
                                 el.classList.add("bg-white", "font-normal");
@@ -1649,7 +1650,6 @@
             }
         });
     });
-
 </script>
 <!-- Add this script before the closing body tag -->
 <script>

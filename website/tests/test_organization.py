@@ -263,4 +263,3 @@ class SizzleCheckInViewTests(TestCase):
         self.assertContains(response, "Last check-in was on")
         self.assertContains(response, "Fill from Last Check-in")
         self.assertContains(response, "fillFromLastCheckinBtn")
-  

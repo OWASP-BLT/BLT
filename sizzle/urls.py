@@ -1,11 +1,12 @@
 from django.urls import path
+
 from . import views
 
 app_name = "sizzle"
 
 urlpatterns = [
     path("", views.SizzleListView.as_view(), name="index"),
-    path("docs/", views.SizzleListView.as_view(), name="docs"), 
+    path("docs/", views.SizzleListView.as_view(), name="docs"),
     path("log/", views.SizzleListView.as_view(), name="sizzle_daily_log"),
     path("report/<str:username>/", views.user_sizzle_report_view, name="user_sizzle_report"),
     path("check-in/", views.checkin, name="checkin"),

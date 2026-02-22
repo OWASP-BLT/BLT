@@ -1586,6 +1586,7 @@ class ActivityLog(models.Model):
     def __str__(self):
         return f"ActivityLog by {self.user.username} at {self.recorded_at}"
 
+
 class IpReport(models.Model):
     IP_TYPE_CHOICES = [
         ("ipv4", "IPv4"),
