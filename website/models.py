@@ -9,9 +9,7 @@ from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
 import pytz
-import requests
 from annoying.fields import AutoOneToOneField
-from captcha.fields import CaptchaField
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -31,6 +29,8 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+
+from website.cache.cve_cache import get_cached_cve_score, normalize_cve_id
 
 logger = logging.getLogger(__name__)
 
@@ -530,7 +530,7 @@ class Trademark(models.Model):
 def validate_image(fieldfile_obj):
     try:
         filesize = fieldfile_obj.file.size
-    except:
+    except Exception:
         filesize = fieldfile_obj.size
     megabyte_limit = 3.0
     if filesize > megabyte_limit * 1024 * 1024:
@@ -606,7 +606,6 @@ class Issue(models.Model):
     url = models.URLField()
     description = models.TextField()
     markdown_description = models.TextField(null=True, blank=True)
-    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
@@ -623,8 +622,8 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
-    cve_id = models.CharField(max_length=16, null=True, blank=True)
-    cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+    cve_id = models.CharField(max_length=20, null=True, blank=True)
+    cve_score = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
 
@@ -670,21 +669,50 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
+    def clean(self):
+        """Validate model fields."""
+        super().clean()
+        if self.cve_id:
+            # Use normalize_cve_id() for consistent validation
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                # normalize_cve_id returns empty string for invalid CVE IDs
+                raise ValidationError(f"Invalid CVE ID format: {self.cve_id}")
+
+    def save(self, *args, **kwargs):
+        """
+        Override save() to validate and normalize CVE ID on every save.
+        Only validates CVE-specific fields, not all model fields.
+        """
+        # Validate and normalize CVE ID if present
+        if self.cve_id:
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                # normalize_cve_id returns empty string for invalid CVE IDs
+                raise ValidationError(f"Invalid CVE ID format: {self.cve_id}")
+            # Update to normalized form (uppercase, trimmed)
+            if normalized != self.cve_id:
+                self.cve_id = normalized
+                # Ensure normalized value is persisted when update_fields is used
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None and "cve_id" not in update_fields:
+                    kwargs["update_fields"] = list(update_fields) + ["cve_id"]
+
+        # Call parent save() to persist the instance
+        super().save(*args, **kwargs)
+
     def get_cve_score(self):
-        if self.cve_id is None:
+        """
+        Get CVE score from cache/API.
+        Returns None for empty, None, or invalid CVE IDs.
+        """
+        if not self.cve_id:
             return None
-        try:
-            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
-            response = requests.get(url).json()
-            results = response["resultsPerPage"]
-            if results != 0:
-                metrics = response["vulnerabilities"][0]["cve"]["metrics"]
-                if metrics:
-                    cvss_metric_v = next(iter(metrics))
-                    return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
-        except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
-            logger.warning(f"Error fetching CVE score for {self.cve_id}: {e}")
+        # normalize_cve_id handles empty strings and invalid formats
+        normalized = normalize_cve_id(self.cve_id)
+        if not normalized:
             return None
+        return get_cached_cve_score(normalized)
 
     def get_cve_severity(self):
         """
@@ -736,6 +764,8 @@ class Issue(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+            models.Index(fields=["cve_id"], name="issue_cve_id_idx"),
+            models.Index(fields=["cve_score"], name="issue_cve_score_idx"),
         ]
 
 
@@ -1279,75 +1309,6 @@ class SearchHistory(models.Model):
         return f"{self.user.username}: {self.query} ({self.search_type}) at {self.timestamp}"
 
 
-class ForumCategory(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "Forum Categories"
-
-
-class ForumPost(models.Model):
-    STATUS_CHOICES = (
-        ("open", "Open"),
-        ("in_progress", "In Progress"),
-        ("completed", "Completed"),
-        ("declined", "Declined"),
-    )
-
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
-    description = models.TextField(max_length=1000, null=True, blank=True)
-    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
-    up_votes = models.IntegerField(null=True, blank=True, default=0)
-    down_votes = models.IntegerField(null=True, blank=True, default=0)
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    is_pinned = models.BooleanField(default=False)
-    repo = models.ForeignKey("Repo", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    project = models.ForeignKey("Project", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts")
-    organization = models.ForeignKey(
-        "Organization", on_delete=models.SET_NULL, null=True, blank=True, related_name="forum_posts"
-    )
-
-    def __str__(self):
-        return f"{self.title} by {self.user}"
-
-    class Meta:
-        ordering = ["-is_pinned", "-created"]
-
-
-class ForumVote(models.Model):
-    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    up_vote = models.BooleanField(default=False)
-    down_vote = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Vote by {self.user} on {self.post.title}"
-
-
-class ForumComment(models.Model):
-    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
-
-    def __str__(self):
-        return f"Comment by {self.user} on {self.post.title}"
-
-    class Meta:
-        ordering = ["created"]
-
-
 class Contributor(models.Model):
     name = models.CharField(max_length=255)
     github_id = models.IntegerField(unique=True)
@@ -1396,6 +1357,63 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    freshness = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.0,
+        db_index=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
+    def calculate_freshness(self):
+        """
+        Calculate freshness using a Bumper-style activity decay model.
+        Prioritizes the 52-week participation stats for more granular recency
+        and consistency checks.
+        """
+        active_repos = self.repos.filter(is_archived=False)
+        total_raw_score = 0
+
+        for repo in active_repos:
+            repo_score = 0
+            stats = repo.participation_stats
+
+            # 1. Use 52-week stats if available (more robust)
+            if isinstance(stats, list) and len(stats) == 52:
+                # Last week (index 51)
+                if stats[51] > 0:
+                    repo_score = 1.0
+                # Last 4 weeks (30 days)
+                elif sum(stats[48:52]) > 0:
+                    repo_score = 0.6
+                # Last 12 weeks (90 days)
+                elif sum(stats[40:52]) > 0:
+                    repo_score = 0.3
+
+                # Consistency bonus: commits in 3+ distinct weeks of the last 12 weeks
+                weeks_active_last_quarter = sum(1 for w in stats[40:52] if w > 0)
+                if weeks_active_last_quarter >= 3:
+                    repo_score += 0.1
+
+            # 2. Fallback to last_commit_date if no stats or stats don't show recent activity
+            if repo_score == 0 and repo.last_commit_date:
+                now = timezone.now()
+                if repo.last_commit_date >= now - timedelta(days=7):
+                    repo_score = 1.0
+                elif repo.last_commit_date >= now - timedelta(days=30):
+                    repo_score = 0.6
+                elif repo.last_commit_date >= now - timedelta(days=90):
+                    repo_score = 0.3
+
+            total_raw_score += repo_score
+
+        if total_raw_score == 0:
+            return Decimal("0.00")
+
+        MAX_SCORE = 20  # ~20 actively maintained repos = fully fresh
+        freshness = min((total_raw_score / MAX_SCORE) * 100, 100)
+
+        return Decimal(str(round(freshness, 2)))
 
     def save(self, *args, **kwargs):
         # Always ensure a valid slug exists before saving
@@ -1425,6 +1443,23 @@ class Project(models.Model):
             self.slug = f"project-{int(time.time())}"
 
         super(Project, self).save(*args, **kwargs)
+
+    def get_participation_stats(self):
+        """
+        Calculates the aggregate 52-week activity for the project
+        by summing participation stats of its active repositories.
+        """
+        repos = self.repos.filter(is_archived=False)
+        # GitHub participation stats 'all' array has 52 entries
+        total_stats = [0] * 52
+
+        for repo in repos:
+            stats = repo.participation_stats
+            if isinstance(stats, list) and len(stats) == 52:
+                for i in range(52):
+                    total_stats[i] += stats[i]
+
+        return total_stats
 
     def __str__(self):
         return self.name
@@ -1825,7 +1860,7 @@ class UserTaskSubmission(models.Model):
 
     progress = models.ForeignKey(UserAdventureProgress, on_delete=models.CASCADE, related_name="task_submissions")
     task = models.ForeignKey(AdventureTask, on_delete=models.CASCADE, related_name="submissions")
-    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, blog post, or other evidence")
+    proof_url = models.URLField(blank=True, help_text="Link to pull request, issue, or other evidence")
     notes = models.TextField(blank=True, help_text="Additional notes or explanation")
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -1860,26 +1895,6 @@ class UserTaskSubmission(models.Model):
             self.progress.check_completion()
 
 
-class Post(models.Model):
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True, max_length=255)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to="blog_posts")
-    comments = GenericRelation("comments.Comment")
-
-    class Meta:
-        db_table = "blog_post"
-
-    def __str__(self):
-        return self.title
-
-    def get_absolute_url(self):
-        return reverse("post_detail", kwargs={"slug": self.slug})
-
-
 class PRAnalysisReport(models.Model):
     pr_link = models.URLField()
     issue_link = models.URLField()
@@ -1890,15 +1905,6 @@ class PRAnalysisReport(models.Model):
 
     def __str__(self):
         return self.pr_link
-
-
-@receiver(post_save, sender=Post)
-def verify_file_upload(sender, instance, **kwargs):
-    from django.core.files.storage import default_storage
-
-    if instance.image:
-        if not default_storage.exists(instance.image.name):
-            raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
 class Repo(models.Model):
@@ -1947,6 +1953,7 @@ class Repo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
     last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
+    participation_stats = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -2064,7 +2071,7 @@ class Room(models.Model):
     ROOM_TYPES = [
         ("project", "Project"),
         ("bug", "Bug"),
-        ("org", "Organization"),
+        ("organization", "Organization"),
         ("custom", "Custom"),
     ]
 
@@ -3077,39 +3084,6 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
-
-
-class BannedApp(models.Model):
-    APP_TYPES = (
-        ("social", "Social Media"),
-        ("messaging", "Messaging"),
-        ("gaming", "Gaming"),
-        ("streaming", "Streaming"),
-        ("other", "Other"),
-    )
-
-    country_name = models.CharField(max_length=100)
-    country_code = models.CharField(max_length=2)  # ISO 2-letter code
-    app_name = models.CharField(max_length=100)
-    app_type = models.CharField(max_length=20, choices=APP_TYPES)
-    ban_reason = models.TextField()
-    ban_date = models.DateField(default=timezone.now)
-    source_url = models.URLField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Banned App"
-        verbose_name_plural = "Banned Apps"
-        ordering = ["country_name", "app_name"]
-        indexes = [
-            models.Index(fields=["country_name"]),
-            models.Index(fields=["country_code"]),
-        ]
-
-    def __str__(self):
-        return f"{self.app_name} (Banned in {self.country_name})"
 
 
 class Labs(models.Model):

@@ -7,18 +7,22 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal
+from smtplib import SMTPException
 from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import BadHeaderError, send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import (
     Http404,
@@ -234,41 +238,63 @@ def link_slack_channel_to_project(request):
         return JsonResponse({"error": "Project not found"}, status=404)
 
 
+@staff_member_required
 def weekly_report(request):
-    domains = Domain.objects.all()
-    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
-    try:
-        for domain in domains:
-            open_issues = domain.open_issues
-            closed_issues = domain.closed_issues
-            total_issues = open_issues.count() + closed_issues.count()
-            issues = Issue.objects.filter(domain=domain)
-            email = domain.email
-            report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
-                f"\n\norganization Name: {domain.name}"
-                f"Open issues: {open_issues.count()}"
-                f"Closed issues: {closed_issues.count()}"
-                f"Total issues: {total_issues}"
-            )
-            for issue in issues:
-                description = issue.description
-                views = issue.views
-                label = issue.get_label_display()
-                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
-
-        report_string = "".join(report_data)
-        send_mail(
-            "Weekly Report!!!",
-            report_string,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
+    domains = Domain.objects.annotate(
+        open_count=Count("issue", filter=Q(issue__status="open")),
+        closed_count=Count("issue", filter=Q(issue__status="closed")),
+    ).prefetch_related(
+        Prefetch(
+            "issue_set",
+            queryset=Issue.objects.filter(Q(status="open") | Q(status="closed")).only(
+                "description", "views", "label", "status"
+            ),
+            to_attr="filtered_issues",  # Store filtered results here
         )
-    except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+    )
 
-    return HttpResponse("Weekly report sent successfully.")
+    results = {"success": [], "failed": []}
+
+    for domain in domains:
+        try:
+            if not domain.email:
+                logger.warning(f"Skipping weekly report: no email for domain {domain.name}")
+                continue
+
+            issues = domain.filtered_issues
+
+            open_issues_count = domain.open_count
+            closed_issues_count = domain.closed_count
+            total_issues = open_issues_count + closed_issues_count
+
+            report_data = [
+                "Hey! This is a weekly report from OWASP BLT regarding the bugs reported for your organization!\n\n",
+                f"Organization Name: {domain.name}\n",
+                f"Open issues: {open_issues_count}\n",
+                f"Closed issues: {closed_issues_count}\n",
+                f"Total issues: {total_issues}\n\n",
+            ]
+
+            for issue in issues:
+                report_data.append(
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
+                )
+
+            send_mail(
+                "Weekly Report!!!",
+                "".join(report_data),
+                settings.EMAIL_HOST_USER,
+                [domain.email],
+                fail_silently=False,
+            )
+
+            results["success"].append(domain.name)
+
+        except (BadHeaderError, SMTPException) as e:
+            logger.error(f"Failed to send report to {domain.name}: {e}")
+            results["failed"].append(domain.name)
+
+    return HttpResponse(f"Sent {len(results['success'])} reports. Failed: {len(results['failed'])}")
 
 
 @login_required(login_url="/accounts/login")
@@ -283,13 +309,14 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         context["hunt"] = hunt
         context["issues"] = issues
         if hunt.result_published:
-            context["winner"] = Winner.objects.get(hunt=hunt)
+            context["winner"] = Winner.objects.filter(hunt=hunt).first()
         return render(request, template, context)
     else:
         for issue in issues:
             issue.verified = False
             issue.score = 0
-            issue.save()
+        if issues:
+            Issue.objects.bulk_update(issues, ["verified", "score"])
 
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
@@ -312,32 +339,33 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         if request.POST["submit"] == "save":
             pass
         elif request.POST["submit"] == "publish":
-            issue.save()
-            winner = Winner()
-            issue_with_score = (
-                Issue.objects.filter(hunt=hunt, verified=True)
-                .values("user")
-                .order_by("user")
-                .annotate(total_score=Sum("score"))
-            )
+            with transaction.atomic():
+                issue_with_score = (
+                    Issue.objects.filter(hunt=hunt, verified=True)
+                    .values("user")
+                    .annotate(total_score=Sum("score"))
+                    .order_by("-total_score")
+                )
 
-            for index, obj in enumerate(issue_with_score, 1):
-                user = User.objects.get(pk=obj["user"])
-                if index == 1:
-                    winner.winner = user
-                elif index == 2:
-                    winner.runner = user
-                elif index == 3:
-                    winner.second_runner = user
-                elif index == 4:
-                    break
+                top_users = list(issue_with_score[:3])
+                user_map = User.objects.in_bulk([u["user"] for u in top_users])
 
-            winner.prize_distributed = True
-            winner.hunt = hunt
-            winner.save()
-            hunt.result_published = True
-            hunt.save()
-            context["winner"] = winner
+                winner, _ = Winner.objects.get_or_create(hunt=hunt)
+
+                if len(top_users) > 0:
+                    winner.winner = user_map.get(top_users[0]["user"])
+                if len(top_users) > 1:
+                    winner.runner = user_map.get(top_users[1]["user"])
+                if len(top_users) > 2:
+                    winner.second_runner = user_map.get(top_users[2]["user"])
+
+                winner.prize_distributed = True
+                winner.save()
+
+                hunt.result_published = True
+                hunt.save()
+
+                context["winner"] = winner
 
         context["hunt"] = hunt
         context["issues"] = issues
@@ -392,6 +420,7 @@ class DomainListView(ListView):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def subscribe_to_domains(request, pk):
     domain = Domain.objects.filter(pk=pk).first()
     if domain is None:
@@ -564,7 +593,7 @@ class Listbounties(TemplateView):
             )
             has_more_pages = total_count > per_page
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             github_issues = []
             total_count = 0
             has_more_pages = False
@@ -603,6 +632,25 @@ class Listbounties(TemplateView):
                     "total_earned": earner["issues_completed"] * BOUNTY_AMOUNT,
                 }
             )
+
+        # TEMP: mock leaderboard data for local UI testing
+        if settings.DEBUG and not leaderboard:
+            leaderboard = [
+                {
+                    "name": "Alice",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/1",
+                    "github_url": "https://github.com/alice",
+                    "issues_completed": 12,
+                    "total_earned": 60,
+                },
+                {
+                    "name": "Bob",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/2",
+                    "github_url": "https://github.com/bob",
+                    "issues_completed": 8,
+                    "total_earned": 40,
+                },
+            ]
 
         context = {
             "hunts": hunts,
@@ -750,7 +798,7 @@ class Listbounties(TemplateView):
                 return [], 0
 
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             # Don't cache errors - could be a transient failure
             return [], 0
 
@@ -797,7 +845,7 @@ def load_more_issues(request):
             }
         )
     except Exception as e:
-        logger.error(f"Error loading more issues: {str(e)}")
+        logger.error("Error loading more issues: Something went wrong.")
         return JsonResponse(
             {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
         )
@@ -994,7 +1042,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            logger.error(f"Error parsing domain slug '{slug}': Something went wrong.")
             raise Http404("Invalid domain format")
 
     def get_queryset(self):
@@ -1067,6 +1115,7 @@ class DomainDetailView(ListView):
             except EmptyPage:
                 closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
+            six_months_ago = timezone.now() - relativedelta(months=6)
             context.update(
                 {
                     "opened_net": open_issues,
@@ -1076,13 +1125,13 @@ class DomainDetailView(ListView):
                     "leaderboard": (
                         User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
                     ),
-                    "current_month": datetime.now().month,
+                    "current_month": timezone.now().month,
                     "domain_graph": (
                         Issue.objects.filter(
                             domain=domain,
                             hunt=None,
-                            created__month__gte=(datetime.now().month - 6),
-                            created__month__lte=datetime.now().month,
+                            created__gte=six_months_ago,
+                            created__lte=timezone.now(),
                         ).order_by("created")
                     ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
@@ -1121,7 +1170,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error in DomainDetailView: {str(e)}")
+            logger.error("Error in DomainDetailView: Something went wrong.")
             raise Http404("Domain not found")
 
 
@@ -1223,7 +1272,7 @@ class InboundParseWebhookView(View):
                     profile.save()
 
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
-                logger.error(f"Error processing SendGrid webhook event: {str(e)}")
+                logger.error("Error processing SendGrid webhook event: Something went wrong.")
 
         # Send events to Slack webhook
         self._send_to_slack(events)
@@ -1277,9 +1326,9 @@ class InboundParseWebhookView(View):
             logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+            logger.error("Failed to send SendGrid events to Slack: Something went wrong.")
         except Exception as e:
-            logger.error(f"Unexpected error sending to Slack: {str(e)}")
+            logger.error("Unexpected error sending to Slack: Something went wrong.")
 
 
 class CreateHunt(TemplateView):
@@ -1366,7 +1415,8 @@ class CreateHunt(TemplateView):
             else:
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing organization: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required
@@ -1734,7 +1784,7 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
         return redirect("/")
 
     except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist) as e:
-        logger.error(f"Error in organization_dashboard_domain_detail: {str(e)}")
+        logger.error("Error in organization_dashboard_domain_detail: Something went wrong.")
         return redirect("/")
 
 
@@ -1778,7 +1828,8 @@ def add_or_update_domain(request):
                     else:
                         return HttpResponse("Unauthorized: Only admin can create domains")
         except (OrganizationAdmin.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing domain: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required(login_url="/accounts/login")
@@ -1830,7 +1881,7 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error updating organization: {str(e)}")
+            logger.error("Error updating organization: Something went wrong.")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -1868,7 +1919,7 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error adding role: {str(e)}")
+            logger.error("Error adding role: Something went wrong.")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -2374,13 +2425,19 @@ def join_room(request, room_id):
     return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
-@login_required(login_url="/accounts/login")
 @require_POST
 def delete_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
 
-    # Check if the user is the admin or the anonymous creator
+    # Admin can always delete
     is_admin = request.user.is_authenticated and room.admin == request.user
+
+    # Explicitly handle anonymous users without session
+    if request.user.is_anonymous and not request.session.session_key:
+        messages.error(request, "Your session has expired. You can no longer delete this room.")
+        return redirect("rooms_list")
+
+    # Anonymous creator check (only if session exists)
     is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
 
     if not (is_admin or is_anon_creator):
@@ -2633,7 +2690,7 @@ def update_organization_repos(request, slug):
         organization = get_object_or_404(Organization, slug=slug)
 
         # Check if repositories were updated in the last 24 hours
-        one_day_ago = timezone.timedelta(days=1)
+        one_day_ago = timedelta(days=1)
         if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
             time_since_update = timezone.now() - organization.repos_updated_at
             hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
@@ -2734,7 +2791,7 @@ def update_organization_repos(request, slug):
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    logger.error("Error testing GitHub API in event_stream: Something went wrong.", exc_info=True)
                     yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
@@ -2790,7 +2847,7 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            logger.error("Error updating logo in event_stream: Something went wrong.", exc_info=True)
                             yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
                     yield "data: Error: Failed to connect to GitHub\n\n"
@@ -2886,11 +2943,11 @@ def update_organization_repos(request, slug):
                                         repo.tags.add(tag)
 
                             except Exception as e:
-                                logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
+                                logger.error(f"Error processing repo {repo_name}: Something went wrong.", exc_info=True)
                                 yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
+                        logger.error("Network error in event_stream: Something went wrong.", exc_info=True)
                         yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
@@ -2905,13 +2962,13 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                logger.error("Unexpected error in event_stream: Something went wrong.", exc_info=True)
                 yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
+        logger.error("Error in update_organization_repos: Something went wrong.", exc_info=True)
         messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
@@ -2952,7 +3009,8 @@ def send_message_api(request):
         return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        logger.error("Error sending message: %s", e)
+        return JsonResponse({"success": False, "error": "An internal error occurred."}, status=500)
 
 
 def room_messages_api(request, room_id):
@@ -3078,7 +3136,7 @@ class BountyPayoutsView(ListView):
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
                 return [], 0
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             return [], 0
 
     def post(self, request, *args, **kwargs):
@@ -3220,9 +3278,11 @@ class BountyPayoutsView(ListView):
                                         )
                                 except Exception as e:
                                     error_msg = "Error fetching GitHub user data"
-                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                                    logger.error(f"{error_msg} for {assignee_username}: Something went wrong.")
                         except Exception as e:
-                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            logger.error(
+                                f"Error creating contributor for assignee {assignee_username}: Something went wrong."
+                            )
                             assignee_contributor = None
 
                     # Try to find a matching user profile for the GitHub username
@@ -3345,7 +3405,7 @@ class BountyPayoutsView(ListView):
                 messages.success(request, msg)
             except Exception as e:
                 error_message = "Error fetching issues from GitHub"
-                messages.error(request, f"{error_message}: {str(e)}")
+                messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "pay_bounty":
             # Record bounty payment (superusers only)
@@ -3420,7 +3480,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error recording payment"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "delete_issue":
             # Delete an issue (superusers only)
@@ -3443,7 +3503,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error deleting issue"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "refresh_assignee":
             # Refresh assignee for an issue (staff only)
@@ -3565,7 +3625,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error refreshing issue data"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "refresh_pull_requests":
             # Refresh pull requests for an issue (staff only)
@@ -3651,7 +3711,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error refreshing linked pull requests"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         return redirect("bounty_payouts")
 
@@ -3739,7 +3799,7 @@ class BountyPayoutsView(ListView):
                                 },
                             )
                         except Exception as e:
-                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            logger.error(f"Error creating repository for {pr_repo_url}: Something went wrong.")
                             continue
 
                         # Check if we already have this PR in our database
@@ -3769,7 +3829,7 @@ class BountyPayoutsView(ListView):
                                         f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
                                     )
                             except Exception as e:
-                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
+                                logger.error(f"Error updating PR state for {pr_url}: Something went wrong.")
 
                             logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
                         else:
@@ -3818,7 +3878,9 @@ class BountyPayoutsView(ListView):
                                                 name=github_username, defaults={"name": github_username}
                                             )
                                         except Exception as e:
-                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
+                                            logger.error(
+                                                f"Error creating contributor for {github_username}: Something went wrong."
+                                            )
                                             contributor = None
 
                                 # Check if PR is merged
@@ -3849,18 +3911,18 @@ class BountyPayoutsView(ListView):
                                     issue.linked_pull_requests.add(new_pr)
                                     logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
                                 except Exception as e:
-                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
+                                    logger.error(f"Error saving PR {pr_url}: Something went wrong.")
                                     continue
 
                             except requests.exceptions.RequestException as e:
-                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
+                                logger.error(f"Error fetching PR details for {pr_url}: Something went wrong.")
                                 continue
 
             # As a fallback, also check for PRs that mention this issue in their body with closing keywords
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            logger.error(f"Error fetching timeline for issue #{issue_number}: Something went wrong.")
             # Fall back to regex-based search for PRs mentioning this issue
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
@@ -3897,7 +3959,7 @@ class BountyPayoutsView(ListView):
                     logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
 
         except Exception as e:
-            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+            logger.error(f"Error finding PRs mentioning issue #{issue_number}: Something went wrong.")
 
     def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
         """
@@ -4115,5 +4177,7 @@ class BountyPayoutsView(ListView):
             return False
 
         except Exception as e:
-            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            logger.error(
+                f"Error extracting payment info from comments for issue #{issue_number}: Something went wrong."
+            )
             return False

@@ -10,12 +10,10 @@ from .models import (
     BaconEarning,
     Badge,
     Bid,
-    ForumPost,
     Hunt,
     IpReport,
     Issue,
     Organization,
-    Post,
     TimeLog,
     UserBadge,
     UserProfile,
@@ -27,11 +25,9 @@ logger = logging.getLogger(__name__)
 # Default BACON rewards for different contribution types
 DEFAULT_BACON_REWARDS = {
     "Issue": 5,
-    "Post": 10,
     "Hunt": 15,
     "IpReport": 3,
     "Organization": 10,
-    "ForumPost": 2,
     "Bid": 2,
 }
 
@@ -189,11 +185,6 @@ def handle_post_save(sender, instance, created, **kwargs):
             _safe_give_bacon(instance.user, instance=instance, action_type="created")
             _safe_create_activity(instance, "created")
 
-        elif sender == Post and created:  # Track first blog post
-            _safe_assign_badge(instance.author, "First Blog Posted")
-            _safe_create_activity(instance, "created")
-            _safe_give_bacon(instance.author, instance=instance, action_type="created")
-
         elif sender == Issue and created:  # Track first bug report
             _safe_assign_badge(instance.user, "First Bug Reported")
             _safe_create_activity(instance, "created")
@@ -214,11 +205,6 @@ def handle_post_save(sender, instance, created, **kwargs):
                 _safe_assign_badge(user, "First Bug Bounty")
                 _safe_create_activity(instance, "created")
                 _safe_give_bacon(user, instance=instance, action_type="created")
-
-        elif sender == ForumPost and created:  # Track first forum post
-            _safe_assign_badge(instance.user, "First Forum Post")
-            _safe_create_activity(instance, "created")
-            _safe_give_bacon(instance.user, instance=instance, action_type="created")
 
         elif sender == Bid and created:  # Track first bid placed
             _safe_assign_badge(instance.user, "First Bid Placed")
@@ -247,7 +233,7 @@ def handle_post_save(sender, instance, created, **kwargs):
 @receiver(pre_delete)
 def handle_pre_delete(sender, instance, **kwargs):
     """Generic handler for pre_delete signal."""
-    if sender in [Issue, Hunt, IpReport, Post]:
+    if sender in [Issue, Hunt, IpReport]:
         _safe_create_activity(instance, "deleted")
 
 

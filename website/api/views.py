@@ -1,10 +1,10 @@
 import json
 import logging
-import os
 import smtplib
 import sys
 import uuid
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -19,12 +19,11 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
@@ -64,7 +63,6 @@ from website.serializers import (
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
-    JobPublicSerializer,
     JobSerializer,
     OrganizationSerializer,
     ProjectSerializer,
@@ -75,7 +73,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.utils import image_validator
+from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
@@ -179,6 +177,60 @@ class IssueViewSet(viewsets.ModelViewSet):
         if domain_url:
             queryset = queryset.filter(domain__url=domain_url)
 
+        cve_id = self.request.GET.get("cve_id")
+        if cve_id:
+            # Normalize CVE ID to match stored format (uppercase, trimmed)
+            # Use case-insensitive matching to handle both normalized and unnormalized data
+            from website.cache.cve_cache import normalize_cve_id
+
+            normalized_cve_id = normalize_cve_id(cve_id)
+            if normalized_cve_id:
+                # Use case-insensitive matching to handle existing unnormalized data
+                queryset = queryset.filter(cve_id__iexact=normalized_cve_id)
+
+        # Parse and validate CVE score filters (Decimal to avoid binary rounding)
+        cve_score_min = self.request.GET.get("cve_score_min")
+        cve_score_max = self.request.GET.get("cve_score_max")
+        parsed_min = None
+        parsed_max = None
+
+        # Parse cve_score_min
+        if cve_score_min:
+            try:
+                parsed_min = Decimal(cve_score_min)
+                if parsed_min < Decimal("0") or parsed_min > Decimal("10"):
+                    logger.warning("Invalid cve_score_min value: %s (must be 0-10)", cve_score_min)
+                    parsed_min = None
+            except (InvalidOperation, TypeError):
+                logger.warning("Invalid cve_score_min value: %s (not a number)", cve_score_min)
+
+        # Parse cve_score_max
+        if cve_score_max:
+            try:
+                parsed_max = Decimal(cve_score_max)
+                if parsed_max < Decimal("0") or parsed_max > Decimal("10"):
+                    logger.warning("Invalid cve_score_max value: %s (must be 0-10)", cve_score_max)
+                    parsed_max = None
+            except (InvalidOperation, TypeError):
+                logger.warning("Invalid cve_score_max value: %s (not a number)", cve_score_max)
+
+        # Validate range BEFORE applying filters
+        if parsed_min is not None and parsed_max is not None:
+            if parsed_min > parsed_max:
+                logger.warning(
+                    "Invalid score range: min (%s) > max (%s), ignoring both filters",
+                    parsed_min,
+                    parsed_max,
+                )
+                parsed_min = None
+                parsed_max = None
+
+        # Apply filters only if valid (Decimal values for exact comparison)
+        if parsed_min is not None:
+            queryset = queryset.filter(cve_score__gte=parsed_min)
+        if parsed_max is not None:
+            queryset = queryset.filter(cve_score__lte=parsed_max)
+
         return queryset
 
     def get_issue_info(self, request, issue):
@@ -255,10 +307,75 @@ class IssueViewSet(viewsets.ModelViewSet):
         elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        data = super().create(request, *args, **kwargs).data
+        # Wrap super().create() to catch model-level ValidationError from Issue.save()
+        try:
+            data = super().create(request, *args, **kwargs).data
+        except ValidationError as e:
+            # Convert model-level ValidationError to HTTP 400 Bad Request
+            # Extract user-friendly message without exposing stack traces
+            if hasattr(e, "message_dict"):
+                # Multiple field errors
+                error_message = "; ".join([f"{k}: {', '.join(v)}" for k, v in e.message_dict.items()])
+            elif hasattr(e, "messages"):
+                # List of error messages
+                error_message = "; ".join(e.messages)
+            else:
+                # Fallback to generic message to avoid exposing internal details
+                error_message = (
+                    "The CVE ID format is invalid. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits)"
+                )
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
         issue = Issue.objects.filter(id=data["id"]).first()
 
-        if tags:
+        # STEP 1: Fetch CVE data OUTSIDE transaction (before any DB locks)
+        cve_updates = {}
+        if issue and issue.cve_id:
+            from website.views.issue import normalize_and_populate_cve_score
+
+            try:
+                # Create a temporary issue instance to fetch CVE data without DB operations
+                temp_issue = Issue(cve_id=issue.cve_id, cve_score=issue.cve_score)
+                # This will normalize and fetch the score via network/cache
+                normalize_and_populate_cve_score(temp_issue)
+
+                # Store the updates to apply later
+                cve_updates = {"cve_id": temp_issue.cve_id, "cve_score": temp_issue.cve_score}
+            except ValidationError as e:
+                logger.warning(f"CVE validation failed: {e}")
+                # Don't clear valid CVE ID - just skip score fetch
+                cve_updates = {}
+            except Exception as e:
+                logger.error(f"Error fetching CVE score: {e}")
+                # Continue without CVE score - don't fail the entire creation
+
+        # STEP 2: Apply CVE updates inside transaction (DB operations only, no network I/O)
+        if cve_updates:
+            with transaction.atomic():
+                try:
+                    issue_locked = Issue.objects.select_for_update().get(pk=issue.pk)
+
+                    # Apply CVE updates
+                    update_fields = []
+                    if "cve_id" in cve_updates and issue_locked.cve_id != cve_updates["cve_id"]:
+                        issue_locked.cve_id = cve_updates["cve_id"]
+                        update_fields.append("cve_id")
+                    if "cve_score" in cve_updates and issue_locked.cve_score != cve_updates["cve_score"]:
+                        issue_locked.cve_score = cve_updates["cve_score"]
+                        update_fields.append("cve_score")
+
+                    if update_fields:
+                        issue_locked.save(update_fields=update_fields)
+                        # Refresh the issue object to get updated values
+                        issue = issue_locked
+                except Issue.DoesNotExist:
+                    logger.error(f"Issue {issue.pk} not found after creation")
+                    # Continue anyway - issue was created successfully
+                except Exception as e:
+                    logger.error(f"Error updating CVE data in transaction: {e}")
+                    # Continue - issue exists, just without CVE score
+
+        if tags and issue:
             issue.tags.add(*tags)
 
         for screenshot in self.request.FILES.getlist("screenshots"):
@@ -391,7 +508,7 @@ class LeaderboardApiViewSet(APIView):
 
             try:
                 date = datetime(int(year), int(month), 1)
-            except:
+            except (ValueError, OverflowError):
                 return Response("Invalid month or year passed", status=400)
 
         queryset = global_leaderboard.get_leaderboard(month, year, api=True)
@@ -725,42 +842,53 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ("get", "post")
+    http_method_names = ("get", "head")
 
-    def create(self, request, *args, **kwargs):
-        data = request.data.copy()
+    def _serialize_projects(self, projects):
+        """Return consistent contributor-enriched project data."""
+        output = []
+        for project in projects:
+            contributors_qs = getattr(project, "contributors", None)
 
-        name = data.get("name", "")
-        slug = slugify(name)
+            if contributors_qs:
+                contributors_data = ContributorSerializer(contributors_qs.all(), many=True).data
+                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+            else:
+                contributors_data = []
 
-        contributors = Project.get_contributors(self, data["github_url"])  # get contributors
+            project_info = ProjectSerializer(project, context={"request": self.request}).data
+            project_info["contributors"] = contributors_data
+            output.append(project_info)
 
-        serializer = ProjectSerializer(data=data)
-
-        if serializer.is_valid():
-            project_instance = serializer.save()
-            project_instance.__setattr__("slug", slug)
-
-            # Set contributors
-            if contributors:
-                project_instance.contributors.set(contributors)
-
-            serializer = ProjectSerializer(project_instance)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return output
 
     def list(self, request, *args, **kwargs):
-        projects = Project.objects.annotate(
+        """List projects with optional filtering by freshness, stars, and forks."""
+        projects = self.get_queryset().annotate(
             total_stars=Coalesce(Sum("repos__stars"), Value(0)),
             total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
+        projects = self.filter_queryset(projects)
 
+        # Freshness filtering
+        freshness = request.query_params.get("freshness")
+        if freshness is not None:
+            try:
+                freshness_val = Decimal(freshness)
+                if not Decimal("0") <= freshness_val <= Decimal("100"):
+                    return Response(
+                        {"error": "Invalid 'freshness' parameter: must be between 0 and 100"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(freshness__gte=freshness_val)
+            except (InvalidOperation, TypeError):
+                return Response(
+                    {"error": "Invalid 'freshness' parameter: must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Stars filtering
         stars = request.query_params.get("stars")
-        forks = request.query_params.get("forks")
-
         if stars is not None:
             try:
                 stars_int = int(stars)
@@ -776,6 +904,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+        # Forks filtering
+        forks = request.query_params.get("forks")
         if forks is not None:
             try:
                 forks_int = int(forks)
@@ -791,120 +921,51 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        project_data = []
-        for project in projects:
-            contributors_data = []
+        tags = request.query_params.get("tags")
+        if tags:
+            # Support comma-separated tags: ?tags=security,web
+            tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+            if tag_list:
+                projects = projects.filter(tags__name__in=tag_list).distinct()
 
-            contributors_manager = getattr(project, "contributors", None)
-            if contributors_manager:
-                for contributor in contributors_manager.all():
-                    contributor_info = ContributorSerializer(contributor)
-                    contributors_data.append(contributor_info.data)
+        # Apply pagination
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            # Use helper method instead of manual loop
+            project_data = self._serialize_projects(page)
+            return self.get_paginated_response(project_data)
 
-            contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
-        return Response({"results": project_data}, status=status.HTTP_200_OK)
+        # Fallback if pagination is disabled (shouldn't happen with current config)
+        # Use helper method instead of manual loop
+        project_data = self._serialize_projects(projects)
+        return Response({"count": len(project_data), "projects": project_data})
 
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
+        """Search projects by name, description, or tags."""
         query = request.query_params.get("q", "")
 
         projects_qs = Project.objects.annotate(
-            total_stars=Coalesce(Sum("repos__stars"), 0),
-            total_forks=Coalesce(Sum("repos__forks"), 0),
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
         )
+        if hasattr(Project, "contributors"):
+            projects_qs = projects_qs.prefetch_related("contributors")
 
         projects = projects_qs.filter(
             Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
         ).distinct()
 
-        project_data = []
-        for project in projects:
-            contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
+        # Apply pagination
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            # Use helper method instead of manual loop
+            project_data = self._serialize_projects(page)
+            return self.get_paginated_response(project_data)
 
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
-        return Response(
-            {"count": len(project_data), "projects": project_data},
-            status=200,
-        )
-
-    @action(detail=False, methods=["get"])
-    def filter(self, request, *args, **kwargs):
-        freshness = request.query_params.get("freshness", None)
-        stars = request.query_params.get("stars", None)
-        forks = request.query_params.get("forks", None)
-        tags = request.query_params.get("tags", None)
-
-        # Annotate Project with aggregated stars and forks from related Repos
-        projects = Project.objects.annotate(
-            total_stars=Coalesce(Sum("repos__stars"), 0),
-            total_forks=Coalesce(Sum("repos__forks"), 0),
-        )
-
-        # Freshness is NOT a DB field (SerializerMethodField)
-        if freshness:
-            pass  # Safe no-op
-
-        # SAFE stars validation
-        if stars:
-            try:
-                stars_int = int(stars)
-                if stars_int < 0:
-                    return Response(
-                        {"error": "Invalid 'stars' parameter: must be non-negative"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                projects = projects.filter(total_stars__gte=stars_int)
-            except (ValueError, TypeError):
-                return Response(
-                    {"error": "Invalid 'stars' parameter: must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        # SAFE forks validation
-        if forks:
-            try:
-                forks_int = int(forks)
-                if forks_int < 0:
-                    return Response(
-                        {"error": "Invalid 'forks' parameter: must be non-negative"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                projects = projects.filter(total_forks__gte=forks_int)
-            except (ValueError, TypeError):
-                return Response(
-                    {"error": "Invalid 'forks' parameter: must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        if tags:
-            projects = projects.filter(tags__name__in=tags.split(",")).distinct()
-
-        project_data = []
-        for project in projects:
-            contributors_data = []
-            for contributor in project.contributors.all():
-                contributor_info = ContributorSerializer(contributor)
-                contributors_data.append(contributor_info.data)
-
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
-
-            project_info = ProjectSerializer(project).data
-            project_info["contributors"] = contributors_data
-            project_data.append(project_info)
-
+        # Fallback if pagination is disabled
+        # Use helper method instead of manual loop
+        project_data = self._serialize_projects(projects)
         return Response(
             {"count": len(project_data), "projects": project_data},
             status=200,
@@ -962,9 +1023,9 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             # Save the TimeLog with the user and organization (if found, or None)
             serializer.save(user=self.request.user, organization=organization)
 
-        except ValidationError as e:
-            raise ParseError(detail=str(e))
-        except Exception as e:
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
             raise ParseError(detail="An unexpected error occurred while creating the time log.")
 
     @action(detail=False, methods=["post"])
@@ -979,7 +1040,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             self.perform_create(serializer)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while starting the time log."},
@@ -1002,7 +1063,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             timelog.save()
             return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while stopping the time log."},
@@ -1058,9 +1119,9 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         try:
             serializer.save(user=self.request.user, recorded_at=timezone.now())
-        except ValidationError as e:
-            raise ParseError(detail=str(e))
-        except Exception as e:
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
 
 
@@ -1092,16 +1153,33 @@ class OwaspComplianceChecker(APIView):
 
     def check_website_compliance(self, url):
         """Check website-related compliance criteria"""
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Check for OWASP mention
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            # Check for project page link (strict hostname check)
+            owasp_links = []
+            for a in soup.find_all("a"):
+                href = a.get("href")
+                if not href:
+                    continue
+                netloc = urlparse(href).netloc.lower()
+                if netloc.endswith("owasp.org"):
+                    owasp_links.append(a)
+
             has_project_link = len(owasp_links) > 0
 
             # Check for up-to-date info
@@ -1111,32 +1189,42 @@ class OwaspComplianceChecker(APIView):
                 "has_owasp_mention": has_owasp_mention,
                 "has_project_link": has_project_link,
                 "has_dates": has_dates,
-                "details": {"url_checked": url, "recommendations": []},
+                "details": {"url_checked": safe_url, "recommendations": []},
             }
-        except Exception as e:
+        except Exception:
             return {
                 "has_owasp_mention": False,
                 "has_project_link": False,
                 "has_dates": False,
-                "details": {"url_checked": url, "error": str(e)},
+                "details": {"url_checked": safe_url, "error": "Compliance check failed."},
             }
 
     def check_vendor_neutrality(self, url):
         """Check vendor neutrality compliance"""
+        # Sanitize incoming URL
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "URL rejected for safety"},
+            }
+
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(safe_url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Look for common paywall terms
             paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
             content = soup.get_text().lower()
             has_paywall_indicators = any(term in content for term in paywall_terms)
 
-            return {"possible_paywall": has_paywall_indicators, "details": {"url_checked": url, "recommendations": []}}
+            return {
+                "possible_paywall": has_paywall_indicators,
+                "details": {"url_checked": safe_url, "recommendations": []},
+            }
         except Exception:
             return {
                 "possible_paywall": None,
-                "details": {"url_checked": url, "error": "Unable to check vendor neutrality"},
+                "details": {"url_checked": safe_url, "error": "Unable to check vendor neutrality"},
             }
 
     def post(self, request, *args, **kwargs):
@@ -1258,67 +1346,6 @@ class JobViewSet(viewsets.ModelViewSet):
         job = self.get_object()
         job.increment_views()
         return Response({"views_count": job.views_count})
-
-
-class PublicJobListViewSet(APIView):
-    """
-    Public API endpoint for job listings
-    Returns only public and active jobs
-    No authentication required
-    """
-
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        """
-        Get all public jobs with optional filters
-        Query parameters:
-        - q: Search query (title, description, location)
-        - job_type: Filter by job type
-        - location: Filter by location
-        - organization: Filter by organization ID
-        """
-        from django.utils import timezone
-
-        # Filter by public, active status, and not expired
-        jobs = (
-            Job.objects.filter(is_public=True, status="active")
-            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
-            .select_related("organization")
-        )
-
-        # Search
-        search_query = request.GET.get("q", "")
-        if search_query:
-            jobs = jobs.filter(
-                Q(title__icontains=search_query)
-                | Q(description__icontains=search_query)
-                | Q(location__icontains=search_query)
-                | Q(organization__name__icontains=search_query)
-            )
-
-        # Filter by job type
-        job_type = request.GET.get("job_type", "")
-        if job_type:
-            jobs = jobs.filter(job_type=job_type)
-
-        # Filter by location
-        location = request.GET.get("location", "")
-        if location:
-            jobs = jobs.filter(location__icontains=location)
-
-        # Filter by organization
-        org_id = request.GET.get("organization", "")
-        if org_id:
-            jobs = jobs.filter(organization_id=org_id)
-
-        # Pagination
-        paginator = PageNumberPagination()
-        paginator.page_size = 20
-        paginated_jobs = paginator.paginate_queryset(jobs, request)
-
-        serializer = JobPublicSerializer(paginated_jobs, many=True)
-        return paginator.get_paginated_response(serializer.data)
 
 
 class OrganizationJobStatsViewSet(APIView):
@@ -1950,21 +1977,18 @@ class DebugPopulateDataApiView(APIView):
     @debug_required
     def post(self, request, *args, **kwargs):
         try:
-            # Load initial data fixture from a resolved path and fail gracefully if missing
-            fixture_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "initial_data.json")
-            if not os.path.exists(fixture_path):
-                return Response(
-                    {"success": False, "error": "Fixture file not found"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+            call_command(
+                "generate_sample_data",
+                preserve_user_id=[request.user.id],
+                preserve_superusers=True,
+                verbosity=0,
+            )
 
-            call_command("loaddata", fixture_path, verbosity=0)
-
-            return Response({"success": True, "message": "Test data populated successfully"})
+            return Response({"success": True, "message": "Sample data populated successfully"})
         except Exception as e:
-            logger.error("Error populating test data: %s", e, exc_info=True)
+            logger.error("Error populating sample data: %s", e, exc_info=True)
             return Response(
-                {"success": False, "error": "Failed to populate test data. Please check server logs."},
+                {"success": False, "error": "Failed to populate sample data. Please check server logs."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

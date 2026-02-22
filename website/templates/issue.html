@@ -42,7 +42,7 @@
     <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
         <div class="flex lg:flex-row flex-col gap-4 mt-10">
             <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4">
-                <nav class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+                <nav class="flex flex-col sm:flex-row items-center justify-between px-2 pb-4 border-b border-gray-200 dark:border-gray-700 mb-4">
                     <div class="flex items-center w-full sm:w-auto mb-3 sm:mb-0">
                         <div class="flex flex-wrap items-center space-x-2 sm:space-x-3 w-full min-w-0">
                             <a href="{% url 'issues' %}"
@@ -65,7 +65,7 @@
                                 {% if object.id < 100 %}#{% endif %}
                             {{ object.id }}</span>
                             <div class="ml-2 sm:ml-3 shrink-0">
-                                {% if status == "open" %}
+                                {% if object.status == "open" %}
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
                                         <span class="w-1.5 h-1.5 bg-[#e74c3c] rounded-full mr-1 animate-pulse"></span>
                                         Ongoing
@@ -80,7 +80,7 @@
                         </div>
                     </div>
                     <span id="likes"
-                          class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-100 text-xs whitespace-nowrap shrink-0">
+                          class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs whitespace-nowrap shrink-0">
                         {{ object.views }}
                         <span>Views</span>
                         <i class="fa-solid fa-eye"></i>
@@ -90,19 +90,19 @@
                     <div class="flex flex-col gap-5 px-2">
                         <div class="flex flex-col gap-2">
                             <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight w-full break-words issue-description"
-                                title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
+                                title="{{ object.description }}">{{ object.description }}</h2>
                             {% if object.markdown_description %}
                                 <p class="text-base sm:text-lg text-gray-700 dark:text-gray-300 font-medium break-words"
                                    id="bug_report"
-                                   data-markdown="{{ object.markdown_description|escapejs }}">
-                                    <!-- This content will be replaced by rendered markdown -->
-                                </p>
+                                   data-markdown="{{ object.markdown_description|escapejs }}"></p>
                             {% endif %}
+                            <!-- This content will be replaced by rendered markdown -->
                         </div>
                     </div>
                     <a href="{{ object.url }}"
                        title="{{ object.url }}"
                        target="_blank"
+                       rel="noopener noreferrer"
                        class="flex items-center gap-3 border px-3 sm:px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-full overflow-hidden">
                         <img src="{{ object.domain.get_logo }}"
                              alt="Organization Logo"
@@ -114,7 +114,7 @@
                     </a>
                     <div class="flex items-center">
                         <img class="size-8 rounded-full object-cover"
-                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.webp' %}{% endif %}"
                              alt="User Profile Logo"
                              width="32px"
                              height="32px">
@@ -122,7 +122,8 @@
                             <div class="text-gray-700 dark:text-gray-300">
                                 {% if object.user.username %}
                                     <a href="{% url 'profile' slug=object.user.username %}"
-                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
+                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">
+                                        <span>@</span>{{ object.user.username }}</a>
                                 {% else %}
                                     Anonymous
                                 {% endif %}
@@ -136,47 +137,29 @@
             </div>
             <div class="lg:w-[25%] flex flex-col gap-4 w-full">
                 {% if request.user.is_superuser or request.user == object.user %}
-                    <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center">
+                    <div class="border border-gray-300 dark:border-gray-600 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center bg-white dark:bg-gray-800">
                         {% if request.user.is_superuser or request.user == object.user %}
                             {% if object.user %}
                                 <form method="post"
-                                      action="{% url 'remove_user_from_issue' id=object.id %}"
-                                      class="flex flex-row gap-x-3 items-center">
+                                      action="{% url 'remove_user_from_issue' id=object.id %}">
                                     {% csrf_token %}
-                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
-                                    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 hover:bg-gray-100 transition duration-200"
-                                            id="report-anonymously"
+                                    <button class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200 font-medium text-sm"
                                             type="submit"
                                             onclick="return confirm('Are you sure you want to report it anonymously?')">
-                                        <div class="flex flex-row gap-2 items-center">
-                                            <span>Anonymous</span>
-                                            <i class="fa-regular fa-user"></i>
-                                        </div>
+                                        <span>Anonymous</span>
+                                        <i class="fa-regular fa-user"></i>
                                     </button>
                                 </form>
                             {% endif %}
-                            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 hover:bg-gray-100 transition duration-200"
-                                    id="edit-issue">
-                                <div class="flex flex-row gap-2 items-center">
-                                    <span class="max-sm:text-[12px]">Edit</span>
-                                    <i class="fa-regular fa-pen-to-square"></i>
-                                </div>
-                            </button>
-                        {% endif %}
-                        {% if request.user.is_superuser or request.user == object.user %}
                             <button onclick="deleteIssue({{ object.id }})"
-                                    class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 px-4 py-3 hover:bg-gray-100 transition duration-200">
-                                <div class="flex flex-row gap-2 items-center">
-                                    <span class="max-sm:text-[12px]">Delete</span>
-                                    <i class="fa-solid fa-trash"></i>
-                                </div>
+                                    class="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 transition text-gray-700 dark:text-gray-200 font-medium text-sm group">
+                                <span class="group-hover:text-red-600 dark:group-hover:text-red-400">Delete</span>
+                                <i class="fa-solid fa-trash group-hover:text-red-600 dark:group-hover:text-red-400"></i>
                             </button>
-                        {% endif %}
-                        {% if request.user.is_superuser or request.user == object.user %}
                             <button type="button"
                                     onclick="resolveIssue()"
-                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 border-gray-300 dark:border-gray-600 px-4 py-3">
-                                {% if status == "open" %}
+                                    class="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-white shadow-sm transition-all duration-200 flex items-center justify-center bg-[#e74c3c] hover:bg-[#c0392b]">
+                                {% if object.status == "open" %}
                                     Close Issue
                                 {% else %}
                                     Open Issue
@@ -195,106 +178,180 @@
     <!-- Scripts -->
     <script>
         function deleteIssue(issueId) {
-            if (!confirm('Are you sure you want to delete this issue?')) {
+            if (!confirm('Are you sure you want to delete this issue? This cannot be undone.')) {
                 return;
             }
-            
+    
             fetch(`/delete_issue/${issueId}/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-CSRFToken': getCookie('csrftoken'),
                     'Content-Type': 'application/json'
                 },
-                credentials: 'same-origin'
+                mode: 'same-origin'
             })
             .then(response => {
                 if (response.ok) {
-                    window.location.href = '/';
+                    window.location.href = '/'; 
                 } else {
-                    throw new Error('Delete failed');
+                    alert('Error: Could not delete issue.');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                $.notify("Failed to delete issue", {
-                    style: "custom",
-                    className: "danger"
-                });
-            });
+            .catch(error => console.error('Error:', error));
         }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
-    <script>
-    var flagClose = document.getElementById("close-flag");
-    var likeClose = document.getElementById("close-like");
-    var flagModal = document.getElementById("flag-modal");
-    var likeModal = document.getElementById("like-modal");
-    var flagOpen = document.getElementById("open-flag");
-
-    flagClose.addEventListener("click", () => {
-        flagModal.style.display = "none";
-    });
-
-    likeClose.addEventListener("click", () => {
-        likeModal.style.display = "none";
-    });
-
-    function flagOpenn() {
-        flagModal.style.cssText = "display:block !important;";
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+        return cookieValue;
     }
 
-    function likeOpenn() {
-        likeModal.style.cssText = "display:block !important;";
-    }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"
+            integrity="sha384-wLhprpjsmjc/XYIcF+LpMxd8yS1gss6jhevOp6F6zhiIoFK6AmHtm4bGKtehTani"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"
+            integrity="sha256-jrQbZYgx+rF1+tm80A/LLYTg7TolpVBT1OzUREuLQ6A="
+            crossorigin="anonymous"></script>
+    {# djlint:off #}
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        
     const bugReportElement = document.getElementById('bug_report');
-    
+
     if (bugReportElement && window.markdownit) {
         const md = new window.markdownit();
-        const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
-        
-        // First render the markdown
-        let renderedHtml = md.render(markdownContent);
-        
-        // Then transform issue references to clickable links
-        renderedHtml = renderedHtml.replace(
-            /#(\d+)/g, 
-            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+                let rawContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+        const decodedContent = rawContent.replace(/\\u([\d\w]{4})/gi, function (match, grp) {
+            return String.fromCharCode(parseInt(grp, 16));
+        }).replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+
+        const markdownContent = decodedContent;
+        const sanitizedFragment = DOMPurify.sanitize(
+            md.render(markdownContent),
+            {
+                ALLOWED_TAGS: [
+                    'a', 'p', 'strong', 'em', 'ul', 'ol', 'li',
+                    'code', 'pre', 'blockquote', 'br',
+                    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img' 
+                ],
+                ALLOWED_ATTR: ['href', 'class', 'src', 'alt', 'title'], 
+                ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|\/)/i,
+                RETURN_DOM_FRAGMENT: true
+            }
         );
-        
-        // Update the content
-        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
-        ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
-        ALLOWED_ATTR: ['href', 'class']
-});
-    }
-    
-    // Also process the issue title/description for issue references
-    const issueDescriptionElement = document.querySelector('.issue-description');
-    if (issueDescriptionElement) {
-        const originalText = issueDescriptionElement.textContent;
-        
-        // Transform issue references to clickable links
-        const transformedText = originalText.replace(
-            /#(\d+)/g, 
-            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-        );
-        
-        issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
-        ALLOWED_TAGS: ['a'],
-        ALLOWED_ATTR: ['href', 'class']
-});
-    }
-});
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
-            integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
-            crossorigin="anonymous"></script>
-    <script>
+            /* Convert #123 → links using DOM APIs */
+            const issueFilterRegex = /#(\d+)/;  // Non-global for test()
+            const issueRegex = /#(\d+)/g;       // Global for exec() loop
+            const walker = document.createTreeWalker(
+                sanitizedFragment,  // Use fragment directly
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode(node) {
+                        if (node.parentElement?.closest('code, pre, a')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return issueFilterRegex.test(node.nodeValue)
+                            ? NodeFilter.FILTER_ACCEPT
+                            : NodeFilter.FILTER_REJECT;
+                    }
+                }
+            );
+
+            const textNodes = [];
+            while (walker.nextNode()) {
+                textNodes.push(walker.currentNode);
+            }
+
+            textNodes.forEach(textNode => {
+                const text = textNode.nodeValue;
+                const fragment = document.createDocumentFragment();
+
+                let lastIndex = 0;
+                let match;
+                issueRegex.lastIndex = 0;
+
+                while ((match = issueRegex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(
+                            document.createTextNode(text.slice(lastIndex, match.index))
+                        );
+                    }
+
+                    const link = document.createElement('a');
+                    link.href = `/issue/${match[1]}`;
+                    link.className =
+                        'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                    // lgtm[js/xss-through-dom] - Safe: digits-only match + textContent (no HTML interpretation)
+                    link.textContent = `#${String(match[1])}`;
+                    fragment.appendChild(link);
+
+                    lastIndex = issueRegex.lastIndex;
+                }
+
+                if (lastIndex < text.length) {
+                    fragment.appendChild(
+                        document.createTextNode(text.slice(lastIndex))
+                    );
+                }
+
+                textNode.replaceWith(fragment);
+            });
+
+            bugReportElement.replaceChildren(sanitizedFragment);  // Use fragment directly
+        }
+
+        const issueDescriptionElement =
+            document.querySelector('.issue-description');
+
+        if (issueDescriptionElement) {
+            const originalText = issueDescriptionElement.textContent;
+            const fragment = document.createDocumentFragment();
+            const regex = /#(\d+)/g;
+
+            let lastIndex = 0;
+            let match;
+
+            while ((match = regex.exec(originalText)) !== null) {
+                if (match.index > lastIndex) {
+                    fragment.appendChild(
+                        document.createTextNode(
+                            originalText.slice(lastIndex, match.index)
+                        )
+                    );
+                }
+
+                const link = document.createElement('a');
+                link.href = `/issue/${match[1]}`;
+                link.className =
+                    'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                // lgtm[js/xss-through-dom] - Safe: digits-only match + textContent (no HTML interpretation)
+                link.textContent = `#${match[1]}`;
+                fragment.appendChild(link);
+
+                lastIndex = regex.lastIndex;
+            }
+
+            if (lastIndex < originalText.length) {
+                fragment.appendChild(
+                    document.createTextNode(originalText.slice(lastIndex))
+                );
+            }
+
+            issueDescriptionElement.replaceChildren(fragment);
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js" integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw=" crossorigin="anonymous"></script>
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         var elms = document.getElementsByClassName('splide');
         for (var i = 0; i < elms.length; i++) {
@@ -308,8 +365,8 @@
             }).mount();
         }
     });
-    </script>
-    <!-- <script>
+</script>
+<!-- <script>
     function edit(){
         $(document).on('click', '.edit-issue-status',(e)=>{
             var s = $('.status').text();
@@ -447,6 +504,37 @@
             });
         });
     }
-    </script> -->
-    <script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
+</script> -->
+    {# djlint:on #}
+    <script>
+    console.log("Script loaded");
+    async function resolveIssue() {
+    const resolveUrl = "{% url 'resolve' object.id %}";
+    const csrftoken = getCookie('csrftoken');
+
+    try {
+        const response = await fetch(resolveUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        if (response.status === 403) {
+            alert("Permission Denied");
+        } else if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Failed to update issue status");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Error occurred");
+    }
+}
+
+    
+    </script>
 {% endblock content %}
