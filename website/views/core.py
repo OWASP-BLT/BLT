@@ -1470,6 +1470,38 @@ def fetch_devto_articles():
         return []
 
 
+# Standalone job board URLs and cache (homepage "recent jobs & seekers")
+JOB_BOARD_JOBS_URL = "https://jobs.owaspblt.org/data/jobs.json"
+JOB_BOARD_SEEKERS_URL = "https://jobs.owaspblt.org/data/seekers.json"
+JOB_BOARD_CACHE_TIMEOUT = 600  # 10 minutes
+
+
+def get_job_board_data():
+    """Fetch recent jobs and seekers from standalone job board. Cached 10 min."""
+    jobs = cache.get("job_board_recent_jobs")
+    seekers = cache.get("job_board_recent_seekers")
+    if jobs is not None and seekers is not None:
+        return jobs, seekers
+    jobs_list = []
+    seekers_list = []
+    try:
+        r = requests.get(JOB_BOARD_JOBS_URL, timeout=10)
+        if r.ok:
+            data = r.json()
+            jobs_list = data.get("jobs", [])[:3]
+        r2 = requests.get(JOB_BOARD_SEEKERS_URL, timeout=10)
+        if r2.ok:
+            data2 = r2.json()
+            seekers_list = data2.get("seekers", [])[:3]
+    except requests.exceptions.RequestException as e:
+        logger.warning("Failed to fetch job board data: %s", e)
+    except (ValueError, KeyError) as e:
+        logger.warning("Invalid job board JSON: %s", e)
+    cache.set("job_board_recent_jobs", jobs_list, JOB_BOARD_CACHE_TIMEOUT)
+    cache.set("job_board_recent_seekers", seekers_list, JOB_BOARD_CACHE_TIMEOUT)
+    return jobs_list, seekers_list
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
@@ -1646,6 +1678,8 @@ def home(request):
         }
 
     devto_articles = fetch_devto_articles()
+    # Recent jobs and seekers from standalone job board (cached)
+    recent_jobs, recent_seekers = get_job_board_data()
 
     return render(
         request,
@@ -1669,6 +1703,8 @@ def home(request):
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
             "recent_hackathons": recent_hackathons,
+            "recent_jobs": recent_jobs,
+            "recent_seekers": recent_seekers,
         },
     )
 
