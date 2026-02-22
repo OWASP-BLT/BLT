@@ -1440,7 +1440,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1521,8 +1521,8 @@ def home(request):
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
 
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+    # Get latest blog posts (Post model was removed in migration 0266; show none until blog is re-added)
+    latest_blog_posts = []
 
     # Get latest bug reports
     if request.user.is_authenticated:
