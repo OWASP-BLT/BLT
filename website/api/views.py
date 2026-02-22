@@ -441,6 +441,9 @@ class IssueViewSet(viewsets.ModelViewSet):
             if security_label is not None:
                 queryset = queryset.filter(label=security_label)
 
+        # Explicit ordering for predictable pagination
+        queryset = queryset.order_by("-created")
+
         total = queryset.count()
         results = queryset[offset : offset + limit]
 
