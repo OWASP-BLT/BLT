@@ -293,28 +293,6 @@
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ item.total_forks|intcomma }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ item.total_issues|intcomma }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap">
-                                        {% if item.project.slack %}
-                                            <div class="flex flex-col">
-                                                <a href="{{ item.project.slack }}"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="text-sm text-red-600 dark:text-red-400 hover:underline"
-                                                   title="Slack: {{ item.project.slack_channel|default:'General' }}">
-                                                    {% if item.project.slack_channel %}
-                                                        {{ item.project.slack_channel }}
-                                                    {% else %}
-                                                        Link
-                                                    {% endif %}
-                                                </a>
-                                                {% if item.project.slack_user_count > 0 %}
-                                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ item.project.slack_user_count|intcomma }} members</span>
-                                                {% endif %}
-                                            </div>
-                                        {% else %}
-                                            <span class="text-sm text-gray-400 dark:text-gray-500">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap">
                                         <div class="flex gap-2">
                                             {% if item.project.twitter %}
                                                 <a href="{% if item.project.twitter|slice:':7' == 'http://' or item.project.twitter|slice:':8' == 'https://' %}{{ item.project.twitter }}{% else %}https://twitter.com/{{ item.project.twitter }}{% endif %}"
