@@ -1,4 +1,4 @@
-﻿Hi {{ recipient_username }},
+Hi {{ recipient_username }},
 
 {{ sender_username }} has started a new encrypted chat with you on OWASP BLT.
 
