@@ -64,7 +64,6 @@ from website.serializers import (
     DomainSerializer,
     IssueSerializer,
     IssueTriageSerializer,
-    JobPublicSerializer,
     JobSerializer,
     OrganizationSerializer,
     ProjectSerializer,
