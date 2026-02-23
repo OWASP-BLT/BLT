@@ -2962,13 +2962,14 @@ class GitHubIssueDetailView(DetailView):
 
 class GitHubIssueBadgeView(APIView):
     """
-    Rich SVG badge card for a GitHub issue showing repo-level stats:
-    - Active Bounties, Total Bounty, Contributors
-    - Total Bounty Pool, Top Bounty, Stars
-    - Open Issues, Views (30d), Time Left (since last update)
+    Compact SVG badge card for a GitHub issue showing four stats:
+    - Views (30d): unique detail-page visits in a 30-day rolling window
+    - Linked PR: whether a pull request is linked (shows PR number or "None")
+    - PR Status: merged / open / closed / N/A
+    - Bounty: the issue's current bounty amount in USD
 
     Design:
-    - Dark card with BLT red (#e74c3c) accent, 3x3 stat grid
+    - Dark card with BLT red (#e74c3c) accent, single-row 4-column layout
     - 5-minute cache TTL with ETag support for conditional requests
 
     Analytics rules:
@@ -2990,7 +2991,14 @@ class GitHubIssueBadgeView(APIView):
         return f"issue_badge:{owner}:{repo_name}:{issue_id}"
 
     def _collect_stats(self, issue_id, owner=None, repo_name=None):
-        """Gather all stats needed for the badge from the database."""
+        """Gather stats needed for the badge from the database.
+
+        Returns only four fields:
+        - views_30d: unique detail-page views in the last 30 days
+        - linked_pr: display string for a linked pull request (e.g. "#123" or "None")
+        - pr_status: status of the linked PR ("merged", "open", "closed", or "N/A")
+        - bounty: the issue's bounty amount (Decimal)
+        """
         repo_url = f"https://github.com/{owner}/{repo_name}" if owner and repo_name else None
 
         # Look up the GitHubIssue
@@ -2999,33 +3007,20 @@ class GitHubIssueBadgeView(APIView):
         else:
             github_issue = GitHubIssue.objects.filter(pk=issue_id, type="issue").first()
 
-        repo = github_issue.repo if github_issue else None
-
         # Issue-specific bounty
-        issue_bounty = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
+        bounty = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
 
-        # Repo-level stats
-        if repo:
-            stars = repo.stars or 0
-            contributor_count = repo.contributor_count or 0
-            open_issues = repo.open_issues or 0
-
-            # Bounty stats across all issues in this repo
-            bounty_qs = GitHubIssue.objects.filter(repo=repo, type="issue", p2p_amount_usd__gt=0)
-            active_bounties = bounty_qs.filter(state="open").count()
-            agg = bounty_qs.aggregate(
-                total_pool=Sum("p2p_amount_usd"),
-                top_bounty=Max("p2p_amount_usd"),
-            )
-            total_bounty_pool = agg["total_pool"] or Decimal(0)
-            top_bounty = agg["top_bounty"] or Decimal(0)
-        else:
-            stars = 0
-            contributor_count = 0
-            open_issues = 0
-            active_bounties = 0
-            total_bounty_pool = Decimal(0)
-            top_bounty = Decimal(0)
+        # Linked pull request info
+        linked_pr = "None"
+        pr_status = "N/A"
+        if github_issue:
+            pr = github_issue.linked_pull_requests.first()
+            if pr:
+                linked_pr = f"#{pr.issue_id}"
+                if pr.is_merged:
+                    pr_status = "merged"
+                else:
+                    pr_status = pr.state  # "open" or "closed"
 
         # 30-day unique views from the issue DETAIL page
         detail_path = reverse("github_issue_detail", kwargs={"pk": github_issue.pk}) if github_issue else None
@@ -3040,25 +3035,11 @@ class GitHubIssueBadgeView(APIView):
         else:
             views_30d = 0
 
-        # Time left: days since last update on the issue
-        if github_issue and github_issue.updated_at:
-            delta = timezone.now() - github_issue.updated_at
-            days = delta.days
-            hours = delta.seconds // 3600
-            time_left = f"{days}d {hours}h" if days else f"{hours}h"
-        else:
-            time_left = "N/A"
-
         return {
-            "active_bounties": active_bounties,
-            "total_bounty": issue_bounty,
-            "contributors": contributor_count,
-            "total_bounty_pool": total_bounty_pool,
-            "top_bounty": top_bounty,
-            "stars": stars,
-            "open_issues": open_issues,
             "views_30d": views_30d,
-            "time_left": time_left,
+            "linked_pr": linked_pr,
+            "pr_status": pr_status,
+            "bounty": bounty,
         }
 
     def get(self, request, issue_id, owner=None, repo_name=None):
@@ -3099,15 +3080,10 @@ class GitHubIssueBadgeView(APIView):
             except Exception as e:
                 logger.error(f"Database error generating badge for issue {issue_id}: {e}")
                 stats = {
-                    "active_bounties": 0,
-                    "total_bounty": Decimal(0),
-                    "contributors": 0,
-                    "total_bounty_pool": Decimal(0),
-                    "top_bounty": Decimal(0),
-                    "stars": 0,
-                    "open_issues": 0,
                     "views_30d": 0,
-                    "time_left": "N/A",
+                    "linked_pr": "None",
+                    "pr_status": "N/A",
+                    "bounty": Decimal(0),
                 }
 
             svg_content = self._generate_badge_svg(stats)
@@ -3138,62 +3114,52 @@ class GitHubIssueBadgeView(APIView):
     @staticmethod
     def _generate_badge_svg(stats):
         """
-        Generate a rich, card-style SVG badge in BLT's dark theme with red (#e74c3c) accent.
-        Displays a 3x3 grid of repo/issue statistics.
+        Generate a compact, card-style SVG badge showing four stats:
+        Views (30d) | Linked PR | PR Status | Bounty
         """
 
-        # Card dimensions
+        # Card dimensions – single row of 4 columns
         card_w = 580
-        card_h = 210
-        header_h = 42
+        header_h = 38
         row_h = 46
-        col_w = card_w // 3
-        grid_y = header_h
+        card_h = header_h + row_h
+        cols = 4
+        col_w = card_w // cols
         border_r = 10
 
         # Colors
         bg = "#1a1a2e"
         header_bg = "#e74c3c"
-        row_bg_1 = "#16213e"
-        row_bg_2 = "#0f3460"
+        row_bg = "#16213e"
         border_color = "#e74c3c"
         text_color = "#ffffff"
         label_color = "#c0c0c0"
-        accent = "#e74c3c"
         accent_green = "#2ecc71"
         accent_gold = "#f1c40f"
+        accent_red = "#e74c3c"
+        accent_blue = "#3498db"
 
         # Format values
-        active_bounties = GitHubIssueBadgeView._fmt_number(stats["active_bounties"])
-        total_bounty = f"${stats['total_bounty']:,.2f}"
-        contributors = GitHubIssueBadgeView._fmt_number(stats["contributors"])
-        total_pool = f"${stats['total_bounty_pool']:,.2f}"
-        top_bounty = f"${stats['top_bounty']:,.2f}"
-        star_count = GitHubIssueBadgeView._fmt_number(stats["stars"])
-        open_issues = GitHubIssueBadgeView._fmt_number(stats["open_issues"])
         views_30d = GitHubIssueBadgeView._fmt_number(stats["views_30d"])
-        time_left = stats["time_left"]
+        linked_pr = stats["linked_pr"]
+        pr_status = stats["pr_status"]
+        bounty = f"${stats['bounty']:,.2f}"
 
-        # Grid data: (icon, label, value, value_color) per cell
-        grid = [
-            # Row 1
-            [
-                ("\U0001F3AF", "Active Bounties", active_bounties, text_color),
-                ("\U0001F4B0", "Total Bounty", total_bounty, accent_green),
-                ("\U0001F465", "Contributors", contributors, text_color),
-            ],
-            # Row 2
-            [
-                ("\U0001F4B5", "Bounty Pool", total_pool, accent_gold),
-                ("\U0001F3C6", "Top Bounty", top_bounty, accent),
-                ("\u2B50", "Stars", star_count, accent_gold),
-            ],
-            # Row 3
-            [
-                ("\U0001F41B", "Open Issues", open_issues, text_color),
-                ("\U0001F4C8", "Views / 30d", views_30d, text_color),
-                ("\u23F0", "Last Activity", time_left, accent_green),
-            ],
+        # Pick a color for PR status
+        status_colors = {
+            "merged": accent_green,
+            "open": accent_blue,
+            "closed": accent_red,
+            "N/A": label_color,
+        }
+        pr_status_color = status_colors.get(pr_status, label_color)
+
+        # Grid data: (icon, label, value, value_color)
+        cells = [
+            ("\U0001F4C8", "Views / 30d", views_30d, text_color),
+            ("\U0001F517", "Linked PR", linked_pr, accent_gold if linked_pr != "None" else label_color),
+            ("\U0001F4CB", "PR Status", pr_status, pr_status_color),
+            ("\U0001F4B0", "Bounty", bounty, accent_green),
         ]
 
         # Build SVG
@@ -3223,78 +3189,64 @@ class GitHubIssueBadgeView(APIView):
 
         # Header text
         svg_parts.append(
-            f'<text x="{card_w // 2}" y="{header_h // 2 + 6}" '
+            f'<text x="{card_w // 2}" y="{header_h // 2 + 5}" '
             f'text-anchor="middle" font-family="Segoe UI,Helvetica,Arial,sans-serif" '
-            f'font-size="18" font-weight="bold" fill="{text_color}" '
-            f'letter-spacing="2">BLT BOUNTY INFORMATION</text>'
+            f'font-size="16" font-weight="bold" fill="{text_color}" '
+            f'letter-spacing="2">BLT ISSUE BADGE</text>'
         )
 
-        # Grid rows
-        for row_idx, row in enumerate(grid):
-            ry = grid_y + row_idx * row_h
-            row_bg = row_bg_1 if row_idx % 2 == 0 else row_bg_2
+        # Row background
+        ry = header_h
+        svg_parts.append(f'<rect y="{ry}" width="{card_w}" height="{row_h}" fill="{row_bg}"/>')
 
-            # Row background
-            svg_parts.append(f'<rect y="{ry}" width="{card_w}" height="{row_h}" fill="{row_bg}"/>')
-
-            # Subtle row separator line
-            svg_parts.append(
-                f'<line x1="0" y1="{ry}" x2="{card_w}" y2="{ry}" '
-                f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
-            )
-
-            for col_idx, (icon, label, value, val_color) in enumerate(row):
-                cx = col_idx * col_w + col_w // 2  # center x of cell
-
-                # Column separator lines (vertical)
-                if col_idx > 0:
-                    lx = col_idx * col_w
-                    svg_parts.append(
-                        f'<line x1="{lx}" y1="{ry}" x2="{lx}" y2="{ry + row_h}" '
-                        f'stroke="{border_color}" stroke-opacity="0.2" stroke-width="0.5"/>'
-                    )
-
-                # Icon + label (top line of cell)
-                label_y = ry + 19
-                svg_parts.append(
-                    f'<text x="{cx}" y="{label_y}" text-anchor="middle" '
-                    f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
-                    f'font-size="12" fill="{label_color}">'
-                    f"{icon} {label}</text>"
-                )
-
-                # Value (bottom line of cell)
-                value_y = ry + 37
-                svg_parts.append(
-                    f'<text x="{cx}" y="{value_y}" text-anchor="middle" '
-                    f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
-                    f'font-size="16" font-weight="bold" fill="{val_color}">'
-                    f"{value}</text>"
-                )
-
-        # Bottom separator line
+        # Row separator line
         svg_parts.append(
-            f'<line x1="0" y1="{grid_y + 3 * row_h}" x2="{card_w}" y2="{grid_y + 3 * row_h}" '
+            f'<line x1="0" y1="{ry}" x2="{card_w}" y2="{ry}" '
             f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
         )
 
-        # Card border (rounded)
+        for col_idx, (icon, label, value, val_color) in enumerate(cells):
+            cx = col_idx * col_w + col_w // 2
+
+            # Column separator
+            if col_idx > 0:
+                lx = col_idx * col_w
+                svg_parts.append(
+                    f'<line x1="{lx}" y1="{ry}" x2="{lx}" y2="{ry + row_h}" '
+                    f'stroke="{border_color}" stroke-opacity="0.2" stroke-width="0.5"/>'
+                )
+
+            # Label
+            label_y = ry + 18
+            svg_parts.append(
+                f'<text x="{cx}" y="{label_y}" text-anchor="middle" '
+                f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+                f'font-size="11" fill="{label_color}">'
+                f"{icon} {label}</text>"
+            )
+
+            # Value
+            value_y = ry + 36
+            svg_parts.append(
+                f'<text x="{cx}" y="{value_y}" text-anchor="middle" '
+                f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+                f'font-size="15" font-weight="bold" fill="{val_color}">'
+                f"{value}</text>"
+            )
+
+        # Bottom separator
+        svg_parts.append(
+            f'<line x1="0" y1="{ry + row_h}" x2="{card_w}" y2="{ry + row_h}" '
+            f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
+        )
+
+        # Card border
         svg_parts.append(
             f'<rect width="{card_w}" height="{card_h}" rx="{border_r}" '
             f'fill="none" stroke="{border_color}" stroke-width="2"/>'
         )
 
         svg_parts.append("</g>")
-
-        # Footer: subtle "Powered by BLT" outside clip to stay in bounds
-        footer_y = card_h - 4
-        svg_parts.append(
-            f'<text x="{card_w // 2}" y="{footer_y}" text-anchor="middle" '
-            f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
-            f'font-size="9" fill="{label_color}" opacity="0.6">'
-            f"Powered by OWASP BLT</text>"
-        )
-
         svg_parts.append("</svg>")
 
         return "\n".join(svg_parts)
