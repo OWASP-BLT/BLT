@@ -81,7 +81,8 @@ class Tag(models.Model):
 
 
 class IntegrationServices(Enum):
-    # Add more services as needed
+    # choices=[] because IntegrationServices is currently empty.
+    # Update IntegrationServices enum when new service types are added.
     pass
 
 
@@ -100,7 +101,7 @@ class Integration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.organization.name} - {self.service_name} Integration"
+        return f"{self.organization.name} - {self.service_name or 'Unknown'} Integration"
 
 
 class OrganisationType(Enum):
