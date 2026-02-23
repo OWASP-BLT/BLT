@@ -70,6 +70,9 @@
         <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans"
               rel="stylesheet">
         <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
+        <link href="{% static 'css/viewport-fixes.css' %}"
+              rel="stylesheet"
+              type="text/css">
         <link href="{% static 'css/text-slider.css' %}"
               rel="stylesheet"
               type="text/css">
@@ -165,6 +168,17 @@
             });
                 
         </script>
+        <!-- Fix for mobile browser viewport height (handles address bar show/hide) -->
+        <script>
+            (function() {
+                function setVh() {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', vh + 'px');
+                }
+                setVh();
+                window.addEventListener('resize', setVh);
+            })();
+        </script>
         <script src="{% static 'js/darkMode.js' %}" defer></script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
@@ -192,18 +206,12 @@
         <div class="w-full h-[50px]"></div>
         <!-- Accessibility: Skip link above allows keyboard navigation -->
         <!-- Main content starts here -->
-        <div id="main-content"
-             role="main"
-             tabindex="-1"
-             class="min-h-screen pb-[70px] mt-[20px]">
+        <div id="main-content" role="main" tabindex="-1" class="flex-1 pb-[80px]">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
-        </div>
-        <div class="pb-[50px]">
-            <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
         {% block scripts %}
         {% endblock scripts %}
