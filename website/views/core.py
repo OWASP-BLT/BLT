@@ -473,7 +473,8 @@ def status_page(request):
         dates = [date.strftime("%Y-%m-%d") for date in date_range]
 
         # Store the data in a format that can be safely serialized to JSON
-        chart_data = {"dates": dates, "team_joins": [], "commands": []}
+        empty_series = [0] * len(dates)
+        chart_data = {"dates": dates, "team_joins": empty_series, "commands": empty_series.copy()}
 
         # Prepare GitHub API history data for chart
         if "github_api_history" in status_data and status_data["github_api_history"]:
