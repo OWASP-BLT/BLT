@@ -544,9 +544,7 @@ class IssueTriageSearchTestCase(APITestCase):
 
         # Create multiple issues
         for i in range(15):
-            Issue.objects.create(
-                description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user
-            )
+            Issue.objects.create(description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user)
 
         # Test limit
         response = self.client.get("/api/v1/issues/triage-search/?limit=5")
@@ -572,9 +570,7 @@ class IssueTriageSearchTestCase(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         # Create test issue
-        issue = Issue.objects.create(
-            description="Test Description", url="http://example.com/test", user=self.user
-        )
+        issue = Issue.objects.create(description="Test Description", url="http://example.com/test", user=self.user)
 
         response = self.client.get("/api/v1/issues/triage-search/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -601,9 +597,7 @@ class IssueTriageSearchTestCase(APITestCase):
 
         # Create 60 issues
         for i in range(60):
-            Issue.objects.create(
-                description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user
-            )
+            Issue.objects.create(description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user)
 
         # Request limit > 50 (should be capped)
         response = self.client.get("/api/v1/issues/triage-search/?limit=100")
