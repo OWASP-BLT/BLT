@@ -1,11 +1,11 @@
 import json
-import os
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.core.mail import send_mail
-from django.shortcuts import HttpResponse, render
+from django.shortcuts import HttpResponse, get_object_or_404, render
 from django.template.loader import render_to_string
 from django.utils.html import escape
 
@@ -14,15 +14,27 @@ from website.models import Issue
 from .models import Comment
 
 
+def _get_issue_ct():
+    """Return the ContentType for the Issue model."""
+    return ContentType.objects.get_for_model(Issue)
+
+
 @login_required(login_url="/accounts/login/")
 def add_comment(request):
-    pk = request.POST.get("issue_pk")
-    issue = Issue.objects.get(pk=pk)
     if request.method == "POST":
+        pk = request.POST.get("issue_pk")
+        if not pk:
+            return HttpResponse("Missing issue ID", status=400)
+        try:
+            pk = int(pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid issue ID", status=400)
+        issue = get_object_or_404(Issue, pk=pk)
         author = request.user.username
-        author_url = os.path.join("/profile/", request.user.username)
-        issue = issue
+        author_url = f"/profile/{request.user.username}"
         text = request.POST.get("text_comment")
+        if not text:
+            return HttpResponse("Missing comment text", status=400)
         text = escape(text)
         user_list = []
         temp_text = text.split()
@@ -30,17 +42,19 @@ def add_comment(request):
         new_msg = ""
         for item in temp_text:
             msg = item
-            if item[0] == "@":
-                if User.objects.filter(username=item[1:]).exists():
-                    user = User.objects.get(username=item[1:])
-                    user_list.append(user)
-                    msg = user.username
-                    item = "<a href='/profile/{0}'>@{1}</a>".format(item[1:], item[1:])
+            if item and item[0] == "@":
+                mentioned = User.objects.filter(username=item[1:]).first()
+                if mentioned:
+                    user_list.append(mentioned)
+                    msg = f"@{mentioned.username}"
+                    item = f"<a href='/profile/{item[1:]}'>@{item[1:]}</a>"
 
             new_text = new_text + " " + item
             new_msg = new_msg + " " + msg
 
         for obj in user_list:
+            if not obj.email:
+                continue
             msg_plain = render_to_string(
                 "email/comment_mention.html",
                 {
@@ -63,82 +77,132 @@ def add_comment(request):
             send_mail(
                 "You have been mentioned in a comment",
                 msg_plain,
-                settings.EMAIL_TO_STRING[obj.email],
+                settings.EMAIL_TO_STRING,
+                [obj.email],
                 html_message=msg_html,
             )
 
-        comment = Comment(author=author, author_url=author_url, issue=issue, text=new_text)
+        issue_ct = _get_issue_ct()
+        comment = Comment(
+            author=author, author_url=author_url, content_type=issue_ct, object_id=issue.pk, text=new_text
+        )
         comment.save()
-        all_comment = Comment.objects.filter(issue=issue)
-    return render(
-        request,
-        "comments.html",
-        {"all_comment": all_comment, "user": request.user},
-    )
+        all_comment = Comment.objects.filter(content_type=issue_ct, object_id=issue.pk).select_related("parent")
+        return render(
+            request,
+            "comments.html",
+            {"all_comment": all_comment, "user": request.user},
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
-@login_required(login_url="/accounts/login")
+@login_required(login_url="/accounts/login/")
 def delete_comment(request):
     if request.method == "POST":
-        issue = Issue.objects.get(pk=request.POST["issue_pk"])
-        all_comment = Comment.objects.filter(issue=issue)
-        comment = Comment.objects.get(pk=int(request.POST["comment_pk"]))
+        issue_pk = request.POST.get("issue_pk")
+        if not issue_pk:
+            return HttpResponse("Missing issue ID", status=400)
+        try:
+            issue_pk = int(issue_pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid issue ID", status=400)
+        issue = get_object_or_404(Issue, pk=issue_pk)
+        comment_pk = request.POST.get("comment_pk")
+        if not comment_pk:
+            return HttpResponse("Missing comment ID", status=400)
+        try:
+            comment_pk = int(comment_pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid comment ID", status=400)
+        issue_ct = _get_issue_ct()
+        comment = get_object_or_404(Comment, pk=comment_pk, content_type=issue_ct, object_id=issue.pk)
+        if request.user.username != comment.author:
+            return HttpResponse("Cannot delete this comment", status=403)
         try:
             show = comment.parent.pk
-        except:
+        except (AttributeError, Comment.DoesNotExist):
             show = -1
-        if request.user.username != comment.author:
-            return HttpResponse("Cannot delete this comment")
         comment.delete()
-    return render(
-        request,
-        "comments.html",
-        {
-            "all_comment": all_comment,
-            "user": request.user,
-            "show": show,
-        },
-    )
+        all_comment = Comment.objects.filter(content_type=issue_ct, object_id=issue.pk).select_related("parent")
+        return render(
+            request,
+            "comments.html",
+            {
+                "all_comment": all_comment,
+                "user": request.user,
+                "show": show,
+            },
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
 @login_required(login_url="/accounts/login/")
 def edit_comment(request, pk):
-    if request.method == "GET":
-        issue = Issue.objects.get(pk=request.GET["issue_pk"])
-        comment = Comment.objects.get(pk=request.GET["comment_pk"])
-        comment.text = request.GET.get("text_comment")
-        comment.text = escape(comment.text)
+    if request.method == "POST":
+        issue = get_object_or_404(Issue, pk=pk)
+        comment_pk = request.POST.get("comment_pk")
+        if not comment_pk:
+            return HttpResponse("Missing comment ID", status=400)
+        try:
+            comment_pk = int(comment_pk)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid comment ID", status=400)
+        issue_ct = _get_issue_ct()
+        comment = get_object_or_404(Comment, pk=comment_pk, content_type=issue_ct, object_id=issue.pk)
+        if request.user.username != comment.author:
+            return HttpResponse("Cannot edit this comment", status=403)
+        text = request.POST.get("text_comment")
+        if not text:
+            return HttpResponse("Missing comment text", status=400)
+        comment.text = escape(text)
         comment.save()
-        all_comment = Comment.objects.filter(issue=issue)
-    return render(
-        request,
-        "comments.html",
-        {"all_comment": all_comment, "user": request.user},
-    )
+        all_comment = Comment.objects.filter(content_type=issue_ct, object_id=issue.pk).select_related("parent")
+        return render(
+            request,
+            "comments.html",
+            {"all_comment": all_comment, "user": request.user},
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
 @login_required(login_url="/accounts/login/")
 def reply_comment(request, pk):
-    if request.method == "GET":
-        parent_id = request.GET.get("parent_id")
-        show = int(parent_id)
-        parent_obj = Comment.objects.get(id=parent_id)
-        author = request.user.username
-        author_url = os.path.join("/profile/", request.user.username)
-        issue = Issue.objects.get(pk=request.GET["issue_pk"])
-        reply_text = request.GET.get("text_comment")
+    if request.method == "POST":
+        issue = get_object_or_404(Issue, pk=pk)
+        issue_ct = _get_issue_ct()
+        parent_id = request.POST.get("parent_id")
+        if not parent_id:
+            return HttpResponse("Missing parent comment ID", status=400)
+        try:
+            parent_id = int(parent_id)
+        except (ValueError, TypeError):
+            return HttpResponse("Invalid parent comment ID", status=400)
+        parent_obj = get_object_or_404(Comment, pk=parent_id, content_type=issue_ct, object_id=issue.pk)
+        reply_text = request.POST.get("text_comment")
+        if not reply_text:
+            return HttpResponse("Missing comment text", status=400)
         reply_text = escape(reply_text)
-        comment = Comment(author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj)
+        author = request.user.username
+        author_url = f"/profile/{request.user.username}"
+        comment = Comment(
+            author=author,
+            author_url=author_url,
+            content_type=issue_ct,
+            object_id=issue.pk,
+            text=reply_text,
+            parent=parent_obj,
+        )
         comment.save()
-        all_comment = Comment.objects.filter(issue=issue)
-    return render(
-        request,
-        "comments.html",
-        {"all_comment": all_comment, "user": request.user, "show": show},
-    )
+        all_comment = Comment.objects.filter(content_type=issue_ct, object_id=issue.pk).select_related("parent")
+        return render(
+            request,
+            "comments.html",
+            {"all_comment": all_comment, "user": request.user, "show": parent_id},
+        )
+    return HttpResponse("Method not allowed", status=405)
 
 
-@login_required(login_url="/accounts/login")
+@login_required(login_url="/accounts/login/")
 def autocomplete(request):
     q_string = request.GET.get("search", "")
     q_string = escape(q_string)
