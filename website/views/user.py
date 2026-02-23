@@ -742,7 +742,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
             "August",
             "September",
             "October",
-            "Novermber",
+            "November",
             "December",
         ]
 
