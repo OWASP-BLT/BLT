@@ -40,7 +40,6 @@ from website.api.views import (
     OrganizationJobStatsViewSet,
     OrganizationViewSet,
     ProjectViewSet,
-    PublicJobListViewSet,
     SearchHistoryApiView,
     SecurityIncidentViewSet,
     StatsApiViewset,
@@ -93,8 +92,6 @@ from website.views.company import (
     delete_prize,
     edit_job,
     edit_prize,
-    job_detail,
-    public_job_list,
     toggle_job_status,
 )
 from website.views.core import (
@@ -784,7 +781,6 @@ urlpatterns = [
     re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
     re_path(r"^api/v1/userscore/$", get_score, name="get_score"),
     # Job Board API URLs
-    path("api/v1/jobs/public/", PublicJobListViewSet.as_view(), name="api_public_jobs"),
     path(
         "api/v1/organization/<int:org_id>/jobs/stats/",
         OrganizationJobStatsViewSet.as_view(),
@@ -1004,8 +1000,8 @@ urlpatterns = [
         toggle_job_status,
         name="toggle_job_status",
     ),
-    path("jobs/", public_job_list, name="public_job_list"),
-    path("jobs/<int:pk>/", job_detail, name="job_detail"),
+    path("jobs/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="public_job_list"),
+    path("jobs/<int:pk>/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="job_detail"),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
