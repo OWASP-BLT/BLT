@@ -2479,13 +2479,7 @@ class OrganizationDetailView(DetailView):
         if not obj.is_active:
             user = self.request.user
 
-            allowed = (
-                user.is_authenticated and (
-                    user.is_superuser
-                    or obj.is_admin(user)
-                    or obj.is_manager(user)
-                )
-            )
+            allowed = user.is_authenticated and (user.is_superuser or obj.is_admin(user) or obj.is_manager(user))
 
             if not allowed:
                 raise Http404("Organization not found")

@@ -262,20 +262,16 @@ class SizzleCheckInViewTests(TestCase):
         self.assertContains(response, "Last check-in was on")
         self.assertContains(response, "Fill from Last Check-in")
         self.assertContains(response, "fillFromLastCheckinBtn")
-        
-        
+
+
 class OrganizationDetailViewAccessTests(TestCase):
     def setUp(self):
         self.client = Client()
 
         # Users
-        self.regular_user = User.objects.create_user(
-            username="regular", password="pass123"
-        )
+        self.regular_user = User.objects.create_user(username="regular", password="pass123")
 
-        self.superuser = User.objects.create_superuser(
-            username="super", email="super@test.com", password="pass123"
-        )
+        self.superuser = User.objects.create_superuser(username="super", email="super@test.com", password="pass123")
 
         # Inactive organization
         self.inactive_org = Organization.objects.create(
