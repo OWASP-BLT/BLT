@@ -278,7 +278,7 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
 # Set the custom email backend that sends Slack notifications
-EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")

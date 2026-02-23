@@ -166,7 +166,6 @@ def status_page(request):
     CHECK_MEMORY = True
     CHECK_DATABASE = True
     CHECK_REDIS = True
-    CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
@@ -189,7 +188,6 @@ def status_page(request):
                 if not CHECK_REDIS
                 else {}
             ),
-            "slack_bot": {},
             "management_commands": [],
             "available_commands": [],
         }

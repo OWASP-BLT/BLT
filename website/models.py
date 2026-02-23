@@ -1270,10 +1270,6 @@ class Project(models.Model):
     )  # Made url nullable in case of no website also made the max_length as 255 because the default is 100
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
-    slack = models.URLField(null=True, blank=True)
-    slack_channel = models.CharField(max_length=255, blank=True, null=True)
-    slack_id = models.CharField(max_length=255, unique=True, blank=True, null=True)
-    slack_user_count = models.IntegerField(default=0)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True, max_length=255)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
