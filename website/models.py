@@ -102,76 +102,6 @@ class Integration(models.Model):
         return f"{self.organization.name} - {self.service_name} Integration"
 
 
-class SlackIntegration(models.Model):
-    integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
-    bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
-    workspace_name = models.CharField(max_length=255, null=True, blank=True)
-    default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
-    default_channel_id = models.CharField(max_length=255, null=True, blank=True)
-    daily_updates = models.BooleanField(default=False)
-    daily_update_time = models.IntegerField(
-        null=True,
-        blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(23)],  # Valid hours: 0–23
-        help_text="The hour of the day (0-23) to send daily updates",
-    )
-    # Add welcome message field
-    welcome_message = models.TextField(
-        null=True,
-        blank=True,
-        help_text="Custom welcome message for new members. Use Slack markdown formatting.",
-    )
-
-    def __str__(self):
-        return f"Slack Integration for {self.integration.organization.name}"
-
-
-class SlackChannel(models.Model):
-    """
-    Stores Slack channel data fetched from the Slack API.
-    This table captures all channels from the OWASP Slack workspace.
-    """
-
-    channel_id = models.CharField(max_length=50, unique=True, primary_key=True)
-    name = models.CharField(max_length=255, db_index=True)
-    topic = models.TextField(blank=True, default="")
-    purpose = models.TextField(blank=True, default="")
-    num_members = models.IntegerField(default=0)
-    is_private = models.BooleanField(default=False)
-    is_archived = models.BooleanField(default=False)
-    is_general = models.BooleanField(default=False)
-    creator = models.CharField(max_length=50, blank=True, default="")
-    created_at = models.DateTimeField(null=True, blank=True)
-    slack_url = models.URLField(max_length=255, blank=True, default="")
-    last_synced = models.DateTimeField(auto_now=True)
-    organization = models.ForeignKey(
-        "Organization",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="slack_channels",
-        help_text="Organization this Slack channel belongs to",
-    )
-    project = models.ForeignKey(
-        "Project",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="slack_channels",
-        help_text="Project this Slack channel is linked to",
-    )
-
-    class Meta:
-        ordering = ["-num_members", "name"]
-        indexes = [
-            models.Index(fields=["name"], name="slackchannel_name_idx"),
-            models.Index(fields=["num_members"], name="slackchannel_members_idx"),
-        ]
-
-    def __str__(self):
-        return f"#{self.name} ({self.num_members} members)"
-
-
 class OrganisationType(Enum):
     ORGANIZATION = "organization"
     INDIVIDUAL = "individual"
@@ -1267,15 +1197,6 @@ class Bid(models.Model):
     #     super().save(*args, **kwargs)
 
 
-class ChatBotLog(models.Model):
-    question = models.TextField()
-    answer = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Q: {self.question} | A: {self.answer} at {self.created}"
-
-
 class SearchHistory(models.Model):
     """Track user search queries for displaying recent searches."""
 
@@ -2011,35 +1932,6 @@ class ContributorStats(models.Model):
 
     def __str__(self):
         return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
-
-
-class SlackBotActivity(models.Model):
-    ACTIVITY_TYPES = [
-        ("team_join", "Team Join"),
-        ("command", "Slash Command"),
-        ("message", "Message"),
-        ("error", "Error"),
-    ]
-
-    workspace_id = models.CharField(max_length=20)
-    workspace_name = models.CharField(max_length=255, null=True, blank=True)
-    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
-    user_id = models.CharField(max_length=20, null=True, blank=True)
-    username = models.CharField(max_length=255, null=True, blank=True)
-    details = models.JSONField(default=dict)  # Stores flexible activity-specific data
-    success = models.BooleanField(default=True)
-    error_message = models.TextField(null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    class Meta:
-        ordering = ["-created"]
-        indexes = [
-            models.Index(fields=["workspace_id", "activity_type"]),
-            models.Index(fields=["created"]),
-        ]
-
-    def __str__(self):
-        return f"{self.get_activity_type_display()} in {self.workspace_name} at {self.created}"
 
 
 class Challenge(models.Model):
