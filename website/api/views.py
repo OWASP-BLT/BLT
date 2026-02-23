@@ -446,10 +446,8 @@ class IssueViewSet(viewsets.ModelViewSet):
             if security_label is not None:
                 queryset = queryset.filter(label=security_label)
 
-        # Optimize queryset to prevent N+1 queries
-        queryset = queryset.select_related("user", "domain", "hunt", "closed_by").prefetch_related(
-            "screenshots", "tags", "team_members"
-        )
+        # Optimize queryset to prevent N+1 queries for the nested user field only
+        queryset = queryset.select_related("user")
 
         # Explicit ordering for predictable pagination
         queryset = queryset.order_by("-created")
