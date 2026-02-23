@@ -36,6 +36,12 @@ class Migration(migrations.Migration):
             model_name="project",
             name="slack_user_count",
         ),
+        migrations.RunPython(
+            code=lambda apps, schema_editor: apps.get_model("website", "Integration")
+            .objects.filter(service_name="slack")
+            .update(service_name=None),
+            reverse_code=migrations.RunPython.noop,
+        ),
         migrations.AlterField(
             model_name="integration",
             name="service_name",
