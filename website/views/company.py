@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 import uuid
 from datetime import datetime, timedelta
@@ -33,6 +34,8 @@ from website.models import (
     Winner,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
+
+logger = logging.getLogger(__name__)
 
 
 def validate_organization_user(func):
