@@ -1971,8 +1971,8 @@ def start_thread(request, user_id):
                     }
 
                     # Render the email content (txt for plain, html for rich)
-                    msg_plain = render_to_string("email/new_encrypted_chat.txt", context)
-                    msg_html = render_to_string("email/new_encrypted_chat.html", context)
+                    msg_plain = f"Hi {other_user.username}, {request.user.username} started a chat."
+                    msg_html = render_to_string("email/new_chat.html", context)
 
                     # Send the email
                     send_mail(
