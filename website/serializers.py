@@ -111,7 +111,6 @@ class IssueTriageSerializer(serializers.ModelSerializer):
         model = Issue
         fields = [
             "id",
-            "title",
             "description",
             "status",
             "label",

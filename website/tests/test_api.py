@@ -458,13 +458,12 @@ class IssueTriageSearchTestCase(APITestCase):
 
         # Create test issues
         issue1 = Issue.objects.create(
-            title="SQL Injection",
             description="Database query vulnerability",
             url="http://example.com/issue1",
             user=self.user,
         )
         issue2 = Issue.objects.create(
-            title="XSS Attack", description="Frontend javascript issue", url="http://example.com/issue2", user=self.user
+            description="Frontend javascript issue", url="http://example.com/issue2", user=self.user
         )
 
         # Search for keyword
@@ -485,14 +484,12 @@ class IssueTriageSearchTestCase(APITestCase):
 
         # Create issues with different labels
         issue_security = Issue.objects.create(
-            title="Security Bug",
             description="Critical security flaw",
             url="http://example.com/sec",
             user=self.user,
             label=4,  # Security label
         )
         issue_other = Issue.objects.create(
-            title="Other Bug",
             description="Minor issue",
             url="http://example.com/other",
             user=self.user,
@@ -517,14 +514,12 @@ class IssueTriageSearchTestCase(APITestCase):
 
         # Create issues with different statuses
         issue_open = Issue.objects.create(
-            title="Open Issue",
             description="Open status",
             url="http://example.com/open",
             user=self.user,
             status="o",  # Open status
         )
         issue_closed = Issue.objects.create(
-            title="Closed Issue",
             description="Closed status",
             url="http://example.com/closed",
             user=self.user,
@@ -550,7 +545,7 @@ class IssueTriageSearchTestCase(APITestCase):
         # Create multiple issues
         for i in range(15):
             Issue.objects.create(
-                title=f"Issue {i}", description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user
+                description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user
             )
 
         # Test limit
@@ -578,7 +573,7 @@ class IssueTriageSearchTestCase(APITestCase):
 
         # Create test issue
         issue = Issue.objects.create(
-            title="Test Issue", description="Test Description", url="http://example.com/test", user=self.user
+            description="Test Description", url="http://example.com/test", user=self.user
         )
 
         response = self.client.get("/api/v1/issues/triage-search/")
@@ -594,7 +589,6 @@ class IssueTriageSearchTestCase(APITestCase):
         # Check issue serialization (lean fields only)
         issue_data = data["results"][0]
         self.assertIn("id", issue_data)
-        self.assertIn("title", issue_data)
         self.assertIn("description", issue_data)
         self.assertIn("status", issue_data)
         self.assertIn("created", issue_data)
@@ -608,7 +602,7 @@ class IssueTriageSearchTestCase(APITestCase):
         # Create 60 issues
         for i in range(60):
             Issue.objects.create(
-                title=f"Issue {i}", description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user
+                description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user
             )
 
         # Request limit > 50 (should be capped)
