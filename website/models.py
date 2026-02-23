@@ -81,7 +81,7 @@ class Tag(models.Model):
 
 
 class IntegrationServices(Enum):
-    SLACK = "slack"
+    pass
 
 
 class Integration(models.Model):
@@ -108,6 +108,15 @@ class OrganisationType(Enum):
     TEAM = "team"
 
 
+class ChatBotLog(models.Model):
+    question = models.TextField()
+    answer = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Q: {self.question} | A: {self.answer} at {self.created}"
+
+
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
@@ -119,7 +128,6 @@ class Organization(models.Model):
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
     matrix_url = models.URLField(null=True, blank=True)
-    slack_url = models.URLField(null=True, blank=True)
     discord_url = models.URLField(null=True, blank=True)
     gitter_url = models.URLField(null=True, blank=True)
     zulipchat_url = models.URLField(null=True, blank=True)
