@@ -116,7 +116,7 @@ class IssueTriageSerializer(serializers.ModelSerializer):
             "label",
             "user",
             "created",
-            "updated",
+            "modified",
             "cve_id",
         ]
 
