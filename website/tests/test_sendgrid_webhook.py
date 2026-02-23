@@ -1,11 +1,10 @@
 import json
-from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from website.models import Domain, UserProfile
+from website.models import UserProfile
 
 
 class SendGridWebhookTestCase(TestCase):
@@ -20,13 +19,6 @@ class SendGridWebhookTestCase(TestCase):
         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass")
         self.user_profile = UserProfile.objects.get(user=self.user)
 
-        # Create test domain
-        self.domain = Domain.objects.create(
-            name="example.com",
-            url="https://example.com",
-            email="test@example.com",
-        )
-
     def test_webhook_updates_user_profile(self):
         """Test that webhook still updates user profile as before"""
         payload = [
@@ -38,12 +30,11 @@ class SendGridWebhookTestCase(TestCase):
             }
         ]
 
-        with patch.dict("os.environ", {}, clear=True):
-            response = self.client.post(
-                self.webhook_url,
-                data=json.dumps(payload),
-                content_type="application/json",
-            )
+        response = self.client.post(
+            self.webhook_url,
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
 
         self.assertEqual(response.status_code, 200)
 

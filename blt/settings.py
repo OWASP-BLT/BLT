@@ -277,8 +277,10 @@ if SENTRY_DSN:
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
-# Set the custom email backend that sends Slack notifications
+# Standard SMTP email backend
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
@@ -334,15 +336,6 @@ else:
         },
     }
     # Removed DEBUG override - DEBUG should be controlled by environment variable
-
-    # use this to debug emails locally
-    # python -m smtpd -n -c DebuggingServer localhost:1025
-    # if DEBUG:
-    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-    # Keep using our custom backend even in debug mode
-    # But make sure we keep the EMAIL_BACKEND setting from above
-    pass
 
 DATABASES = {
     "default": {
