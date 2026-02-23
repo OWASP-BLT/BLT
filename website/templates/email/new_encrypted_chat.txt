@@ -1,0 +1,9 @@
+﻿Hi {{ recipient_username }},
+
+{{ sender_username }} has started a new encrypted chat with you on OWASP BLT.
+
+You can view the message and reply here:
+{{ chat_url }}
+
+Best regards,
+The OWASP BLT Team
