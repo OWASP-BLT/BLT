@@ -482,14 +482,12 @@ class IssueTriageSearchTestCase(APITestCase):
 
         self.client.force_authenticate(user=self.user)
 
-        security_label = next((key for key, value in Issue.labels if value == "Security"), None)
-
         # Create issues with different labels
         issue_security = Issue.objects.create(
             description="Critical security flaw",
             url="http://example.com/sec",
             user=self.user,
-            label=security_label,
+            label=4,  # Security label
         )
         issue_other = Issue.objects.create(
             description="Minor issue",
@@ -519,17 +517,17 @@ class IssueTriageSearchTestCase(APITestCase):
             description="Open status",
             url="http://example.com/open",
             user=self.user,
-            status="open",
+            status="o",  # Open status
         )
         issue_closed = Issue.objects.create(
             description="Closed status",
             url="http://example.com/closed",
             user=self.user,
-            status="closed",
+            status="c",  # Closed status
         )
 
         # Filter by status
-        response = self.client.get("/api/v1/issues/triage-search/?status=open")
+        response = self.client.get("/api/v1/issues/triage-search/?status=o")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
 
