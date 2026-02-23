@@ -2425,6 +2425,58 @@ class GitHubReview(models.Model):
         return f"Review #{self.review_id} by {reviewer_name} on PR #{self.pull_request.issue_id}"
 
 
+class GitHubComment(models.Model):
+    """
+    Model to store comments made by users on GitHub issues and pull requests.
+    Tracks engagement for the comment leaderboard.
+    """
+
+    comment_id = models.BigIntegerField(unique=True)
+    issue = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="tracked_comments",
+    )
+    commenter = models.ForeignKey(
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_user",
+    )
+    commenter_contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="github_comments_as_contributor",
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    url = models.URLField()
+
+    class Meta:
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(commenter__isnull=False) | models.Q(commenter_contributor__isnull=False),
+                name="at_least_one_commenter",
+            ),
+        )
+        indexes = [
+            models.Index(fields=["created_at"], name="gh_comment_created_idx"),
+            models.Index(fields=["commenter_contributor"], name="gh_comment_contributor_idx"),
+        ]
+
+    def __str__(self):
+        commenter_name = "Unknown"
+        if self.commenter:
+            commenter_name = self.commenter.user.username
+        elif self.commenter_contributor:
+            commenter_name = self.commenter_contributor.name
+        return f"Comment #{self.comment_id} by {commenter_name} on {self.issue.type} #{self.issue.issue_id}"
+
+
 class Kudos(models.Model):
     """
     Model to send kudos to team members.
