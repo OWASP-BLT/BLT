@@ -8,7 +8,7 @@ name: CI/CD Optimized
 # - Pre-commit results (comments, labels) are handled by a separate workflow
 #   (label-test-result.yml) triggered via workflow_run after this workflow completes.
 #   This gives it write permissions without executing untrusted code.
-# TODO: Consider adding tests for workflow_run triggers to ensure label workflow is correctly triggered and handles results.
+
 on:
   #merge_group:
   pull_request:
