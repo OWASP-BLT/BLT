@@ -570,3 +570,254 @@ class GitHubWebhookPullRequestIdempotentTestCase(TestCase):
             GitHubIssue.objects.filter(issue_id=self.pr_global_id, repo=self.repo).count(),
             1,
         )
+
+
+@override_settings(GITHUB_WEBHOOK_SECRET="testsecret")
+class GitHubWebhookCommentTestCase(TestCase):
+    """Test GitHub webhook handling for COMMENT events (issue_comment and pull_request_review_comment)."""
+
+    def setUp(self):
+        """Set up a test client, webhook URL, secret, and a test Repo instance."""
+        self.client = Client()
+        self.webhook_url = reverse("github-webhook")
+        self.secret = "testsecret"
+
+        # Create test user with GitHub profile
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user_profile = UserProfile.objects.get(user=self.user)
+        self.user_profile.github_url = "https://github.com/testuser"
+        self.user_profile.save()
+
+        # Create test repository
+        self.repo_url = "https://github.com/OWASP-BLT/demo-repo"
+        self.repo = Repo.objects.create(
+            name="demo-repo",
+            repo_url=self.repo_url,
+            slug="owasp-blt-demo-repo",
+        )
+
+        # Create test GitHub issue
+        self.issue_global_id = 987654321
+        self.issue_number = 42
+        self.github_issue = GitHubIssue.objects.create(
+            issue_id=self.issue_global_id,
+            title="Test Issue",
+            body="Test issue description",
+            state="open",
+            type="issue",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            url=f"{self.repo_url}/issues/{self.issue_number}",
+            repo=self.repo,
+        )
+
+    def _sign(self, body: bytes) -> str:
+        """Compute X-Hub-Signature-256 using HMAC-SHA256."""
+        return compute_github_signature(self.secret, body)
+
+    def _post(self, payload: dict, event: str = "issue_comment", *, signature=None):
+        """Helper to POST a signed comment webhook payload to /github-webhook/."""
+        body = json.dumps(payload).encode("utf-8")
+        headers = {
+            "HTTP_X_GITHUB_EVENT": event,
+        }
+        if signature is None:
+            signature = self._sign(body)
+        headers["HTTP_X_HUB_SIGNATURE_256"] = signature
+
+        return self.client.post(
+            self.webhook_url,
+            data=body,
+            content_type="application/json",
+            **headers,
+        )
+
+    def test_issue_comment_created_creates_github_comment(self):
+        """issue_comment created event should create a GitHubComment record."""
+        from website.models import GitHubComment
+
+        payload = {
+            "action": "created",
+            "comment": {
+                "id": 111222333,
+                "body": "This is a test comment",
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}#issuecomment-111222333",
+                "created_at": timezone.now().isoformat(),
+                "updated_at": timezone.now().isoformat(),
+                "user": {
+                    "id": 12345,
+                    "login": "testcommenter",
+                    "html_url": "https://github.com/testcommenter",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/12345?v=4",
+                    "type": "User",
+                },
+            },
+            "issue": {
+                "id": self.issue_global_id,
+                "number": self.issue_number,
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}",
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+
+        response = self._post(payload, event="issue_comment")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(GitHubComment.objects.count(), 1)
+
+        comment = GitHubComment.objects.first()
+        self.assertEqual(comment.comment_id, 111222333)
+        self.assertEqual(comment.body, "This is a test comment")
+        self.assertEqual(comment.issue, self.github_issue)
+        self.assertIsNotNone(comment.commenter_contributor)
+        self.assertEqual(comment.commenter_contributor.name, "testcommenter")
+
+    def test_bot_comment_is_ignored(self):
+        """Comments from bots should be ignored."""
+        from website.models import GitHubComment
+
+        payload = {
+            "action": "created",
+            "comment": {
+                "id": 999888777,
+                "body": "This is a bot comment",
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}#issuecomment-999888777",
+                "created_at": timezone.now().isoformat(),
+                "updated_at": timezone.now().isoformat(),
+                "user": {
+                    "id": 99999,
+                    "login": "github-actions[bot]",
+                    "html_url": "https://github.com/apps/github-actions",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/99999?v=4",
+                    "type": "Bot",
+                },
+            },
+            "issue": {
+                "id": self.issue_global_id,
+                "number": self.issue_number,
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}",
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+
+        response = self._post(payload, event="issue_comment")
+
+        self.assertEqual(response.status_code, 200)
+        # No GitHubComment should be created for bot comments
+        self.assertEqual(GitHubComment.objects.count(), 0)
+
+    def test_comment_on_untracked_repo_is_handled_gracefully(self):
+        """Comment on a repository not in BLT database should return success without error."""
+        from website.models import GitHubComment
+
+        payload = {
+            "action": "created",
+            "comment": {
+                "id": 555666777,
+                "body": "Comment on untracked repo",
+                "html_url": "https://github.com/some-org/untracked-repo/issues/1#issuecomment-555666777",
+                "created_at": timezone.now().isoformat(),
+                "updated_at": timezone.now().isoformat(),
+                "user": {
+                    "id": 54321,
+                    "login": "someuser",
+                    "html_url": "https://github.com/someuser",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/54321?v=4",
+                    "type": "User",
+                },
+            },
+            "issue": {
+                "id": 123456789,
+                "number": 1,
+                "html_url": "https://github.com/some-org/untracked-repo/issues/1",
+            },
+            "repository": {
+                "full_name": "some-org/untracked-repo",
+                "html_url": "https://github.com/some-org/untracked-repo",
+            },
+        }
+
+        response = self._post(payload, event="issue_comment")
+
+        self.assertEqual(response.status_code, 200)
+        # No GitHubComment should be created
+        self.assertEqual(GitHubComment.objects.count(), 0)
+
+    def test_comment_edited_is_ignored(self):
+        """Edited comments should not be tracked (only 'created' action is tracked)."""
+        from website.models import GitHubComment
+
+        payload = {
+            "action": "edited",
+            "comment": {
+                "id": 333444555,
+                "body": "This is an edited comment",
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}#issuecomment-333444555",
+                "created_at": timezone.now().isoformat(),
+                "updated_at": timezone.now().isoformat(),
+                "user": {
+                    "id": 11111,
+                    "login": "editor",
+                    "html_url": "https://github.com/editor",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/11111?v=4",
+                    "type": "User",
+                },
+            },
+            "issue": {
+                "id": self.issue_global_id,
+                "number": self.issue_number,
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}",
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+
+        response = self._post(payload, event="issue_comment")
+
+        self.assertEqual(response.status_code, 200)
+        # No GitHubComment should be created for edited comments
+        self.assertEqual(GitHubComment.objects.count(), 0)
+
+    def test_invalid_signature_returns_403_and_does_not_create_comment(self):
+        """Invalid signature should return 403 and not create any GitHubComment records."""
+        from website.models import GitHubComment
+
+        payload = {
+            "action": "created",
+            "comment": {
+                "id": 777888999,
+                "body": "This should not be saved",
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}#issuecomment-777888999",
+                "created_at": timezone.now().isoformat(),
+                "updated_at": timezone.now().isoformat(),
+                "user": {
+                    "id": 22222,
+                    "login": "hacker",
+                    "html_url": "https://github.com/hacker",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/22222?v=4",
+                    "type": "User",
+                },
+            },
+            "issue": {
+                "id": self.issue_global_id,
+                "number": self.issue_number,
+                "html_url": f"{self.repo_url}/issues/{self.issue_number}",
+            },
+            "repository": {
+                "full_name": "OWASP-BLT/demo-repo",
+                "html_url": self.repo_url,
+            },
+        }
+
+        response = self._post(payload, event="issue_comment", signature="sha256=invalidsignature")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(GitHubComment.objects.count(), 0)

@@ -8,7 +8,8 @@ jobs:
   process-bounty:
     permissions:
       contents: read
-      issues: read
+      issues: write
+      pull-requests: write
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
@@ -82,13 +83,18 @@ jobs:
               return;
             }
 
+            // Human-readable dollar amount for display
+            const bountyDisplay = bountyMatch[1];
+
             core.setOutput('has-bounty', 'true');
             core.setOutput('issue-number', bountyIssue.number.toString());
             core.setOutput('bounty-amount', bountyAmount);
+            core.setOutput('bounty-display', bountyDisplay);
             core.setOutput('contributor-username', pr.user.login);
 
       - name: Send bounty data to BLT
         if: steps.check-issues.outputs['has-bounty'] == 'true'
+        continue-on-error: true
         env:
           ISSUE_NUMBER: ${{ steps.check-issues.outputs.issue-number }}
           BOUNTY_AMOUNT: ${{ steps.check-issues.outputs.bounty-amount }}
@@ -123,3 +129,37 @@ jobs:
 
             const result = await response.json();
             console.log('Bounty payout request successful:', result);
+
+      - name: Post bounty notification comments
+        if: steps.check-issues.outputs['has-bounty'] == 'true'
+        uses: actions/github-script@v6.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = parseInt('${{ steps.check-issues.outputs.issue-number }}');
+            const bountyDisplay = '${{ steps.check-issues.outputs.bounty-display }}';
+            const prAuthor = '${{ steps.check-issues.outputs.contributor-username }}';
+            const prNumber = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sponsorsUrl = `https://github.com/sponsors/${prAuthor}`;
+
+            const issueComment = `🎉 This issue had a **$${bountyDisplay}** bounty attached!\n\nThe fix was contributed by @${prAuthor}. If you'd like to support their work, you can visit their profile at https://github.com/${prAuthor} or sponsor them at ${sponsorsUrl} (if GitHub Sponsors is enabled).`;
+
+            const prComment = `🎉 This PR closed a bounty issue worth **$${bountyDisplay}**!\n\nThank you @${prAuthor} for your contribution! Others can support your work at your profile https://github.com/${prAuthor} or sponsor you at ${sponsorsUrl} (if GitHub Sponsors is enabled).`;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: issueComment
+            });
+            console.log(`Posted bounty comment on issue #${issueNumber}`);
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: prComment
+            });
+            console.log(`Posted bounty comment on PR #${prNumber}`);

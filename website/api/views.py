@@ -557,7 +557,7 @@ class LeaderboardApiViewSet(APIView):
             "August",
             "September",
             "October",
-            "Novermber",
+            "November",
             "December",
         ]
 
