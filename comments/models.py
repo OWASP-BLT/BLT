@@ -26,6 +26,6 @@ class Comment(models.Model):
         """Explicit return type; text truncated to 50 chars for UI stability."""
         return self.text[:50]
 
-    def children(self) -> QuerySet:
+    def children(self) -> "QuerySet[Comment]":
         """Returns a QuerySet of child comments for threaded discussions."""
         return Comment.objects.filter(parent=self)
