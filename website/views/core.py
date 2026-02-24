@@ -1384,6 +1384,69 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+DEVTO_USERNAME = "owaspblt"
+DEVTO_ARTICLE_COUNT = 2
+DEVTO_API_URL = f"https://dev.to/api/articles?username={DEVTO_USERNAME}&per_page={DEVTO_ARTICLE_COUNT}"
+
+
+def fetch_devto_articles():
+    """
+    Fetches latest articles from Dev.to API.
+    Implements security validation for external URLs and data allow-listing.
+    """
+    cache_key = "devto_articles"
+    cached_data = cache.get(cache_key)
+
+    # Return cached result if available to reduce external API calls
+    if cached_data is not None:
+        return cached_data
+
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        response = requests.get(DEVTO_API_URL, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        if not isinstance(data, list):
+            return []
+
+        refined_articles = []
+
+        for article in data:
+            url = article.get("url", "")
+            cover_image = article.get("cover_image") or ""
+
+            # URL Validation to ensure external links use HTTPS
+            if not url.startswith("https://"):
+                continue
+            if cover_image and not cover_image.startswith("https://"):
+                cover_image = ""
+
+            # Safe Date Parsing
+            published_at = article.get("published_at", "")
+            clean_date = published_at[:10] if len(published_at) >= 10 else ""
+
+            refined_articles.append(
+                {
+                    "title": article.get("title"),
+                    "url": url,
+                    "cover_image": cover_image,
+                    "description": article.get("description", ""),
+                    "user_name": article.get("user", {}).get("name", "OWASP BLT"),
+                    "published_at": clean_date,
+                }
+            )
+
+        cache.set(cache_key, refined_articles, 600)  # Cache success for 10 min
+        return refined_articles
+
+    except (requests.RequestException, ValueError) as e:
+        logger.error(f"Dev.to fetch failure: {e}")
+        # Short failure cache to prevent repeated failing calls
+        cache.set(cache_key, [], 30)
+        return []
+
+
 # Standalone job board URLs and cache (homepage "recent jobs & seekers")
 JOB_BOARD_JOBS_URL = "https://jobs.owaspblt.org/data/jobs.json"
 JOB_BOARD_SEEKERS_URL = "https://jobs.owaspblt.org/data/seekers.json"
@@ -1521,8 +1584,8 @@ def home(request):
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
 
-    # Get latest blog posts (Post model was removed in migration 0266; show none until blog is re-added)
-    latest_blog_posts = []
+    # fetches blog from dev.to and displays in homepage
+    devto_articles = fetch_devto_articles()
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1624,13 +1687,13 @@ def home(request):
             "last_commit": last_commit,
             "current_year": timezone.now().year,
             "current_time": current_time,  # Add current time for month display
+            "devto_articles": devto_articles,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,
             "repo_stars": repo_stars,
             "top_referrals": top_referrals,
