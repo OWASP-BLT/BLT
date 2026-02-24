@@ -16,32 +16,26 @@ Follow the prompts to submit a private security advisory.
 
 We ask security researchers to:
 - Allow us reasonable time to fix the vulnerability before public disclosure (typically 90 days)
+- Follow up every 30 days on the advisory thread to check on the progress
 - Not exploit the vulnerability or demonstrate it on live systems
 - Not disclose the vulnerability to others until we've released a patch
 
 In return, we commit to:
-- We will acknowledge your report and work with you to establish a timeline for addressing the vulnerability.
-- We aim to provide an initial response within 48-72 hours of receiving your report.
+- If it's a valid report, we may acknowledge it and work with you to establish a timeline for addressing the vulnerability. We are not obliged to acknowledge any report, especially if it's low quality or inaccurate.
+- We aim to provide an initial response within 1–7 days of receiving your report.
 - We will keep you informed of our progress in addressing the issue.
-- Once the issue is fixed, we will release a patch and publicly disclose the vulnerability.
+- Once the issue is fixed, we will release a patch. We may or may not publicly disclose the vulnerability depending on the severity and affected users. If users are affected, we will do our best to contact them.
 - If you wish to be credited for the discovery, please let us know in your report. You may also choose to remain anonymous.
 
 ## Bug Bounties
 
-OWASP BLT may offer rewards for valid security vulnerabilities reported through responsible disclosure. Bounty eligibility and amounts are determined on a case-by-case basis depending on:
-
-- **Severity**: Critical vulnerabilities affecting user data, authentication, or system integrity
-- **Impact**: Potential harm to users or the platform
-- **Quality**: Clear reproduction steps and detailed documentation
-
-Not all reports are eligible for bounties. The decision to award a bounty is at the discretion of the project maintainers. To be considered for a bounty, please indicate your interest in your initial report.
+Currently, we do not offer bounties for security vulnerability reports. To find out if we offer bounties in the future, please check the BLT project on the [BLT homepage](https://owaspblt.org).
 
 ## Vulnerability Handling Process - (if a valid security issue is found)
 
 - **Triage**: The Project Leaders will review the report and assess the severity of the vulnerability.
 - **Fix Development**: A fix will be developed and tested for the vulnerability.
-- **Release**: A patched version will be released.
-- **Disclosure**: The vulnerability may be publicly disclosed with appropriate details.
+- **Release and Disclosure**: A patched version will be released. The vulnerability may or may not be publicly disclosed depending on the severity and affected users.
 
 ## Contacting Maintainers
 
