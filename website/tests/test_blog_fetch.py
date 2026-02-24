@@ -1,7 +1,6 @@
-import requests
-
 from unittest.mock import MagicMock, patch
 
+import requests
 from django.core.cache import cache
 from django.test import TestCase
 
