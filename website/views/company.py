@@ -11,6 +11,7 @@ from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
@@ -40,6 +41,7 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
+from website.services.dns_security import get_domain_dns_posture
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
@@ -789,6 +791,81 @@ class OrganizationDashboardAnalyticsView(View):
             "threat_intelligence": self.get_threat_intelligence(id),
         }
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+
+class OrganizationDashboardCyberView(View):
+    CACHE_TIMEOUT_SECONDS = 3600
+
+    def _get_user_organizations(self, user):
+        if user.is_authenticated:
+            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+        return []
+
+    def _build_dns_metrics(self, organization_id):
+        active_domains = Domain.objects.filter(organization__id=organization_id, is_active=True).values("name", "url")
+
+        domain_results = []
+        for domain in active_domains:
+            try:
+                posture = get_domain_dns_posture(domain["url"] or domain["name"])
+            except Exception:
+                posture = {"domain": "", "spf": False, "dmarc": False, "dnssec": False}
+
+            compliant = posture["spf"] and posture["dmarc"] and posture["dnssec"]
+            domain_results.append(
+                {
+                    "name": domain["name"],
+                    "hostname": posture["domain"] or domain["name"],
+                    "spf": posture["spf"],
+                    "dmarc": posture["dmarc"],
+                    "dnssec": posture["dnssec"],
+                    "compliant": compliant,
+                }
+            )
+
+        total_domains = len(domain_results)
+        spf_count = sum(1 for entry in domain_results if entry["spf"])
+        dmarc_count = sum(1 for entry in domain_results if entry["dmarc"])
+        dnssec_count = sum(1 for entry in domain_results if entry["dnssec"])
+        compliant_count = sum(1 for entry in domain_results if entry["compliant"])
+        non_compliant_count = total_domains - compliant_count
+
+        return {
+            "domains": domain_results,
+            "total_domains": total_domains,
+            "spf_count": spf_count,
+            "dmarc_count": dmarc_count,
+            "dnssec_count": dnssec_count,
+            "compliant_count": compliant_count,
+            "non_compliant_count": non_compliant_count,
+            "compliance_labels": json.dumps(["Compliant", "Needs Attention"]),
+            "compliance_data": json.dumps([compliant_count, non_compliant_count]),
+        }
+
+    def _get_cached_dns_metrics(self, organization_id):
+        cache_key = f"org_cyber_dns:{organization_id}"
+        cached_metrics = cache.get(cache_key)
+        if cached_metrics is not None:
+            return cached_metrics
+
+        metrics = self._build_dns_metrics(organization_id)
+        cache.set(cache_key, metrics, self.CACHE_TIMEOUT_SECONDS)
+        return metrics
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        context = {
+            "organization": id,
+            "organizations": self._get_user_organizations(request.user),
+            "organization_obj": organization_obj,
+            "dns_security": self._get_cached_dns_metrics(id),
+        }
+        return render(request, "organization/dashboard/organization_cyber.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):

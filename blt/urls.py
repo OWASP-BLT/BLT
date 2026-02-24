@@ -72,6 +72,7 @@ from website.views.company import (
     LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
+    OrganizationDashboardCyberView,
     OrganizationDashboardIntegrations,
     OrganizationDashboardManageBughuntView,
     OrganizationDashboardManageBugsView,
@@ -877,6 +878,11 @@ urlpatterns = [
         "organization/<int:id>/dashboard/analytics/",
         OrganizationDashboardAnalyticsView.as_view(),
         name="organization_analytics",
+    ),
+    path(
+        "organization/<int:id>/dashboard/cyber/",
+        OrganizationDashboardCyberView.as_view(),
+        name="organization_cyber",
     ),
     path(
         "organization/<int:id>/dashboard/integrations/",

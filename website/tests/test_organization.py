@@ -150,6 +150,104 @@ class OrganizationSwitcherTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("organizations", response.context)
 
+        # Test cyber view
+        url = reverse("organization_cyber", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("organizations", response.context)
+
+
+class OrganizationCyberDashboardTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_user(
+            username="cyberadmin", password="testpass123", email="cyberadmin@example.com"
+        )
+        self.manager_user = User.objects.create_user(
+            username="cybermanager", password="testpass123", email="cybermanager@example.com"
+        )
+        self.outsider_user = User.objects.create_user(
+            username="cyberoutsider", password="testpass123", email="cyberoutsider@example.com"
+        )
+
+        self.organization = Organization.objects.create(
+            name="Cyber Org",
+            description="Org for cyber dashboard tests",
+            slug="cyber-org",
+            url="https://cyber.example.com",
+            admin=self.admin_user,
+        )
+        self.organization.managers.add(self.manager_user)
+
+    def tearDown(self):
+        cache.clear()
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_admin_and_manager_can_access_cyber_dashboard(self, mock_dns_posture):
+        mock_dns_posture.return_value = {"domain": "example.com", "spf": True, "dmarc": True, "dnssec": True}
+        Domain.objects.create(name="example.com", url="https://example.com", organization=self.organization, is_active=True)
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        admin_response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertContains(admin_response, "Cyber Dashboard")
+
+        self.client.logout()
+        self.client.login(username="cybermanager", password="testpass123")
+        manager_response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+        self.assertEqual(manager_response.status_code, 200)
+        self.assertContains(manager_response, "Cyber Dashboard")
+
+    def test_outsider_cannot_access_cyber_dashboard(self):
+        self.client.login(username="cyberoutsider", password="testpass123")
+        response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_dns_metrics_are_rendered(self, mock_dns_posture):
+        Domain.objects.create(name="good.example", url="https://good.example", organization=self.organization, is_active=True)
+        Domain.objects.create(name="bad.example", url="https://bad.example", organization=self.organization, is_active=True)
+        mock_dns_posture.side_effect = [
+            {"domain": "good.example", "spf": True, "dmarc": True, "dnssec": True},
+            {"domain": "bad.example", "spf": False, "dmarc": True, "dnssec": False},
+        ]
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "good.example")
+        self.assertContains(response, "bad.example")
+        self.assertContains(response, "DNS Compliance")
+        self.assertContains(response, "Pass")
+        self.assertContains(response, "Fail")
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_empty_state_when_no_domains(self, mock_dns_posture):
+        self.client.login(username="cyberadmin", password="testpass123")
+        response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No active domains to evaluate yet.")
+        self.assertContains(response, "No active domains found. Add a domain to start DNS checks.")
+        mock_dns_posture.assert_not_called()
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_dns_results_are_cached(self, mock_dns_posture):
+        Domain.objects.create(name="cache.example", url="https://cache.example", organization=self.organization, is_active=True)
+        mock_dns_posture.return_value = {"domain": "cache.example", "spf": True, "dmarc": True, "dnssec": True}
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        url = reverse("organization_cyber", kwargs={"id": self.organization.id})
+
+        first_response = self.client.get(url)
+        second_response = self.client.get(url)
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(mock_dns_posture.call_count, 1)
+
 
 class BountyPayoutsViewTests(TestCase):
     def setUp(self):

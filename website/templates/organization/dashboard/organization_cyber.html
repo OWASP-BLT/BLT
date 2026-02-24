@@ -1,0 +1,124 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% block title %}
+    Cyber Dashboard
+{% endblock title %}
+{% block body %}
+    <div class="px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Cyber Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">DNS baseline checks for your active organization domains.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Active Domains</p>
+                <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ dns_security.total_domains }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">SPF</p>
+                <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ dns_security.spf_count }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">DMARC</p>
+                <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ dns_security.dmarc_count }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">DNSSEC</p>
+                <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ dns_security.dnssec_count }}</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 lg:col-span-1">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">DNS Compliance</h2>
+                {% if dns_security.total_domains > 0 %}
+                    <canvas id="dnsComplianceChart" class="max-h-64"></canvas>
+                {% else %}
+                    <p class="text-sm text-gray-600 dark:text-gray-400">No active domains to evaluate yet.</p>
+                {% endif %}
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 lg:col-span-2">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Domain Checks</h2>
+                {% if dns_security.total_domains > 0 %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900/40">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Domain</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">SPF</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">DMARC</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">DNSSEC</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for item in dns_security.domains %}
+                                    <tr>
+                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ item.hostname }}</td>
+                                        <td class="px-4 py-3 text-sm">
+                                            {% if item.spf %}
+                                                <span class="text-green-600 dark:text-green-400 font-medium">Pass</span>
+                                            {% else %}
+                                                <span class="text-red-600 dark:text-red-400 font-medium">Fail</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            {% if item.dmarc %}
+                                                <span class="text-green-600 dark:text-green-400 font-medium">Pass</span>
+                                            {% else %}
+                                                <span class="text-red-600 dark:text-red-400 font-medium">Fail</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            {% if item.dnssec %}
+                                                <span class="text-green-600 dark:text-green-400 font-medium">Pass</span>
+                                            {% else %}
+                                                <span class="text-red-600 dark:text-red-400 font-medium">Fail</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-gray-600 dark:text-gray-400">No active domains found. Add a domain to start DNS checks.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            const canvas = document.getElementById("dnsComplianceChart");
+            if (!canvas) {
+                return;
+            }
+
+            const labels = {{ dns_security.compliance_labels|safe }};
+            const data = {{ dns_security.compliance_data|safe }};
+            const darkMode = document.documentElement.classList.contains("dark");
+
+            new Chart(canvas, {
+                type: "pie",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            data: data,
+                            backgroundColor: ["#22c55e", "#ef4444"],
+                        },
+                    ],
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: darkMode ? "#e5e7eb" : "#374151",
+                            },
+                        },
+                    },
+                },
+            });
+        })();
+    </script>
+{% endblock scripts %}
