@@ -225,8 +225,8 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         run: |
           EXIT_CODE="${{ steps.run-tests.outputs.exit_code }}"
-          # If exit_code is empty (e.g. step was cancelled/timed out), use sentinel value
-          echo "${EXIT_CODE:-cancelled}" > test-result.txt
+          # Use 255 as sentinel for cancelled/timed-out (must be numeric for label workflow validation)
+          echo "${EXIT_CODE:-255}" > test-result.txt
       - name: Upload test result
         if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
