@@ -1384,65 +1384,54 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
-DEVTO_USERNAME = "owaspblt"
-DEVTO_ARTICLE_COUNT = 2
+DEVTO_USERNAME = getattr(settings, "DEVTO_USERNAME", "owaspblt")
+DEVTO_ARTICLE_COUNT = getattr(settings, "DEVTO_ARTICLE_COUNT", 2)
 DEVTO_API_URL = f"https://dev.to/api/articles?username={DEVTO_USERNAME}&per_page={DEVTO_ARTICLE_COUNT}"
 
 
 def fetch_devto_articles():
     """
-    Fetches latest articles from Dev.to API.
-    Implements security validation for external URLs and data allow-listing.
+    Fetches latest articles from Dev.to API and warms the cache.
+    Updated to handle non-list responses and safe title defaults.
     """
     cache_key = "devto_articles"
-    cached_data = cache.get(cache_key)
-
-    # Return cached result if available to reduce external API calls
-    if cached_data is not None:
-        return cached_data
-
     try:
+        # Custom User-Agent helps prevent API throttling or blocking
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         response = requests.get(DEVTO_API_URL, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
 
+        # Ensure API returned expected structure
         if not isinstance(data, list):
+            cache.set(cache_key, [], 30)
             return []
 
         refined_articles = []
 
+        # Allows only HTTPS URLs
         for article in data:
             url = article.get("url", "")
-            cover_image = article.get("cover_image") or ""
-
-            # URL Validation to ensure external links use HTTPS
             if not url.startswith("https://"):
                 continue
-            if cover_image and not cover_image.startswith("https://"):
-                cover_image = ""
-
-            # Safe Date Parsing
-            published_at = article.get("published_at", "")
-            clean_date = published_at[:10] if len(published_at) >= 10 else ""
 
             refined_articles.append(
                 {
-                    "title": article.get("title"),
+                    "title": article.get("title", "OWASP BLT Blog Post"),
                     "url": url,
-                    "cover_image": cover_image,
+                    "cover_image": article.get("cover_image", ""),
                     "description": article.get("description", ""),
                     "user_name": article.get("user", {}).get("name", "OWASP BLT"),
-                    "published_at": clean_date,
+                    "published_at": (article.get("published_at") or "")[:10],
                 }
             )
 
-        cache.set(cache_key, refined_articles, 600)  # Cache success for 10 min
+        cache.set(cache_key, refined_articles, 600)
         return refined_articles
 
     except (requests.RequestException, ValueError) as e:
         logger.error(f"Dev.to fetch failure: {e}")
-        # Short failure cache to prevent repeated failing calls
+        # Short failure cache prevents repeated failing calls
         cache.set(cache_key, [], 30)
         return []
 
@@ -1586,6 +1575,7 @@ def home(request):
 
     # fetches blog from dev.to and displays in homepage
     devto_articles = fetch_devto_articles()
+    devto_profile_url = f"https://dev.to/{DEVTO_USERNAME}"
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1688,6 +1678,7 @@ def home(request):
             "current_year": timezone.now().year,
             "current_time": current_time,  # Add current time for month display
             "devto_articles": devto_articles,
+            "devto_profile_url": devto_profile_url,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_discussions": recent_discussions,
