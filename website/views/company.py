@@ -3,7 +3,9 @@ import logging
 import os
 import re
 import uuid
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+from concurrent.futures import as_completed
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -830,32 +832,45 @@ class OrganizationDashboardCyberView(View):
     def _build_dns_metrics(self, organization_id):
         """Build DNS metrics with bounded concurrency and a total time budget."""
         active_domains = list(
-            Domain.objects.filter(organization__id=organization_id, is_active=True).values("name", "url").order_by("name")
+            Domain.objects.filter(organization__id=organization_id, is_active=True)
+            .values("name", "url")
+            .order_by("name")
         )
 
         domain_results = [None] * len(active_domains)
         if active_domains:
-            with ThreadPoolExecutor(max_workers=self.MAX_DNS_WORKERS) as executor:
+            executor = ThreadPoolExecutor(max_workers=self.MAX_DNS_WORKERS)
+            futures = {}
+            timed_out = False
+            try:
                 futures = {
                     executor.submit(self._safe_fetch_domain_posture, domain): index
                     for index, domain in enumerate(active_domains)
                 }
-                try:
-                    for future in as_completed(futures, timeout=self.DNS_COLLECTION_TIME_BUDGET_SECONDS):
-                        index = futures[future]
-                        posture = future.result()
-                        domain_results[index] = self._build_domain_result(active_domains[index], posture)
-                except FuturesTimeoutError:
-                    logger.warning(
-                        "Cyber dashboard DNS collection timed out for organization %s; returning partial results.",
-                        organization_id,
-                    )
-                finally:
-                    for future, index in futures.items():
-                        if domain_results[index] is None:
-                            domain_results[index] = self._build_domain_result(
-                                active_domains[index], {"domain": "", "spf": False, "dmarc": False, "dnssec": False}
-                            )
+
+                for future in as_completed(futures, timeout=self.DNS_COLLECTION_TIME_BUDGET_SECONDS):
+                    index = futures[future]
+                    posture = future.result()
+                    domain_results[index] = self._build_domain_result(active_domains[index], posture)
+            except FuturesTimeoutError:
+                timed_out = True
+                logger.warning(
+                    "Cyber dashboard DNS collection timed out for organization %s; returning partial results.",
+                    organization_id,
+                )
+            finally:
+                if timed_out:
+                    for future in futures:
+                        future.cancel()
+                    executor.shutdown(wait=False, cancel_futures=True)
+                else:
+                    executor.shutdown(wait=True, cancel_futures=False)
+
+                for future, index in futures.items():
+                    if domain_results[index] is None:
+                        domain_results[index] = self._build_domain_result(
+                            active_domains[index], {"domain": "", "spf": False, "dmarc": False, "dnssec": False}
+                        )
 
         total_domains = len(domain_results)
         spf_count = sum(1 for entry in domain_results if entry["spf"])

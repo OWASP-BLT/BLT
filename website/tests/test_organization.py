@@ -1,3 +1,4 @@
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
@@ -8,6 +9,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 
 from website.models import DailyStatusReport, Domain, Issue, Organization
+from website.views.company import OrganizationDashboardCyberView
 from website.views.organization import BountyPayoutsView
 
 
@@ -185,7 +187,9 @@ class OrganizationCyberDashboardTests(TestCase):
     @patch("website.views.company.get_domain_dns_posture")
     def test_admin_and_manager_can_access_cyber_dashboard(self, mock_dns_posture):
         mock_dns_posture.return_value = {"domain": "example.com", "spf": True, "dmarc": True, "dnssec": True}
-        Domain.objects.create(name="example.com", url="https://example.com", organization=self.organization, is_active=True)
+        Domain.objects.create(
+            name="example.com", url="https://example.com", organization=self.organization, is_active=True
+        )
 
         self.client.login(username="cyberadmin", password="testpass123")
         admin_response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
@@ -206,8 +210,12 @@ class OrganizationCyberDashboardTests(TestCase):
 
     @patch("website.views.company.get_domain_dns_posture")
     def test_dns_metrics_are_rendered(self, mock_dns_posture):
-        Domain.objects.create(name="good.example", url="https://good.example", organization=self.organization, is_active=True)
-        Domain.objects.create(name="bad.example", url="https://bad.example", organization=self.organization, is_active=True)
+        Domain.objects.create(
+            name="good.example", url="https://good.example", organization=self.organization, is_active=True
+        )
+        Domain.objects.create(
+            name="bad.example", url="https://bad.example", organization=self.organization, is_active=True
+        )
         mock_dns_posture.side_effect = [
             {"domain": "good.example", "spf": True, "dmarc": True, "dnssec": True},
             {"domain": "bad.example", "spf": False, "dmarc": True, "dnssec": False},
@@ -235,7 +243,9 @@ class OrganizationCyberDashboardTests(TestCase):
 
     @patch("website.views.company.get_domain_dns_posture")
     def test_dns_results_are_cached(self, mock_dns_posture):
-        Domain.objects.create(name="cache.example", url="https://cache.example", organization=self.organization, is_active=True)
+        Domain.objects.create(
+            name="cache.example", url="https://cache.example", organization=self.organization, is_active=True
+        )
         mock_dns_posture.return_value = {"domain": "cache.example", "spf": True, "dmarc": True, "dnssec": True}
 
         self.client.login(username="cyberadmin", password="testpass123")
@@ -271,6 +281,26 @@ class OrganizationCyberDashboardTests(TestCase):
         second_response = self.client.get(url)
         self.assertEqual(second_response.status_code, 200)
         self.assertContains(second_response, "No active domains to evaluate yet.")
+
+    @patch("website.views.company.as_completed")
+    @patch("website.views.company.ThreadPoolExecutor")
+    def test_timeout_uses_non_blocking_executor_shutdown(self, mock_executor_class, mock_as_completed):
+        Domain.objects.create(
+            name="timeout.example", url="https://timeout.example", organization=self.organization, is_active=True
+        )
+        fake_future = MagicMock()
+        fake_executor = MagicMock()
+        fake_executor.submit.return_value = fake_future
+        mock_executor_class.return_value = fake_executor
+        mock_as_completed.side_effect = FuturesTimeoutError()
+
+        view = OrganizationDashboardCyberView()
+        metrics = view._build_dns_metrics(self.organization.id)
+
+        self.assertEqual(metrics["total_domains"], 1)
+        self.assertEqual(metrics["compliant_count"], 0)
+        fake_future.cancel.assert_called_once()
+        fake_executor.shutdown.assert_called_once_with(wait=False, cancel_futures=True)
 
 
 class BountyPayoutsViewTests(TestCase):
