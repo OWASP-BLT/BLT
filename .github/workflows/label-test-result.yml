@@ -62,6 +62,8 @@ jobs:
       - name: Read PR number and test result
         if: steps.download-result.outcome == 'success'
         id: read-artifacts
+        env:
+          PAYLOAD_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: |
           if [ -f pr-number.txt ] && [ -f test-result.txt ]; then
             PR_NUMBER=$(cat pr-number.txt | tr -d '[:space:]')
@@ -70,6 +72,20 @@ jobs:
             # These values came from artifacts which could be tampered with
             if ! echo "$PR_NUMBER" | grep -qE '^[0-9]+$'; then
               echo "::error::PR number is not numeric: '$PR_NUMBER'"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # SECURITY: Cross-validate artifact PR number against the workflow_run payload.
+            # The payload must include a pull_requests entry that matches the artifact value.
+            # This prevents a malicious artifact from targeting a different PR.
+            # Fail closed: if the payload has no PR number, we cannot validate the artifact.
+            if [ -z "$PAYLOAD_PR" ]; then
+              echo "::error::No PR number in workflow_run payload; cannot validate artifact (fork PR?)"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            if [ "$PAYLOAD_PR" != "$PR_NUMBER" ]; then
+              echo "::error::Artifact PR #$PR_NUMBER does not match payload PR #$PAYLOAD_PR"
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -159,9 +175,12 @@ jobs:
             const lines = testOutput.split('\n');
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
-            // SECURITY: Sanitize triple backticks to prevent breaking out of the code fence
-            // Artifacts from fork PRs could contain crafted output to inject markdown/HTML
-            const sanitizedOutput = last100Lines.replace(/`{3,}/g, '` ` `');
+            // SECURITY: Sanitize output to prevent breaking out of the code fence or HTML blocks.
+            // Artifacts from fork PRs could contain crafted output to inject markdown/HTML.
+            const sanitizedOutput = last100Lines
+              .replace(/`{3,}/g, '` ` `')
+              .replace(/<\/(details|summary)>/gi, '&lt;/$1&gt;')
+              .replace(/<(details|summary)(\s|>)/gi, '&lt;$1$2');
 
             const message = `${testFailureMarker}
             ## ❌ Tests failed
@@ -400,6 +419,8 @@ jobs:
       - name: Read PR number and pre-commit result
         if: steps.download-result.outcome == 'success'
         id: read-artifacts
+        env:
+          PAYLOAD_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: |
           if [ -f pre-commit-pr-number.txt ] && [ -f pre-commit-result.txt ]; then
             PR_NUMBER=$(cat pre-commit-pr-number.txt | tr -d '[:space:]')
@@ -407,6 +428,20 @@ jobs:
             # SECURITY: Strictly validate inputs are numeric to prevent code injection
             if ! echo "$PR_NUMBER" | grep -qE '^[0-9]+$'; then
               echo "::error::PR number is not numeric: '$PR_NUMBER'"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # SECURITY: Cross-validate artifact PR number against the workflow_run payload.
+            # The payload must include a pull_requests entry that matches the artifact value.
+            # This prevents a malicious artifact from targeting a different PR.
+            # Fail closed: if the payload has no PR number, we cannot validate the artifact.
+            if [ -z "$PAYLOAD_PR" ]; then
+              echo "::error::No PR number in workflow_run payload; cannot validate artifact (fork PR?)"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            if [ "$PAYLOAD_PR" != "$PR_NUMBER" ]; then
+              echo "::error::Artifact PR #$PR_NUMBER does not match payload PR #$PAYLOAD_PR"
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -496,8 +531,11 @@ jobs:
             const lines = precommitOutput.split('\n');
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
-            // SECURITY: Sanitize triple backticks to prevent breaking out of the code fence
-            const sanitizedOutput = last100Lines.replace(/`{3,}/g, '` ` `');
+            // SECURITY: Sanitize output to prevent breaking out of the code fence or HTML blocks.
+            const sanitizedOutput = last100Lines
+              .replace(/`{3,}/g, '` ` `')
+              .replace(/<\/(details|summary)>/gi, '&lt;/$1&gt;')
+              .replace(/<(details|summary)(\s|>)/gi, '&lt;$1$2');
 
             const message = `${commentMarker}
             ## ❌ Pre-commit checks failed
