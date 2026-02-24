@@ -8,7 +8,7 @@ from website.views.core import fetch_devto_articles
 
 
 class DevToBlogTests(TestCase):
-    """Test suite for Dev.to blog fetching logic addressing Peer Review & Sentry Bot"""
+    """Test suite for Dev.to blog fetching logic"""
 
     def setUp(self):
         self.cache_key = "devto_articles"
@@ -16,7 +16,7 @@ class DevToBlogTests(TestCase):
 
     @patch("website.views.core.requests.get")
     def test_fetch_cache_hit(self, mock_get):
-        """Test that function returns cached data immediately without calling API (Point 1392)"""
+        """Test that function returns cached data immediately without calling API"""
         cache.set(self.cache_key, [{"title": "Cached Title"}])
 
         articles = fetch_devto_articles()
@@ -44,11 +44,29 @@ class DevToBlogTests(TestCase):
 
         self.assertEqual(len(articles), 1)
         self.assertEqual(articles[0]["user_name"], "Test User")
+        self.assertEqual(articles[0]["published_at"], "2026-02-24")
         self.assertIsNotNone(cache.get(self.cache_key))
 
     @patch("website.views.core.requests.get")
+    def test_fetch_null_and_malformed_fields(self, mock_get):
+        """Test handling of null values and wrong types"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"title": None, "url": "https://dev.to/valid-link", "user": None, "published_at": None, "cover_image": 123}
+        ]
+        mock_get.return_value = mock_response
+
+        articles = fetch_devto_articles()
+
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0]["user_name"], "OWASP BLT")
+        self.assertEqual(articles[0]["published_at"], "")
+        self.assertEqual(articles[0]["cover_image"], "")
+
+    @patch("website.views.core.requests.get")
     def test_fetch_insecure_image_validation(self, mock_get):
-        """Test that non-HTTPS cover images are stripped (Addressing Sentry finding)"""
+        """Test that non-HTTPS cover images are stripped (Mixed Content Prevention)"""
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = [
@@ -67,7 +85,7 @@ class DevToBlogTests(TestCase):
 
     @patch("website.views.core.requests.get")
     def test_fetch_unexpected_format(self, mock_get):
-        """Test handling when API returns non-list structure (Point 1410/1412)"""
+        """Test handling when API returns non-list structure"""
         mock_response = MagicMock()
         mock_response.json.return_value = {"error": "not a list"}
         mock_get.return_value = mock_response

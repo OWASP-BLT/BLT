@@ -1384,25 +1384,28 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+# Configurable Dev.to integration with safe defaults
 DEVTO_USERNAME = getattr(settings, "DEVTO_USERNAME", "owaspblt")
-DEVTO_ARTICLE_COUNT = getattr(settings, "DEVTO_ARTICLE_COUNT", 2)
-DEVTO_API_URL = f"https://dev.to/api/articles?username={DEVTO_USERNAME}&per_page={DEVTO_ARTICLE_COUNT}"
+DEVTO_ARTICLE_COUNT = max(1, int(getattr(settings, "DEVTO_ARTICLE_COUNT", 2)))
+
+DEVTO_API_URL = f"https://dev.to/api/articles?" f"username={DEVTO_USERNAME}&per_page={DEVTO_ARTICLE_COUNT}"
 
 
 def fetch_devto_articles():
-    """
-    Fetches latest articles from Dev.to API.
-    """
+    """Fetch latest Dev.to articles with strict validation and safe caching."""
+
     cache_key = "devto_articles"
-    # Return cached data if available to avoid unnecessary API calls
+
+    # Return cached data to reduce external API calls
     cached_data = cache.get(cache_key)
     if cached_data is not None:
         return cached_data
 
     try:
-        # Custom User-Agent to reduce risk of API throttling
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        # Use application-specific User-Agent instead of browser spoofing
+        headers = {"User-Agent": "OWASP-BLT/1.0 (+https://owaspblt.org)"}
         response = requests.get(DEVTO_API_URL, headers=headers, timeout=10)
+        # Raise exception for HTTP errors
         response.raise_for_status()
         data = response.json()
 
@@ -1411,28 +1414,49 @@ def fetch_devto_articles():
             return []
 
         refined_articles = []
+
         for article in data:
             if not isinstance(article, dict):
                 continue
 
-            url = article.get("url", "")
-            cover_image = article.get("cover_image") or ""
+            url = article.get("url")
 
-            # Allow only HTTPS URLs to prevent unsafe link injection
-            if not url.startswith("https://"):
+            # Allow only HTTPS article urls
+            if not isinstance(url, str) or not url.startswith("https://"):
                 continue
-            # Ensure cover images also use HTTPS
-            if cover_image and not cover_image.startswith("https://"):
+
+            cover_image = article.get("cover_image")
+
+            # Ensure cover image url is HTTPS
+            if not isinstance(cover_image, str) or not cover_image.startswith("https://"):
                 cover_image = ""
 
+            user = article.get("user")
+            # Safely extract username from nested object
+            user_name = (
+                user.get("name") if isinstance(user, dict) and isinstance(user.get("name"), str) else "OWASP BLT"
+            )
+
+            published_at = article.get("published_at")
+            clean_date = ""
+            if isinstance(published_at, str):
+                try:
+                    from datetime import datetime
+
+                    parsed = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+                    clean_date = parsed.strftime("%Y-%m-%d")
+                except ValueError:
+                    clean_date = ""
+
+            # Allow-list only required fields for template safety
             refined_articles.append(
                 {
-                    "title": article.get("title", "OWASP BLT Blog Post"),
+                    "title": article.get("title") if isinstance(article.get("title"), str) else "OWASP BLT Blog Post",
                     "url": url,
                     "cover_image": cover_image,
-                    "description": article.get("description", ""),
-                    "user_name": article.get("user", {}).get("name", "OWASP BLT"),
-                    "published_at": (article.get("published_at") or "")[:10],
+                    "description": article.get("description") if isinstance(article.get("description"), str) else "",
+                    "user_name": user_name,
+                    "published_at": clean_date,
                 }
             )
 
@@ -1441,8 +1465,9 @@ def fetch_devto_articles():
         return refined_articles
 
     except (requests.RequestException, ValueError) as e:
-        # Log failure and cache empty result briefly to prevent repeated failing calls
-        logger.error(f"Dev.to fetch failure: {e}")
+        # Log failure securely without exposing sensitive details
+        logger.error("Dev.to fetch failure: %s", e)
+        # Cache empty list briefly to prevent repeated failing calls
         cache.set(cache_key, [], 30)
         return []
 
