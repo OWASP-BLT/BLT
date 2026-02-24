@@ -1391,47 +1391,58 @@ DEVTO_API_URL = f"https://dev.to/api/articles?username={DEVTO_USERNAME}&per_page
 
 def fetch_devto_articles():
     """
-    Fetches latest articles from Dev.to API and warms the cache.
-    Updated to handle non-list responses and safe title defaults.
+    Fetches latest articles from Dev.to API.
     """
     cache_key = "devto_articles"
+    # Return cached data if available to avoid unnecessary API calls
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return cached_data
+
     try:
-        # Custom User-Agent helps prevent API throttling or blocking
+        # Custom User-Agent to reduce risk of API throttling
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         response = requests.get(DEVTO_API_URL, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
 
-        # Ensure API returned expected structure
         if not isinstance(data, list):
             cache.set(cache_key, [], 30)
             return []
 
         refined_articles = []
-
-        # Allows only HTTPS URLs
         for article in data:
+            if not isinstance(article, dict):
+                continue
+
             url = article.get("url", "")
+            cover_image = article.get("cover_image") or ""
+
+            # Allow only HTTPS URLs to prevent unsafe link injection
             if not url.startswith("https://"):
                 continue
+            # Ensure cover images also use HTTPS
+            if cover_image and not cover_image.startswith("https://"):
+                cover_image = ""
 
             refined_articles.append(
                 {
                     "title": article.get("title", "OWASP BLT Blog Post"),
                     "url": url,
-                    "cover_image": article.get("cover_image", ""),
+                    "cover_image": cover_image,
                     "description": article.get("description", ""),
                     "user_name": article.get("user", {}).get("name", "OWASP BLT"),
                     "published_at": (article.get("published_at") or "")[:10],
                 }
             )
 
+        # Cache successful results for 10 minutes
         cache.set(cache_key, refined_articles, 600)
         return refined_articles
 
     except (requests.RequestException, ValueError) as e:
+        # Log failure and cache empty result briefly to prevent repeated failing calls
         logger.error(f"Dev.to fetch failure: {e}")
-        # Short failure cache prevents repeated failing calls
         cache.set(cache_key, [], 30)
         return []
 

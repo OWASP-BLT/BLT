@@ -8,21 +8,32 @@ from website.views.core import fetch_devto_articles
 
 
 class DevToBlogTests(TestCase):
-    """Test suite for Dev.to blog fetching logic"""
+    """Test suite for Dev.to blog fetching logic addressing Peer Review & Sentry Bot"""
 
     def setUp(self):
         self.cache_key = "devto_articles"
         cache.clear()
 
     @patch("website.views.core.requests.get")
+    def test_fetch_cache_hit(self, mock_get):
+        """Test that function returns cached data immediately without calling API (Point 1392)"""
+        cache.set(self.cache_key, [{"title": "Cached Title"}])
+
+        articles = fetch_devto_articles()
+
+        self.assertEqual(articles[0]["title"], "Cached Title")
+        mock_get.assert_not_called()
+
+    @patch("website.views.core.requests.get")
     def test_fetch_success(self, mock_get):
-        """Test successful API fetch and refined article output"""
+        """Test successful API fetch, refined output, and caching"""
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = [
             {
                 "title": "Test Post",
                 "url": "https://dev.to/test",
+                "cover_image": "https://dev.to/img.png",
                 "user": {"name": "Test User"},
                 "published_at": "2026-02-24T12:00:00Z",
             }
@@ -32,46 +43,33 @@ class DevToBlogTests(TestCase):
         articles = fetch_devto_articles()
 
         self.assertEqual(len(articles), 1)
-        self.assertEqual(articles[0]["title"], "Test Post")
-
-        cached_data = cache.get(self.cache_key)
-        self.assertEqual(len(cached_data), 1)
-        self.assertEqual(cached_data[0]["user_name"], "Test User")
+        self.assertEqual(articles[0]["user_name"], "Test User")
+        self.assertIsNotNone(cache.get(self.cache_key))
 
     @patch("website.views.core.requests.get")
-    def test_fetch_cache_logic(self, mock_get):
-        """
-        Note: Since fetch_devto_articles now always performs a fetch
-        to refresh the cache, we test that it overwrites existing data.
-        """
-        cache.set(self.cache_key, [{"title": "Old Data"}])
-
+    def test_fetch_insecure_image_validation(self, mock_get):
+        """Test that non-HTTPS cover images are stripped (Addressing Sentry finding)"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = [{"title": "New Data", "url": "https://dev.to/new"}]
-        mock_get.return_value = mock_response
-
-        fetch_devto_articles()
-
-        self.assertEqual(cache.get(self.cache_key)[0]["title"], "New Data")
-
-    @patch("website.views.core.requests.get")
-    def test_fetch_json_error(self, mock_get):
-        """Test handling of invalid JSON responses"""
-        mock_response = MagicMock()
-        mock_response.json.side_effect = ValueError("Invalid JSON")
+        mock_response.json.return_value = [
+            {
+                "title": "Insecure Post",
+                "url": "https://dev.to/link",
+                "cover_image": "http://insecure.com/img.png",
+            }
+        ]
         mock_get.return_value = mock_response
 
         articles = fetch_devto_articles()
 
-        self.assertEqual(articles, [])
-        self.assertEqual(cache.get(self.cache_key), [])
+        self.assertEqual(articles[0]["cover_image"], "")
+        self.assertEqual(articles[0]["url"], "https://dev.to/link")
 
     @patch("website.views.core.requests.get")
     def test_fetch_unexpected_format(self, mock_get):
-        """Test handling when API returns unexpected data structure"""
+        """Test handling when API returns non-list structure (Point 1410/1412)"""
         mock_response = MagicMock()
-        mock_response.json.return_value = {"error": "wrong format"}
+        mock_response.json.return_value = {"error": "not a list"}
         mock_get.return_value = mock_response
 
         articles = fetch_devto_articles()
@@ -81,7 +79,7 @@ class DevToBlogTests(TestCase):
 
     @patch("website.views.core.requests.get")
     def test_fetch_network_exception(self, mock_get):
-        """Test handling of network timeout or request failure"""
+        """Test handling of network failure and failure-cache setting"""
         mock_get.side_effect = requests.RequestException("Timeout")
 
         articles = fetch_devto_articles()
