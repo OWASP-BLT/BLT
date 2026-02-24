@@ -39,8 +39,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
@@ -1385,11 +1384,63 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+# Standalone job board URLs and cache (homepage "recent jobs & seekers")
+JOB_BOARD_JOBS_URL = "https://jobs.owaspblt.org/data/jobs.json"
+JOB_BOARD_SEEKERS_URL = "https://jobs.owaspblt.org/data/seekers.json"
+JOB_BOARD_CACHE_TIMEOUT = 600  # 10 minutes
+
+
+def get_job_board_data():
+    """Fetch recent jobs and seekers from standalone job board. Cached 10 min."""
+    from website.utils import rebuild_safe_url
+
+    jobs = cache.get("job_board_recent_jobs")
+    seekers = cache.get("job_board_recent_seekers")
+    if jobs is not None and seekers is not None:
+        return jobs, seekers
+    jobs_list = []
+    seekers_list = []
+    try:
+        r = requests.get(JOB_BOARD_JOBS_URL, timeout=10)
+        if r.ok:
+            data = r.json()
+            raw_jobs = data.get("jobs")
+            jobs_list = (raw_jobs if isinstance(raw_jobs, list) else [])[:3]
+            for job in jobs_list:
+                if isinstance(job, dict):
+                    url = job.get("application_url")
+                    if url and isinstance(url, str):
+                        safe = rebuild_safe_url(url)
+                        job["application_url"] = safe if safe else ""
+                    elif url is not None:
+                        job["application_url"] = ""
+        r2 = requests.get(JOB_BOARD_SEEKERS_URL, timeout=10)
+        if r2.ok:
+            data2 = r2.json()
+            raw_seekers = data2.get("seekers")
+            seekers_list = (raw_seekers if isinstance(raw_seekers, list) else [])[:3]
+            for seeker in seekers_list:
+                if isinstance(seeker, dict):
+                    url = seeker.get("profile_url")
+                    if url and isinstance(url, str):
+                        safe = rebuild_safe_url(url)
+                        seeker["profile_url"] = safe if safe else ""
+                    elif url is not None:
+                        seeker["profile_url"] = ""
+    except requests.exceptions.RequestException as e:
+        logger.warning("Failed to fetch job board data: %s", e)
+    except (ValueError, KeyError, TypeError) as e:
+        logger.warning("Invalid job board JSON: %s", e)
+    cache.set("job_board_recent_jobs", jobs_list, JOB_BOARD_CACHE_TIMEOUT)
+    cache.set("job_board_recent_seekers", seekers_list, JOB_BOARD_CACHE_TIMEOUT)
+    return jobs_list, seekers_list
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1470,8 +1521,8 @@ def home(request):
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
 
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+    # Get latest blog posts (Post model was removed in migration 0266; show none until blog is re-added)
+    latest_blog_posts = []
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1563,6 +1614,9 @@ def home(request):
             "db_connections": len(connection.queries),
         }
 
+    # Recent jobs and seekers from standalone job board (cached)
+    recent_jobs, recent_seekers = get_job_board_data()
+
     return render(
         request,
         "home.html",
@@ -1585,6 +1639,8 @@ def home(request):
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
             "recent_hackathons": recent_hackathons,
+            "recent_jobs": recent_jobs,
+            "recent_seekers": recent_seekers,
         },
     )
 
@@ -1895,7 +1951,7 @@ def management_commands(request):
     available_commands = []
 
     # Get the date 30 days ago for stats
-    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
 
     # Get sort parameter from request
     sort_param = request.GET.get("sort", "name")
@@ -2000,7 +2056,7 @@ def management_commands(request):
 
             # Generate all dates in the 30-day range
             for i in range(30):
-                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date = (timezone.now() - timedelta(days=29 - i)).date()
                 date_range.append(date)
                 date_values[date.isoformat()] = 0
 
@@ -2120,11 +2176,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (
@@ -2996,28 +3052,19 @@ def invite_organization(request):
     return render(request, "invite.html", context)
 
 
-@csrf_exempt
+@require_POST
 def set_theme(request):
     """View to save user's theme preference"""
-    if request.method == "POST":
-        try:
-            import json
+    try:
+        import json
 
-            data = json.loads(request.body)
-            theme = data.get("theme", "light")
+        data = json.loads(request.body)
+        theme = data.get("theme", "light")
 
-            # Save theme in session
-            request.session["theme"] = theme
+        # Save theme in session
+        request.session["theme"] = theme
 
-            # If user is authenticated, could also save to user profile - confirm if we have theme_preference
-            # if request.user.is_authenticated:
-            #     profile = request.user.userprofile
-            #     profile.theme_preference = theme
-            #     profile.save()
-
-            return JsonResponse({"status": "success", "theme": theme})
-        except Exception as e:
-            logging.exception("Error occurred while setting theme")
-            return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)
-
-    return JsonResponse({"status": "error", "message": "Invalid request method"}, status=400)
+        return JsonResponse({"status": "success", "theme": theme})
+    except Exception:
+        logging.exception("Error occurred while setting theme")
+        return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=400)

@@ -21,7 +21,6 @@ from website.models import (
     BaconSubmission,
     BaconToken,
     Badge,
-    BannedApp,
     Bid,
     Blocked,
     Challenge,
@@ -34,6 +33,7 @@ from website.models import (
     DailyStatusReport,
     Domain,
     Enrollment,
+    GitHubComment,
     GitHubIssue,
     GitHubReview,
     Hackathon,
@@ -63,7 +63,6 @@ from website.models import (
     OsshDiscussionChannel,
     Payment,
     Points,
-    Post,
     PRAnalysisReport,
     Project,
     Queue,
@@ -597,11 +596,6 @@ class ContributionAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
 
 
-class PostAdmin(admin.ModelAdmin):
-    list_display = ("title", "author", "created_at", "image")
-    prepopulated_fields = {"slug": ("title",)}
-
-
 class GitHubIssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -678,6 +672,34 @@ class GitHubReviewAdmin(admin.ModelAdmin):
         "url",
     ]
     date_hierarchy = "submitted_at"
+
+
+class GitHubCommentAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "commenter_display",
+        "created_at",
+        "issue",
+        "url",
+    )
+    list_filter = [
+        "created_at",
+    ]
+    search_fields = [
+        "commenter__user__username",
+        "commenter_contributor__name",
+        "body",
+    ]
+    date_hierarchy = "created_at"
+
+    def commenter_display(self, obj):
+        if obj.commenter:
+            return obj.commenter.user.username
+        elif obj.commenter_contributor:
+            return obj.commenter_contributor.name
+        return "Unknown"
+
+    commenter_display.short_description = "Commenter"
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -934,7 +956,6 @@ admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
-admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
@@ -946,6 +967,7 @@ admin.site.register(Enrollment)
 admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
+admin.site.register(GitHubComment, GitHubCommentAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
@@ -1127,21 +1149,6 @@ admin.site.register(StakingPool, StakingPoolAdmin)
 admin.site.register(StakingTransaction, StakingTransactionAdmin)
 admin.site.register(Thread, ThreadAdmin)
 admin.site.register(UserBadge, UserBadgeAdmin)
-
-
-@admin.register(BannedApp)
-class BannedAppAdmin(admin.ModelAdmin):
-    list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
-    list_filter = ("app_type", "is_active", "ban_date")
-    search_fields = ("country_name", "country_code", "app_name", "ban_reason")
-    date_hierarchy = "ban_date"
-    ordering = ("country_name", "app_name")
-
-    fieldsets = (
-        ("App Information", {"fields": ("app_name", "app_type")}),
-        ("Country Information", {"fields": ("country_name", "country_code")}),
-        ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
-    )
 
 
 class AdventureTaskInline(admin.TabularInline):
