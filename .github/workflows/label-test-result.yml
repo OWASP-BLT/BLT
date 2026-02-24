@@ -532,7 +532,7 @@ jobs:
 
             </details>
 
-            For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
+            For more information, see the [pre-commit documentation](https://pre-commit.com/).`.replace(/^ {12}/gm, '');
 
             try {
               await github.rest.issues.createComment({

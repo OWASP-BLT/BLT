@@ -130,7 +130,8 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         run: |
           EXIT_CODE="${{ steps.pre-commit.outputs.exit_code }}"
-          echo "${EXIT_CODE:-cancelled}" > pre-commit-result.txt
+          # Use 255 as sentinel for cancelled/timed-out (must be numeric for label workflow validation)
+          echo "${EXIT_CODE:-255}" > pre-commit-result.txt
       - name: Upload pre-commit result
         if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
