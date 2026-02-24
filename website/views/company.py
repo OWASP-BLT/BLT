@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import re
-import time
 import uuid
 from datetime import datetime, timedelta
 from typing import ClassVar
@@ -104,10 +103,24 @@ def calculate_social_stats(organization):
         "facebook_clicks": social_clicks.get("facebook", 0),
         "github_clicks": social_clicks.get("github", 0),
         "linkedin_clicks": social_clicks.get("linkedin", 0),
-        "total_clicks": sum(social_clicks.values()) if social_clicks else 0,
+        "total_clicks": sum(v for v in social_clicks.values() if isinstance(v, (int, float))) if social_clicks else 0,
     }
 
     return stats
+
+
+def get_user_organizations(user):
+    """Get organizations accessible to a user.
+
+    Args:
+        user: User object (can be authenticated or anonymous)
+
+    Returns:
+        QuerySet of organization names and IDs if authenticated, empty list otherwise
+    """
+    if user.is_authenticated:
+        return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+    return []
 
 
 def validate_organization_user(func):
@@ -334,7 +347,7 @@ class RegisterOrganizationView(View):
                         )
                         # Log error type for debugging without exposing to user
                         if referral_error_type:
-                            logger.debug(f"Referral application failed with error type: {referral_error_type}")
+                            logger.warning(f"Referral application failed with error type: {referral_error_type}")
                 else:
                     request.session.pop("org_ref", None)
 
@@ -641,9 +654,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def _get_user_organizations(self, user):
         """Helper to get organizations accessible by user."""
-        if user.is_authenticated:
-            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
-        return []
+        return get_user_organizations(user)
 
     def get_network_traffic_data(self, organization):
         """Collects and analyzes network traffic data for the organization."""
@@ -885,78 +896,68 @@ class OrganizationSocialRedirectView(View):
         "github": ["github.com"],
     }
 
-    @method_decorator(ratelimit(key="ip", rate="20/m", method="ALL"))
+    @method_decorator(ratelimit(key="ip", rate="60/m", method="ALL"))
     def get(self, request, org_id, platform):
         # Validate platform - derive from ALLOWED_DOMAINS for single source of truth
         valid_platforms = list(self.ALLOWED_DOMAINS.keys())
         if platform not in valid_platforms:
             return HttpResponseBadRequest("Invalid social platform")
 
-        # Increment the click counter atomically to prevent race conditions
-        # Add retry logic to handle SQLite database locking in concurrent scenarios
-        # Note: Click counting is non-critical, so failures won't prevent redirect
-        max_retries = 3
+        # Increment the click counter atomically to prevent race conditions.
+        # Note: Click counting is non-critical and is treated as best-effort; failures
+        # won't prevent the redirect.
         organization = None
-        for attempt in range(max_retries):
-            try:
-                with transaction.atomic():
-                    # Lock the row to ensure atomic update and validate organization exists
-                    # This combines validation + locking into a single query
-                    try:
-                        organization = Organization.objects.select_for_update().get(id=org_id)
-                    except Organization.DoesNotExist as exc:
-                        raise Http404("Organization not found") from exc
+        try:
+            with transaction.atomic():
+                # Lock the row to ensure atomic update and validate organization exists
+                # This combines validation + locking into a single query
+                try:
+                    organization = Organization.objects.select_for_update().get(id=org_id)
+                except Organization.DoesNotExist as exc:
+                    raise Http404("Organization not found") from exc
 
-                    # Get current clicks dict (handle None case)
-                    clicks = organization.social_clicks or {}
+                # Get current clicks dict (handle None case)
+                clicks = organization.social_clicks or {}
 
-                    # Increment the counter for this platform
-                    clicks[platform] = clicks.get(platform, 0) + 1
+                # Increment the counter for this platform
+                clicks[platform] = clicks.get(platform, 0) + 1
 
-                    # Use atomic database update to prevent race conditions
-                    # This ensures the JSON update happens at the database level
-                    Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
-
-                break  # Success, exit retry loop
-            except Http404:
-                raise  # Re-raise 404 immediately, don't retry
-            except OperationalError as e:
-                if "database is locked" in str(e) and attempt < max_retries - 1:
-                    # Exponential backoff: wait longer with each retry
-                    time.sleep(0.1 * (attempt + 1))
-                    continue
-                # Log the error but don't fail the redirect - click counting is non-critical
-                logger.warning(
-                    "Failed to update social clicks for organization %s on platform %s: %s",
-                    org_id,
-                    platform,
-                    str(e),
-                    exc_info=True,
-                )
-                # Need to fetch organization for redirect if click update failed
-                if organization is None:
-                    try:
-                        organization = Organization.objects.get(id=org_id)
-                    except Organization.DoesNotExist as exc:
-                        raise Http404("Organization not found") from exc
-                break  # Exit retry loop and continue with redirect
-            except Exception as e:
-                # Catch all other database errors (IntegrityError, DatabaseError, etc.)
-                # to ensure redirect always works even if click tracking fails
-                logger.warning(
-                    "Unexpected error updating social clicks for organization %s on platform %s: %s",
-                    org_id,
-                    platform,
-                    str(e),
-                    exc_info=True,
-                )
-                # Need to fetch organization for redirect if click update failed
-                if organization is None:
-                    try:
-                        organization = Organization.objects.get(id=org_id)
-                    except Organization.DoesNotExist as exc:
-                        raise Http404("Organization not found") from exc
-                break  # Exit retry loop and continue with redirect
+                # Use atomic database update to prevent race conditions
+                # This ensures the JSON update happens at the database level
+                Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
+        except Http404:
+            raise  # Re-raise 404 immediately
+        except OperationalError as e:
+            # Log the error but don't fail the redirect - click counting is non-critical
+            logger.warning(
+                "Failed to update social clicks for organization %s on platform %s: %s",
+                org_id,
+                platform,
+                str(e),
+                exc_info=True,
+            )
+            # Need to fetch organization for redirect if click update failed
+            if organization is None:
+                try:
+                    organization = Organization.objects.get(id=org_id)
+                except Organization.DoesNotExist as exc:
+                    raise Http404("Organization not found") from exc
+        except Exception as e:
+            # Catch all other database errors (IntegrityError, DatabaseError, etc.)
+            # to ensure redirect always works even if click tracking fails
+            logger.warning(
+                "Unexpected error updating social clicks for organization %s on platform %s: %s",
+                org_id,
+                platform,
+                str(e),
+                exc_info=True,
+            )
+            # Need to fetch organization for redirect if click update failed
+            if organization is None:
+                try:
+                    organization = Organization.objects.get(id=org_id)
+                except Organization.DoesNotExist as exc:
+                    raise Http404("Organization not found") from exc
 
         # Get the actual URL based on platform
         url_mapping = {
@@ -1002,9 +1003,7 @@ class OrganizationProfileEditView(View):
 
     def _get_user_organizations(self, user):
         """Helper method to get organizations accessible to the user."""
-        if user.is_authenticated:
-            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
-        return []
+        return get_user_organizations(user)
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
