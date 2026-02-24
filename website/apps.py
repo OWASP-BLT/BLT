@@ -7,5 +7,6 @@ class WebsiteConfig(AppConfig):
 
     def ready(self):
         import website.challenge_signals  # noqa
+        import website.domain_cache_signals  # noqa
         import website.feed_signals  # noqa
         import website.social_signals  # noqa

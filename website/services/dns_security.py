@@ -1,3 +1,5 @@
+"""DNS posture checks for organization cyber dashboard metrics."""
+
 from urllib.parse import urlparse
 
 try:
@@ -10,6 +12,7 @@ DNS_LOOKUP_TIMEOUT_SECONDS = 3.0
 
 
 def _extract_hostname(raw_value):
+    """Extract and normalize hostname from user-provided domain/url input."""
     value = (raw_value or "").strip()
     if not value:
         return ""
@@ -18,10 +21,14 @@ def _extract_hostname(raw_value):
         value = f"https://{value}"
 
     parsed = urlparse(value)
-    return (parsed.hostname or "").lower()
+    hostname = (parsed.hostname or "").lower()
+    if hostname.startswith("www."):
+        hostname = hostname[4:]
+    return hostname
 
 
 def _lookup_txt_records(name):
+    """Resolve TXT records for a hostname and return normalized text entries."""
     if dns is None:
         return []
 
@@ -38,6 +45,7 @@ def _lookup_txt_records(name):
 
 
 def _lookup_dnskey_records(name):
+    """Return whether DNSKEY records exist for a hostname."""
     if dns is None:
         return False
 
@@ -49,6 +57,7 @@ def _lookup_dnskey_records(name):
 
 
 def get_domain_dns_posture(domain_name_or_url):
+    """Compute SPF/DMARC/DNSSEC posture for a domain or URL."""
     hostname = _extract_hostname(domain_name_or_url)
     if not hostname:
         return {"domain": "", "spf": False, "dmarc": False, "dnssec": False}

@@ -248,6 +248,30 @@ class OrganizationCyberDashboardTests(TestCase):
         self.assertEqual(second_response.status_code, 200)
         self.assertEqual(mock_dns_posture.call_count, 1)
 
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_cache_invalidates_after_domain_update(self, mock_dns_posture):
+        domain = Domain.objects.create(
+            name="stale.example",
+            url="https://stale.example",
+            organization=self.organization,
+            is_active=True,
+        )
+        mock_dns_posture.return_value = {"domain": "stale.example", "spf": True, "dmarc": True, "dnssec": True}
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        url = reverse("organization_cyber", kwargs={"id": self.organization.id})
+
+        first_response = self.client.get(url)
+        self.assertEqual(first_response.status_code, 200)
+        self.assertContains(first_response, "stale.example")
+
+        domain.is_active = False
+        domain.save(update_fields=["is_active"])
+
+        second_response = self.client.get(url)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertContains(second_response, "No active domains to evaluate yet.")
+
 
 class BountyPayoutsViewTests(TestCase):
     def setUp(self):
