@@ -193,7 +193,7 @@ jobs:
 
             </details>
 
-            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`;
+            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`.replace(/^ {12}/gm, '');
 
             try {
               await github.rest.issues.createComment({
