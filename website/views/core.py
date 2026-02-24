@@ -1384,10 +1384,13 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
-# Configurable Dev.to integration with safe defaults
 DEVTO_USERNAME = getattr(settings, "DEVTO_USERNAME", "owaspblt")
-DEVTO_ARTICLE_COUNT = max(1, int(getattr(settings, "DEVTO_ARTICLE_COUNT", 2)))
-
+_raw_count = getattr(settings, "DEVTO_ARTICLE_COUNT", 2)
+try:
+    DEVTO_ARTICLE_COUNT = max(1, int(_raw_count))
+except (TypeError, ValueError):
+    logger.warning("Invalid DEVTO_ARTICLE_COUNT setting. Falling back to default (2).")
+    DEVTO_ARTICLE_COUNT = 2
 DEVTO_API_URL = f"https://dev.to/api/articles?" f"username={DEVTO_USERNAME}&per_page={DEVTO_ARTICLE_COUNT}"
 
 
