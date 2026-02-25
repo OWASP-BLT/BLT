@@ -1,6 +1,6 @@
 # Contributing to OWASP BLT
 
-Thank you for your interest in contributing to OWASP BLT! We welcome contributions from everyone, regardless of your level of experience.
+Thank you for your interest in contributing to OWASP BLT! We welcome contributions from everyone, regardless of their level of experience.
 
 ## Table of Contents
 
