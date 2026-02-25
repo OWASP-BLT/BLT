@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load static %}
 {% load i18n %}
 {% block title %}Verify Domain Claim - {{ domain.name }}{% endblock %}
 {% block description %}
@@ -23,7 +22,7 @@
             {% if messages %}
                 <div class="mb-4">
                     {% for message in messages %}
-                        <div class="p-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400{% elif message.tags == 'success' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">
+                        <div class="p-3 rounded-lg text-sm {% if message.level_tag == 'error' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400{% elif message.level_tag == 'success' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">
                             {{ message }}
                         </div>
                     {% endfor %}
@@ -41,11 +40,13 @@
                            name="verification_code"
                            maxlength="6"
                            pattern="[0-9]{6}"
+                           inputmode="numeric"
                            placeholder="000000"
                            required
+                           aria-describedby="code-hint"
                            class="w-full px-4 py-3 text-center text-2xl tracking-[0.5em] border rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent outline-none"
                            autocomplete="off">
-                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{% trans "The code expires in 30 minutes." %}</p>
+                    <p id="code-hint" class="mt-2 text-xs text-gray-500 dark:text-gray-400">{% trans "The code expires in 30 minutes." %}</p>
                 </div>
                 <button type="submit"
                         class="w-full px-6 py-3 bg-[#e74c3c] text-white font-semibold rounded-lg hover:bg-red-600 transition duration-200">

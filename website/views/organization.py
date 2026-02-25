@@ -2,8 +2,8 @@ import ipaddress
 import json
 import logging
 import os
-import random
 import re
+import secrets
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -18,11 +18,11 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.core.mail import BadHeaderError, EmailMultiAlternatives, send_mail
-from django.template.loader import render_to_string
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
@@ -35,6 +35,7 @@ from django.http import (
     StreamingHttpResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -1193,18 +1194,23 @@ def request_domain_claim(request, pk):
         messages.info(request, "You are already a manager of this domain.")
         return redirect("domain", slug=domain.name)
 
-    # Generate a 6-digit verification code
-    verification_code = f"{random.randint(100000, 999999)}"
+    # Generate a cryptographically secure 6-digit verification code
+    verification_code = f"{secrets.randbelow(900000) + 100000}"
 
-    # Create claim request with 30-minute expiry
+    # Clean up expired/unverified claims for this domain+user, then create new one
     DomainClaimRequest.objects.filter(
         domain=domain, user=request.user, is_verified=False
     ).delete()
 
-    DomainClaimRequest.objects.create(
+    # Also clean up expired claims globally to prevent unbounded table growth
+    DomainClaimRequest.objects.filter(
+        is_verified=False, expires_at__lt=timezone.now()
+    ).delete()
+
+    claim = DomainClaimRequest.objects.create(
         domain=domain,
         user=request.user,
-        verification_code=verification_code,
+        verification_code=make_password(verification_code),
         expires_at=timezone.now() + timedelta(minutes=30),
     )
 
@@ -1224,17 +1230,19 @@ def request_domain_claim(request, pk):
     )
 
     try:
-        email = EmailMultiAlternatives(
+        email_msg = EmailMultiAlternatives(
             subject=subject,
             body=text_content,
             from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
             to=[domain.email],
         )
-        email.attach_alternative(html_content, "text/html")
-        email.send(fail_silently=False)
+        email_msg.attach_alternative(html_content, "text/html")
+        email_msg.send(fail_silently=False)
         messages.success(request, "A verification code has been sent to the domain's email address.")
     except Exception:
         logger.exception("Failed to send domain claim verification email")
+        # Clean up the claim since user never received the code
+        claim.delete()
         messages.error(request, "Failed to send verification email. Please try again later.")
         return redirect("domain", slug=domain.name)
 
@@ -1254,8 +1262,17 @@ def verify_domain_claim(request, pk):
 
     # POST - verify the code
     code = request.POST.get("verification_code", "").strip()
-    if not code:
-        messages.error(request, "Please enter a verification code.")
+
+    # Validate input format: must be exactly 6 digits
+    if not code or not code.isdigit() or len(code) != 6:
+        messages.error(request, "Please enter a valid 6-digit verification code.")
+        return render(request, "domain_claim_verify.html", {"domain": domain})
+
+    # Brute-force protection: limit to 5 attempts per claim per 30 minutes
+    cache_key = f"domain_claim_attempts_{domain.pk}_{request.user.pk}"
+    attempts = cache.get(cache_key, 0)
+    if attempts >= 5:
+        messages.error(request, "Too many failed attempts. Please request a new verification code.")
         return render(request, "domain_claim_verify.html", {"domain": domain})
 
     claim = (
@@ -1276,24 +1293,29 @@ def verify_domain_claim(request, pk):
         messages.error(request, "Your verification code has expired. Please request a new one.")
         return render(request, "domain_claim_verify.html", {"domain": domain})
 
-    if claim.verification_code != code:
+    if not check_password(code, claim.verification_code):
+        # Increment brute-force counter
+        cache.set(cache_key, attempts + 1, timeout=1800)
         messages.error(request, "Invalid verification code. Please try again.")
         return render(request, "domain_claim_verify.html", {"domain": domain})
 
     # Verification successful - add user as domain manager
-    claim.is_verified = True
-    claim.save()
+    with transaction.atomic():
+        claim.is_verified = True
+        claim.save()
+        domain.managers.add(request.user)
 
-    domain.managers.add(request.user)
+        # Also create an OrganizationAdmin entry if domain has an organization
+        if domain.organization:
+            OrganizationAdmin.objects.get_or_create(
+                user=request.user,
+                organization=domain.organization,
+                domain=domain,
+                defaults={"role": 1, "is_active": True},
+            )
 
-    # Also create an OrganizationAdmin entry if domain has an organization
-    if domain.organization:
-        OrganizationAdmin.objects.get_or_create(
-            user=request.user,
-            organization=domain.organization,
-            domain=domain,
-            defaults={"role": 1, "is_active": True},
-        )
+    # Clear brute-force counter on success
+    cache.delete(cache_key)
 
     messages.success(request, f"You have been added as a manager of {domain.name}.")
     return redirect("domain", slug=domain.name)
