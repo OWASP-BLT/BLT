@@ -314,7 +314,7 @@ def save_analysis_report(pr_link, issue_link, analysis):
     )
 
 
-def generate_embedding(text, retries=2, backoff_factor=2):
+def generate_embedding(text, retries=2):
     """
     Generate embedding for a function's full text using OpenAI's embeddings API.
     :param function_text: The full text of the function.
