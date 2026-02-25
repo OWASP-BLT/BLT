@@ -1,8 +1,10 @@
+import ipaddress
 import json
 import logging
 import os
 import re
 import uuid
+from collections import Counter
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -15,7 +17,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
-from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
+from django.db.models.functions import ExtractHour, ExtractMonth, TruncDate, TruncDay, TruncMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -25,6 +27,7 @@ from django.views.generic import View
 from slack_bolt import App
 
 from website.models import (
+    ComplianceCheck,
     DailyStatusReport,
     Domain,
     Hunt,
@@ -37,7 +40,12 @@ from website.models import (
     Organization,
     OrganizationAdmin,
     Points,
+    SecurityIncident,
     SlackIntegration,
+    ThreatIntelEntry,
+    UserBehaviorAnomaly,
+    UserLoginEvent,
+    Vulnerability,
     Winner,
 )
 from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
@@ -2962,3 +2970,792 @@ def toggle_job_status(request, id, job_id):
     job.save(update_fields=["status"])
 
     return JsonResponse({"success": True, "status": job.status})
+
+
+def public_job_list(request):
+    """Public view showing all active public jobs"""
+    from django.utils import timezone
+
+    from website.models import Job
+
+    # Get all public and active jobs that haven't expired
+    jobs = (
+        Job.objects.filter(is_public=True, status="active")
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+        .select_related("organization")
+        .order_by("-created_at")
+    )
+
+    # Search functionality
+    search_query = request.GET.get("q", "")
+    if search_query:
+        jobs = jobs.filter(
+            Q(title__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(location__icontains=search_query)
+            | Q(organization__name__icontains=search_query)
+        )
+
+    # Filter by job type
+    job_type = request.GET.get("type", "")
+    if job_type:
+        jobs = jobs.filter(job_type=job_type)
+
+    # Filter by location
+    location = request.GET.get("location", "")
+    if location:
+        jobs = jobs.filter(location__icontains=location)
+
+    context = {
+        "jobs": jobs,
+        "search_query": search_query,
+        "job_type_filter": job_type,
+        "location_filter": location,
+    }
+
+    return render(request, "jobs/public_job_list.html", context)
+
+
+def job_detail(request, pk):
+    """Public view for a single job posting; org members can see all their jobs"""
+    from django.http import Http404
+
+    from website.models import Job
+
+    job = get_object_or_404(Job, pk=pk)
+
+    # Check if user is org member (admin or manager)
+    is_org_member = False
+    if request.user.is_authenticated:
+        is_org_member = (
+            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
+        )
+
+    # Public users can only see active, public, non-expired jobs
+    if not is_org_member:
+        from django.utils import timezone
+
+        is_expired = job.expires_at and job.expires_at < timezone.now()
+        if not job.is_public or job.status != "active" or is_expired:
+            raise Http404("Job not found")
+
+    # Increment view count
+    job.increment_views()
+
+    context = {
+        "job": job,
+    }
+
+    return render(request, "jobs/job_detail.html", context)
+
+
+class OrganizationSecurityDashboardView(View):
+    """Org-scoped security monitoring dashboard."""
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        org = Organization.objects.filter(id=id).first()
+        if not org:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers=request.user) | Q(admin=request.user))
+            .distinct()
+            .order_by("name")
+        )
+
+        if not org.security_monitoring_enabled:
+            context = {
+                "organization": int(id),
+                "organizations": organizations,
+                "organization_obj": org,
+                "monitoring_disabled": True,
+            }
+            return render(request, "organization/dashboard/organization_security.html", context)
+
+        now = timezone.now()
+        thirty_days_ago = now - timedelta(days=30)
+        seven_days_ago = now - timedelta(days=7)
+        this_week_start = now - timedelta(days=7)
+        last_week_start = now - timedelta(days=14)
+
+        # Org-scoped security issues (via domains); remove ordering for aggregate use
+        security_issues = Issue.objects.filter(domain__organization__id=id, label=4).order_by()
+
+        # Org-scoped login events and anomalies
+        login_events = (
+            UserLoginEvent.objects.filter(organization_id=id).select_related("user").order_by("-timestamp")[:30]
+        )
+        anomaly_count = UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=False).count()
+        anomalies = (
+            UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=False)
+            .select_related("user", "login_event")
+            .order_by("-created_at")[:10]
+        )
+
+        login_success = UserLoginEvent.objects.filter(
+            organization_id=id, event_type="login", timestamp__gte=thirty_days_ago
+        ).count()
+        login_failed = UserLoginEvent.objects.filter(
+            organization_id=id, event_type="failed", timestamp__gte=thirty_days_ago
+        ).count()
+        login_logout = UserLoginEvent.objects.filter(
+            organization_id=id, event_type="logout", timestamp__gte=thirty_days_ago
+        ).count()
+
+        # Unique IPs and users in last 30 days
+        unique_ips_count = (
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            .exclude(ip_address__isnull=True)
+            .values("ip_address")
+            .distinct()
+            .count()
+        )
+        unique_users_count = (
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            .exclude(user__isnull=True)
+            .values("user")
+            .distinct()
+            .count()
+        )
+
+        # Login trend: this week vs last week
+        this_week_logins = UserLoginEvent.objects.filter(
+            organization_id=id, event_type="login", timestamp__gte=this_week_start
+        ).count()
+        last_week_logins = UserLoginEvent.objects.filter(
+            organization_id=id,
+            event_type="login",
+            timestamp__gte=last_week_start,
+            timestamp__lt=this_week_start,
+        ).count()
+        if last_week_logins > 0:
+            login_trend_pct = int(((this_week_logins - last_week_logins) / last_week_logins) * 100)
+        elif this_week_logins > 0:
+            login_trend_pct = 100
+        else:
+            login_trend_pct = 0
+
+        # Top 5 IPs by login count (last 30 days)
+        top_ips = list(
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            .exclude(ip_address__isnull=True)
+            .values("ip_address")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+
+        # Daily login counts for last 7 days (for sparkline)
+        daily_logins_qs = list(
+            UserLoginEvent.objects.filter(organization_id=id, event_type="login", timestamp__gte=seven_days_ago)
+            .annotate(day=TruncDate("timestamp"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+        daily_login_map = {entry["day"].isoformat(): entry["count"] for entry in daily_logins_qs if entry["day"]}
+        daily_login_labels = []
+        daily_login_counts = []
+        for i in range(6, -1, -1):
+            day = (now - timedelta(days=i)).date()
+            daily_login_labels.append(day.strftime("%a"))
+            daily_login_counts.append(daily_login_map.get(day.isoformat(), 0))
+
+        # Hourly login distribution
+        hourly_data = list(
+            UserLoginEvent.objects.filter(
+                organization_id=id,
+                event_type="login",
+                timestamp__gte=thirty_days_ago,
+            )
+            .annotate(hour=ExtractHour("timestamp"))
+            .values("hour")
+            .annotate(count=Count("id"))
+            .order_by("hour")
+        )
+
+        # Login type breakdown for doughnut
+        login_type_labels = ["Login", "Logout", "Failed"]
+        login_type_counts = [login_success, login_logout, login_failed]
+
+        # Severity breakdown from security issues (CVE score ranges)
+        severity_ranges = [
+            (9.0, 11.0, "Critical"),
+            (7.0, 9.0, "High"),
+            (5.0, 7.0, "Medium"),
+            (3.0, 5.0, "Low"),
+        ]
+        severity_labels = [label for _, _, label in severity_ranges]
+        severity_counts = [
+            security_issues.filter(cve_score__gte=min_s, cve_score__lt=max_s).count()
+            for min_s, max_s, _ in severity_ranges
+        ]
+
+        # Risk score (weighted formula from analytics view)
+        scored_total = sum(severity_counts)
+        if scored_total > 0:
+            risk_weights = {"critical": 100, "high": 70, "medium": 40, "low": 20}
+            risk_counts = dict(zip(risk_weights.keys(), severity_counts))
+            risk_score = sum(risk_counts[level] / scored_total * weight for level, weight in risk_weights.items())
+            risk_score = min(100, int(risk_score))
+        else:
+            risk_score = 0
+
+        # Anomaly type breakdown
+        anomaly_type_labels = ["New IP", "New UA", "Odd Time", "Rapid Fail"]
+        anomaly_type_keys = ["new_ip", "new_ua", "unusual_time", "rapid_failures"]
+        anomaly_type_counts = [
+            UserBehaviorAnomaly.objects.filter(organization_id=id, anomaly_type=t).count() for t in anomaly_type_keys
+        ]
+
+        # Anomaly severity breakdown
+        anomaly_high = UserBehaviorAnomaly.objects.filter(organization_id=id, severity="high").count()
+        anomaly_medium = UserBehaviorAnomaly.objects.filter(organization_id=id, severity="medium").count()
+        anomaly_low = UserBehaviorAnomaly.objects.filter(organization_id=id, severity="low").count()
+
+        # SecurityIncident open vs resolved counts
+        incidents_open = SecurityIncident.objects.filter(organization_id=id, status="open").count()
+        incidents_resolved = SecurityIncident.objects.filter(organization_id=id, status="resolved").count()
+
+        # Login success rate (computed from existing counts)
+        total_login_attempts = login_success + login_failed
+        login_success_rate = int((login_success / total_login_attempts) * 100) if total_login_attempts > 0 else 0
+
+        # Peak hour derived from hourly_data
+        peak_hour = 0
+        peak_hour_count = 0
+        for entry in hourly_data:
+            if entry.get("count", 0) > peak_hour_count:
+                peak_hour = entry.get("hour", 0)
+                peak_hour_count = entry.get("count", 0)
+
+        # Most active users (last 30 days)
+        most_active_users = list(
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            .values("username_attempted")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+
+        # Recent security incidents
+        recent_incidents = list(SecurityIncident.objects.filter(organization_id=id).order_by("-created_at")[:10])
+
+        # Top user agents (last 30 days)
+        top_user_agents = list(
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=thirty_days_ago)
+            .exclude(user_agent__isnull=True)
+            .exclude(user_agent="")
+            .values("user_agent")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+        for ua in top_user_agents:
+            ua["user_agent_short"] = (ua["user_agent"] or "")[:60]
+
+        # Daily failed login counts for last 7 days
+        daily_failed_qs = list(
+            UserLoginEvent.objects.filter(organization_id=id, event_type="failed", timestamp__gte=seven_days_ago)
+            .annotate(day=TruncDate("timestamp"))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+        daily_failed_map = {entry["day"].isoformat(): entry["count"] for entry in daily_failed_qs if entry["day"]}
+        daily_failed_labels = []
+        daily_failed_counts = []
+        for i in range(6, -1, -1):
+            day = (now - timedelta(days=i)).date()
+            daily_failed_labels.append(day.strftime("%a"))
+            daily_failed_counts.append(daily_failed_map.get(day.isoformat(), 0))
+
+        # Anomaly resolution stats
+        anomaly_total_count = UserBehaviorAnomaly.objects.filter(organization_id=id).count()
+        anomaly_reviewed_count = UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=True).count()
+        anomaly_resolution_rate = (
+            int((anomaly_reviewed_count / anomaly_total_count) * 100) if anomaly_total_count > 0 else 0
+        )
+
+        # ── Enhanced Incidents Summary ──
+        six_months_ago = now - timedelta(days=180)
+        monthly_incidents_qs = list(
+            SecurityIncident.objects.filter(organization_id=id, created_at__gte=six_months_ago)
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(total=Count("id"), critical=Count("id", filter=Q(severity="critical")))
+            .order_by("month")
+        )
+        monthly_incident_labels = [e["month"].strftime("%b %Y") for e in monthly_incidents_qs if e["month"]]
+        monthly_incident_totals = [e["total"] for e in monthly_incidents_qs]
+        monthly_incident_criticals = [e["critical"] for e in monthly_incidents_qs]
+
+        # Affected systems breakdown
+        affected_systems_counter = Counter()
+        for inc in SecurityIncident.objects.filter(organization_id=id).exclude(affected_systems=""):
+            for sys_name in inc.affected_systems.split(","):
+                sys_name = sys_name.strip()
+                if sys_name:
+                    affected_systems_counter[sys_name] += 1
+        affected_systems_top = affected_systems_counter.most_common(8)
+        affected_systems_labels = [s[0] for s in affected_systems_top]
+        affected_systems_counts = [s[1] for s in affected_systems_top]
+
+        # MTTR (Mean Time To Resolution) in hours
+        resolved_incidents = SecurityIncident.objects.filter(
+            organization_id=id, status="resolved", resolved_at__isnull=False
+        )
+        mttr_agg = resolved_incidents.aggregate(avg_resolution=Avg(F("resolved_at") - F("created_at")))
+        mttr_delta = mttr_agg["avg_resolution"]
+        mttr_hours = round(mttr_delta.total_seconds() / 3600, 1) if mttr_delta else 0
+
+        # ── Threat Intelligence ──
+        org_threats = ThreatIntelEntry.objects.filter(organization_id=id)
+        active_threats_count = org_threats.filter(status="active").count()
+        total_threats_count = org_threats.count()
+
+        threat_type_qs = list(org_threats.values("threat_type").annotate(count=Count("id")).order_by("-count"))
+        threat_type_labels = [e["threat_type"].replace("_", " ").title() for e in threat_type_qs]
+        threat_type_counts = [e["count"] for e in threat_type_qs]
+
+        threat_sev_critical = org_threats.filter(severity="critical").count()
+        threat_sev_high = org_threats.filter(severity="high").count()
+        threat_sev_medium = org_threats.filter(severity="medium").count()
+        threat_sev_low = org_threats.filter(severity="low").count()
+
+        recent_threats = list(org_threats.order_by("-created_at")[:10])
+
+        # ── Network Traffic (derived from UserLoginEvent) ──
+        daily_traffic_qs = list(
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=seven_days_ago)
+            .annotate(day=TruncDate("timestamp"))
+            .values("day")
+            .annotate(total=Count("id"), unique_ips=Count("ip_address", distinct=True))
+            .order_by("day")
+        )
+        daily_traffic_map = {e["day"].isoformat(): e for e in daily_traffic_qs if e["day"]}
+        ip_diversity_labels = []
+        ip_diversity_counts = []
+        daily_traffic_labels = []
+        daily_traffic_counts = []
+        for i in range(6, -1, -1):
+            day = (now - timedelta(days=i)).date()
+            day_label = day.strftime("%a")
+            entry = daily_traffic_map.get(day.isoformat(), {})
+            ip_diversity_labels.append(day_label)
+            ip_diversity_counts.append(entry.get("unique_ips", 0))
+            daily_traffic_labels.append(day_label)
+            daily_traffic_counts.append(entry.get("total", 0))
+
+        # Top subnets (/24)
+        subnet_counter = Counter()
+        ip_events = (
+            UserLoginEvent.objects.filter(organization_id=id, timestamp__gte=seven_days_ago)
+            .exclude(ip_address__isnull=True)
+            .values_list("ip_address", flat=True)
+        )
+        for ip_addr in ip_events:
+            if ip_addr and "." in ip_addr:
+                parts = ip_addr.split(".")
+                if len(parts) == 4:
+                    subnet_counter[f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"] += 1
+        top_subnets = subnet_counter.most_common(5)
+
+        # Failed login origin concentration
+        failed_ip_qs = list(
+            UserLoginEvent.objects.filter(organization_id=id, event_type="failed", timestamp__gte=seven_days_ago)
+            .exclude(ip_address__isnull=True)
+            .values("ip_address")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+
+        # ── Vulnerability Management ──
+        org_vulns = Vulnerability.objects.filter(organization_id=id)
+        vuln_total = org_vulns.count()
+        vuln_open = org_vulns.filter(status="open").count()
+        vuln_in_progress = org_vulns.filter(status="in_progress").count()
+        vuln_remediated = org_vulns.filter(status="remediated").count()
+        vuln_overdue = org_vulns.filter(
+            status__in=["open", "in_progress"],
+            remediation_deadline__isnull=False,
+            remediation_deadline__lt=now.date(),
+        ).count()
+
+        vuln_sev_qs = list(org_vulns.values("severity").annotate(count=Count("id")).order_by("-count"))
+        vuln_severity_labels = [e["severity"].title() for e in vuln_sev_qs]
+        vuln_severity_counts = [e["count"] for e in vuln_sev_qs]
+
+        vuln_status_qs = list(org_vulns.values("status").annotate(count=Count("id")).order_by("-count"))
+        vuln_status_labels = [e["status"].replace("_", " ").title() for e in vuln_status_qs]
+        vuln_status_counts = [e["count"] for e in vuln_status_qs]
+
+        recent_vulns = list(org_vulns.order_by("-created_at")[:10])
+
+        # High CVE issues from Issue model
+        high_cve_issues = list(security_issues.filter(cve_score__gte=7.0).order_by("-cve_score")[:5])
+
+        # ── Compliance Monitoring ──
+        org_compliance = ComplianceCheck.objects.filter(organization_id=id)
+        framework_summaries = []
+        total_compliant_all = 0
+        total_checks_all = 0
+        for fw_value, fw_label in ComplianceCheck.Framework.choices:
+            fw_checks = org_compliance.filter(framework=fw_value)
+            fw_total = fw_checks.count()
+            if fw_total == 0:
+                continue
+            fw_compliant = fw_checks.filter(status="compliant").count()
+            fw_pct = int((fw_compliant / fw_total) * 100) if fw_total > 0 else 0
+            framework_summaries.append(
+                {
+                    "framework": fw_value,
+                    "label": fw_label,
+                    "compliant": fw_compliant,
+                    "total": fw_total,
+                    "pct": fw_pct,
+                }
+            )
+            total_compliant_all += fw_compliant
+            total_checks_all += fw_total
+
+        overall_compliance_pct = int((total_compliant_all / total_checks_all) * 100) if total_checks_all > 0 else 0
+
+        upcoming_due_checks = list(
+            org_compliance.filter(
+                due_date__isnull=False,
+                due_date__gte=now.date(),
+                due_date__lte=(now + timedelta(days=30)).date(),
+            )
+            .exclude(status="compliant")
+            .order_by("due_date")[:10]
+        )
+
+        context = {
+            "organization": int(id),
+            "organizations": organizations,
+            "organization_obj": org,
+            "monitoring_disabled": False,
+            "login_events": login_events,
+            "anomalies": anomalies,
+            "anomaly_count": anomaly_count,
+            "login_success_count": login_success,
+            "login_failed_count": login_failed,
+            "login_logout_count": login_logout,
+            "unique_ips_count": unique_ips_count,
+            "unique_users_count": unique_users_count,
+            "login_trend_pct": login_trend_pct,
+            "top_ips": top_ips,
+            "daily_login_labels": daily_login_labels,
+            "daily_login_counts": daily_login_counts,
+            "hourly_login_data": hourly_data,
+            "login_type_labels": login_type_labels,
+            "login_type_counts": login_type_counts,
+            "severity_labels": severity_labels,
+            "severity_counts": severity_counts,
+            "risk_score": risk_score,
+            "anomaly_type_labels": anomaly_type_labels,
+            "anomaly_type_counts": anomaly_type_counts,
+            "anomaly_high": anomaly_high,
+            "anomaly_medium": anomaly_medium,
+            "anomaly_low": anomaly_low,
+            "incidents_open": incidents_open,
+            "incidents_resolved": incidents_resolved,
+            "total_security_issues": security_issues.count(),
+            "recent_incidents_count": SecurityIncident.objects.filter(
+                organization_id=id, created_at__gte=thirty_days_ago
+            ).count(),
+            "login_success_rate": login_success_rate,
+            "peak_hour": f"{peak_hour}:00",
+            "peak_hour_count": peak_hour_count,
+            "most_active_users": most_active_users,
+            "recent_incidents": recent_incidents,
+            "top_user_agents": top_user_agents,
+            "daily_failed_labels": daily_failed_labels,
+            "daily_failed_counts": daily_failed_counts,
+            "anomaly_reviewed_count": anomaly_reviewed_count,
+            "anomaly_total_count": anomaly_total_count,
+            "anomaly_resolution_rate": anomaly_resolution_rate,
+            # Enhanced Incidents Summary
+            "monthly_incident_labels": monthly_incident_labels,
+            "monthly_incident_totals": monthly_incident_totals,
+            "monthly_incident_criticals": monthly_incident_criticals,
+            "affected_systems_labels": affected_systems_labels,
+            "affected_systems_counts": affected_systems_counts,
+            "mttr_hours": mttr_hours,
+            # Threat Intelligence
+            "active_threats_count": active_threats_count,
+            "total_threats_count": total_threats_count,
+            "threat_type_labels": threat_type_labels,
+            "threat_type_counts": threat_type_counts,
+            "threat_sev_critical": threat_sev_critical,
+            "threat_sev_high": threat_sev_high,
+            "threat_sev_medium": threat_sev_medium,
+            "threat_sev_low": threat_sev_low,
+            "recent_threats": recent_threats,
+            # Network Traffic
+            "ip_diversity_labels": ip_diversity_labels,
+            "ip_diversity_counts": ip_diversity_counts,
+            "daily_traffic_labels": daily_traffic_labels,
+            "daily_traffic_counts": daily_traffic_counts,
+            "top_subnets": top_subnets,
+            "failed_ip_origins": failed_ip_qs,
+            # Vulnerability Management
+            "vuln_total": vuln_total,
+            "vuln_open": vuln_open,
+            "vuln_in_progress": vuln_in_progress,
+            "vuln_remediated": vuln_remediated,
+            "vuln_overdue": vuln_overdue,
+            "vuln_severity_labels": vuln_severity_labels,
+            "vuln_severity_counts": vuln_severity_counts,
+            "vuln_status_labels": vuln_status_labels,
+            "vuln_status_counts": vuln_status_counts,
+            "recent_vulns": recent_vulns,
+            "high_cve_issues": high_cve_issues,
+            # Compliance Monitoring
+            "framework_summaries": framework_summaries,
+            "overall_compliance_pct": overall_compliance_pct,
+            "upcoming_due_checks": upcoming_due_checks,
+        }
+        return render(request, "organization/dashboard/organization_security.html", context)
+
+
+class OrganizationSecurityApiView(View):
+    """Org-scoped security API for events, anomalies, and dismiss actions."""
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        org = Organization.objects.filter(id=id).first()
+        if not org or not org.security_monitoring_enabled:
+            return JsonResponse({"error": "Security monitoring is not enabled"}, status=403)
+        action = request.GET.get("action")
+        if action == "events":
+            events = (
+                UserLoginEvent.objects.filter(organization_id=id).select_related("user").order_by("-timestamp")[:50]
+            )
+            data = [
+                {
+                    "id": e.id,
+                    "username": e.username_attempted,
+                    "event_type": e.get_event_type_display(),
+                    "ip_address": e.ip_address or "",
+                    "user_agent": (e.user_agent or "")[:100],
+                    "timestamp": e.timestamp.isoformat(),
+                }
+                for e in events
+            ]
+            return JsonResponse({"events": data})
+        elif action == "anomalies":
+            anomalies = (
+                UserBehaviorAnomaly.objects.filter(organization_id=id, is_reviewed=False)
+                .select_related("user")
+                .order_by("-created_at")[:30]
+            )
+            data = [
+                {
+                    "id": a.id,
+                    "username": a.user.username if a.user else "",
+                    "anomaly_type": a.get_anomaly_type_display(),
+                    "severity": a.get_severity_display(),
+                    "description": a.description,
+                    "created_at": a.created_at.isoformat(),
+                }
+                for a in anomalies
+            ]
+            return JsonResponse({"anomalies": data})
+        elif action == "user_events":
+            username = request.GET.get("username", "")
+            if not username:
+                return JsonResponse({"error": "username parameter is required"}, status=400)
+            events = (
+                UserLoginEvent.objects.filter(organization_id=id, username_attempted=username)
+                .select_related("user")
+                .order_by("-timestamp")[:50]
+            )
+            data = [
+                {
+                    "id": e.id,
+                    "username": e.username_attempted,
+                    "event_type": e.get_event_type_display(),
+                    "ip_address": e.ip_address or "",
+                    "user_agent": (e.user_agent or "")[:100],
+                    "timestamp": e.timestamp.isoformat(),
+                }
+                for e in events
+            ]
+            return JsonResponse({"events": data})
+        elif action == "ip_events":
+            ip = request.GET.get("ip", "")
+            if not ip:
+                return JsonResponse({"error": "ip parameter is required"}, status=400)
+            try:
+                ipaddress.ip_address(ip)
+            except ValueError:
+                return JsonResponse({"error": "Invalid IP address format"}, status=400)
+            events = (
+                UserLoginEvent.objects.filter(organization_id=id, ip_address=ip)
+                .select_related("user")
+                .order_by("-timestamp")[:50]
+            )
+            data = [
+                {
+                    "id": e.id,
+                    "username": e.username_attempted,
+                    "event_type": e.get_event_type_display(),
+                    "ip_address": e.ip_address or "",
+                    "user_agent": (e.user_agent or "")[:100],
+                    "timestamp": e.timestamp.isoformat(),
+                }
+                for e in events
+            ]
+            return JsonResponse({"events": data})
+        elif action == "incidents":
+            try:
+                page = max(1, int(request.GET.get("page", 1)))
+            except (ValueError, TypeError):
+                page = 1
+            per_page = 10
+            offset = (page - 1) * per_page
+            incidents = SecurityIncident.objects.filter(organization_id=id).order_by("-created_at")
+            total = incidents.count()
+            incidents_page = incidents[offset : offset + per_page]
+            data = [
+                {
+                    "id": inc.id,
+                    "title": inc.title,
+                    "severity": inc.get_severity_display(),
+                    "status": inc.get_status_display(),
+                    "description": inc.description[:200] if inc.description else "",
+                    "created_at": inc.created_at.isoformat(),
+                }
+                for inc in incidents_page
+            ]
+            return JsonResponse({"incidents": data, "total": total, "page": page})
+        elif action == "threats":
+            threats = ThreatIntelEntry.objects.filter(organization_id=id).order_by("-created_at")[:50]
+            data = [
+                {
+                    "id": t.id,
+                    "title": t.title,
+                    "threat_type": t.get_threat_type_display(),
+                    "severity": t.get_severity_display(),
+                    "status": t.get_status_display(),
+                    "source": t.source,
+                    "created_at": t.created_at.isoformat(),
+                }
+                for t in threats
+            ]
+            return JsonResponse({"threats": data})
+        elif action == "vulnerabilities":
+            vulns = Vulnerability.objects.filter(organization_id=id).order_by("-created_at")[:50]
+            data = [
+                {
+                    "id": v.id,
+                    "title": v.title,
+                    "severity": v.get_severity_display(),
+                    "status": v.get_status_display(),
+                    "cve_id": v.cve_id,
+                    "cvss_score": str(v.cvss_score) if v.cvss_score else "",
+                    "affected_component": v.affected_component,
+                    "remediation_deadline": v.remediation_deadline.isoformat() if v.remediation_deadline else "",
+                    "created_at": v.created_at.isoformat(),
+                }
+                for v in vulns
+            ]
+            return JsonResponse({"vulnerabilities": data})
+        elif action == "compliance":
+            checks = ComplianceCheck.objects.filter(organization_id=id)
+            framework_filter = request.GET.get("framework", "")
+            if framework_filter:
+                checks = checks.filter(framework=framework_filter)
+            checks = checks.order_by("framework", "requirement_id")[:100]
+            data = [
+                {
+                    "id": c.id,
+                    "framework": c.get_framework_display(),
+                    "requirement_id": c.requirement_id,
+                    "requirement_title": c.requirement_title,
+                    "status": c.get_status_display(),
+                    "due_date": c.due_date.isoformat() if c.due_date else "",
+                    "last_assessed": c.last_assessed.isoformat() if c.last_assessed else "",
+                }
+                for c in checks
+            ]
+            return JsonResponse({"compliance": data})
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        org = Organization.objects.filter(id=id).first()
+        if not org or not org.security_monitoring_enabled:
+            return JsonResponse({"error": "Security monitoring is not enabled"}, status=403)
+        action = request.POST.get("action")
+        if action == "dismiss_anomaly":
+            if not (org.is_admin(request.user) or org.is_manager(request.user)):
+                return JsonResponse({"error": "Only org admin or manager can dismiss anomalies"}, status=403)
+            anomaly_id = request.POST.get("anomaly_id")
+            if not anomaly_id:
+                return JsonResponse({"error": "anomaly_id is required"}, status=400)
+            try:
+                anomaly_id = int(anomaly_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Invalid anomaly_id"}, status=400)
+            anomaly = UserBehaviorAnomaly.objects.filter(id=anomaly_id, organization_id=id).first()
+            if not anomaly:
+                return JsonResponse({"error": "Anomaly not found"}, status=404)
+            anomaly.is_reviewed = True
+            anomaly.reviewed_at = timezone.now()
+            anomaly.reviewed_by = request.user
+            anomaly.save(update_fields=["is_reviewed", "reviewed_at", "reviewed_by"])
+            return JsonResponse({"status": "dismissed"})
+        elif action == "update_vuln_status":
+            if not (org.is_admin(request.user) or org.is_manager(request.user)):
+                return JsonResponse({"error": "Only org admin or manager can update vulnerabilities"}, status=403)
+            vuln_id = request.POST.get("vuln_id")
+            new_status = request.POST.get("status", "")
+            if not vuln_id:
+                return JsonResponse({"error": "vuln_id is required"}, status=400)
+            try:
+                vuln_id = int(vuln_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Invalid vuln_id"}, status=400)
+            valid_statuses = [c[0] for c in Vulnerability.Status.choices]
+            if new_status not in valid_statuses:
+                return JsonResponse(
+                    {"error": f"Invalid status. Must be one of: {', '.join(valid_statuses)}"}, status=400
+                )
+            vuln = Vulnerability.objects.filter(id=vuln_id, organization_id=id).first()
+            if not vuln:
+                return JsonResponse({"error": "Vulnerability not found"}, status=404)
+            vuln.status = new_status
+            if new_status == "remediated":
+                vuln.remediated_at = timezone.now()
+            else:
+                vuln.remediated_at = None
+            vuln.save(update_fields=["status", "remediated_at"])
+            return JsonResponse({"status": "updated", "new_status": vuln.get_status_display()})
+        elif action == "update_compliance_status":
+            if not (org.is_admin(request.user) or org.is_manager(request.user)):
+                return JsonResponse({"error": "Only org admin or manager can update compliance"}, status=403)
+            check_id = request.POST.get("check_id")
+            new_status = request.POST.get("status", "")
+            if not check_id:
+                return JsonResponse({"error": "check_id is required"}, status=400)
+            try:
+                check_id = int(check_id)
+            except (ValueError, TypeError):
+                return JsonResponse({"error": "Invalid check_id"}, status=400)
+            valid_statuses = [c[0] for c in ComplianceCheck.Status.choices]
+            if new_status not in valid_statuses:
+                return JsonResponse(
+                    {"error": f"Invalid status. Must be one of: {', '.join(valid_statuses)}"}, status=400
+                )
+            check = ComplianceCheck.objects.filter(id=check_id, organization_id=id).first()
+            if not check:
+                return JsonResponse({"error": "Compliance check not found"}, status=404)
+            check.status = new_status
+            check.last_assessed = timezone.now()
+            check.assessed_by = request.user
+            check.save(update_fields=["status", "last_assessed", "assessed_by"])
+            return JsonResponse({"status": "updated", "new_status": check.get_status_display()})
+        return JsonResponse({"error": "Invalid action"}, status=400)

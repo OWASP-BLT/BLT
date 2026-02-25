@@ -19,7 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -220,6 +220,9 @@ class Organization(models.Model):
     )
     check_ins_enabled = models.BooleanField(
         default=False, help_text="Indicates if the organization has check-ins enabled"
+    )
+    security_monitoring_enabled = models.BooleanField(
+        default=False, help_text="Enable security monitoring for this organization"
     )
 
     # Address fields
@@ -3613,6 +3616,13 @@ class SecurityIncident(models.Model):
         RESOLVED = "resolved", "Resolved"
 
     title = models.CharField(max_length=255)
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="security_incidents",
+        null=True,
+        blank=True,
+    )
     severity = models.CharField(
         max_length=20,
         choices=Severity.choices,
@@ -3631,19 +3641,14 @@ class SecurityIncident(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
 
-    #  NEW AUTO-FIELDS & ENHANCEMENTS
     def __str__(self):
         return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
 
     def save(self, *args, **kwargs):
-        """
-        Automatically set or clear resolved_at timestamp based on status.
-        """
         if self.status == self.Status.RESOLVED and not self.resolved_at:
             self.resolved_at = timezone.now()
         elif self.status != self.Status.RESOLVED and self.resolved_at:
             self.resolved_at = None
-
         super().save(*args, **kwargs)
 
     class Meta:
@@ -3652,6 +3657,7 @@ class SecurityIncident(models.Model):
             models.Index(fields=["severity"], name="incident_severity_idx"),
             models.Index(fields=["status"], name="incident_status_idx"),
             models.Index(fields=["-created_at"], name="incident_created_idx"),
+            models.Index(fields=["organization", "-created_at"], name="incident_org_created_idx"),
         ]
 
 
@@ -3670,4 +3676,319 @@ class SecurityIncidentHistory(models.Model):
                 fields=["incident", "-changed_at"],
                 name="history_incident_changedat_idx",
             ),
+        ]
+
+
+class UserLoginEvent(models.Model):
+    class EventType(models.TextChoices):
+        LOGIN = "login", "Login"
+        LOGOUT = "logout", "Logout"
+        FAILED = "failed", "Failed Login"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="login_events",
+    )
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="org_login_events",
+        null=True,
+        blank=True,
+    )
+    username_attempted = models.CharField(max_length=150)
+    event_type = models.CharField(max_length=10, choices=EventType.choices)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default="")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username_attempted} - {self.get_event_type_display()} at {self.timestamp}"
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "-timestamp"], name="login_user_ts_idx"),
+            models.Index(fields=["event_type", "-timestamp"], name="login_type_ts_idx"),
+            models.Index(fields=["ip_address"], name="login_ip_idx"),
+            models.Index(fields=["organization", "-timestamp"], name="login_org_ts_idx"),
+            models.Index(fields=["organization", "event_type", "-timestamp"], name="login_org_type_ts_idx"),
+        ]
+
+
+class UserBehaviorAnomaly(models.Model):
+    class AnomalyType(models.TextChoices):
+        NEW_IP = "new_ip", "New IP Address"
+        NEW_UA = "new_ua", "New User Agent"
+        UNUSUAL_TIME = "unusual_time", "Unusual Login Time"
+        RAPID_FAILURES = "rapid_failures", "Rapid Failed Logins"
+
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="behavior_anomalies",
+    )
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="org_behavior_anomalies",
+        null=True,
+        blank=True,
+    )
+    anomaly_type = models.CharField(max_length=20, choices=AnomalyType.choices)
+    severity = models.CharField(max_length=10, choices=Severity.choices)
+    description = models.TextField()
+    details = models.JSONField(default=dict, blank=True)
+    login_event = models.ForeignKey(
+        UserLoginEvent,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="anomalies",
+    )
+    is_reviewed = models.BooleanField(default=False)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_anomalies",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_anomaly_type_display()} - {self.user or 'deleted user'} ({self.get_severity_display()})"
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "User behavior anomalies"
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="anomaly_user_ts_idx"),
+            models.Index(fields=["is_reviewed", "-created_at"], name="anomaly_review_ts_idx"),
+            models.Index(fields=["organization", "-created_at"], name="anomaly_org_ts_idx"),
+        ]
+
+
+class ThreatIntelEntry(models.Model):
+    class ThreatType(models.TextChoices):
+        MALWARE = "malware", "Malware"
+        PHISHING = "phishing", "Phishing"
+        RANSOMWARE = "ransomware", "Ransomware"
+        DATA_BREACH = "data_breach", "Data Breach"
+        DDOS = "ddos", "DDoS"
+        INSIDER_THREAT = "insider_threat", "Insider Threat"
+        ZERO_DAY = "zero_day", "Zero Day"
+        OTHER = "other", "Other"
+
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        MITIGATED = "mitigated", "Mitigated"
+        EXPIRED = "expired", "Expired"
+
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="threat_intel_entries",
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(max_length=255)
+    threat_type = models.CharField(max_length=20, choices=ThreatType.choices)
+    severity = models.CharField(max_length=20, choices=Severity.choices, default=Severity.MEDIUM)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    description = models.TextField(blank=True)
+    source = models.CharField(max_length=255, blank=True)
+    reference_url = models.URLField(blank=True, null=True)
+    indicators = models.JSONField(default=dict, blank=True)
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reported_threats",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.get_threat_type_display()}) - {self.get_severity_display()}"
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "Threat intel entries"
+        indexes = [
+            models.Index(fields=["organization", "-created_at"], name="threat_org_created_idx"),
+            models.Index(fields=["threat_type"], name="threat_type_idx"),
+            models.Index(fields=["severity"], name="threat_severity_idx"),
+            models.Index(fields=["status"], name="threat_status_idx"),
+        ]
+
+
+class Vulnerability(models.Model):
+    class Severity(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        IN_PROGRESS = "in_progress", "In Progress"
+        REMEDIATED = "remediated", "Remediated"
+        ACCEPTED_RISK = "accepted_risk", "Accepted Risk"
+        FALSE_POSITIVE = "false_positive", "False Positive"
+
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="vulnerabilities",
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    severity = models.CharField(max_length=20, choices=Severity.choices, default=Severity.MEDIUM)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    cve_id = models.CharField(max_length=20, blank=True)
+    cvss_score = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal("0.0")), MaxValueValidator(Decimal("10.0"))],
+    )
+    affected_component = models.CharField(max_length=255, blank=True)
+    remediation_steps = models.TextField(blank=True)
+    remediation_deadline = models.DateField(null=True, blank=True)
+    issue = models.ForeignKey(
+        "Issue",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="linked_vulnerabilities",
+    )
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_vulnerabilities",
+    )
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reported_vulnerabilities",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    remediated_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.get_severity_display()}) - {self.get_status_display()}"
+
+    def clean(self):
+        super().clean()
+        if self.cve_id:
+            normalized = normalize_cve_id(self.cve_id)
+            if not normalized:
+                raise ValidationError({"cve_id": "Invalid CVE ID format. Expected CVE-YYYY-NNNNN."})
+            self.cve_id = normalized
+
+    def save(self, *args, **kwargs):
+        if self.cve_id:
+            normalized = normalize_cve_id(self.cve_id)
+            if normalized:
+                self.cve_id = normalized
+        if self.status == self.Status.REMEDIATED and not self.remediated_at:
+            self.remediated_at = timezone.now()
+        elif self.status != self.Status.REMEDIATED and self.remediated_at:
+            self.remediated_at = None
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "Vulnerabilities"
+        indexes = [
+            models.Index(fields=["organization", "-created_at"], name="vuln_org_created_idx"),
+            models.Index(fields=["severity"], name="vuln_severity_idx"),
+            models.Index(fields=["status"], name="vuln_status_idx"),
+            models.Index(fields=["organization", "status"], name="vuln_org_status_idx"),
+        ]
+
+
+class ComplianceCheck(models.Model):
+    class Framework(models.TextChoices):
+        PCI_DSS = "pci_dss", "PCI DSS"
+        HIPAA = "hipaa", "HIPAA"
+        SOC2 = "soc2", "SOC 2"
+        GDPR = "gdpr", "GDPR"
+        ISO_27001 = "iso_27001", "ISO 27001"
+        OWASP_TOP10 = "owasp_top10", "OWASP Top 10"
+
+    class Status(models.TextChoices):
+        COMPLIANT = "compliant", "Compliant"
+        NON_COMPLIANT = "non_compliant", "Non-Compliant"
+        PARTIAL = "partial", "Partial"
+        NOT_ASSESSED = "not_assessed", "Not Assessed"
+
+    organization = models.ForeignKey(
+        "Organization",
+        on_delete=models.SET_NULL,
+        related_name="compliance_checks",
+        null=True,
+        blank=True,
+    )
+    framework = models.CharField(max_length=20, choices=Framework.choices)
+    requirement_id = models.CharField(max_length=50)
+    requirement_title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NOT_ASSESSED)
+    evidence = models.TextField(blank=True)
+    last_assessed = models.DateTimeField(null=True, blank=True)
+    assessed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assessed_compliance_checks",
+    )
+    due_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.get_framework_display()} - {self.requirement_id}: {self.requirement_title}"
+
+    class Meta:
+        ordering = ["framework", "requirement_id"]
+        verbose_name_plural = "Compliance checks"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "framework", "requirement_id"],
+                condition=Q(organization__isnull=False),
+                name="unique_compliance_with_org",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["organization", "framework"], name="compliance_org_fw_idx"),
+            models.Index(fields=["status"], name="compliance_status_idx"),
+            models.Index(fields=["organization", "status"], name="compliance_org_status_idx"),
         ]

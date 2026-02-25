@@ -131,6 +131,11 @@
                             <i class="fas fa-puzzle-piece mr-2"></i>
                             Integrations
                         </a>
+                        <a href="{% url 'organization_security_dashboard' request.resolver_match.kwargs.id %}"
+                           class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_security_dashboard' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Security
+                        </a>
                         <a href="{% url 'organization_manage_jobs' request.resolver_match.kwargs.id %}"
                            class="flex-shrink-0 inline-flex items-center px-4 py-4 border-b-2 text-sm font-medium transition-colors duration-200 {% if request.resolver_match.url_name == 'organization_manage_jobs' or request.resolver_match.url_name == 'create_job' or request.resolver_match.url_name == 'edit_job' %}border-[#e74c3c] text-[#e74c3c]{% else %}border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600{% endif %}">
                             <i class="fas fa-briefcase mr-2"></i>
@@ -189,6 +194,8 @@
                                 targetUrl = `/organization/${selectedOrgId}/dashboard/roles/`;
                             } else if (currentUrlName === 'organization_manage_integrations') {
                                 targetUrl = `/organization/${selectedOrgId}/dashboard/integrations/`;
+                            } else if (currentUrlName === 'organization_security_dashboard') {
+                                targetUrl = `/organization/${selectedOrgId}/dashboard/security/`;
                             } else if (currentUrlName === 'organization_manage_jobs') {
                                 targetUrl = `/organization/${selectedOrgId}/dashboard/jobs/`;
                             } else {
