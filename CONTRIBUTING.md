@@ -22,7 +22,7 @@ Thank you for your interest in contributing to OWASP BLT! We welcome contributio
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our Code of Conduct. Please be respectful and considerate of others when contributing to the project.
+By participating in this project, you agree to abide by our Code of Conduct. Please be respectful and considerate when contributing.
 
 ## Getting Started
 
