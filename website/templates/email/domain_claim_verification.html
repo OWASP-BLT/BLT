@@ -44,12 +44,12 @@
                                     on {% env 'PROJECT_NAME' %}.
                                 </p>
                                 <p class="mb-4">Your verification code is:</p>
-                                <div style="text-align: center; margin: 24px 0;">
-                                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 16px 32px; background-color: #f3f4f6; border-radius: 8px; display: inline-block;">
-                                        {{ verification_code }}
-                                    </span>
+                                <div class="text-center my-6">
+                                    <span class="text-3xl font-bold tracking-[8px] py-4 px-8 bg-gray-100 rounded-lg inline-block">{{ verification_code }}</span>
                                 </div>
-                                <p class="mb-4">This code will expire in <strong>30 minutes</strong>.</p>
+                                <p class="mb-4">
+                                    This code will expire in <strong>30 minutes</strong>.
+                                </p>
                                 <p class="mb-4">
                                     If you did not expect this request, you can safely ignore this email.
                                     No changes will be made to the domain.
