@@ -64,6 +64,9 @@ jobs:
         id: read-artifacts
         env:
           PAYLOAD_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f pr-number.txt ] && [ -f test-result.txt ]; then
             PR_NUMBER=$(cat pr-number.txt | tr -d '[:space:]')
@@ -75,17 +78,25 @@ jobs:
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
-            # SECURITY: Cross-validate artifact PR number against the workflow_run payload.
-            # The payload must include a pull_requests entry that matches the artifact value.
+            # SECURITY: Cross-validate artifact PR number against a trusted source.
             # This prevents a malicious artifact from targeting a different PR.
-            # Fail closed: if the payload has no PR number, we cannot validate the artifact.
-            if [ -z "$PAYLOAD_PR" ]; then
-              echo "::error::No PR number in workflow_run payload; cannot validate artifact (fork PR?)"
-              echo "has_data=false" >> $GITHUB_OUTPUT
-              exit 0
+            TRUSTED_PR="$PAYLOAD_PR"
+            if [ -z "$TRUSTED_PR" ]; then
+              # For fork PRs, pull_requests[] is empty. Look up the PR via the
+              # workflow run's head SHA (a trusted value from the event payload).
+              TRUSTED_PR=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$GH_REPO/commits/$HEAD_SHA/pulls" \
+                | jq -r '.[0].number // empty')
+              if [ -z "$TRUSTED_PR" ]; then
+                echo "::error::Could not determine PR number from payload or HEAD SHA"
+                echo "has_data=false" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              echo "Resolved PR #$TRUSTED_PR from HEAD SHA $HEAD_SHA"
             fi
-            if [ "$PAYLOAD_PR" != "$PR_NUMBER" ]; then
-              echo "::error::Artifact PR #$PR_NUMBER does not match payload PR #$PAYLOAD_PR"
+            if [ "$TRUSTED_PR" != "$PR_NUMBER" ]; then
+              echo "::error::Artifact PR #$PR_NUMBER does not match trusted PR #$TRUSTED_PR"
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -421,6 +432,9 @@ jobs:
         id: read-artifacts
         env:
           PAYLOAD_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f pre-commit-pr-number.txt ] && [ -f pre-commit-result.txt ]; then
             PR_NUMBER=$(cat pre-commit-pr-number.txt | tr -d '[:space:]')
@@ -431,17 +445,25 @@ jobs:
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
-            # SECURITY: Cross-validate artifact PR number against the workflow_run payload.
-            # The payload must include a pull_requests entry that matches the artifact value.
+            # SECURITY: Cross-validate artifact PR number against a trusted source.
             # This prevents a malicious artifact from targeting a different PR.
-            # Fail closed: if the payload has no PR number, we cannot validate the artifact.
-            if [ -z "$PAYLOAD_PR" ]; then
-              echo "::error::No PR number in workflow_run payload; cannot validate artifact (fork PR?)"
-              echo "has_data=false" >> $GITHUB_OUTPUT
-              exit 0
+            TRUSTED_PR="$PAYLOAD_PR"
+            if [ -z "$TRUSTED_PR" ]; then
+              # For fork PRs, pull_requests[] is empty. Look up the PR via the
+              # workflow run's head SHA (a trusted value from the event payload).
+              TRUSTED_PR=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$GH_REPO/commits/$HEAD_SHA/pulls" \
+                | jq -r '.[0].number // empty')
+              if [ -z "$TRUSTED_PR" ]; then
+                echo "::error::Could not determine PR number from payload or HEAD SHA"
+                echo "has_data=false" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              echo "Resolved PR #$TRUSTED_PR from HEAD SHA $HEAD_SHA"
             fi
-            if [ "$PAYLOAD_PR" != "$PR_NUMBER" ]; then
-              echo "::error::Artifact PR #$PR_NUMBER does not match payload PR #$PAYLOAD_PR"
+            if [ "$TRUSTED_PR" != "$PR_NUMBER" ]; then
+              echo "::error::Artifact PR #$PR_NUMBER does not match trusted PR #$TRUSTED_PR"
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
