@@ -609,58 +609,65 @@ def search(request, template="search.html"):
         if not stype or stype not in allowed_types:
             stype = "all"
 
-        # Handle type='all' - search ALL models
-        if stype == "all":
-            organizations = Organization.objects.filter(name__icontains=query)
-            if request.user.is_authenticated:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )
-            else:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
-            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+# Handle type='all' - search ALL models
+if stype == "all":
+    organizations = Organization.objects.filter(name__icontains=query)
 
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "organizations": organizations,
-                "domains": domains,
-                "users": users,
-                "issues": issues,
-                "projects": projects,
-                "repos": repos,
-            }
+    if request.user.is_authenticated:
+        issues = (
+            Issue.objects.filter(Q(description__icontains=query), hunt=None)
+            .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+            .order_by("-created")
+        )
+    else:
+        issues = (
+            Issue.objects.filter(Q(description__icontains=query), hunt=None)
+            .exclude(is_hidden=True)
+            .order_by("-created")
+        )
 
-        elif stype == "issues":
-            if request.user.is_authenticated:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                    Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )[0:20]
-            else:
-                issues_qs = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
-                    0:20
-                ]
+    domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+    users = (
+        User.objects.filter(username__icontains=query)
+        .exclude(is_superuser=True)
+        .order_by("-points")[0:20]
+    )
+    projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
 
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "issues": issues_qs,
-            }
+    context = {
+        "request": request,
+        "query": query,
+        "type": stype,
+        "organizations": organizations,
+        "domains": domains,
+        "users": users,
+        "issues": issues,
+        "projects": projects,
+        "repos": repos,
+    }
 
-        elif stype == "domains":
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
-            }
+elif stype == "issues":
 
-        elif stype == "users":
+    if request.user.is_authenticated:
+        issues_qs = (
+            Issue.objects.filter(Q(description__icontains=query), hunt=None)
+            .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+            .order_by("-created")
+        )[0:20]
+    else:
+        issues_qs = (
+            Issue.objects.filter(Q(description__icontains=query), hunt=None)
+            .exclude(is_hidden=True)
+            .order_by("-created")
+        )[0:20]
+
+    context = {
+        "request": request,
+        "query": query,
+        "type": stype,
+        "issues": issues_qs,
+    }
             users = (
                 UserProfile.objects.filter(Q(user__username__icontains=query))
                 .annotate(total_score=Sum("user__points__score"))
