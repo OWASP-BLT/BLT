@@ -136,6 +136,25 @@
                                 <span class="font-medium">{{ organization.name }}</span>
                             </div>
                         {% endif %}
+                        {% if request.user.is_authenticated and not is_domain_manager and domain.email %}
+                            <div class="mt-2">
+                                <form method="post" action="{% url 'domain_claim_request' pk=domain.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white text-sm font-medium rounded-lg hover:bg-red-600 transition duration-200">
+                                        <i class="fas fa-user-shield"></i>
+                                        {% trans "Manage this domain" %}
+                                    </button>
+                                </form>
+                            </div>
+                        {% elif is_domain_manager %}
+                            <div class="mt-2">
+                                <span class="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-sm font-medium rounded-lg">
+                                    <i class="fas fa-check-circle"></i>
+                                    {% trans "You are a manager of this domain" %}
+                                </span>
+                            </div>
+                        {% endif %}
                         {% if domain.email %}
                             <div class="flex flex-col gap-1 text-sm">
                                 <span class="text-[#e74c3c]">{{ domain.email|obfuscate_mailto }}</span>

@@ -2,6 +2,7 @@ import ipaddress
 import json
 import logging
 import os
+import random
 import re
 import time
 from collections import defaultdict
@@ -20,7 +21,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
-from django.core.mail import BadHeaderError, send_mail
+from django.core.mail import BadHeaderError, EmailMultiAlternatives, send_mail
+from django.template.loader import render_to_string
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
@@ -51,6 +53,7 @@ from website.models import (
     Activity,
     DailyStatusReport,
     Domain,
+    DomainClaimRequest,
     GitHubIssue,
     Hunt,
     IpReport,
@@ -1094,6 +1097,9 @@ class DomainDetailView(ListView):
 
             if self.request.user.is_authenticated:
                 context["wallet"] = Wallet.objects.get(user=self.request.user)
+                context["is_domain_manager"] = domain.managers.filter(id=self.request.user.id).exists()
+            else:
+                context["is_domain_manager"] = False
 
             # Handle pagination for open issues
             open_paginator = Paginator(open_issues, self.paginate_by)
@@ -1172,6 +1178,125 @@ class DomainDetailView(ListView):
             # Log the error but return a 404 instead of propagating the exception
             logger.error("Error in DomainDetailView: Something went wrong.")
             raise Http404("Domain not found")
+
+
+@login_required
+@require_POST
+def request_domain_claim(request, pk):
+    domain = get_object_or_404(Domain, pk=pk)
+
+    if not domain.email:
+        messages.error(request, "This domain does not have a contact email configured.")
+        return redirect("domain", slug=domain.name)
+
+    if domain.managers.filter(id=request.user.id).exists():
+        messages.info(request, "You are already a manager of this domain.")
+        return redirect("domain", slug=domain.name)
+
+    # Generate a 6-digit verification code
+    verification_code = f"{random.randint(100000, 999999)}"
+
+    # Create claim request with 30-minute expiry
+    DomainClaimRequest.objects.filter(
+        domain=domain, user=request.user, is_verified=False
+    ).delete()
+
+    DomainClaimRequest.objects.create(
+        domain=domain,
+        user=request.user,
+        verification_code=verification_code,
+        expires_at=timezone.now() + timedelta(minutes=30),
+    )
+
+    # Send verification email to the domain's email
+    subject = f"Domain Ownership Verification Code for {domain.name}"
+    html_content = render_to_string(
+        "email/domain_claim_verification.html",
+        {
+            "domain": domain.name,
+            "verification_code": verification_code,
+            "username": request.user.username,
+        },
+    )
+    text_content = (
+        f"Your verification code for claiming {domain.name} is: {verification_code}. "
+        f"This code expires in 30 minutes."
+    )
+
+    try:
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            to=[domain.email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+        messages.success(request, "A verification code has been sent to the domain's email address.")
+    except Exception:
+        logger.exception("Failed to send domain claim verification email")
+        messages.error(request, "Failed to send verification email. Please try again later.")
+        return redirect("domain", slug=domain.name)
+
+    return redirect("domain_claim_verify", pk=domain.pk)
+
+
+@login_required
+def verify_domain_claim(request, pk):
+    domain = get_object_or_404(Domain, pk=pk)
+
+    if domain.managers.filter(id=request.user.id).exists():
+        messages.info(request, "You are already a manager of this domain.")
+        return redirect("domain", slug=domain.name)
+
+    if request.method == "GET":
+        return render(request, "domain_claim_verify.html", {"domain": domain})
+
+    # POST - verify the code
+    code = request.POST.get("verification_code", "").strip()
+    if not code:
+        messages.error(request, "Please enter a verification code.")
+        return render(request, "domain_claim_verify.html", {"domain": domain})
+
+    claim = (
+        DomainClaimRequest.objects.filter(
+            domain=domain,
+            user=request.user,
+            is_verified=False,
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+    if not claim:
+        messages.error(request, "No pending claim request found. Please request a new verification code.")
+        return render(request, "domain_claim_verify.html", {"domain": domain})
+
+    if claim.is_expired():
+        messages.error(request, "Your verification code has expired. Please request a new one.")
+        return render(request, "domain_claim_verify.html", {"domain": domain})
+
+    if claim.verification_code != code:
+        messages.error(request, "Invalid verification code. Please try again.")
+        return render(request, "domain_claim_verify.html", {"domain": domain})
+
+    # Verification successful - add user as domain manager
+    claim.is_verified = True
+    claim.save()
+
+    domain.managers.add(request.user)
+
+    # Also create an OrganizationAdmin entry if domain has an organization
+    if domain.organization:
+        OrganizationAdmin.objects.get_or_create(
+            user=request.user,
+            organization=domain.organization,
+            domain=domain,
+            defaults={"role": 1, "is_active": True},
+        )
+
+    messages.success(request, f"You have been added as a manager of {domain.name}.")
+    return redirect("domain", slug=domain.name)
 
 
 class ScoreboardView(ListView):

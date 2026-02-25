@@ -1959,6 +1959,7 @@ class DomainView(View):
             "first_bug": first_bug,
             "last_bug": last_bug,
             "ongoing_bughunts": ongoing_bughunts,
+            "is_domain_manager": is_domain_manager,
         }
 
         return render(request, "organization/dashboard/view_domain.html", context)
