@@ -33,6 +33,7 @@ from website.models import (
     DailyStatusReport,
     Domain,
     Enrollment,
+    GitHubComment,
     GitHubIssue,
     GitHubReview,
     Hackathon,
@@ -673,6 +674,34 @@ class GitHubReviewAdmin(admin.ModelAdmin):
     date_hierarchy = "submitted_at"
 
 
+class GitHubCommentAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "commenter_display",
+        "created_at",
+        "issue",
+        "url",
+    )
+    list_filter = [
+        "created_at",
+    ]
+    search_fields = [
+        "commenter__user__username",
+        "commenter_contributor__name",
+        "body",
+    ]
+    date_hierarchy = "created_at"
+
+    def commenter_display(self, obj):
+        if obj.commenter:
+            return obj.commenter.user.username
+        elif obj.commenter_contributor:
+            return obj.commenter_contributor.name
+        return "Unknown"
+
+    commenter_display.short_description = "Commenter"
+
+
 class MessageAdmin(admin.ModelAdmin):
     list_display = ("id", "room", "thread", "username", "content", "timestamp")
     list_filter = ("room", "timestamp")
@@ -938,6 +967,7 @@ admin.site.register(Enrollment)
 admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
+admin.site.register(GitHubComment, GitHubCommentAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
