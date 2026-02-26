@@ -228,7 +228,7 @@ def profile_edit(request):
 
         else:
             print("FORM ERRORS:", form.errors)
-            messages.error(request, "Please correct the errors below.")
+            messages.error(request, "Please correct the highlighted errors.")
 
     else:
         form = UserProfileForm(
