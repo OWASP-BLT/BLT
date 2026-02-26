@@ -432,3 +432,178 @@ class ProjectFreshnessFilteringTestCase(APITestCase):
         for project in data["results"]:
             self.assertIn("freshness", project)
             self.assertIsNotNone(project["freshness"])
+
+
+class IssueTriageSearchTestCase(APITestCase):
+    """Test cases for the triage-search endpoint"""
+
+    def setUp(self):
+        """Create test user and issues"""
+        self.user = get_user_model().objects.create_user(
+            username="testuser", email="test@example.com", password="testpass123"
+        )
+        self.domain = Project.objects.create(name="Test Project")
+
+    def test_triage_search_requires_authentication(self):
+        """Test that unauthenticated requests are denied"""
+        response = self.client.get("/api/v1/issues/triage-search/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_triage_search_keyword_search(self):
+        """Test keyword search in description"""
+        from website.models import Issue
+
+        # Log in user
+        self.client.force_authenticate(user=self.user)
+
+        # Create test issues
+        issue1 = Issue.objects.create(
+            description="Database query vulnerability",
+            url="http://example.com/issue1",
+            user=self.user,
+        )
+        issue2 = Issue.objects.create(
+            description="Frontend javascript issue", url="http://example.com/issue2", user=self.user
+        )
+
+        # Search for keyword
+        response = self.client.get("/api/v1/issues/triage-search/?q=database")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        # Should return only issue1
+        self.assertEqual(data["total"], 1)
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["id"], issue1.id)
+
+    def test_triage_search_security_only_filter(self):
+        """Test security label filtering"""
+        from website.models import Issue
+
+        self.client.force_authenticate(user=self.user)
+
+        # Create issues with different labels
+        issue_security = Issue.objects.create(
+            description="Critical security flaw",
+            url="http://example.com/sec",
+            user=self.user,
+            label=4,  # Security label
+        )
+        issue_other = Issue.objects.create(
+            description="Minor issue",
+            url="http://example.com/other",
+            user=self.user,
+            label=1,  # Different label
+        )
+
+        # Filter by security_only
+        response = self.client.get("/api/v1/issues/triage-search/?security_only=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        # Should return only security issue
+        self.assertEqual(data["total"], 1)
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["id"], issue_security.id)
+
+    def test_triage_search_status_filter(self):
+        """Test status filtering"""
+        from website.models import Issue
+
+        self.client.force_authenticate(user=self.user)
+
+        # Create issues with different statuses
+        issue_open = Issue.objects.create(
+            description="Open status",
+            url="http://example.com/open",
+            user=self.user,
+            status="o",  # Open status
+        )
+        issue_closed = Issue.objects.create(
+            description="Closed status",
+            url="http://example.com/closed",
+            user=self.user,
+            status="c",  # Closed status
+        )
+
+        # Filter by status
+        response = self.client.get("/api/v1/issues/triage-search/?status=o")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        # Should return only open issue
+        self.assertEqual(data["total"], 1)
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["id"], issue_open.id)
+
+    def test_triage_search_pagination(self):
+        """Test limit and offset pagination"""
+        from website.models import Issue
+
+        self.client.force_authenticate(user=self.user)
+
+        # Create multiple issues
+        for i in range(15):
+            Issue.objects.create(description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user)
+
+        # Test limit
+        response = self.client.get("/api/v1/issues/triage-search/?limit=5")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        self.assertEqual(data["limit"], 5)
+        self.assertEqual(len(data["results"]), 5)
+        self.assertEqual(data["total"], 15)
+
+        # Test offset
+        response = self.client.get("/api/v1/issues/triage-search/?limit=5&offset=5")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        self.assertEqual(data["offset"], 5)
+        self.assertEqual(len(data["results"]), 5)
+
+    def test_triage_search_response_structure(self):
+        """Test that response contains required fields"""
+        from website.models import Issue
+
+        self.client.force_authenticate(user=self.user)
+
+        # Create test issue
+        issue = Issue.objects.create(description="Test Description", url="http://example.com/test", user=self.user)
+
+        response = self.client.get("/api/v1/issues/triage-search/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        # Check response structure
+        self.assertIn("total", data)
+        self.assertIn("limit", data)
+        self.assertIn("offset", data)
+        self.assertIn("results", data)
+
+        # Check issue serialization (lean fields only)
+        issue_data = data["results"][0]
+        self.assertIn("id", issue_data)
+        self.assertIn("description", issue_data)
+        self.assertIn("status", issue_data)
+        self.assertIn("created", issue_data)
+
+    def test_triage_search_limit_bounds(self):
+        """Test that limit is bounded at 50"""
+        from website.models import Issue
+
+        self.client.force_authenticate(user=self.user)
+
+        # Create 60 issues
+        for i in range(60):
+            Issue.objects.create(description=f"Description {i}", url=f"http://example.com/issue{i}", user=self.user)
+
+        # Request limit > 50 (should be capped)
+        response = self.client.get("/api/v1/issues/triage-search/?limit=100")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+
+        # Should cap at 50
+        self.assertEqual(data["limit"], 50)
+        self.assertEqual(len(data["results"]), 50)
