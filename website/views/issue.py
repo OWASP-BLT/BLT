@@ -3031,7 +3031,7 @@ class GsocView(View):
         # Sort projects by total PRs
         sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
 
-        return render(request, "gsoc.html", {"projects": sorted_project_data})
+        return render(request, "gsoc_pr_report.html", {"projects": sorted_project_data})
 
 
 @login_required
