@@ -77,6 +77,24 @@ from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_int(value, default, min_value=0, max_value=None):
+    """
+    Safely parse integer query parameters with bounds checking.
+    Returns default if parsing fails or value is out of bounds.
+    """
+    try:
+        value = int(value)
+        if value < min_value:
+            return default
+        if max_value is not None:
+            return min(value, max_value)
+        return value
+    except (TypeError, ValueError):
+        return default
+
+
 # API's
 
 
@@ -390,6 +408,48 @@ class IssueViewSet(viewsets.ModelViewSet):
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(self.get_issue_info(request, issue))
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="triage-search",
+        permission_classes=[IsAuthenticated],
+    )
+    def triage_search(self, request):
+        """
+        Dedicated search endpoint for triage workflows.
+        Requires authentication. Supports:
+        - q: keyword search in description
+        - security_only: filter to security labels only
+        - limit, offset pagination (with bounds)
+        """
+
+        q = request.query_params.get("q")
+        security_only = request.query_params.get("security_only")
+        limit = _safe_int(request.query_params.get("limit"), default=10, min_value=1, max_value=50)
+        offset = _safe_int(request.query_params.get("offset"), default=0, min_value=0)
+
+        queryset = self.get_queryset()
+
+        if q:
+            queryset = queryset.filter(Q(description__icontains=q))
+
+        if security_only == "true":
+            # Filter to security issues only
+            security_label = next((key for key, value in Issue.labels if value == "Security"), None)
+            if security_label is not None:
+                queryset = queryset.filter(label=security_label)
+
+        # Explicit ordering for predictable pagination
+        queryset = queryset.order_by("-created")
+
+        total = queryset.count()
+        results = queryset[offset : offset + limit]
+
+        serializer = self.get_serializer(results, many=True)
+
+        # Intentionally returns lean serializer output for triage workflows.
+        return Response({"total": total, "limit": limit, "offset": offset, "results": serializer.data})
 
 
 class LikeIssueApiView(APIView):
