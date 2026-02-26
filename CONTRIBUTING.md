@@ -140,11 +140,14 @@ From the project root, run:
 
 ```bash
 uv sync
+```
 
 To start the development server:
 
+```bash
 uv run python manage.py migrate
 uv run python manage.py runserver
+```
 
 Open your browser at:
 http://localhost:8000
