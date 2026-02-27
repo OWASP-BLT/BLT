@@ -3,7 +3,7 @@ import logging
 import smtplib
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from urllib.parse import urlparse
@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
@@ -999,6 +999,20 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     serializer_class = TimeLogSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        """
+        Filter queryset based on query parameters.
+        Supports filtering active timers with ?end_time__isnull=true
+        """
+        queryset = TimeLog.objects.filter(user=self.request.user)
+
+        # Check for end_time__isnull parameter
+        end_time_isnull = self.request.query_params.get("end_time__isnull")
+        if end_time_isnull and end_time_isnull.lower() == "true":
+            queryset = queryset.filter(end_time__isnull=True)
+
+        return queryset
+
     def perform_create(self, serializer):
         organization_url = self.request.data.get("organization_url")
 
@@ -1050,14 +1064,31 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def stop(self, request, pk=None):
         """Stops the time log and calculates duration"""
-        try:
-            timelog = self.get_object()
-        except ObjectDoesNotExist:
-            raise NotFound(detail="Time log not found.")
+        timelog = self.get_object()
+
+        # Check ownership
+        if timelog.user != request.user:
+            return Response(
+                {"detail": "You do not have permission to stop this time log."}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        # If timer is paused, add the current pause interval to paused_duration BEFORE resetting
+        if timelog.is_paused and timelog.last_pause_time:
+            current_pause = timezone.now() - timelog.last_pause_time
+            timelog.paused_duration = (timelog.paused_duration or timedelta(0)) + current_pause
 
         timelog.end_time = timezone.now()
         if timelog.start_time:
-            timelog.duration = timelog.end_time - timelog.start_time
+            # Calculate duration excluding paused time
+            total_duration = timelog.end_time - timelog.start_time
+            # paused_duration is already a timedelta object, not seconds
+            paused = timelog.paused_duration or timedelta(0)
+            timelog.duration = total_duration - paused
+
+        # Reset pause state after calculating final pause duration
+        if timelog.is_paused:
+            timelog.is_paused = False
+            timelog.last_pause_time = None
 
         try:
             timelog.save()
@@ -1067,6 +1098,82 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response(
                 {"detail": "An unexpected error occurred while stopping the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["post"])
+    def pause(self, request, pk=None):
+        """Pauses an active time log"""
+        try:
+            timelog = TimeLog.objects.get(pk=pk)
+        except TimeLog.DoesNotExist:
+            return Response(
+                {"detail": "Time log not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if timelog.user != request.user:
+            return Response(
+                {"detail": "You don't have permission to pause this time log."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if timelog.end_time:
+            return Response(
+                {"detail": "Cannot pause a completed time log."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if timelog.is_paused:
+            return Response(
+                {"detail": "Time log is already paused."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            timelog.pause()
+            return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while pausing the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["post"])
+    def resume(self, request, pk=None):
+        """Resumes a paused time log"""
+        try:
+            timelog = TimeLog.objects.get(pk=pk)
+        except TimeLog.DoesNotExist:
+            return Response(
+                {"detail": "Time log not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if timelog.user != request.user:
+            return Response(
+                {"detail": "You don't have permission to resume this time log."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if timelog.end_time:
+            return Response(
+                {"detail": "Cannot resume a completed time log."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not timelog.is_paused:
+            return Response(
+                {"detail": "Time log is not paused."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            timelog.resume()
+            return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while resuming the time log."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

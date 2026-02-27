@@ -1565,12 +1565,73 @@ class TimeLog(models.Model):
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
     github_issue_url = models.URLField(null=True, blank=True)  # URL field for GitHub issue
+    github_issue_number = models.IntegerField(null=True, blank=True)  # GitHub issue number
+    github_repo = models.CharField(max_length=255, null=True, blank=True)  # GitHub repo (owner/repo)
+    is_paused = models.BooleanField(default=False)  # Track if timer is currently paused
+    paused_duration = models.DurationField(default=timedelta, null=True, blank=True)  # Total paused time
+    last_pause_time = models.DateTimeField(null=True, blank=True)  # When timer was last paused
     created = models.DateTimeField(default=timezone.now, editable=False)
 
     def save(self, *args, **kwargs):
         if self.end_time and self.start_time <= self.end_time:
-            self.duration = self.end_time - self.start_time
+            # Calculate duration excluding paused time
+            total_duration = self.end_time - self.start_time
+
+            # Calculate total paused time (paused_duration is already a timedelta)
+            total_paused = self.paused_duration or timedelta(0)
+
+            # If currently paused, add the ongoing pause interval
+            if self.is_paused and self.last_pause_time:
+                current_pause = self.end_time - self.last_pause_time
+                total_paused += current_pause
+
+            self.duration = total_duration - total_paused
         super().save(*args, **kwargs)
+
+    def pause(self):
+        """Pause the timer"""
+        if not self.is_paused and not self.end_time:
+            self.is_paused = True
+            self.last_pause_time = timezone.now()
+            self.save()
+            return True
+        return False
+
+    def resume(self):
+        """Resume the timer"""
+        if self.is_paused and self.last_pause_time:
+            pause_duration = timezone.now() - self.last_pause_time
+            if self.paused_duration:
+                self.paused_duration += pause_duration
+            else:
+                self.paused_duration = pause_duration
+            self.is_paused = False
+            self.last_pause_time = None
+            self.save()
+            return True
+        return False
+
+    def get_active_duration(self):
+        """Get current active duration (excluding paused time)"""
+        if not self.start_time:
+            return timedelta(0)
+
+        end = self.end_time or timezone.now()
+        total = end - self.start_time
+
+        # Subtract paused duration
+        if self.paused_duration:
+            total -= self.paused_duration
+
+        # If currently paused, subtract current pause time
+        if self.is_paused and self.last_pause_time:
+            total -= timezone.now() - self.last_pause_time
+
+        # Clamp to non-negative value
+        if total.total_seconds() < 0:
+            return timedelta(0)
+
+        return total
 
     def __str__(self):
         return f"TimeLog by {self.user.username} from {self.start_time} to {self.end_time}"
