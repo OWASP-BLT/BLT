@@ -526,4 +526,62 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   attachStargazersListeners();
+
+  // Set up the "Refresh from GitHub" button
+  const refreshGithubBtn = document.getElementById("refresh-github-btn");
+  if (refreshGithubBtn) {
+    refreshGithubBtn.addEventListener("click", async function () {
+      const refreshUrl = this.getAttribute("data-refresh-url");
+      const originalHTML = this.innerHTML;
+
+      // Show loading state
+      this.disabled = true;
+      this.innerHTML =
+        '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>Refreshing...';
+
+      let csrfToken =
+        getCookie("csrftoken") ||
+        document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ||
+        "";
+
+      try {
+        const response = await fetch(refreshUrl, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+          },
+        });
+        const data = await response.json();
+        if (data.status === "success") {
+          this.innerHTML =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Refreshed!';
+          this.classList.remove("bg-gray-600", "hover:bg-gray-700");
+          this.classList.add("bg-green-600", "hover:bg-green-700");
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          this.innerHTML =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Failed';
+          this.classList.remove("bg-gray-600", "hover:bg-gray-700");
+          this.classList.add("bg-red-600", "hover:bg-red-700");
+          setTimeout(() => {
+            this.innerHTML = originalHTML;
+            this.classList.remove("bg-red-600", "hover:bg-red-700");
+            this.classList.add("bg-gray-600", "hover:bg-gray-700");
+            this.disabled = false;
+          }, 3000);
+        }
+      } catch (error) {
+        this.innerHTML =
+          '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Error';
+        this.classList.remove("bg-gray-600", "hover:bg-gray-700");
+        this.classList.add("bg-red-600", "hover:bg-red-700");
+        setTimeout(() => {
+          this.innerHTML = originalHTML;
+          this.classList.remove("bg-red-600", "hover:bg-red-700");
+          this.classList.add("bg-gray-600", "hover:bg-gray-700");
+          this.disabled = false;
+        }, 3000);
+      }
+    });
+  }
 });
