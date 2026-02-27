@@ -108,59 +108,6 @@ def _build_owasp_welcome_message(user_id):
     )
 
 
-# Replace GSoC cache with hardcoded project data
-GSOC_PROJECTS = [
-    {
-        "title": "BLT (Bug Logging Tool)",
-        "tech": "Python, Django, Flutter, Blockchain",
-        "mentor": "Donnie, Yash Pandey",
-        "repo": "https://github.com/OWASP-BLT/BLT",
-    },
-    {
-        "title": "OWASP Juice Shop",
-        "tech": "TypeScript, JavaScript",
-        "mentor": "Bjoern Kimminich, Shubham Palriwala, Jannik Hollenbach",
-        "repo": "https://github.com/juice-shop/juice-shop",
-    },
-    {
-        "title": "OWASP DevSecOps Maturity Model",
-        "tech": "TypeScript, HTML",
-        "mentor": "Timo Pagel, Aryan Prasad",
-        "repo": "https://github.com/devsecopsmaturitymodel/DevSecOps-MaturityModel",
-    },
-    {
-        "title": "OWASP OWTF",
-        "tech": "Python, TypeScript, JavaScript",
-        "mentor": "Viyat Bhalodia, Abraham Aranguran",
-        "repo": "https://github.com/owtf/owtf",
-    },
-    {
-        "title": "OWASP secureCodeBox",
-        "tech": "JavaScript, Go, Python, Java",
-        "mentor": "Jannik Hollenbach, Robert Felber",
-        "repo": "https://github.com/secureCodeBox/secureCodeBox",
-    },
-    {
-        "title": "OWASP Nettacker",
-        "tech": "Python, Css, JavaScript",
-        "mentor": "Sam Stepanyan, Ali Razmjoo, Arkadii Yakovets",
-        "repo": "https://github.com/OWASP/Nettacker",
-    },
-    {
-        "title": "OWASP Threat Dragon",
-        "tech": "JavaScript, Vue.js",
-        "mentor": "Jon Gadsden",
-        "repo": "https://github.com/OWASP/threat-dragon",
-    },
-    {
-        "title": "OWASP Website",
-        "tech": "HTML, CSS, JavaScript, Github",
-        "mentor": "Donnie",
-        "repo": "https://github.com/orgs/OWASP",
-    },
-]
-
-
 def verify_slack_signature(request):
     timestamp = request.headers.get("X-Slack-Request-Timestamp", "")
     signature = request.headers.get("X-Slack-Signature", "")
@@ -651,10 +598,6 @@ def slack_commands(request):
                 activity.error_message = str(e)
                 activity.save()
                 return HttpResponse(status=500)
-
-        elif command == "/gsoc25":
-            search_term = request.POST.get("text", "").strip()
-            return get_gsoc_overview(workspace_client, user_id, search_term, activity, team_id)
 
         elif command == "/blt":
             search_term = request.POST.get("text", "").strip()

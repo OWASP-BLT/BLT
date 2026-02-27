@@ -173,7 +173,6 @@ from website.views.issue import (
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
-    GsocView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -738,7 +737,6 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
-    path("gsoc/", GsocView.as_view(), name="gsoc"),
     path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
     re_path(
         r"^privacypolicy/$",
