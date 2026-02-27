@@ -4,9 +4,33 @@ from datetime import timedelta
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
+from comments.models import Comment
 from website.management.base import LoggedBaseCommand
+from website.models import (
+    Activity,
+    ActivityLog,
+    BaconToken,
+    Bid,
+    Contribution,
+    DailyStatusReport,
+    Domain,
+    Hunt,
+    InviteFriend,
+    InviteOrganization,
+    Issue,
+    JoinRequest,
+    Organization,
+    OrganizationAdmin,
+    Points,
+    SearchHistory,
+    TimeLog,
+    UserProfile,
+    Wallet,
+    Winner,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +75,6 @@ class Command(LoggedBaseCommand):
             return
 
         cutoff_date = timezone.now() - timedelta(days=days)
-        # Store cutoff for use in has_user_activity
-        self.cutoff_datetime = cutoff_date
 
         # Find users to delete
         unverified_users = self.get_unverified_users(cutoff_date)
@@ -75,68 +97,136 @@ class Command(LoggedBaseCommand):
         1. Registered before the cutoff date
         2. Have no verified email addresses OR no email addresses at all
         3. Are not staff or superusers
-        4. Have no significant activity (issues, points, etc.)
+        4. Have no significant activity (issues, points, comments, etc.)
+
+        Uses database-level filtering with Exists() subqueries for optimal performance.
         """
         User = get_user_model()
-        # Get all users registered before cutoff who are not staff/superuser
-        candidate_users = User.objects.filter(date_joined__lt=cutoff_date, is_staff=False, is_superuser=False)
 
         # Get users with verified emails
         verified_user_ids = EmailAddress.objects.filter(verified=True).values_list("user_id", flat=True).distinct()
 
-        # Exclude users with verified emails
-        unverified_users = candidate_users.exclude(id__in=verified_user_ids)
+        # Create Exists subqueries for all activity checks
+        # This is done at the database level to avoid N+1 query problems
 
-        # Exclude users with activity
-        users_to_delete = []
-        for user in unverified_users:
-            if not self.has_user_activity(user):
-                users_to_delete.append(user.id)
+        # Check for recent login (logged in after cutoff)
+        has_recent_login = Q(last_login__gte=cutoff_date)
 
-        return User.objects.filter(id__in=users_to_delete)
+        # Check for reported issues
+        has_issues = Exists(Issue.objects.filter(user=OuterRef("pk")))
 
-    def has_user_activity(self, user):
-        """Check if user has any meaningful activity in the system"""
-        try:
-            # Check for recent login
-            if user.last_login is not None and user.last_login >= self.cutoff_datetime:
-                return True
+        # Check for points earned
+        has_points = Exists(Points.objects.filter(user=OuterRef("pk")))
 
-            # Check for reported issues
-            if hasattr(user, "issue_set") and user.issue_set.exists():
-                return True
+        # Check for domain ownership
+        has_domains = Exists(Domain.objects.filter(user=OuterRef("pk")))
 
-            # Check for points earned
-            if hasattr(user, "points_set") and user.points_set.exists():
-                return True
+        # Check for hunt participation
+        has_hunts = Exists(Hunt.objects.filter(user=OuterRef("pk")))
 
-            # Check for domain ownership
-            if hasattr(user, "domain_set") and user.domain_set.exists():
-                return True
+        # Check for comments (via UserProfile)
+        has_comments = Exists(Comment.objects.filter(author_fk=OuterRef("userprofile")))
 
-            # Check for comments
-            if hasattr(user, "userprofile"):
-                profile = user.userprofile
-                # Check for any activity on the profile that indicates engagement
-                if profile.user_avatar or profile.description:
-                    return True
+        # Check for bids
+        has_bids = Exists(Bid.objects.filter(user=OuterRef("pk")))
 
-            # Check for hunt participation
-            if hasattr(user, "hunt_set") and user.hunt_set.exists():
-                return True
+        # Check for organization admin role
+        has_org_admin = Exists(Organization.objects.filter(admin=OuterRef("pk")))
 
-            return False
-        except Exception as e:
-            logger.warning("Error checking activity for user {}: {}".format(user.username, str(e)))
-            # If we can't determine activity safely, don't delete
-            return True
+        # Check for organization manager role
+        has_org_manager = Exists(Organization.objects.filter(managers=OuterRef("pk")))
+
+        # Check for organization admin/moderator role
+        has_org_admin_role = Exists(OrganizationAdmin.objects.filter(user=OuterRef("pk")))
+
+        # Check for join requests
+        has_join_requests = Exists(JoinRequest.objects.filter(user=OuterRef("pk")))
+
+        # Check for sent invites to friends
+        has_sent_invites = Exists(InviteFriend.objects.filter(sender=OuterRef("pk")))
+
+        # Check for received invites to friends
+        has_received_invites = Exists(InviteFriend.objects.filter(recipients=OuterRef("pk")))
+
+        # Check for sent organization invites
+        has_sent_org_invites = Exists(InviteOrganization.objects.filter(sender=OuterRef("pk")))
+
+        # Check for search history
+        has_search_history = Exists(SearchHistory.objects.filter(user=OuterRef("pk")))
+
+        # Check for contributions
+        has_contributions = Exists(Contribution.objects.filter(user=OuterRef("pk")))
+
+        # Check for bacon tokens
+        has_bacon_tokens = Exists(BaconToken.objects.filter(user=OuterRef("pk")))
+
+        # Check for time logs
+        has_time_logs = Exists(TimeLog.objects.filter(user=OuterRef("pk")))
+
+        # Check for activity logs
+        has_activity_logs = Exists(ActivityLog.objects.filter(user=OuterRef("pk")))
+
+        # Check for daily status reports
+        has_status_reports = Exists(DailyStatusReport.objects.filter(user=OuterRef("pk")))
+
+        # Check for activity records
+        has_activities = Exists(Activity.objects.filter(user=OuterRef("pk")))
+
+        # Check for winners
+        has_wins = Exists(Winner.objects.filter(user=OuterRef("pk")))
+
+        # Check for wallets
+        has_wallet = Exists(Wallet.objects.filter(user=OuterRef("pk")))
+
+        # Check for UserProfile with meaningful content (avatar or description)
+        has_profile_content = Exists(
+            UserProfile.objects.filter(user=OuterRef("pk"))
+            .filter(Q(user_avatar__isnull=False) | Q(description__isnull=False))
+            .exclude(Q(user_avatar="") & Q(description=""))
+        )
+
+        # Build the query combining all conditions
+        unverified_users = (
+            User.objects.filter(date_joined__lt=cutoff_date, is_staff=False, is_superuser=False)
+            .exclude(id__in=verified_user_ids)
+            .exclude(
+                has_recent_login
+                | Q(has_issues)
+                | Q(has_points)
+                | Q(has_domains)
+                | Q(has_hunts)
+                | Q(has_comments)
+                | Q(has_bids)
+                | Q(has_org_admin)
+                | Q(has_org_manager)
+                | Q(has_org_admin_role)
+                | Q(has_join_requests)
+                | Q(has_sent_invites)
+                | Q(has_received_invites)
+                | Q(has_sent_org_invites)
+                | Q(has_search_history)
+                | Q(has_contributions)
+                | Q(has_bacon_tokens)
+                | Q(has_time_logs)
+                | Q(has_activity_logs)
+                | Q(has_status_reports)
+                | Q(has_activities)
+                | Q(has_wins)
+                | Q(has_wallet)
+                | Q(has_profile_content)
+            )
+        )
+
+        return unverified_users
 
     def delete_users_in_batches(self, users, days, batch_size):
-        """Delete users in batches with transaction safety"""
+        """Delete users in batches with transaction safety and race condition protection"""
         total_count = users.count()
         deleted_count = 0
         email_addresses_deleted = 0
+        skipped_count = 0
         batch_num = 0
+        cutoff_date = timezone.now() - timedelta(days=days)
 
         self.stdout.write(
             self.style.WARNING(
@@ -151,7 +241,25 @@ class Command(LoggedBaseCommand):
         for i in range(0, len(user_ids), batch_size):
             batch_num += 1
             batch_ids = user_ids[i : i + batch_size]
-            batch_users = User.objects.filter(id__in=batch_ids)
+
+            # Re-fetch users using the same filtering logic to ensure they still qualify for deletion
+            # This protects against race conditions where activity might have been added
+            batch_users = self.get_unverified_users(cutoff_date).filter(id__in=batch_ids)
+
+            actual_batch_size = batch_users.count()
+            if actual_batch_size < len(batch_ids):
+                # Some users no longer qualify for deletion
+                skipped_this_batch = len(batch_ids) - actual_batch_size
+                skipped_count += skipped_this_batch
+                logger.info(
+                    "Batch {}: Skipped {} users who gained activity since initial query".format(
+                        batch_num, skipped_this_batch
+                    )
+                )
+
+            if actual_batch_size == 0:
+                # All users in this batch now have activity, skip
+                continue
 
             try:
                 with transaction.atomic():
@@ -194,11 +302,15 @@ class Command(LoggedBaseCommand):
             )
         )
         self.stdout.write("  - Total EmailAddress records deleted: {}".format(email_addresses_deleted))
+        if skipped_count > 0:
+            self.stdout.write(
+                self.style.WARNING("  - Skipped {} users who gained activity during deletion".format(skipped_count))
+            )
         self.stdout.write("=" * 70)
 
         logger.info(
-            "Completed deletion: {} users deleted, {} EmailAddress records removed".format(
-                deleted_count, email_addresses_deleted
+            "Completed deletion: {} users deleted, {} EmailAddress records removed, {} users skipped".format(
+                deleted_count, email_addresses_deleted, skipped_count
             )
         )
 

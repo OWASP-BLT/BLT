@@ -7,6 +7,29 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
+from comments.models import Comment
+from website.models import (
+    Activity,
+    ActivityLog,
+    BaconToken,
+    Bid,
+    Contribution,
+    DailyStatusReport,
+    Domain,
+    Hunt,
+    InviteFriend,
+    InviteOrganization,
+    Issue,
+    JoinRequest,
+    Organization,
+    OrganizationAdmin,
+    SearchHistory,
+    TimeLog,
+    UserProfile,
+    Wallet,
+    Winner,
+)
+
 
 class DeleteUnverifiedUsersTest(TestCase):
     """Test suite for delete_unverified_users management command"""
@@ -311,3 +334,427 @@ class DeleteUnverifiedUsersTest(TestCase):
 
         # Verify user was NOT deleted due to recent login
         self.assertTrue(User.objects.filter(username="recentlogin").exists())
+
+    def test_keep_users_with_comments(self):
+        """Test that users with comments are NOT deleted"""
+        # Create old unverified user
+        user = User.objects.create_user(username="commenter", email="commenter@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="commenter@example.com", verified=False, primary=True)
+
+        # Create UserProfile and Comment
+        profile = UserProfile.objects.create(user=user)
+        Comment.objects.create(author_fk=profile, text="Test comment")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="commenter").exists())
+
+    def test_keep_users_with_bids(self):
+        """Test that users with bids are NOT deleted"""
+        user = User.objects.create_user(username="bidder", email="bidder@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="bidder@example.com", verified=False, primary=True)
+
+        # Create bid
+        Bid.objects.create(user=user, issue_url="https://github.com/test/issue/1", amount_bch=0.5)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="bidder").exists())
+
+    def test_keep_users_with_organization_admin(self):
+        """Test that organization admins are NOT deleted"""
+        user = User.objects.create_user(username="orgadmin", email="orgadmin@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="orgadmin@example.com", verified=False, primary=True)
+
+        # Create organization with user as admin
+        Organization.objects.create(admin=user, name="Test Org", url="https://testorg.com")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="orgadmin").exists())
+
+    def test_keep_users_with_organization_manager(self):
+        """Test that organization managers are NOT deleted"""
+        user = User.objects.create_user(username="orgmanager", email="orgmanager@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="orgmanager@example.com", verified=False, primary=True)
+
+        # Create organization and add user as manager
+        org = Organization.objects.create(name="Test Org 2", url="https://testorg2.com")
+        org.managers.add(user)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="orgmanager").exists())
+
+    def test_keep_users_with_organization_admin_role(self):
+        """Test that OrganizationAdmin role users are NOT deleted"""
+        user = User.objects.create_user(
+            username="orgadminrole", email="orgadminrole@example.com", password="testpass123"
+        )
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="orgadminrole@example.com", verified=False, primary=True)
+
+        # Create OrganizationAdmin role
+        org = Organization.objects.create(name="Test Org 3", url="https://testorg3.com")
+        OrganizationAdmin.objects.create(user=user, organization=org, role=0)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="orgadminrole").exists())
+
+    def test_keep_users_with_join_requests(self):
+        """Test that users with organization join requests are NOT deleted"""
+        user = User.objects.create_user(username="joiner", email="joiner@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="joiner@example.com", verified=False, primary=True)
+
+        # Create join request
+        org = Organization.objects.create(name="Test Org 4", url="https://testorg4.com")
+        JoinRequest.objects.create(user=user, team=org)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="joiner").exists())
+
+    def test_keep_users_with_sent_invites(self):
+        """Test that users who sent friend invites are NOT deleted"""
+        user = User.objects.create_user(username="inviter", email="inviter@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="inviter@example.com", verified=False, primary=True)
+
+        # Create sent invite
+        InviteFriend.objects.create(sender=user)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="inviter").exists())
+
+    def test_keep_users_with_received_invites(self):
+        """Test that users who received friend invites are NOT deleted"""
+        sender = User.objects.create_user(username="sender", email="sender@example.com", password="testpass123")
+        recipient = User.objects.create_user(
+            username="recipient", email="recipient@example.com", password="testpass123"
+        )
+        recipient.date_joined = self.cutoff_date - timedelta(days=10)
+        recipient.save()
+
+        EmailAddress.objects.create(user=recipient, email="recipient@example.com", verified=False, primary=True)
+
+        # Create invite with recipient
+        invite = InviteFriend.objects.create(sender=sender)
+        invite.recipients.add(recipient)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify recipient was NOT deleted
+        self.assertTrue(User.objects.filter(username="recipient").exists())
+
+    def test_keep_users_with_sent_org_invites(self):
+        """Test that users who sent organization invites are NOT deleted"""
+        user = User.objects.create_user(username="orginviter", email="orginviter@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="orginviter@example.com", verified=False, primary=True)
+
+        # Create organization invite
+        InviteOrganization.objects.create(sender=user, email="invitee@example.com", organization_name="Test Org")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="orginviter").exists())
+
+    def test_keep_users_with_search_history(self):
+        """Test that users with search history are NOT deleted"""
+        user = User.objects.create_user(username="searcher", email="searcher@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="searcher@example.com", verified=False, primary=True)
+
+        # Create search history
+        SearchHistory.objects.create(user=user, query="test search", search_type="all")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="searcher").exists())
+
+    def test_keep_users_with_contributions(self):
+        """Test that users with contributions are NOT deleted"""
+        user = User.objects.create_user(username="contributor", email="contributor@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="contributor@example.com", verified=False, primary=True)
+
+        # Create contribution
+        Contribution.objects.create(
+            user=user,
+            title="Test Contribution",
+            description="Test description",
+            contribution_type="commit",
+            created=timezone.now(),
+            status="open",
+        )
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="contributor").exists())
+
+    def test_keep_users_with_bacon_tokens(self):
+        """Test that users with bacon tokens are NOT deleted"""
+        user = User.objects.create_user(username="baconholder", email="baconholder@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="baconholder@example.com", verified=False, primary=True)
+
+        # Create contribution and bacon token
+        contribution = Contribution.objects.create(
+            user=user,
+            title="Test Contribution",
+            description="Test description",
+            contribution_type="commit",
+            created=timezone.now(),
+            status="open",
+        )
+        BaconToken.objects.create(user=user, amount=100, contribution=contribution)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="baconholder").exists())
+
+    def test_keep_users_with_time_logs(self):
+        """Test that users with time logs are NOT deleted"""
+        user = User.objects.create_user(username="timelogger", email="timelogger@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="timelogger@example.com", verified=False, primary=True)
+
+        # Create time log
+        TimeLog.objects.create(user=user, start_time=timezone.now(), end_time=timezone.now() + timedelta(hours=1))
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="timelogger").exists())
+
+    def test_keep_users_with_activity_logs(self):
+        """Test that users with activity logs are NOT deleted"""
+        user = User.objects.create_user(
+            username="activitylogger", email="activitylogger@example.com", password="testpass123"
+        )
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="activitylogger@example.com", verified=False, primary=True)
+
+        # Create activity log
+        ActivityLog.objects.create(user=user, window_title="Test Window")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="activitylogger").exists())
+
+    def test_keep_users_with_status_reports(self):
+        """Test that users with daily status reports are NOT deleted"""
+        user = User.objects.create_user(username="reporter", email="reporter@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="reporter@example.com", verified=False, primary=True)
+
+        # Create status report
+        DailyStatusReport.objects.create(
+            user=user,
+            date=timezone.now().date(),
+            previous_work="Did work",
+            next_plan="Will do work",
+            blockers="No blockers",
+        )
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="reporter").exists())
+
+    def test_keep_users_with_activities(self):
+        """Test that users with activity records are NOT deleted"""
+        user = User.objects.create_user(
+            username="activityuser", email="activityuser@example.com", password="testpass123"
+        )
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="activityuser@example.com", verified=False, primary=True)
+
+        # Create activity record
+        Activity.objects.create(user=user)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="activityuser").exists())
+
+    def test_keep_users_with_wins(self):
+        """Test that users with winner records are NOT deleted"""
+        user = User.objects.create_user(username="winner", email="winner@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="winner@example.com", verified=False, primary=True)
+
+        # Create domain and hunt for winner
+        domain = Domain.objects.create(url="https://test.com", name="Test Domain")
+        hunt = Hunt.objects.create(domain=domain, prize=100)
+        Winner.objects.create(user=user, hunt=hunt, prize_money=50)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="winner").exists())
+
+    def test_keep_users_with_wallet(self):
+        """Test that users with wallets are NOT deleted"""
+        user = User.objects.create_user(
+            username="walletholder", email="walletholder@example.com", password="testpass123"
+        )
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="walletholder@example.com", verified=False, primary=True)
+
+        # Create wallet
+        Wallet.objects.create(user=user, current_balance=100.00)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="walletholder").exists())
+
+    def test_keep_users_with_profile_content(self):
+        """Test that users with profile avatars or descriptions are NOT deleted"""
+        # Test with avatar
+        user1 = User.objects.create_user(username="avataruser", email="avataruser@example.com", password="testpass123")
+        user1.date_joined = self.cutoff_date - timedelta(days=10)
+        user1.save()
+
+        EmailAddress.objects.create(user=user1, email="avataruser@example.com", verified=False, primary=True)
+        UserProfile.objects.create(user=user1, user_avatar="avatars/test.jpg")
+
+        # Test with description
+        user2 = User.objects.create_user(username="biouser", email="biouser@example.com", password="testpass123")
+        user2.date_joined = self.cutoff_date - timedelta(days=10)
+        user2.save()
+
+        EmailAddress.objects.create(user=user2, email="biouser@example.com", verified=False, primary=True)
+        UserProfile.objects.create(user=user2, description="Test bio")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify users were NOT deleted
+        self.assertTrue(User.objects.filter(username="avataruser").exists())
+        self.assertTrue(User.objects.filter(username="biouser").exists())
+
+    def test_keep_users_with_issues(self):
+        """Test that users with reported issues are NOT deleted"""
+        user = User.objects.create_user(username="issuer", email="issuer@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="issuer@example.com", verified=False, primary=True)
+
+        # Create issue
+        domain = Domain.objects.create(url="https://test.com", name="Test Domain")
+        Issue.objects.create(user=user, domain=domain, description="Test issue")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="issuer").exists())
+
+    def test_keep_users_with_domains(self):
+        """Test that users with domain ownership are NOT deleted"""
+        user = User.objects.create_user(username="domainowner", email="domainowner@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="domainowner@example.com", verified=False, primary=True)
+
+        # Create domain
+        Domain.objects.create(user=user, url="https://mydomain.com", name="My Domain")
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="domainowner").exists())
+
+    def test_keep_users_with_hunts(self):
+        """Test that users with hunt participation are NOT deleted"""
+        user = User.objects.create_user(username="hunter", email="hunter@example.com", password="testpass123")
+        user.date_joined = self.cutoff_date - timedelta(days=10)
+        user.save()
+
+        EmailAddress.objects.create(user=user, email="hunter@example.com", verified=False, primary=True)
+
+        # Create hunt (with user relation if exists)
+        domain = Domain.objects.create(url="https://test.com", name="Test Domain")
+        Hunt.objects.create(domain=domain, prize=100, user=user)
+
+        # Run command
+        out, err = self.call_command(days=self.cutoff_days)
+
+        # Verify user was NOT deleted
+        self.assertTrue(User.objects.filter(username="hunter").exists())
