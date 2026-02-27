@@ -173,6 +173,7 @@ TEMPLATES = [
         "OPTIONS": {
             "debug": DEBUG,
             "context_processors": [
+                "website.context_processors.oauth_providers_status",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.template.context_processors.media",
