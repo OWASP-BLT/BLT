@@ -246,7 +246,7 @@ def bounty_payout(request):
             logger.error(f"Issue #{issue_number} not found in repo {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        # --- First transaction: validation and atomic intent marking ---
+        #  First transaction: validation and atomic intent marking
         try:
             with transaction.atomic():
                 github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
@@ -265,9 +265,7 @@ def bounty_payout(request):
                         )
                         return JsonResponse({"status": "error", "message": "Bounty expired"}, status=400)
                 elif not is_timed_bounty and github_issue.bounty_expiry_date is not None:
-                    logger.info(
-                        f"Clearing stale bounty_expiry_date for non-timed bounty issue #{issue_number}"
-                    )
+                    logger.info(f"Clearing stale bounty_expiry_date for non-timed bounty issue #{issue_number}")
                     github_issue.bounty_expiry_date = None
                     github_issue.save(update_fields=["bounty_expiry_date"])
 
@@ -300,7 +298,7 @@ def bounty_payout(request):
             logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name}")
             return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
 
-        # --- External payment call (outside transaction) ---
+        #  External payment call (outside transaction)
         transaction_id = process_github_sponsors_payment(
             username=contributor_username,
             amount=bounty_amount,
@@ -345,13 +343,13 @@ def bounty_payout(request):
             f"for PR #{pr_number} (Issue #{issue_number})"
         )
 
-        # --- Second transaction: record payment ---
+        #  Second transaction: record payment
         try:
             with transaction.atomic():
                 github_issue = GitHubIssue.objects.select_for_update().get(issue_id=issue_number, repo=repo)
                 github_issue.sponsors_tx_id = transaction_id
                 github_issue.payment_pending = False
-                github_issue.save()
+                github_issue.save(update_fields=["sponsors_tx_id", "payment_pending"])
         except GitHubIssue.DoesNotExist:
             logger.error(f"GitHubIssue not found: issue #{issue_number} in {owner_name}/{repo_name} after payment")
             return JsonResponse({"status": "error", "message": "Issue not found after payment"}, status=404)
