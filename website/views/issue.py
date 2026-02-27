@@ -1341,51 +1341,59 @@ class IssueCreate(IssueBaseCreate, CreateView):
         if url and title:
             # Add https:// if not present for duplicate checking
             check_url = url if url.startswith(("http://", "https://")) else f"https://{url}"
-
+            # Check for duplicates before creating the issue to warn the user
             try:
-                # Get domain object if available for more accurate matching
-                parsed_url = urlparse(check_url)
-                clean_domain = parsed_url.netloc.replace("www.", "").lower()
-                domain_obj = Domain.objects.filter(Q(name__iexact=clean_domain) | Q(url__iexact=clean_domain)).first()
+                from django.db import transaction
 
-                duplicate_result = check_for_duplicates(
-                    check_url,
-                    full_description,  # Use combined title + description
-                    domain=domain_obj,
-                    threshold=self.DUPLICATE_CHECK_THRESHOLD,
-                )
+                with transaction.atomic():
+                    # Get domain object if available for more accurate matching
+                    parsed_url = urlparse(check_url)
+                    clean_domain = parsed_url.netloc.replace("www.", "").lower()
+                    domain_obj = Domain.objects.filter(
+                        Q(name__iexact=clean_domain) | Q(url__iexact=clean_domain)
+                    ).first()
 
-                if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
-                    # Check if user wants to proceed anyway
-                    if not self.request.POST.get("confirm_not_duplicate"):
-                        # Store similar bugs for display using shared helper
-                        similar_bugs_data = []
-                        for bug in duplicate_result["similar_bugs"][:5]:
-                            try:
-                                similar_bugs_data.append(format_similar_bug(bug, truncate_description=200))
-                            except (KeyError, AttributeError, ValueError, TypeError) as e:
-                                logger.warning("Error formatting similar bug: %s", e)
-                                continue
+                    duplicate_result = check_for_duplicates(
+                        check_url,
+                        full_description,  # Use combined title + description
+                        domain=domain_obj,
+                        threshold=self.DUPLICATE_CHECK_THRESHOLD,
+                    )
 
-                        if similar_bugs_data:
-                            messages.warning(
-                                self.request,
-                                f"Similar bugs found ({duplicate_result['confidence']} confidence). Please review them before submitting.",
-                            )
-                            captcha_form = CaptchaForm(self.request.POST)
-                            return render(
-                                self.request,
-                                "report.html",
-                                {
-                                    "form": self.get_form(),
-                                    "captcha_form": captcha_form,
-                                    "similar_bugs": similar_bugs_data,
-                                    "duplicate_confidence": duplicate_result["confidence"],
-                                    "show_duplicate_warning": True,
-                                },
-                            )
-            except (KeyError, AttributeError, ValueError, TypeError) as e:
-                # If duplicate check fails, log it but don't block submission
+                    # Only warn if it's a high/medium confidence duplicate and user hasn't confirmed yet
+                    if duplicate_result["is_duplicate"] and duplicate_result["confidence"] in ["high", "medium"]:
+                        # Check if user wants to proceed anyway
+                        if not self.request.POST.get("confirm_not_duplicate"):
+                            # Store similar bugs for display using shared helper
+                            similar_bugs_data = []
+                            for bug in duplicate_result["similar_bugs"][:5]:
+                                try:
+                                    similar_bugs_data.append(format_similar_bug(bug, truncate_description=200))
+                                except (KeyError, AttributeError, ValueError, TypeError) as e:
+                                    logger.warning("Error formatting similar bug: %s", e)
+                                    continue
+
+                            if similar_bugs_data:
+                                messages.warning(
+                                    self.request,
+                                    f"Similar bugs found ({duplicate_result['confidence']} confidence). Please review them before submitting.",
+                                )
+                                captcha_form = CaptchaForm(self.request.POST)
+                                return render(
+                                    self.request,
+                                    "report.html",
+                                    {
+                                        "form": form,  # Use current form
+                                        "captcha_form": captcha_form,
+                                        "similar_bugs": similar_bugs_data,
+                                        "duplicate_confidence": duplicate_result["confidence"],
+                                        "show_duplicate_warning": True,
+                                    },
+                                )
+            except Exception as e:
+                # If duplicate check fails for any reason (including DB errors),
+                # log it but don't block submission. The atomic savepoint ensures
+                # the outer transaction is not poisoned.
                 logger.warning(
                     "Duplicate check failed for URL %s: %s. Proceeding with submission.",
                     url,
@@ -2643,8 +2651,7 @@ def generate_github_issue(description):
             messages=[
                 {
                     "role": "system",
-                    "content": """You are a helpful assistant that analyzes bug reports. 
-                    Always respond with a valid JSON object in this exact format:
+                    "content": """You are a helpful assistant that analyzes bug reports.                    Always respond with a valid JSON object in this exact format:
                     {
                         "title": "Brief bug title",
                         "description": "Detailed bug description",

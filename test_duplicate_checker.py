@@ -6,13 +6,14 @@ IMPORTANT: The form has 3 fields:
   1. URL (name='url') - Domain URL
   2. Bug Title (name='description') - Short title
   3. Bug Description (name='markdown_description') - Detailed description
-  
+
 The duplicate checker uses: Title + Description combined for better matching
 
 Usage:
   In Docker:  docker exec app python test_duplicate_checker.py quick
   With Django: python manage.py test
 """
+
 import json
 import os
 import sys
@@ -20,23 +21,20 @@ import sys
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 
-from website.duplicate_checker import (
-    calculate_similarity,
-    check_for_duplicates,
-    extract_domain_from_url,
-    extract_keywords,
-    normalize_text,
-)
+from website.duplicate_checker import SequenceMatcherStrategy, check_for_duplicates
 from website.models import Domain, Issue
 
 
 class DuplicateCheckerUnitTests(TestCase):
     """Unit tests for duplicate checker functions"""
 
+    def setUp(self):
+        self.strategy = SequenceMatcherStrategy()
+
     def test_normalize_text(self):
         """Test text normalization"""
         text = "This is a TEST with Special@Characters!"
-        normalized = normalize_text(text)
+        normalized = self.strategy.normalize_text(text)
         self.assertEqual(normalized, "this is a test with special characters")
 
     def test_extract_domain(self):
@@ -47,7 +45,7 @@ class DuplicateCheckerUnitTests(TestCase):
             ("https://example.com/path/to/page", "example.com"),
         ]
         for url, expected in test_cases:
-            result = extract_domain_from_url(url)
+            result = self.strategy.extract_domain_from_url(url)
             self.assertEqual(result, expected)
 
     def test_calculate_similarity(self):
@@ -56,8 +54,8 @@ class DuplicateCheckerUnitTests(TestCase):
         text2 = "Login button doesn't work"
         text3 = "The payment gateway has an error"
 
-        sim1 = calculate_similarity(text1, text2)
-        sim2 = calculate_similarity(text1, text3)
+        sim1 = self.strategy.calculate_similarity(text1, text2)
+        sim2 = self.strategy.calculate_similarity(text1, text3)
 
         self.assertGreater(sim1, sim2, "Similar texts should have higher similarity")
         self.assertGreater(sim1, 0.5)
@@ -65,7 +63,7 @@ class DuplicateCheckerUnitTests(TestCase):
     def test_extract_keywords(self):
         """Test keyword extraction"""
         text = "The login button is not working properly on the homepage"
-        keywords = extract_keywords(text)
+        keywords = self.strategy.extract_keywords(text)
 
         self.assertIn("login", keywords)
         self.assertIn("button", keywords)
@@ -174,12 +172,13 @@ def run_quick_tests():
 
     passed = 0
     failed = 0
+    strategy = SequenceMatcherStrategy()
 
     # Test 1: Text normalization
     sys.stdout.write("\n1. Testing text normalization...\n")
     try:
         text = "This is a TEST!"
-        normalized = normalize_text(text)
+        normalized = strategy.normalize_text(text)
         sys.stdout.write(f"   Input: '{text}'\n")
         sys.stdout.write(f"   Output: '{normalized}'\n")
         assert normalized == "this is a test"
@@ -193,7 +192,7 @@ def run_quick_tests():
     sys.stdout.write("\n2. Testing domain extraction...\n")
     try:
         url = "https://www.example.com/page"
-        domain = extract_domain_from_url(url)
+        domain = strategy.extract_domain_from_url(url)
         sys.stdout.write(f"   URL: {url}\n")
         sys.stdout.write(f"   Domain: {domain}\n")
         assert domain == "example.com"
@@ -208,7 +207,7 @@ def run_quick_tests():
     try:
         text1 = "Login button not working"
         text2 = "Login button doesn't work"
-        similarity = calculate_similarity(text1, text2)
+        similarity = strategy.calculate_similarity(text1, text2)
         sys.stdout.write(f"   Text 1: '{text1}'\n")
         sys.stdout.write(f"   Text 2: '{text2}'\n")
         sys.stdout.write(f"   Similarity: {similarity:.2f}\n")
