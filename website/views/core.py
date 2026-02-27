@@ -60,10 +60,7 @@ from website.models import (
     Repo,
     SearchHistory,
     SlackBotActivity,
-    Tag,
     User,
-    UserBadge,
-    UserProfile,
     Wallet,
 )
 from website.utils import (
@@ -606,104 +603,56 @@ def search(request, template="search.html"):
             "tags",
             "languages",
         ]
+
         if not stype or stype not in allowed_types:
             stype = "all"
 
-# Handle type='all' - search ALL models
-if stype == "all":
-    organizations = Organization.objects.filter(name__icontains=query)
+        if stype == "all":
+            organizations = Organization.objects.filter(name__icontains=query)
 
-    if request.user.is_authenticated:
-        issues = (
-            Issue.objects.filter(Q(description__icontains=query), hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-            .order_by("-created")
-        )
-    else:
-        issues = (
-            Issue.objects.filter(Q(description__icontains=query), hunt=None)
-            .exclude(is_hidden=True)
-            .order_by("-created")
-        )
+            if request.user.is_authenticated:
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .order_by("-created")
+                )
+            else:
+                issues = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .exclude(is_hidden=True)
+                    .order_by("-created")
+                )
 
-    domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-    users = (
-        User.objects.filter(username__icontains=query)
-        .exclude(is_superuser=True)
-        .order_by("-points")[0:20]
-    )
-    projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[:20]
+            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[:20]
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
 
-    context = {
-        "request": request,
-        "query": query,
-        "type": stype,
-        "organizations": organizations,
-        "domains": domains,
-        "users": users,
-        "issues": issues,
-        "projects": projects,
-        "repos": repos,
-    }
-
-elif stype == "issues":
-
-    if request.user.is_authenticated:
-        issues_qs = (
-            Issue.objects.filter(Q(description__icontains=query), hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-            .order_by("-created")
-        )[0:20]
-    else:
-        issues_qs = (
-            Issue.objects.filter(Q(description__icontains=query), hunt=None)
-            .exclude(is_hidden=True)
-            .order_by("-created")
-        )[0:20]
-
-    context = {
-        "request": request,
-        "query": query,
-        "type": stype,
-        "issues": issues_qs,
-    }
-            users = (
-                UserProfile.objects.filter(Q(user__username__icontains=query))
-                .annotate(total_score=Sum("user__points__score"))
-                .order_by("-total_score")[0:20]
-            )
-            for userprofile in users:
-                userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
             context = {
                 "request": request,
                 "query": query,
                 "type": stype,
+                "organizations": organizations,
+                "domains": domains,
                 "users": users,
+                "issues": issues,
+                "projects": projects,
+                "repos": repos,
             }
 
-        elif stype == "labels":
-            # Map query to numeric label values (by id or display name)
-            label_values = []
-            q_lower = query.lower()
-
-            # Allow direct numeric id search, e.g. "3"
-            if query.isdigit():
-                label_values.append(int(query))
-
-            # Also match by human-readable label names (e.g. "Performance")
-            for value, name in Issue._meta.get_field("label").choices:
-                if q_lower in str(name).lower():
-                    label_values.append(value)
-
-            issues_base_qs = (
-                Issue.objects.filter(label__in=label_values, hunt=None) if label_values else Issue.objects.none()
-            )
-
+        elif stype == "issues":
             if request.user.is_authenticated:
-                issues_qs = issues_base_qs.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+                    .order_by("-created")[:20]
+                )
             else:
-                issues_qs = issues_base_qs.exclude(is_hidden=True)[0:20]
+                issues_qs = (
+                    Issue.objects.filter(Q(description__icontains=query), hunt=None)
+                    .exclude(is_hidden=True)
+                    .order_by("-created")[:20]
+                )
 
             context = {
                 "request": request,
@@ -712,231 +661,124 @@ elif stype == "issues":
                 "issues": issues_qs,
             }
 
-        elif stype == "organizations":
-            organizations = Organization.objects.filter(name__icontains=query)
-            for org in organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "organizations": organizations,
-            }
-
-        elif stype == "projects":
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
-            }
-
-        elif stype == "repos":
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
-            }
-
-        elif stype == "tags":
-            tags = Tag.objects.filter(name__icontains=query)
-            matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
-            matching_domains = Domain.objects.filter(tags__in=tags).distinct()
-            if request.user.is_authenticated:
-                matching_issues = (
-                    Issue.objects.filter(tags__in=tags)
-                    .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
-                    .distinct()
-                )
-            else:
-                matching_issues = Issue.objects.filter(tags__in=tags).exclude(is_hidden=True).distinct()
-            matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
-            matching_repos = Repo.objects.filter(tags__in=tags).distinct()
-            for org in matching_organizations:
-                d = Domain.objects.filter(organization=org).first()
-                if d:
-                    org.absolute_url = d.get_absolute_url()
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "tags": tags,
-                "matching_organizations": matching_organizations,
-                "matching_domains": matching_domains,
-                "matching_issues": matching_issues,
-                "matching_user_profiles": matching_user_profiles,
-                "matching_repos": matching_repos,
-            }
-
-        elif stype == "languages":
-            context = {
-                "request": request,
-                "query": query,
-                "type": stype,
-                "repos": Repo.objects.filter(primary_language__icontains=query),
-            }
-
-        has_results = False
-
-        if stype == "all" or not stype:
-            has_results = bool(
-                context.get("organizations")
-                or context.get("issues")
-                or context.get("domains")
-                or context.get("users")
-                or context.get("projects")
-                or context.get("repos")
-            )
-        elif stype == "tags":
-            has_results = bool(
-                context.get("matching_organizations")
-                or context.get("matching_domains")
-                or context.get("matching_issues")
-                or context.get("matching_user_profiles")
-                or context.get("matching_repos")
-            )
-        else:
-            type_to_key = {
-                "issues": "issues",
-                "domains": "domains",
-                "users": "users",
-                "labels": "issues",
-                "organizations": "organizations",
-                "projects": "projects",
-                "repos": "repos",
-                "languages": "repos",
-            }
-            key = type_to_key.get(stype, stype)
-            has_results = bool(context.get(key))
-        # If no results found, add popular search suggestions
-        if not has_results:
-            context["popular_searches"] = get_popular_searches(limit=5, min_users=3)
-            context["has_no_results"] = True
-
     # Handle authenticated user features
+
     if request.user.is_authenticated:
         try:
             context["wallet"] = Wallet.objects.get(user=request.user)
         except Wallet.DoesNotExist:
             context["wallet"] = None
 
-        # Log search history for authenticated users - LAZY EVALUATION
-        # Only calculate result count when we're actually going to log the search
-        if query:
-            search_type = stype if stype else "all"
+    # Log search history for authenticated users - LAZY EVALUATION
+    # Only calculate result count when we're actually going to log the search
+    if query:
+        search_type = stype if stype else "all"
 
-            # LAZY EVALUATION: Only calculate result count when we actually need it
-            # (after checking for duplicates and before creating the entry)
+        # LAZY EVALUATION: Only calculate result count when we actually need it
+        # (after checking for duplicates and before creating the entry)
 
-            # Atomic operation: check for duplicates, create entry, and cleanup excess entries
-            if len(query) > 255:
-                # Store hash + preview for very long queries, ensuring we stay within max_length (255)
-                query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
-                # 228 + 27 ("... [hash:" + 16 hex chars + "]") = 255
-                truncated_query = f"{query[:228]}... [hash:{query_hash}]"
-            else:
-                truncated_query = query
+        # Atomic operation: check for duplicates, create entry, and cleanup excess entries
+        if len(query) > 255:
+            # Store hash + preview for very long queries, ensuring we stay within max_length (255)
+            query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
+            # 228 + 27 ("... [hash:" + 16 hex chars + "]") = 255
+            truncated_query = f"{query[:228]}... [hash:{query_hash}]"
+        else:
+            truncated_query = query
 
-            try:
-                with transaction.atomic():
-                    # Lock user's search history to prevent race conditions
-                    user_history_ids = list(
-                        SearchHistory.objects.filter(user=request.user)
-                        .select_for_update()
-                        .order_by("-timestamp")
-                        .values_list("id", flat=True)
-                    )
-
-                    last_search_id = user_history_ids[0] if user_history_ids else None
-                    last_search = SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
-
-                    # Prevent consecutive duplicates
-                    if (
-                        not last_search
-                        or last_search.query != truncated_query
-                        or last_search.search_type != search_type
-                    ):
-                        # LAZY EVALUATION: Calculate result count only now, when we need it
-                        result_count = 0
-
-                        # Get result counts from context if available
-                        try:
-                            if search_type == "all" or not search_type:
-                                # Sum counts from all search results
-                                for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
-                                    if key in context:
-                                        items = context[key]
-                                        if hasattr(items, "count"):
-                                            result_count += items.count()
-                                        elif isinstance(items, list):
-                                            result_count += len(items)
-
-                            elif search_type == "tags":
-                                # Sum counts for tag search
-                                for key in [
-                                    "matching_organizations",
-                                    "matching_domains",
-                                    "matching_issues",
-                                    "matching_user_profiles",
-                                    "matching_repos",
-                                ]:
-                                    if key in context:
-                                        items = context[key]
-                                        if hasattr(items, "count"):
-                                            result_count += items.count()
-                                        elif isinstance(items, list):
-                                            result_count += len(items)
-
-                            else:
-                                # Map search types to their context keys
-                                type_to_key = {
-                                    "issues": "issues",
-                                    "domains": "domains",
-                                    "users": "users",
-                                    "labels": "issues",  # labels search returns issues
-                                    "organizations": "organizations",
-                                    "projects": "projects",
-                                    "repos": "repos",
-                                    "languages": "repos",  # languages search returns repos
-                                }
-                                key = type_to_key.get(search_type, search_type)
-                                items = context.get(key)
-                                if items:
-                                    if hasattr(items, "count"):
-                                        result_count = items.count()
-                                    elif isinstance(items, list):
-                                        result_count = len(items)
-
-                        except Exception:
-                            logger.exception("Error calculating result count")
-                            result_count = 0
-
-                        SearchHistory.objects.create(
-                            user=request.user,
-                            query=truncated_query,
-                            search_type=search_type,
-                            result_count=result_count,
-                        )
-
-                        # CLEANUP — keep last 50 (exact count)
-                        if len(user_history_ids) >= SEARCH_HISTORY_LIMIT:
-                            # Keep newest limit-1 old entries + new entry = limit total
-                            excess_ids = user_history_ids[SEARCH_HISTORY_LIMIT - 1 :]
-                            if excess_ids:
-                                SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
-
-            except (DatabaseError, IntegrityError):
-                # Log the error but don't break search
-                logger.exception(
-                    f"Error saving search history - user_id: {request.user.id}, "
-                    f"truncated_query: {(truncated_query[:50] if truncated_query else None)!r}, "
-                    f"search_type: {search_type}"
+        try:
+            with transaction.atomic():
+                # Lock user's search history to prevent race conditions
+                user_history_ids = list(
+                    SearchHistory.objects.filter(user=request.user)
+                    .select_for_update()
+                    .order_by("-timestamp")
+                    .values_list("id", flat=True)
                 )
 
-        context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
+                last_search_id = user_history_ids[0] if user_history_ids else None
+                last_search = SearchHistory.objects.filter(id=last_search_id).first() if last_search_id else None
+
+                # Prevent consecutive duplicates
+                if not last_search or last_search.query != truncated_query or last_search.search_type != search_type:
+                    # LAZY EVALUATION: Calculate result count only now, when we need it
+                    result_count = 0
+
+                    # Get result counts from context if available
+                    try:
+                        if search_type == "all" or not search_type:
+                            # Sum counts from all search results
+                            for key in ["organizations", "issues", "domains", "users", "projects", "repos"]:
+                                if key in context:
+                                    items = context[key]
+                                    if hasattr(items, "count"):
+                                        result_count += items.count()
+                                    elif isinstance(items, list):
+                                        result_count += len(items)
+
+                        elif search_type == "tags":
+                            # Sum counts for tag search
+                            for key in [
+                                "matching_organizations",
+                                "matching_domains",
+                                "matching_issues",
+                                "matching_user_profiles",
+                                "matching_repos",
+                            ]:
+                                if key in context:
+                                    items = context[key]
+                                    if hasattr(items, "count"):
+                                        result_count += items.count()
+                                    elif isinstance(items, list):
+                                        result_count += len(items)
+
+                        else:
+                            # Map search types to their context keys
+                            type_to_key = {
+                                "issues": "issues",
+                                "domains": "domains",
+                                "users": "users",
+                                "labels": "issues",  # labels search returns issues
+                                "organizations": "organizations",
+                                "projects": "projects",
+                                "repos": "repos",
+                                "languages": "repos",  # languages search returns repos
+                            }
+                            key = type_to_key.get(search_type, search_type)
+                            items = context.get(key)
+                            if items:
+                                if hasattr(items, "count"):
+                                    result_count = items.count()
+                                elif isinstance(items, list):
+                                    result_count = len(items)
+
+                    except Exception:
+                        logger.exception("Error calculating result count")
+                        result_count = 0
+
+                    SearchHistory.objects.create(
+                        user=request.user,
+                        query=truncated_query,
+                        search_type=search_type,
+                        result_count=result_count,
+                    )
+
+                    # CLEANUP — keep last 50 (exact count)
+                    if len(user_history_ids) >= SEARCH_HISTORY_LIMIT:
+                        # Keep newest limit-1 old entries + new entry = limit total
+                        excess_ids = user_history_ids[SEARCH_HISTORY_LIMIT - 1 :]
+                        if excess_ids:
+                            SearchHistory.objects.filter(user=request.user, id__in=excess_ids).delete()
+
+        except (DatabaseError, IntegrityError):
+            # Log the error but don't break search
+            logger.exception(
+                f"Error saving search history - user_id: {request.user.id}, "
+                f"truncated_query: {(truncated_query[:50] if truncated_query else None)!r}, "
+                f"search_type: {search_type}"
+            )
+
+    context["recent_searches"] = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:10]
 
     return render(request, template, context)
 
