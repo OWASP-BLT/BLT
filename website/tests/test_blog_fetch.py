@@ -29,6 +29,7 @@ class DevToBlogTests(TestCase):
         """Test successful API fetch, refined output, and caching"""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = [
             {
                 "title": "Test Post",
@@ -52,6 +53,7 @@ class DevToBlogTests(TestCase):
         """Test handling of null values and wrong types"""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = [
             {"title": None, "url": "https://dev.to/valid-link", "user": None, "published_at": None, "cover_image": 123}
         ]
@@ -69,6 +71,7 @@ class DevToBlogTests(TestCase):
         """Test that non-HTTPS cover images are stripped (Mixed Content Prevention)"""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = [
             {
                 "title": "Insecure Post",
@@ -87,6 +90,7 @@ class DevToBlogTests(TestCase):
     def test_fetch_unexpected_format(self, mock_get):
         """Test handling when API returns non-list structure"""
         mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {"error": "not a list"}
         mock_get.return_value = mock_response
 

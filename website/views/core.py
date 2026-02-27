@@ -1391,7 +1391,7 @@ try:
 except (TypeError, ValueError):
     logger.warning("Invalid DEVTO_ARTICLE_COUNT setting. Falling back to default (2).")
     DEVTO_ARTICLE_COUNT = 2
-DEVTO_API_URL = f"https://dev.to/api/articles?" f"username={DEVTO_USERNAME}&per_page={DEVTO_ARTICLE_COUNT}"
+DEVTO_API_BASE = "https://dev.to/api/articles"
 
 
 def fetch_devto_articles():
@@ -1407,7 +1407,15 @@ def fetch_devto_articles():
     try:
         # Use application-specific User-Agent instead of browser spoofing
         headers = {"User-Agent": "OWASP-BLT/1.0 (+https://owaspblt.org)"}
-        response = requests.get(DEVTO_API_URL, headers=headers, timeout=10)
+        response = requests.get(
+            DEVTO_API_BASE,
+            headers=headers,
+            params={
+                "username": DEVTO_USERNAME,
+                "per_page": DEVTO_ARTICLE_COUNT,
+            },
+            timeout=10,
+        )
         # Raise exception for HTTP errors
         response.raise_for_status()
         data = response.json()
@@ -1444,8 +1452,6 @@ def fetch_devto_articles():
             clean_date = ""
             if isinstance(published_at, str):
                 try:
-                    from datetime import datetime
-
                     parsed = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
                     clean_date = parsed.strftime("%Y-%m-%d")
                 except ValueError:
@@ -1469,7 +1475,7 @@ def fetch_devto_articles():
 
     except (requests.RequestException, ValueError) as e:
         # Log failure securely without exposing sensitive details
-        logger.error("Dev.to fetch failure: %s", e)
+        logger.warning("Dev.to fetch failure: %s", e, exc_info=True)
         # Cache empty list briefly to prevent repeated failing calls
         cache.set(cache_key, [], 30)
         return []
