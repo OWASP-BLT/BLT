@@ -86,7 +86,9 @@ from website.utils import (
     get_email_from_domain,
     get_page_votes,
     image_validator,
+    is_face_processing_available,
     is_valid_https_url,
+    process_bug_screenshot,
     rebuild_safe_url,
     safe_redirect_request,
     validate_screenshot_hash,
@@ -1418,6 +1420,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
             # Only validate uploaded screenshots if there are any
 
             if len(self.request.FILES.getlist("screenshots")) > 0:
+                # Process screenshots for privacy protection (face overlay)
+                processed_screenshots = []
+                face_processing_available = is_face_processing_available()
+
+                if not face_processing_available:
+                    logger.warning(
+                        "Face processing not available - screenshots will be saved without privacy protection"
+                    )
+
                 for screenshot in self.request.FILES.getlist("screenshots"):
                     img_valid = image_validator(screenshot)
                     if img_valid is not True:
@@ -1427,6 +1438,30 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             "report.html",
                             {"form": self.get_form(), "captcha_form": CaptchaForm()},
                         )
+
+                    # Process screenshot for face detection and overlay
+                    if face_processing_available:
+                        try:
+                            processed_screenshot = process_bug_screenshot(screenshot, overlay_color=(0, 0, 0))
+                            if processed_screenshot is not None:
+                                processed_screenshots.append(processed_screenshot)
+                                logger.info(
+                                    f"Successfully processed screenshot {screenshot.name} with privacy protection"
+                                )
+                            else:
+                                # Fallback to original if processing fails
+                                processed_screenshots.append(screenshot)
+                                logger.warning(f"Face processing failed for {screenshot.name}, using original")
+                        except Exception as e:
+                            # Graceful fallback on any processing error
+                            logger.error(f"Face processing error for {screenshot.name}: {str(e)}", exc_info=True)
+                            processed_screenshots.append(screenshot)
+                    else:
+                        # No face processing available, use original
+                        processed_screenshots.append(screenshot)
+
+                # Replace original screenshots with processed ones in request.FILES
+                self.request.FILES.setlist("screenshots", processed_screenshots)
             tokenauth = False
             obj = form.save(commit=False)
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
@@ -1727,10 +1762,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         {"form": self.get_form(), "captcha_form": CaptchaForm()},
                     )
 
-            # Save screenshots
+            # Save screenshots (these are now processed with face overlay if available)
             for screenshot in self.request.FILES.getlist("screenshots"):
                 filename = screenshot.name
-                extension = filename.split(".")[-1]
+                # Ensure JPG extension for processed files
+                if hasattr(screenshot, "_processed") and screenshot._processed:
+                    extension = "jpg"
+                else:
+                    extension = filename.split(".")[-1]
                 screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
                 default_storage.save(f"screenshots/{screenshot.name}", screenshot)
                 IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
