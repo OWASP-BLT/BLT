@@ -314,7 +314,10 @@
                 const responseURL = xhr.responseURL || '';
                 if (responseURL.includes('/accounts/login/')) {
                     evt.detail.shouldSwap = false;
-                    window.location.assign(responseURL);
+                    const loginUrl = new URL(responseURL, window.location.origin);
+                    const next = `${window.location.pathname}${window.location.search}`;
+                    loginUrl.searchParams.set('next', next);
+                    window.location.assign(loginUrl.toString());
                     return;
                 }
 
