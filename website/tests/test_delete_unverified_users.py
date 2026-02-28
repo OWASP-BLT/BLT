@@ -25,7 +25,6 @@ from website.models import (
     OrganizationAdmin,
     SearchHistory,
     TimeLog,
-    UserProfile,
     Wallet,
     Winner,
 )
@@ -347,21 +346,17 @@ class DeleteUnverifiedUsersTest(TestCase):
         # Get auto-created UserProfile and create Comment
         # Comment uses GenericForeignKey, so we need to create an Issue to link it to
         from django.contrib.contenttypes.models import ContentType
+
         issue = Issue.objects.create(
             user=user,
             url="http://example.com/test",
             description="Test issue for comment",
-            domain=Domain.objects.create(name="example.com", url="http://example.com")
+            domain=Domain.objects.create(name="example.com", url="http://example.com"),
         )
-        
+
         profile = user.userprofile
         ct = ContentType.objects.get_for_model(Issue)
-        Comment.objects.create(
-            author_fk=profile,
-            text="Test comment",
-            content_type=ct,
-            object_id=issue.id
-        )
+        Comment.objects.create(author_fk=profile, text="Test comment", content_type=ct, object_id=issue.id)
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
@@ -651,11 +646,12 @@ class DeleteUnverifiedUsersTest(TestCase):
 
         # Create activity record with required fields (Activity uses GenericForeignKey)
         from django.contrib.contenttypes.models import ContentType
+
         issue = Issue.objects.create(
             user=user,
             url="http://example.com/activity",
             description="Test issue for activity",
-            domain=Domain.objects.create(name="example.com", url="http://example.com")
+            domain=Domain.objects.create(name="example.com", url="http://example.com"),
         )
         ct = ContentType.objects.get_for_model(Issue)
         Activity.objects.create(user=user, content_type=ct, object_id=issue.id)
@@ -780,7 +776,9 @@ class DeleteUnverifiedUsersTest(TestCase):
         # Create hunt and issue to link user to hunt
         domain = Domain.objects.create(url="https://test.com", name="Test Domain")
         hunt = Hunt.objects.create(domain=domain, name="Test Hunt", url="https://test.com/hunt", plan="free", prize=100)
-        Issue.objects.create(user=user, domain=domain, hunt=hunt, url="https://test.com/issue", description="Test issue")
+        Issue.objects.create(
+            user=user, domain=domain, hunt=hunt, url="https://test.com/issue", description="Test issue"
+        )
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)

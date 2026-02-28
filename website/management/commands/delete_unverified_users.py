@@ -122,12 +122,7 @@ class Command(LoggedBaseCommand):
 
         # Check for comments - need to check if user's UserProfile has comments
         # We need to use a subquery since Comment links to UserProfile, not User directly
-        from django.db.models import Subquery
-        has_comments = Exists(
-            Comment.objects.filter(
-                author_fk__user=OuterRef("pk")
-            )
-        )
+        has_comments = Exists(Comment.objects.filter(author_fk__user=OuterRef("pk")))
 
         # Check for bids
         has_bids = Exists(Bid.objects.filter(user=OuterRef("pk")))
@@ -233,7 +228,7 @@ class Command(LoggedBaseCommand):
             .exclude(has_avatar)
             .exclude(has_description)
         )
-        
+
         return unverified_users
 
     def delete_users_in_batches(self, users, days, batch_size):
