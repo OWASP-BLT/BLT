@@ -1,5 +1,5 @@
 <h1 align="center"> 🐛 OWASP BLT </h1>
-<h3 align="center">Bug Logging Tool - Gamified Crowd-Sourced QA Testing & Vulnerability Disclosure</h3>
+<h3 align="center">Bug Logging Tool – Gamified Crowd-Sourced QA Testing & Vulnerability Disclosure</h3>
 
 <p align="center">
   <strong>A gamified platform for discovering and reporting bugs across websites, applications, Git repositories, and more.</strong>
@@ -171,7 +171,7 @@ Docker/virtualization issues on Windows? Use Poetry + SQLite in GitHub Codespace
 3. `poetry install` (add `poetry run pip install psutil` if "ModuleNotFound" errors)
 4. Edit `.env`:
    - `DATABASE_URL=sqlite:///db.sqlite3`
-   - Add `SECRET_KEY=your-random-bengaluru2026!@#`
+   - Add `SECRET_KEY=your-random-bengaluru2026!@#`(keep private)
    - Comment Postgres lines with `#`
    - Dummy keys: `OPENAI_API_KEY=dummy`
    - Keep `DEBUG=True`
