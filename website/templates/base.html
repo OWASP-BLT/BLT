@@ -307,22 +307,25 @@
         <script>
             document.body.addEventListener('htmx:beforeSwap', function(evt) {
                 // Check if response is a redirect to login page (302/301)
-                if (evt.detail.xhr.status === 302 || evt.detail.xhr.status === 301) {
-                    const redirectLocation = evt.detail.xhr.getResponseHeader('Location');
-                    
-                    // If redirecting to login, do full-page navigation instead of swap
-                    if (redirectLocation && redirectLocation.includes('/accounts/login/')) {
-                        evt.detail.shouldSwap = false;
-                        window.location.href = redirectLocation;
-                    }
+                const xhr = evt.detail && evt.detail.xhr;
+                if (!xhr) return;
+
+                // Primary signal: detect redirect via final URL
+                const responseURL = xhr.responseURL || '';
+                if (responseURL.includes('/accounts/login/')) {
+                    evt.detail.shouldSwap = false;
+                    window.location.assign(responseURL);
+                    return;
                 }
-                
-                // Fallback: Check if response HTML contains login form
-                if (evt.detail.xhr.status === 200) {
-                    const responseText = evt.detail.xhr.responseText;
-                    if (responseText.includes('id="login"') || responseText.includes('name="login"')) {
+
+                // Fallback: inspect HTML more robustly
+                if (xhr.status === 200 && (xhr.getResponseHeader('Content-Type') || '').includes('text/html')) {
+                    const doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
+                    const looksLikeLogin = doc.querySelector('#login, [name="login"], form[action*="/accounts/login/"]');
+                    if (looksLikeLogin) {
                         evt.detail.shouldSwap = false;
-                        window.location.href = '/accounts/login/?next=' + encodeURIComponent(window.location.pathname);
+                        const next = `${window.location.pathname}${window.location.search}`;
+                        window.location.assign(`/accounts/login/?next=${encodeURIComponent(next)}`);
                     }
                 }
             });
