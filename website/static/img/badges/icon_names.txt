@@ -28,7 +28,6 @@ icons8-markdown-56.png
 icons8-mentor-94.png
 icons8-merge-40.png
 icons8-milestone-50.png
-icons8-newsletter-96.png
 icons8-optimize-64.png
 icons8-performance-goal-96.png
 icons8-refactoring-60.png
