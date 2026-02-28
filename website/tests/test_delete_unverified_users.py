@@ -344,9 +344,24 @@ class DeleteUnverifiedUsersTest(TestCase):
 
         EmailAddress.objects.create(user=user, email="commenter@example.com", verified=False, primary=True)
 
-        # Create UserProfile and Comment
-        profile = UserProfile.objects.create(user=user)
-        Comment.objects.create(author_fk=profile, text="Test comment")
+        # Get auto-created UserProfile and create Comment
+        # Comment uses GenericForeignKey, so we need to create an Issue to link it to
+        from django.contrib.contenttypes.models import ContentType
+        issue = Issue.objects.create(
+            user=user,
+            url="http://example.com/test",
+            description="Test issue for comment",
+            domain=Domain.objects.create(name="example.com", url="http://example.com")
+        )
+        
+        profile = user.userprofile
+        ct = ContentType.objects.get_for_model(Issue)
+        Comment.objects.create(
+            author_fk=profile,
+            text="Test comment",
+            content_type=ct,
+            object_id=issue.id
+        )
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
@@ -634,8 +649,16 @@ class DeleteUnverifiedUsersTest(TestCase):
 
         EmailAddress.objects.create(user=user, email="activityuser@example.com", verified=False, primary=True)
 
-        # Create activity record
-        Activity.objects.create(user=user)
+        # Create activity record with required fields (Activity uses GenericForeignKey)
+        from django.contrib.contenttypes.models import ContentType
+        issue = Issue.objects.create(
+            user=user,
+            url="http://example.com/activity",
+            description="Test issue for activity",
+            domain=Domain.objects.create(name="example.com", url="http://example.com")
+        )
+        ct = ContentType.objects.get_for_model(Issue)
+        Activity.objects.create(user=user, content_type=ct, object_id=issue.id)
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
@@ -653,8 +676,8 @@ class DeleteUnverifiedUsersTest(TestCase):
 
         # Create domain and hunt for winner
         domain = Domain.objects.create(url="https://test.com", name="Test Domain")
-        hunt = Hunt.objects.create(domain=domain, prize=100)
-        Winner.objects.create(user=user, hunt=hunt, prize_money=50)
+        hunt = Hunt.objects.create(domain=domain, name="Test Hunt", url="https://test.com/hunt", plan="free", prize=100)
+        Winner.objects.create(winner=user, hunt=hunt)
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
@@ -683,26 +706,30 @@ class DeleteUnverifiedUsersTest(TestCase):
 
     def test_keep_users_with_profile_content(self):
         """Test that users with profile avatars or descriptions are NOT deleted"""
-        # Test with avatar
+        # Test with avatar only
         user1 = User.objects.create_user(username="avataruser", email="avataruser@example.com", password="testpass123")
         user1.date_joined = self.cutoff_date - timedelta(days=10)
         user1.save()
 
         EmailAddress.objects.create(user=user1, email="avataruser@example.com", verified=False, primary=True)
-        UserProfile.objects.create(user=user1, user_avatar="avatars/test.jpg")
+        # Update auto-created profile
+        user1.userprofile.user_avatar = "avatars/test.jpg"
+        user1.userprofile.save()
 
-        # Test with description
+        # Test with description only
         user2 = User.objects.create_user(username="biouser", email="biouser@example.com", password="testpass123")
         user2.date_joined = self.cutoff_date - timedelta(days=10)
         user2.save()
 
         EmailAddress.objects.create(user=user2, email="biouser@example.com", verified=False, primary=True)
-        UserProfile.objects.create(user=user2, description="Test bio")
+        # Update auto-created profile
+        user2.userprofile.description = "Test bio"
+        user2.userprofile.save()
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
 
-        # Verify users were NOT deleted
+        # Users with profile content should NOT be deleted (avatar or description is meaningful activity)
         self.assertTrue(User.objects.filter(username="avataruser").exists())
         self.assertTrue(User.objects.filter(username="biouser").exists())
 
@@ -725,15 +752,16 @@ class DeleteUnverifiedUsersTest(TestCase):
         self.assertTrue(User.objects.filter(username="issuer").exists())
 
     def test_keep_users_with_domains(self):
-        """Test that users with domain ownership are NOT deleted"""
+        """Test that users who are domain managers are NOT deleted"""
         user = User.objects.create_user(username="domainowner", email="domainowner@example.com", password="testpass123")
         user.date_joined = self.cutoff_date - timedelta(days=10)
         user.save()
 
         EmailAddress.objects.create(user=user, email="domainowner@example.com", verified=False, primary=True)
 
-        # Create domain
-        Domain.objects.create(user=user, url="https://mydomain.com", name="My Domain")
+        # Create domain with user as manager
+        domain = Domain.objects.create(url="https://mydomain.com", name="My Domain")
+        domain.managers.add(user)
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
@@ -741,20 +769,21 @@ class DeleteUnverifiedUsersTest(TestCase):
         # Verify user was NOT deleted
         self.assertTrue(User.objects.filter(username="domainowner").exists())
 
-    def test_keep_users_with_hunts(self):
-        """Test that users with hunt participation are NOT deleted"""
+    def test_keep_users_with_issues_in_hunts(self):
+        """Test that users with issues in hunts are NOT deleted (via Issue.hunt relationship)"""
         user = User.objects.create_user(username="hunter", email="hunter@example.com", password="testpass123")
         user.date_joined = self.cutoff_date - timedelta(days=10)
         user.save()
 
         EmailAddress.objects.create(user=user, email="hunter@example.com", verified=False, primary=True)
 
-        # Create hunt (with user relation if exists)
+        # Create hunt and issue to link user to hunt
         domain = Domain.objects.create(url="https://test.com", name="Test Domain")
-        Hunt.objects.create(domain=domain, prize=100, user=user)
+        hunt = Hunt.objects.create(domain=domain, name="Test Hunt", url="https://test.com/hunt", plan="free", prize=100)
+        Issue.objects.create(user=user, domain=domain, hunt=hunt, url="https://test.com/issue", description="Test issue")
 
         # Run command
         out, err = self.call_command(days=self.cutoff_days)
 
-        # Verify user was NOT deleted
+        # Verify user was NOT deleted (due to having issues)
         self.assertTrue(User.objects.filter(username="hunter").exists())

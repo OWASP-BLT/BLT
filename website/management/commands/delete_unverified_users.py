@@ -17,7 +17,6 @@ from website.models import (
     Contribution,
     DailyStatusReport,
     Domain,
-    Hunt,
     InviteFriend,
     InviteOrganization,
     Issue,
@@ -118,14 +117,17 @@ class Command(LoggedBaseCommand):
         # Check for points earned
         has_points = Exists(Points.objects.filter(user=OuterRef("pk")))
 
-        # Check for domain ownership
-        has_domains = Exists(Domain.objects.filter(user=OuterRef("pk")))
+        # Check for domain management (users can be domain managers)
+        has_domains = Exists(Domain.objects.filter(managers=OuterRef("pk")))
 
-        # Check for hunt participation
-        has_hunts = Exists(Hunt.objects.filter(user=OuterRef("pk")))
-
-        # Check for comments (via UserProfile)
-        has_comments = Exists(Comment.objects.filter(author_fk=OuterRef("userprofile")))
+        # Check for comments - need to check if user's UserProfile has comments
+        # We need to use a subquery since Comment links to UserProfile, not User directly
+        from django.db.models import Subquery
+        has_comments = Exists(
+            Comment.objects.filter(
+                author_fk__user=OuterRef("pk")
+            )
+        )
 
         # Check for bids
         has_bids = Exists(Bid.objects.filter(user=OuterRef("pk")))
@@ -170,53 +172,68 @@ class Command(LoggedBaseCommand):
         has_status_reports = Exists(DailyStatusReport.objects.filter(user=OuterRef("pk")))
 
         # Check for activity records
-        has_activities = Exists(Activity.objects.filter(user=OuterRef("pk")))
+        # NOTE: A "signup" Activity is auto-created for every user, so we exclude it
+        has_activities = Exists(Activity.objects.filter(user=OuterRef("pk")).exclude(action_type="signup"))
 
-        # Check for winners
-        has_wins = Exists(Winner.objects.filter(user=OuterRef("pk")))
+        # Check for winners (winner, runner, or second_runner)
+        # Note: Cannot use Q() with OR inside Exists(), use three separate checks
+        has_wins_winner = Exists(Winner.objects.filter(winner=OuterRef("pk")))
+        has_wins_runner = Exists(Winner.objects.filter(runner=OuterRef("pk")))
+        has_wins_second = Exists(Winner.objects.filter(second_runner=OuterRef("pk")))
 
-        # Check for wallets
-        has_wallet = Exists(Wallet.objects.filter(user=OuterRef("pk")))
+        # Note: Wallets are auto-created with $0 balance for all users and are not considered activity
+        # Note: UserProfiles are auto-created for all users via AutoOneToOneField
 
-        # Check for UserProfile with meaningful content (avatar or description)
-        has_profile_content = Exists(
-            UserProfile.objects.filter(user=OuterRef("pk"))
-            .filter(Q(user_avatar__isnull=False) | Q(description__isnull=False))
-            .exclude(Q(user_avatar="") & Q(description=""))
+        # Check for wallets with non-zero balance
+        # NOTE: Wallets are auto-created with $0 balance for all users, so only non-zero balances count
+        has_wallet = Exists(Wallet.objects.filter(user=OuterRef("pk"), current_balance__gt=0))
+
+        # NOTE: UserProfile is auto-created for all users via AutoOneToOneField
+        # Check if profile has meaningful content (avatar or description set and non-empty)
+        # Split into two separate Exists() because ImageField empty string causes SQL issues when
+        # combined in a single query. Two chained .exclude() calls give correct OR semantics:
+        # both avatar and description must be absent for the user to be eligible for deletion.
+        has_avatar = Exists(
+            UserProfile.objects.filter(user=OuterRef("pk"), user_avatar__isnull=False).exclude(user_avatar="")
+        )
+        has_description = Exists(
+            UserProfile.objects.filter(user=OuterRef("pk"), description__isnull=False).exclude(description="")
         )
 
         # Build the query combining all conditions
+        # Chain multiple .exclude() calls instead of using OR operator
+        # This ensures proper evaluation of Exists() subqueries
         unverified_users = (
             User.objects.filter(date_joined__lt=cutoff_date, is_staff=False, is_superuser=False)
             .exclude(id__in=verified_user_ids)
-            .exclude(
-                has_recent_login
-                | Q(has_issues)
-                | Q(has_points)
-                | Q(has_domains)
-                | Q(has_hunts)
-                | Q(has_comments)
-                | Q(has_bids)
-                | Q(has_org_admin)
-                | Q(has_org_manager)
-                | Q(has_org_admin_role)
-                | Q(has_join_requests)
-                | Q(has_sent_invites)
-                | Q(has_received_invites)
-                | Q(has_sent_org_invites)
-                | Q(has_search_history)
-                | Q(has_contributions)
-                | Q(has_bacon_tokens)
-                | Q(has_time_logs)
-                | Q(has_activity_logs)
-                | Q(has_status_reports)
-                | Q(has_activities)
-                | Q(has_wins)
-                | Q(has_wallet)
-                | Q(has_profile_content)
-            )
+            .exclude(has_recent_login)
+            .exclude(has_issues)
+            .exclude(has_points)
+            .exclude(has_domains)
+            .exclude(has_comments)
+            .exclude(has_bids)
+            .exclude(has_org_admin)
+            .exclude(has_org_manager)
+            .exclude(has_org_admin_role)
+            .exclude(has_join_requests)
+            .exclude(has_sent_invites)
+            .exclude(has_received_invites)
+            .exclude(has_sent_org_invites)
+            .exclude(has_search_history)
+            .exclude(has_contributions)
+            .exclude(has_bacon_tokens)
+            .exclude(has_time_logs)
+            .exclude(has_activity_logs)
+            .exclude(has_status_reports)
+            .exclude(has_activities)
+            .exclude(has_wins_winner)
+            .exclude(has_wins_runner)
+            .exclude(has_wins_second)
+            .exclude(has_wallet)
+            .exclude(has_avatar)
+            .exclude(has_description)
         )
-
+        
         return unverified_users
 
     def delete_users_in_batches(self, users, days, batch_size):
