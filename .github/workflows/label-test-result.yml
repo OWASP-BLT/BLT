@@ -1,4 +1,4 @@
-# This workflow labels PRs with test results after CI/CD completes.
+# This workflow labels PRs with test and pre-commit results after CI/CD completes.
 # It runs via workflow_run which gives it write permissions to label/comment
 # on fork PRs without executing any untrusted code (preventing cache poisoning).
 #
@@ -62,6 +62,11 @@ jobs:
       - name: Read PR number and test result
         if: steps.download-result.outcome == 'success'
         id: read-artifacts
+        env:
+          PAYLOAD_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f pr-number.txt ] && [ -f test-result.txt ]; then
             PR_NUMBER=$(cat pr-number.txt | tr -d '[:space:]')
@@ -70,6 +75,28 @@ jobs:
             # These values came from artifacts which could be tampered with
             if ! echo "$PR_NUMBER" | grep -qE '^[0-9]+$'; then
               echo "::error::PR number is not numeric: '$PR_NUMBER'"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # SECURITY: Cross-validate artifact PR number against a trusted source.
+            # This prevents a malicious artifact from targeting a different PR.
+            TRUSTED_PR="$PAYLOAD_PR"
+            if [ -z "$TRUSTED_PR" ]; then
+              # For fork PRs, pull_requests[] is empty. Look up the PR via the
+              # workflow run's head SHA (a trusted value from the event payload).
+              TRUSTED_PR=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$GH_REPO/commits/$HEAD_SHA/pulls" \
+                | jq -r '.[0].number // empty')
+              if [ -z "$TRUSTED_PR" ]; then
+                echo "::error::Could not determine PR number from payload or HEAD SHA"
+                echo "has_data=false" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              echo "Resolved PR #$TRUSTED_PR from HEAD SHA $HEAD_SHA"
+            fi
+            if [ "$TRUSTED_PR" != "$PR_NUMBER" ]; then
+              echo "::error::Artifact PR #$PR_NUMBER does not match trusted PR #$TRUSTED_PR"
               echo "has_data=false" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -87,15 +114,17 @@ jobs:
             echo "Missing artifact files"
           fi
 
-      - name: Comment on PR if tests failed
-        if: steps.read-artifacts.outputs.has_data == 'true' && steps.read-artifacts.outputs.test_result != '0'
+      - name: Update test failure comment
+        if: steps.read-artifacts.outputs.has_data == 'true'
         uses: actions/github-script@v7
         env:
           PR_NUMBER: ${{ steps.read-artifacts.outputs.pr_number }}
+          TEST_RESULT: ${{ steps.read-artifacts.outputs.test_result }}
         with:
           script: |
             const fs = require('fs');
             const pull_number = parseInt(process.env.PR_NUMBER, 10);
+            const testFailed = process.env.TEST_RESULT !== '0';
 
             if (!pull_number) {
               core.warning('No pull request number found. Skipping comment.');
@@ -104,9 +133,9 @@ jobs:
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-
-            // Delete any previous test failure comments
             const testFailureMarker = '<!-- test-failure-comment -->';
+
+            // Always delete previous test failure comments
             try {
               let allComments = [];
               let page = 1;
@@ -140,6 +169,12 @@ jobs:
               core.warning(`Could not delete previous comments: ${error.message}`);
             }
 
+            // Post new comment only if tests failed
+            if (!testFailed) {
+              core.info(`Tests passed for PR #${pull_number}, no comment needed.`);
+              return;
+            }
+
             let testOutput = 'Test output not available.';
             try {
               testOutput = fs.readFileSync('test-output.txt', 'utf8');
@@ -151,9 +186,12 @@ jobs:
             const lines = testOutput.split('\n');
             const last100Lines = lines.slice(-100).join('\n');
             const truncated = lines.length > 100;
-            // SECURITY: Sanitize triple backticks to prevent breaking out of the code fence
-            // Artifacts from fork PRs could contain crafted output to inject markdown/HTML
-            const sanitizedOutput = last100Lines.replace(/`{3,}/g, '` ` `');
+            // SECURITY: Sanitize output to prevent breaking out of the code fence or HTML blocks.
+            // Artifacts from fork PRs could contain crafted output to inject markdown/HTML.
+            const sanitizedOutput = last100Lines
+              .replace(/`{3,}/g, '` ` `')
+              .replace(/<\/(details|summary)>/gi, '&lt;/$1&gt;')
+              .replace(/<(details|summary)(\s|>)/gi, '&lt;$1$2');
 
             const message = `${testFailureMarker}
             ## ❌ Tests failed
@@ -185,7 +223,7 @@ jobs:
 
             </details>
 
-            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`;
+            For more information, see the [Django testing documentation](https://docs.djangoproject.com/en/stable/topics/testing/).`.replace(/^ {12}/gm, '');
 
             try {
               await github.rest.issues.createComment({
@@ -201,57 +239,6 @@ jobs:
               } else {
                 throw error;
               }
-            }
-
-      - name: Remove test failure comment if tests passed
-        if: steps.read-artifacts.outputs.has_data == 'true' && steps.read-artifacts.outputs.test_result == '0'
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.read-artifacts.outputs.pr_number }}
-        with:
-          script: |
-            const pull_number = parseInt(process.env.PR_NUMBER, 10);
-
-            if (!pull_number) {
-              core.warning('No pull request number found. Skipping comment removal.');
-              return;
-            }
-
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-
-            const testFailureMarker = '<!-- test-failure-comment -->';
-            try {
-              let allComments = [];
-              let page = 1;
-              let fetched;
-              do {
-                const { data: comments } = await github.rest.issues.listComments({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                  per_page: 100,
-                  page,
-                });
-                allComments = allComments.concat(comments);
-                fetched = comments.length;
-                page += 1;
-              } while (fetched === 100);
-
-              const existingComments = allComments.filter(comment =>
-                comment.body && comment.body.includes(testFailureMarker)
-              );
-
-              for (const comment of existingComments) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: comment.id,
-                });
-                core.info(`Deleted test failure comment #${comment.id} from PR #${pull_number} (tests now passing)`);
-              }
-            } catch (error) {
-              core.warning(`Could not fetch or delete previous comments: ${error.message}`);
             }
 
       - name: Add test status label
@@ -402,3 +389,316 @@ jobs:
             }
 
             core.info(`Test exit code: ${testExitCode}`)
+
+  label-precommit-result:
+    name: Label Pre-commit Result
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request'
+    steps:
+      - name: Download pre-commit PR number artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pre-commit-pr-number
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        id: download-pr
+
+      - name: Download pre-commit result artifact
+        if: steps.download-pr.outcome == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: pre-commit-result
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        id: download-result
+
+      - name: Download pre-commit output artifact
+        if: steps.download-result.outcome == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: pre-commit-output
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Read PR number and pre-commit result
+        if: steps.download-result.outcome == 'success'
+        id: read-artifacts
+        env:
+          PAYLOAD_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f pre-commit-pr-number.txt ] && [ -f pre-commit-result.txt ]; then
+            PR_NUMBER=$(cat pre-commit-pr-number.txt | tr -d '[:space:]')
+            PRECOMMIT_RESULT=$(cat pre-commit-result.txt | tr -d '[:space:]')
+            # SECURITY: Strictly validate inputs are numeric to prevent code injection
+            if ! echo "$PR_NUMBER" | grep -qE '^[0-9]+$'; then
+              echo "::error::PR number is not numeric: '$PR_NUMBER'"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # SECURITY: Cross-validate artifact PR number against a trusted source.
+            # This prevents a malicious artifact from targeting a different PR.
+            TRUSTED_PR="$PAYLOAD_PR"
+            if [ -z "$TRUSTED_PR" ]; then
+              # For fork PRs, pull_requests[] is empty. Look up the PR via the
+              # workflow run's head SHA (a trusted value from the event payload).
+              TRUSTED_PR=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$GH_REPO/commits/$HEAD_SHA/pulls" \
+                | jq -r '.[0].number // empty')
+              if [ -z "$TRUSTED_PR" ]; then
+                echo "::error::Could not determine PR number from payload or HEAD SHA"
+                echo "has_data=false" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              echo "Resolved PR #$TRUSTED_PR from HEAD SHA $HEAD_SHA"
+            fi
+            if [ "$TRUSTED_PR" != "$PR_NUMBER" ]; then
+              echo "::error::Artifact PR #$PR_NUMBER does not match trusted PR #$TRUSTED_PR"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            if ! echo "$PRECOMMIT_RESULT" | grep -qE '^[0-9]+$'; then
+              echo "::error::Pre-commit result is not numeric: '$PRECOMMIT_RESULT' (job may have been cancelled)"
+              echo "has_data=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "precommit_result=$PRECOMMIT_RESULT" >> $GITHUB_OUTPUT
+            echo "has_data=true" >> $GITHUB_OUTPUT
+            echo "PR #$PR_NUMBER, pre-commit exit code: $PRECOMMIT_RESULT"
+          else
+            echo "has_data=false" >> $GITHUB_OUTPUT
+            echo "Missing artifact files"
+          fi
+
+      - name: Update pre-commit failure comment
+        if: steps.read-artifacts.outputs.has_data == 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.read-artifacts.outputs.pr_number }}
+          PRECOMMIT_RESULT: ${{ steps.read-artifacts.outputs.precommit_result }}
+        with:
+          script: |
+            const fs = require('fs');
+            const pull_number = parseInt(process.env.PR_NUMBER, 10);
+            const precommitFailed = process.env.PRECOMMIT_RESULT !== '0';
+
+            if (!pull_number) {
+              core.warning('No pull request number found. Skipping comment.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const commentMarker = '<!-- pre-commit-check -->';
+
+            // Always delete previous pre-commit failure comments
+            try {
+              let allComments = [];
+              let page = 1;
+              let fetched;
+              do {
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  per_page: 100,
+                  page,
+                });
+                allComments = allComments.concat(comments);
+                fetched = comments.length;
+                page += 1;
+              } while (fetched === 100);
+
+              const existingComments = allComments.filter(comment =>
+                comment.body && comment.body.includes(commentMarker)
+              );
+
+              for (const comment of existingComments) {
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: comment.id,
+                });
+                core.info(`Deleted previous pre-commit failure comment #${comment.id} from PR #${pull_number}`);
+              }
+            } catch (error) {
+              core.warning(`Could not delete previous comments: ${error.message}`);
+            }
+
+            // Post new comment only if pre-commit failed
+            if (!precommitFailed) {
+              core.info(`Pre-commit passed for PR #${pull_number}, no comment needed.`);
+              return;
+            }
+
+            let precommitOutput = 'Pre-commit output not available.';
+            try {
+              precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
+            } catch (e) {
+              core.warning(`Could not read pre-commit output: ${e.message}`);
+            }
+
+            // Get last 100 lines of output
+            const lines = precommitOutput.split('\n');
+            const last100Lines = lines.slice(-100).join('\n');
+            const truncated = lines.length > 100;
+            // SECURITY: Sanitize output to prevent breaking out of the code fence or HTML blocks.
+            const sanitizedOutput = last100Lines
+              .replace(/`{3,}/g, '` ` `')
+              .replace(/<\/(details|summary)>/gi, '&lt;/$1&gt;')
+              .replace(/<(details|summary)(\s|>)/gi, '&lt;$1$2');
+
+            const message = `${commentMarker}
+            ## ❌ Pre-commit checks failed
+
+            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
+
+            \`\`\`bash
+            # Install pre-commit if you haven't already
+            pip install pre-commit
+
+            # Run pre-commit on all files
+            pre-commit run --all-files
+
+            # Or run pre-commit on staged files only
+            pre-commit run
+            \`\`\`
+
+            After running these commands, the pre-commit hooks will automatically fix most issues.
+            Please review the changes, commit them, and push to your branch.
+
+            💡 **Tip**: You can set up pre-commit to run automatically on every commit by running:
+            \`\`\`bash
+            pre-commit install
+            \`\`\`
+
+            <details>
+            <summary>Pre-commit output${truncated ? ' (last 100 lines)' : ''}</summary>
+
+            \`\`\`
+            ${sanitizedOutput}
+            \`\`\`
+
+            </details>
+
+            For more information, see the [pre-commit documentation](https://pre-commit.com/).`.replace(/^ {12}/gm, '');
+
+            try {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: message
+              });
+              core.info(`Added pre-commit failure comment to PR #${pull_number}`);
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Permission denied: Cannot comment on PR.');
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Add pre-commit status label
+        if: steps.read-artifacts.outputs.has_data == 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.read-artifacts.outputs.pr_number }}
+          PRECOMMIT_EXIT_CODE: ${{ steps.read-artifacts.outputs.precommit_result }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = parseInt(process.env.PR_NUMBER, 10);
+            const preCommitExitCode = process.env.PRECOMMIT_EXIT_CODE;
+
+            if (!pull_number) {
+              core.warning('No pull request number found. Skipping label.');
+              return;
+            }
+
+            core.info(`Processing pre-commit result label for PR #${pull_number}`);
+            core.info(`Pre-commit exit code: ${preCommitExitCode}`);
+
+            const newLabel = preCommitExitCode === '0' ? 'pre-commit: passed' : 'pre-commit: failed';
+            const labelColor = preCommitExitCode === '0' ? '0e8a16' : 'e74c3c';
+            const description = preCommitExitCode === '0' ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
+
+            const { data: current } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100
+            });
+            const currentNames = new Set(current.map(l => l.name));
+
+            const preCommitRegex = /^pre-commit:/i;
+            for (const name of currentNames) {
+              if (preCommitRegex.test(name) && name !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    name
+                  });
+                  core.info(`Removed label ${name}`);
+                } catch (err) {
+                  core.warning(`Failed to remove label ${name}: ${err.message}`);
+                }
+              }
+            }
+
+            async function ensureLabelExists(labelName) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+              } catch (e) {
+                if (e.status === 404) {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Created label ${labelName}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            await ensureLabelExists(newLabel);
+
+            if (!currentNames.has(newLabel)) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: pull_number,
+                  labels: [newLabel]
+                });
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              } catch (error) {
+                if (error.status === 403) {
+                  core.warning(`Permission denied: Cannot add label to PR.`);
+                } else {
+                  throw error;
+                }
+              }
+            } else {
+              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
+            }
+
+            core.info(`Pre-commit exit code: ${preCommitExitCode}`)
