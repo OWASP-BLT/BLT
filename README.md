@@ -320,6 +320,16 @@ The leaderboard updates monthly, with rankings reset at the start of each month 
 
 ---
 
+## 🧪 Test Issue
+
+This section is used to test whether GitHub issues can be created from the README.
+
+Click the link below to open a pre-filled test issue:
+
+[Create a Test Issue](https://github.com/OWASP-BLT/BLT/issues/new?template=test_issue.md)
+
+---
+
 ## 📄 License
 
 This project is licensed under the **AGPL-3.0 License** - see the [LICENSE.md](LICENSE.md) file for details.
