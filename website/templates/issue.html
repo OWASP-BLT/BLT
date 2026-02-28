@@ -91,6 +91,11 @@
                         <div class="flex flex-col gap-2">
                             <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight w-full break-words issue-description"
                                 title="{{ object.description }}">{{ object.description }}</h2>
+
+                                    <button id="pledgeBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-md transition duration-200">
+                                          💰 Pledge
+                                    </button>
+
                             {% if object.markdown_description %}
                                 <p class="text-base sm:text-lg text-gray-700 dark:text-gray-300 font-medium break-words"
                                    id="bug_report"
@@ -504,6 +509,39 @@
             });
         });
     }
+
+
+    <!-- Pledge Modal -->
+<div id="pledgeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg w-96">
+      <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">
+          Pledge to this Issue
+      </h3>
+
+      <form method="post">
+          {% csrf_token %}
+          <input 
+              type="number" 
+              name="pledge_amount"
+              placeholder="Enter BCH amount"
+              class="w-full px-3 py-2 border rounded-md mb-4 dark:bg-gray-700 dark:text-white"
+              required
+          />
+
+          <div class="flex justify-end gap-2">
+              <button type="button" id="closeModal"
+                  class="px-4 py-2 bg-gray-400 rounded-md text-white">
+                  Cancel
+              </button>
+
+              <button type="submit"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
+                  Confirm Pledge
+              </button>
+          </div>
+      </form>
+  </div>
+</div>
 </script> -->
     {# djlint:on #}
     <script>
@@ -537,4 +575,6 @@
 
     
     </script>
+
+
 {% endblock content %}
