@@ -227,7 +227,6 @@ def profile_edit(request):
             return redirect("profile", slug=request.user.username)
 
         else:
-            print("FORM ERRORS:", form.errors)
             messages.error(request, "Please correct the highlighted errors.")
 
     else:
