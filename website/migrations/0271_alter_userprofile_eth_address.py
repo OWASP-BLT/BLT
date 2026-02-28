@@ -6,7 +6,6 @@ import website.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0270_githubcomment"),
     ]

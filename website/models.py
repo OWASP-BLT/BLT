@@ -49,9 +49,10 @@ def validate_btc_address(value):
         raise ValidationError('BTC address must be in a valid format (SegWit addresses start with "bc1")')
     # Additional validation for the rest of the address could be added here
 
+
 def validate_eth_address(value):
     """Validates that an Ethereum address starts with 0x and is 42 characters long."""
-    if not value.startswith("0x") or len(value)!=42:
+    if not value.startswith("0x") or len(value) != 42:
         raise ValidationError('Ethereum address must starts with "0x" and be 42 characters long.')
 
 
