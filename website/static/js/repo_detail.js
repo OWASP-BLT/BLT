@@ -551,6 +551,23 @@ document.addEventListener("DOMContentLoaded", function () {
             "X-CSRFToken": csrfToken,
           },
         });
+        if (!response.ok) {
+          // If the user is not authenticated or CSRF failed, reload so Django can redirect appropriately
+          if (response.status === 401 || response.status === 403) {
+            window.location.reload();
+            return;
+          }
+          throw new Error("Request failed with status " + response.status);
+        }
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          // If we were redirected to a login page or received HTML, reload to let the server handle it
+          if (response.redirected) {
+            window.location.href = response.url;
+            return;
+          }
+          throw new Error("Unexpected response content type: " + contentType);
+        }
         const data = await response.json();
         if (data.status === "success") {
           this.innerHTML =
