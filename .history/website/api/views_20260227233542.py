@@ -1,0 +1,2038 @@
+import json
+import logging
+import smtplib
+import sys
+import uuid
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from functools import wraps
+from urllib.parse import urlparse
+
+import django
+import psutil
+import requests
+from bs4 import BeautifulSoup
+from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.core.management import call_command
+from django.db import connection, transaction
+from django.db.models import Count, Q, Sum, Value
+from django.db.models.functions import Coalesce
+from django.template.loader import render_to_string
+from django.utils import timezone
+from rest_framework import filters, status, viewsets
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
+from website.models import (
+    ActivityLog,
+    Contributor,
+    Domain,
+    Hunt,
+    HuntPrize,
+    InviteFriend,
+    Issue,
+    IssueScreenshot,
+    Job,
+    Organization,
+    Points,
+    Project,
+    Repo,
+    SearchHistory,
+    SecurityIncident,
+    Tag,
+    TimeLog,
+    Token,
+    User,
+    UserProfile,
+)
+from website.serializers import (
+    ActivityLogSerializer,
+    BugHuntPrizeSerializer,
+    BugHuntSerializer,
+    ContributorSerializer,
+    DomainSerializer,
+    IssueSerializer,
+    JobSerializer,
+    OrganizationSerializer,
+    ProjectSerializer,
+    RepoSerializer,
+    SearchHistorySerializer,
+    SecurityIncidentSerializer,
+    TagSerializer,
+    TimeLogSerializer,
+    UserProfileSerializer,
+)
+from website.utils import image_validator, rebuild_safe_url
+from website.views.user import LeaderboardBase
+
+logger = logging.getLogger(__name__)
+# API's
+
+
+class UserIssueViewSet(viewsets.ModelViewSet):
+    """
+    User Issue Model View Set
+    """
+
+    serializer_class = IssueSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("user__username", "user__id")
+    http_method_names = ["get", "head"]
+
+    def get_queryset(self):
+        anonymous_user = self.request.user.is_anonymous
+        user_id = self.request.user.id
+        if anonymous_user:
+            return Issue.objects.exclude(Q(is_hidden=True))
+        else:
+            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    User Profile View Set
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
+    queryset = UserProfile.objects.all()
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("id", "user__id", "user__username")
+    http_method_names = ["get", "post", "head", "put"]
+
+    def retrieve(self, request, pk, *args, **kwargs):
+        user_profile = UserProfile.objects.filter(user__id=pk).first()
+
+        if user_profile is None:
+            return Response({"detail": "Not found."}, status=404)
+
+        serializer = self.get_serializer(user_profile)
+        return Response(serializer.data)
+
+    def update(self, request, pk, *args, **kwargs):
+        user_profile = request.user.userprofile
+
+        if user_profile is None:
+            return Response({"detail": "Not found."}, status=404)
+
+        instance = user_profile
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+
+class DomainViewSet(viewsets.ModelViewSet):
+    """
+    Domain View Set
+    """
+
+    serializer_class = DomainSerializer
+    queryset = Domain.objects.all()
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("url", "name")
+    http_method_names = ["get", "post", "head"]
+
+
+class IssueViewSet(viewsets.ModelViewSet):
+    """
+    Issue View Set
+    """
+
+    filter_backends = (filters.SearchFilter,)
+    http_method_names = ("get", "post", "head")
+    search_fields = ("url", "description", "user__id")
+    serializer_class = IssueSerializer
+
+    def get_queryset(self):
+        queryset = (
+            Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            if self.request.user.is_authenticated
+            else Issue.objects.exclude(Q(is_hidden=True))
+        )
+
+        status = self.request.GET.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+
+        domain_url = self.request.GET.get("domain")
+        if domain_url:
+            queryset = queryset.filter(domain__url=domain_url)
+
+        cve_id = self.request.GET.get("cve_id")
+        if cve_id:
+            # Normalize CVE ID to match stored format (uppercase, trimmed)
+            # Use case-insensitive matching to handle both normalized and unnormalized data
+            from website.cache.cve_cache import normalize_cve_id
+
+            normalized_cve_id = normalize_cve_id(cve_id)
+            if normalized_cve_id:
+                # Use case-insensitive matching to handle existing unnormalized data
+                queryset = queryset.filter(cve_id__iexact=normalized_cve_id)
+
+        # Parse and validate CVE score filters (Decimal to avoid binary rounding)
+        cve_score_min = self.request.GET.get("cve_score_min")
+        cve_score_max = self.request.GET.get("cve_score_max")
+        parsed_min = None
+        parsed_max = None
+
+        # Parse cve_score_min
+        if cve_score_min:
+            try:
+                parsed_min = Decimal(cve_score_min)
+                if parsed_min < Decimal("0") or parsed_min > Decimal("10"):
+                    logger.warning("Invalid cve_score_min value: %s (must be 0-10)", cve_score_min)
+                    parsed_min = None
+            except (InvalidOperation, TypeError):
+                logger.warning("Invalid cve_score_min value: %s (not a number)", cve_score_min)
+
+        # Parse cve_score_max
+        if cve_score_max:
+            try:
+                parsed_max = Decimal(cve_score_max)
+                if parsed_max < Decimal("0") or parsed_max > Decimal("10"):
+                    logger.warning("Invalid cve_score_max value: %s (must be 0-10)", cve_score_max)
+                    parsed_max = None
+            except (InvalidOperation, TypeError):
+                logger.warning("Invalid cve_score_max value: %s (not a number)", cve_score_max)
+
+        # Validate range BEFORE applying filters
+        if parsed_min is not None and parsed_max is not None:
+            if parsed_min > parsed_max:
+                logger.warning(
+                    "Invalid score range: min (%s) > max (%s), ignoring both filters",
+                    parsed_min,
+                    parsed_max,
+                )
+                parsed_min = None
+                parsed_max = None
+
+        # Apply filters only if valid (Decimal values for exact comparison)
+        if parsed_min is not None:
+            queryset = queryset.filter(cve_score__gte=parsed_min)
+        if parsed_max is not None:
+            queryset = queryset.filter(cve_score__lte=parsed_max)
+
+        return queryset
+
+    def get_issue_info(self, request, issue):
+        if issue is None:
+            return {}
+
+        # Check if there is an image in the `screenshot` field of the Issue table
+        if issue.screenshot:
+            # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
+            screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
+                request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()
+            ]
+        else:
+            # If no image exists in the Issue table, return only the images from IssueScreenshot
+            screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
+
+        is_upvoted = False
+        is_flagged = False
+        if request.user.is_authenticated:
+            is_upvoted = request.user.userprofile.issue_upvoted.filter(id=issue.id).exists()
+            is_flagged = request.user.userprofile.issue_flaged.filter(id=issue.id).exists()
+
+        tag_serializer = TagSerializer(issue.tags.all(), many=True)
+        tags = tag_serializer.data
+
+        return {
+            **IssueSerializer(issue).data,
+            "closed_by": issue.closed_by.username if issue.closed_by else None,
+            "flagged": is_flagged,
+            "flags": issue.flaged.count(),
+            "screenshots": screenshots,
+            "upvotes": issue.upvoted.count(),
+            "upvotted": is_upvoted,
+            "tags": tags,
+        }
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        issues = []
+        page = self.paginate_queryset(queryset)
+        if page is None:
+            return Response(issues)
+        for issue in page:
+            issues.append(self.get_issue_info(request, issue))
+        return self.get_paginated_response(issues)
+
+    def retrieve(self, request, pk, *args, **kwargs):
+
+         issue = Issue.objects.filter(id=pk).first()
+
+         if not issue:
+            return Response(
+              {"error": "Issue not found"},
+              status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # ⭐ NEW SECURITY CHECK
+        if issue.is_hidden:
+
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "Not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if issue.user != request.user:
+            return Response(
+                {"error": "Not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    return Response(self.get_issue_info(request, issue))
+
+    def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+
+        # Since the tags field is json encoded we need to decode it
+        tags = None
+        try:
+            if "tags" in request.data:
+                tags_json = request.data.get("tags")
+                if isinstance(tags_json, list):
+                    tags_json = tags_json[0]
+                tags = json.loads(tags_json)
+
+                if isinstance(tags, list) and any(isinstance(i, list) for i in tags):
+                    tags = [item for sublist in tags for item in sublist]
+
+                del request.data["tags"]
+        except (ValueError, MultiValueDictKeyError) as e:
+            return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            request.data._mutable = False
+
+        screenshot_count = len(self.request.FILES.getlist("screenshots"))
+        if screenshot_count == 0:
+            return Response({"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST)
+        elif screenshot_count > 5:
+            return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Wrap super().create() to catch model-level ValidationError from Issue.save()
+        try:
+            data = super().create(request, *args, **kwargs).data
+        except ValidationError as e:
+            # Convert model-level ValidationError to HTTP 400 Bad Request
+            # Extract user-friendly message without exposing stack traces
+            if hasattr(e, "message_dict"):
+                # Multiple field errors
+                error_message = "; ".join([f"{k}: {', '.join(v)}" for k, v in e.message_dict.items()])
+            elif hasattr(e, "messages"):
+                # List of error messages
+                error_message = "; ".join(e.messages)
+            else:
+                # Fallback to generic message to avoid exposing internal details
+                error_message = (
+                    "The CVE ID format is invalid. Expected format: CVE-YYYY-NNNN (where NNNN is 4-7 digits)"
+                )
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        issue = Issue.objects.filter(id=data["id"]).first()
+
+        # STEP 1: Fetch CVE data OUTSIDE transaction (before any DB locks)
+        cve_updates = {}
+        if issue and issue.cve_id:
+            from website.views.issue import normalize_and_populate_cve_score
+
+            try:
+                # Create a temporary issue instance to fetch CVE data without DB operations
+                temp_issue = Issue(cve_id=issue.cve_id, cve_score=issue.cve_score)
+                # This will normalize and fetch the score via network/cache
+                normalize_and_populate_cve_score(temp_issue)
+
+                # Store the updates to apply later
+                cve_updates = {"cve_id": temp_issue.cve_id, "cve_score": temp_issue.cve_score}
+            except ValidationError as e:
+                logger.warning(f"CVE validation failed: {e}")
+                # Don't clear valid CVE ID - just skip score fetch
+                cve_updates = {}
+            except Exception as e:
+                logger.error(f"Error fetching CVE score: {e}")
+                # Continue without CVE score - don't fail the entire creation
+
+        # STEP 2: Apply CVE updates inside transaction (DB operations only, no network I/O)
+        if cve_updates:
+            with transaction.atomic():
+                try:
+                    issue_locked = Issue.objects.select_for_update().get(pk=issue.pk)
+
+                    # Apply CVE updates
+                    update_fields = []
+                    if "cve_id" in cve_updates and issue_locked.cve_id != cve_updates["cve_id"]:
+                        issue_locked.cve_id = cve_updates["cve_id"]
+                        update_fields.append("cve_id")
+                    if "cve_score" in cve_updates and issue_locked.cve_score != cve_updates["cve_score"]:
+                        issue_locked.cve_score = cve_updates["cve_score"]
+                        update_fields.append("cve_score")
+
+                    if update_fields:
+                        issue_locked.save(update_fields=update_fields)
+                        # Refresh the issue object to get updated values
+                        issue = issue_locked
+                except Issue.DoesNotExist:
+                    logger.error(f"Issue {issue.pk} not found after creation")
+                    # Continue anyway - issue was created successfully
+                except Exception as e:
+                    logger.error(f"Error updating CVE data in transaction: {e}")
+                    # Continue - issue exists, just without CVE score
+
+        if tags and issue:
+            issue.tags.add(*tags)
+
+        for screenshot in self.request.FILES.getlist("screenshots"):
+            if image_validator(screenshot):
+                filename = screenshot.name
+                screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
+                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+
+                # Create the IssueScreenshot object and associate it with the issue
+                IssueScreenshot.objects.create(image=file_path, issue=issue)
+            else:
+                return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(self.get_issue_info(request, issue))
+
+
+class LikeIssueApiView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, format=None, *args, **kwargs):
+        return Response(
+            {
+                "likes": UserProfile.objects.filter(issue_upvoted__id=id).count(),
+            }
+        )
+
+    def post(self, request, id, format=None, *args, **kwargs):
+        issue = Issue.objects.get(id=id)
+        userprof = UserProfile.objects.get(user=request.user)
+        if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+            userprof.issue_upvoted.remove(issue)
+            userprof.save()
+            return Response({"issue": "unliked"})
+        else:
+            userprof.issue_upvoted.add(issue)
+            userprof.save()
+
+            liked_user = issue.user
+            liker_user = request.user
+            issue_pk = issue.pk
+
+            if liked_user:
+                msg_plain = render_to_string(
+                    "email/issue_liked.html",
+                    {
+                        "liker_user": liker_user.username,
+                        "liked_user": liked_user.username,
+                        "issue_pk": issue_pk,
+                    },
+                )
+                msg_html = render_to_string(
+                    "email/issue_liked.html",
+                    {
+                        "liker_user": liker_user.username,
+                        "liked_user": liked_user.username,
+                        "issue_pk": issue_pk,
+                    },
+                )
+
+                send_mail(
+                    "Your issue got an upvote!!",
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [liked_user.email],
+                    html_message=msg_html,
+                )
+
+            return Response({"issue": "liked"})
+
+
+class FlagIssueApiView(APIView):
+    """
+    api for Issue like,flag and bookmark
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, format=None, *args, **kwargs):
+        return Response(
+            {
+                "flags": UserProfile.objects.filter(issue_flaged__id=id).count(),
+            }
+        )
+
+    def post(self, request, id, format=None, *args, **kwargs):
+        issue = Issue.objects.get(id=id)
+        userprof = UserProfile.objects.get(user=request.user)
+        if userprof in UserProfile.objects.filter(issue_flaged=issue):
+            userprof.issue_flaged.remove(issue)
+            userprof.save()
+            return Response({"issue": "unflagged"})
+        else:
+            userprof.issue_flaged.add(issue)
+            userprof.save()
+            return Response({"issue": "flagged"})
+
+
+class UserScoreApiView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id, format=None, *args, **kwargs):
+        total_score = Points.objects.filter(user__id=id).annotate(total_score=Sum("score"))
+
+        return Response({"total_score": total_score})
+
+
+class LeaderboardApiViewSet(APIView):
+    def get_queryset(self):
+        return User.objects.all()
+
+    def filter(self, request, *args, **kwargs):
+        paginator = PageNumberPagination()
+        global_leaderboard = LeaderboardBase()
+
+        month = self.request.query_params.get("month")
+        year = self.request.query_params.get("year")
+
+        if not year:
+            return Response("Year not passed", status=400)
+
+        elif isinstance(year, str) and not year.isdigit():
+            return Response("Invalid year passed", status=400)
+
+        if month:
+            if not month.isdigit():
+                return Response("Invalid month passed", status=400)
+
+            try:
+                date = datetime(int(year), int(month), 1)
+            except (ValueError, OverflowError):
+                return Response("Invalid month or year passed", status=400)
+
+        queryset = global_leaderboard.get_leaderboard(month, year, api=True)
+        users = []
+        rank_user = 1
+        for each in queryset:
+            temp = {}
+            temp["rank"] = rank_user
+            temp["id"] = each["id"]
+            temp["User"] = each["username"]
+            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
+            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
+            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
+            temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
+            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
+            rank_user = rank_user + 1
+            users.append(temp)
+
+        page = paginator.paginate_queryset(users, request)
+        return paginator.get_paginated_response(page)
+
+    def group_by_month(self, request, *args, **kwargs):
+        global_leaderboard = LeaderboardBase()
+
+        year = self.request.query_params.get("year")
+
+        if not year:
+            year = datetime.now().year
+
+        if isinstance(year, str) and not year.isdigit():
+            return Response(f"Invalid query passed | Year:{year}", status=400)
+
+        year = int(year)
+
+        leaderboard = global_leaderboard.monthly_year_leaderboard(year, api=True)
+        month_winners = []
+
+        months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
+
+        for month_indx, usr in enumerate(leaderboard):
+            month_winner = {"user": usr, "month": months[month_indx]}
+            month_winners.append(month_winner)
+
+        return Response(month_winners)
+
+    def global_leaderboard(self, request, *args, **kwargs):
+        paginator = PageNumberPagination()
+        global_leaderboard = LeaderboardBase()
+
+        queryset = global_leaderboard.get_leaderboard(api=True)
+        page = paginator.paginate_queryset(queryset, request)
+
+        return paginator.get_paginated_response(page)
+
+    def get(self, request, format=None, *args, **kwargs):
+        filter = request.query_params.get("filter")
+        group_by_month = request.query_params.get("group_by_month")
+        leaderboard_type = request.query_params.get("leaderboard_type")
+
+        if filter:
+            return self.filter(request, *args, **kwargs)
+
+        elif group_by_month:
+            return self.group_by_month(request, *args, **kwargs)
+        elif leaderboard_type == "organizations":
+            return self.organization_leaderboard(request, *args, **kwargs)
+        else:
+            return self.global_leaderboard(request, *args, **kwargs)
+
+    def organization_leaderboard(self, request, *args, **kwargs):
+        paginator = PageNumberPagination()
+        organizations = (
+            Organization.objects.values().annotate(issue_count=Count("domain__issue")).order_by("-issue_count")
+        )
+        page = paginator.paginate_queryset(organizations, request)
+
+        return paginator.get_paginated_response(page)
+
+
+class StatsApiViewset(APIView):
+    def get(self, request, *args, **kwargs):
+        bug_count = Issue.objects.all().count()
+        user_count = User.objects.all().count()
+        hunt_count = Hunt.objects.all().count()
+        domain_count = Domain.objects.all().count()
+
+        return Response({"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count})
+
+
+class UrlCheckApiViewset(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        domain_url = request.data.get("domain_url", None)
+
+        if domain_url is None or domain_url.strip() == "":
+            return Response([])
+
+        domain = domain_url.replace("https://", "").replace("http://", "").replace("www.", "")
+
+        issues = (
+            Issue.objects.filter(Q(Q(domain__name=domain) | Q(domain__url__icontains=domain)) & Q(is_hidden=False))
+            .values(
+                "id",
+                "description",
+                "created__day",
+                "created__month",
+                "created__year",
+                "domain__url",
+                "user__userprofile__user_avatar",
+            )
+            .all()
+        )
+
+        return Response(issues[:10])
+
+
+class BugHuntApiViewset(APIView):
+    permission_classes = [AllowAny]
+
+    def get_active_hunts(self, request, fields, *args, **kwargs):
+        hunts = (
+            Hunt.objects.values(*fields)
+            .filter(is_published=True, starts_on__lte=datetime.now(), end_on__gte=datetime.now())
+            .order_by("-prize")
+        )
+        return Response(hunts)
+
+    def get_previous_hunts(self, request, fields, *args, **kwargs):
+        hunts = Hunt.objects.values(*fields).filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
+        return Response(hunts)
+
+    def get_upcoming_hunts(self, request, fields, *args, **kwargs):
+        hunts = (
+            Hunt.objects.values(*fields).filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
+        )
+        return Response(hunts)
+
+    def get_search_by_name(self, request, search_query, fields, *args, **kwargs):
+        hunts = Hunt.objects.values(*fields).filter(is_published=True, name__icontains=search_query).order_by("end_on")
+        return Response(hunts)
+
+    def get(self, request, *args, **kwargs):
+        activeHunt = request.query_params.get("activeHunt")
+        previousHunt = request.query_params.get("previousHunt")
+        upcomingHunt = request.query_params.get("upcomingHunt")
+        search_query = request.query_params.get("search")
+        fields = (
+            "id",
+            "name",
+            "url",
+            "prize",
+            "logo",
+            "banner",
+            "description",
+            "starts_on",
+            "end_on",
+        )
+
+        if search_query:
+            return self.get_search_by_name(request, search_query, fields, *args, **kwargs)
+        elif activeHunt:
+            return self.get_active_hunts(request, fields, *args, **kwargs)
+        elif previousHunt:
+            return self.get_previous_hunts(request, fields, *args, **kwargs)
+        elif upcomingHunt:
+            return self.get_upcoming_hunts(request, fields, *args, **kwargs)
+        hunts = Hunt.objects.values(*fields).filter(is_published=True).order_by("-end_on")
+        return Response(hunts)
+
+
+class BugHuntApiViewsetV2(APIView):
+    permission_classes = [AllowAny]
+
+    def serialize_hunts(self, hunts):
+        hunts = BugHuntSerializer(hunts, many=True)
+
+        serialize_hunts_list = []
+
+        for hunt in hunts.data:
+            hunt_prizes = HuntPrize.objects.filter(hunt__id=hunt["id"])
+            hunt_prizes = BugHuntPrizeSerializer(hunt_prizes, many=True)
+
+            serialize_hunts_list.append({**hunt, "prizes": hunt_prizes.data})
+
+        return serialize_hunts_list
+
+    def get_active_hunts(self, request, *args, **kwargs):
+        hunts = Hunt.objects.filter(
+            is_published=True, starts_on__lte=datetime.now(), end_on__gte=datetime.now()
+        ).order_by("-prize")
+        return Response(self.serialize_hunts(hunts))
+
+    def get_previous_hunts(self, request, *args, **kwargs):
+        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
+        return Response(self.serialize_hunts(hunts))
+
+    def get_upcoming_hunts(self, request, *args, **kwargs):
+        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
+        return Response(self.serialize_hunts(hunts))
+
+    def get(self, request, *args, **kwargs):
+        paginator = PageNumberPagination()
+
+        activeHunt = request.query_params.get("activeHunt")
+        previousHunt = request.query_params.get("previousHunt")
+        upcomingHunt = request.query_params.get("upcomingHunt")
+        if activeHunt:
+            page = paginator.paginate_queryset(self.get_active_hunts(request, *args, **kwargs), request)
+
+            return paginator.get_paginated_response(page)
+
+        elif previousHunt:
+            page = paginator.paginate_queryset(self.get_previous_hunts(request, *args, **kwargs), request)
+
+            return paginator.get_paginated_response(page)
+
+        elif upcomingHunt:
+            page = paginator.paginate_queryset(self.get_upcoming_hunts(request, *args, **kwargs), request)
+
+            return paginator.get_paginated_response(page)
+
+        hunts = self.serialize_hunts(Hunt.objects.filter(is_published=True).order_by("-end_on"))
+        page = paginator.paginate_queryset(hunts, request)
+
+        return paginator.get_paginated_response(page)
+
+
+class InviteFriendApiViewset(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email")
+
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
+
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "User already exists"}, status=400)
+
+        try:
+            current_site = get_current_site(request)
+            referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+            referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
+
+            # Prepare email content
+            subject = f"Join me on {current_site.name}!"
+            message = render_to_string(
+                "email/invite_friend.html",
+                {
+                    "sender": request.user.username,
+                    "referral_link": referral_link,
+                    "site_name": current_site.name,
+                    "site_domain": current_site.domain,
+                },
+            )
+
+            # Send the invitation email
+            email_result = send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+
+            if email_result == 1:
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Invitation sent successfully",
+                        "referral_link": referral_link,
+                        "email_status": "delivered",
+                    }
+                )
+            else:
+                return Response({"error": "Email failed to send", "email_status": "failed"}, status=500)
+
+        except smtplib.SMTPException as e:
+            return Response(
+                {
+                    "error": "Failed to send invitation email for an unexpected reason",
+                    "email_status": "error",
+                },
+                status=500,
+            )
+
+
+class OrganizationViewSet(viewsets.ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("id", "name")
+    http_method_names = ("get", "post", "put")
+
+    @action(detail=True, methods=["get"])
+    def repositories(self, request, pk=None):
+        """
+        Get all repositories for an organization.
+        """
+        try:
+            organization = self.get_object()
+            repos = Repo.objects.filter(organization=organization)
+            serializer = RepoSerializer(repos, many=True, context={"request": request})
+            return Response(serializer.data)
+        except Organization.DoesNotExist:
+            return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ContributorViewSet(viewsets.ModelViewSet):
+    queryset = Contributor.objects.all()
+    serializer_class = ContributorSerializer
+    http_method_names = ("get", "post", "put")
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    http_method_names = ("get", "head")
+
+    def _serialize_projects(self, projects):
+        """Return consistent contributor-enriched project data."""
+        output = []
+        for project in projects:
+            contributors_qs = getattr(project, "contributors", None)
+
+            if contributors_qs:
+                contributors_data = ContributorSerializer(contributors_qs.all(), many=True).data
+                contributors_data.sort(key=lambda x: x.get("contributions", 0), reverse=True)
+            else:
+                contributors_data = []
+
+            project_info = ProjectSerializer(project, context={"request": self.request}).data
+            project_info["contributors"] = contributors_data
+            output.append(project_info)
+
+        return output
+
+    def list(self, request, *args, **kwargs):
+        """List projects with optional filtering by freshness, stars, and forks."""
+        projects = self.get_queryset().annotate(
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        )
+        projects = self.filter_queryset(projects)
+
+        # Freshness filtering
+        freshness = request.query_params.get("freshness")
+        if freshness is not None:
+            try:
+                freshness_val = Decimal(freshness)
+                if not Decimal("0") <= freshness_val <= Decimal("100"):
+                    return Response(
+                        {"error": "Invalid 'freshness' parameter: must be between 0 and 100"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(freshness__gte=freshness_val)
+            except (InvalidOperation, TypeError):
+                return Response(
+                    {"error": "Invalid 'freshness' parameter: must be a valid number"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Stars filtering
+        stars = request.query_params.get("stars")
+        if stars is not None:
+            try:
+                stars_int = int(stars)
+                if stars_int < 0:
+                    return Response(
+                        {"error": "Invalid 'stars' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_stars__gte=stars_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'stars' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Forks filtering
+        forks = request.query_params.get("forks")
+        if forks is not None:
+            try:
+                forks_int = int(forks)
+                if forks_int < 0:
+                    return Response(
+                        {"error": "Invalid 'forks' parameter: must be non-negative"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                projects = projects.filter(total_forks__gte=forks_int)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid 'forks' parameter: must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        tags = request.query_params.get("tags")
+        if tags:
+            # Support comma-separated tags: ?tags=security,web
+            tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+            if tag_list:
+                projects = projects.filter(tags__name__in=tag_list).distinct()
+
+        # Apply pagination
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            # Use helper method instead of manual loop
+            project_data = self._serialize_projects(page)
+            return self.get_paginated_response(project_data)
+
+        # Fallback if pagination is disabled (shouldn't happen with current config)
+        # Use helper method instead of manual loop
+        project_data = self._serialize_projects(projects)
+        return Response({"count": len(project_data), "projects": project_data})
+
+    @action(detail=False, methods=["get"])
+    def search(self, request, *args, **kwargs):
+        """Search projects by name, description, or tags."""
+        query = request.query_params.get("q", "")
+
+        projects_qs = Project.objects.annotate(
+            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
+            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        )
+        if hasattr(Project, "contributors"):
+            projects_qs = projects_qs.prefetch_related("contributors")
+
+        projects = projects_qs.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
+        ).distinct()
+
+        # Apply pagination
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            # Use helper method instead of manual loop
+            project_data = self._serialize_projects(page)
+            return self.get_paginated_response(project_data)
+
+        # Fallback if pagination is disabled
+        # Use helper method instead of manual loop
+        project_data = self._serialize_projects(projects)
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+
+class AuthApiViewset(viewsets.ModelViewSet):
+    http_method_names = ("delete",)
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            token = request.headers["Authorization"].split(" ")
+            user = Token.objects.get(key=token[1]).user
+            user_data = User.objects.get(username=user)
+            user_data.delete()
+            return Response({"success": True, "message": "User deleted successfully !!"})
+        except Token.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
+
+
+class TagApiViewset(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
+
+class TimeLogViewSet(viewsets.ModelViewSet):
+    queryset = TimeLog.objects.all()
+    serializer_class = TimeLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        organization_url = self.request.data.get("organization_url")
+
+        try:
+            if organization_url:
+                parsed_url = urlparse(organization_url)
+                normalized_url = parsed_url.netloc + parsed_url.path
+
+                # Normalize the URL in the Company model (remove the protocol if present)
+                try:
+                    organization = Organization.objects.get(
+                        Q(url__iexact=normalized_url)
+                        | Q(url__iexact=f"http://{normalized_url}")
+                        | Q(url__iexact=f"https://{normalized_url}")
+                    )
+                except Organization.DoesNotExist:
+                    raise ParseError(detail="Organization not found for the given URL.")
+
+            else:
+                organization = None
+
+            # Save the TimeLog with the user and organization (if found, or None)
+            serializer.save(user=self.request.user, organization=organization)
+
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
+            raise ParseError(detail="An unexpected error occurred while creating the time log.")
+
+    @action(detail=False, methods=["post"])
+    def start(self, request):
+        """Starts a new time log"""
+        data = request.data
+        data["start_time"] = timezone.now()  # Set start time to current tim
+
+        serializer = self.get_serializer(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while starting the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["post"])
+    def stop(self, request, pk=None):
+        """Stops the time log and calculates duration"""
+        try:
+            timelog = self.get_object()
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Time log not found.")
+
+        timelog.end_time = timezone.now()
+        if timelog.start_time:
+            timelog.duration = timelog.end_time - timelog.start_time
+
+        try:
+            timelog.save()
+            return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": "something went wrong!"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while stopping the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class SearchHistoryApiView(APIView):
+    """API view for retrieving and clearing user search history"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """Retrieve user's search history, limited to last 50 searches."""
+        search_history = SearchHistory.objects.filter(user=request.user).order_by("-timestamp")[:50]
+        serializer = SearchHistorySerializer(search_history, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        """Clear user's entire search history or a single item if id is provided."""
+        search_id = request.data.get("id") or request.query_params.get("id")
+        if search_id:
+            # Validate search_id is an integer
+            try:
+                search_id = int(search_id)
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "Invalid search history item ID"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Delete single item - filter by user to prevent unauthorized access
+            search_item = SearchHistory.objects.filter(user=request.user, id=search_id).first()
+            if search_item:
+                search_item.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(
+                    {"error": "Search history item not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            # Delete all items
+            SearchHistory.objects.filter(user=request.user).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ActivityLogViewSet(viewsets.ModelViewSet):
+    queryset = ActivityLog.objects.all()
+    serializer_class = ActivityLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(user=self.request.user, recorded_at=timezone.now())
+        except ValidationError:
+            raise ParseError(detail="Validation failed.")
+        except Exception:
+            raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+class OwaspComplianceChecker(APIView):
+    """
+    API endpoint to check OWASP project compliance criteria for a given URL
+    """
+
+    permission_classes = [AllowAny]
+
+    def check_github_compliance(self, url):
+        """Check GitHub-related compliance criteria"""
+        try:
+            parsed_url = urlparse(url)
+            is_github = parsed_url.netloc == "github.com"
+            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+
+            return {
+                "github_hosted": is_github,
+                "under_owasp_org": is_owasp_org,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+        except Exception:
+            return {
+                "github_hosted": False,
+                "under_owasp_org": False,
+                "details": {"url_checked": url, "error": "Unable to parse GitHub URL"},
+            }
+
+    def check_website_compliance(self, url):
+        """Check website-related compliance criteria"""
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+
+        try:
+            response = requests.get(safe_url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Check for OWASP mention
+            content = soup.get_text().lower()
+            has_owasp_mention = "owasp" in content
+
+            # Check for project page link (strict hostname check)
+            owasp_links = []
+            for a in soup.find_all("a"):
+                href = a.get("href")
+                if not href:
+                    continue
+                netloc = urlparse(href).netloc.lower()
+                if netloc.endswith("owasp.org"):
+                    owasp_links.append(a)
+
+            has_project_link = len(owasp_links) > 0
+
+            # Check for up-to-date info
+            has_dates = bool(soup.find_all(["time", "date"]))
+
+            return {
+                "has_owasp_mention": has_owasp_mention,
+                "has_project_link": has_project_link,
+                "has_dates": has_dates,
+                "details": {"url_checked": safe_url, "recommendations": []},
+            }
+        except Exception:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": safe_url, "error": "Compliance check failed."},
+            }
+
+    def check_vendor_neutrality(self, url):
+        """Check vendor neutrality compliance"""
+        # Sanitize incoming URL
+        safe_url = rebuild_safe_url(url)
+        if not safe_url:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "URL rejected for safety"},
+            }
+
+        try:
+            response = requests.get(safe_url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
+            content = soup.get_text().lower()
+            has_paywall_indicators = any(term in content for term in paywall_terms)
+
+            return {
+                "possible_paywall": has_paywall_indicators,
+                "details": {"url_checked": safe_url, "recommendations": []},
+            }
+        except Exception:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": safe_url, "error": "Unable to check vendor neutrality"},
+            }
+
+    def post(self, request, *args, **kwargs):
+        url = request.data.get("url")
+        if not url:
+            return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Rerun all compliance checks
+        github_check = self.check_github_compliance(url)
+        website_check = self.check_website_compliance(url)
+        vendor_check = self.check_vendor_neutrality(url)
+
+        # Compile recommendations
+        recommendations = []
+        if not github_check["under_owasp_org"]:
+            recommendations.append("Project should be hosted under the OWASP GitHub organization")
+        if not website_check["has_owasp_mention"]:
+            recommendations.append("Website should clearly state it is an OWASP project")
+        if not website_check["has_project_link"]:
+            recommendations.append("Website should link to the OWASP project page")
+        if vendor_check["possible_paywall"]:
+            recommendations.append("Check if the project has features behind a paywall")
+
+        report = {
+            "url": url,
+            "compliance_status": {"github": github_check, "website": website_check, "vendor_neutrality": vendor_check},
+            "recommendations": recommendations,
+            "overall_status": "needs_improvement" if recommendations else "compliant",
+        }
+
+        return Response(report, status=status.HTTP_200_OK)
+
+
+class JobViewSet(viewsets.ModelViewSet):
+    """
+    API ViewSet for Job CRUD operations
+    Requires authentication for create, update, delete
+    """
+
+    serializer_class = JobSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "description", "location", "organization__name"]
+    ordering_fields = ["created_at", "updated_at", "views_count"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        """
+        Filter jobs based on user permissions
+        - Authenticated users see all their organization's jobs
+        - Unauthenticated users only see public jobs
+        """
+        if self.request.user.is_authenticated:
+            # Get organizations where user is admin or manager
+            user_orgs = Organization.objects.filter(
+                Q(admin=self.request.user) | Q(managers=self.request.user)
+            ).values_list("id", flat=True)
+
+            # Show own org jobs (all) + other public jobs
+            return Job.objects.filter(Q(organization_id__in=user_orgs) | Q(is_public=True, status="active")).distinct()
+        else:
+            # Only public, active, non-expired jobs for anonymous users
+            now = timezone.now()
+            return Job.objects.filter(is_public=True, status="active").filter(
+                Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+            )
+
+    def perform_create(self, serializer):
+        """Set the organization and posted_by when creating a job"""
+        org_id = self.request.data.get("organization")
+        if not org_id:
+            raise ParseError("Organization ID is required")
+
+        organization = Organization.objects.filter(id=org_id).first()
+        if not organization:
+            raise NotFound("Organization not found")
+
+        # Check if user has permission to post for this organization
+        is_member = (
+            organization.admin == self.request.user or organization.managers.filter(id=self.request.user.id).exists()
+        )
+
+        if not is_member:
+            raise PermissionDenied("You do not have permission to create jobs for this organization")
+
+        serializer.save(organization=organization, posted_by=self.request.user)
+
+    def perform_update(self, serializer):
+        """Check permissions before updating"""
+        job = self.get_object()
+
+        # Check if user has permission to update this job
+        is_member = (
+            job.organization.admin == self.request.user
+            or job.organization.managers.filter(id=self.request.user.id).exists()
+        )
+
+        if not is_member:
+            raise PermissionDenied("You do not have permission to update this job")
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Check permissions before deleting"""
+        # Check if user has permission to delete this job
+        is_member = (
+            instance.organization.admin == self.request.user
+            or instance.organization.managers.filter(id=self.request.user.id).exists()
+        )
+
+        if not is_member:
+            raise PermissionDenied("You do not have permission to delete this job")
+
+        instance.delete()
+
+    @action(detail=True, methods=["post"])
+    def increment_view(self, request, pk=None):
+        """Increment view count for a job"""
+        job = self.get_object()
+        job.increment_views()
+        return Response({"views_count": job.views_count})
+
+
+class OrganizationJobStatsViewSet(APIView):
+    """
+    API endpoint for organization job statistics
+    Requires authentication
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, org_id):
+        """Get job statistics for an organization"""
+        organization = Organization.objects.filter(id=org_id).first()
+        if not organization:
+            raise NotFound("Organization not found")
+
+        # Check permissions
+        is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+        if not is_member:
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get statistics
+        total_jobs = Job.objects.filter(organization=organization).count()
+        active_jobs = Job.objects.filter(organization=organization, status="active").count()
+        draft_jobs = Job.objects.filter(organization=organization, status="draft").count()
+        paused_jobs = Job.objects.filter(organization=organization, status="paused").count()
+        closed_jobs = Job.objects.filter(organization=organization, status="closed").count()
+        public_jobs = Job.objects.filter(organization=organization, is_public=True).count()
+        total_views = Job.objects.filter(organization=organization).aggregate(total=Sum("views_count"))["total"] or 0
+
+        # Jobs by type
+        jobs_by_type = (
+            Job.objects.filter(organization=organization).values("job_type").annotate(count=Count("id")).order_by()
+        )
+
+        stats = {
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "draft_jobs": draft_jobs,
+            "paused_jobs": paused_jobs,
+            "closed_jobs": closed_jobs,
+            "public_jobs": public_jobs,
+            "private_jobs": total_jobs - public_jobs,
+            "total_views": total_views,
+            "jobs_by_type": list(jobs_by_type),
+        }
+
+        return Response(stats)
+
+
+def safe_json(response):
+    try:
+        return response.json()
+    except ValueError:
+        logger.error("Invalid JSON received from USPTO API", exc_info=True)
+        return None
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def trademark_search_api(request):
+    """
+    API endpoint to search trademarks
+    GET /api/trademarks/search/?query=keyword
+    """
+    query = request.query_params.get("query", "").strip()
+
+    if not query:
+        return Response({"error": "Query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if settings.USPTO_API is None:
+        return Response({"error": "USPTO API key not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    try:
+        # Check availability
+        available_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/{query}"
+        headers = {
+            "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+            "x-rapidapi-key": settings.USPTO_API,
+        }
+
+        available_response = requests.get(available_url, headers=headers, timeout=10)
+        available_data = safe_json(available_response)
+        if available_data is None:
+            return Response(
+                {"error": "Invalid JSON response from USPTO API"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if available_response.status_code == 429:
+            return Response(
+                {"error": "Rate limit exceeded. Please try again later."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        # If not available, fetch trademark details
+        if isinstance(available_data, list) and len(available_data) > 0:
+            if available_data[0].get("available") == "no":
+                search_url = f"https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/{query}/active"
+                search_response = requests.get(search_url, headers=headers, timeout=10)
+                search_data = safe_json(search_response)
+                if search_data is None:
+                    return Response(
+                        {"error": "Invalid JSON response from USPTO API"},
+                        status=status.HTTP_502_BAD_GATEWAY,
+                    )
+
+                return Response(
+                    {
+                        "available": False,
+                        "query": query,
+                        "count": search_data.get("count", 0),
+                        "trademarks": search_data.get("items", []),
+                    }
+                )
+            else:
+                return Response({"available": True, "query": query, "count": 0, "trademarks": []})
+
+        return Response({"error": "Invalid response from USPTO API"}, status=status.HTTP_502_BAD_GATEWAY)
+
+    except requests.exceptions.RequestException as e:
+        logger.error("Trademark API request failed")
+
+        return Response(
+            {"error": "Failed to fetch trademark data due to an external service error."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+
+# Security Incident API
+class SecurityIncidentViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    serializer_class = SecurityIncidentSerializer
+    permission_classes = [IsAdminUser]
+    queryset = SecurityIncident.objects.all()
+
+    def get_queryset(self):
+        queryset = self.queryset  # Use class-level queryset
+
+        request = self.request
+        severity = request.query_params.get("severity")
+        status = request.query_params.get("status")
+
+        allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
+        allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]
+
+        if severity in allowed_severities:
+            queryset = queryset.filter(severity=severity)
+
+        if status in allowed_statuses:
+            queryset = queryset.filter(status=status)
+
+        return queryset
+
+
+class CheckDuplicateBugApiView(APIView):
+    """
+    API endpoint to check for duplicate bug reports before submission.
+    Helps users avoid submitting duplicate bugs by finding similar existing reports.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check for duplicate bugs based on URL and description.
+
+        Request body:
+        {
+            "url": "https://example.com/page",
+            "description": "Bug description text",
+            "domain_id": 123  # Optional
+        }
+
+        Response:
+        {
+            "is_duplicate": true/false,
+            "confidence": "high/medium/low/none",
+            "similar_bugs": [
+                {
+                    "id": 123,
+                    "url": "...",
+                    "description": "...",
+                    "similarity": 0.85,
+                    "status": "open",
+                    "created": "...",
+                    "user": "..."
+                }
+            ]
+        }
+        """
+        # Input validation and sanitization
+        url = request.data.get("url", "").strip()
+        description = request.data.get("description", "").strip()
+        domain_id = request.data.get("domain_id")
+
+        # Validate input
+        if not url:
+            return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not description:
+            return Response({"error": "Description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate URL length (prevent DoS)
+        if len(url) > 2048:
+            return Response({"error": "URL is too long (max 2048 characters)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate description length (prevent DoS)
+        if len(description) > 10000:
+            return Response(
+                {"error": "Description is too long (max 10000 characters)"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get domain if provided
+        domain = None
+        if domain_id:
+            try:
+                domain_id = int(domain_id)
+                domain = Domain.objects.get(id=domain_id)
+            except (ValueError, TypeError, Domain.DoesNotExist):
+                logger.warning("Invalid domain_id provided: %s", domain_id)
+                pass
+
+        # Check for duplicates
+        try:
+            result = check_for_duplicates(url, description, domain)
+
+            # Format the response using shared helper
+            similar_bugs_data = []
+            for bug_info in result["similar_bugs"]:
+                try:
+                    similar_bugs_data.append(format_similar_bug(bug_info, truncate_description=200))
+                except (KeyError, AttributeError, ValueError, TypeError) as e:
+                    logger.warning("Error formatting similar bug: %s", e)
+                    continue
+
+            response_data = {
+                "is_duplicate": result["is_duplicate"],
+                "confidence": result["confidence"],
+                "similar_bugs": similar_bugs_data,
+                "message": self._get_message(result),
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error("Error checking for duplicates: %s", e, exc_info=True)
+            return Response(
+                {"error": "An error occurred while checking for duplicates"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def _get_message(self, result):
+        """Generate a user-friendly message based on the duplicate check result."""
+        if not result["is_duplicate"]:
+            if result["similar_bugs"]:
+                return "No exact duplicates found, but there are some similar reports you might want to review."
+            return "No similar bugs found. This appears to be a new issue."
+
+        confidence = result["confidence"]
+        if confidence == "high":
+            return "This bug appears to be very similar to existing reports. Please review them before submitting."
+        elif confidence == "medium":
+            return "This bug might be similar to existing reports. Please check if your issue is already reported."
+        else:
+            return "There are some potentially related bugs. You may want to review them."
+
+
+class FindSimilarBugsApiView(APIView):
+    """
+    API endpoint to find similar bugs for a given domain.
+    Useful for browsing related issues.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        """
+        Find similar bugs based on query parameters.
+
+        Query parameters:
+        - url: URL to search for
+        - description: Description text to match
+        - domain_id: Optional domain ID to narrow search
+        - threshold: Similarity threshold (0.0-1.0, default 0.5)
+        - limit: Maximum results to return (default 10)
+        """
+        url = request.query_params.get("url", "").strip()
+        description = request.query_params.get("description", "").strip()
+        domain_id = request.query_params.get("domain_id")
+
+        try:
+            threshold = float(request.query_params.get("threshold", 0.5))
+            threshold = max(0.0, min(1.0, threshold))  # Clamp between 0 and 1
+        except (ValueError, TypeError):
+            threshold = 0.5
+
+        try:
+            limit = int(request.query_params.get("limit", 10))
+            limit = max(1, min(50, limit))  # Clamp between 1 and 50
+        except (ValueError, TypeError):
+            limit = 10
+
+        # Validate input
+        if not url and not description:
+            return Response({"error": "Either URL or description is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get domain if provided
+        domain = None
+        if domain_id:
+            try:
+                domain = Domain.objects.get(id=domain_id)
+            except Domain.DoesNotExist:
+                pass
+
+        # Find similar bugs
+        try:
+            # Determine search URL: use provided URL, or domain URL if available, or None for no domain filter
+            search_url = None
+            if url:
+                search_url = url
+            elif domain:
+                search_url = domain.url
+            # If neither URL nor domain, search_url stays None (no domain filtering)
+
+            search_description = description or "search query"
+
+            similar_bugs = find_similar_bugs(
+                search_url, search_description, domain, similarity_threshold=threshold, limit=limit
+            )
+
+            # Format response
+            results = []
+            for bug_info in similar_bugs:
+                issue = bug_info["issue"]
+                results.append(
+                    {
+                        "id": issue.id,
+                        "url": issue.url,
+                        "description": issue.description[:200],
+                        "similarity": bug_info["similarity"],
+                        "status": issue.status,
+                        "created": issue.created,
+                        "user": issue.user.username if issue.user else "Anonymous",
+                        "domain": issue.domain.name if issue.domain else None,
+                        "verified": issue.verified,
+                    }
+                )
+
+            return Response({"count": len(results), "results": results}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error("Error finding similar bugs: %s", e, exc_info=True)
+            return Response(
+                {"error": "An error occurred while searching for similar bugs"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+def _is_local_host(host: str, db_name: str | None = None) -> bool:
+    """
+    Determine if a request host represents a local environment.
+    Optionally treats SQLite in-memory DB as local for redaction logic.
+    """
+    host_lower = (host or "").lower()
+    host_without_port = host_lower.split(":")[0]
+    return (
+        "localhost" in host_lower
+        or host_without_port == "127.0.0.1"
+        or host_without_port.startswith("127.")
+        or host_lower == "testserver"
+        or (db_name == ":memory:" if db_name is not None else False)
+    )
+
+
+def debug_required(func):
+    """
+    Decorator to ensure endpoint only works in DEBUG mode and local environment.
+    Adds additional protection beyond just DEBUG flag.
+    """
+
+    @wraps(func)
+    def wrapper(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            return Response(
+                {"success": False, "error": "This endpoint is only available in DEBUG mode."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        host = request.get_host()
+        if not _is_local_host(host):
+            logger.warning("Debug endpoint accessed from non-local environment: %s", host)
+            return Response(
+                {"success": False, "error": "This endpoint is only available in local development."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return func(self, request, *args, **kwargs)
+
+    return wrapper
+
+
+class DebugSystemStatsApiView(APIView):
+    """Get current system statistics for debug panel"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get database name
+            db_name = settings.DATABASES["default"]["NAME"]
+
+            # Redact database name in non-local environments (defense-in-depth)
+            if not _is_local_host(request.get_host(), db_name=db_name):
+                db_name = "[REDACTED]"
+
+            # Get database version with error handling
+            db_version = "Unknown"
+            try:
+                with connection.cursor() as cursor:
+                    if connection.vendor == "postgresql":
+                        cursor.execute("SELECT version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "sqlite":
+                        cursor.execute("SELECT sqlite_version();")
+                        db_version = cursor.fetchone()[0]
+                    elif connection.vendor == "mysql":
+                        cursor.execute("SELECT VERSION();")
+                        db_version = cursor.fetchone()[0]
+            except Exception as e:
+                logger.error("Failed to get database version: %s", e, exc_info=True)
+
+            # Get system stats with error handling
+            memory_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            disk_stats = {"total": "N/A", "used": "N/A", "percent": "N/A"}
+            cpu_stats = {"percent": "N/A"}
+
+            try:
+                memory = psutil.virtual_memory()
+                memory_stats = {
+                    "total": f"{memory.total / (1024**3):.2f} GB",
+                    "used": f"{memory.used / (1024**3):.2f} GB",
+                    "percent": f"{memory.percent}%",
+                }
+            except Exception as mem_error:
+                logger.warning("Could not fetch memory stats: %s", mem_error)
+
+            try:
+                disk = psutil.disk_usage("/")
+                disk_stats = {
+                    "total": f"{disk.total / (1024**3):.2f} GB",
+                    "used": f"{disk.used / (1024**3):.2f} GB",
+                    "percent": f"{disk.percent}%",
+                }
+            except Exception as disk_error:
+                logger.warning("Could not fetch disk stats: %s", disk_error)
+
+            try:
+                cpu = psutil.cpu_percent(interval=0)
+                cpu_stats = {"percent": f"{cpu}%"}
+            except Exception as cpu_error:
+                logger.warning("Could not fetch CPU stats: %s", cpu_error)
+
+            # Get active DB connections (PostgreSQL only)
+            active_connections = "N/A"
+            if connection.vendor == "postgresql":
+                try:
+                    with connection.cursor() as cursor:
+                        # Count active connections for the current database
+                        cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database();")
+                        active_connections = cursor.fetchone()[0]
+                except Exception as conn_error:
+                    logger.warning("Could not fetch active DB connections: %s", conn_error)
+                    active_connections = "Unavailable (error)"
+
+            # Attempt to use a short-lived cache to avoid repeated COUNT() queries during active development
+            try:
+                cached_counts = cache.get("debug_system_counts")
+            except Exception:
+                cached_counts = None
+
+            if cached_counts:
+                db_counts = cached_counts
+            else:
+                # Optimize: fetch all counts in a single DB round-trip using raw SQL subselects
+                try:
+                    user_table = User._meta.db_table
+                    issue_table = Issue._meta.db_table
+                    org_table = Organization._meta.db_table
+                    domain_table = Domain._meta.db_table
+                    repo_table = Repo._meta.db_table
+                    qn = connection.ops.quote_name
+
+                    with connection.cursor() as cursor:
+                        sql = (
+                            "SELECT "
+                            f"(SELECT COUNT(*) FROM {qn(user_table)}) AS user_count, "
+                            f"(SELECT COUNT(*) FROM {qn(issue_table)}) AS issue_count, "
+                            f"(SELECT COUNT(*) FROM {qn(org_table)}) AS org_count, "
+                            f"(SELECT COUNT(*) FROM {qn(domain_table)}) AS domain_count, "
+                            f"(SELECT COUNT(*) FROM {qn(repo_table)}) AS repo_count"
+                        )
+                        cursor.execute(sql)
+                        row = cursor.fetchone()
+                        db_counts = {
+                            "user_count": row[0],
+                            "issue_count": row[1],
+                            "org_count": row[2],
+                            "domain_count": row[3],
+                            "repo_count": row[4],
+                        }
+                except Exception as e:
+                    logger.warning("Could not fetch counts with optimized query: %s", e)
+                    # Fallback to original method
+                    db_counts = {
+                        "user_count": User.objects.count(),
+                        "issue_count": Issue.objects.count(),
+                        "org_count": Organization.objects.count(),
+                        "domain_count": Domain.objects.count(),
+                        "repo_count": Repo.objects.count(),
+                    }
+
+                # Cache for a short time (30 seconds) to reduce noise during rapid page reloads
+                try:
+                    cache.set("debug_system_counts", db_counts, timeout=30)
+                except Exception:
+                    # If cache not available, just continue with live counts
+                    pass
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+                        "django_version": django.get_version(),
+                        "database": {
+                            "engine": settings.DATABASES["default"]["ENGINE"].split(".")[-1],
+                            "name": db_name,
+                            "version": db_version,
+                            # NOTE: These counts are used only in the local debug panel and run in DEBUG/local environments only.
+                            # These counts are efficiently fetched in a single database round-trip using subselects.
+                            "user_count": db_counts["user_count"],
+                            "issue_count": db_counts["issue_count"],
+                            "org_count": db_counts["org_count"],
+                            "domain_count": db_counts["domain_count"],
+                            "repo_count": db_counts["repo_count"],
+                            # Total active connections to the PostgreSQL database (from all sources, not just this application)
+                            "connections": active_connections,
+                        },
+                        "memory": memory_stats,
+                        "disk": disk_stats,
+                        "cpu": cpu_stats,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error("Error fetching system stats: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch system statistics"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugCacheInfoApiView(APIView):
+    """Get cache backend information and statistics"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def get(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache_backend = settings.CACHES["default"]["BACKEND"].split(".")[-1]
+
+            # Security: Don't expose actual cache keys as they may contain sensitive data
+            keys_count = 0
+
+            # Only attempt key listing for Redis backend; for other backends just log a note.
+            if "redis" in cache_backend.lower():
+                try:
+                    if hasattr(cache, "_cache") and hasattr(cache._cache, "keys"):
+                        all_keys = list(cache._cache.keys("*"))
+                        keys_count = len(all_keys)
+                except Exception:
+                    logger.warning("Failed to list cache keys for debug cache info", exc_info=True)
+            else:
+                logger.info("Cache key listing not supported for backend: %s", cache_backend)
+
+            hit_ratio = "N/A"
+            try:
+                if hasattr(cache, "get_stats"):
+                    stats = cache.get_stats()
+                    hits = stats.get("hits", 0)
+                    misses = stats.get("misses", 0)
+                    total = hits + misses
+                    if total > 0:
+                        hit_ratio = f"{(hits/total)*100:.2f}%"
+            except Exception:
+                logger.warning("Failed to retrieve cache hit ratio stats", exc_info=True)
+
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "backend": cache_backend,
+                        "keys_count": keys_count,
+                        "hit_ratio": hit_ratio,
+                    },
+                }
+            )
+        except Exception as e:
+            logger.error("Error fetching cache info: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to fetch cache information"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugPopulateDataApiView(APIView):
+    """Populate database with test data"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            call_command(
+                "generate_sample_data",
+                preserve_user_id=[request.user.id],
+                preserve_superusers=True,
+                verbosity=0,
+            )
+
+            return Response({"success": True, "message": "Sample data populated successfully"})
+        except Exception as e:
+            logger.error("Error populating sample data: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to populate sample data. Please check server logs."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class DebugClearCacheApiView(APIView):
+    """Clear all cache data"""
+
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    @debug_required
+    def post(self, request, *args, **kwargs):
+        try:
+            from django.core.cache import cache
+
+            cache.clear()
+
+            return Response({"success": True, "message": "Cache cleared successfully"})
+        except Exception as e:
+            logger.error("Error clearing cache: %s", e, exc_info=True)
+            return Response(
+                {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

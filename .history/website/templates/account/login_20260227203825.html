@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% load i18n %}
+{% load account socialaccount %}
+{% block title %}
+    Account Login | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Log in to your account to access the gamified crowd-sourced QA testing and vulnerability disclosure platform. Test websites, apps, git repositories, and more.
+{% endblock description %}
+{% block keywords %}
+    Account Login, Bug Logging Tool, Username, Password, Google Login, GitHub Login
+{% endblock keywords %}
+{% block og_title %}
+    Account Login - Access Your Bug Logging Tool
+{% endblock og_title %}
+{% block og_description %}
+    Log in to your account to access the gamified crowd-sourced QA testing and vulnerability disclosure platform. Test websites, apps, git repositories, and more.
+{% endblock og_description %}
+{% block natural_content %}
+    {% include "includes/sidenav.html" %}
+    {% get_providers as socialaccount_providers %}
+    <div class="auth-container flex items-center justify-center w-full p-4 bg-gray-100 dark:bg-gray-800 overflow-auto">
+        <div class="flex flex-col overflow-hidden bg-white dark:bg-gray-800 rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
+            <!-- Left Side (Branding and Info) -->
+            <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+                <div class="my-2 text-4xl font-bold tracking-wider text-center">
+                    <a href="{% url 'home' %}"
+                       class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
+                </div>
+                <p class="mt-4 font-normal text-center text-white text-xl md:mt-0">
+                    {% env 'PROJECT_NAME' %} {% trans "is a gamified crowd-sourced QA testing and vulnerability disclosure platform for websites, apps, git repositories, and more" %}.
+                </p>
+                <p class="flex flex-col items-center justify-center text-sm mt-6 text-center">
+                    <span>{% trans "Don't have an account" %}?</span>
+                    <a href="{% url 'account_signup' %}{% if redirect_field_value %}?{{ redirect_field_name }}={{ redirect_field_value }}{% endif %}"
+                       class="underline text-white">{% trans "Get Started" %}!</a>
+                </p>
+                <p class="mt-4 text-sm text-center text-white">
+                    {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
+                </p>
+            </div>
+            <!-- Right Side (Login Form) d -->
+            <div class="p-5 bg-white dark:bg-gray-800 md:flex-1">
+                <h3 class="text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account Login" %}</h3>
+                <form class="flex flex-col space-y-4 login"
+                      method="post"
+                      action="{% url 'account_login' %}?next={{ request.path }}">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-200 p-4 rounded-md mb-4"
+                             role="alert">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-500 dark:text-red-300"
+                                         viewBox="0 0 20 20"
+                                         fill="currentColor"
+                                         aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">
+                                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if redirect_field_value %}
+                        <input type="hidden"
+                               name="{{ redirect_field_name }}"
+                               value="{{ redirect_field_value }}" />
+                    {% endif %}
+                    <!-- Username/Email Field -->
+                    <div class="flex flex-col space-y-1">
+                        <label for="id_login"
+                               class="text-sm font-semibold text-gray-500 dark:text-gray-500">
+                            {% trans "Username or Email" %}
+                        </label>
+                        <input autofocus
+                               id="id_login"
+                               name="login"
+                               value="{{ form.login.value|default:'' }}"
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
+                        <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>
+                    </div>
+                    <!-- Password Field -->
+                    <div class="flex flex-col space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label for="id_password"
+                                   class="text-sm font-semibold text-gray-500 dark:text-gray-500">Password</label>
+                            <a href="{% url 'account_reset_password' %}"
+                               class="text-sm text-red-600 hover:underline">{% trans "Forgot Password?" %}</a>
+                        </div>
+                        <div class="relative">
+                            <input type="password"
+                                   id="id_password"
+                                   name="password"
+                                   value="{{ form.password.value|default:'' }}"
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 dark:border-gray-600 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200 dark:bg-gray-700 dark:text-white" />
+                            <button type="button"
+                                    id="togglePassword"
+                                    class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-500 hover:text-gray-800 focus:outline-none"
+                                    data-target="id_password">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     viewBox="0 0 24 24"
+                                     fill="currentColor"
+                                     class="size-6">
+                                    <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577a11.217 11.217 0 0 1 4.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113Z" />
+                                    <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0 1 15.75 12ZM12.53 15.713l-4.243-4.244a3.75 3.75 0 0 0 4.244 4.243Z" />
+                                    <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="help-block text-sm text-red-500">{{ form.password.errors }}</span>
+                    </div>
+                    <!-- Remember Me Checkbox -->
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox"
+                               id="id_remember"
+                               name="remember"
+                               class="w-4 h-4 transition duration-300 rounded focus:ring-2 focus:ring-offset-0 focus:outline-none focus:ring-red-200" />
+                        <label for="id_remember"
+                               class="mb-0 text-sm font-semibold text-gray-500 dark:text-gray-500 select-none">
+                            Remember me
+                        </label>
+                    </div>
+                    <!-- Login Button -->
+                    <div>
+                        <button type="submit"
+                                name="login_button"
+                                class="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                            {% trans "Log in" %}
+                        </button>
+                    </div>
+                    <!-- Social Login Buttons -->
+                    <div class="flex flex-col space-y-4">
+                        <span class="flex items-center justify-center space-x-2">
+                            <span class="h-px bg-gray-400 dark:bg-gray-500 w-14"></span>
+                            <span class="font-normal text-gray-500 dark:text-gray-500">{% trans "or login with" %}</span>
+                            <span class="h-px bg-gray-400 dark:bg-gray-500 w-14"></span>
+                        </span>
+                        {% if github_oauth_available %}
+
+                        <a href="{% url 'github_login' %}"
+                        class="flex items-center justify-center px-4 py-2 space-x-2 transition-colors duration-300">
+
+                           <svg class="w-5 h-5">
+                           <!-- keep svg icon or paste original svg -->
+                           </svg>
+
+                           <span>Github</span>
+
+                         </a>
+
+{% else %}
+
+<button
+disabled
+class="flex items-center justify-center px-4 py-2 opacity-50 cursor-not-allowed">
+
+<span>Github Login Not Configured</span>
+
+</button>
+
+{% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock natural_content %}
