@@ -1179,6 +1179,27 @@ class OrganizationAdmin(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
+class DomainClaimRequest(models.Model):
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name="claim_requests")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="domain_claims")
+    verification_code = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_verified = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["domain", "user", "is_verified"], name="claim_domain_user_idx"),
+            models.Index(fields=["expires_at"], name="claim_expires_idx"),
+        ]
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"Claim by {self.user.username} for {self.domain.name}"
+
+
 class Wallet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     account_id = models.TextField(null=True, blank=True)

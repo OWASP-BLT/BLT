@@ -40,6 +40,24 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Helper functions for handling permission errors gracefully
+            function isPermissionError(e) {
+              return e && (e.status === 403 || e.status === 404) &&
+                /Resource not accessible by integration/i.test(e.message || "");
+            }
+
+            async function safeWrite(opDescription, fn) {
+              try {
+                return await fn();
+              } catch (e) {
+                if (isPermissionError(e)) {
+                  core.warning(`${opDescription} skipped: ${e.message}`);
+                  return null;
+                }
+                throw e;
+              }
+            }
+
             let pr = context.payload.pull_request;
             let pull_number;
             
@@ -141,16 +159,16 @@ jobs:
             const commentsRegex = /^unresolved-conversations:/i;
             for (const name of currentNames) {
               if (commentsRegex.test(name) && name !== newLabel) {
-                try {
-                  await github.rest.issues.removeLabel({ 
+                const result = await safeWrite(`Remove label ${name}`, () =>
+                  github.rest.issues.removeLabel({ 
                     owner, 
                     repo, 
                     issue_number: pull_number, 
                     name 
-                  });
+                  })
+                );
+                if (result) {
                   core.info(`Removed label ${name}`);
-                } catch (err) {
-                  core.warning(`Failed to remove label ${name}: ${err.message}`);
                 }
               }
             }
@@ -161,14 +179,18 @@ jobs:
                 await github.rest.issues.getLabel({ owner, repo, name: labelName });
               } catch (e) {
                 if (e.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner,
-                    repo,
-                    name: labelName,
-                    color: labelColor,
-                    description: description,
-                  });
-                  core.info(`Created label ${labelName}`);
+                  const result = await safeWrite(`Create label ${labelName}`, () =>
+                    github.rest.issues.createLabel({
+                      owner,
+                      repo,
+                      name: labelName,
+                      color: labelColor,
+                      description: description,
+                    })
+                  );
+                  if (result) {
+                    core.info(`Created label ${labelName}`);
+                  }
                 } else {
                   throw e;
                 }
@@ -179,13 +201,17 @@ jobs:
 
             // Add the label if it isn't already present
             if (!currentNames.has(newLabel)) {
-              await github.rest.issues.addLabels({ 
-                owner, 
-                repo, 
-                issue_number: pull_number, 
-                labels: [newLabel] 
-              });
-              core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              const result = await safeWrite(`Add label ${newLabel}`, () =>
+                github.rest.issues.addLabels({ 
+                  owner, 
+                  repo, 
+                  issue_number: pull_number, 
+                  labels: [newLabel] 
+                })
+              );
+              if (result) {
+                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
+              }
             } else {
               core.info(`Label ${newLabel} already present on PR #${pull_number}`);
             }
@@ -219,24 +245,32 @@ jobs:
               
               if (!existingNotification) {
                 // Post a new notification comment
-                await github.rest.issues.createComment({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                  body: commentBody,
-                });
-                core.info(`Posted notification comment for ${count} unresolved ${conversationWord}`);
+                const result = await safeWrite(`Create comment for ${count} unresolved ${conversationWord}`, () =>
+                  github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: pull_number,
+                    body: commentBody,
+                  })
+                );
+                if (result) {
+                  core.info(`Posted notification comment for ${count} unresolved ${conversationWord}`);
+                }
               } else {
                 // Update the existing notification comment if the count changed
                 const currentCount = existingNotification.body.match(/\*\*(\d+) unresolved/);
                 if (!currentCount || parseInt(currentCount[1]) !== count) {
-                  await github.rest.issues.updateComment({
-                    owner,
-                    repo,
-                    comment_id: existingNotification.id,
-                    body: commentBody,
-                  });
-                  core.info(`Updated notification comment with new count: ${count} unresolved ${conversationWord}`);
+                  const result = await safeWrite(`Update comment with new count: ${count}`, () =>
+                    github.rest.issues.updateComment({
+                      owner,
+                      repo,
+                      comment_id: existingNotification.id,
+                      body: commentBody,
+                    })
+                  );
+                  if (result) {
+                    core.info(`Updated notification comment with new count: ${count} unresolved ${conversationWord}`);
+                  }
                 } else {
                   core.info(`Notification comment already exists with correct count (${count})`);
                 }
@@ -257,12 +291,16 @@ jobs:
               );
               
               if (existingNotification) {
-                await github.rest.issues.deleteComment({
-                  owner,
-                  repo,
-                  comment_id: existingNotification.id,
-                });
-                core.info(`Removed notification comment as all conversations are resolved`);
+                const result = await safeWrite(`Delete notification comment`, () =>
+                  github.rest.issues.deleteComment({
+                    owner,
+                    repo,
+                    comment_id: existingNotification.id,
+                  })
+                );
+                if (result) {
+                  core.info(`Removed notification comment as all conversations are resolved`);
+                }
               }
             }
 

@@ -256,6 +256,7 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    request_domain_claim,
     room_messages_api,
     send_message_api,
     sizzle,
@@ -268,6 +269,7 @@ from website.views.organization import (
     update_organization_repos,
     update_role,
     user_sizzle_report,
+    verify_domain_claim,
     view_hunt,
     weekly_report,
 )
@@ -637,6 +639,8 @@ urlpatterns = [
         name="upload",
     ),
     re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
+    path("domain/<int:pk>/claim/", request_domain_claim, name="domain_claim_request"),
+    path("domain/<int:pk>/claim/verify/", verify_domain_claim, name="domain_claim_verify"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
