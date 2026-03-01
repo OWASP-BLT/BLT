@@ -1,3 +1,4 @@
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
@@ -8,6 +9,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 
 from website.models import DailyStatusReport, Domain, Issue, Organization
+from website.views.company import OrganizationDashboardCyberView
 from website.views.organization import BountyPayoutsView
 
 
@@ -149,6 +151,156 @@ class OrganizationSwitcherTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertIn("organizations", response.context)
+
+        # Test cyber view
+        url = reverse("organization_cyber", kwargs={"id": self.org1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("organizations", response.context)
+
+
+class OrganizationCyberDashboardTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin_user = User.objects.create_user(
+            username="cyberadmin", password="testpass123", email="cyberadmin@example.com"
+        )
+        self.manager_user = User.objects.create_user(
+            username="cybermanager", password="testpass123", email="cybermanager@example.com"
+        )
+        self.outsider_user = User.objects.create_user(
+            username="cyberoutsider", password="testpass123", email="cyberoutsider@example.com"
+        )
+
+        self.organization = Organization.objects.create(
+            name="Cyber Org",
+            description="Org for cyber dashboard tests",
+            slug="cyber-org",
+            url="https://cyber.example.com",
+            admin=self.admin_user,
+        )
+        self.organization.managers.add(self.manager_user)
+
+    def tearDown(self):
+        cache.clear()
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_admin_and_manager_can_access_cyber_dashboard(self, mock_dns_posture):
+        mock_dns_posture.return_value = {"domain": "example.com", "spf": True, "dmarc": True, "dnssec": True}
+        Domain.objects.create(
+            name="example.com", url="https://example.com", organization=self.organization, is_active=True
+        )
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        admin_response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertContains(admin_response, "Cyber Dashboard")
+
+        self.client.logout()
+        self.client.login(username="cybermanager", password="testpass123")
+        manager_response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+        self.assertEqual(manager_response.status_code, 200)
+        self.assertContains(manager_response, "Cyber Dashboard")
+
+    def test_outsider_cannot_access_cyber_dashboard(self):
+        self.client.login(username="cyberoutsider", password="testpass123")
+        response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_dns_metrics_are_rendered(self, mock_dns_posture):
+        Domain.objects.create(
+            name="good.example", url="https://good.example", organization=self.organization, is_active=True
+        )
+        Domain.objects.create(
+            name="bad.example", url="https://bad.example", organization=self.organization, is_active=True
+        )
+        mock_dns_posture.side_effect = [
+            {"domain": "good.example", "spf": True, "dmarc": True, "dnssec": True},
+            {"domain": "bad.example", "spf": False, "dmarc": True, "dnssec": False},
+        ]
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "good.example")
+        self.assertContains(response, "bad.example")
+        self.assertContains(response, "DNS Compliance")
+        self.assertContains(response, "Pass")
+        self.assertContains(response, "Fail")
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_empty_state_when_no_domains(self, mock_dns_posture):
+        self.client.login(username="cyberadmin", password="testpass123")
+        response = self.client.get(reverse("organization_cyber", kwargs={"id": self.organization.id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No active domains to evaluate yet.")
+        self.assertContains(response, "No active domains found. Add a domain to start DNS checks.")
+        mock_dns_posture.assert_not_called()
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_dns_results_are_cached(self, mock_dns_posture):
+        Domain.objects.create(
+            name="cache.example", url="https://cache.example", organization=self.organization, is_active=True
+        )
+        mock_dns_posture.return_value = {"domain": "cache.example", "spf": True, "dmarc": True, "dnssec": True}
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        url = reverse("organization_cyber", kwargs={"id": self.organization.id})
+
+        first_response = self.client.get(url)
+        second_response = self.client.get(url)
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(mock_dns_posture.call_count, 1)
+
+    @patch("website.views.company.get_domain_dns_posture")
+    def test_cache_invalidates_after_domain_update(self, mock_dns_posture):
+        domain = Domain.objects.create(
+            name="stale.example",
+            url="https://stale.example",
+            organization=self.organization,
+            is_active=True,
+        )
+        mock_dns_posture.return_value = {"domain": "stale.example", "spf": True, "dmarc": True, "dnssec": True}
+
+        self.client.login(username="cyberadmin", password="testpass123")
+        url = reverse("organization_cyber", kwargs={"id": self.organization.id})
+
+        first_response = self.client.get(url)
+        self.assertEqual(first_response.status_code, 200)
+        self.assertContains(first_response, "stale.example")
+
+        domain.is_active = False
+        domain.save(update_fields=["is_active"])
+
+        second_response = self.client.get(url)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertContains(second_response, "No active domains to evaluate yet.")
+
+    @patch("website.views.company.as_completed")
+    @patch("website.views.company.ThreadPoolExecutor")
+    def test_timeout_uses_non_blocking_executor_shutdown(self, mock_executor_class, mock_as_completed):
+        Domain.objects.create(
+            name="timeout.example", url="https://timeout.example", organization=self.organization, is_active=True
+        )
+        fake_future = MagicMock()
+        fake_executor = MagicMock()
+        fake_executor.submit.return_value = fake_future
+        mock_executor_class.return_value = fake_executor
+        mock_as_completed.side_effect = FuturesTimeoutError()
+
+        view = OrganizationDashboardCyberView()
+        metrics = view._build_dns_metrics(self.organization.id)
+
+        self.assertEqual(metrics["total_domains"], 1)
+        self.assertEqual(metrics["compliant_count"], 0)
+        fake_future.cancel.assert_called_once()
+        fake_executor.shutdown.assert_called_once_with(wait=False, cancel_futures=True)
 
 
 class BountyPayoutsViewTests(TestCase):
