@@ -434,3 +434,22 @@ Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT
 ## Need more help?
 
 If you're still facing issues or need further assistance, feel free to reach out to the community on the [OWASP Slack channel](https://owasp.org/slack/invite).
+## Email Verification in Local Development
+This section explains how to bypass email verification locally when no email backend is configured.
+
+When running BLT locally, you may encounter a **“Verify Your Email Address”**
+screen after creating a user or superuser.
+
+This happens because BLT uses `django-allauth`, which enforces email verification
+by default, but no email backend is configured for local development.
+
+### Local Development Workaround
+
+If you are running BLT locally (for example, using Docker) and want to log in
+immediately, you can manually mark your email as verified using the Django shell.
+
+Run:
+
+```bash
+docker-compose exec app python manage.py shell
+
