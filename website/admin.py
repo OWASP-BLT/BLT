@@ -1,9 +1,14 @@
+from typing import ClassVar
 from urllib.parse import urlparse
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.sites import NotRegistered
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
+from django.db.models import Count, Q
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
 from django.utils.html import format_html
@@ -94,6 +99,8 @@ from website.models import (
     Wallet,
     Winner,
 )
+
+User = get_user_model()
 
 
 class UserResource(resources.ModelResource):
@@ -1234,3 +1241,134 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+@admin.action(description="Deactivate selected users")
+def deactivate_users(modeladmin, request, queryset):
+    """Admin action to deactivate selected users (superuser only)"""
+    if not request.user.is_superuser:
+        modeladmin.message_user(
+            request,
+            "Only superusers can deactivate users.",
+            level=messages.ERROR,
+        )
+        return
+
+    updated = queryset.update(is_active=False)
+    modeladmin.message_user(
+        request,
+        f"Deactivated {updated} user(s).",
+        level=messages.SUCCESS,
+    )
+
+
+class ActivityStatusFilter(admin.SimpleListFilter):
+    title = "Activity Status"
+    parameter_name = "activity"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("active", "Active"),
+            ("inactive", "Inactive"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "active":
+            return queryset.filter(
+                Q(last_login__isnull=False)
+                | Q(issue__isnull=False)
+                | Q(forumpost__isnull=False)
+                | Q(forumcomment__isnull=False)
+            ).distinct()
+
+        if self.value() == "inactive":
+            return queryset.filter(
+                last_login__isnull=True, issue__isnull=True, forumpost__isnull=True, forumcomment__isnull=True
+            ).distinct()
+
+        return queryset
+
+
+try:
+    admin.site.unregister(User)
+except NotRegistered:
+    pass
+
+
+@admin.register(User)
+class CustomUserAdmin(DjangoUserAdmin):
+    actions: ClassVar[list] = [deactivate_users]
+
+    list_display = (
+        "username",
+        "email",
+        "is_active",
+        "activity_status",
+        "bug_count",
+        "forum_post_count",
+        "forum_comment_count",
+        "last_login",
+        "date_joined",
+    )
+
+    list_filter = (
+        "is_active",
+        ActivityStatusFilter,
+        "is_staff",
+        "is_superuser",
+        "date_joined",
+    )
+
+    search_fields = ("username", "email", "first_name", "last_name")
+    ordering = ("-last_login",)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            bugs_reported=Count("issue", distinct=True),
+            posts_created=Count("forumpost", distinct=True),
+            comments_created=Count("forumcomment", distinct=True),
+        )
+
+    def bug_count(self, obj):
+        return obj.bugs_reported
+
+    bug_count.short_description = "Bugs Reported"
+    bug_count.admin_order_field = "bugs_reported"
+
+    def forum_post_count(self, obj):
+        return obj.posts_created
+
+    forum_post_count.short_description = "Forum Posts"
+    forum_post_count.admin_order_field = "posts_created"
+
+    def forum_comment_count(self, obj):
+        return obj.comments_created
+
+    forum_comment_count.short_description = "Forum Comments"
+    forum_comment_count.admin_order_field = "comments_created"
+
+    def activity_status(self, obj):
+        if obj.last_login or obj.bugs_reported > 0 or obj.posts_created > 0 or obj.comments_created > 0:
+            return format_html('<span style="color: green; font-weight: 600;">Active</span>')
+        return format_html('<span style="color: red; font-weight: 600;">Inactive</span>')
+
+    activity_status.short_description = "Activity"
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        """Only superusers can view users"""
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        """Only superusers can change users"""
+        return request.user.is_superuser
+
+    def get_actions(self, request):
+        """Only show actions to superusers"""
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            return {}
+        return actions
