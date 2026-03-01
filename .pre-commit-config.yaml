@@ -39,10 +39,10 @@ repos:
       - id: check-style-tags
         name: check for <style> tags in HTML
         entry: python
-        args: [pre-commit-hooks/check_style_tags.py]
+        args: [scripts/check_style_tags.py]
         language: python
         types: [html]
-        pass_filenames: false  # <-- ADD THIS LINE
+        pass_filenames: false
         verbose: true
 
   - repo: local
