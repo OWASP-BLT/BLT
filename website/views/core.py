@@ -1384,6 +1384,103 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+DEVTO_USERNAME = getattr(settings, "DEVTO_USERNAME", "owaspblt")
+_raw_count = getattr(settings, "DEVTO_ARTICLE_COUNT", 2)
+try:
+    DEVTO_ARTICLE_COUNT = max(1, int(_raw_count))
+except (TypeError, ValueError):
+    logger.warning("Invalid DEVTO_ARTICLE_COUNT setting. Falling back to default (2).")
+    DEVTO_ARTICLE_COUNT = 2
+DEVTO_API_BASE = "https://dev.to/api/articles"
+
+
+def fetch_devto_articles():
+    """Fetch latest Dev.to articles with strict validation and safe caching."""
+
+    cache_key = "devto_articles"
+
+    # Return cached data to reduce external API calls
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return cached_data
+
+    try:
+        # Use application-specific User-Agent instead of browser spoofing
+        headers = {"User-Agent": "OWASP-BLT/1.0 (+https://owaspblt.org)"}
+        response = requests.get(
+            DEVTO_API_BASE,
+            headers=headers,
+            params={
+                "username": DEVTO_USERNAME,
+                "per_page": DEVTO_ARTICLE_COUNT,
+            },
+            timeout=10,
+        )
+        # Raise exception for HTTP errors
+        response.raise_for_status()
+        data = response.json()
+
+        if not isinstance(data, list):
+            cache.set(cache_key, [], 30)
+            return []
+
+        refined_articles = []
+
+        for article in data:
+            if not isinstance(article, dict):
+                continue
+
+            url = article.get("url")
+
+            # Allow only HTTPS article urls
+            if not isinstance(url, str) or not url.startswith("https://"):
+                continue
+
+            cover_image = article.get("cover_image")
+
+            # Ensure cover image url is HTTPS
+            if not isinstance(cover_image, str) or not cover_image.startswith("https://"):
+                cover_image = ""
+
+            user = article.get("user")
+            # Safely extract username from nested object
+            user_name = (
+                user.get("name") if isinstance(user, dict) and isinstance(user.get("name"), str) else "OWASP BLT"
+            )
+
+            published_at = article.get("published_at")
+            clean_date = ""
+            if isinstance(published_at, str):
+                try:
+                    parsed = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+                    clean_date = parsed.strftime("%Y-%m-%d")
+                except ValueError:
+                    clean_date = ""
+
+            # Allow-list only required fields for template safety
+            refined_articles.append(
+                {
+                    "title": article.get("title") if isinstance(article.get("title"), str) else "OWASP BLT Blog Post",
+                    "url": url,
+                    "cover_image": cover_image,
+                    "description": article.get("description") if isinstance(article.get("description"), str) else "",
+                    "user_name": user_name,
+                    "published_at": clean_date,
+                }
+            )
+
+        # Cache successful results for 10 minutes
+        cache.set(cache_key, refined_articles, 600)
+        return refined_articles
+
+    except (requests.RequestException, ValueError) as e:
+        # Log failure securely without exposing sensitive details
+        logger.warning("Dev.to fetch failure: %s", e, exc_info=True)
+        # Cache empty list briefly to prevent repeated failing calls
+        cache.set(cache_key, [], 30)
+        return []
+
+
 # Standalone job board URLs and cache (homepage "recent jobs & seekers")
 JOB_BOARD_JOBS_URL = "https://jobs.owaspblt.org/data/jobs.json"
 JOB_BOARD_SEEKERS_URL = "https://jobs.owaspblt.org/data/seekers.json"
@@ -1521,8 +1618,9 @@ def home(request):
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
 
-    # Get latest blog posts (Post model was removed in migration 0266; show none until blog is re-added)
-    latest_blog_posts = []
+    # fetches blog from dev.to and displays in homepage
+    devto_articles = fetch_devto_articles()
+    devto_profile_url = f"https://dev.to/{DEVTO_USERNAME}"
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1624,13 +1722,14 @@ def home(request):
             "last_commit": last_commit,
             "current_year": timezone.now().year,
             "current_time": current_time,  # Add current time for month display
+            "devto_articles": devto_articles,
+            "devto_profile_url": devto_profile_url,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_discussions": recent_discussions,
             "recent_activities": recent_activities,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,
             "repo_stars": repo_stars,
             "top_referrals": top_referrals,
