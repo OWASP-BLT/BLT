@@ -226,13 +226,7 @@
                                                class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50"
                                                placeholder="BTC Address">
                                     </div>
-
-                                    {% if form.btc_address.errors %}
-                                    <p class="mt-1 text-red-500 text-sm">
-                                        {{form.btc_address.errors.0}}
-                                    </p>
-                                    {% endif %}
-
+                                    {% if form.btc_address.errors %}<p class="mt-1 text-red-500 text-sm">{{ form.btc_address.errors.0 }}</p>{% endif %}
                                 </div>
                                 <div>
                                     <label for="id_bch_address"
@@ -248,13 +242,7 @@
                                                class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50"
                                                placeholder="BCH Address">
                                     </div>
-
-                                    {% if form.bch_address.errors %}
-                                    <p class="mt-1 text-red-500 text-sm">
-                                        {{form.bch_address.errors.0}}
-                                    </p>
-                                    {% endif %}
-
+                                    {% if form.bch_address.errors %}<p class="mt-1 text-red-500 text-sm">{{ form.bch_address.errors.0 }}</p>{% endif %}
                                 </div>
                                 <div>
                                     <label for="id_eth_address"
@@ -270,13 +258,7 @@
                                                class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c] dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700 dark:hover:text-gray-50"
                                                placeholder="ETH Address">
                                     </div>
-
-                                    {% if form.eth_address.errors %}
-                                    <p class="mt-1 text-red-500 text-sm">
-                                        {{form.eth_address.errors.0}}
-                                    </p>
-                                    {% endif %}
-
+                                    {% if form.eth_address.errors %}<p class="mt-1 text-red-500 text-sm">{{ form.eth_address.errors.0 }}</p>{% endif %}
                                 </div>
                             </div>
                         </div>
