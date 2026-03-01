@@ -470,11 +470,13 @@ email = "your_email@example.com"
 
 user = User.objects.get(username=username)
 
-EmailAddress.objects.create(
+EmailAddress.objects.update_or_create(
     user=user,
     email=email,
-    verified=True,
-    primary=True
+    defaults={
+        "verified": True,
+        "primary": True,
+    },
 )
 
 print("Email created and verified successfully.")
