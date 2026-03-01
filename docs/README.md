@@ -12,6 +12,7 @@ Welcome to the OWASP BLT (Bug Logging Tool) documentation directory!
 ### Architecture & Design
 - **[Architecture Overview](architecture.md)** - System architecture and design patterns
 - **[URL Endpoints](URL_ENDPOINTS.md)** - Complete list of all URL patterns and their components
+- **[URL Migration Plan](URL_MIGRATION_PLAN.md)** - Strategy for migrating legacy URL patterns to modern Django patterns
 - **[Features](features.md)** - Overview of BLT features
 - **[Feature Checklist](feature-checklist.md)** - Development feature checklist
 

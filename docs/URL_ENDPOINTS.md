@@ -2,10 +2,27 @@
 
 This document provides a comprehensive list of all URL endpoints, pages, and their corresponding components in the OWASP BLT (Bug Logging Tool) application.
 
-**Last Updated:** 2026-02-13  
+**Last Updated:** 2026-03-01  
 **Django Version:** 5.1+  
 **Total Endpoints:** ~180+  
 **Main URL Configuration:** `blt/urls.py`
+
+> 📋 **Related Documentation:** See [URL_MIGRATION_PLAN.md](URL_MIGRATION_PLAN.md) for the plan to migrate legacy regex-based URLs to modern Django path patterns.
+
+---
+
+## URL Pattern Migration Status
+
+The application uses two URL pattern styles:
+- ✅ **Modern**: `path()` with built-in converters (389 patterns, 76.9%)
+- ⚠️ **Legacy**: `re_path()` with regex patterns (117 patterns, 23.1%)
+
+**Migration Priority:**
+- 🔴 High Priority: Issues, User Management, API Endpoints (~55 patterns)
+- 🟡 Medium Priority: Organizations, Projects, Social (~35 patterns)
+- 🟢 Low Priority: Education, Leaderboards, Misc (~27 patterns)
+
+See [URL_MIGRATION_PLAN.md](URL_MIGRATION_PLAN.md) for detailed migration strategy.
 
 ---
 
@@ -96,34 +113,37 @@ This document provides a comprehensive list of all URL endpoints, pages, and the
 
 ## 3. Issues & Bugs
 
-**Component:** `website/views/issue.py`
+**Component:** `website/views/issue.py`  
+**Migration Status:** 🔴 HIGH PRIORITY - ~25 legacy regex patterns need migration
+
+> See [URL_MIGRATION_PLAN.md](URL_MIGRATION_PLAN.md) for migration details.
 
 ### Issue Management
 
-| Path | View Function | URL Name | Description |
-|------|--------------|----------|-------------|
-| `^issues/` | `newhome` | `issues` | Browse all issues |
-| `^issue/` | `IssueCreate` | `issue` | Create new issue |
-| `^issue/<slug>/` | `IssueView` | `issue_view` | View specific issue |
-| `^issue/edit/` | `IssueEdit` | `edit_issue` | Edit issue |
-| `^issue/update/` | `UpdateIssue` | `update_issue` | Update issue details |
-| `^report/` | `IssueCreate` | `report` | Report a bug |
-| `^all_activity/` | `AllIssuesView` | `all_activity` | View all activity |
-| `^label_activity/` | `SpecificIssuesView` | `all_activitys` | Filter by label |
-| `^resolve/<id>/` | `resolve` | `resolve` | Mark issue as resolved |
+| Path | View Function | URL Name | Description | Pattern Type |
+|------|--------------|----------|-------------|--------------|
+| `^issues/` | `newhome` | `issues` | Browse all issues | ⚠️ Legacy |
+| `^issue/` | `IssueCreate` | `issue` | Create new issue | ⚠️ Legacy |
+| `^issue/<slug>/` | `IssueView` | `issue_view` | View specific issue | ⚠️ Legacy |
+| `^issue/edit/` | `IssueEdit` | `edit_issue` | Edit issue | ⚠️ Legacy |
+| `^issue/update/` | `UpdateIssue` | `update_issue` | Update issue details | ⚠️ Legacy |
+| `^report/` | `IssueCreate` | `report` | Report a bug | ⚠️ Legacy |
+| `^all_activity/` | `AllIssuesView` | `all_activity` | View all activity | ⚠️ Legacy |
+| `^label_activity/` | `SpecificIssuesView` | `all_activitys` | Filter by label | ⚠️ Legacy |
+| `^resolve/<id>/` | `resolve` | `resolve` | Mark issue as resolved | ⚠️ Legacy |
 
 ### Issue Interactions
 
-| Path | View Function | URL Name | Description |
-|------|--------------|----------|-------------|
-| `^like_issue/<id>/` | `like_issue` | `like_issue` | Like an issue |
-| `^dislike_issue/<id>/` | `dislike_issue` | `dislike_issue` | Dislike an issue |
-| `^flag_issue/<id>/` | `flag_issue` | `flag_issue` | Flag inappropriate issue |
-| `^save_issue/<id>/` | `save_issue` | `save_issue` | Save issue to bookmarks |
-| `^unsave_issue/<id>/` | `unsave_issue` | `unsave_issue` | Remove from bookmarks |
-| `^vote_count/<id>/` | `vote_count` | `vote_count` | Get vote count |
-| `^create_github_issue/<id>/` | `create_github_issue` | `create_github_issue` | Create GitHub issue |
-| `^remove_user_from_issue/<id>/` | `remove_user_from_issue` | `remove_user_from_issue` | Remove user assignment |
+| Path | View Function | URL Name | Description | Pattern Type |
+|------|--------------|----------|-------------|--------------|
+| `^like_issue/<id>/` | `like_issue` | `like_issue` | Like an issue | ⚠️ Legacy |
+| `^dislike_issue/<id>/` | `dislike_issue` | `dislike_issue` | Dislike an issue | ⚠️ Legacy |
+| `^flag_issue/<id>/` | `flag_issue` | `flag_issue` | Flag inappropriate issue | ⚠️ Legacy |
+| `^save_issue/<id>/` | `save_issue` | `save_issue` | Save issue to bookmarks | ⚠️ Legacy |
+| `^unsave_issue/<id>/` | `unsave_issue` | `unsave_issue` | Remove from bookmarks | ⚠️ Legacy |
+| `^vote_count/<id>/` | `vote_count` | `vote_count` | Get vote count | ⚠️ Legacy |
+| `^create_github_issue/<id>/` | `create_github_issue` | `create_github_issue` | Create GitHub issue | ⚠️ Legacy |
+| `^remove_user_from_issue/<id>/` | `remove_user_from_issue` | `remove_user_from_issue` | Remove user assignment | ⚠️ Legacy |
 
 ### Content & Comments
 
