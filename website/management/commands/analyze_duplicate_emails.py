@@ -395,37 +395,3 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Analysis exported to: {filename}"))
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Failed to export CSV: {e}"))
-
-    def export_to_csv(self, csv_data, filename):
-        """Legacy export method - kept for compatibility"""
-        try:
-            with open(filename, "w", newline="", encoding="utf-8") as csvfile:
-                fieldnames = [
-                    "email",
-                    "username",
-                    "user_id",
-                    "date_joined",
-                    "last_login",
-                    "issue_count",
-                    "total_points",
-                    "points_entries",
-                    "days_since_login",
-                    "is_high_activity",
-                    "will_be_kept",
-                    "activity_summary",
-                ]
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
-
-                for row in csv_data:
-                    # Format dates for CSV
-                    row_copy = row.copy()
-                    if row_copy["date_joined"]:
-                        row_copy["date_joined"] = row_copy["date_joined"].strftime("%Y-%m-%d %H:%M:%S")
-                    if row_copy["last_login"]:
-                        row_copy["last_login"] = row_copy["last_login"].strftime("%Y-%m-%d %H:%M:%S")
-                    writer.writerow(row_copy)
-
-            self.stdout.write(self.style.SUCCESS(f"Analysis exported to: {filename}"))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Failed to export CSV: {e}"))

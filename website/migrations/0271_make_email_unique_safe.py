@@ -66,7 +66,7 @@ def remove_duplicate_users_safely(apps, schema_editor):
     - Activity threshold checks to prevent deletion of high-activity users
     - Backup recommendations in migration docs
     - Detailed logging of what will be deleted
-    - Preserves newest account instead of oldest (more likely to be active)
+    - Preserves newest account (highest ID) instead of oldest (more likely to be active)
 
     Only non-empty emails are checked for duplicates. Multiple users can have
     empty or NULL emails (which is valid per Django's User model where email
@@ -217,11 +217,9 @@ def remove_duplicate_users_safely(apps, schema_editor):
     logger.info(f"\nSafety check passed. {total_users_to_delete} low-activity users will be deleted.")
 
     deletion_csv = f"deleted_users_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    csv_file = None
-    csv_writer = None
+    actual_deleted = 0
 
-    try:
-        csv_file = open(deletion_csv, "w", newline="", encoding="utf-8")
+    with open(deletion_csv, "w", newline="", encoding="utf-8") as csv_file:
         fieldnames = [
             "user_id",
             "username",
@@ -236,39 +234,32 @@ def remove_duplicate_users_safely(apps, schema_editor):
         ]
         csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         csv_writer.writeheader()
-    except Exception as e:
-        logger.warning(f"Failed to create CSV file: {e}")
-        csv_file = None
-        csv_writer = None
 
-    actual_deleted = 0
+        for email in duplicate_emails:
+            users_with_email = users_by_email.get(email, [])
+            if not users_with_email:
+                continue
 
-    for email in duplicate_emails:
-        users_with_email = users_by_email.get(email, [])
-        if not users_with_email:
-            continue
+            kept_user = users_with_email[0]
+            users_to_delete = users_with_email[1:]
 
-        kept_user = users_with_email[0]
-        users_to_delete = users_with_email[1:]
+            for user in users_to_delete:
+                issue_count = user.issue_count or 0
+                total_points = user.total_points or 0
 
-        for user in users_to_delete:
-            issue_count = user.issue_count or 0
-            total_points = user.total_points or 0
+                recent_login = False
+                if user.last_login:
+                    days_since_login = (timezone.now() - user.last_login).days
+                    recent_login = days_since_login <= HIGH_ACTIVITY_THRESHOLDS["recent_login_days"]
 
-            recent_login = False
-            if user.last_login:
-                days_since_login = (timezone.now() - user.last_login).days
-                recent_login = days_since_login <= HIGH_ACTIVITY_THRESHOLDS["recent_login_days"]
+                if (
+                    issue_count >= HIGH_ACTIVITY_THRESHOLDS["issues_reported"]
+                    or total_points >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
+                    or recent_login
+                ):
+                    logger.error(f"SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
+                    raise Exception(f"Safety violation: User {user.username} has high activity and should not be deleted")
 
-            if (
-                issue_count >= HIGH_ACTIVITY_THRESHOLDS["issues_reported"]
-                or total_points >= HIGH_ACTIVITY_THRESHOLDS["points_earned"]
-                or recent_login
-            ):
-                logger.error(f"SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
-                raise Exception(f"Safety violation: User {user.username} has high activity and should not be deleted")
-
-            if csv_writer:
                 try:
                     csv_writer.writerow(
                         {
@@ -287,18 +278,13 @@ def remove_duplicate_users_safely(apps, schema_editor):
                 except Exception as csv_error:
                     logger.warning(f"Failed to write CSV record for user {user.username}: {csv_error}")
 
-            logger.info(f"Deleting user: {user.username} (ID: {user.id}, email: '{email}')")
-            logger.info(f"   Keeping: {kept_user.username} (ID: {kept_user.id})")
+                logger.info(f"Deleting user: {user.username} (ID: {user.id}, email: '{email}')")
+                logger.info(f"   Keeping: {kept_user.username} (ID: {kept_user.id})")
 
-            user.delete(using=db_alias)
-            actual_deleted += 1
+                user.delete(using=db_alias)
+                actual_deleted += 1
 
-    if csv_file:
-        try:
-            csv_file.close()
-            logger.info(f"Deletion records exported to: {deletion_csv}")
-        except Exception as e:
-            logger.warning(f"Failed to close CSV file: {e}")
+    logger.info(f"Deletion records exported to: {deletion_csv}")
 
     logger.info(f"\nSuccessfully deleted {actual_deleted} duplicate users")
     logger.info("Email uniqueness migration completed safely")
@@ -392,7 +378,7 @@ class Migration(migrations.Migration):
     atomic = True
 
     dependencies = [
-        ("website", "0263_githubissue_githubissue_pr_merged_idx_and_more"),
+        ("website", "0270_githubcomment"),
         ("auth", "0012_alter_user_first_name_max_length"),
     ]
 

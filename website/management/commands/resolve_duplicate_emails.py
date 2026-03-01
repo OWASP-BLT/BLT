@@ -14,6 +14,8 @@ Usage:
     python manage.py resolve_duplicate_emails --update-email <user_id> <new_email>
 """
 
+import time
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -290,8 +292,6 @@ The Team
                             )
                         else:
                             self.stdout.write(self.style.WARNING(f"   Retry {retry_count}/{max_retries} for {email}"))
-                            import time
-
                             time.sleep(2**retry_count)
 
         if dry_run:
@@ -316,7 +316,7 @@ The Team
         # Append to failure log file immediately
         failure_log = f"email_failures_{timezone.now().strftime('%Y%m%d')}.jsonl"
         try:
-            with open(failure_log, "a") as f:
+            with open(failure_log, "a", encoding="utf-8", errors="replace") as f:
                 f.write(json.dumps(failure_record) + "\n")
         except Exception as log_error:
             self.stdout.write(self.style.WARNING(f"Failed to log email failure: {log_error}"))
@@ -383,41 +383,12 @@ The Team
             m2m_counts["activity_dislikes"] = Activity.objects.filter(dislikes=from_user).count()
             m2m_counts["profile_subscriptions"] = UserProfile.objects.filter(subscribed_users=from_user).count()
 
-            # Check optional M2M relationships
-            try:
-                from website.models import Domain
+            # Check optional M2M relationships that exist in website.models
+            from website.models import Challenge, Domain, Thread
 
-                m2m_counts["domain_managers"] = Domain.objects.filter(managers=from_user).count()
-            except ImportError:
-                pass
-
-            try:
-                from website.models import Referral
-
-                m2m_counts["referral_recipients"] = Referral.objects.filter(recipients=from_user).count()
-            except ImportError:
-                pass
-
-            try:
-                from website.models import Challenge
-
-                m2m_counts["challenge_participants"] = Challenge.objects.filter(participants=from_user).count()
-            except ImportError:
-                pass
-
-            try:
-                from website.models import ChatRoom
-
-                m2m_counts["chatroom_users"] = ChatRoom.objects.filter(users=from_user).count()
-            except ImportError:
-                pass
-
-            try:
-                from website.models import Thread
-
-                m2m_counts["thread_participants"] = Thread.objects.filter(participants=from_user).count()
-            except ImportError:
-                pass
+            m2m_counts["domain_managers"] = Domain.objects.filter(managers=from_user).count()
+            m2m_counts["challenge_participants"] = Challenge.objects.filter(participants=from_user).count()
+            m2m_counts["thread_participants"] = Thread.objects.filter(participants=from_user).count()
 
             for field, count in m2m_counts.items():
                 if count > 0:
@@ -489,69 +460,30 @@ The Team
                     m2m_transfers += 1
 
                 # Transfer Domain managerships
-                try:
-                    from website.models import Domain
+                from website.models import Challenge, Domain, Thread
 
-                    domains_managed = Domain.objects.filter(managers=from_user)
-                    for domain in domains_managed:
-                        if not domain.managers.filter(id=to_user.id).exists():
-                            domain.managers.add(to_user)
-                        domain.managers.remove(from_user)
-                        m2m_transfers += 1
-                except ImportError:
-                    pass  # Domain model might not exist
-
-                # Transfer Referral recipients
-                try:
-                    from website.models import Referral
-
-                    referrals_received = Referral.objects.filter(recipients=from_user)
-                    for referral in referrals_received:
-                        if not referral.recipients.filter(id=to_user.id).exists():
-                            referral.recipients.add(to_user)
-                        referral.recipients.remove(from_user)
-                        m2m_transfers += 1
-                except ImportError:
-                    pass  # Referral model might not exist
+                domains_managed = Domain.objects.filter(managers=from_user)
+                for domain in domains_managed:
+                    if not domain.managers.filter(id=to_user.id).exists():
+                        domain.managers.add(to_user)
+                    domain.managers.remove(from_user)
+                    m2m_transfers += 1
 
                 # Transfer Challenge participations
-                try:
-                    from website.models import Challenge
-
-                    challenges_participated = Challenge.objects.filter(participants=from_user)
-                    for challenge in challenges_participated:
-                        if not challenge.participants.filter(id=to_user.id).exists():
-                            challenge.participants.add(to_user)
-                        challenge.participants.remove(from_user)
-                        m2m_transfers += 1
-                except ImportError:
-                    pass  # Challenge model might not exist
-
-                # Transfer ChatRoom memberships
-                try:
-                    from website.models import ChatRoom
-
-                    chatrooms_joined = ChatRoom.objects.filter(users=from_user)
-                    for chatroom in chatrooms_joined:
-                        if not chatroom.users.filter(id=to_user.id).exists():
-                            chatroom.users.add(to_user)
-                        chatroom.users.remove(from_user)
-                        m2m_transfers += 1
-                except ImportError:
-                    pass  # ChatRoom model might not exist
+                challenges_participated = Challenge.objects.filter(participants=from_user)
+                for challenge in challenges_participated:
+                    if not challenge.participants.filter(id=to_user.id).exists():
+                        challenge.participants.add(to_user)
+                    challenge.participants.remove(from_user)
+                    m2m_transfers += 1
 
                 # Transfer Thread participations
-                try:
-                    from website.models import Thread
-
-                    threads_participated = Thread.objects.filter(participants=from_user)
-                    for thread in threads_participated:
-                        if not thread.participants.filter(id=to_user.id).exists():
-                            thread.participants.add(to_user)
-                        thread.participants.remove(from_user)
-                        m2m_transfers += 1
-                except ImportError:
-                    pass  # Thread model might not exist
+                threads_participated = Thread.objects.filter(participants=from_user)
+                for thread in threads_participated:
+                    if not thread.participants.filter(id=to_user.id).exists():
+                        thread.participants.add(to_user)
+                    thread.participants.remove(from_user)
+                    m2m_transfers += 1
 
                 if m2m_transfers > 0:
                     self.stdout.write(f"   Transferred {m2m_transfers} M2M relationships")
