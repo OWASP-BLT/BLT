@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import io
 import json
 import logging
@@ -6,7 +7,8 @@ import os
 import smtplib
 import socket
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 from urllib.parse import urlparse
 
 import markdown
@@ -23,6 +25,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -45,6 +48,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
@@ -56,9 +60,10 @@ from django.views.generic.edit import CreateView
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
 from user_agents import parse
 
-from blt import settings
 from comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
@@ -2914,6 +2919,36 @@ class GitHubIssueDetailView(DetailView):
     template_name = "github_issue_detail.html"
     context_object_name = "issue"
 
+    def get(self, request, *args, **kwargs):
+        """Track unique daily visits via the IP model."""
+        response = super().get(request, *args, **kwargs)
+        try:
+            user_ip = get_client_ip(request)
+            today = timezone.now().date()
+            with transaction.atomic():
+                existing = (
+                    IP.objects.select_for_update()
+                    .filter(
+                        address=user_ip,
+                        path=request.path,
+                        created__date=today,
+                    )
+                    .first()
+                )
+                if not existing:
+                    IP.objects.create(
+                        address=user_ip,
+                        path=request.path,
+                        count=1,
+                        agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                        referer=request.META.get("HTTP_REFERER", "")[:255]
+                        if request.META.get("HTTP_REFERER")
+                        else None,
+                    )
+        except Exception as e:
+            logger.error(f"Error tracking IP view for GitHubIssue: {e}")
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Convert markdown bodies to HTML for display using markdown
@@ -2962,6 +2997,298 @@ class GitHubIssueDetailView(DetailView):
             issue.body_html = escape(issue.body or "")
 
         return context
+
+
+class GitHubIssueBadgeView(APIView):
+    """
+    Compact SVG badge card for a GitHub issue showing four stats:
+    - Views (30d): unique detail-page visits in a 30-day rolling window
+    - Linked PR: whether a pull request is linked (shows PR number or "None")
+    - PR Status: merged / open / closed / N/A
+    - Bounty: the issue's current bounty amount in USD
+
+    Design:
+    - Dark card with BLT red (#e74c3c) accent, single-row 4-column layout
+    - 5-minute cache TTL with ETag support for conditional requests
+
+    Analytics rules:
+    - Counts ONLY real issue-detail page visits stored in the IP model
+    - EXCLUDES badge-endpoint hits from view-count analytics
+    - Tracks badge-endpoint visits separately for its own IP logging
+    - Uses a 30-day rolling window
+    - No GitHub API calls; all data read from the database
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    BRAND_COLOR = "#e74c3c"  # BLT red
+    CACHE_TTL = 300  # 5 minutes
+
+    @staticmethod
+    def _cache_key(owner: str, repo_name: str, issue_id: int) -> str:
+        return f"issue_badge:{owner}:{repo_name}:{issue_id}"
+
+    def _collect_stats(self, issue_id, owner=None, repo_name=None):
+        """Gather stats needed for the badge from the database.
+
+        Returns only four fields:
+        - views_30d: unique detail-page views in the last 30 days
+        - linked_pr: display string for a linked pull request (e.g. "#123" or "None")
+        - pr_status: status of the linked PR ("merged", "open", "closed", or "N/A")
+        - bounty: the issue's bounty amount (Decimal)
+        """
+        repo_url = f"https://github.com/{owner}/{repo_name}" if owner and repo_name else None
+
+        # Look up the GitHubIssue
+        if repo_url:
+            github_issue = GitHubIssue.objects.filter(issue_id=issue_id, type="issue", repo__repo_url=repo_url).first()
+        else:
+            github_issue = GitHubIssue.objects.filter(pk=issue_id, type="issue").first()
+
+        # Issue-specific bounty
+        bounty = Decimal(github_issue.p2p_amount_usd or 0) if github_issue else Decimal(0)
+
+        # Linked pull request info
+        linked_pr = "None"
+        pr_status = "N/A"
+        if github_issue:
+            pr = github_issue.linked_pull_requests.first()
+            if pr:
+                linked_pr = f"#{pr.issue_id}"
+                if pr.is_merged:
+                    pr_status = "merged"
+                else:
+                    pr_status = pr.state  # "open" or "closed"
+
+        # 30-day unique views from the issue DETAIL page
+        detail_path = reverse("github_issue_detail", kwargs={"pk": github_issue.pk}) if github_issue else None
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        if detail_path:
+            views_30d = (
+                IP.objects.filter(path=detail_path, created__gte=thirty_days_ago)
+                .aggregate(uv=Count("address", distinct=True))
+                .get("uv")
+                or 0
+            )
+        else:
+            views_30d = 0
+
+        return {
+            "views_30d": views_30d,
+            "linked_pr": linked_pr,
+            "pr_status": pr_status,
+            "bounty": bounty,
+        }
+
+    def get(self, request, issue_id, owner=None, repo_name=None):
+        # Determine cache key and lookup strategy
+        if owner and repo_name:
+            cache_key = self._cache_key(owner, repo_name, issue_id)
+        else:
+            cache_key = f"issue_badge:pk:{issue_id}"
+
+        cached = cache.get(cache_key)
+
+        # Explicit daily-dedup IP logging for the badge endpoint itself
+        try:
+            user_ip = get_client_ip(request)
+            today = timezone.now().date()
+            with transaction.atomic():
+                existing = (
+                    IP.objects.select_for_update()
+                    .filter(address=user_ip, path=request.path, created__date=today)
+                    .first()
+                )
+                if not existing:
+                    IP.objects.create(
+                        address=user_ip,
+                        path=request.path,
+                        count=1,
+                        agent=request.META.get("HTTP_USER_AGENT", "")[:255],
+                        referer=request.META.get("HTTP_REFERER", "")[:255] or None,
+                    )
+        except Exception as e:
+            logger.error(f"Error tracking IP for badge endpoint: {e}")
+
+        if cached:
+            svg_content = cached
+        else:
+            try:
+                stats = self._collect_stats(issue_id, owner, repo_name)
+            except Exception as e:
+                logger.error(f"Database error generating badge for issue {issue_id}: {e}")
+                stats = {
+                    "views_30d": 0,
+                    "linked_pr": "None",
+                    "pr_status": "N/A",
+                    "bounty": Decimal(0),
+                }
+
+            svg_content = self._generate_badge_svg(stats)
+            cache.set(cache_key, svg_content, self.CACHE_TTL)
+
+        # ETag for conditional requests
+        etag = f'"{hashlib.md5(svg_content.encode()).hexdigest()}"'
+        if_none_match = request.META.get("HTTP_IF_NONE_MATCH", "")
+        client_etags = {tag.strip() for tag in if_none_match.split(",")}
+        if etag in client_etags:
+            not_modified_response = HttpResponse(status=304)
+            not_modified_response["Cache-Control"] = f"public, max-age={self.CACHE_TTL}"
+            not_modified_response["ETag"] = etag
+            return not_modified_response
+
+        response = HttpResponse(svg_content, content_type="image/svg+xml")
+        response["Cache-Control"] = f"public, max-age={self.CACHE_TTL}"
+        response["ETag"] = etag
+        return response
+
+    @staticmethod
+    def _fmt_number(n):
+        """Format a number with commas (e.g. 1500 -> 1,500)."""
+        if isinstance(n, Decimal):
+            return f"{n:,.0f}"
+        return f"{n:,}"
+
+    @staticmethod
+    def _generate_badge_svg(stats):
+        """
+        Generate a compact, card-style SVG badge showing four stats:
+        Views (30d) | Linked PR | PR Status | Bounty
+        """
+
+        # Card dimensions – single row of 4 columns
+        card_w = 580
+        header_h = 38
+        row_h = 46
+        card_h = header_h + row_h
+        cols = 4
+        col_w = card_w // cols
+        border_r = 10
+
+        # Colors
+        bg = "#1a1a2e"
+        header_bg = "#e74c3c"
+        row_bg = "#16213e"
+        border_color = "#e74c3c"
+        text_color = "#ffffff"
+        label_color = "#c0c0c0"
+        accent_green = "#2ecc71"
+        accent_gold = "#f1c40f"
+        accent_red = "#e74c3c"
+        accent_blue = "#3498db"
+
+        # Format values
+        views_30d = GitHubIssueBadgeView._fmt_number(stats["views_30d"])
+        linked_pr = stats["linked_pr"]
+        pr_status = stats["pr_status"]
+        bounty = f"${stats['bounty']:,.2f}"
+
+        # Pick a color for PR status
+        status_colors = {
+            "merged": accent_green,
+            "open": accent_blue,
+            "closed": accent_red,
+            "N/A": label_color,
+        }
+        pr_status_color = status_colors.get(pr_status, label_color)
+
+        # Grid data: (icon, label, value, value_color)
+        cells = [
+            ("\U0001F4C8", "Views / 30d", views_30d, text_color),
+            ("\U0001F517", "Linked PR", linked_pr, accent_gold if linked_pr != "None" else label_color),
+            ("\U0001F4CB", "PR Status", pr_status, pr_status_color),
+            ("\U0001F4B0", "Bounty", bounty, accent_green),
+        ]
+
+        # Build SVG
+        svg_parts = []
+        svg_parts.append(
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{card_w}" height="{card_h}" '
+            f'viewBox="0 0 {card_w} {card_h}">'
+        )
+
+        # Defs: rounded clip path
+        svg_parts.append(
+            f"<defs>"
+            f'<clipPath id="card-clip">'
+            f'<rect width="{card_w}" height="{card_h}" rx="{border_r}"/>'
+            f"</clipPath>"
+            f"</defs>"
+        )
+
+        # Card group with clip
+        svg_parts.append('<g clip-path="url(#card-clip)">')
+
+        # Background
+        svg_parts.append(f'<rect width="{card_w}" height="{card_h}" fill="{bg}"/>')
+
+        # Header bar
+        svg_parts.append(f'<rect width="{card_w}" height="{header_h}" fill="{header_bg}"/>')
+
+        # Header text
+        svg_parts.append(
+            f'<text x="{card_w // 2}" y="{header_h // 2 + 5}" '
+            f'text-anchor="middle" font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+            f'font-size="16" font-weight="bold" fill="{text_color}" '
+            f'letter-spacing="2">BLT ISSUE BADGE</text>'
+        )
+
+        # Row background
+        ry = header_h
+        svg_parts.append(f'<rect y="{ry}" width="{card_w}" height="{row_h}" fill="{row_bg}"/>')
+
+        # Row separator line
+        svg_parts.append(
+            f'<line x1="0" y1="{ry}" x2="{card_w}" y2="{ry}" '
+            f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
+        )
+
+        for col_idx, (icon, label, value, val_color) in enumerate(cells):
+            cx = col_idx * col_w + col_w // 2
+
+            # Column separator
+            if col_idx > 0:
+                lx = col_idx * col_w
+                svg_parts.append(
+                    f'<line x1="{lx}" y1="{ry}" x2="{lx}" y2="{ry + row_h}" '
+                    f'stroke="{border_color}" stroke-opacity="0.2" stroke-width="0.5"/>'
+                )
+
+            # Label
+            label_y = ry + 18
+            svg_parts.append(
+                f'<text x="{cx}" y="{label_y}" text-anchor="middle" '
+                f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+                f'font-size="11" fill="{label_color}">'
+                f"{icon} {label}</text>"
+            )
+
+            # Value
+            value_y = ry + 36
+            svg_parts.append(
+                f'<text x="{cx}" y="{value_y}" text-anchor="middle" '
+                f'font-family="Segoe UI,Helvetica,Arial,sans-serif" '
+                f'font-size="15" font-weight="bold" fill="{val_color}">'
+                f"{value}</text>"
+            )
+
+        # Bottom separator
+        svg_parts.append(
+            f'<line x1="0" y1="{ry + row_h}" x2="{card_w}" y2="{ry + row_h}" '
+            f'stroke="{border_color}" stroke-opacity="0.3" stroke-width="0.5"/>'
+        )
+
+        # Card border
+        svg_parts.append(
+            f'<rect width="{card_w}" height="{card_h}" rx="{border_r}" '
+            f'fill="none" stroke="{border_color}" stroke-width="2"/>'
+        )
+
+        svg_parts.append("</g>")
+        svg_parts.append("</svg>")
+
+        return "\n".join(svg_parts)
 
 
 @login_required(login_url="/accounts/login")
