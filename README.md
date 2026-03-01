@@ -2,7 +2,7 @@
 <h3 align="center">Bug Logging Tool - Gamified Crowd-Sourced QA Testing & Vulnerability Disclosure</h3>
 
 <p align="center">
-  <strong>A gamified platform for discovering and reporting bugs across websites, apps, git repositories, and more</strong>
+  <strong>A gamified platform for discovering and reporting bugs across websites, applications, Git repositories, and more.</strong>
 </p>
 
 <p align="center">
