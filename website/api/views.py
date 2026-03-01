@@ -241,7 +241,9 @@ class IssueViewSet(viewsets.ModelViewSet):
         if parsed_max is not None:
             queryset = queryset.filter(cve_score__lte=parsed_max)
 
-        return queryset
+        return queryset.select_related("user", "domain", "closed_by").prefetch_related(
+            "screenshots", "tags", "flaged", "upvoted"
+        )
 
     def get_issue_info(self, request, issue):
         if issue is None:
