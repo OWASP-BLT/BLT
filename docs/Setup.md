@@ -435,13 +435,18 @@ Feel free to contribute by solving this [issue](https://github.com/OWASP-BLT/BLT
 
 If you're still facing issues or need further assistance, feel free to reach out to the community on the [OWASP Slack channel](https://owasp.org/slack/invite).
 ## Email Verification in Local Development
-This section explains how to bypass email verification locally when no email backend is configured.
+
+This section explains how to handle email verification locally when
+verification emails are not actually delivered by default.
 
 When running BLT locally, you may encounter a **“Verify Your Email Address”**
 screen after creating a user or superuser.
 
-This happens because BLT uses `django-allauth`, which enforces email verification
-by default, but no email backend is configured for local development.
+BLT uses `django-allauth`, which enforces email verification by default.
+In local development, BLT is configured to use the
+`SlackNotificationEmailBackend` with an SMTP host of `localhost:1025`.
+However, no SMTP server (and typically no Slack integration) is running
+by default, so the verification email is never actually delivered..
 
 ### Local Development Workaround
 
