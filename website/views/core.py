@@ -1468,7 +1468,7 @@ def home(request):
         )
         .annotate(
             bug_count=Count("points", filter=Q(points__score__gt=0, points__issue__isnull=False)),  # Only count bug reports
-            total_score=Sum("points__score", filter=Q(points__issue__isnull=False)),  # Only count points from bug reports
+            total_score=Coalesce(Sum("points__score", filter=Q(points__issue__isnull=False)), 0),  # Default NULL to 0
         )
         .order_by("-total_score")[:5]
     )
