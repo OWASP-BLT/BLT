@@ -151,24 +151,40 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Helps reviewers prioritize PRs—large PRs (often from bulk AI refactoring) get red labels for extra scrutiny.
 
 #### 2.2 Add Comment Count Label (`add-comment-count-label.yml`)
-**Purpose**: Track unresolved review conversations on PRs
+**Purpose**: Track unresolved review conversations on PRs and notify developers
 
 **Triggers**:
-- Pull request events
-- Issue comments, PR reviews, PR review comments
-- Review thread resolved/unresolved events
+- Pull request events (opened, synchronize, reopened, ready_for_review, edited)
+- Issue comments (created, edited, deleted)
+- Pull request reviews (submitted, edited, dismissed)
+- Pull request review comments (created, edited, deleted)
+- Pull request review threads (resolved, unresolved)
 
 **Key Features**:
-- Counts unresolved, non-outdated conversations
-- Labels: `unresolved-conversations: N`
+- Counts unresolved, non-outdated conversations using GraphQL pagination
+- Adds dynamic label: `unresolved-conversations: N`
 - Color-coded by severity:
   - Green (0)
   - Yellow (1-3)
   - Orange (4-10)
   - Red (11+)
-- Updates in real-time as conversations are resolved
+- **Posts notification comment** when unresolved conversations are detected
+  - Comment provides clear action items for developers
+  - Comment is automatically updated when conversation count changes
+  - Comment is removed when all conversations are resolved
+- Updates in real-time as conversations are resolved or added
+- Uses unique marker (`<!-- unresolved-conversations-notification -->`) to manage notification comment
+- Uses pagination to reliably find notification comment even on PRs with >100 comments
 
-**AI Relevance**: Helps track review progress on AI-generated PRs which may need more iterations.
+**Developer Experience**:
+When conversations are added to a PR, developers immediately receive:
+1. A color-coded label showing the count
+2. A notification comment with:
+   - Clear description of what needs attention
+   - Action items (review, address, mark as resolved or ask maintainer)
+   - Link to where conversations can be found
+
+**AI Relevance**: Helps track review progress on AI-generated PRs which may need more iterations. Provides immediate, actionable feedback to developers about pending discussions.
 
 #### 2.3 Add Changes Requested Label (`add-changes-requested-label.yml`)
 **Purpose**: Flag PRs with reviewer-requested changes
@@ -185,7 +201,7 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Makes it easy to see which PRs need author attention vs. maintainer review.
 
 #### 2.4 Add Migrations Label (`add-migrations-label.yml`)
-**Purpose**: Flag PRs containing database migrations
+**Purpose**: Flag PRs containing database migrations and validate migration sequence
 
 **Triggers**:
 - Pull request opened, synchronized, or reopened
@@ -194,8 +210,22 @@ These workflows add intelligent metadata and checks to pull requests.
 - Detects migration files in `website/migrations/` or `comments/migrations/`
 - Adds `migrations` label (yellow) for visibility
 - Removes label if migrations are removed from PR
+- **Validates migration numbers are sequential**:
+  - Extracts migration numbers from PR files (e.g., `0252` from `0252_description.py`)
+  - Fetches existing migrations from base branch via GitHub API
+  - Detects conflicts when PR migration numbers ≤ highest existing migration number
+  - Posts detailed comment with fix instructions when conflicts are found
+  - Fails the workflow check to prevent merge until resolved
+  - Auto-removes conflict comment when migrations are regenerated correctly
 
-**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files.
+**Migration Conflict Detection**:
+When a PR contains migrations with numbers that overlap existing migrations (e.g., PR has `0252_*.py` but base branch already has migrations up to `0263_*.py`), the workflow will:
+1. Post a comment explaining the conflict
+2. Provide step-by-step fix instructions (delete migrations, rebase, regenerate)
+3. Fail the workflow check to prevent accidental merge
+4. Automatically remove the warning when the issue is fixed
+
+**AI Relevance**: Critical for database changes—ensures maintainers give extra attention to migration files. Also prevents migration conflicts that can occur when AI generates migrations on stale branches, which could break the database migration sequence.
 
 #### 2.5 Check PR Conflicts (`check-pr-conflicts.yml`)
 **Purpose**: Detect and notify about merge conflicts
@@ -527,13 +557,21 @@ Workflows that keep the repository healthy and up-to-date.
 - Manual dispatch
 
 **Key Features**:
-- Checks all open PRs for unresolved conversations
+- Checks all open PRs for unresolved conversations using GraphQL API
+- **Proper pagination support**: Fetches all review threads across multiple pages (100 per page)
 - Only reminds if PR hasn't been updated in 24 hours
-- Skips bot-created PRs
+- Skips bot-created PRs (detects by user type, `[bot]` suffix, or known bot list)
 - Won't remind more than once per week
 - Posts friendly reminder comment tagging the author
+- **Comprehensive logging**: Tracks pagination progress and thread statistics for debugging
 
-**AI Relevance**: Keeps contributors engaged, even when they're working with AI assistance and may forget about pending discussions.
+**Technical Details**:
+- Uses GraphQL query with proper `$after` parameter for cursor-based pagination
+- Filters out outdated threads that no longer apply to current code
+- Counts resolved, unresolved, and outdated threads separately
+- Logs each page fetch and provides detailed breakdown of thread states
+
+**AI Relevance**: Keeps contributors engaged, even when they're working with AI assistance and may forget about pending discussions. Critical for ensuring AI-generated code receives proper review attention.
 
 #### 6.7 Update All PRs (`update-all-prs.yml`)
 **Purpose**: Batch update and check all open PRs

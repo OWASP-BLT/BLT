@@ -1,0 +1,178 @@
+from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.test import Client, TestCase
+from django.urls import reverse
+
+from website.models import Issue, UserProfile
+
+
+class IssueHTMXTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.user = User.objects.create_user(username="testuser", password="testpass123")
+        self.user_profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        self.issue = Issue.objects.create(url="https://example.com/bug", description="Test bug", user=self.user)
+        self.client.login(username="testuser", password="testpass123")
+
+    def test_like_issue_htmx(self):
+        """Test HTMX like request"""
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"like-section", response.content)
+        # Verify user profile was updated
+        self.user_profile.refresh_from_db()
+        self.assertTrue(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
+
+    def test_like_issue_toggle_off(self):
+        """Test toggling like off"""
+        # First like
+        self.user_profile.issue_upvoted.add(self.issue)
+        # Then unlike
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertFalse(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
+
+    def test_dislike_removes_like(self):
+        """Test that disliking removes existing like"""
+        # First like
+        self.user_profile.issue_upvoted.add(self.issue)
+        # Then dislike
+        response = self.client.post(
+            reverse("dislike_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertFalse(self.user_profile.issue_upvoted.filter(pk=self.issue.pk).exists())
+        self.assertTrue(self.user_profile.issue_downvoted.filter(pk=self.issue.pk).exists())
+
+    def test_flag_issue_htmx(self):
+        """Test HTMX flag request"""
+        response = self.client.post(
+            reverse("flag_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertTrue(self.user_profile.issue_flaged.filter(pk=self.issue.pk).exists())
+
+    def test_save_issue_htmx(self):
+        """Test HTMX save request"""
+        response = self.client.post(
+            reverse("save_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"bookmark-section", response.content)
+        self.user_profile.refresh_from_db()
+        self.assertTrue(self.user_profile.issue_saved.filter(pk=self.issue.pk).exists())
+
+    def test_like_requires_login(self):
+        """Test that like requires authentication"""
+        self.client.logout()
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+
+    def test_like_requires_post(self):
+        """Test that like only accepts POST"""
+        response = self.client.get(
+            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+        )
+        self.assertEqual(response.status_code, 405)  # Method not allowed
+
+    def test_like_rate_limit(self):
+        """Test that like action is rate limited"""
+        # Make 60 requests (should succeed)
+        for _ in range(60):
+            response = self.client.post(
+                reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+                HTTP_HX_REQUEST="true",
+            )
+            self.assertEqual(response.status_code, 200)
+
+        # 61st request should be rate limited
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 429)
+        self.assertIn(b"Rate limit exceeded", response.content)
+
+    def test_like_nonexistent_issue(self):
+        """Test that liking a non-existent issue returns 404"""
+        response = self.client.post(
+            reverse("like_issue", kwargs={"issue_pk": 99999}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_save_issue_toggle_off(self):
+        """Test toggling save off (unsave)"""
+        # First save
+        self.user_profile.issue_saved.add(self.issue)
+        # Then unsave
+        response = self.client.post(
+            reverse("save_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertFalse(self.user_profile.issue_saved.filter(pk=self.issue.pk).exists())
+
+    def test_flag_issue_toggle_off(self):
+        """Test toggling flag off (unflag)"""
+        # First flag
+        self.user_profile.issue_flaged.add(self.issue)
+        # Then unflag
+        response = self.client.post(
+            reverse("flag_issue", kwargs={"issue_pk": self.issue.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user_profile.refresh_from_db()
+        self.assertFalse(self.user_profile.issue_flaged.filter(pk=self.issue.pk).exists())
+
+    def test_toggle_follow_htmx(self):
+        """Test HTMX follow request"""
+        other_user = User.objects.create_user(username="otheruser", password="testpass123")
+        response = self.client.post(
+            reverse("toggle_follow", kwargs={"username": "otheruser"}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"follow-section", response.content)
+        # Verify follow relationship created
+        self.assertTrue(self.user_profile.follows.filter(user=other_user).exists())
+
+    def test_toggle_follow_unfollow(self):
+        """Test toggling follow off"""
+        other_user = User.objects.create_user(username="otheruser", password="testpass123")
+        other_profile, _ = UserProfile.objects.get_or_create(user=other_user)
+        self.user_profile.follows.add(other_profile)
+
+        response = self.client.post(
+            reverse("toggle_follow", kwargs={"username": "otheruser"}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.user_profile.follows.filter(user=other_user).exists())
+
+    def test_toggle_follow_self_fails(self):
+        """Test that users cannot follow themselves"""
+        response = self.client.post(
+            reverse("toggle_follow", kwargs={"username": self.user.username}),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"cannot follow yourself", response.content.lower())

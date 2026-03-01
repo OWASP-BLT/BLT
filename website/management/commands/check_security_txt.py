@@ -1,5 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import timedelta
 
 import requests
 from django.core.management.base import BaseCommand
@@ -75,7 +76,7 @@ class Command(BaseCommand):
             # Skip recently checked domains unless update_all is True
             if not update_all:
                 # Only check domains that haven't been checked in the last 7 days
-                last_week = timezone.now() - timezone.timedelta(days=7)
+                last_week = timezone.now() - timedelta(days=7)
                 domains = domains.filter(
                     Q(security_txt_checked_at__isnull=True) | Q(security_txt_checked_at__lt=last_week)
                 )

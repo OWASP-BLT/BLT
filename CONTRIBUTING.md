@@ -1,6 +1,6 @@
 # Contributing to OWASP BLT
 
-Thank you for your interest in contributing to OWASP BLT! We welcome contributions from everyone, regardless of your level of experience.
+Thank you for your interest in contributing to OWASP BLT! We welcome contributions from everyone, regardless of their level of experience.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to OWASP BLT! We welcome contributio
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our Code of Conduct. Please be respectful and considerate of others when contributing to the project.
+By participating in this project, you agree to abide by our Code of Conduct. Please be respectful and considerate when contributing.
 
 ## Getting Started
 
@@ -112,6 +112,46 @@ Before you start contributing, you'll need to set up your development environmen
 4. Access the application at [http://localhost:8000](http://localhost:8000)
 
 ### Python Virtual Environment Setup
+
+
+### Optional: Python Virtual Environment Setup using `uv`
+
+BLT can also be set up using [`uv`](https://github.com/astral-sh/uv), a fast Python package manager
+and virtual environment tool. This is an **optional** alternative to the Poetry-based setup
+described above.
+
+This option is useful for contributors who prefer faster dependency resolution and installation.
+
+#### Install `uv`
+
+> ⚠️ Note (Windows):  
+> On some Windows setups, `uv` may fail to auto-detect Python installations
+> due to registry or PATH resolution issues. In such cases, explicitly
+> specifying the Python interpreter or using Docker/Poetry is recommended.
+
+
+```bash
+pip install uv
+```
+
+#### Set up the BLT project using `uv`
+
+From the project root, run:
+
+```bash
+uv sync
+```
+
+To start the development server:
+
+```bash
+uv run python manage.py migrate
+uv run python manage.py runserver
+```
+
+Open your browser at:
+http://localhost:8000
+
 
 1. Install Python 3.11.2 (using pyenv or another tool):
 
@@ -241,6 +281,7 @@ This will give you a fully populated development environment with realistic rela
 - Make sure all tests pass before submitting
 - Keep pull requests focused on a single issue or feature
 - Provide a clear description of the changes in your PR
+- For UI changes or new features, include clear screenshots or a short demo video showing the functionality
 
 ## Coding Standards
 
