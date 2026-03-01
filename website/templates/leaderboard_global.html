@@ -185,6 +185,56 @@
         </div>
         <div class="flex justify-center gap-6 flex-wrap">
             <div class="flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">
+                    Comment Leaderboard
+                    <div class="text-sm font-normal text-gray-600 dark:text-gray-400 mt-1">Last 6 months</div>
+                </div>
+                <div class="list-group p-4">
+                    {% if comment_leaderboard %}
+                        <div class="flex flex-col gap-2">
+                            {% for leader in comment_leaderboard %}
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2 items-center truncate">
+                                        {% if leader.commenter_contributor__avatar_url %}
+                                            <img src="{{ leader.commenter_contributor__avatar_url }}"
+                                                 class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
+                                                 alt="{{ leader.commenter_contributor__name }}"
+                                                 width="50px"
+                                                 height="50px">
+                                        {% else %}
+                                            <img src="{% gravatar_url 'default@example.com' 50 %}"
+                                                 class="size-11 select-none border border-gray-200 dark:border-gray-700 rounded-full"
+                                                 alt="{{ leader.commenter_contributor__name|default:'Unknown User' }}"
+                                                 width="50px"
+                                                 height="50px">
+                                        {% endif %}
+                                        {% if leader.commenter__user__username %}
+                                            <a href="{% url 'profile' slug=leader.commenter__user__username %}"
+                                               class="text-lg transition-all duration-200">
+                                                {{ leader.commenter__user__username }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-lg text-gray-500 dark:text-gray-500">{{ leader.commenter_contributor__name|default:"Unknown User" }}</span>
+                                        {% endif %}
+                                        {% if leader.commenter_contributor__github_url %}
+                                            <a href="{{ leader.commenter_contributor__github_url }}"
+                                               target="_blank"
+                                               class="ml-2">
+                                                <i class="fab fa-github text-xl"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                    <span class="pull-right badge bg-gray-100 dark:bg-gray-800 flex-shrink-0 rounded-md py-1 px-2 select-none">{{ leader.total_comments }} Comments</span>
+                                </div>
+                                <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-[#e74c3c] text-center font-medium">No comment data available!</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex-1 border-2 border-[#e74c3c] pb-3 rounded-lg flex-1 min-w-[300px] max-w-[550px]">
                 <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">Top Visitors</div>
                 <div class="list-group w-full p-4">
                     {% if top_visitors %}

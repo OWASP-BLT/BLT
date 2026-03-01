@@ -536,7 +536,7 @@ class OrganizationDashboardAnalyticsView(View):
             "current_year": current_year,
         }
 
-    def bug_rate_increase_descrease_weekly(self, organization, is_accepted_bugs=False):
+    def bug_rate_increase_decrease_weekly(self, organization, is_accepted_bugs=False):
         """Returns stats comparing past 8-15 days (previous week) to 0-7 days (this week)."""
         current_date = timezone.now().date()
         date_ranges = {
@@ -783,8 +783,8 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
-            "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
-            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
+            "bug_rate_increase_decrease_weekly": self.bug_rate_increase_decrease_weekly(id),
+            "accepted_bug_rate_increase_decrease_weekly": self.bug_rate_increase_decrease_weekly(id, True),
             "security_incidents_summary": self.get_security_incidents_summary(id),
             "threat_intelligence": self.get_threat_intelligence(id),
         }

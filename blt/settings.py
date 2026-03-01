@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import sys
 
 import dj_database_url
@@ -136,9 +137,22 @@ if DEBUG:
 
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
-TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
+
 
 if DEBUG and not TESTING:
+    # Configure INTERNAL_IPS for Docker environment
+    INTERNAL_IPS = {"127.0.0.1", "::1", "10.0.2.2"}
+    try:
+        _, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    except (socket.gaierror, OSError):
+        # Fall back to default INTERNAL_IPS if hostname resolution fails
+        ips = []
+    else:
+        # Add Docker network IPs
+        INTERNAL_IPS.update([ip[: ip.rfind(".")] + ".1" for ip in ips if "." in ip])
+        # Add the container's own IP
+        INTERNAL_IPS.update(ips)
+
     DEBUG_TOOLBAR_PANELS = [
         "debug_toolbar.panels.versions.VersionsPanel",
         "debug_toolbar.panels.timer.TimerPanel",
