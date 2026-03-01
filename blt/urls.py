@@ -66,10 +66,8 @@ from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
     AddHuntView,
-    AddSlackIntegrationView,
     DomainView,
     EndBughuntView,
-    LookupSlackUserView,
     Organization_view,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardIntegrations,
@@ -81,8 +79,6 @@ from website.views.company import (
     OrganizationDashboardTeamOverviewView,
     RegisterOrganizationView,
     ShowBughuntView,
-    SlackCallbackView,
-    TestSlackIntegrationView,
     accept_bug,
     check_domain_security_txt,
     create_job,
@@ -249,7 +245,6 @@ from website.views.organization import (
     hunt_results,
     join_room,
     like_activity,
-    link_slack_channel_to_project,
     load_more_issues,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -261,7 +256,6 @@ from website.views.organization import (
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
-    slack_channels_list,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
@@ -304,8 +298,6 @@ from website.views.security_incidents import (
     SecurityIncidentUpdateView,
 )
 from website.views.Simulation import dashboard, lab_detail, submit_answer, task_detail
-from website.views.slack_handlers import slack_commands, slack_events
-from website.views.slackbot import slack_landing_page
 from website.views.social import queue_social_view
 from website.views.staking_competitive import (
     create_staking_pool,
@@ -430,13 +422,6 @@ urlpatterns = [
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
-    path(
-        "oauth/slack/callback/",
-        SlackCallbackView.as_view(),
-        name="slack_oauth_callback",
-    ),
-    path("slack/", slack_landing_page, name="slack_landing_page"),
-    path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
@@ -545,16 +530,6 @@ urlpatterns = [
         name="ongoing_hunts",
     ),
     re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
-    re_path(
-        r"^dashboard/organization/slack-channels$",
-        slack_channels_list,
-        name="slack_channels_list",
-    ),
-    path(
-        "dashboard/organization/slack-channels/link",
-        link_slack_channel_to_project,
-        name="link_slack_channel_to_project",
-    ),
     re_path(
         r"^dashboard/organization/settings$",
         OrganizationSettings.as_view(),
@@ -924,21 +899,6 @@ urlpatterns = [
         name="add_domain",
     ),
     path(
-        "organization/<int:id>/dashboard/add_slack_integration/",
-        AddSlackIntegrationView.as_view(),
-        name="add_slack_integration",
-    ),
-    path(
-        "organization/<int:id>/dashboard/test_slack_integration/",
-        TestSlackIntegrationView.as_view(),
-        name="test_slack_integration",
-    ),
-    path(
-        "organization/<int:id>/dashboard/lookup_slack_user/",
-        LookupSlackUserView.as_view(),
-        name="lookup_slack_user",
-    ),
-    path(
         "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
         AddDomainView.as_view(),
         name="edit_domain",
@@ -1095,7 +1055,6 @@ urlpatterns = [
     path("staking/create/", create_staking_pool, name="create_staking_pool"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
     path("project/<slug:slug>/delete/", delete_project, name="delete_project"),
-    path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),

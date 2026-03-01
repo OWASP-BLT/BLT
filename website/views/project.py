@@ -360,8 +360,6 @@ class ProjectCompactListView(ListView):
                 "name": "name",
                 "status": "status",
                 "repos_count": "repo_count",
-                "slack_channel": "slack_channel",
-                "slack_user_count": "slack_user_count",
                 "created": "created",
                 "modified": "modified",
             }
@@ -500,18 +498,6 @@ def create_project(request):
                     status=400,
                 )
 
-        slack = request.POST.get("slack")
-        if slack:
-            if slack.startswith(("http://", "https://")):
-                if not validate_url(slack):
-                    return JsonResponse(
-                        {
-                            "error": "Slack URL is not accessible",
-                            "code": "INVALID_SLACK_URL",
-                        },
-                        status=400,
-                    )
-
         # Validate repository URLs
         repo_urls = request.POST.getlist("repo_urls[]")
         for url in repo_urls:
@@ -590,7 +576,6 @@ def create_project(request):
             "url": project_url,
             "twitter": request.POST.get("twitter"),
             "facebook": request.POST.get("facebook"),
-            "slack": request.POST.get("slack"),
         }
 
         # Handle logo file
