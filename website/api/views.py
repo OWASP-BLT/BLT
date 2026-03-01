@@ -158,6 +158,7 @@ class DomainViewSet(viewsets.ModelViewSet):
 
     serializer_class = DomainSerializer
     queryset = Domain.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = (filters.SearchFilter,)
     search_fields = ("url", "name")
     http_method_names = ["get", "post", "head"]
