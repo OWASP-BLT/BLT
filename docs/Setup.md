@@ -457,6 +457,8 @@ Run:
 
 ```bash
 docker-compose exec app python manage.py shell
+```
+
 Once inside the Django shell, run:
 
 ```python
@@ -481,3 +483,4 @@ EmailAddress.objects.update_or_create(
 
 print("Email created and verified successfully.")
 exit()
+```
