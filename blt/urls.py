@@ -11,7 +11,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
@@ -29,6 +29,7 @@ from website.api.views import (
     DebugClearCacheApiView,
     DebugPopulateDataApiView,
     DebugSystemStatsApiView,
+    DeleteIssueApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -172,6 +173,7 @@ from website.views.hackathon import (
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
+    GitHubIssueBadgeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
@@ -646,7 +648,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
-    path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
+    path("delete_issue/<int:id>/", delete_issue, name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,
@@ -806,7 +808,7 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v1/search/$",
-        csrf_exempt(search_issues),
+        search_issues,
         name="search_issues",
     ),
     re_path(
@@ -815,8 +817,8 @@ urlpatterns = [
         name="cve_autocomplete",
     ),
     re_path(
-        r"^api/v1/delete_issue/(?P<id>\w+)/$",
-        csrf_exempt(delete_issue),
+        r"^api/v1/delete_issue/(?P<id>\d+)/$",
+        DeleteIssueApiView.as_view(),
         name="delete_api_issue",
     ),
     re_path(
@@ -832,17 +834,17 @@ urlpatterns = [
     re_path(r"^api/v1/scoreboard/$", get_scoreboard, name="api_scoreboard"),
     re_path(
         r"^api/v1/terms/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
+        TemplateView.as_view(template_name="mobile_terms.html"),
         name="api_terms",
     ),
     re_path(
         r"^api/v1/about/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
+        TemplateView.as_view(template_name="mobile_about.html"),
         name="api_about",
     ),
     re_path(
         r"^api/v1/privacypolicy/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
+        TemplateView.as_view(template_name="mobile_privacy.html"),
         name="api_privacypolicy",
     ),
     re_path(
@@ -1152,6 +1154,16 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
+    path(
+        "api/v1/badge/issue/<str:owner>/<str:repo_name>/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge",
+    ),
+    path(
+        "api/v1/badge/issue/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge_simple",
+    ),
     path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
     path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
     path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
