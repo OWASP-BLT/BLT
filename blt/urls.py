@@ -11,7 +11,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
@@ -29,6 +29,7 @@ from website.api.views import (
     DebugClearCacheApiView,
     DebugPopulateDataApiView,
     DebugSystemStatsApiView,
+    DeleteIssueApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -40,7 +41,6 @@ from website.api.views import (
     OrganizationJobStatsViewSet,
     OrganizationViewSet,
     ProjectViewSet,
-    PublicJobListViewSet,
     SearchHistoryApiView,
     SecurityIncidentViewSet,
     StatsApiViewset,
@@ -63,7 +63,6 @@ from website.views.bitcoin import (
     pending_transactions_view,
     update_submission_status,
 )
-from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
@@ -94,8 +93,6 @@ from website.views.company import (
     delete_prize,
     edit_job,
     edit_prize,
-    job_detail,
-    public_job_list,
     toggle_job_status,
 )
 from website.views.core import (
@@ -174,6 +171,7 @@ from website.views.hackathon import (
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
+    GitHubIssueBadgeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
@@ -187,6 +185,7 @@ from website.views.issue import (
     change_bid_status,
     comment_on_content,
     create_github_issue,
+    cve_autocomplete,
     delete_content_comment,
     delete_issue,
     dislike_issue,
@@ -647,7 +646,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
-    path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
+    path("delete_issue/<int:id>/", delete_issue, name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,
@@ -783,7 +782,6 @@ urlpatterns = [
     re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
     re_path(r"^api/v1/userscore/$", get_score, name="get_score"),
     # Job Board API URLs
-    path("api/v1/jobs/public/", PublicJobListViewSet.as_view(), name="api_public_jobs"),
     path(
         "api/v1/organization/<int:org_id>/jobs/stats/",
         OrganizationJobStatsViewSet.as_view(),
@@ -808,12 +806,17 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v1/search/$",
-        csrf_exempt(search_issues),
+        search_issues,
         name="search_issues",
     ),
     re_path(
-        r"^api/v1/delete_issue/(?P<id>\w+)/$",
-        csrf_exempt(delete_issue),
+        r"^api/v1/cve/autocomplete/$",
+        csrf_exempt(cve_autocomplete),
+        name="cve_autocomplete",
+    ),
+    re_path(
+        r"^api/v1/delete_issue/(?P<id>\d+)/$",
+        DeleteIssueApiView.as_view(),
         name="delete_api_issue",
     ),
     re_path(
@@ -829,17 +832,17 @@ urlpatterns = [
     re_path(r"^api/v1/scoreboard/$", get_scoreboard, name="api_scoreboard"),
     re_path(
         r"^api/v1/terms/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
+        TemplateView.as_view(template_name="mobile_terms.html"),
         name="api_terms",
     ),
     re_path(
         r"^api/v1/about/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
+        TemplateView.as_view(template_name="mobile_about.html"),
         name="api_about",
     ),
     re_path(
         r"^api/v1/privacypolicy/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
+        TemplateView.as_view(template_name="mobile_privacy.html"),
         name="api_privacypolicy",
     ),
     re_path(
@@ -998,8 +1001,8 @@ urlpatterns = [
         toggle_job_status,
         name="toggle_job_status",
     ),
-    path("jobs/", public_job_list, name="public_job_list"),
-    path("jobs/<int:pk>/", job_detail, name="job_detail"),
+    path("jobs/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="public_job_list"),
+    path("jobs/<int:pk>/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="job_detail"),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
@@ -1035,7 +1038,7 @@ urlpatterns = [
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
-        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
+        ProjectViewSet.as_view({"get": "list"}),
         name="projects_api",
     ),
     path(
@@ -1066,12 +1069,6 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
-    # blog urls
-    path("blog/", PostListView.as_view(), name="post_list"),
-    path("blog/new/", PostCreateView.as_view(), name="post_form"),
-    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
-    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
-    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
     path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),
@@ -1145,6 +1142,16 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
+    path(
+        "api/v1/badge/issue/<str:owner>/<str:repo_name>/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge",
+    ),
+    path(
+        "api/v1/badge/issue/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge_simple",
+    ),
     path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
     path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
     path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
