@@ -1,6 +1,5 @@
 import logging
 
-from django.core import management
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -14,10 +13,9 @@ class Command(BaseCommand):
         try:
             logger.info(f"Starting hourly scheduled tasks at {timezone.now()}")
 
-            # Run the dynamic repository update command
-            # This will update repositories based on their GitHub issue activity dates
-            # and fetch issues with $ in tags and closed pull requests
-            management.call_command("update_repos_dynamic")
+            # Repository updates have been disabled from automatic scheduling.
+            # Updates are now triggered manually by logged-in users via the
+            # "Refresh from GitHub" button on the repository detail page.
 
             # Other hourly commands can be added here
             # management.call_command('other_hourly_command')

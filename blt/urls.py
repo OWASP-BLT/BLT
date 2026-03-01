@@ -40,7 +40,6 @@ from website.api.views import (
     OrganizationJobStatsViewSet,
     OrganizationViewSet,
     ProjectViewSet,
-    PublicJobListViewSet,
     SearchHistoryApiView,
     SecurityIncidentViewSet,
     StatsApiViewset,
@@ -63,7 +62,6 @@ from website.views.bitcoin import (
     pending_transactions_view,
     update_submission_status,
 )
-from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
@@ -94,8 +92,6 @@ from website.views.company import (
     delete_prize,
     edit_job,
     edit_prize,
-    job_detail,
-    public_job_list,
     toggle_job_status,
 )
 from website.views.core import (
@@ -187,6 +183,7 @@ from website.views.issue import (
     change_bid_status,
     comment_on_content,
     create_github_issue,
+    cve_autocomplete,
     delete_content_comment,
     delete_issue,
     dislike_issue,
@@ -783,7 +780,6 @@ urlpatterns = [
     re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
     re_path(r"^api/v1/userscore/$", get_score, name="get_score"),
     # Job Board API URLs
-    path("api/v1/jobs/public/", PublicJobListViewSet.as_view(), name="api_public_jobs"),
     path(
         "api/v1/organization/<int:org_id>/jobs/stats/",
         OrganizationJobStatsViewSet.as_view(),
@@ -810,6 +806,11 @@ urlpatterns = [
         r"^api/v1/search/$",
         csrf_exempt(search_issues),
         name="search_issues",
+    ),
+    re_path(
+        r"^api/v1/cve/autocomplete/$",
+        csrf_exempt(cve_autocomplete),
+        name="cve_autocomplete",
     ),
     re_path(
         r"^api/v1/delete_issue/(?P<id>\w+)/$",
@@ -998,8 +999,8 @@ urlpatterns = [
         toggle_job_status,
         name="toggle_job_status",
     ),
-    path("jobs/", public_job_list, name="public_job_list"),
-    path("jobs/<int:pk>/", job_detail, name="job_detail"),
+    path("jobs/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="public_job_list"),
+    path("jobs/<int:pk>/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="job_detail"),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
@@ -1035,7 +1036,7 @@ urlpatterns = [
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
-        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
+        ProjectViewSet.as_view({"get": "list"}),
         name="projects_api",
     ),
     path(
@@ -1066,12 +1067,6 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
-    # blog urls
-    path("blog/", PostListView.as_view(), name="post_list"),
-    path("blog/new/", PostCreateView.as_view(), name="post_form"),
-    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
-    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
-    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
     path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),

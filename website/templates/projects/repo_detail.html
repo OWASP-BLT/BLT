@@ -53,6 +53,7 @@
                     <div class="flex items-center gap-4 mb-4">
                         {% if repo.logo_url %}
                             <img src="{{ repo.logo_url }}"
+                                 loading="eager"
                                  width="40"
                                  height="40"
                                  alt="{{ repo.name }} logo"
@@ -105,6 +106,19 @@
                         </svg>
                         View on GitHub
                     </a>
+                    {% if user.is_authenticated %}
+                        <button id="refresh-github-btn"
+                                data-refresh-url="{% url 'refresh_repo_data' repo.id %}"
+                                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Refresh from GitHub
+                        </button>
+                    {% endif %}
                 </div>
             </div>
             <!-- Badge URL Section -->
@@ -540,6 +554,7 @@
                                 {% for contributor in top_contributors %}
                                     <div class="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors group">
                                         <img src="{{ contributor.avatar_url }}"
+                                             loading="lazy"
                                              width="30"
                                              height="30"
                                              alt="{{ contributor.name }}"
@@ -568,6 +583,7 @@
                                         <div class="flex -space-x-2">
                                             {% for contributor in repo.contributor.all|dictsortreversed:"contributions"|slice:"6:11" %}
                                                 <img src="{{ contributor.avatar_url }}"
+                                                     loading="lazy"
                                                      width="20"
                                                      height="20"
                                                      alt="{{ contributor.name }}"
@@ -665,6 +681,7 @@
                                             <td class="px-4 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
                                                     <img class="h-8 w-8 rounded-full"
+                                                         loading="lazy"
                                                          width="20"
                                                          height="20"
                                                          src="{{ stat.contributor.avatar_url }}"
@@ -1319,6 +1336,7 @@
                     {% for stargazer in stargazers %}
                         <div class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 transition-colors">
                             <img src="{{ stargazer.avatar_url }}"
+                                 loading="lazy"
                                  alt="{{ stargazer.login }}'s avatar"
                                  class="w-10 h-10 rounded-full"
                                  height="40"
