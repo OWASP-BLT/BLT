@@ -79,6 +79,8 @@ from website.views.company import (
     OrganizationDashboardManageJobsView,
     OrganizationDashboardManageRolesView,
     OrganizationDashboardTeamOverviewView,
+    OrganizationSecurityApiView,
+    OrganizationSecurityDashboardView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -882,6 +884,16 @@ urlpatterns = [
         "organization/<int:id>/dashboard/integrations/",
         OrganizationDashboardIntegrations.as_view(),
         name="organization_manage_integrations",
+    ),
+    path(
+        "organization/<int:id>/dashboard/security/",
+        OrganizationSecurityDashboardView.as_view(),
+        name="organization_security_dashboard",
+    ),
+    path(
+        "organization/<int:id>/api/security/",
+        OrganizationSecurityApiView.as_view(),
+        name="organization_security_api",
     ),
     path(
         "organization/<int:id>/dashboard/bugs/",

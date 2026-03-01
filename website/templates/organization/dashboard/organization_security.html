@@ -1,0 +1,1183 @@
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Security Monitoring | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Monitor your organization's security posture with login activity tracking, anomaly detection, and vulnerability insights.
+{% endblock description %}
+{% block body %}
+    {% if monitoring_disabled %}
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-4 py-12 bg-gray-50 dark:bg-gray-900">
+            <div class="max-w-lg mx-auto text-center">
+                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-gray-400 text-2xl" aria-hidden="true"></i>
+                </div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Security Monitoring is Disabled</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">
+                    Enable security monitoring in your organization settings to start tracking login activity and detecting anomalies.
+                </p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">Contact your organization admin to enable this feature.</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="w-full bg-gray-100 dark:bg-gray-900 overflow-y-auto h-[calc(100vh-185px)]"
+             id="security-dashboard"
+             data-org-id="{{ organization }}">
+            <div class="flex flex-col p-3 gap-3">
+                <!-- Section Navigation Strip -->
+                <div class="flex gap-2 flex-wrap">
+                    <button onclick="document.getElementById('security-dashboard').scrollTo({top:0,behavior:'smooth'})"
+                            class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 transition-colors duration-150">
+                        <i class="fas fa-sign-in-alt mr-1" aria-hidden="true"></i>User Activity
+                    </button>
+                    <button onclick="document.getElementById('incidents-section').scrollIntoView({behavior:'smooth',block:'start'})"
+                            class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 transition-colors duration-150">
+                        <i class="fas fa-exclamation-circle mr-1" aria-hidden="true"></i>Incidents
+                    </button>
+                    <button onclick="document.getElementById('threats-section').scrollIntoView({behavior:'smooth',block:'start'})"
+                            class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-gray-700 hover:text-purple-600 transition-colors duration-150">
+                        <i class="fas fa-skull-crossbones mr-1" aria-hidden="true"></i>Threats
+                    </button>
+                    <button onclick="document.getElementById('traffic-section').scrollIntoView({behavior:'smooth',block:'start'})"
+                            class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-cyan-50 dark:hover:bg-gray-700 hover:text-cyan-600 transition-colors duration-150">
+                        <i class="fas fa-network-wired mr-1" aria-hidden="true"></i>Traffic
+                    </button>
+                    <button onclick="document.getElementById('vulns-section').scrollIntoView({behavior:'smooth',block:'start'})"
+                            class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-600 transition-colors duration-150">
+                        <i class="fas fa-bug mr-1" aria-hidden="true"></i>Vulnerabilities
+                    </button>
+                    <button onclick="document.getElementById('compliance-section').scrollIntoView({behavior:'smooth',block:'start'})"
+                            class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-gray-700 hover:text-green-600 transition-colors duration-150">
+                        <i class="fas fa-clipboard-check mr-1" aria-hidden="true"></i>Compliance
+                    </button>
+                </div>
+                <!-- ROW 1: 4 Hero KPI Cards (text-5xl) -->
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-red-500 p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                         onclick="toggleExpand('security-issues')">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Security Issues</p>
+                                <p class="text-5xl font-black text-gray-900 dark:text-gray-100 mt-1">{{ total_security_issues }}</p>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    <span class="{% if recent_incidents_count > 0 %}text-red-500{% else %}text-green-500{% endif %} font-semibold">{{ recent_incidents_count }}</span> this month
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-shield-alt text-red-500 text-lg" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-300 dark:text-gray-600 text-xs mt-2 block transition-transform duration-200"
+                           id="chevron-security-issues"></i>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-blue-500 p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                         onclick="toggleExpand('logins')">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Logins (30d)</p>
+                                <p class="text-5xl font-black text-gray-900 dark:text-gray-100 mt-1">{{ login_success_count }}</p>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    <span class="{% if login_trend_pct > 0 %}text-green-500{% elif login_trend_pct < 0 %}text-red-500{% else %}text-gray-400{% endif %} font-semibold">
+                                        {% if login_trend_pct > 0 %}+{% endif %}
+                                        {{ login_trend_pct }}%</span> vs last week
+                                    </p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-sign-in-alt text-blue-500 text-lg" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-300 dark:text-gray-600 text-xs mt-2 block transition-transform duration-200"
+                               id="chevron-logins"></i>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-orange-500 p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                             onclick="toggleExpand('failed')">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Failed Logins</p>
+                                    <p class="text-5xl font-black {% if login_failed_count > 0 %}text-orange-500{% else %}text-gray-900 dark:text-gray-100{% endif %} mt-1">
+                                        {{ login_failed_count }}
+                                    </p>
+                                    <p class="text-sm text-gray-500 mt-1">last 30 days</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-orange-500 text-lg"
+                                       aria-hidden="true"></i>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-300 dark:text-gray-600 text-xs mt-2 block transition-transform duration-200"
+                               id="chevron-failed"></i>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-amber-500 p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                             onclick="toggleExpand('anomalies-card')">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Anomalies</p>
+                                    <p class="text-5xl font-black {% if anomaly_count > 0 %}text-amber-500{% else %}text-gray-900 dark:text-gray-100{% endif %} mt-1">
+                                        {{ anomaly_count }}
+                                    </p>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        <span class="text-red-500 font-semibold">{{ anomaly_high }}</span>H
+                                        <span class="text-amber-500 font-semibold ml-1">{{ anomaly_medium }}</span>M
+                                        <span class="text-blue-500 font-semibold ml-1">{{ anomaly_low }}</span>L
+                                    </p>
+                                </div>
+                                <div class="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-bug text-amber-500 text-lg" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-300 dark:text-gray-600 text-xs mt-2 block transition-transform duration-200"
+                               id="chevron-anomalies-card"></i>
+                        </div>
+                    </div>
+                    <!-- Expand panels for Row 1 -->
+                    <div id="expand-security-issues"
+                         class="hidden transition-all duration-300 overflow-hidden">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                            <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Recent Security Incidents</h4>
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th scope="col"
+                                            class="text-left py-1.5 px-2 text-gray-500 font-semibold uppercase text-[10px]">
+                                            Title
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-1.5 px-2 text-gray-500 font-semibold uppercase text-[10px]">
+                                            Severity
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-1.5 px-2 text-gray-500 font-semibold uppercase text-[10px]">
+                                            Status
+                                        </th>
+                                        <th scope="col"
+                                            class="text-left py-1.5 px-2 text-gray-500 font-semibold uppercase text-[10px]">
+                                            Date
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for inc in recent_incidents %}
+                                        <tr class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                            <td class="py-1.5 px-2 text-gray-900 dark:text-gray-100 font-medium">{{ inc.title|truncatechars:50 }}</td>
+                                            <td class="py-1.5 px-2">
+                                                <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold {% if inc.severity == 'critical' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% elif inc.severity == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400{% elif inc.severity == 'medium' %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">{{ inc.get_severity_display }}</span>
+                                            </td>
+                                            <td class="py-1.5 px-2">
+                                                <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold {% if inc.status == 'open' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% elif inc.status == 'investigating' %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% else %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400{% endif %}">{{ inc.get_status_display }}</span>
+                                            </td>
+                                            <td class="py-1.5 px-2 text-gray-400">{{ inc.created_at|timesince }} ago</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="py-4 text-center text-gray-400">No incidents recorded</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="expand-logins"
+                         class="hidden transition-all duration-300 overflow-hidden">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+                             id="expand-logins-content"></div>
+                    </div>
+                    <div id="expand-failed"
+                         class="hidden transition-all duration-300 overflow-hidden">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+                             id="expand-failed-content"></div>
+                    </div>
+                    <div id="expand-anomalies-card"
+                         class="hidden transition-all duration-300 overflow-hidden">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+                             id="expand-anomalies-content"></div>
+                    </div>
+                    <!-- ROW 2: 4 Secondary KPI Cards (text-3xl) -->
+                    <div class="grid grid-cols-4 gap-3">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-cyan-500 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Unique IPs</p>
+                                    <p class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ unique_ips_count }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">last 30 days</p>
+                                </div>
+                                <div class="w-12 h-12 bg-cyan-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-network-wired text-cyan-500 text-lg" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-purple-500 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Active Users</p>
+                                    <p class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ unique_users_count }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">last 30 days</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-users text-purple-500 text-lg" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-green-500 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Success Rate</p>
+                                    <p class="text-3xl font-bold {% if login_success_rate >= 90 %}text-green-500{% elif login_success_rate >= 70 %}text-amber-500{% else %}text-red-500{% endif %} mt-1">
+                                        {{ login_success_rate }}%
+                                    </p>
+                                    <p class="text-sm text-gray-500 mt-1">{{ login_success_count }} ok / {{ login_failed_count }} fail</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-check-circle text-green-500 text-lg" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 border-l-indigo-500 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Peak Hour</p>
+                                    <p class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ peak_hour }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">{{ peak_hour_count }} logins</p>
+                                </div>
+                                <div class="w-12 h-12 bg-indigo-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-clock text-indigo-500 text-lg" aria-hidden="true"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ROW 3: 4 Chart Cards -->
+                    <div class="grid grid-cols-4 gap-3 h-52">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('riskGaugeChart', 'Risk Score')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Risk Score</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 flex items-center justify-center gap-4 px-4">
+                                <div class="relative w-24 h-24 flex-shrink-0">
+                                    <canvas id="riskGaugeChart"></canvas>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <span class="text-xl font-black {% if risk_score >= 70 %}text-red-500{% elif risk_score >= 40 %}text-amber-500{% else %}text-green-500{% endif %}">{{ risk_score }}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold {% if risk_score >= 70 %}text-red-500{% elif risk_score >= 40 %}text-amber-500{% else %}text-green-500{% endif %}">
+                                        {% if risk_score >= 70 %}
+                                            High Risk
+                                        {% elif risk_score >= 40 %}
+                                            Medium Risk
+                                        {% else %}
+                                            Low Risk
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        <span class="text-red-500 font-semibold">{{ incidents_open }}</span> open
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        <span class="text-green-500 font-semibold">{{ incidents_resolved }}</span> resolved
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('severityChart', 'Issue Severity')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Issue Severity</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 p-3 min-h-0">
+                                <canvas id="severityChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('loginTypeChart', 'Login Breakdown')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Login Breakdown</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 flex items-center px-3 gap-3 min-h-0">
+                                <div class="relative w-24 h-24 flex-shrink-0">
+                                    <canvas id="loginTypeChart"></canvas>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1.5">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0"></span>
+                                        <span>Login: <strong class="text-gray-700 dark:text-gray-200">{{ login_success_count }}</strong></span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-gray-400 flex-shrink-0"></span>
+                                        <span>Logout: <strong class="text-gray-700 dark:text-gray-200">{{ login_logout_count }}</strong></span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                                        <span>Failed: <strong class="text-gray-700 dark:text-gray-200">{{ login_failed_count }}</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('resolutionGaugeChart', 'Anomaly Resolution Rate')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Resolution Rate</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 flex items-center justify-center gap-4 px-4">
+                                <div class="relative w-24 h-24 flex-shrink-0">
+                                    <canvas id="resolutionGaugeChart"></canvas>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <span class="text-xl font-black {% if anomaly_resolution_rate >= 70 %}text-green-500{% elif anomaly_resolution_rate >= 40 %}text-amber-500{% else %}text-red-500{% endif %}">{{ anomaly_resolution_rate }}%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        <span class="text-green-500 font-semibold">{{ anomaly_reviewed_count }}</span> reviewed
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        <span class="text-gray-600 dark:text-gray-300 font-semibold">{{ anomaly_total_count }}</span> total
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ROW 4: 4 Chart Cards -->
+                    <div class="grid grid-cols-4 gap-3 h-52">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('dailyTrendChart', '7-Day Login Trend')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">7-Day Login Trend</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 p-3 min-h-0">
+                                <canvas id="dailyTrendChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('dailyFailedChart', 'Failed Login Timeline')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Failed Timeline</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 p-3 min-h-0">
+                                <canvas id="dailyFailedChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('hourlyChart', 'Hourly Activity')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hourly Activity</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 p-3 min-h-0">
+                                <canvas id="hourlyChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                             onclick="openChartModal('anomalyTypeChart', 'Anomaly Types')">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Anomaly Types</span>
+                                <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                   aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-1 p-3 min-h-0">
+                                <canvas id="anomalyTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ROW 5: Tables + Sidebar (grid-cols-5) -->
+                    <div class="grid grid-cols-5 gap-3">
+                        <!-- Login Events Table (2 cols) -->
+                        <div class="col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[340px]">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Recent Login Events</span>
+                            </div>
+                            <div class="overflow-y-auto flex-1 min-h-0">
+                                <table class="w-full text-xs">
+                                    <thead class="sticky top-0 bg-gray-50 dark:bg-gray-750">
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                User
+                                            </th>
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                Type
+                                            </th>
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                IP
+                                            </th>
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                Time
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for event in login_events %}
+                                            <tr class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
+                                                onclick="drillDown('user_events', {username: '{{ event.username_attempted|escapejs }}'})">
+                                                <td class="py-1.5 px-3 text-gray-900 dark:text-gray-100 font-medium text-[11px]">{{ event.username_attempted }}</td>
+                                                <td class="py-1.5 px-3">
+                                                    {% if event.event_type == "login" %}
+                                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Login</span>
+                                                    {% elif event.event_type == "failed" %}
+                                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Failed</span>
+                                                    {% else %}
+                                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">Logout</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="py-1.5 px-3 text-gray-500 font-mono text-[10px]">{{ event.ip_address|default:"-" }}</td>
+                                                <td class="py-1.5 px-3 text-gray-400 text-[10px]">{{ event.timestamp|timesince }} ago</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="py-6 text-center text-gray-400 text-xs">No login events recorded yet</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Incidents Table (2 cols) -->
+                        <div class="col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[340px]">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Security Incidents</span>
+                            </div>
+                            <div class="overflow-y-auto flex-1 min-h-0">
+                                <table class="w-full text-xs">
+                                    <thead class="sticky top-0 bg-gray-50 dark:bg-gray-750">
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                Title
+                                            </th>
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                Severity
+                                            </th>
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                Status
+                                            </th>
+                                            <th scope="col"
+                                                class="text-left py-1.5 px-3 text-gray-500 font-semibold text-[10px] uppercase">
+                                                Date
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for inc in recent_incidents %}
+                                            <tr class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                                <td class="py-1.5 px-3 text-gray-900 dark:text-gray-100 font-medium text-[11px]">{{ inc.title|truncatechars:40 }}</td>
+                                                <td class="py-1.5 px-3">
+                                                    <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold {% if inc.severity == 'critical' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% elif inc.severity == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400{% elif inc.severity == 'medium' %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">{{ inc.get_severity_display }}</span>
+                                                </td>
+                                                <td class="py-1.5 px-3">
+                                                    <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold {% if inc.status == 'open' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% elif inc.status == 'investigating' %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% else %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400{% endif %}">{{ inc.get_status_display }}</span>
+                                                </td>
+                                                <td class="py-1.5 px-3 text-gray-400 text-[10px]">{{ inc.created_at|timesince }} ago</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="py-6 text-center text-gray-400 text-xs">No incidents recorded</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Sidebar (1 col) -->
+                        <div class="col-span-1 flex flex-col gap-3 max-h-[340px]">
+                            <!-- Top IPs -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col flex-1">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Top Source IPs</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-2 py-1">
+                                    {% for ip in top_ips %}
+                                        <div class="flex items-center justify-between py-1 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded cursor-pointer transition-colors duration-150"
+                                             onclick="drillDown('ip_events', {ip: '{{ ip.ip_address|escapejs }}'})">
+                                            <span class="font-mono text-[10px] text-gray-700 dark:text-gray-300 truncate">{{ ip.ip_address }}</span>
+                                            <span class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 ml-2 flex-shrink-0">{{ ip.count }}</span>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-[10px] text-gray-400 mt-2 text-center">No IP data</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <!-- Top User Agents -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col flex-1">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Top User Agents</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-2 py-1">
+                                    {% for ua in top_user_agents %}
+                                        <div class="flex items-center justify-between py-1 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded transition-colors duration-150">
+                                            <span class="text-[9px] text-gray-600 dark:text-gray-400 truncate"
+                                                  title="{{ ua.user_agent }}">{{ ua.user_agent_short }}</span>
+                                            <span class="text-[10px] font-semibold text-purple-600 dark:text-purple-400 ml-2 flex-shrink-0">{{ ua.count }}</span>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-[10px] text-gray-400 mt-2 text-center">No UA data</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <!-- Active Alerts -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col flex-1">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Active Alerts</span>
+                                    {% if anomaly_count > 0 %}
+                                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold bg-red-500 text-white animate-pulse">{{ anomaly_count }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1 overflow-y-auto min-h-0" id="anomalies-sidebar">
+                                    {% for anomaly in anomalies %}
+                                        <div class="px-2 py-1.5 border-b border-gray-50 dark:border-gray-700/50 hover:bg-blue-50 dark:hover:bg-gray-700/40 cursor-pointer transition-colors duration-150 flex items-start justify-between gap-1"
+                                             id="anomaly-row-{{ anomaly.id }}"
+                                             data-anomaly-id="{{ anomaly.id }}"
+                                             data-anomaly-type="{{ anomaly.get_anomaly_type_display }}"
+                                             data-anomaly-severity="{{ anomaly.severity }}"
+                                             data-anomaly-user="{% if anomaly.user %}{{ anomaly.user.username }}{% else %}deleted user{% endif %}"
+                                             data-anomaly-description="{{ anomaly.description }}"
+                                             data-anomaly-ip="{% if anomaly.login_event %}{{ anomaly.login_event.ip_address|default:'-' }}{% else %}-{% endif %}"
+                                             data-anomaly-ua="{% if anomaly.login_event %}{{ anomaly.login_event.user_agent|default:'-'|truncatechars:80 }}{% else %}-{% endif %}"
+                                             data-anomaly-time="{{ anomaly.created_at|timesince }} ago">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center gap-1">
+                                                    {% if anomaly.severity == "high" %}
+                                                        <span class="inline-flex px-1 rounded text-[8px] font-bold bg-red-500 text-white flex-shrink-0">H</span>
+                                                    {% elif anomaly.severity == "medium" %}
+                                                        <span class="inline-flex px-1 rounded text-[8px] font-bold bg-amber-500 text-white flex-shrink-0">M</span>
+                                                    {% else %}
+                                                        <span class="inline-flex px-1 rounded text-[8px] font-bold bg-blue-500 text-white flex-shrink-0">L</span>
+                                                    {% endif %}
+                                                    <span class="text-[10px] font-semibold text-gray-800 dark:text-gray-200 truncate">{{ anomaly.get_anomaly_type_display }}</span>
+                                                    <i class="fas fa-chevron-right text-[7px] text-gray-300 dark:text-gray-600 ml-auto flex-shrink-0"></i>
+                                                </div>
+                                                <p class="text-[9px] text-gray-400 truncate">
+                                                    {% if anomaly.user %}
+                                                        {{ anomaly.user.username }}
+                                                    {% else %}
+                                                        deleted user
+                                                    {% endif %}
+                                                    · {{ anomaly.created_at|timesince }} ago
+                                                </p>
+                                            </div>
+                                            <button onclick="event.stopPropagation(); dismissAnomaly({{ organization }}, {{ anomaly.id }}, this)"
+                                                    class="text-gray-300 hover:text-red-400 flex-shrink-0 mt-0.5 transition-colors duration-150"
+                                                    title="Dismiss">
+                                                <i class="fas fa-times text-[9px]"></i>
+                                            </button>
+                                        </div>
+                                    {% empty %}
+                                        <div class="px-2 py-3 text-center">
+                                            <i class="fas fa-check-circle text-green-400 text-sm" aria-hidden="true"></i>
+                                            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">No active anomalies</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ROW 6: Most Active Users -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Most Active Users (30d)</span>
+                        </div>
+                        <div class="p-4">
+                            {% if most_active_users %}
+                                <div class="space-y-2">
+                                    {% for user_entry in most_active_users %}
+                                        <div class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg p-2 transition-colors duration-150"
+                                             onclick="drillDown('user_events', {username: '{{ user_entry.username_attempted|escapejs }}'})">
+                                            <span class="text-sm font-bold text-gray-500 dark:text-gray-400 w-6 text-right">{{ forloop.counter }}</span>
+                                            <div class="w-8 h-8 bg-indigo-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-user text-indigo-500 text-xs" aria-hidden="true"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{{ user_entry.username_attempted }}</p>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="bg-gray-100 dark:bg-gray-700 rounded-full h-2 flex-1 w-[120px]">
+                                                    <div class="bg-indigo-500 rounded-full h-2"
+                                                         style="width: {% widthratio user_entry.count most_active_users.0.count 100 %}%">
+                                                    </div>
+                                                </div>
+                                                <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400 w-10 text-right">{{ user_entry.count }}</span>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-center text-gray-400 text-sm py-4">No login data in the last 30 days</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- ENHANCED INCIDENTS SUMMARY SECTION                 -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div id="incidents-section" class="scroll-mt-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-exclamation-circle text-red-500 text-sm"
+                               aria-hidden="true"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Enhanced Incidents Summary</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <!-- Monthly Incident Trend -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('monthlyIncidentChart', 'Monthly Incident Trend')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Monthly Trend (6mo)</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 p-3 min-h-0">
+                                    <canvas id="monthlyIncidentChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Top Affected Systems -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('affectedSystemsChart', 'Top Affected Systems')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Affected Systems</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 p-3 min-h-0">
+                                    <canvas id="affectedSystemsChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- MTTR KPI -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col items-center justify-center h-52">
+                                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Mean Time to Resolution</p>
+                                <p class="text-5xl font-black {% if mttr_hours > 72 %}text-red-500{% elif mttr_hours > 24 %}text-amber-500{% else %}text-green-500{% endif %}">
+                                    {{ mttr_hours }}
+                                </p>
+                                <p class="text-sm text-gray-500 mt-1">hours (avg)</p>
+                                <p class="text-xs text-gray-400 mt-2">
+                                    {% if mttr_hours > 0 %}
+                                        ~{{ mttr_hours|floatformat:0 }}h per incident
+                                    {% else %}
+                                        No resolved incidents
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- THREAT INTELLIGENCE SECTION                        -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div id="threats-section" class="scroll-mt-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-skull-crossbones text-purple-500 text-sm"
+                               aria-hidden="true"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Threat Intelligence</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3">
+                            <!-- KPI Mini-Cards -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-2">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Active Threats</p>
+                                    <div class="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-crosshairs text-red-500 text-xs" aria-hidden="true"></i>
+                                    </div>
+                                </div>
+                                <p class="text-3xl font-black {% if active_threats_count > 0 %}text-red-500{% else %}text-gray-900 dark:text-gray-100{% endif %}">
+                                    {{ active_threats_count }}
+                                </p>
+                                <p class="text-xs text-gray-500">{{ total_threats_count }} total</p>
+                                <div class="border-t border-gray-100 dark:border-gray-700 pt-2 mt-auto">
+                                    <div class="grid grid-cols-4 gap-1 text-center">
+                                        <div>
+                                            <p class="text-xs font-bold text-red-500">{{ threat_sev_critical }}</p>
+                                            <p class="text-[8px] text-gray-400 uppercase">Crit</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-orange-500">{{ threat_sev_high }}</p>
+                                            <p class="text-[8px] text-gray-400 uppercase">High</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-amber-500">{{ threat_sev_medium }}</p>
+                                            <p class="text-[8px] text-gray-400 uppercase">Med</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-blue-500">{{ threat_sev_low }}</p>
+                                            <p class="text-[8px] text-gray-400 uppercase">Low</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Threat Type Chart -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('threatTypeChart', 'Threat Types')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Threat Types</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 p-3 min-h-0">
+                                    <canvas id="threatTypeChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Threat Severity Doughnut -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('threatSeverityChart', 'Threat Severity')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Severity</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 flex items-center justify-center p-3 min-h-0">
+                                    <div class="w-28 h-28">
+                                        <canvas id="threatSeverityChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Recent Threats Feed -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-52">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Recent Threats</span>
+                                </div>
+                                <div class="overflow-y-auto flex-1 min-h-0">
+                                    <table class="w-full text-xs">
+                                        <tbody>
+                                            {% for threat in recent_threats %}
+                                                <tr class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                                    <td class="py-1 px-2 text-gray-900 dark:text-gray-100 font-medium text-[10px] truncate max-w-[100px]">
+                                                        {{ threat.title|truncatechars:30 }}
+                                                    </td>
+                                                    <td class="py-1 px-1">
+                                                        <span class="inline-flex px-1 py-0.5 rounded text-[8px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">{{ threat.get_threat_type_display }}</span>
+                                                    </td>
+                                                    <td class="py-1 px-1">
+                                                        <span class="inline-flex px-1 py-0.5 rounded text-[8px] font-semibold {% if threat.severity == 'critical' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% elif threat.severity == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400{% elif threat.severity == 'medium' %}bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">{{ threat.get_severity_display }}</span>
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="py-4 text-center text-gray-400 text-xs">No threat data</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- NETWORK TRAFFIC SECTION                            -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div id="traffic-section" class="scroll-mt-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-network-wired text-cyan-500 text-sm" aria-hidden="true"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Network Traffic Analysis</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3">
+                            <!-- IP Diversity Line Chart -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('ipDiversityChart', 'IP Diversity (7d)')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">IP Diversity (7d)</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 p-3 min-h-0">
+                                    <canvas id="ipDiversityChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Daily Traffic Volume -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('dailyTrafficChart', 'Daily Traffic Volume')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Traffic Volume (7d)</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 p-3 min-h-0">
+                                    <canvas id="dailyTrafficChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Top Subnets -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-52">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Top Subnets (/24)</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-2 py-1">
+                                    {% for subnet, count in top_subnets %}
+                                        <div class="flex items-center justify-between py-1.5 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded transition-colors duration-150">
+                                            <span class="font-mono text-[10px] text-gray-700 dark:text-gray-300">{{ subnet }}</span>
+                                            <div class="flex items-center gap-2">
+                                                <div class="bg-cyan-100 dark:bg-cyan-900/30 rounded-full h-1.5 w-16">
+                                                    <div class="bg-cyan-500 rounded-full h-1.5"
+                                                         style="width: {% widthratio count top_subnets.0.1 100 %}%">
+                                                    </div>
+                                                </div>
+                                                <span class="text-[10px] font-semibold text-cyan-600 dark:text-cyan-400 w-8 text-right">{{ count }}</span>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-[10px] text-gray-400 mt-2 text-center">No subnet data</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <!-- Failed Login Origins -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-52">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Failed Login Origins</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-2 py-1">
+                                    {% for ip_entry in failed_ip_origins %}
+                                        <div class="flex items-center justify-between py-1.5 px-1 hover:bg-red-50 dark:hover:bg-gray-700/30 rounded cursor-pointer transition-colors duration-150"
+                                             onclick="drillDown('ip_events', {ip: '{{ ip_entry.ip_address|escapejs }}'})">
+                                            <span class="font-mono text-[10px] text-red-600 dark:text-red-400">{{ ip_entry.ip_address }}</span>
+                                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">{{ ip_entry.count }}</span>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-[10px] text-gray-400 mt-2 text-center">No failed login data</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- VULNERABILITY MANAGEMENT SECTION                   -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div id="vulns-section" class="scroll-mt-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-bug text-orange-500 text-sm" aria-hidden="true"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Vulnerability Management</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3">
+                            <!-- Vuln KPIs -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-2">
+                                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Vulnerabilities</p>
+                                <p class="text-3xl font-black text-gray-900 dark:text-gray-100">{{ vuln_total }}</p>
+                                <div class="space-y-1.5 mt-auto">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] text-gray-500">Open</span>
+                                        <span class="text-xs font-bold text-red-500">{{ vuln_open }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] text-gray-500">In Progress</span>
+                                        <span class="text-xs font-bold text-amber-500">{{ vuln_in_progress }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] text-gray-500">Remediated</span>
+                                        <span class="text-xs font-bold text-green-500">{{ vuln_remediated }}</span>
+                                    </div>
+                                    {% if vuln_overdue > 0 %}
+                                        <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-1">
+                                            <span class="text-[10px] text-red-500 font-semibold"><i class="fas fa-exclamation-triangle mr-0.5" aria-hidden="true"></i>Overdue</span>
+                                            <span class="text-xs font-bold text-red-600">{{ vuln_overdue }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Vuln Severity Chart -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('vulnSeverityChart', 'Vulnerability Severity')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">By Severity</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 p-3 min-h-0">
+                                    <canvas id="vulnSeverityChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Vuln Status Doughnut -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52 cursor-pointer transition-shadow duration-200 hover:shadow-lg"
+                                 onclick="openChartModal('vulnStatusChart', 'Vulnerability Status')">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0 flex items-center justify-between">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">By Status</span>
+                                    <i class="fas fa-expand text-gray-300 dark:text-gray-600 text-[10px]"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="flex-1 flex items-center justify-center p-3 min-h-0">
+                                    <div class="w-28 h-28">
+                                        <canvas id="vulnStatusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Recent Vulns Table -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-52">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Recent Vulns</span>
+                                </div>
+                                <div class="overflow-y-auto flex-1 min-h-0">
+                                    <table class="w-full text-xs">
+                                        <tbody>
+                                            {% for vuln in recent_vulns %}
+                                                <tr class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                                    <td class="py-1 px-2 text-gray-900 dark:text-gray-100 font-medium text-[10px] truncate max-w-[80px]">
+                                                        {{ vuln.title|truncatechars:25 }}
+                                                    </td>
+                                                    <td class="py-1 px-1">
+                                                        <span class="inline-flex px-1 py-0.5 rounded text-[8px] font-semibold {% if vuln.severity == 'critical' %}bg-red-100 text-red-700{% elif vuln.severity == 'high' %}bg-orange-100 text-orange-700{% elif vuln.severity == 'medium' %}bg-amber-100 text-amber-700{% else %}bg-blue-100 text-blue-700{% endif %}">{{ vuln.get_severity_display }}</span>
+                                                    </td>
+                                                    <td class="py-1 px-1">
+                                                        <span class="inline-flex px-1 py-0.5 rounded text-[8px] font-semibold {% if vuln.status == 'open' %}bg-red-100 text-red-700{% elif vuln.status == 'in_progress' %}bg-amber-100 text-amber-700{% elif vuln.status == 'remediated' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ vuln.get_status_display }}</span>
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="py-4 text-center text-gray-400 text-xs">No vulnerabilities</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <!-- COMPLIANCE MONITORING SECTION                      -->
+                    <!-- ═══════════════════════════════════════════════════ -->
+                    <div id="compliance-section" class="scroll-mt-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-clipboard-check text-green-500 text-sm"
+                               aria-hidden="true"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Compliance Monitoring</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3">
+                            <!-- Compliance Gauge -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-52">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Overall Compliance</span>
+                                </div>
+                                <div class="flex-1 flex items-center justify-center px-4">
+                                    <div class="relative w-28 h-28 flex-shrink-0">
+                                        <canvas id="complianceGaugeChart"></canvas>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-2xl font-black {% if overall_compliance_pct >= 80 %}text-green-500{% elif overall_compliance_pct >= 50 %}text-amber-500{% else %}text-red-500{% endif %}">{{ overall_compliance_pct }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Framework Cards -->
+                            <div class="col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-52">
+                                <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Frameworks</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto p-2">
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for fw in framework_summaries %}
+                                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5 min-w-[140px] flex-1">
+                                                <p class="text-[10px] font-bold text-gray-700 dark:text-gray-300">{{ fw.label }}</p>
+                                                <div class="flex items-center gap-2 mt-1.5">
+                                                    <div class="bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 flex-1">
+                                                        <div class="rounded-full h-1.5 {% if fw.pct >= 80 %}bg-green-500{% elif fw.pct >= 50 %}bg-amber-500{% else %}bg-red-500{% endif %}"
+                                                             style="width: {{ fw.pct }}%"></div>
+                                                    </div>
+                                                    <span class="text-[10px] font-bold {% if fw.pct >= 80 %}text-green-600{% elif fw.pct >= 50 %}text-amber-600{% else %}text-red-600{% endif %}">{{ fw.pct }}%</span>
+                                                </div>
+                                                <p class="text-[9px] text-gray-400 mt-0.5">{{ fw.compliant }}/{{ fw.total }} checks</p>
+                                            </div>
+                                        {% empty %}
+                                            <p class="text-xs text-gray-400 py-4 text-center w-full">No compliance frameworks configured</p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Upcoming Due Checks -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-52">
+                                <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Upcoming Due (30d)</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-2 py-1">
+                                    {% for check in upcoming_due_checks %}
+                                        <div class="flex items-center justify-between py-1.5 px-1 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded transition-colors duration-150">
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-[10px] font-medium text-gray-700 dark:text-gray-300 truncate">{{ check.requirement_id }}</p>
+                                                <p class="text-[9px] text-gray-400 truncate">{{ check.requirement_title|truncatechars:30 }}</p>
+                                            </div>
+                                            <span class="text-[9px] font-semibold text-amber-600 dark:text-amber-400 ml-2 flex-shrink-0">{{ check.due_date|date:"M d" }}</span>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-[10px] text-gray-400 mt-2 text-center">No upcoming checks</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Anomaly Detail Modal -->
+            <div id="anomaly-detail-modal"
+                 class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm"
+                 onclick="if(event.target===this) closeAnomalyDetail()">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md mx-4 transform transition-all duration-200 scale-95 opacity-0"
+                     id="anomaly-detail-content">
+                    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-2">
+                            <span id="modal-severity-badge"
+                                  class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold text-white"></span>
+                            <h3 id="modal-type"
+                                class="text-sm font-semibold text-gray-900 dark:text-gray-100"></h3>
+                        </div>
+                        <button onclick="closeAnomalyDetail()"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150 p-1">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="px-5 py-4 space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">User</p>
+                                <p id="modal-user"
+                                   class="text-xs font-medium text-gray-900 dark:text-gray-100"></p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Detected</p>
+                                <p id="modal-time" class="text-xs text-gray-600 dark:text-gray-300"></p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">IP Address</p>
+                                <p id="modal-ip"
+                                   class="text-xs font-mono text-gray-700 dark:text-gray-300"></p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Severity</p>
+                                <p id="modal-severity-text" class="text-xs font-semibold"></p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Description</p>
+                            <p id="modal-description"
+                               class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed"></p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">User Agent</p>
+                            <p id="modal-ua"
+                               class="text-[10px] font-mono text-gray-500 dark:text-gray-400 break-all leading-relaxed">
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-100 dark:border-gray-700">
+                        <button onclick="closeAnomalyDetail()"
+                                class="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-150">
+                            Close
+                        </button>
+                        <button id="modal-dismiss-btn"
+                                class="px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors duration-150">
+                            Dismiss Alert
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Chart Fullscreen Modal -->
+            <div id="chart-modal"
+                 class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm"
+                 onclick="if(event.target===this) closeChartModal()">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-3xl mx-4 transform transition-all duration-200 scale-95 opacity-0"
+                     id="chart-modal-content">
+                    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <h3 id="chart-modal-title"
+                            class="text-sm font-semibold text-gray-900 dark:text-gray-100"></h3>
+                        <button onclick="closeChartModal()"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150 p-1">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 h-[400px]">
+                        <canvas id="chart-modal-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Drill-down Detail Modal -->
+            <div id="drilldown-modal"
+                 class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm"
+                 onclick="if(event.target===this) closeDrilldownModal()">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-3xl mx-4 transform transition-all duration-200 scale-95 opacity-0"
+                     id="drilldown-modal-content">
+                    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <h3 id="drilldown-modal-title"
+                            class="text-sm font-semibold text-gray-900 dark:text-gray-100"></h3>
+                        <button onclick="closeDrilldownModal()"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-150 p-1">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="px-5 py-4 overflow-y-auto max-h-[500px]"
+                         id="drilldown-modal-body"></div>
+                </div>
+            </div>
+        {% endif %}
+    {% endblock body %}
+    {% block scripts %}
+        {% if not monitoring_disabled %}
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            {{ hourly_login_data|json_script:"hourly-login-data" }}
+            {{ severity_labels|json_script:"severity-labels" }}
+            {{ severity_counts|json_script:"severity-counts" }}
+            {{ daily_login_labels|json_script:"daily-login-labels" }}
+            {{ daily_login_counts|json_script:"daily-login-counts" }}
+            {{ login_type_labels|json_script:"login-type-labels" }}
+            {{ login_type_counts|json_script:"login-type-counts" }}
+            {{ anomaly_type_labels|json_script:"anomaly-type-labels" }}
+            {{ anomaly_type_counts|json_script:"anomaly-type-counts" }}
+            {{ daily_failed_labels|json_script:"daily-failed-labels" }}
+            {{ daily_failed_counts|json_script:"daily-failed-counts" }}
+            {{ monthly_incident_labels|json_script:"monthly-incident-labels" }}
+            {{ monthly_incident_totals|json_script:"monthly-incident-totals" }}
+            {{ monthly_incident_criticals|json_script:"monthly-incident-criticals" }}
+            {{ affected_systems_labels|json_script:"affected-systems-labels" }}
+            {{ affected_systems_counts|json_script:"affected-systems-counts" }}
+            {{ threat_type_labels|json_script:"threat-type-labels" }}
+            {{ threat_type_counts|json_script:"threat-type-counts" }}
+            {{ ip_diversity_labels|json_script:"ip-diversity-labels" }}
+            {{ ip_diversity_counts|json_script:"ip-diversity-counts" }}
+            {{ daily_traffic_labels|json_script:"daily-traffic-labels" }}
+            {{ daily_traffic_counts|json_script:"daily-traffic-counts" }}
+            {{ vuln_severity_labels|json_script:"vuln-severity-labels" }}
+            {{ vuln_severity_counts|json_script:"vuln-severity-counts" }}
+            {{ vuln_status_labels|json_script:"vuln-status-labels" }}
+            {{ vuln_status_counts|json_script:"vuln-status-counts" }}
+            <script>
+            var ORG_SECURITY_CONFIG = {
+                orgId: {{ organization }},
+                hourlyData: JSON.parse(document.getElementById('hourly-login-data').textContent),
+                severityLabels: JSON.parse(document.getElementById('severity-labels').textContent),
+                severityCounts: JSON.parse(document.getElementById('severity-counts').textContent),
+                dailyLoginLabels: JSON.parse(document.getElementById('daily-login-labels').textContent),
+                dailyLoginCounts: JSON.parse(document.getElementById('daily-login-counts').textContent),
+                loginTypeLabels: JSON.parse(document.getElementById('login-type-labels').textContent),
+                loginTypeCounts: JSON.parse(document.getElementById('login-type-counts').textContent),
+                anomalyTypeLabels: JSON.parse(document.getElementById('anomaly-type-labels').textContent),
+                anomalyTypeCounts: JSON.parse(document.getElementById('anomaly-type-counts').textContent),
+                dailyFailedLabels: JSON.parse(document.getElementById('daily-failed-labels').textContent),
+                dailyFailedCounts: JSON.parse(document.getElementById('daily-failed-counts').textContent),
+                riskScore: {{ risk_score }},
+                loginSuccessRate: {{ login_success_rate }},
+                anomalyResolutionRate: {{ anomaly_resolution_rate }},
+                monthlyIncidentLabels: JSON.parse(document.getElementById('monthly-incident-labels').textContent),
+                monthlyIncidentTotals: JSON.parse(document.getElementById('monthly-incident-totals').textContent),
+                monthlyIncidentCriticals: JSON.parse(document.getElementById('monthly-incident-criticals').textContent),
+                affectedSystemsLabels: JSON.parse(document.getElementById('affected-systems-labels').textContent),
+                affectedSystemsCounts: JSON.parse(document.getElementById('affected-systems-counts').textContent),
+                threatTypeLabels: JSON.parse(document.getElementById('threat-type-labels').textContent),
+                threatTypeCounts: JSON.parse(document.getElementById('threat-type-counts').textContent),
+                threatSevCounts: [{{ threat_sev_critical }}, {{ threat_sev_high }}, {{ threat_sev_medium }}, {{ threat_sev_low }}],
+                ipDiversityLabels: JSON.parse(document.getElementById('ip-diversity-labels').textContent),
+                ipDiversityCounts: JSON.parse(document.getElementById('ip-diversity-counts').textContent),
+                dailyTrafficLabels: JSON.parse(document.getElementById('daily-traffic-labels').textContent),
+                dailyTrafficCounts: JSON.parse(document.getElementById('daily-traffic-counts').textContent),
+                vulnSeverityLabels: JSON.parse(document.getElementById('vuln-severity-labels').textContent),
+                vulnSeverityCounts: JSON.parse(document.getElementById('vuln-severity-counts').textContent),
+                vulnStatusLabels: JSON.parse(document.getElementById('vuln-status-labels').textContent),
+                vulnStatusCounts: JSON.parse(document.getElementById('vuln-status-counts').textContent),
+                overallCompliancePct: {{ overall_compliance_pct }},
+                csrfToken: '{{ csrf_token }}'
+            };
+            </script>
+            <script src="{% static 'js/organization_security.js' %}"></script>
+        {% endif %}
+    {% endblock scripts %}
