@@ -13,6 +13,7 @@ from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from website.models import Organization, Project, Repo
 from website.utils import rebuild_safe_url, validate_file_type
 
 
@@ -300,3 +301,134 @@ class TestPasswordResetUnknownEmail(APITestCase):
         self.assertEqual(len(mail.outbox), 1, "Email should be sent for known accounts")
 
         print("✓ Correct: Email sent for known account")
+
+
+class ProjectFreshnessFilteringTestCase(APITestCase):
+    """Test cases for Project API freshness filtering"""
+
+    def setUp(self):
+        """Set up test data"""
+        self.org = Organization.objects.create(name="Test Organization", url="https://test.org")
+
+        # Create projects with different freshness scores
+        self.high_freshness_project = Project.objects.create(
+            name="High Freshness", organization=self.org, url="https://github.com/test/high", freshness=85.50
+        )
+
+        self.medium_freshness_project = Project.objects.create(
+            name="Medium Freshness", organization=self.org, url="https://github.com/test/medium", freshness=50.25
+        )
+
+        self.low_freshness_project = Project.objects.create(
+            name="Low Freshness", organization=self.org, url="https://github.com/test/low", freshness=15.75
+        )
+
+        self.zero_freshness_project = Project.objects.create(
+            name="Zero Freshness", organization=self.org, url="https://github.com/test/zero", freshness=0.0
+        )
+
+    def test_filter_by_min_freshness_threshold(self):
+        """Test filtering projects by valid freshness threshold"""
+        response = self.client.get("/api/v1/projects/?freshness=50")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Should return projects with freshness >= 50
+        self.assertEqual(len(data["results"]), 2)
+        names = [p["name"] for p in data["results"]]
+        self.assertIn("High Freshness", names)
+        self.assertIn("Medium Freshness", names)
+
+    def test_filter_by_high_freshness(self):
+        """Test filtering with high freshness threshold"""
+        response = self.client.get("/api/v1/projects/?freshness=80")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Only high freshness project should match
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["name"], "High Freshness")
+
+    def test_filter_freshness_invalid_negative(self):
+        """Test that negative freshness values are rejected"""
+        response = self.client.get("/api/v1/projects/?freshness=-10")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("must be between 0 and 100", response.json()["error"])
+
+    def test_filter_freshness_invalid_over_100(self):
+        """Test that freshness values over 100 are rejected"""
+        response = self.client.get("/api/v1/projects/?freshness=150")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("must be between 0 and 100", response.json()["error"])
+
+    def test_filter_freshness_invalid_non_numeric(self):
+        """Test that non-numeric freshness values are rejected"""
+        response = self.client.get("/api/v1/projects/?freshness=invalid")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("must be a valid number", response.json()["error"])
+
+    def test_filter_freshness_decimal_value(self):
+        """Test filtering with decimal freshness value"""
+        response = self.client.get("/api/v1/projects/?freshness=50.5")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Should return projects with freshness >= 50.5
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["name"], "High Freshness")
+
+    def test_filter_freshness_combined_with_other_filters(self):
+        """Test freshness filter combined with other filters"""
+        # Add repos for star filtering
+        Repo.objects.create(
+            project=self.high_freshness_project,
+            name="popular-repo",
+            repo_url="https://github.com/test/popular",
+            stars=1000,
+            forks=100,
+        )
+        Repo.objects.create(
+            project=self.low_freshness_project,
+            name="unpopular-repo",
+            repo_url="https://github.com/test/unpopular",
+            stars=10,
+            forks=5,
+        )
+
+        # Filter by both freshness and stars
+        response = self.client.get("/api/v1/projects/?freshness=50&stars=500")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Should return only high freshness project with enough stars
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["name"], "High Freshness")
+
+    def test_filter_without_freshness_parameter(self):
+        """Test that filtering works when freshness parameter is not provided"""
+        response = self.client.get("/api/v1/projects/")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Should return all projects
+        self.assertEqual(len(data["results"]), 4)
+
+    def test_freshness_field_in_api_response(self):
+        """Test that freshness field is included in API response"""
+        response = self.client.get("/api/v1/projects/")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Check that freshness field exists in response
+        for project in data["results"]:
+            self.assertIn("freshness", project)
+            self.assertIsNotNone(project["freshness"])
