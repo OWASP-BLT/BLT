@@ -94,6 +94,15 @@
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
+            // Suppress Tailwind CDN production warning
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
+                    return; // Suppress this specific warning
+                }
+                originalWarn.apply(console, args);
+            };
+            
             tailwind.config = {
                 darkMode: 'class',
             }
@@ -448,8 +457,9 @@
                     openCheckInButton.addEventListener('click', showModal);
                 }
 
-                // Handle check-in form submission with AJAX
-                if (checkInForm) {
+                // Handle check-in form submission with AJAX (only for modal form, not main page form)
+                if (checkInForm && modal && modal.contains(checkInForm)) {
+                    // Only handle if form is inside the modal (not the main page form)
                     checkInForm.addEventListener('submit', function(e) {
                         e.preventDefault(); // Prevent the default form submission
 
@@ -473,6 +483,10 @@
                             if (data.success) {
                                 hideModal(); // Hide the modal on successful submission
                                 localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
+                                // Removed alert - success is handled inline in the form page
+                                // Page will reload to show updated state
+                                if (window.location.pathname.includes('add-sizzle-checkin')) {
+                                    window.location.reload();
                                 if (window.createMessage) {
                                     window.createMessage('Your report has been submitted successfully!', 'success', 3000);
                                 }
@@ -481,6 +495,15 @@
                             }
                         })
                         .catch(error => {
+                            // Show error inline instead of alert
+                            console.error('Error submitting check-in:', error);
+                            // Display user-facing error notification
+                            if (typeof window.createMessage === 'function') {
+                                window.createMessage(
+                                    'Failed to submit check-in: ' + (error.message || 'Unknown error'),
+                                    'error',
+                                    8000
+                                );
                             if (window.createMessage) {
                                 window.createMessage(`There was an error submitting your report: ${error.message}. Please try again.`, 'error', 5000);
                             }
