@@ -943,7 +943,7 @@
 <!-- Chatbot -->
 <div class="bg-gray-100 dark:bg-gray-900 chat-Zindex z-[9999] transition-colors">
     <div id="chatbot"
-         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[520px] overflow-hidden hidden transition-colors">
+         class="fixed bottom-3 right-3 w-full max-w-[calc(100vw-24px)] md:max-w-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-lg h-[520px] overflow-hidden hidden transition-colors">
         <div class="bg-[#e74c3c] dark:bg-[#e74c3c] text-white p-3 rounded-t-lg flex justify-between items-center">
             <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
             <button id="closeChatbot" class="text-white text-2xl">×</button>
@@ -1482,10 +1482,10 @@
                 const unreadNotifications = notifications.filter(notification => !notification.is_read);
                 if (unreadNotifications.length > 0) {
                     unreadCount.textContent = unreadNotifications.length;
-                    unreadCount.classList.remove("hidden"); 
+                    unreadCount.classList.remove("hidden");
                 } else {
-                    unreadCount.textContent = ""; 
-                    unreadCount.classList.add("hidden"); 
+                    unreadCount.textContent = "";
+                    unreadCount.classList.add("hidden");
                 }
 
                 if (notifications.length === 0) {
@@ -1632,7 +1632,7 @@
                     .then(data => {
                         if (data.status === "success") {
                             unreadCount.textContent = "";
-                            unreadCount.classList.add("hidden"); 
+                            unreadCount.classList.add("hidden");
                             document.querySelectorAll(".bg-gray-50").forEach(el => {
                                 el.classList.remove("bg-gray-50", "font-semibold");
                                 el.classList.add("bg-white", "font-normal");

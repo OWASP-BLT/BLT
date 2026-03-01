@@ -225,7 +225,7 @@
                             <div class="p-6">
                                 <div class="flex justify-between items-center mb-4">
                                     <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 truncate">{{ bug.description }}</h3>
-                                    <span class="px-2 py-1 bg-{{ bug.status|yesno:'green-100,red-100' }} text-{{ bug.status|yesno:'green-800,red-800' }} rounded-full text-xs">
+                                    <span class="px-2 py-1 rounded-full text-xs {% if bug.status == 'open' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
                                         {{ bug.status|default:"open"|title }}
                                     </span>
                                 </div>
@@ -233,7 +233,8 @@
                                     <i class="fas fa-globe mr-2"></i>
                                     <a href="{{ bug.url }}"
                                        class="hover:text-[#e74c3c] truncate"
-                                       target="_blank">{{ bug.domain_name }}</a>
+                                       target="_blank"
+                                       rel="noopener noreferrer">{{ bug.domain_name }}</a>
                                 </div>
                                 {% if bug.screenshots.all.0 %}
                                     <div class="mb-4 rounded-lg overflow-hidden">
