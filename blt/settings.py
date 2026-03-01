@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import re as _re
 import sys
 
 import dj_database_url
@@ -261,14 +263,104 @@ MEDIA_URL = "/media/"
 # This enables connection reuse and prevents connection exhaustion
 db_from_env = dj_database_url.config(conn_max_age=600)
 
+ZERO_TRUST_PATHS = ("/api/zero-trust/issues",)
+
+
+def _is_zero_trust_event(event: dict) -> bool:
+    req = (event or {}).get("request") or {}
+    url = req.get("url") or ""
+    if any(p in url for p in ZERO_TRUST_PATHS):
+        return True
+
+    # Extra safety: match by transaction name (e.g., DRF view)
+    tx = (event or {}).get("transaction") or ""
+    if "ZeroTrustIssueCreateView" in tx:
+        return True
+
+    # Breadcrumbs may contain the URL of the request even if request.url is absent
+    bc = (event or {}).get("breadcrumbs") or {}
+    for crumb in bc.get("values", []):
+        if (crumb.get("category") == "http") and any(
+            p in (crumb.get("data", {}).get("url") or "") for p in ZERO_TRUST_PATHS
+        ):
+            return True
+
+    return False
+
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN:
+
+    def _sentry_before_send(event: dict, hint):
+        """
+        Redact PII only for Zero‑Trust submissions.
+        Keeps full diagnostics (including PII) for the rest of the application.
+        """
+        try:
+            if not _is_zero_trust_event(event):
+                return event  # leave non‑ZT events unchanged
+
+            # 1) Strip request details (body, headers, cookies, query, env)
+            req = (event or {}).get("request")
+            if req:
+                # keep only method + a minimal URL indicator; drop the rest
+                event["request"] = {
+                    "method": req.get("method"),
+                    "url": "[REDACTED zero‑trust endpoint]",
+                }
+            # Also redact exception messages and top-level message for Zero-Trust events
+            exc = event.get("exception")
+            if exc:
+                for val in exc.get("values", []):
+                    val["value"] = "[REDACTED zero-trust error details]"
+
+            # Sentry's top-level "message" can echo exception text; redact it as well.
+            if "message" in event:
+                event["message"] = "[REDACTED zero-trust event]"
+            # 2) Remove user context entirely
+            event.pop("user", None)
+
+            # 3) Remove local variables from stack frames
+            exc = event.get("exception")
+            if exc:
+                for val in exc.get("values", []):
+                    st = val.get("stacktrace")
+                    if st:
+                        for frame in st.get("frames", []):
+                            frame.pop("vars", None)
+
+            # 4) Sanitize breadcrumbs that may include ZT URLs/payload hints
+            bc = event.get("breadcrumbs")
+            if bc and "values" in bc:
+                redacted = []
+                for crumb in bc["values"]:
+                    if crumb.get("category") == "http":
+                        data = dict(crumb.get("data") or {})
+                        url = data.get("url", "")
+                        if any(p in url for p in ZERO_TRUST_PATHS):
+                            data["url"] = "[REDACTED zero‑trust endpoint]"
+                            # drop any other potentially sensitive fields
+                            for k in ("method", "status_code", "request_body", "headers"):
+                                data.pop(k, None)
+                            crumb["data"] = data
+                    redacted.append(crumb)
+                event["breadcrumbs"]["values"] = redacted
+
+            # 5) Optional marker to ease triage
+            event.setdefault("tags", {})["zero_trust_redacted"] = True
+
+            return event
+        except Exception:
+            # If filtering fails for any reason, prefer dropping the event over leaking data
+            logging.getLogger(__name__).exception("Sentry before_send failed; dropping Zero‑Trust event")
+            return None
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        send_default_pii=True,
-        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
+        send_default_pii=True,  # keep PII for non‑ZT endpoints
+        before_send=_sentry_before_send,  # redact only Zero‑Trust events
+        traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
         release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
@@ -292,10 +384,6 @@ if "DYNO" in os.environ:  # for Heroku
     EMAIL_USE_TLS = True
     if not TESTING:
         SECURE_SSL_REDIRECT = True
-
-    # import logging
-
-    # logging.basicConfig(level=logging.DEBUG)
 
     GS_BUCKET_NAME = "bhfiles"
 
@@ -404,6 +492,49 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_ON_GET = True
 
+
+class SensitiveDataFilter(logging.Filter):
+    """
+    Prevent accidental logging of sensitive zero-trust data.
+    Uses context-aware pattern matching to reduce false positives.
+    """
+
+    def filter(self, record):
+        # Redact any log messages that might contain sensitive patterns
+        msg = str(record.getMessage()).lower()
+
+        # Check for patterns that suggest sensitive data (with context)
+        sensitive_patterns = [
+            "request.files",
+            "uploaded_files[",
+            ".chunks()",
+            "poc data",
+            "exploit code",
+            "vulnerability payload",
+        ]
+
+        critical_patterns = [
+            "uploaded_files =",
+            "file content:",
+        ]
+
+        # Check critical patterns first (always redact)
+        if any(pattern in msg for pattern in critical_patterns):
+            record.msg = "[REDACTED: Sensitive file data in log message]"
+            record.args = ()
+            return True
+
+        # Check context-aware patterns (partial redaction)
+        for pattern in sensitive_patterns:
+            if pattern in msg:
+                # Replace just the sensitive part instead of entire message
+                record.msg = _re.sub(_re.escape(pattern), "[REDACTED]", str(record.msg), flags=_re.IGNORECASE)
+                record.args = ()
+                return True
+
+        return True
+
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -416,12 +547,22 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "simple",
-            "stream": "ext://sys.stdout",  # Explicitly use stdout
+            "stream": "ext://sys.stdout",
+            "filters": ["sensitive_data"],  # NEW: Add filter
         },
-        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
+            "filters": ["sensitive_data"],  # NEW: Add filter
+        },
+    },
+    "filters": {  # NEW: Add filters section
+        "sensitive_data": {
+            "()": "blt.settings.SensitiveDataFilter",
+        }
     },
     "root": {
-        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "level": "INFO" if not DEBUG else "DEBUG",  # INFO in production
         "handlers": ["console"],
     },
     "loggers": {
@@ -496,6 +637,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": f"{anon_throttle}/day",
         "user": f"{user_throttle}/day",
+        "zero_trust_issues": "10/hour",  # NEW: limit heavy uploads
     },
 }
 
@@ -643,3 +785,10 @@ THROTTLE_LIMITS = {
 }
 THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
 THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
+
+# Ephemeral directory for zero-trust artifacts (OK to be dyno/local FS)
+REPORT_TMP_DIR = os.path.join(BASE_DIR, "tmp_reports")
+
+# Binaries for encryption tools (can be overridden via env)
+AGE_BINARY = os.environ.get("AGE_BINARY", "age")
+GPG_BINARY = os.environ.get("GPG_BINARY", "gpg")

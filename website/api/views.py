@@ -19,6 +19,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
+from django.core.validators import URLValidator
 from django.db import connection, transaction
 from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
@@ -29,8 +30,10 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
@@ -45,6 +48,7 @@ from website.models import (
     IssueScreenshot,
     Job,
     Organization,
+    OrgEncryptionConfig,
     Points,
     Project,
     Repo,
@@ -75,6 +79,7 @@ from website.serializers import (
 )
 from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
+from website.zero_trust_pipeline import build_and_deliver_zero_trust_issue
 
 logger = logging.getLogger(__name__)
 # API's
@@ -2012,3 +2017,144 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ZeroTrustIssueCreateView(APIView):
+    """
+    Zero-trust Issue creation endpoint.
+    Stores only metadata in DB; PoC files are encrypted and delivered ephemerally.
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    # NEW: throttle uploads by user/IP using a named scope
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "zero_trust_issues"
+
+    def post(self, request):
+        domain_id = request.data.get("domain_id")
+        url = request.data.get("url")
+        summary = request.data.get("summary")
+        files = request.FILES.getlist("files")
+
+        if not domain_id or not url or not summary or not files:
+            return Response(
+                {"error": "domain_id, url, summary, and files are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate URL format
+        url_validator = URLValidator()
+        try:
+            url_validator(url)
+        except ValidationError:
+            return Response(
+                {"error": "Invalid URL format"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            domain = Domain.objects.get(id=domain_id)
+        except Domain.DoesNotExist:
+            return Response({"error": "Invalid domain_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure the domain is associated with an organization
+        organization = domain.organization
+        if organization is None:
+            return Response(
+                {"error": "Domain is not associated with an organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # NEW: Check org encryption config BEFORE creating the Issue
+        try:
+            org_encryption_config = OrgEncryptionConfig.objects.get(organization=organization)
+            # Use the model's clean() method to ensure the configuration is valid
+            # before creating the Issue. This will raise ValidationError if the
+            # configuration is incomplete or unusable for zero-trust delivery.
+            org_encryption_config.clean()
+        except OrgEncryptionConfig.DoesNotExist:
+            return Response(
+                {"error": "Zero-trust delivery is not configured for this organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValidationError:
+            return Response(
+                {"error": "Zero-trust delivery is misconfigured for this organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if org_encryption_config.preferred_method not in ("age", "openpgp"):
+            return Response(
+                {"error": "Organization must configure age or OpenPGP public key for zero-trust delivery."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        issue = Issue.objects.create(
+            user=request.user,
+            domain=domain,
+            url=url,
+            description=summary,  # non-sensitive summary only
+            is_hidden=True,
+            is_zero_trust=True,
+            delivery_status="pending_build",
+        )
+        # HARD GUARANTEES: Defense-in-depth checks to catch database-level issues,
+        # signal handlers, or middleware that might modify these critical fields.
+        # These should never fail in normal operation but provide early detection
+        # of integrity violations in the zero-trust chain.
+        try:
+            if not issue.is_hidden:
+                logger.error(
+                    "Zero-trust issue invariant violated: issue.is_hidden is not True (id=%s)",
+                    issue.id,
+                )
+                raise RuntimeError("Zero-trust issue must be hidden")
+            if not issue.is_zero_trust:
+                logger.error(
+                    "Zero-trust issue invariant violated: issue.is_zero_trust is not True (id=%s)",
+                    issue.id,
+                )
+                raise RuntimeError("Zero-trust issue must be marked as zero_trust")
+            build_and_deliver_zero_trust_issue(issue, files)
+        except ValueError as e:
+            issue.delivery_status = "failed"
+            issue.save(update_fields=["delivery_status", "modified"])
+            error_msg = "Organization encryption configuration is invalid. Please contact the administrator."
+            logger.warning("Zero-trust validation failed for issue %s: %s", issue.id, str(e))
+            return Response(
+                {
+                    "error": error_msg,
+                    "id": issue.id,
+                    "delivery_status": issue.delivery_status,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception:
+            # Mark the issue as failed and expose its identifier so clients can track it
+            logger.error(
+                "Zero-trust submission failed for issue %s",
+                issue.id,
+                exc_info=True,
+            )
+            issue.delivery_status = "failed"
+            issue.save(update_fields=["delivery_status", "modified"])
+            return Response(
+                {
+                    "error": "Zero-trust submission failed",
+                    "id": issue.id,
+                    "delivery_status": issue.delivery_status,
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        # Reload in case pipeline mutated fields
+        issue.refresh_from_db()
+
+        return Response(
+            {
+                "id": issue.id,
+                "artifact_sha256": issue.artifact_sha256,
+                "delivery_status": issue.delivery_status,
+            },
+            status=status.HTTP_201_CREATED,
+        )
