@@ -258,7 +258,9 @@ def remove_duplicate_users_safely(apps, schema_editor):
                     or recent_login
                 ):
                     logger.error(f"SAFETY VIOLATION: High activity user {user.username} detected during deletion!")
-                    raise Exception(f"Safety violation: User {user.username} has high activity and should not be deleted")
+                    raise Exception(
+                        f"Safety violation: User {user.username} has high activity and should not be deleted"
+                    )
 
                 try:
                     csv_writer.writerow(
