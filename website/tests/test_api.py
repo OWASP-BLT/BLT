@@ -303,6 +303,43 @@ class TestPasswordResetUnknownEmail(APITestCase):
         print("✓ Correct: Email sent for known account")
 
 
+class TeamLeaderboardAPITest(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="testuser", email="test@example.com", password="testpass123"
+        )
+
+        # Create a team and assign user to it
+        self.team = Organization.objects.create(name="Test Team")
+        self.user.userprofile.team = self.team
+        self.user.userprofile.leaderboard_score = 10
+        self.user.userprofile.save()
+
+        # Create another team member
+        self.user2 = get_user_model().objects.create_user(
+            username="member2", email="m2@example.com", password="pass1234"
+        )
+        self.user2.userprofile.team = self.team
+        self.user2.userprofile.leaderboard_score = 5
+        self.user2.userprofile.save()
+
+    def test_api_requires_auth_and_returns_data(self):
+        """Test API endpoint requires authentication and returns correct structure"""
+        # Unauthenticated
+        response = self.client.get("/api/v1/team-member-leaderboard/")
+        self.assertEqual(response.status_code, 401)
+
+        # Authenticated
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get("/api/v1/team-member-leaderboard/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("results", response.data)
+        self.assertGreater(len(response.data["results"]), 0)
+        member = response.data["results"][0]
+        self.assertIn("leaderboard_score", member)
+
+
 class ProjectFreshnessFilteringTestCase(APITestCase):
     """Test cases for Project API freshness filtering"""
 

@@ -24,7 +24,7 @@ from django.db.models import Count, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, generics, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
@@ -70,6 +70,7 @@ from website.serializers import (
     SearchHistorySerializer,
     SecurityIncidentSerializer,
     TagSerializer,
+    TeamMemberLeaderboardSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
 )
@@ -2012,3 +2013,22 @@ class DebugClearCacheApiView(APIView):
             return Response(
                 {"success": False, "error": "Failed to clear cache"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class TeamMemberLeaderboardAPIView(generics.ListAPIView):
+    serializer_class = TeamMemberLeaderboardSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        team = self.request.user.userprofile.team
+        if not team:
+            logger.info("User %s has no team; returning empty leaderboard.", self.request.user.id)
+            return UserProfile.objects.none()
+
+        return (
+            UserProfile.objects.filter(team=team)
+            .select_related("user")
+            .order_by("-leaderboard_score", "-current_streak")
+        )
