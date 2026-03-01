@@ -33,18 +33,21 @@
                     <a href="{% url 'profile' slug=leader.username %}" class="block">
                         {% if leader.userprofile.avatar %}
                             <img src="{{ leader.userprofile.avatar }}"
+                                 loading="lazy"
                                  class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                  alt="{{ leader.username }}"
                                  width="48"
                                  height="48">
                         {% elif user.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                 loading="lazy"
                                  class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                  alt="{{ leader.username }}"
                                  width="48"
                                  height="48">
                         {% else %}
                             <img src="{% gravatar_url leader.email 50 %}"
+                                 loading="lazy"
                                  class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
                                  alt="{{ leader.username }}"
                                  width="48"
