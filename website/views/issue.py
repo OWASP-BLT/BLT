@@ -3196,6 +3196,6 @@ def refresh_gsoc_project(request):
         messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
         return redirect("gsoc_pr_report")
 
-    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1", user=request.user)
+    DailyStats.objects.create(name=f"refresh_gsoc_{request.user.id}", value="1")
 
     return redirect("gsoc_pr_report")
