@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [closed]
 
+permissions: {}
+
 jobs:
   process-bounty:
     permissions:
@@ -42,8 +44,44 @@ jobs:
               return;
             }
 
+            const MAX_DURATION_HOURS = 720;
+            const parseBountyLabel = (labelName) => {
+              if (!labelName || !labelName.includes('$')) {
+                return null;
+              }
+
+              const trimmed = labelName.trim();
+              const timedMatch = trimmed.match(/^\$(\d+(?:\.\d{2})?)\s+(\d+)$/);
+              if (timedMatch) {
+                const duration = parseInt(timedMatch[2], 10);
+                // Only treat as timed if duration is > 0 and <= MAX_DURATION_HOURS
+                if (duration > 0 && duration <= MAX_DURATION_HOURS) {
+                  return {
+                    amount: timedMatch[1],
+                    durationHours: duration,
+                    labelName: labelName
+                  };
+                } else {
+                  // Invalid duration, treat as invalid label
+                  return null;
+                }
+              }
+
+              const bountyMatch = trimmed.match(/\$(\d+(?:\.\d{2})?)/);
+              if (bountyMatch) {
+                return {
+                  amount: bountyMatch[1],
+                  durationHours: null,
+                  labelName: labelName
+                };
+              }
+
+              return null;
+            };
+
             // Check each issue for bounty labels
             let bountyIssue = null;
+            let bountyLabelDetails = null;
             for (const issueNumber of issueNumbers) {
               const issue = await github.rest.issues.get({
                 owner: context.repo.owner,
@@ -52,12 +90,16 @@ jobs:
               });
 
               // Check for dollar sign labels
-              const hasBountyLabel = issue.data.labels.some(label => {
-                return label.name.includes('$');
-              });
+              for (const label of issue.data.labels) {
+                const parsed = parseBountyLabel(label.name);
+                if (parsed) {
+                  bountyIssue = issue.data;
+                  bountyLabelDetails = parsed;
+                  break;
+                }
+              }
 
-              if (hasBountyLabel) {
-                bountyIssue = issue.data;
+              if (bountyIssue) {
                 break;
               }
             }
@@ -67,11 +109,13 @@ jobs:
               return;
             }
 
-            // Find the bounty amount from the label
-            // Support both integer ($50) and decimal ($25.50) amounts
-            const bountyLabel = bountyIssue.labels.find(label => label.name.includes('$'));
-            const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+(?:\.\d{2})?)/) : null;
-            let bountyAmount = bountyMatch ? bountyMatch[1] : null;
+            if (!bountyLabelDetails) {
+              console.log('Bounty label details missing');
+              return;
+            }
+
+            const isTimedBounty = bountyLabelDetails.durationHours !== null;
+            let bountyAmount = bountyLabelDetails.amount;
 
             // Convert to cents for API (e.g., "25.50" -> 2550, "50" -> 5000)
             if (bountyAmount) {
@@ -91,6 +135,7 @@ jobs:
             core.setOutput('bounty-amount', bountyAmount);
             core.setOutput('bounty-display', bountyDisplay);
             core.setOutput('contributor-username', pr.user.login);
+            core.setOutput('is-timed-bounty', isTimedBounty ? 'true' : 'false');
 
       - name: Send bounty data to BLT
         if: steps.check-issues.outputs['has-bounty'] == 'true'
@@ -100,6 +145,7 @@ jobs:
           BOUNTY_AMOUNT: ${{ steps.check-issues.outputs.bounty-amount }}
           CONTRIBUTOR_USERNAME: ${{ steps.check-issues.outputs.contributor-username }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          IS_TIMED_BOUNTY: ${{ steps.check-issues.outputs.is-timed-bounty }}
           BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
           API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
         uses: actions/github-script@v6.1.1
@@ -118,7 +164,8 @@ jobs:
                 owner: context.repo.owner,
                 bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
                 contributor_username: process.env.CONTRIBUTOR_USERNAME,
-                pr_number: parseInt(process.env.PR_NUMBER)
+                pr_number: parseInt(process.env.PR_NUMBER),
+                is_timed_bounty: process.env.IS_TIMED_BOUNTY === 'true'
               })
             });
 
