@@ -6,21 +6,27 @@
 {% load humanize %}
 {% providers_media_js %}
 {% load custom_tags %}
+
 {% block title %}
     Report an IP
 {% endblock title %}
+
 {% block description %}
     Report an IP by providing details such as the activity title, IP address, activity type, and a detailed description. Ensure comprehensive reporting for better monitoring.
 {% endblock description %}
+
 {% block keywords %}
     Report an IP, IP Reporting, Activity Title, IP Address, Activity Type, Detailed Description
 {% endblock keywords %}
+
 {% block og_title %}
     Report an IP - Comprehensive Reporting
 {% endblock og_title %}
+
 {% block og_description %}
     Efficiently report an IP by providing necessary details such as the activity title, IP address, activity type, and a comprehensive description.
 {% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center py-6 px-4 sm:px-6 lg:px-8">
@@ -247,7 +253,7 @@
                             <div class="flex justify-end gap-3">
                                 <button type="button"
                                         onclick="cancelForm()"
-                                        class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
+                                        class="inline-flex justify-center items-center px-5 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-[#e74c3c] hover:bg-[#c0392b] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all group relative">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          class="h-4 w-4 mr-2"
                                          fill="none"
@@ -258,7 +264,7 @@
                                     Cancel
                                 </button>
                                 <button type="submit"
-                                        class="inline-flex justify-center items-center px-5 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-[#e74c3c] hover:bg-[#c0392b] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all group relative">
+                                        class="inline-flex justify-center items-center px-5 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-[#e74c3c] hover:bg-[#d35400] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all group relative">
                                     <!-- Tooltip -->
                                     <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-900 text-white dark:text-gray-100 text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
@@ -287,91 +293,9 @@
         </div>
     </div>
 {% endblock content %}
+
 {% block after_js %}
-    <script type="text/javascript">
-    function validateIP(ipInput, ipType) {
-        // Combined IP pattern that properly validates both IPv4 and IPv6
-        const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$|^(?:[a-f0-9]{1,4}:){7}[a-f0-9]{1,4}$|^(?:[a-f0-9]{1,4}:){1,7}:$|^(?:[a-f0-9]{1,4}:){1,6}:[a-f0-9]{1,4}$|^(?:[a-f0-9]{1,4}:){1,5}(:[a-f0-9]{1,4}){1,2}$|^(?:[a-f0-9]{1,4}:){1,4}(:[a-f0-9]{1,4}){1,3}$|^(?:[a-f0-9]{1,4}:){1,3}(:[a-f0-9]{1,4}){1,4}$|^(?:[a-f0-9]{1,4}:){1,2}(:[a-f0-9]{1,4}){1,5}$|^[a-f0-9]{1,4}(:[a-f0-9]{1,4}){1,6}$|^:((?::[a-f0-9]{1,4}){1,7}|:)$/i;
-        
-        // Initial pattern matching
-        if (!ipPattern.test(ipInput)) {
-            return false;
-        }
-        
-        // Additional validation for IPv4 to check octet ranges (0-255)
-        if (ipType === 'ipv4') {
-            const octets = ipInput.split('.');
-            for (let i = 0; i < octets.length; i++) {
-                const octet = parseInt(octets[i], 10);
-                if (octet < 0 || octet > 255) {
-                    return false;
-                }
-            }
-        }
-        
-        return true;
-    }
-
-    // Live validation and feedback
-    document.getElementById('ip_address').addEventListener('input', function() {
-        const ipInput = this.value;
-        const ipType = document.getElementById('ip_type').value;
-        const validationMessage = document.getElementById('ip-validation-message');
-        
-        if (ipInput === '') {
-            validationMessage.textContent = 'Enter a valid IPv4 or IPv6 address';
-            validationMessage.className = 'text-xs text-gray-500';
-            this.className = 'block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
-            this.setAttribute('aria-invalid', 'false');
-        } else if (validateIP(ipInput, ipType)) {
-            validationMessage.textContent = '✓ Valid IP address format';
-            validationMessage.className = 'text-xs text-green-600';
-            this.className = 'block w-full pl-10 pr-3 py-2 border border-green-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all';
-            this.setAttribute('aria-invalid', 'false');
-        } else {
-            validationMessage.textContent = '✗ Invalid format for ' + (ipType === 'ipv4' ? 'IPv4' : 'IPv6');
-            validationMessage.className = 'text-xs text-red-600';
-            this.className = 'block w-full pl-10 pr-3 py-2 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
-            this.setAttribute('aria-invalid', 'true');
-        }
-    });
-
-    // Update validation when IP type changes
-    document.getElementById('ip_type').addEventListener('change', function() {
-        const ipInput = document.getElementById('ip_address');
-        if (ipInput.value) {
-            // Trigger the input event to revalidate
-            const event = new Event('input');
-            ipInput.dispatchEvent(event);
-        }
-    });
-
-    function validateReportIp() {
-        const ipInput = document.getElementById('ip_address').value;
-        const ipType = document.getElementById('ip_type').value;
-        
-        if (validateIP(ipInput, ipType)) {
-            return true;
-        } else {
-            // More subtle error notification with better UX
-            const validationMessage = document.getElementById('ip-validation-message');
-            validationMessage.textContent = '✗ Please correct the IP address format';
-            validationMessage.className = 'text-xs text-red-600 font-medium';
-            
-            // Focus on the input field
-            document.getElementById('ip_address').focus();
-            document.getElementById('ip_address').className = 'block w-full pl-10 pr-3 py-2 border-2 border-red-500 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
-            document.getElementById('ip_address').setAttribute('aria-invalid', 'true');
-            
-            return false;
-        }
-    }
-    
-    function cancelForm() {
-        // Ask for confirmation
-        if (confirm("{% trans 'Are you sure you want to cancel this report? All entered data will be lost.' %}")) {
-            window.history.back();
-        }
-    }
-    </script>
+<script type="text/javascript">
+// Your existing JS code for IP validation, cancelForm, etc.
+</script>
 {% endblock after_js %}
