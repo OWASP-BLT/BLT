@@ -25,10 +25,6 @@ on:
       - created
       - edited
       - deleted
-  pull_request_review_thread:
-    types:
-      - resolved
-      - unresolved
 
 permissions:
   contents: write
@@ -71,10 +67,10 @@ jobs:
 
             // Get all review threads (conversations) using GraphQL
             const query = `
-              query($owner: String!, $repo: String!, $pull_number: Int!) {
+              query($owner: String!, $repo: String!, $pull_number: Int!, $after: String) {
                 repository(owner: $owner, name: $repo) {
                   pullRequest(number: $pull_number) {
-                    reviewThreads(first: 100) {
+                    reviewThreads(first: 100, after: $after) {
                       nodes {
                         isResolved
                         isOutdated
@@ -99,10 +95,10 @@ jobs:
                 owner,
                 repo,
                 pull_number,
-                ...(cursor && { after: cursor })
+                after: cursor
               };
               
-              const result = await github.graphql(query.replace('first: 100', cursor ? 'first: 100, after: $after' : 'first: 100'), variables);
+              const result = await github.graphql(query, variables);
               const threads = result.repository.pullRequest.reviewThreads;
               
               allThreads = allThreads.concat(threads.nodes);

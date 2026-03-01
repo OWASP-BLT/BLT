@@ -95,13 +95,17 @@ $(function () {
         var issue_id = $('#issue_pk').val();
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
+        var csrftoken = $('#comments input[name=csrfmiddlewaretoken]').val();
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/issue/' + issue_id + '/comment/edit/',
             data: {
                 comment_pk: comment_id,
                 text_comment: comment,
                 issue_pk: issue_id,
+            },
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
             },
             success: function (data) {
                 $('#target_div').html(data);
@@ -122,8 +126,9 @@ $(function () {
         var issue_id = $('#issue_pk').val();
         var comment = $(this).prev().find('textarea').val();
         if (comment == '') return;
+        var csrftoken = $('#comments input[name=csrfmiddlewaretoken]').val();
         $.ajax({
-            type: 'GET',
+            type: 'POST',
             url: '/issue/' + issue_id + '/comment/reply/',
             data: {
                 comment_pk: comment_id,
@@ -131,22 +136,25 @@ $(function () {
                 issue_pk: issue_id,
                 parent_id: parent_id,
             },
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            },
             success: function (data) {
                 $('#target_div').html(data);
             }
         });
     });
 
-    $('body').on('input, keyup', 'textarea', function () {
+    $('body').on('input keyup', 'textarea', function () {
         var search = $(this).val();
-        var data = {search: search};
         $.ajax({
             type: 'GET',
             url: '/comment/autocomplete/',
-            data: data,
-            dataType: 'jsonp',
-            jsonp: 'callback',
-            jsonpCallback: 'renderer',
+            data: {search: search},
+            dataType: 'json',
+            success: function (data) {
+                renderer(data);
+            }
         });
     });
 
@@ -385,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
             displaySuggestions(filteredIssues, append);
         }
     } catch (error) {
-        console.error('Error fetching issues:', error);
         if (!append) {
             hideSuggestionBox();
         } else {
