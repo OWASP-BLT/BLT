@@ -1522,9 +1522,6 @@ class RepoDetailView(DetailView):
                     context["stargazers"] = []
                     context["stargazers_error"] = f"Error fetching stargazers (Status code: {response.status_code})"
                     break
-            else:
-                context["stargazers"] = []
-                context["stargazers_error"] = "Unknown error fetching stargazers."
 
             if "stargazers" not in context:
                 if filter_type == "recent":

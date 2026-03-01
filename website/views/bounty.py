@@ -85,7 +85,6 @@ def bounty_payout(request):
         transaction_id = process_github_sponsors_payment(
             username=contributor_username,
             amount=bounty_amount,
-            note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
         )
 
         if not transaction_id:
@@ -326,7 +325,7 @@ def create_sponsorship_mutation(sponsor_login, tier_id):
         return None
 
 
-def process_github_sponsors_payment(username, amount, note=""):
+def process_github_sponsors_payment(username, amount):
     """
     Process GitHub Sponsors payment using the GitHub GraphQL API.
     Payment comes from DonnieBLT's GitHub Sponsors account.
@@ -334,7 +333,6 @@ def process_github_sponsors_payment(username, amount, note=""):
     Args:
         username: GitHub username of the recipient
         amount: Amount in cents (e.g., 5000 = $50.00)
-        note: Optional note for the payment
 
     Returns:
         str: Sponsorship transaction ID if successful, None otherwise

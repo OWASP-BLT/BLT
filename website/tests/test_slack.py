@@ -261,7 +261,7 @@ class SlackHandlerTests(TestCase):
 
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
-    def test_slack_command_apps(self, mock_webclient, _mock_verify):
+    def test_slack_command_apps(self, mock_webclient, mock_verify):
         # Mock the Slack client
         mock_client = MagicMock()
         mock_webclient.return_value = mock_client
