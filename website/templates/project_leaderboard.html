@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Project Leaderboard - OWASP BLT{% endblock %}
+{% block extra_head %}{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Project Leaderboard</h1>
+                <p class="text-gray-600">Comprehensive GitHub statistics for all OWASP projects</p>
+            </div>
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow p-4 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Filters</h3>
+                    <div class="flex gap-2">
+                        <button type="button"
+                                id="refresh-data"
+                                class="bg-[#e74c3c] text-white px-4 py-2 rounded hover:bg-[#c0392b] transition text-sm">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+                        </button>
+                        <label class="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox"
+                                   id="auto-refresh"
+                                   class="rounded text-[#e74c3c] focus:ring-[#e74c3c]">
+                            <span>Auto-refresh (1 min)</span>
+                        </label>
+                    </div>
+                </div>
+                <form method="get" class="flex flex-wrap gap-4 items-end">
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-search mr-1"></i>Search Projects
+                        </label>
+                        <input type="text"
+                               name="search"
+                               id="search"
+                               placeholder="Type project name..."
+                               value="{{ filters.search|default:'' }}"
+                               class="w-full rounded border-gray-300 focus:ring-[#e74c3c] focus:border-[#e74c3c]">
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="organization"
+                               class="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                        <select name="organization"
+                                id="organization"
+                                class="w-full rounded border-gray-300 focus:ring-[#e74c3c] focus:border-[#e74c3c]">
+                            <option value="">All Organizations</option>
+                            {% for org in organizations %}
+                                <option value="{{ org.id }}"
+                                        {% if filters.organization|stringformat:"s" == org.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ org.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status"
+                                id="status"
+                                class="w-full rounded border-gray-300 focus:ring-[#e74c3c] focus:border-[#e74c3c]">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}"
+                                        {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="sort" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                        <select name="sort"
+                                id="sort"
+                                class="w-full rounded border-gray-300 focus:ring-[#e74c3c] focus:border-[#e74c3c]">
+                            <option value="stars" {% if filters.sort == "stars" %}selected{% endif %}>Stars</option>
+                            <option value="forks" {% if filters.sort == "forks" %}selected{% endif %}>Forks</option>
+                            <option value="issues" {% if filters.sort == "issues" %}selected{% endif %}>Issues</option>
+                            <option value="contributors"
+                                    {% if filters.sort == "contributors" %}selected{% endif %}>Contributors</option>
+                            <option value="commits" {% if filters.sort == "commits" %}selected{% endif %}>Commits</option>
+                            <option value="activity"
+                                    {% if filters.sort == "activity" %}selected{% endif %}>Activity Score</option>
+                            <option value="name" {% if filters.sort == "name" %}selected{% endif %}>Name</option>
+                        </select>
+                    </div>
+                    <button type="submit"
+                            class="bg-[#e74c3c] text-white px-6 py-2 rounded hover:bg-[#c0392b] transition">
+                        Apply Filters
+                    </button>
+                </form>
+            </div>
+            <!-- Tab Navigation -->
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="flex -mb-px">
+                        <button type="button"
+                                data-tab="dashboard"
+                                class="tab-button active flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition hover:text-[#e74c3c] hover:border-[#e74c3c]">
+                            Dashboard
+                        </button>
+                        <button type="button"
+                                data-tab="projects"
+                                class="tab-button flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition hover:text-[#e74c3c] hover:border-[#e74c3c]">
+                            Projects
+                        </button>
+                        <button type="button"
+                                data-tab="stats"
+                                class="tab-button flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition hover:text-[#e74c3c] hover:border-[#e74c3c]">
+                            Statistics
+                        </button>
+                        <button type="button"
+                                data-tab="activity"
+                                class="tab-button flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition hover:text-[#e74c3c] hover:border-[#e74c3c]">
+                            Activity
+                        </button>
+                    </nav>
+                </div>
+                <!-- Tab Content -->
+                <div class="p-6">
+                    <!-- Dashboard Tab -->
+                    <div id="tab-dashboard" class="tab-content">
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                            <div class="bg-[#e74c3c] text-white rounded-lg p-4">
+                                <div class="text-2xl font-bold">{{ total_projects }}</div>
+                                <div class="text-sm opacity-90">Projects</div>
+                            </div>
+                            <div class="bg-[#c0392b] text-white rounded-lg p-4">
+                                <div class="text-2xl font-bold">{{ total_stars|default:0 }}</div>
+                                <div class="text-sm opacity-90">Stars</div>
+                            </div>
+                            <div class="bg-[#e74c3c] text-white rounded-lg p-4">
+                                <div class="text-2xl font-bold">{{ total_forks|default:0 }}</div>
+                                <div class="text-sm opacity-90">Forks</div>
+                            </div>
+                            <div class="bg-[#c0392b] text-white rounded-lg p-4">
+                                <div class="text-2xl font-bold">{{ total_issues|default:0 }}</div>
+                                <div class="text-sm opacity-90">Issues</div>
+                            </div>
+                            <div class="bg-[#e74c3c] text-white rounded-lg p-4">
+                                <div class="text-2xl font-bold">{{ total_contributors|default:0 }}</div>
+                                <div class="text-sm opacity-90">Contributors</div>
+                            </div>
+                            <div class="bg-[#c0392b] text-white rounded-lg p-4">
+                                <div class="text-2xl font-bold">{{ total_commits|default:0 }}</div>
+                                <div class="text-sm opacity-90">Commits</div>
+                            </div>
+                        </div>
+                        <!-- Charts Row -->
+                        <div class="grid md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Top 5 Projects by Stars</h3>
+                                <div class="h-[300px]">
+                                    <canvas id="starsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Project Status Distribution</h3>
+                                <div class="h-[300px]">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Featured Projects Cards -->
+                        <div class="mb-4">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Top Projects</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% for project in projects|slice:":6" %}
+                                <div class="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-lg transition-shadow">
+                                    <div class="flex items-start mb-3">
+                                        <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                            <svg class="w-6 h-6 text-blue-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="text-base font-semibold text-gray-900 truncate mb-1">{{ project.name }}</h4>
+                                            {% if project.status %}
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                    {{ project.get_status_display }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+                                        {% if project.description %}
+                                            {{ project.description|truncatewords:15 }}
+                                        {% else %}
+                                            OWASP Foundation Web Repository
+                                        {% endif %}
+                                    </p>
+                                    <div class="grid grid-cols-3 gap-3 mb-4">
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-1">
+                                                <svg class="w-4 h-4 text-yellow-500"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                            <div class="text-lg font-bold text-gray-900">{{ project.stars|default:0 }}</div>
+                                            <div class="text-xs text-gray-500">Stars</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-1">
+                                                <svg class="w-4 h-4 text-green-500"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                            <div class="text-lg font-bold text-gray-900">{{ project.forks|default:0 }}</div>
+                                            <div class="text-xs text-gray-500">Forks</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="flex items-center justify-center mb-1">
+                                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                            <div class="text-lg font-bold text-gray-900">{{ project.issues|default:0 }}</div>
+                                            <div class="text-xs text-gray-500">Issues</div>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'project_detail' project.slug %}"
+                                       class="block w-full text-center px-4 py-2 bg-[#e74c3c] text-white rounded hover:bg-[#c0392b] transition text-sm font-medium">
+                                        View Details
+                                        <svg class="inline-block w-4 h-4 ml-1"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                            </path>
+                                        </svg>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Recent Activity Timeline -->
+                        <!-- TODO: Replace with dynamic activity data from backend -->
+                        <div class="mt-8">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Recent Activity</h3>
+                            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                <div class="space-y-6">
+                                    <!-- Activity Item 1 -->
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-green-600"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    New commits pushed to <span class="text-[#e74c3c]">OWASP ZAP</span>
+                                                </p>
+                                                <span class="text-xs text-gray-500">2 hours ago</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">45 commits added with bug fixes and performance improvements</p>
+                                        </div>
+                                    </div>
+                                    <!-- Activity Item 2 -->
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-blue-600"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    Pull request merged in <span class="text-[#e74c3c]">Juice Shop</span>
+                                                </p>
+                                                <span class="text-xs text-gray-500">5 hours ago</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">Feature: Added new challenge for SQL injection detection</p>
+                                        </div>
+                                    </div>
+                                    <!-- Activity Item 3 -->
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-yellow-600"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    Issues opened in <span class="text-[#e74c3c]">ModSecurity</span>
+                                                </p>
+                                                <span class="text-xs text-gray-500">8 hours ago</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">12 new issues reported by community members</p>
+                                        </div>
+                                    </div>
+                                    <!-- Activity Item 4 -->
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-purple-600"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    Documentation updated for <span class="text-[#e74c3c]">Cheat Sheet Series</span>
+                                                </p>
+                                                <span class="text-xs text-gray-500">12 hours ago</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">Added 5 new security best practice guides</p>
+                                        </div>
+                                    </div>
+                                    <!-- Activity Item 5 -->
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-red-600"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    Issues closed in <span class="text-[#e74c3c]">Dependency-Check</span>
+                                                </p>
+                                                <span class="text-xs text-gray-500">1 day ago</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">28 issues resolved and closed by maintainers</p>
+                                        </div>
+                                    </div>
+                                    <!-- Activity Item 6 -->
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-5 h-5 text-indigo-600"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    New contributors joined <span class="text-[#e74c3c]">WebGoat</span>
+                                                </p>
+                                                <span class="text-xs text-gray-500">1 day ago</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-600">15 new contributors made their first contributions</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Projects Tab -->
+                    <div id="tab-projects" class="tab-content hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stars</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Forks</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Issues</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Repos</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for project in projects %}
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    {% if project.logo %}
+                                                        <img src="{{ project.logo }}"
+                                                             alt="{{ project.name }}"
+                                                             width="32"
+                                                             height="32"
+                                                             class="h-8 w-8 rounded mr-3">
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="font-medium text-gray-900">{{ project.name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ project.organization }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
+                                                    {{ project.status_display }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900">{{ project.stars|default:0 }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900">{{ project.forks|default:0 }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900">{{ project.issues|default:0 }}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900">{{ project.repos_count }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">No projects found matching your filters.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Statistics Tab -->
+                    <div id="tab-stats" class="tab-content hidden">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Top 5 Contributors</h3>
+                                <div class="h-[300px]">
+                                    <canvas id="contributorsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Top 5 Forks</h3>
+                                <div class="h-[300px]">
+                                    <canvas id="forksChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Activity Tab -->
+                    <div id="tab-activity" class="tab-content hidden">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Top 5 by Commits</h3>
+                                <div class="h-[300px]">
+                                    <canvas id="commitsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Top 5 by Activity Score</h3>
+                                <div class="h-[300px]">
+                                    <canvas id="activityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/project_leaderboard.js' %}"></script>
+    <script>
+    // Initialize charts with data
+    const projectsData = {{ projects|length|yesno:"1,0" }};
+    const topProjects = [
+        {% for project in projects|slice:":10" %}
+        {
+            name: "{{ project.name|escapejs }}",
+            stars: {{ project.stars|default:0 }},
+            forks: {{ project.forks|default:0 }},
+            issues: {{ project.issues|default:0 }},
+            contributors: {{ project.contributors|default:0 }},
+            commits: {{ project.commits|default:0 }},
+            activity_score: {{ project.activity_score|default:0 }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const statusDistribution = {
+        {% for status, count in status_distribution.items %}
+        "{{ status|escapejs }}": {{ count }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts(topProjects, statusDistribution);
+            setupRefreshHandlers();
+        });
+    } else {
+        initializeCharts(topProjects, statusDistribution);
+        setupRefreshHandlers();
+    }
+    
+    // Refresh functionality
+    function setupRefreshHandlers() {
+        const refreshBtn = document.getElementById('refresh-data');
+        const autoRefreshCheck = document.getElementById('auto-refresh');
+        
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                location.reload();
+            });
+        }
+        
+        // Auto-refresh functionality
+        let autoRefreshInterval = null;
+        if (autoRefreshCheck) {
+            autoRefreshCheck.addEventListener('change', function() {
+                if (this.checked) {
+                    autoRefreshInterval = setInterval(function() {
+                        location.reload();
+                    }, 60000); // 1 minute
+                } else {
+                    if (autoRefreshInterval) {
+                        clearInterval(autoRefreshInterval);
+                        autoRefreshInterval = null;
+                    }
+                }
+            });
+        }
+    }
+    </script>
+{% endblock %}

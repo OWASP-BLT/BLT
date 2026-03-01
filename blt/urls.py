@@ -19,6 +19,12 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
+from website.api.leaderboard_api import (
+    LeaderboardAPIView,
+    ProjectStatsAPIView,
+    RefreshStatsAPIView,
+    leaderboard_filters,
+)
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -295,6 +301,7 @@ from website.views.project import (
     repo_activity_data,
     select_contribution,
 )
+from website.views.project_leaderboard import ProjectLeaderboardView, project_leaderboard_data
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.security import SecurityDashboardView
@@ -1093,6 +1100,12 @@ urlpatterns = [
     path("staking/my-stakes/", my_staking, name="my_staking"),
     path("staking/leaderboard/", staking_leaderboard, name="staking_leaderboard"),
     path("staking/create/", create_staking_pool, name="create_staking_pool"),
+    path("project_leaderboard/", ProjectLeaderboardView.as_view(), name="project_leaderboard"),
+    path("api/project-leaderboard/", project_leaderboard_data, name="project_leaderboard_data"),
+    path("api/leaderboard/", LeaderboardAPIView.as_view(), name="api_leaderboard"),
+    path("api/leaderboard/filters/", leaderboard_filters, name="api_leaderboard_filters"),
+    path("api/project/<int:project_id>/stats/", ProjectStatsAPIView.as_view(), name="api_project_stats"),
+    path("api/project/<int:project_id>/refresh/", RefreshStatsAPIView.as_view(), name="api_refresh_project_stats"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
     path("project/<slug:slug>/delete/", delete_project, name="delete_project"),
     path("slack/events", slack_events, name="slack_events"),
