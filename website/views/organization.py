@@ -2473,6 +2473,20 @@ class OrganizationDetailView(DetailView):
             )
         )
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+
+        # 🔒 Restrict access to inactive organizations
+        if not obj.is_active:
+            user = self.request.user
+
+            allowed = user.is_authenticated and (user.is_superuser or obj.is_admin(user) or obj.is_manager(user))
+
+            if not allowed:
+                raise Http404("Organization not found")
+
+        return obj
+
     def get_leaderboard_data(self, organization):
         """
         Get leaderboard data for all organization repositories.
