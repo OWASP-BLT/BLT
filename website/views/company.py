@@ -4,7 +4,8 @@ import os
 import re
 import uuid
 from datetime import datetime, timedelta
-from urllib.parse import parse_qs, urlencode, urlparse
+from typing import ClassVar
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
 from django.conf import settings as django_settings
@@ -16,14 +17,18 @@ from django.core.files.storage import default_storage
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
+from django.db.utils import OperationalError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 from slack_bolt import App
 
+from website.decorators import ratelimit
+from website.forms import OrganizationProfileForm
 from website.models import (
     DailyStatusReport,
     Domain,
@@ -40,13 +45,82 @@ from website.models import (
     SlackIntegration,
     Winner,
 )
-from website.utils import check_security_txt, format_timedelta, is_valid_https_url, rebuild_safe_url
+from website.utils import (
+    check_security_txt,
+    format_timedelta,
+    is_valid_host_for_domain,
+    is_valid_https_url,
+    rebuild_safe_url,
+)
+from website.views.core import SAMPLE_INVITE_EMAIL_PATTERN
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
 
 # Slack user ID validation pattern
 SLACK_USER_ID_PATTERN = r"^U[A-Z0-9]+$"
+
+
+def calculate_social_stats(organization):
+    """Calculate social media statistics for an organization.
+
+    Args:
+        organization: Organization object or ID (for backwards compatibility)
+
+    Returns:
+        dict: Social media statistics including platform availability and click counts
+    """
+    # Support both Organization object and ID for backwards compatibility
+    if isinstance(organization, int):
+        try:
+            org = Organization.objects.get(id=organization)
+        except Organization.DoesNotExist:
+            return {
+                "has_twitter": False,
+                "has_facebook": False,
+                "has_github": False,
+                "has_linkedin": False,
+                "twitter_clicks": 0,
+                "facebook_clicks": 0,
+                "github_clicks": 0,
+                "linkedin_clicks": 0,
+                "total_clicks": 0,
+            }
+    else:
+        # Validate that organization is an Organization instance
+        if not isinstance(organization, Organization):
+            raise TypeError(f"organization must be an Organization instance or int, got {type(organization).__name__}")
+        org = organization
+
+    social_clicks = org.social_clicks or {}
+
+    stats = {
+        "has_twitter": bool(org.twitter),
+        "has_facebook": bool(org.facebook),
+        "has_github": bool(org.github_org),
+        "has_linkedin": bool(org.linkedin),
+        "twitter_clicks": social_clicks.get("twitter", 0),
+        "facebook_clicks": social_clicks.get("facebook", 0),
+        "github_clicks": social_clicks.get("github", 0),
+        "linkedin_clicks": social_clicks.get("linkedin", 0),
+        "total_clicks": sum(v for v in social_clicks.values() if isinstance(v, (int, float))) if social_clicks else 0,
+    }
+
+    return stats
+
+
+def get_user_organizations(user):
+    """Get organizations accessible to a user.
+
+    Args:
+        user: User object (can be authenticated or anonymous)
+
+    Returns:
+        QuerySet of organization names and IDs if authenticated, empty list otherwise
+    """
+    if user.is_authenticated:
+        return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
+    return []
 
 
 def validate_organization_user(func):
@@ -267,11 +341,13 @@ class RegisterOrganizationView(View):
                         request.session.pop("org_ref", None)
 
                     if not referral_succeeded:
-                        error_detail = referral_error_type if referral_error_type else "Unknown error"
                         messages.warning(
                             request,
-                            f"Referral code could not be applied ({error_detail}), but your organization was created successfully.",
+                            "Referral code could not be applied, but your organization was created successfully.",
                         )
+                        # Log error type for debugging without exposing to user
+                        if referral_error_type:
+                            logger.warning(f"Referral application failed with error type: {referral_error_type}")
                 else:
                     request.session.pop("org_ref", None)
 
@@ -309,13 +385,14 @@ class RegisterOrganizationView(View):
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
         except Exception as e:
+            logger.exception("Error creating organization")
             if "value too long" in str(e):
                 messages.error(
                     request,
                     "One of the entered values is too long. Please check that all URLs and text fields are within the allowed length limits.",
                 )
             else:
-                messages.error(request, f"Error creating organization: {e}")
+                messages.error(request, "Unable to create organization. Please check your input and try again.")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "organization/register_organization.html")
@@ -455,6 +532,17 @@ class OrganizationDashboardAnalyticsView(View):
         """Convert label ID to human-readable name."""
         return self.labels.get(label_id, "Other")
 
+    def get_social_stats(self, organization):
+        """Get social media stats for the organization.
+
+        Args:
+            organization: Organization object or ID (for backwards compatibility)
+
+        Returns:
+            dict: Social media statistics from calculate_social_stats utility
+        """
+        return calculate_social_stats(organization)
+
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
@@ -566,9 +654,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def _get_user_organizations(self, user):
         """Helper to get organizations accessible by user."""
-        if user.is_authenticated:
-            return Organization.objects.values("name", "id").filter(Q(managers__in=[user]) | Q(admin=user)).distinct()
-        return []
+        return get_user_organizations(user)
 
     def get_network_traffic_data(self, organization):
         """Collects and analyzes network traffic data for the organization."""
@@ -786,9 +872,188 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_rate_increase_decrease_weekly": self.bug_rate_increase_decrease_weekly(id),
             "accepted_bug_rate_increase_decrease_weekly": self.bug_rate_increase_decrease_weekly(id, True),
             "security_incidents_summary": self.get_security_incidents_summary(id),
+            "social_stats": self.get_social_stats(organization_obj),
+            "network_traffic_data": self.get_network_traffic_data(id),
+            "compliance_monitoring": self.get_compliance_monitoring(id),
             "threat_intelligence": self.get_threat_intelligence(id),
         }
         return render(request, "organization/dashboard/organization_analytics.html", context=context)
+
+
+class OrganizationSocialRedirectView(View):
+    """
+    Tracks social media clicks and redirects to the actual social media URL.
+    Usage: /organization/<org_id>/social/<platform>/
+
+    Rate limited to prevent bot-driven inflation of click metrics.
+    """
+
+    # Allowed domains for each platform to prevent open redirect attacks
+    ALLOWED_DOMAINS: ClassVar[dict[str, list[str]]] = {
+        "twitter": ["twitter.com", "x.com", "mobile.twitter.com"],
+        "facebook": ["facebook.com", "fb.com", "m.facebook.com"],
+        "linkedin": ["linkedin.com"],
+        "github": ["github.com"],
+    }
+
+    @method_decorator(ratelimit(key="ip", rate="60/m", method="ALL"))
+    def get(self, request, org_id, platform):
+        # Validate platform - derive from ALLOWED_DOMAINS for single source of truth
+        valid_platforms = list(self.ALLOWED_DOMAINS.keys())
+        if platform not in valid_platforms:
+            return HttpResponseBadRequest("Invalid social platform")
+
+        # Increment the click counter atomically to prevent race conditions.
+        # Note: Click counting is non-critical and is treated as best-effort; failures
+        # won't prevent the redirect.
+        organization = None
+        try:
+            with transaction.atomic():
+                # Lock the row to ensure atomic update and validate organization exists
+                # This combines validation + locking into a single query
+                try:
+                    organization = Organization.objects.select_for_update().get(id=org_id)
+                except Organization.DoesNotExist as exc:
+                    raise Http404("Organization not found") from exc
+
+                # Get current clicks dict (handle None case)
+                clicks = organization.social_clicks or {}
+
+                # Increment the counter for this platform
+                clicks[platform] = clicks.get(platform, 0) + 1
+
+                # Use atomic database update to prevent race conditions
+                # This ensures the JSON update happens at the database level
+                Organization.objects.filter(pk=org_id).update(social_clicks=clicks)
+        except Http404:
+            raise  # Re-raise 404 immediately
+        except OperationalError as e:
+            # Log the error but don't fail the redirect - click counting is non-critical
+            logger.warning(
+                "Failed to update social clicks for organization %s on platform %s: %s",
+                org_id,
+                platform,
+                str(e),
+                exc_info=True,
+            )
+            # Need to fetch organization for redirect if click update failed
+            if organization is None:
+                try:
+                    organization = Organization.objects.get(id=org_id)
+                except Organization.DoesNotExist as exc:
+                    raise Http404("Organization not found") from exc
+        except Exception as e:
+            # Catch all other database errors (IntegrityError, DatabaseError, etc.)
+            # to ensure redirect always works even if click tracking fails
+            logger.warning(
+                "Unexpected error updating social clicks for organization %s on platform %s: %s",
+                org_id,
+                platform,
+                str(e),
+                exc_info=True,
+            )
+            # Need to fetch organization for redirect if click update failed
+            if organization is None:
+                try:
+                    organization = Organization.objects.get(id=org_id)
+                except Organization.DoesNotExist as exc:
+                    raise Http404("Organization not found") from exc
+
+        # Get the actual URL based on platform
+        url_mapping = {
+            "twitter": organization.twitter,
+            "facebook": organization.facebook,
+            "github": f"https://github.com/{organization.github_org}" if organization.github_org else None,
+            "linkedin": organization.linkedin,
+        }
+
+        target_url = url_mapping.get(platform)
+
+        if not target_url:
+            messages.error(request, f"No {platform.capitalize()} profile configured for this organization.")
+            return redirect("organization_analytics", id=org_id)
+
+        # Validate target URL domain to prevent open redirect attacks
+        parsed = urlparse(target_url)
+
+        # Validate scheme
+        if parsed.scheme not in ["http", "https"]:
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured.")
+            return redirect("organization_analytics", id=org_id)
+
+        hostname = (parsed.hostname or "").lower()
+        allowed_domains = self.ALLOWED_DOMAINS.get(platform, [])
+
+        # Validate hostname is exact match or proper subdomain (prevent suffix attacks)
+        if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
+            messages.error(request, f"Invalid {platform.capitalize()} URL configured")
+            return redirect("organization_analytics", id=org_id)
+
+        # Strip query parameters and fragments before redirect to prevent parameter injection attacks
+        clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+
+        # Redirect to the sanitized social media URL (query params already stripped)
+        return redirect(clean_url)
+
+
+class OrganizationProfileEditView(View):
+    """
+    View for editing organization profile information and social media links.
+    """
+
+    def _get_user_organizations(self, user):
+        """Helper method to get organizations accessible to the user."""
+        return get_user_organizations(user)
+
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        organization = get_object_or_404(Organization, id=id)
+
+        # Get list of organizations for dropdown
+        organizations = self._get_user_organizations(request.user)
+
+        form = OrganizationProfileForm(instance=organization)
+
+        # Get social media click statistics
+        social_stats = calculate_social_stats(organization)
+
+        context = {
+            "organization": id,
+            "organization_obj": organization,
+            "organizations": organizations,
+            "form": form,
+            "social_stats": social_stats,
+        }
+
+        return render(request, "organization/dashboard/edit_organization_profile.html", context)
+
+    @validate_organization_user
+    def post(self, request, id, *args, **kwargs):
+        organization = get_object_or_404(Organization, id=id)
+
+        form = OrganizationProfileForm(request.POST, request.FILES, instance=organization)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Organization profile updated successfully!")
+            return redirect("organization_analytics", id=id)
+        else:
+            # Get list of organizations for dropdown
+            organizations = self._get_user_organizations(request.user)
+
+            # Get social media click statistics for error case
+            social_stats = calculate_social_stats(organization)
+
+            context = {
+                "organization": id,
+                "organization_obj": organization,
+                "organizations": organizations,
+                "form": form,
+                "social_stats": social_stats,
+            }
+
+            messages.error(request, "Please correct the errors below.")
+            return render(request, "organization/dashboard/edit_organization_profile.html", context)
 
 
 class OrganizationDashboardIntegrations(View):
@@ -2217,16 +2482,16 @@ class OrganizationDashboardManageRolesView(View):
                 messages.error(request, "Role not found")
             except ValueError as e:
                 logger.error(f"Invalid value provided when updating role: {str(e)}")
-                messages.error(request, str(e))
+                messages.error(request, "Invalid role value provided. Please check your input")
             except ValidationError as e:
                 logger.error(f"Validation error when updating role: {str(e)}")
-                messages.error(request, str(e))
+                messages.error(request, "Unable to update role. Please check your input and try again")
             except IntegrityError as e:
                 logger.error(f"Database integrity error when updating role: {str(e)}")
-                messages.error(request, "Database integrity error: Unable to update role due to conflicting data")
+                messages.error(request, "Unable to update role due to conflicting data")
             except Exception as e:
                 logger.exception("Error updating role")
-                messages.error(request, "An error occurred while updating the role. " + str(e))
+                messages.error(request, "An error occurred while updating the role. Please try again")
 
         elif action == "remove_role":
             role_id = request.POST.get("role_id")
@@ -2734,7 +2999,8 @@ def check_domain_security_txt(request):
             messages.info(request, f"No security.txt found for {domain.name}")
 
     except Exception as e:
-        messages.error(request, f"Error checking security.txt: {str(e)}")
+        logger.exception(f"Error checking security.txt for domain {domain.name}")
+        messages.error(request, "Unable to check security.txt. Please try again later")
 
     # Redirect back to the manage domains page
     if domain.organization:

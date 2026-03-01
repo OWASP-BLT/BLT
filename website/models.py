@@ -188,6 +188,7 @@ class Organization(models.Model):
     url = models.URLField(unique=True, max_length=255)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
+    linkedin = models.URLField(null=True, blank=True, help_text="LinkedIn profile URL")
     matrix_url = models.URLField(null=True, blank=True)
     slack_url = models.URLField(null=True, blank=True)
     discord_url = models.URLField(null=True, blank=True)
@@ -195,6 +196,9 @@ class Organization(models.Model):
     zulipchat_url = models.URLField(null=True, blank=True)
     element_url = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
+    social_clicks = models.JSONField(
+        default=dict, help_text="Track social media profile visits (Twitter, GitHub, LinkedIn, Facebook)"
+    )
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)

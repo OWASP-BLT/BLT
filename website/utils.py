@@ -53,6 +53,34 @@ WHITELISTED_IMAGE_TYPES = {
 }
 
 
+def is_valid_host_for_domain(host: str, domain: str) -> bool:
+    """Validate that a hostname is either exactly the domain or a proper subdomain.
+
+    This function prevents domain suffix attacks (e.g., evil.com.attacker.com is not
+    a subdomain of evil.com). It ensures the hostname either matches exactly or is
+    a proper subdomain by checking:
+    1. The hostname doesn't contain empty labels (no consecutive or trailing dots)
+    2. The hostname is an exact match, or
+    3. The hostname ends with ".domain" pattern
+
+    Args:
+        host: The hostname to validate (should be lowercase)
+        domain: The allowed domain to check against (should be lowercase)
+
+    Returns:
+        bool: True if host is valid for domain, False otherwise
+    """
+    if not host or not domain:
+        return False
+    parts = host.split(".")
+    # Reject hosts with empty labels (e.g., consecutive dots or leading/trailing dots)
+    if any(not part for part in parts):
+        return False
+    if host == domain:
+        return True
+    return host.endswith(f".{domain}")
+
+
 def validate_file_type(request, file_field_name, allowed_extensions, allowed_mime_types=None, max_size=None):
     file = request.FILES.get(file_field_name)
     if not file:

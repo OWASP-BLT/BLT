@@ -1,3 +1,5 @@
+import re
+
 import pytz
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
@@ -19,6 +21,7 @@ from website.models import (
     Room,
     UserProfile,
 )
+from website.utils import is_valid_host_for_domain
 
 
 class UserProfileForm(forms.ModelForm):
@@ -602,4 +605,205 @@ class JobForm(forms.ModelForm):
             "application_email": "Optional: Email address where applications should be sent",
             "application_url": "Optional: Link to external application page",
             "application_instructions": "Optional: Custom instructions for applicants",
+        }
+
+
+class OrganizationProfileForm(forms.ModelForm):
+    """Form for editing organization profile and social media links"""
+
+    def _validate_social_url(self, url, allowed_domains, platform_name):
+        """Helper to validate social URLs to prevent open redirect vulnerabilities"""
+        if url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(url)
+
+            # Validate scheme
+            if parsed.scheme not in ["http", "https"]:
+                raise forms.ValidationError(f"{platform_name} URL must use http or https")
+
+            hostname = (parsed.hostname or "").lower()
+            # Only allow specified domains and their subdomains (prevent suffix attacks)
+            if not any(is_valid_host_for_domain(hostname, domain) for domain in allowed_domains):
+                allowed_str = " or ".join(allowed_domains)
+                raise forms.ValidationError(f"{platform_name} URL must be from {allowed_str} domain")
+
+            # Normalize URL: rebuild without query params, lowercase hostname, no trailing slash
+            # Preserve fragments for Matrix URLs (room/user info is in fragment e.g., #/@user:matrix.org)
+            path = parsed.path.rstrip("/")
+            if platform_name == "Matrix" and parsed.fragment:
+                # For Matrix URLs, preserve the path separator before fragment
+                # e.g., https://matrix.to/#/@user:matrix.org
+                path = parsed.path  # Keep original path including trailing /
+                normalized_url = f"{parsed.scheme}://{hostname}{path}#{parsed.fragment}"
+            else:
+                normalized_url = f"{parsed.scheme}://{hostname}{path}"
+            return normalized_url
+        return url
+
+    def clean_twitter(self):
+        """Validate Twitter URL to prevent open redirect vulnerabilities"""
+        twitter_url = self.cleaned_data.get("twitter")
+        return self._validate_social_url(twitter_url, ["twitter.com", "x.com"], "Twitter")
+
+    def clean_facebook(self):
+        """Validate Facebook URL to prevent open redirect vulnerabilities"""
+        facebook_url = self.cleaned_data.get("facebook")
+        return self._validate_social_url(facebook_url, ["facebook.com", "fb.com"], "Facebook")
+
+    def clean_linkedin(self):
+        """Validate LinkedIn URL to prevent open redirect vulnerabilities"""
+        linkedin_url = self.cleaned_data.get("linkedin")
+        return self._validate_social_url(linkedin_url, ["linkedin.com"], "LinkedIn")
+
+    def clean_discord_url(self):
+        """Validate Discord URL to prevent open redirect vulnerabilities"""
+        discord_url = self.cleaned_data.get("discord_url")
+        return self._validate_social_url(discord_url, ["discord.gg", "discord.com"], "Discord")
+
+    def clean_slack_url(self):
+        """Validate Slack URL to prevent open redirect vulnerabilities"""
+        slack_url = self.cleaned_data.get("slack_url")
+        return self._validate_social_url(slack_url, ["slack.com"], "Slack")
+
+    def clean_matrix_url(self):
+        """Validate Matrix URL to prevent open redirect vulnerabilities"""
+        matrix_url = self.cleaned_data.get("matrix_url")
+        return self._validate_social_url(matrix_url, ["matrix.to", "matrix.org"], "Matrix")
+
+    def clean_github_org(self):
+        """Validate GitHub organization handle"""
+        github_org = self.cleaned_data.get("github_org")
+        if github_org:
+            # GitHub usernames can only contain alphanumeric characters and hyphens
+            # Cannot start or end with hyphen, no consecutive hyphens
+            if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$", github_org):
+                raise forms.ValidationError(
+                    "Invalid GitHub organization handle. Use only letters, numbers, and hyphens."
+                )
+        return github_org
+
+    class Meta:
+        model = Organization
+        fields = [
+            "name",
+            "description",
+            "tagline",
+            "logo",
+            "url",
+            "email",
+            "twitter",
+            "facebook",
+            "linkedin",
+            "github_org",
+            "discord_url",
+            "slack_url",
+            "matrix_url",
+        ]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "Organization Name",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "rows": 4,
+                    "placeholder": "Describe your organization...",
+                }
+            ),
+            "tagline": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "A brief tagline for your organization",
+                }
+            ),
+            "logo": forms.ClearableFileInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                }
+            ),
+            "url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://example.com",
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "contact@example.com",
+                }
+            ),
+            "twitter": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://twitter.com/yourorg",
+                }
+            ),
+            "facebook": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://facebook.com/yourorg",
+                }
+            ),
+            "linkedin": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://linkedin.com/company/yourorg",
+                }
+            ),
+            "github_org": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "yourorg",
+                }
+            ),
+            "discord_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://discord.gg/yourinvite",
+                }
+            ),
+            "slack_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://yourorg.slack.com",
+                }
+            ),
+            "matrix_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent",
+                    "placeholder": "https://matrix.to/#/@yourorg:matrix.org",
+                }
+            ),
+        }
+        labels = {
+            "name": "Organization Name",
+            "description": "Description",
+            "tagline": "Tagline",
+            "logo": "Logo",
+            "url": "Website URL",
+            "email": "Contact Email",
+            "twitter": "Twitter Profile",
+            "facebook": "Facebook Page",
+            "linkedin": "LinkedIn Company Page",
+            "github_org": "GitHub Organization Handle",
+            "discord_url": "Discord Server",
+            "slack_url": "Slack Workspace",
+            "matrix_url": "Matrix Channel",
+        }
+        help_texts = {
+            "description": "Describe what your organization does",
+            "tagline": "A short, catchy phrase that describes your organization",
+            "logo": "Upload a logo for your organization (recommended size: 200x200px)",
+            "twitter": "Full URL to your Twitter/X profile",
+            "facebook": "Full URL to your Facebook page",
+            "linkedin": "Full URL to your LinkedIn company page",
+            "github_org": "GitHub organization name/handle (without https://github.com/ prefix)",
+            "discord_url": "Full URL to your Discord server invite",
+            "slack_url": "Full URL to your Slack workspace",
+            "matrix_url": "Full URL to your Matrix channel",
         }
