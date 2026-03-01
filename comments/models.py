@@ -15,7 +15,8 @@ class Comment(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
 
-    # Adding help_text to define the data contract for HTMX migration
+    # author_fk is the source of truth for authenticated users.
+    # author (CharField) retained temporarily for HTMX migration compatibility only.
     author = models.CharField(max_length=200, help_text="The name or username of the person posting the comment.")
     author_fk = models.ForeignKey(UserProfile, null=True, on_delete=models.SET_NULL)
     author_url = models.CharField(max_length=200)
