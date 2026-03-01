@@ -1,5 +1,3 @@
-import unittest.mock as mock
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
@@ -14,14 +12,6 @@ class ProjectAggregationTestCase(TestCase):
     """Tests for stars/forks aggregation in Project API endpoints"""
 
     def setUp(self):
-        #  Patch prefetch_related to avoid invalid 'contributors'
-        self.prefetch_patcher = mock.patch(
-            "website.api.views.Project.objects.prefetch_related",
-            return_value=Project.objects.all(),
-        )
-        self.prefetch_patcher.start()
-        self.addCleanup(self.prefetch_patcher.stop)
-
         self.client = APIClient()
 
         self.user = User.objects.create_user(

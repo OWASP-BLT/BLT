@@ -1,11 +1,12 @@
 import json
 import logging
+import operator
 import smtplib
 import sys
 import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from functools import wraps
+from functools import reduce, wraps
 from urllib.parse import urlparse
 
 import django
@@ -20,7 +21,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import Count, Q, Sum, Value
+from django.db.models import Count, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -77,6 +78,11 @@ from website.utils import image_validator, rebuild_safe_url
 from website.views.user import LeaderboardBase
 
 logger = logging.getLogger(__name__)
+
+# Correlated subqueries for per-project star/fork totals — immune to M2M JOIN inflation
+_PROJECT_STARS_SQ = Repo.objects.filter(project=OuterRef("pk")).values("project").annotate(s=Sum("stars")).values("s")
+_PROJECT_FORKS_SQ = Repo.objects.filter(project=OuterRef("pk")).values("project").annotate(s=Sum("forks")).values("s")
+
 # API's
 
 
@@ -511,20 +517,51 @@ class LeaderboardApiViewSet(APIView):
             except (ValueError, OverflowError):
                 return Response("Invalid month or year passed", status=400)
 
-        queryset = global_leaderboard.get_leaderboard(month, year, api=True)
+        queryset = list(global_leaderboard.get_leaderboard(month, year, api=True))
+
+        # Batch-fetch all user IDs to avoid N+1 queries
+        user_ids = [each["id"] for each in queryset]
+
+        # Single query for all scores — filter to the same period as the leaderboard
+        scores_qs = Points.objects.filter(user__in=user_ids)
+        if month:
+            scores_qs = scores_qs.filter(created__year=int(year), created__month=int(month))
+        else:
+            scores_qs = scores_qs.filter(created__year=int(year))
+        scores_map = {}
+        for row in scores_qs.values("user").annotate(total_score=Sum("score")):
+            scores_map[row["user"]] = {"total_score": row["total_score"]}
+
+        # Single query for all profiles (exclude M2M fields to avoid Cartesian product)
+        profiles_map = {}
+        for p in (
+            UserProfile.objects.filter(user__in=user_ids)
+            .values("user_id", "user_avatar", "title")
+            .annotate(
+                follows_count=Count("follows", distinct=True),
+                issue_saved_count=Count("issue_saved", distinct=True),
+            )
+        ):
+            profiles_map[p["user_id"]] = p
+
         users = []
         rank_user = 1
         for each in queryset:
-            temp = {}
-            temp["rank"] = rank_user
-            temp["id"] = each["id"]
-            temp["User"] = each["username"]
-            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
-            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
-            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
-            temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
-            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
-            rank_user = rank_user + 1
+            uid = each["id"]
+            profile = profiles_map.get(uid, {})
+            avatar_path = profile.get("user_avatar", "")
+            avatar_url = request.build_absolute_uri(settings.MEDIA_URL + avatar_path) if avatar_path else ""
+            temp = {
+                "rank": rank_user,
+                "id": uid,
+                "User": each["username"],
+                "score": scores_map.get(uid, {"total_score": 0}),
+                "image": {"user_avatar": avatar_url},
+                "title_type": {"title": profile.get("title", 0)},
+                "follows": {"follows": profile.get("follows_count", 0)},
+                "savedissue": {"issue_saved": profile.get("issue_saved_count", 0)},
+            }
+            rank_user += 1
             users.append(temp)
 
         page = paginator.paginate_queryset(users, request)
@@ -864,10 +901,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         """List projects with optional filtering by freshness, stars, and forks."""
-        projects = self.get_queryset().annotate(
-            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
-            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
-        )
+        projects = self.get_queryset()
         projects = self.filter_queryset(projects)
 
         # Freshness filtering
@@ -886,6 +920,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"error": "Invalid 'freshness' parameter: must be a valid number"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
+        tags = request.query_params.get("tags")
+        if tags:
+            # Support comma-separated tags: ?tags=security,web (case-insensitive)
+            tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+            if tag_list:
+                tag_q = reduce(operator.or_, [Q(tags__name__iexact=t) for t in tag_list])
+                projects = projects.filter(tag_q).distinct()
+
+        # Use Subquery to avoid Sum inflation from M2M tag JOINs
+        projects = projects.annotate(
+            total_stars=Coalesce(Subquery(_PROJECT_STARS_SQ), Value(0)),
+            total_forks=Coalesce(Subquery(_PROJECT_FORKS_SQ), Value(0)),
+        )
 
         # Stars filtering
         stars = request.query_params.get("stars")
@@ -921,13 +969,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        tags = request.query_params.get("tags")
-        if tags:
-            # Support comma-separated tags: ?tags=security,web
-            tag_list = [t.strip() for t in tags.split(",") if t.strip()]
-            if tag_list:
-                projects = projects.filter(tags__name__in=tag_list).distinct()
-
         # Apply pagination
         page = self.paginate_queryset(projects)
         if page is not None:
@@ -945,16 +986,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Search projects by name, description, or tags."""
         query = request.query_params.get("q", "")
 
-        projects_qs = Project.objects.annotate(
-            total_stars=Coalesce(Sum("repos__stars"), Value(0)),
-            total_forks=Coalesce(Sum("repos__forks"), Value(0)),
+        # Use Subquery for stars/forks to avoid inflation from tags JOIN
+        projects = (
+            self.get_queryset()
+            .filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query))
+            .distinct()
+            .annotate(
+                total_stars=Coalesce(Subquery(_PROJECT_STARS_SQ), Value(0)),
+                total_forks=Coalesce(Subquery(_PROJECT_FORKS_SQ), Value(0)),
+            )
         )
-        if hasattr(Project, "contributors"):
-            projects_qs = projects_qs.prefetch_related("contributors")
-
-        projects = projects_qs.filter(
-            Q(name__icontains=query) | Q(description__icontains=query) | Q(tags__name__icontains=query)
-        ).distinct()
 
         # Apply pagination
         page = self.paginate_queryset(projects)
