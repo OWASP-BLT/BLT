@@ -64,7 +64,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "user_avatar",
             "description",
             "winnings",
-            "follows",
             "issue_upvoted",
             "issue_saved",
             "issue_flaged",
