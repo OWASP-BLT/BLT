@@ -122,10 +122,14 @@ docker info | findstr OSType
 
 #### Using Poetry
 ```bash
-# Install dependencies
+# Install Poetry
 pip install poetry
-poetry shell
+
+# 1. Install dependencies first (Creates the virtual environment)
 poetry install
+
+# 2. Activate the virtual environment
+poetry shell
 
 
 #### Beginner-Friendly Non-Docker Setup (Codespaces for Windows Beginners)
