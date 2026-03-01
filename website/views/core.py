@@ -1384,11 +1384,63 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+# Standalone job board URLs and cache (homepage "recent jobs & seekers")
+JOB_BOARD_JOBS_URL = "https://jobs.owaspblt.org/data/jobs.json"
+JOB_BOARD_SEEKERS_URL = "https://jobs.owaspblt.org/data/seekers.json"
+JOB_BOARD_CACHE_TIMEOUT = 600  # 10 minutes
+
+
+def get_job_board_data():
+    """Fetch recent jobs and seekers from standalone job board. Cached 10 min."""
+    from website.utils import rebuild_safe_url
+
+    jobs = cache.get("job_board_recent_jobs")
+    seekers = cache.get("job_board_recent_seekers")
+    if jobs is not None and seekers is not None:
+        return jobs, seekers
+    jobs_list = []
+    seekers_list = []
+    try:
+        r = requests.get(JOB_BOARD_JOBS_URL, timeout=10)
+        if r.ok:
+            data = r.json()
+            raw_jobs = data.get("jobs")
+            jobs_list = (raw_jobs if isinstance(raw_jobs, list) else [])[:3]
+            for job in jobs_list:
+                if isinstance(job, dict):
+                    url = job.get("application_url")
+                    if url and isinstance(url, str):
+                        safe = rebuild_safe_url(url)
+                        job["application_url"] = safe if safe else ""
+                    elif url is not None:
+                        job["application_url"] = ""
+        r2 = requests.get(JOB_BOARD_SEEKERS_URL, timeout=10)
+        if r2.ok:
+            data2 = r2.json()
+            raw_seekers = data2.get("seekers")
+            seekers_list = (raw_seekers if isinstance(raw_seekers, list) else [])[:3]
+            for seeker in seekers_list:
+                if isinstance(seeker, dict):
+                    url = seeker.get("profile_url")
+                    if url and isinstance(url, str):
+                        safe = rebuild_safe_url(url)
+                        seeker["profile_url"] = safe if safe else ""
+                    elif url is not None:
+                        seeker["profile_url"] = ""
+    except requests.exceptions.RequestException as e:
+        logger.warning("Failed to fetch job board data: %s", e)
+    except (ValueError, KeyError, TypeError) as e:
+        logger.warning("Invalid job board JSON: %s", e)
+    cache.set("job_board_recent_jobs", jobs_list, JOB_BOARD_CACHE_TIMEOUT)
+    cache.set("job_board_recent_seekers", seekers_list, JOB_BOARD_CACHE_TIMEOUT)
+    return jobs_list, seekers_list
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import GitHubIssue, Hackathon, Issue, Post, Repo, User, UserProfile
+    from website.models import GitHubIssue, Hackathon, Issue, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1469,8 +1521,8 @@ def home(request):
         invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
         referral_code = invite_friend.referral_code
 
-    # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+    # Get latest blog posts (Post model was removed in migration 0266; show none until blog is re-added)
+    latest_blog_posts = []
 
     # Get latest bug reports
     if request.user.is_authenticated:
@@ -1562,6 +1614,9 @@ def home(request):
             "db_connections": len(connection.queries),
         }
 
+    # Recent jobs and seekers from standalone job board (cached)
+    recent_jobs, recent_seekers = get_job_board_data()
+
     return render(
         request,
         "home.html",
@@ -1584,6 +1639,8 @@ def home(request):
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
             "recent_hackathons": recent_hackathons,
+            "recent_jobs": recent_jobs,
+            "recent_seekers": recent_seekers,
         },
     )
 
