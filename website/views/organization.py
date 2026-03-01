@@ -6,7 +6,7 @@ import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from smtplib import SMTPException
 from urllib.parse import quote_plus, urlparse
 
@@ -469,18 +469,24 @@ class Joinorganization(TemplateView):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        name = request.POST["organization"]
+        name = request.POST.get("organization", "").strip()
+        url = request.POST.get("url", "").strip()
+        email = request.POST.get("email", "").strip()
+        product = request.POST.get("product", "").strip()
+        if not all([name, url, email, product]):
+            return JsonResponse({"error": "Empty Fields"}, status=400)
         try:
             Organization.objects.get(name=name)
             return JsonResponse({"status": "Organization already exists"})
         except Organization.DoesNotExist:
-            url = request.POST["url"]
-            email = request.POST["email"]
-            product = request.POST["product"]
-            sub = Subscription.objects.get(name=product)
-            if name == "" or url == "" or email == "" or product == "":
-                return JsonResponse({"error": "Empty Fields"})
-            paymentType = request.POST["paymentType"]
+            try:
+                sub = Subscription.objects.get(name=product)
+            except Subscription.DoesNotExist:
+                return JsonResponse({"error": "Invalid subscription plan"}, status=400)
+            paymentType = request.POST.get("paymentType", "")
+            safe_url = rebuild_safe_url(url)
+            if not safe_url:
+                return JsonResponse({"error": "Invalid or unsafe URL"}, status=400)
             if paymentType == "wallet":
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 if wallet.current_balance < sub.charge_per_month:
@@ -489,7 +495,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = rebuild_safe_url(request.POST["url"])
+                organization.url = safe_url
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -509,7 +515,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = rebuild_safe_url(request.POST["url"])
+                organization.url = safe_url
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -1357,24 +1363,28 @@ class CreateHunt(TemplateView):
     def post(self, request, *args, **kwargs):
         try:
             domain_admin = OrganizationAdmin.objects.get(user=request.user)
-            if (
-                domain_admin.role == 1
-                and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
-            ) or domain_admin.role == 0:
+            domain_val = request.POST.get("domain", "")
+            domain_pk = domain_val.split("-")[0].replace(" ", "") if domain_val else ""
+            if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == domain_pk)) or domain_admin.role == 0:
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
-                total_amount = (
-                    Decimal(request.POST["prize_winner"])
-                    + Decimal(request.POST["prize_runner"])
-                    + Decimal(request.POST["prize_second_runner"])
-                )
+                try:
+                    prize_winner = Decimal(request.POST.get("prize_winner", "0"))
+                    prize_runner = Decimal(request.POST.get("prize_runner", "0"))
+                    prize_second_runner = Decimal(request.POST.get("prize_second_runner", "0"))
+                    total_amount = prize_winner + prize_runner + prize_second_runner
+                except (InvalidOperation, TypeError):
+                    return HttpResponse("Invalid prize amounts")
                 if total_amount > wallet.current_balance:
                     return HttpResponse("Insufficient balance")
                 hunt = Hunt()
-                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+                try:
+                    hunt.domain = Domain.objects.get(pk=domain_pk)
+                except (Domain.DoesNotExist, ValueError):
+                    return HttpResponse("Invalid domain")
                 data = {}
-                data["content"] = request.POST["content"]
-                data["start_date"] = request.POST["start_date"]
-                data["end_date"] = request.POST["end_date"]
+                data["content"] = request.POST.get("content", "")
+                data["start_date"] = request.POST.get("start_date", "")
+                data["end_date"] = request.POST.get("end_date", "")
                 form = HuntForm(data)
                 if not form.is_valid():
                     return HttpResponse("Invalid form data")
@@ -1383,33 +1393,33 @@ class CreateHunt(TemplateView):
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
                         return HttpResponse("Domain mismatch")
-                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 tzsign = 1
-                offset = request.POST["tzoffset"]
-                if int(offset) < 0:
-                    offset = int(offset) * (-1)
+                offset = request.POST.get("tzoffset", "0")
+                try:
+                    offset_int = int(offset)
+                except (ValueError, TypeError):
+                    offset_int = 0
+                if offset_int < 0:
+                    offset_int = offset_int * (-1)
                     tzsign = -1
                 start_date = form.cleaned_data["start_date"]
                 end_date = form.cleaned_data["end_date"]
                 if tzsign > 0:
-                    start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-                    end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    start_date = start_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+                    end_date = end_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
                 else:
-                    start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-                    end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    start_date = start_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+                    end_date = end_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
                 hunt.starts_on = start_date
-                hunt.prize_winner = Decimal(request.POST["prize_winner"])
-                hunt.prize_runner = Decimal(request.POST["prize_runner"])
-                hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
+                hunt.prize_winner = prize_winner
+                hunt.prize_runner = prize_runner
+                hunt.prize_second_runner = prize_second_runner
                 hunt.end_on = end_date
-                hunt.name = request.POST["name"]
+                hunt.name = request.POST.get("name", "")
                 hunt.description = form.cleaned_data["content"]
                 wallet.withdraw(total_amount)
                 wallet.save()
-                try:
-                    hunt.is_published = request.POST.get("publish", False) == "on"
-                except KeyError:
-                    hunt.is_published = False
+                hunt.is_published = request.POST.get("publish", False) == "on"
                 hunt.save()
                 return HttpResponse("success")
             else:
@@ -1648,10 +1658,15 @@ def trademark_detailview(request, slug):
         "x-rapidapi-key": settings.USPTO_API,
     }
     trademark_available_response = requests.get(trademark_available_url, headers=headers)
-    ta_data = trademark_available_response.json()
 
     if trademark_available_response.status_code == 429:
         error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+
+    try:
+        ta_data = trademark_available_response.json()
+    except ValueError:
+        error_message = "Failed to parse response from USPTO API."
         return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
 
     if not isinstance(ta_data, list) or len(ta_data) == 0:
@@ -1661,7 +1676,10 @@ def trademark_detailview(request, slug):
     if ta_data[0].get("available") == "no":
         trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
-        ts_data = trademark_search_response.json()
+        try:
+            ts_data = trademark_search_response.json()
+        except ValueError:
+            ts_data = {}
         context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
         context = {"available": ta_data[0].get("available"), "query": slug}
@@ -1722,9 +1740,9 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         return render(request, template, context)
     else:
         data = {}
-        data["content"] = request.POST["content"]
-        data["start_date"] = request.POST["start_date"]
-        data["end_date"] = request.POST["end_date"]
+        data["content"] = request.POST.get("content", "")
+        data["start_date"] = request.POST.get("start_date", "")
+        data["end_date"] = request.POST.get("end_date", "")
         form = HuntForm(data)
         if not form.is_valid():
             return HttpResponse("Invalid form data")
@@ -1735,23 +1753,30 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if domain_admin.role == 1:
             if hunt.domain != domain_admin.domain:
                 return HttpResponse("Domain mismatch")
-        hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+        try:
+            domain_pk = request.POST.get("domain", "").split("-")[0].replace(" ", "")
+            hunt.domain = Domain.objects.get(pk=domain_pk)
+        except (ValueError, Domain.DoesNotExist):
+            return HttpResponse("Invalid domain")
         tzsign = 1
-        offset = request.POST["tzoffset"]
-        if int(offset) < 0:
-            offset = int(offset) * (-1)
+        try:
+            tz_raw = int(request.POST.get("tzoffset", "0"))
+        except ValueError:
+            tz_raw = 0
+        offset_int = abs(tz_raw)
+        if tz_raw < 0:
             tzsign = -1
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         if tzsign > 0:
-            start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            start_date = start_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+            end_date = end_date + timedelta(hours=offset_int // 60, minutes=offset_int % 60)
         else:
-            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            start_date = start_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
+            end_date = end_date - timedelta(hours=offset_int // 60, minutes=offset_int % 60)
         hunt.starts_on = start_date
         hunt.end_on = end_date
-        hunt.name = request.POST["name"]
+        hunt.name = request.POST.get("name", "")
         hunt.description = form.cleaned_data["content"]
         hunt.is_published = request.POST.get("publish", False) == "on"
         hunt.save()
@@ -3177,10 +3202,13 @@ class BountyPayoutsView(ListView):
                 count = 0
 
                 for issue_data in issues:
-                    github_url = issue_data["html_url"]
+                    github_url = issue_data.get("html_url", "")
 
                     # Extract owner, repo, and issue number from URL
                     parts = github_url.split("/")
+                    if len(parts) < 7:
+                        logger.warning(f"Invalid GitHub issue URL format: {github_url}")
+                        continue
                     owner = parts[3]
                     repo_name = parts[4]
                     issue_number = parts[6]
