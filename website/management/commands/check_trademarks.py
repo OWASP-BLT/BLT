@@ -1,41 +1,40 @@
 import logging
 from datetime import timedelta
 
-import requests
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import models
 from django.utils.timezone import now
 
 from website.management.base import LoggedBaseCommand
-from website.models import Organization
+from website.models import Organization, Trademark
 
 logger = logging.getLogger(__name__)
 
 
 def search_uspto_database(term):
-    """
-    Search the USPTO trademark database using RapidAPI.
-    """
+    """Search the local USPTO trademark database."""
     if not term or not term.strip():
         logger.error(f"Empty or invalid term {term} provided for USPTO search.")
         return None
 
-    url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
-    payload = {"keywords": f'["{term}"]', "start_index": "0"}
-    logger.debug(f"USPTO search payload: {payload}")
-    headers = {
-        "x-rapidapi-key": f"{settings.USPTO_API}",
-        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
-        "Content-Type": "application/x-www-form-urlencoded",
+    # Query local database
+    trademarks = Trademark.objects.filter(keyword__icontains=term)
+
+    # Apply a hard limit to avoid OOM
+    queryset = trademarks.values(
+        "keyword",
+        "serial_number",
+        "registration_number",
+        "status_label",
+        "filing_date",
+        "registration_date",
+    )[:500]
+
+    return {
+        "count": trademarks.count(),
+        "items": list(queryset),
     }
-    response = requests.post(url, data=payload, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        logger.error(f"Received status code {response.status_code} - {response.reason}")
-        logger.error(f"Response: {response.json()}")
-    return None
 
 
 def send_email_alert(organization, results_count):
