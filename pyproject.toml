@@ -106,7 +106,7 @@ select = ["E4", "E7", "E9", "F", "T"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 # CLI tools and scripts where print is appropriate for user output
-"pre-commit-hooks/check_style_tags.py" = ["T201"]
+"scripts/check_style_tags.py" = ["T201"]
 ".github/scripts/auto_fix.py" = ["T201"]
 # Settings file - print statements used for startup debugging
 "blt/settings.py" = ["T201"]
