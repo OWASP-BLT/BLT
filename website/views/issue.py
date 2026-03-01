@@ -16,7 +16,6 @@ import requests
 import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
-from allauth.socialaccount.models import SocialToken
 from better_profanity import profanity
 from bleach import clean
 from django.conf import settings
@@ -50,7 +49,6 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.views import View
