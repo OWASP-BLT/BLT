@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% block title %}PR Analysis Reports{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <title>PR Analysis Reports</title>
     <div class="container mx-auto bg-gray-100 dark:bg-gray-800 p-5 max-w-2xl rounded-lg shadow-md mt-20">
         <h1 class="text-center text-3xl text-gray-800 dark:text-gray-200 mb-8">PR Analysis Reports</h1>
         {% for report in reports %}
