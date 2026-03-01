@@ -57,9 +57,13 @@ jobs:
               .filter(review => review.user && review.user.login) // Filter out reviews with null users
               .sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at));
             
-            // Process reviews in chronological order to track most recent state
+            // Process reviews in chronological order to track most recent state.
+            // Skip COMMENTED and PENDING reviews - they don't change the review decision
+            // (e.g. a comment-only review after CHANGES_REQUESTED does NOT resolve it).
             for (const review of sortedReviews) {
-              reviewerStates.set(review.user.login, review.state);
+              if (review.state !== 'COMMENTED' && review.state !== 'PENDING') {
+                reviewerStates.set(review.user.login, review.state);
+              }
             }
             
             // Check if any reviewer's most recent state is CHANGES_REQUESTED
