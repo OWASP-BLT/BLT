@@ -59,7 +59,6 @@ from website.models import (
     Project,
     Repo,
     SearchHistory,
-    SlackBotActivity,
     Tag,
     User,
     UserBadge,
@@ -167,7 +166,6 @@ def status_page(request):
     CHECK_MEMORY = True
     CHECK_DATABASE = True
     CHECK_REDIS = True
-    CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
@@ -190,7 +188,6 @@ def status_page(request):
                 if not CHECK_REDIS
                 else {}
             ),
-            "slack_bot": {},
             "management_commands": [],
             "available_commands": [],
         }
@@ -462,87 +459,22 @@ def status_page(request):
                     "error": "REDISCLOUD_URL not set",
                 }
 
-        # Slack bot activity metrics
-        if CHECK_SLACK_BOT:
-            last_24h = timezone.now() - timedelta(hours=24)
-
-            # Get last activity
-            last_activity = SlackBotActivity.objects.order_by("-created").first()
-
-            # Get bot activity metrics
-            bot_metrics = {
-                "total_activities": SlackBotActivity.objects.count(),
-                "last_24h_activities": SlackBotActivity.objects.filter(created__gte=last_24h).count(),
-                "success_rate": (
-                    SlackBotActivity.objects.filter(success=True).count() / SlackBotActivity.objects.count() * 100
-                    if SlackBotActivity.objects.exists()
-                    else 0
-                ),
-                "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
-                "last_activity": last_activity.created if last_activity else None,
-                "recent_activities": list(
-                    SlackBotActivity.objects.filter(created__gte=last_24h)
-                    .values("activity_type", "workspace_name", "created", "success")
-                    .order_by("-created")[:5]
-                ),
-                "activity_types": {
-                    activity_type: count
-                    for activity_type, count in SlackBotActivity.objects.values("activity_type")
-                    .annotate(count=Count("id"))
-                    .values_list("activity_type", "count")
-                },
-            }
-
-            status_data["slack_bot"] = bot_metrics
-
         # Get the date range for the last 30 days
         end_date = timezone.now()
         start_date = end_date - timedelta(days=30)
 
-        # Get daily counts for team joins and commands
-        team_joins = (
-            SlackBotActivity.objects.filter(activity_type="team_join", created__gte=start_date, created__lte=end_date)
-            .annotate(date=TruncDate("created"))
-            .values("date")
-            .annotate(count=Count("id"))
-            .order_by("date")
-        )
-
-        commands = (
-            SlackBotActivity.objects.filter(activity_type="command", created__gte=start_date, created__lte=end_date)
-            .annotate(date=TruncDate("created"))
-            .values("date")
-            .annotate(count=Count("id"))
-            .order_by("date")
-        )
-
-        # Convert querysets to lists for the template
-        team_joins_data = list(team_joins)
-        commands_data = list(commands)
-
-        # Create a complete date range with zero counts for missing dates
+        # Create a complete date range
         date_range = []
         current_date = start_date.date()
         while current_date <= end_date.date():
             date_range.append(current_date)
             current_date += timedelta(days=1)
 
-        # Fill in missing dates with zero counts
         dates = [date.strftime("%Y-%m-%d") for date in date_range]
-        team_joins_counts = [0] * len(date_range)
-        commands_counts = [0] * len(date_range)
-
-        # Map the actual data to the date range
-        for i, date in enumerate(date_range):
-            for join in team_joins_data:
-                if join["date"] == date:
-                    team_joins_counts[i] = join["count"]
-            for cmd in commands_data:
-                if cmd["date"] == date:
-                    commands_counts[i] = cmd["count"]
 
         # Store the data in a format that can be safely serialized to JSON
-        chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
+        empty_series = [0] * len(dates)
+        chart_data = {"dates": dates, "team_joins": empty_series, "commands": empty_series.copy()}
 
         # Prepare GitHub API history data for chart
         if "github_api_history" in status_data and status_data["github_api_history"]:
@@ -1131,7 +1063,6 @@ class StatsDetailView(TemplateView):
             "Wallet": "created",
             "BaconToken": "date_awarded",
             "IP": "created",
-            "ChatBotLog": "created",
         }
 
         date_field = date_field_map.get(model.__name__, "created")
@@ -1197,7 +1128,6 @@ class StatsDetailView(TemplateView):
             "ContributorStats": "fas fa-chart-bar",
             "Monitor": "fas fa-desktop",
             "Bid": "fas fa-gavel",
-            "ChatBotLog": "fas fa-robot",
             "Suggestion": "fas fa-lightbulb",
             "SuggestionVotes": "fas fa-thumbs-up",
             "Contributor": "fas fa-user-friends",

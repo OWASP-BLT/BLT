@@ -30,9 +30,6 @@ class ProjectCompactViewTestCase(TestCase):
             organization=self.org,
             status="production",
             url="https://example.com/project1",
-            slack="https://slack.com/test1",
-            slack_channel="#general",
-            slack_user_count=150,
             twitter="@testproject",
         )
 
@@ -85,17 +82,6 @@ class ProjectCompactViewTestCase(TestCase):
         response = self.client.get(reverse("project_compact_list"))
         self.assertContains(response, "Test Organization")
 
-    def test_compact_view_displays_slack_channel(self):
-        """Test that slack channels are displayed"""
-        response = self.client.get(reverse("project_compact_list"))
-        self.assertContains(response, "#general")
-
-    def test_compact_view_displays_slack_member_count(self):
-        """Test that slack member count is displayed"""
-        response = self.client.get(reverse("project_compact_list"))
-        # Project 1 has slack_user_count = 150
-        self.assertContains(response, "150 members")
-
     def test_compact_view_displays_stats(self):
         """Test that project stats are aggregated and displayed"""
         response = self.client.get(reverse("project_compact_list"))
@@ -109,17 +95,6 @@ class ProjectCompactViewTestCase(TestCase):
         response = self.client.get(reverse("project_compact_list") + "?sort=name&order=asc")
         self.assertEqual(response.status_code, 200)
         # Check that projects are in the correct order
-        content = response.content.decode()
-        pos1 = content.find("Test Project 1")
-        pos2 = content.find("Test Project 2")
-        self.assertLess(pos1, pos2)
-
-    def test_compact_view_sorting_by_slack_member_count(self):
-        """Test sorting projects by slack member count"""
-        response = self.client.get(reverse("project_compact_list") + "?sort=slack_user_count&order=desc")
-        self.assertEqual(response.status_code, 200)
-        # Project 1 has slack_user_count = 150, Project 2 has 0
-        # When sorted by slack_user_count desc, Project 1 should come first
         content = response.content.decode()
         pos1 = content.find("Test Project 1")
         pos2 = content.find("Test Project 2")
