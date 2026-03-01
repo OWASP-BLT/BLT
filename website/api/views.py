@@ -241,22 +241,24 @@ class IssueViewSet(viewsets.ModelViewSet):
         if parsed_max is not None:
             queryset = queryset.filter(cve_score__lte=parsed_max)
 
-        return queryset.select_related("user", "domain", "closed_by").prefetch_related(
-            "screenshots", "tags", "flaged", "upvoted"
+        return (
+            queryset.select_related("user", "domain", "closed_by")
+            .prefetch_related("screenshots", "tags")
+            .annotate(
+                flag_count=Count("flaged", distinct=True),
+                upvote_count=Count("upvoted", distinct=True),
+            )
         )
 
     def get_issue_info(self, request, issue):
         if issue is None:
             return {}
 
-        # Check if there is an image in the `screenshot` field of the Issue table
         if issue.screenshot:
-            # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()
             ]
         else:
-            # If no image exists in the Issue table, return only the images from IssueScreenshot
             screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
 
         is_upvoted = False
@@ -268,13 +270,20 @@ class IssueViewSet(viewsets.ModelViewSet):
         tag_serializer = TagSerializer(issue.tags.all(), many=True)
         tags = tag_serializer.data
 
+        flags = getattr(issue, "flag_count", None)
+        if flags is None:
+            flags = issue.flaged.count()
+        upvotes = getattr(issue, "upvote_count", None)
+        if upvotes is None:
+            upvotes = issue.upvoted.count()
+
         return {
             **IssueSerializer(issue).data,
             "closed_by": issue.closed_by.username if issue.closed_by else None,
             "flagged": is_flagged,
-            "flags": issue.flaged.count(),
+            "flags": flags,
             "screenshots": screenshots,
-            "upvotes": issue.upvoted.count(),
+            "upvotes": upvotes,
             "upvotted": is_upvoted,
             "tags": tags,
         }
@@ -290,7 +299,8 @@ class IssueViewSet(viewsets.ModelViewSet):
         return self.get_paginated_response(issues)
 
     def retrieve(self, request, pk, *args, **kwargs):
-        return Response(self.get_issue_info(request, Issue.objects.filter(id=pk).first()))
+        issue = self.get_queryset().filter(id=pk).first()
+        return Response(self.get_issue_info(request, issue))
 
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
