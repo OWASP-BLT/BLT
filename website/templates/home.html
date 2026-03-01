@@ -215,6 +215,123 @@
                 <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent"></div>
             </div>
         </div>
+        <!-- Recent Jobs & Seekers (from standalone job board) -->
+        {% if recent_jobs or recent_seekers %}
+            <section class="py-8 bg-gray-50 dark:bg-gray-900/50 transition-colors">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="mb-6">
+                        <div class="flex items-center gap-4 mb-2">
+                            <i class="fas fa-briefcase text-xl text-[#e74c3c]"></i>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Opportunities & Talent</h2>
+                            <div class="flex-grow h-px bg-gradient-to-r from-gray-300 dark:from-gray-600 to-transparent"></div>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">
+                            Recent job postings and seeker profiles from the OWASP BLT job board. Find your next role or hire security talent.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Recent job postings -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <i class="fas fa-briefcase text-[#e74c3c]"></i>
+                                Recent job postings
+                            </h3>
+                            {% if recent_jobs %}
+                                <ul class="space-y-3">
+                                    {% for job in recent_jobs %}
+                                        <li class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+                                            <div class="flex justify-between items-start gap-2">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-gray-900 dark:text-white truncate">{{ job.title }}</p>
+                                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                        {{ job.organization_name }}
+                                                        {% if job.location %}· {{ job.location }}{% endif %}
+                                                    </p>
+                                                    {% if job.job_type %}
+                                                        <span class="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-red-50 dark:bg-red-900/30 text-[#e74c3c]">{{ job.job_type }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if job.application_url %}
+                                                    <a href="{{ job.application_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       aria-label="Apply to {{ job.title }}"
+                                                       class="shrink-0 text-sm font-medium text-[#e74c3c] hover:text-red-700 whitespace-nowrap">
+                                                        Apply
+                                                        <i class="fas fa-external-link-alt text-xs ml-0.5"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-sm text-gray-500 dark:text-gray-400">No recent jobs right now. Check back later.</p>
+                            {% endif %}
+                            <a href="https://jobs.owaspblt.org/jobs.html"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center mt-3 text-[#e74c3c] hover:text-red-700 font-medium text-sm">
+                                View all jobs
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                        <!-- Seeker profiles -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <i class="fas fa-user-tie text-[#e74c3c]"></i>
+                                Seeker profiles
+                            </h3>
+                            {% if recent_seekers %}
+                                <ul class="space-y-3">
+                                    {% for seeker in recent_seekers %}
+                                        <li class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+                                            <div class="flex justify-between items-start gap-2">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-gray-900 dark:text-white truncate">{{ seeker.name }}</p>
+                                                    {% if seeker.headline %}
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ seeker.headline }}</p>
+                                                    {% endif %}
+                                                    {% if seeker.location %}<p class="text-xs text-gray-500 dark:text-gray-500">{{ seeker.location }}</p>{% endif %}
+                                                </div>
+                                                {% if seeker.profile_url %}
+                                                    <a href="{{ seeker.profile_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       aria-label="View profile for {{ seeker.name }}"
+                                                       class="shrink-0 text-sm font-medium text-[#e74c3c] hover:text-red-700 whitespace-nowrap">
+                                                        Profile
+                                                        <i class="fas fa-external-link-alt text-xs ml-0.5"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-sm text-gray-500 dark:text-gray-400">No seeker profiles yet. Check back later.</p>
+                            {% endif %}
+                            <a href="https://jobs.owaspblt.org/seekers.html"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center mt-3 text-[#e74c3c] hover:text-red-700 font-medium text-sm">
+                                View all seekers
+                                <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <a href="https://jobs.owaspblt.org"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="inline-flex items-center px-5 py-2.5 border border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-colors duration-200">
+                            Open full job board
+                            <i class="fas fa-external-link-alt ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
         <!-- Recent Hackathons Section -->
         {% if recent_hackathons %}
             <section class="py-8 bg-white dark:bg-gray-900 transition-colors">
@@ -333,21 +450,18 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if profile.avatar %}
                                                 <img src="{{ profile.avatar }}"
-                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% elif profile.user.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ profile.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% else %}
                                                 <img src="{% gravatar_url profile.user.email 50 %}"
-                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ profile.user.username }}'s avatar"
                                                      width="32"
@@ -384,21 +498,18 @@
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.userprofile.avatar %}
                                                     <img src="{{ user.userprofile.avatar }}"
-                                                         loading="lazy"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full">
                                                 {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                                     <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
-                                                         loading="lazy"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full">
                                                 {% else %}
                                                     <img src="{% gravatar_url user.email 50 %}"
-                                                         loading="lazy"
                                                          alt="{{ user.username }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -436,7 +547,6 @@
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.contributor__avatar_url %}
                                                     <img src="{{ user.contributor__avatar_url }}"
-                                                         loading="lazy"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -444,7 +554,6 @@
                                                          onerror="this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% else %}
                                                     <img src="{% static 'images/dummy-user.webp' %}"
-                                                         loading="lazy"
                                                          alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
@@ -484,21 +593,18 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if invite.sender.userprofile.avatar %}
                                                 <img src="{{ invite.sender.userprofile.avatar }}"
-                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% elif invite.sender.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
-                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
                                                      height="32">
                                             {% else %}
                                                 <img src="{% gravatar_url invite.sender.email 50 %}"
-                                                     loading="lazy"
                                                      class="w-8 h-8 rounded-full"
                                                      alt="{{ invite.sender.username }}'s avatar"
                                                      width="32"
@@ -911,7 +1017,6 @@
                                 {% if bug.screenshots.all.0 %}
                                     <div class="mb-4 rounded-lg overflow-hidden">
                                         <img src="{{ bug.screenshots.all.0.image.url }}"
-                                             loading="lazy"
                                              alt="Screenshot"
                                              class="w-full h-32 object-cover"
                                              width="400"
@@ -923,14 +1028,12 @@
                                         {% if bug.user %}
                                             {% if bug.user.userprofile.avatar %}
                                                 <img src="{{ bug.user.userprofile.avatar }}"
-                                                     loading="lazy"
                                                      alt="{{ bug.user.username }}"
                                                      class="w-6 h-6 rounded-full mr-2"
                                                      width="24"
                                                      height="24">
                                             {% else %}
                                                 <img src="{% gravatar_url bug.user.email 30 %}"
-                                                     loading="lazy"
                                                      alt="{{ bug.user.username }}"
                                                      class="w-6 h-6 rounded-full mr-2"
                                                      width="24"
@@ -990,30 +1093,34 @@
                             <div class="p-6">
                                 <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">{{ article.title }}</h3>
                                 <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-user"></i>
-                                        {{ article.user.name }}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-calendar"></i>
-                                        {{ article.published_at|slice:":10" }}
-                                    </span>
+                                    <span class="flex items-center gap-1"><i class="fas fa-user"></i> {{ article.user_name }} </span>
+                                    <span class="flex items-center gap-1"><i class="fas fa-calendar"></i> {{ article.published_at }} </span>
                                 </div>
                                 <p class="text-gray-700 dark:text-gray-300 mb-4">{{ article.description|truncatewords:25 }}</p>
                                 <a href="{{ article.url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
+                                   aria-label="Read more about {{ article.title }}"
                                    class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more →</a>
                             </div>
                         </div>
                     {% empty %}
-                        <p class="text-gray-500 dark:text-gray-500 text-center col-span-2">No blog posts available.</p>
+                        <div class="text-center col-span-2 py-8">
+                            <p class="text-gray-500 mb-4">No blog posts available right now.</p>
+                            <a href="{{ devto_profile_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-[#e74c3c] hover:underline font-medium">
+                                Visit our official blog on Dev.to <i class="fas fa-external-link-alt ml-1"></i>
+                            </a>
+                        </div>
                     {% endfor %}
                 </div>
                 {% if devto_articles %}
                     <div class="text-center">
-                        <a href="https://dev.to/owaspblt"
+                        <a href="{{ devto_profile_url }}"
                            target="_blank"
+                           rel="noopener noreferrer"
                            class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors shadow-md">
                             <i class="fas fa-book-open mr-2"></i>
                             View Our Latest Blogs
@@ -1210,13 +1317,11 @@
                         <a href="{% url 'organization_detail' slug='owasp' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/OWASP_black_logo.svg' %}"
-                                 loading="lazy"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
                                  class="block dark:hidden max-w-full max-h-full">
                             <img src="{% static 'images/OWASP_white_logo.svg' %}"
-                                 loading="lazy"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
@@ -1231,13 +1336,11 @@
                         <a href="{% url 'organization_detail' slug='sentry' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/sentry-logo.svg' %}"
-                                 loading="lazy"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
                                  class="block dark:hidden max-w-full max-h-full">
                             <img src="{% static 'images/sentry-white.png' %}"
-                                 loading="lazy"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
@@ -1252,7 +1355,6 @@
                         <a href="{% url 'organization_detail' slug='google' %}"
                            class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/googlelogo_color_272x92dp.webp' %}"
-                                 loading="lazy"
                                  alt="Google Logo"
                                  width="272"
                                  height="92"
