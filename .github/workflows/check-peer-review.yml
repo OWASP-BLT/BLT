@@ -16,7 +16,7 @@ on:
 # Prevent multiple workflow runs for the same PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   pull-requests: write
