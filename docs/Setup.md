@@ -457,4 +457,26 @@ Run:
 
 ```bash
 docker-compose exec app python manage.py shell
+```md
+Once inside the Django shell, run:
 
+```python
+from django.contrib.auth import get_user_model
+from allauth.account.models import EmailAddress
+
+User = get_user_model()
+
+username = "your_username"
+email = "your_email@example.com"
+
+user = User.objects.get(username=username)
+
+EmailAddress.objects.create(
+    user=user,
+    email=email,
+    verified=True,
+    primary=True
+)
+
+print("Email created and verified successfully.")
+exit()
