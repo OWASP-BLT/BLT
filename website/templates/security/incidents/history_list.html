@@ -67,9 +67,7 @@
                 <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-5">
                     <div class="flex items-center justify-between">
                         <div>
-                            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                                {{ history_entries|slice:"0:1"|first.changed_at|date:"M j" }}
-                            </div>
+                            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ history_entries.0.changed_at|date:"M j" }}</div>
                             <div class="text-sm text-gray-500 dark:text-gray-400">Last Updated</div>
                         </div>
                         <div class="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-full flex items-center justify-center">
