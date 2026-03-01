@@ -145,6 +145,7 @@ class WinnerAdmin(admin.ModelAdmin):
         "second_runner",
         "prize_distributed",
     )
+    list_select_related = ("hunt", "winner", "runner", "second_runner")
 
 
 class BidAdmin(admin.ModelAdmin):
@@ -158,18 +159,22 @@ class BidAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
+    list_select_related = ("user",)
 
 
 class WalletAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "current_balance", "created")
+    list_select_related = ("user",)
 
 
 class JoinRequestAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "team", "created_at", "is_accepted")
+    list_select_related = ("user", "team")
 
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id", "wallet", "value", "active")
+    list_select_related = ("wallet", "wallet__user")
 
 
 class ImageInline(admin.TabularInline):
