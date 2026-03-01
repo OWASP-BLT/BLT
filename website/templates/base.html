@@ -210,6 +210,8 @@
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
+                {% block content %}
+                {% endblock content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
         </div>
