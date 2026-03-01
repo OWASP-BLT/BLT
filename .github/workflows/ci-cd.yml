@@ -1,29 +1,16 @@
 name: CI/CD Optimized
 
 # SECURITY NOTES:
-# - pull_request: Used for test/docker-test jobs that execute untrusted code
-#   but don't need write permissions. This prevents cache poisoning attacks.
-# - pull_request_target: Used ONLY for pre-commit job which needs write permissions to
-#   comment/label on forked PRs. No untrusted dependency installation happens in this context.
-#   When using pull_request_target, we explicitly checkout the PR head to run checks on the actual PR code
-#   WARNING: This allows execution of pre-commit hooks from forked PRs. The hooks are defined in
-#   .pre-commit-config.yaml which could be modified by the fork. However, this is necessary to
-#   validate PR code and is consistent with the repository's pre-commit-fix.yaml workflow.
-#   Maintainers should review PRs for malicious pre-commit hook modifications.
+# - pull_request: Used for all jobs that execute untrusted code (test, docker-test,
+#   pre-commit). This prevents code from forks running with elevated permissions.
 # - Jobs that install dependencies (poetry install, pip install) MUST NOT run on
 #   pull_request_target or workflow_run triggers to prevent cache poisoning.
-# - Test result labeling is handled by a separate workflow (label-test-result.yml)
-#   triggered via workflow_run after this workflow completes. This gives it write
-#   permissions without executing untrusted code.
+# - Pre-commit results (comments, labels) are handled by a separate workflow
+#   (label-test-result.yml) triggered via workflow_run after this workflow completes.
+#   This gives it write permissions without executing untrusted code.
 
 on:
   #merge_group:
-  pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
   pull_request:
     types:
       - opened
@@ -34,10 +21,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Pre-commit fix"]
-    types:
-      - completed
 
 env:
   FORCE_COLOR: 1
@@ -50,17 +33,14 @@ permissions:
 
 concurrency:
   cancel-in-progress: false
-  # Include event_name to prevent pull_request and pull_request_target from blocking each other
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       contents: read  # Minimal permission for checking out code
-    outputs:
-      python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
     steps:
       - uses: actions/checkout@v4
       
@@ -98,26 +78,19 @@ jobs:
 
   pre-commit:
     name: Run pre-commit
-    # Run on pull_request_target (for write permissions to comment/label), push to main, or manual trigger
-    # Explicitly exclude pull_request (pull_request_target handles PR checks) and workflow_run
-    # (workflow_run has no PR context and would run against main, not the PR code)
-    if: github.event_name == 'pull_request_target' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Run on pull_request (safe: no elevated permissions), push to main, or manual trigger
+    # SECURITY: Never use pull_request_target here — pre-commit executes hooks from the
+    # checked-out code, so running fork code with write permissions would allow arbitrary
+    # code execution with access to secrets and repo write access.
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: setup
     runs-on: ubuntu-latest
-    permissions: 
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: write
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
-          # For pull_request_target, explicitly checkout the PR head from the fork
-          # For pull_request, the default behavior already checks out the PR head
-          ref: ${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.event.pull_request.head.sha || github.ref }}
-          # For forked PRs with pull_request_target, checkout from the fork repository
-          # SECURITY: We run pre-commit which only executes linters/formatters, not arbitrary code from the PR
-          repository: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
@@ -130,244 +103,36 @@ jobs:
           echo "exit_code=$?" >> $GITHUB_OUTPUT
           set -e
         continue-on-error: true
-      - name: Comment on PR if pre-commit fails
-        if: github.event_name == 'pull_request_target' && steps.pre-commit.outputs.exit_code != '0'
-        uses: actions/github-script@v7
+      - name: Upload pre-commit output
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const precommitOutput = fs.readFileSync('pre-commit-output.txt', 'utf8');
-            
-            // Get last 100 lines of output
-            const lines = precommitOutput.split('\n');
-            const last100Lines = lines.slice(-100).join('\n');
-            const truncated = lines.length > 100;
-            
-            const commentMarker = '<!-- pre-commit-check -->';
-            const message = commentMarker + '\n' +
-              `## ❌ Pre-commit checks failed
-            
-            The pre-commit hooks found issues that need to be fixed. Please run the following commands locally to fix them:
-            
-            \`\`\`bash
-            # Install pre-commit if you haven't already
-            pip install pre-commit
-            
-            # Run pre-commit on all files
-            pre-commit run --all-files
-            
-            # Or run pre-commit on staged files only
-            pre-commit run
-            \`\`\`
-            
-            After running these commands, the pre-commit hooks will automatically fix most issues. 
-            Please review the changes, commit them, and push to your branch.
-            
-            💡 **Tip**: You can set up pre-commit to run automatically on every commit by running:
-            \`\`\`bash
-            pre-commit install
-            \`\`\`
-            
-            <details>
-            <summary>Pre-commit output${truncated ? ' (last 100 lines)' : ''}</summary>
-            
-            \`\`\`
-            ${last100Lines}
-            \`\`\`
-            
-            </details>
-            
-            For more information, see the [pre-commit documentation](https://pre-commit.com/).`;
-            
-            // Delete old pre-commit failure comments before posting new one
-            try {
-              // Paginate through all comments to find and delete old pre-commit failure comments
-              let allComments = [];
-              let page = 1;
-              let fetched;
-              do {
-                const { data: comments } = await github.rest.issues.listComments({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.issue.number,
-                  per_page: 100,
-                  page: page,
-                });
-                allComments = allComments.concat(comments);
-                fetched = comments.length;
-                page += 1;
-              } while (fetched === 100);
-              
-              const existingComments = allComments.filter(comment =>
-                comment.body && comment.body.includes(commentMarker)
-              );
-              
-              for (const comment of existingComments) {
-                try {
-                  await github.rest.issues.deleteComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    comment_id: comment.id,
-                  });
-                  core.info(`Deleted old pre-commit failure comment #${comment.id}`);
-                } catch (error) {
-                  core.warning(`Failed to delete old pre-commit failure comment #${comment.id}: ${error.message}`);
-                }
-              }
-            } catch (error) {
-              core.warning(`Could not fetch or delete previous comments: ${error.message}`);
-            }
-            
-            try {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: message
-              });
-            } catch (error) {
-              if (error.status === 403) {
-                core.warning('Permission denied: Cannot comment on PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.');
-              } else {
-                throw error;
-              }
-            }
-      - name: Remove pre-commit failure comment if pre-commit passes
-        if: github.event_name == 'pull_request_target' && steps.pre-commit.outcome == 'success'
-        uses: actions/github-script@v7
+          name: pre-commit-output
+          path: pre-commit-output.txt
+          retention-days: 1
+      - name: Save PR number for pre-commit
+        if: always() && github.event_name == 'pull_request'
+        run: echo "${{ github.event.pull_request.number }}" > pre-commit-pr-number.txt
+      - name: Upload PR number for pre-commit
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const commentMarker = '<!-- pre-commit-check -->';
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const pull_number = context.issue.number;
-            
-            // Delete old pre-commit failure comment when pre-commit passes
-            try {
-              // Paginate through all comments to ensure we find all pre-commit failure comments
-              let comments = [];
-              let page = 1;
-              let fetched;
-              do {
-                const { data } = await github.rest.issues.listComments({
-                  owner,
-                  repo,
-                  issue_number: pull_number,
-                  per_page: 100,
-                  page,
-                });
-                fetched = data.length;
-                comments = comments.concat(data);
-                page += 1;
-              } while (fetched === 100);
-              
-              const existingComments = comments.filter(comment => 
-                comment.body && comment.body.includes(commentMarker)
-              );
-              
-              for (const comment of existingComments) {
-                try {
-                  await github.rest.issues.deleteComment({
-                    owner,
-                    repo,
-                    comment_id: comment.id,
-                  });
-                  core.info(`Deleted pre-commit failure comment #${comment.id} since checks now pass`);
-                } catch (error) {
-                  core.warning(`Failed to delete pre-commit failure comment #${comment.id}: ${error.message}`);
-                }
-              }
-            } catch (error) {
-              core.warning(`Could not fetch or delete previous comments: ${error.message}`);
-            }
-      - name: Add pre-commit status label
-        if: github.event_name == 'pull_request_target'
-        uses: actions/github-script@v7
+          name: pre-commit-pr-number
+          path: pre-commit-pr-number.txt
+          retention-days: 1
+      - name: Save pre-commit result for label workflow
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          EXIT_CODE="${{ steps.pre-commit.outputs.exit_code }}"
+          # Use 255 as sentinel for cancelled/timed-out (must be numeric for label workflow validation)
+          echo "${EXIT_CODE:-255}" > pre-commit-result.txt
+      - name: Upload pre-commit result
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const pull_number = context.issue.number;
-            
-            // Determine label based on pre-commit exit code
-            const preCommitExitCode = '${{ steps.pre-commit.outputs.exit_code }}';
-            const newLabel = preCommitExitCode === '0' ? 'pre-commit: passed' : 'pre-commit: failed';
-            const labelColor = preCommitExitCode === '0' ? '0e8a16' : 'e74c3c';  // Green or Red
-            const description = preCommitExitCode === '0' ? 'Pre-commit checks passed' : 'Pre-commit checks failed';
-            
-            // Get current labels on the PR
-            const { data: current } = await github.rest.issues.listLabelsOnIssue({ 
-              owner, 
-              repo, 
-              issue_number: pull_number, 
-              per_page: 100 
-            });
-            const currentNames = new Set(current.map(l => l.name));
-            
-            // Remove any existing pre-commit labels
-            const preCommitRegex = /^pre-commit:/i;
-            for (const name of currentNames) {
-              if (preCommitRegex.test(name) && name !== newLabel) {
-                try {
-                  await github.rest.issues.removeLabel({ 
-                    owner, 
-                    repo, 
-                    issue_number: pull_number, 
-                    name 
-                  });
-                  core.info(`Removed label ${name}`);
-                } catch (err) {
-                  core.warning(`Failed to remove label ${name}: ${err.message}`);
-                }
-              }
-            }
-            
-            // Ensure the new label exists (create if missing)
-            async function ensureLabelExists(labelName) {
-              try {
-                await github.rest.issues.getLabel({ owner, repo, name: labelName });
-              } catch (e) {
-                if (e.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner,
-                    repo,
-                    name: labelName,
-                    color: labelColor,
-                    description: description,
-                  });
-                  core.info(`Created label ${labelName}`);
-                } else {
-                  throw e;
-                }
-              }
-            }
-            
-            await ensureLabelExists(newLabel);
-            
-            // Add the label if it isn't already present
-            if (!currentNames.has(newLabel)) {
-              try {
-                await github.rest.issues.addLabels({ 
-                  owner, 
-                  repo, 
-                  issue_number: pull_number, 
-                  labels: [newLabel] 
-                });
-                core.info(`Applied label ${newLabel} to PR #${pull_number}`);
-              } catch (error) {
-                if (error.status === 403) {
-                  core.warning(`Permission denied: Cannot add label to PR. Repository may need to enable "Allow GitHub Actions to create and approve pull requests" in Settings > Actions > General.`);
-                } else {
-                  throw error;
-                }
-              }
-            } else {
-              core.info(`Label ${newLabel} already present on PR #${pull_number}`);
-            }
-            
-            core.info(`Pre-commit exit code: ${preCommitExitCode}`);
+          name: pre-commit-result
+          path: pre-commit-result.txt
+          retention-days: 1
       - name: Fail the job if pre-commit failed
         if: steps.pre-commit.outputs.exit_code != '0'
         run: exit 1
@@ -422,7 +187,6 @@ jobs:
           sudo cp -r /var/lib/apt/lists/* ~/apt-cache/lists/ 2>/dev/null || true
           sudo chown -R $USER:$USER ~/apt-cache
       - run: pip install poetry
-      - run: poetry lock
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -455,8 +219,8 @@ jobs:
         if: always() && github.event_name == 'pull_request'
         run: |
           EXIT_CODE="${{ steps.run-tests.outputs.exit_code }}"
-          # If exit_code is empty (e.g. step was cancelled/timed out), use sentinel value
-          echo "${EXIT_CODE:-cancelled}" > test-result.txt
+          # Use 255 as sentinel for cancelled/timed-out (must be numeric for label workflow validation)
+          echo "${EXIT_CODE:-255}" > test-result.txt
       - name: Upload test result
         if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -499,7 +263,6 @@ jobs:
           --name my-container my-app
 
       - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock
       - run: docker exec my-container poetry install --without dev --no-interaction
 
       - name: Clean up
