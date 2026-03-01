@@ -1041,7 +1041,10 @@ urlpatterns = [
     ),
     path(
         "api/v1/projects/least-members-channel/",
-        ProjectViewSet.as_view({"get": "least_members_channel"}),
+        ProjectViewSet.as_view(
+            {"get": "least_members_channel"},
+            permission_classes=[permissions.IsAuthenticated],
+        ),
         name="projects_least_members_channel_api",
     ),
     path(
