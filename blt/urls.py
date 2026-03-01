@@ -18,7 +18,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-import comments.views
+import website.comments.views as comments_views
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -760,17 +760,17 @@ urlpatterns = [
     re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
     re_path(r"^status/commands/$", management_commands, name="management_commands"),
     path(r"website_stats/", website_stats, name="website_stats"),
-    re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
-    re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
-    re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
+    re_path(r"^issue/comment/add/$", comments_views.add_comment, name="add_comment"),
+    re_path(r"^issue/comment/delete/$", comments_views.delete_comment, name="delete_comment"),
+    re_path(r"^comment/autocomplete/$", comments_views.autocomplete, name="autocomplete"),
     re_path(
         r"^issue/(?P<pk>\d+)/comment/edit/$",
-        comments.views.edit_comment,
+        comments_views.edit_comment,
         name="edit_comment",
     ),
     re_path(
         r"^issue/(?P<pk>\d+)/comment/reply/$",
-        comments.views.reply_comment,
+        comments_views.reply_comment,
         name="reply_comment",
     ),
     re_path(r"^social/$", queue_social_view, name="social"),

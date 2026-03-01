@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
-from comments.models import Comment
+from website.comments.models import Comment
 from website.models import (
     Activity,
     ActivityLog,

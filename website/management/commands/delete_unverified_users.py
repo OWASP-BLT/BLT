@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
-from comments.models import Comment
+from website.comments.models import Comment
 from website.management.base import LoggedBaseCommand
 from website.models import (
     Activity,

@@ -64,7 +64,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from user_agents import parse
 
-from comments.models import Comment
+from website.comments.models import Comment
 from website.decorators import ratelimit
 from website.duplicate_checker import check_for_duplicates, format_similar_bug
 from website.forms import CaptchaForm, GitHubIssueForm
