@@ -1465,9 +1465,11 @@ def home(request):
         User.objects.filter(
             points__created__month=current_time.month,
             points__created__year=current_time.year,
-            points__issue__isnull=False,  # Only count points from bug reports
         )
-        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        .annotate(
+            bug_count=Count("points", filter=Q(points__score__gt=0)),
+            total_score=Sum("points__score", filter=Q(points__issue__isnull=False)),  # Only count points from bug reports
+        )
         .order_by("-total_score")[:5]
     )
 
