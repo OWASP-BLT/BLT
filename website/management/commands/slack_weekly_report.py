@@ -87,5 +87,9 @@ class Command(LoggedBaseCommand):
 
     def _send_to_slack(self, channel_id, token, message):
         """Send message to Slack."""
-        app = App(token=token)
-        app.client.chat_postMessage(channel=channel_id, text=message)
+        try:
+            app = App(token=token)
+            app.client.chat_postMessage(channel=channel_id, text=message)
+        except Exception as e:
+            logger.error(f"Failed to send Slack message: {e}")
+            raise
