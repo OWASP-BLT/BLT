@@ -1,0 +1,54 @@
+:root {
+    --header-height: 70px;
+    --footer-height: 80px;
+}
+
+/* Auth container - fixes mobile viewport height */
+.auth-container {
+    min-height: calc(var(--vh, 1vh) * 100 - var(--footer-height, 80px));
+    min-height: calc(100dvh - var(--footer-height, 80px));
+    overflow: auto;
+    width: 100%;
+}
+/* Reminder settings page container */
+.page-container {
+    min-height: calc(var(--vh, 1vh) * 100 - var(--footer-height, 80px));
+    min-height: calc(100dvh - var(--footer-height, 80px));
+}
+/* Fix for time input - scoped to reminder settings page */
+.page-container input[type="time"] {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.dark .page-container input[type="time"] {
+    background-color: #111827;
+    color: #e5e7eb;
+    border-color: #374151;
+}
+
+.dark .page-container input[type="time"]:hover,
+.dark .page-container input[type="time"]:focus {
+    color: #f9fafb;
+    border-color: #4b5563;
+}
+
+/* Fix for select elements - scoped to reminder settings page */
+.page-container select {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.dark .page-container select {
+    background-color: #111827;
+    color: #e5e7eb;
+    border-color: #374151;
+}
+
+.dark .page-container select:hover,
+.dark .page-container select:focus {
+    color: #f9fafb;
+    border-color: #4b5563;
+}
