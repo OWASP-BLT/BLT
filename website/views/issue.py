@@ -1143,47 +1143,69 @@ class IssueCreate(IssueBaseCreate, CreateView):
     # Duplicate detection threshold - can be adjusted without code changes
     DUPLICATE_CHECK_THRESHOLD = 0.65
 
+    def dispatch(self, request, *args, **kwargs):
+        """Cache request body before it's consumed to prevent RawPostDataException."""
+        # Only cache body for POST requests with JSON content type
+        if request.method == "POST" and request.content_type and "application/json" in request.content_type:
+            try:
+                # Cache the body before it's consumed by accessing request.POST
+                request._cached_body = request.body
+            except Exception:
+                logger.exception("Failed to cache request body")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_initial(self):
         try:
-            json_data = json.loads(self.request.body)
-            if not self.request.GET._mutable:
-                self.request.POST._mutable = True
-            self.request.POST["url"] = json_data["url"]
-            self.request.POST["description"] = json_data["description"]
-            self.request.POST["markdown_description"] = json_data["markdown_description"]
-            self.request.POST["file"] = json_data["file"]
-            self.request.POST["label"] = json_data["label"]
-            self.request.POST["token"] = json_data["token"]
-            self.request.POST["type"] = json_data["type"]
-            self.request.POST["cve_id"] = json_data["cve_id"]
-            self.request.POST["cve_score"] = json_data["cve_score"]
+            # Check if we have a cached body (JSON request)
+            if hasattr(self.request, "_cached_body"):
+                json_data = json.loads(self.request._cached_body)
+                post_data = self.request.POST
+                original_mutable = getattr(post_data, "_mutable", None)
+                if original_mutable is not None and original_mutable is False:
+                    post_data._mutable = True
+                try:
+                    post_data["url"] = json_data["url"]
+                    post_data["description"] = json_data["description"]
+                    post_data["markdown_description"] = json_data["markdown_description"]
+                    post_data["file"] = json_data["file"]
+                    post_data["label"] = json_data["label"]
+                    post_data["token"] = json_data["token"]
+                    post_data["type"] = json_data["type"]
+                    post_data["cve_id"] = json_data["cve_id"]
+                    post_data["cve_score"] = json_data["cve_score"]
+                finally:
+                    if original_mutable is not None:
+                        post_data._mutable = original_mutable
 
-            if self.request.POST.get("file"):
-                if isinstance(self.request.POST.get("file"), six.string_types):
-                    import imghdr
+                if self.request.POST.get("file"):
+                    if isinstance(self.request.POST.get("file"), six.string_types):
+                        import imghdr
 
-                    data = "data:image/" + self.request.POST.get("type") + ";base64," + self.request.POST.get("file")
-                    data = data.replace(" ", "")
-                    data += "=" * ((4 - len(data) % 4) % 4)
-                    if "data:" in data and ";base64," in data:
-                        header, data = data.split(";base64,")
+                        data = (
+                            "data:image/" + self.request.POST.get("type") + ";base64," + self.request.POST.get("file")
+                        )
+                        data = data.replace(" ", "")
+                        data += "=" * ((4 - len(data) % 4) % 4)
+                        if "data:" in data and ";base64," in data:
+                            header, data = data.split(";base64,")
 
-                    try:
-                        decoded_file = base64.b64decode(data)
-                    except TypeError:
-                        TypeError("invalid_image")
+                        try:
+                            decoded_file = base64.b64decode(data)
+                        except TypeError as exc:
+                            logger.error("Failed to decode base64 image data", exc_info=True)
+                            raise ValueError("invalid_image") from exc
 
-                    file_name = str(uuid.uuid4())[:12]
-                    extension = imghdr.what(file_name, decoded_file)
-                    extension = "jpg" if extension == "jpeg" else extension
-                    file_extension = extension
+                        file_name = str(uuid.uuid4())[:12]
+                        extension = imghdr.what(file_name, decoded_file)
+                        extension = "jpg" if extension == "jpeg" else extension
+                        file_extension = extension
 
-                    complete_file_name = "%s.%s" % (
-                        file_name,
-                        file_extension,
-                    )
+                        complete_file_name = "%s.%s" % (
+                            file_name,
+                            file_extension,
+                        )
 
-                    self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
+                        self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
         except Exception:
             logger.exception("Failed to process screenshot data in get_initial")
         initial = super(IssueCreate, self).get_initial()
