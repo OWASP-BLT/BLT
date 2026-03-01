@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Sum
 from django.utils import timezone
 from slack_bolt import App
 
@@ -14,155 +14,78 @@ logger = logging.getLogger(__name__)
 class Command(LoggedBaseCommand):
     help = "Sends weekly project report to organizations with Slack integration"
 
-    # Configuration constants
-    MAX_RECENT_REPOS = 10
-    MAX_PROJECTS_IN_REPORT = 10
-    MAX_DESCRIPTION_LENGTH = 100
-
     def handle(self, *args, **kwargs):
         logger.info("Starting weekly Slack report generation")
 
-        # Fetch all Slack integrations with related integration data
+        # Fetch all Slack integrations
         slack_integrations = SlackIntegration.objects.select_related("integration__organization").all()
 
         for integration in slack_integrations:
-            current_org = integration.integration.organization
-            # Use weekly report channel if configured, otherwise use default channel
+            org = integration.integration.organization
+            if not org:
+                continue
+
+            # Use weekly report channel if configured, otherwise default
             channel_id = integration.weekly_report_channel_id or integration.default_channel_id
-            channel_name = integration.weekly_report_channel_name or integration.default_channel_name
+            if not channel_id:
+                logger.warning(f"No channel configured for {org.name}, skipping")
+                continue
 
-            if channel_id and current_org:
-                logger.info(
-                    f"Processing weekly report for organization: {current_org.name} "
-                    f"(channel: {channel_name or channel_id})"
-                )
-                try:
-                    report_message = self.generate_weekly_report(current_org)
-                    self.send_message(
-                        channel_id,
-                        integration.bot_access_token,
-                        report_message,
-                    )
-                    logger.info(f"Successfully sent weekly report to {current_org.name}")
-                except Exception as e:
-                    logger.error(f"Error generating/sending report for {current_org.name}: {e}")
+            try:
+                report = self._generate_report(org)
+                self._send_to_slack(channel_id, integration.bot_access_token, report)
+                logger.info(f"Sent weekly report to {org.name}")
+            except Exception as e:
+                logger.error(f"Error sending report for {org.name}: {e}")
 
-    def generate_weekly_report(self, organization):
-        """Generate a comprehensive weekly report for the organization's projects."""
+    def _generate_report(self, org):
+        """Generate weekly report for organization."""
         one_week_ago = timezone.now() - timedelta(days=7)
 
-        # Get all projects for this organization with repo count annotation
-        projects = Project.objects.filter(organization=organization).annotate(repo_count=Count("repos"))
-        project_count = projects.count()
+        # Get projects and repos
+        projects = Project.objects.filter(organization=org).annotate(repo_count=Count("repos"))
+        repos = Repo.objects.filter(organization=org)
 
-        # Get all repos for this organization
-        repos = Repo.objects.filter(organization=organization)
-
-        # Count repos by different criteria in a single query
-        repo_counts = repos.aggregate(
+        # Aggregate stats
+        stats = repos.aggregate(
             total=Count("id"),
-            active=Count("id", filter=Q(is_archived=False)),
-            archived=Count("id", filter=Q(is_archived=True)),
+            stars=Sum("stars"),
+            forks=Sum("forks"),
+            issues=Sum("open_issues"),
         )
-        total_repos = repo_counts["total"]
-        active_repos = repo_counts["active"]
-        archived_repos = repo_counts["archived"]
 
-        # Get repos updated in the last week
-        recently_updated_repos = repos.filter(last_updated__gte=one_week_ago, is_archived=False).order_by(
-            "-last_updated"
-        )[: self.MAX_RECENT_REPOS]
-
-        # Aggregate statistics
-        aggregates = repos.aggregate(
-            total_stars=Sum("stars"),
-            total_forks=Sum("forks"),
-            total_open_issues=Sum("open_issues"),
-            total_contributors=Sum("contributor_count"),
-        )
-        total_stars = aggregates["total_stars"] or 0
-        total_forks = aggregates["total_forks"] or 0
-        total_open_issues = aggregates["total_open_issues"] or 0
-        total_contributors = aggregates["total_contributors"] or 0
-
-        # Build the report message
-        report_lines = [
+        # Build report
+        lines = [
             "📊 *Weekly Organization Report*",
-            f"Organization: *{organization.name}*",
-            f"Report Date: {timezone.now().strftime('%B %d, %Y')}",
+            f"Organization: *{org.name}*",
+            f"Date: {timezone.now().strftime('%B %d, %Y')}",
             "",
-            "=" * 50,
-            "",
-            "📈 *Overview Statistics*",
-            f"• Total Projects: {project_count}",
-            f"• Total Repositories: {total_repos}",
-            f"  - Active: {active_repos}",
-            f"  - Archived: {archived_repos}",
-            "",
-            "⭐ *Aggregate Metrics*",
-            f"• Total Stars: {total_stars:,}",
-            f"• Total Forks: {total_forks:,}",
-            f"• Open Issues: {total_open_issues:,}",
-            f"• Contributors: {total_contributors:,}",
+            "📈 *Statistics*",
+            f"• Projects: {projects.count()}",
+            f"• Repositories: {stats['total'] or 0}",
+            f"• Stars: {stats['stars'] or 0:,}",
+            f"• Forks: {stats['forks'] or 0:,}",
+            f"• Open Issues: {stats['issues'] or 0:,}",
         ]
 
-        # Add recently updated repositories section
-        if recently_updated_repos.exists():
-            report_lines.extend(
-                [
-                    "",
-                    "🔥 *Recently Updated Repositories (Last 7 Days)*",
-                ]
-            )
-            for repo in recently_updated_repos:
-                last_updated = repo.last_updated.strftime("%Y-%m-%d") if repo.last_updated else "N/A"
-                report_lines.append(
-                    f"• *{repo.name}*\n"
-                    f"  └─ Last Updated: {last_updated} | ⭐ {repo.stars} | 🍴 {repo.forks} | 🐛 {repo.open_issues} issues"
-                )
+        # Recent repos
+        recent = repos.filter(last_updated__gte=one_week_ago, is_archived=False).order_by("-last_updated")[:5]
 
-        # Add project breakdown if available
-        if project_count > 0:
-            report_lines.extend(
-                [
-                    "",
-                    "📦 *Projects Overview*",
-                ]
-            )
-            for project in projects[: self.MAX_PROJECTS_IN_REPORT]:
-                # Use annotated repo_count to avoid N+1 queries
-                project_repos = project.repo_count
-                report_lines.append(f"• *{project.name}*")
-                if project.description:
-                    # Truncate description if too long
-                    desc = (
-                        project.description[: self.MAX_DESCRIPTION_LENGTH] + "..."
-                        if len(project.description) > self.MAX_DESCRIPTION_LENGTH
-                        else project.description
-                    )
-                    report_lines.append(f"  └─ {desc}")
-                report_lines.append(f"  └─ Repositories: {project_repos} | Status: {project.status}")
+        if recent.exists():
+            lines.extend(["", "🔥 *Recently Updated*"])
+            for repo in recent:
+                date = repo.last_updated.strftime("%Y-%m-%d") if repo.last_updated else "N/A"
+                lines.append(f"• {repo.name} ({date})")
 
-        # Add footer
-        report_lines.extend(
-            [
-                "",
-                "=" * 50,
-                f"🔗 Organization Page: {organization.url}" if organization.url else "",
-                "",
-                "_This is an automated weekly report. Have a great week!_ 🚀",
-            ]
-        )
+        # Top projects
+        if projects.exists():
+            lines.extend(["", "📦 *Top Projects*"])
+            for proj in projects[:5]:
+                lines.append(f"• {proj.name} ({proj.repo_count} repos)")
 
-        return "\n".join(report_lines)
+        return "\n".join(lines)
 
-    def send_message(self, channel_id, bot_token, message):
-        """Send a message to the Slack channel."""
-        try:
-            app = App(token=bot_token)
-            app.client.conversations_join(channel=channel_id)
-            response = app.client.chat_postMessage(channel=channel_id, text=message)
-            logger.info(f"Message sent successfully: {response['ts']}")
-        except Exception as e:
-            logger.error(f"Error sending message: {e}")
-            raise
+    def _send_to_slack(self, channel_id, token, message):
+        """Send message to Slack."""
+        app = App(token=token)
+        app.client.chat_postMessage(channel=channel_id, text=message)
