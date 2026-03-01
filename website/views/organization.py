@@ -2617,7 +2617,7 @@ class OrganizationListView(ListView):
                 "domain_set",
                 "projects",
                 "projects__repos",
-                "repos",  # Prefetch all repos for Python-side filtering
+                "repos",  # Prefetch repos; Django evaluates lazily for paginated slice only
                 "tags",
                 "managers",
                 Prefetch(
