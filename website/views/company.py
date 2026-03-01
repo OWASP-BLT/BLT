@@ -1857,6 +1857,7 @@ class DomainView(View):
                 "id",
                 "name",
                 "url",
+                "email",
                 "organization__name",
                 "created",
                 "modified",
@@ -3148,9 +3149,7 @@ def verify_domain_access(request, pk):
         verification.mark_as_used()
         domain.managers.add(request.user)
 
-        messages.success(
-            request, f"Success! You are now a manager of {domain.name}. You can now manage this domain."
-        )
+        messages.success(request, f"Success! You are now a manager of {domain.name}. You can now manage this domain.")
         return redirect("view_domain", pk=pk)
 
     return render(request, "organization/verify_domain_access.html", {"domain": domain})
