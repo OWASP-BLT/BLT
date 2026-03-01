@@ -128,6 +128,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl pb-8">
             <div class="w-full h-[250px]">
                 <img src="{% if banner_src %} {{ MEDIA_URL }}{{ banner_src }} {% else %}https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png {% endif %}"
+                     fetchpriority="high"
                      class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
                      width="100%"
                      height="100%"
@@ -135,6 +136,7 @@
             </div>
             <div class="flex flex-col items-center -mt-20">
                 <img src="{% if hunt_obj.logo %} {{ MEDIA_URL }}{{ hunt_obj.logo }} {% else %} https://via.placeholder.com/160?text=No+Logo {% endif %}"
+                     fetchpriority="high"
                      class="w-40 h-40 border-4 rounded-full"
                      width="100"
                      height="100"
@@ -351,6 +353,7 @@
                                             class="flex items-center px-6 py-4 text-gray-900 dark:text-gray-100 whitespace-nowrap">
                                             <img class="rounded-full"
                                                  src="{% if winner.winner.userprofile.user_avatar %} {{ MEDIA_URL }}{{ winner.winner.userprofile.user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
+                                                 loading="lazy"
                                                  alt="avatar"
                                                  width="40"
                                                  height="40">
@@ -503,6 +506,7 @@
                         <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all">
                             <div class="w-[10%] mr-5 h-full flex items-center">
                                 <img src="{% if issue.first_screenshot %} {{ MEDIA_URL }}{{ issue.first_screenshot }} {% else %} https://via.placeholder.com/100?text=No+Screenshot {% endif %}"
+                                     loading="lazy"
                                      alt=""
                                      width="100%"
                                      height="100%">
@@ -555,6 +559,7 @@
                                            href="{% url 'profile' issue.user__username %}">
                                             <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block"
                                                  src="{% if issue.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/40?text=No+Avatar {% endif %}"
+                                                 loading="lazy"
                                                  alt="avatar"
                                                  width="40px"
                                                  height="40px">
@@ -584,6 +589,7 @@
                            title="View Profile">
                             <div class="w-[100px] h-[100px] rounded-full border-[1px] border-gray-500 dark:border-gray-400 overflow-hidden flex items-center justify-center">
                                 <img src="{% if tester.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
+                                     loading="lazy"
                                      class="object-cover"
                                      width="100%"
                                      height="100%"
