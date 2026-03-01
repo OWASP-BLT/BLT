@@ -18,6 +18,6 @@ class Command(BaseCommand):
             # Add commands to be executed monthly
             # management.call_command('monthly_command1')
             # management.call_command('monthly_command2')
-        except Exception as e:
-            logger.error(f"Error in monthly tasks: {str(e)}")
+        except Exception:
+            logger.exception("Error in monthly tasks")
             raise

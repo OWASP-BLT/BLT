@@ -13,6 +13,9 @@ from website.models import Labs, TaskContent, Tasks, UserLabProgress, UserTaskPr
 def dashboard(request):
     labs = Labs.objects.filter(is_active=True).order_by("order")
 
+    # Batch-fetch all user progress for active labs in one query (avoids N+1)
+    user_progress_map = {ulp.lab_id: ulp for ulp in UserLabProgress.objects.filter(user=request.user, lab__in=labs)}
+
     labs_data = []
     for lab in labs:
         # Map lab icons based on lab name or add a default
@@ -24,12 +27,9 @@ def dashboard(request):
         elif "command" in lab.name.lower():
             icon = "terminal"
 
-        # Get user progress for this lab
-        try:
-            user_lab_progress = UserLabProgress.objects.get(user=request.user, lab=lab)
-            progress = user_lab_progress.calculate_progress_percentage()
-        except UserLabProgress.DoesNotExist:
-            progress = 0
+        # Get user progress for this lab from pre-fetched map
+        user_lab_progress = user_progress_map.get(lab.id)
+        progress = user_lab_progress.calculate_progress_percentage() if user_lab_progress else 0
 
         labs_data.append(
             {

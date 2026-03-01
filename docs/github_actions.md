@@ -151,24 +151,40 @@ These workflows add intelligent metadata and checks to pull requests.
 **AI Relevance**: Helps reviewers prioritize PRs—large PRs (often from bulk AI refactoring) get red labels for extra scrutiny.
 
 #### 2.2 Add Comment Count Label (`add-comment-count-label.yml`)
-**Purpose**: Track unresolved review conversations on PRs
+**Purpose**: Track unresolved review conversations on PRs and notify developers
 
 **Triggers**:
-- Pull request events
-- Issue comments, PR reviews, PR review comments
-- Review thread resolved/unresolved events
+- Pull request events (opened, synchronize, reopened, ready_for_review, edited)
+- Issue comments (created, edited, deleted)
+- Pull request reviews (submitted, edited, dismissed)
+- Pull request review comments (created, edited, deleted)
+- Pull request review threads (resolved, unresolved)
 
 **Key Features**:
-- Counts unresolved, non-outdated conversations
-- Labels: `unresolved-conversations: N`
+- Counts unresolved, non-outdated conversations using GraphQL pagination
+- Adds dynamic label: `unresolved-conversations: N`
 - Color-coded by severity:
   - Green (0)
   - Yellow (1-3)
   - Orange (4-10)
   - Red (11+)
-- Updates in real-time as conversations are resolved
+- **Posts notification comment** when unresolved conversations are detected
+  - Comment provides clear action items for developers
+  - Comment is automatically updated when conversation count changes
+  - Comment is removed when all conversations are resolved
+- Updates in real-time as conversations are resolved or added
+- Uses unique marker (`<!-- unresolved-conversations-notification -->`) to manage notification comment
+- Uses pagination to reliably find notification comment even on PRs with >100 comments
 
-**AI Relevance**: Helps track review progress on AI-generated PRs which may need more iterations.
+**Developer Experience**:
+When conversations are added to a PR, developers immediately receive:
+1. A color-coded label showing the count
+2. A notification comment with:
+   - Clear description of what needs attention
+   - Action items (review, address, mark as resolved or ask maintainer)
+   - Link to where conversations can be found
+
+**AI Relevance**: Helps track review progress on AI-generated PRs which may need more iterations. Provides immediate, actionable feedback to developers about pending discussions.
 
 #### 2.3 Add Changes Requested Label (`add-changes-requested-label.yml`)
 **Purpose**: Flag PRs with reviewer-requested changes

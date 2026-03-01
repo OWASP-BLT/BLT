@@ -271,11 +271,12 @@ class MySeleniumTests(LiveServerTestCase):
 class HideImage(TestCase):
     def setUp(self):
         test_issue = Issue.objects.create(description="test", url="test.com")
-        test_issue.screenshot = SimpleUploadedFile(
-            name="test_image.jpg",
-            content=open("website/static/images/dummy-user.png", "rb").read(),
-            content_type="image/png",
-        )
+        with open("website/static/images/dummy-user.webp", "rb") as f:
+            test_issue.screenshot = SimpleUploadedFile(
+                name="test_image.webp",
+                content=f.read(),
+                content_type="image/webp",
+            )
         test_issue.save()
 
     def test_on_hide(self):
@@ -454,7 +455,6 @@ class LeaderboardTests(TestCase):
 
     def test_monthly_leaderboard_excludes_bots(self):
         """Test that bots are excluded from monthly leaderboard"""
-        from datetime import datetime
 
         # Create bot users with typical bot naming patterns
         bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
@@ -462,8 +462,8 @@ class LeaderboardTests(TestCase):
         bot3 = User.objects.create_user(username="renovate-bot", password="password")
 
         # Create points for bot users in current month
-        current_month = datetime.now().month
-        current_year = datetime.now().year
+        current_month = timezone.now().month
+        current_year = timezone.now().year
         Points.objects.create(user=bot1, score=100)
         Points.objects.create(user=bot2, score=200)
         Points.objects.create(user=bot3, score=150)
@@ -483,14 +483,13 @@ class LeaderboardTests(TestCase):
 
     def test_yearly_leaderboard_excludes_bots(self):
         """Test that bots are excluded from yearly leaderboard (each month view)"""
-        from datetime import datetime
 
         # Create bot users
         bot1 = User.objects.create_user(username="dependabot[bot]", password="password")
         bot2 = User.objects.create_user(username="copilot-bot", password="password")
 
         # Create points for bot users in current year
-        current_year = datetime.now().year
+        current_year = timezone.now().year
         Points.objects.create(user=bot1, score=500)
         Points.objects.create(user=bot2, score=600)
 

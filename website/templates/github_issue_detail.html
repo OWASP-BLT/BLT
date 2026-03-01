@@ -53,6 +53,7 @@
                        target="_blank"
                        class="flex items-center hover:text-[#e74c3c]">
                         <img src="{{ issue.user_profile.github_url }}.png"
+                             loading="lazy"
                              alt="{{ issue.user.login }}"
                              class="w-6 h-6 rounded-full mr-2"
                              width="24"
@@ -64,12 +65,14 @@
                        class="flex items-center hover:text-[#e74c3c]">
                         {% if issue.user_profile.user_avatar %}
                             <img src="{{ issue.user_profile.user_avatar.url }}"
+                                 loading="lazy"
                                  alt="{{ issue.user.login }}"
                                  class="w-6 h-6 rounded-full mr-2"
                                  width="24"
                                  height="24">
                         {% else %}
                             <img src="{% gravatar_url issue.user_profile.user.email 24 %}"
+                                 loading="lazy"
                                  alt="{{ issue.user.login }}"
                                  class="w-6 h-6 rounded-full mr-2"
                                  width="24"
@@ -82,6 +85,7 @@
                        target="_blank"
                        class="flex items-center hover:text-[#e74c3c]">
                         <img src="{{ issue.user.avatar_url }}"
+                             loading="lazy"
                              alt="{{ issue.user.login }}"
                              class="w-6 h-6 rounded-full mr-2"
                              width="24"
@@ -109,7 +113,7 @@
                 </a>
             </div>
             <!-- Issue Body -->
-            <div class="prose max-w-none">{{ issue.body|safe|linebreaks }}</div>
+            <div class="prose max-w-none">{{ issue.body_html|safe }}</div>
             <!-- Labels -->
             {% if issue.labels %}
                 <div class="mt-6">
@@ -130,6 +134,7 @@
                     <div class="flex -space-x-2">
                         {% for assignee in issue.assignees %}
                             <img src="{{ assignee.avatar_url }}"
+                                 loading="lazy"
                                  alt="{{ assignee.login }}"
                                  title="{{ assignee.login }}"
                                  class="w-8 h-8 rounded-full border-2 border-white"
@@ -149,6 +154,7 @@
                         <div class="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 last:pb-0">
                             <div class="flex items-center mb-4">
                                 <img src="{{ comment.user.avatar_url }}"
+                                     loading="lazy"
                                      alt="{{ comment.user.login }}"
                                      class="w-8 h-8 rounded-full mr-3"
                                      width="32"
@@ -162,7 +168,7 @@
                                     <div class="text-sm text-gray-500 dark:text-gray-500">{{ comment.created_at|timesince }} ago</div>
                                 </div>
                             </div>
-                            <div class="prose max-w-none">{{ comment.body|safe|linebreaks }}</div>
+                            <div class="prose max-w-none">{{ comment.body_html|safe }}</div>
                         </div>
                     {% endfor %}
                 </div>

@@ -1,0 +1,164 @@
+name: One-Time Cleanup - Closed PR Assignees
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (only log, do not unassign)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup Old Closed PR Assignees
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const dryRun = '${{ inputs.dry_run }}' === 'true';
+            
+            const GRACE_PERIOD_MS = 12 * 60 * 60 * 1000;
+            
+            core.info(`Starting cleanup (dry run: ${dryRun})...\n`);
+            
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo,
+              state: 'open',
+              per_page: 100
+            });
+            
+            const issuesWithAssignees = issues.filter(i => 
+              i.assignees.length > 0 && !i.pull_request
+            );
+            
+            core.info(`Found ${issuesWithAssignees.length} open issues with assignees\n`);
+            
+            let processedCount = 0;
+            let unassignedCount = 0;
+            
+            for (const issue of issuesWithAssignees) {
+              try {
+                core.info(`Checking issue #${issue.number}: ${issue.title}`);
+                
+                // Get timeline to find linked PRs (paginate to get all events)
+                const allTimelineEvents = await github.paginate(github.rest.issues.listEventsForTimeline, {
+                  owner, repo,
+                  issue_number: issue.number,
+                  per_page: 100
+                });
+                
+                let hasOpenPR = false;
+                let closedPRsOlderThan6h = [];
+                const now = Date.now();
+                
+                for (const event of allTimelineEvents) {
+                  if (event.event === 'connected' && event.source?.issue?.pull_request) {
+                    const prNum = event.source.issue.number;
+                    
+                    try {
+                      const pr = await github.rest.pulls.get({ 
+                        owner, repo, 
+                        pull_number: prNum 
+                      });
+                      
+                      if (pr.data.state === 'open') {
+                        hasOpenPR = true;
+                        core.info(`  Found open PR #${prNum}`);
+                      } else if (pr.data.state === 'closed' && !pr.data.merged) {
+                        const closedAt = new Date(pr.data.closed_at).getTime();
+                        const elapsed = now - closedAt;
+                        
+                        if (elapsed > GRACE_PERIOD_MS) {
+                          closedPRsOlderThan6h.push({
+                            number: prNum,
+                            author: pr.data.user.login,
+                            closedAt: pr.data.closed_at,
+                            hoursAgo: (elapsed / (60 * 60 * 1000)).toFixed(1)
+                          });
+                        }
+                      }
+                    } catch (e) {
+                      core.warning(`  Failed to fetch PR #${prNum}: ${e.message}`);
+                    }
+                  }
+                }
+                
+                if (closedPRsOlderThan6h.length > 0 && !hasOpenPR) {
+                  core.info(`  Found ${closedPRsOlderThan6h.length} closed PR(s) older than 12 hours:`);
+                  closedPRsOlderThan6h.forEach(pr => {
+                    core.info(`    - PR #${pr.number} by @${pr.author} (closed ${pr.hoursAgo}h ago)`);
+                  });
+                  
+                  // Build filtered removal list: only unassign authors of closed PRs who are still assigned
+                  const closedPRAuthors = closedPRsOlderThan6h.map(pr => pr.author);
+                  const currentAssignees = issue.assignees.map(a => a.login);
+                  const assigneesToRemove = currentAssignees.filter(assignee => closedPRAuthors.includes(assignee));
+                  
+                  core.info(`  Current assignees: ${currentAssignees.join(', ')}`);
+                  core.info(`  Closed PR authors: ${closedPRAuthors.join(', ')}`);
+                  core.info(`  Will unassign: ${assigneesToRemove.join(', ') || 'none'}`);
+                  
+                  if (assigneesToRemove.length === 0) {
+                    core.info(`  No assignees to remove (closed PR authors not currently assigned)`);
+                  } else if (dryRun) {
+                    core.info(`  [DRY RUN] Would unassign: ${assigneesToRemove.join(', ')}`);
+                  } else {
+                    // Unassign only the filtered list
+                    await github.rest.issues.removeAssignees({
+                      owner, repo,
+                      issue_number: issue.number,
+                      assignees: assigneesToRemove
+                    });
+                    
+                    const prList = closedPRsOlderThan6h.map(pr => 
+                      `- PR #${pr.number} (closed ${pr.hoursAgo}h ago)`
+                    ).join('\n');
+                    
+                    await github.rest.issues.createComment({
+                      owner, repo,
+                      issue_number: issue.number,
+                      body: `**Cleanup: Unassigned due to closed PR(s)**\n\n` +
+                            `The following PR(s) were closed over 12 hours ago:\n${prList}\n\n` +
+                            `Unassigned: ${assigneesToRemove.join(', ')}\n\n` +
+                            `Assignees have been removed. Feel free to comment \`/assign\` to work on this issue!`
+                    });
+                    
+                    core.info(`  ✓ Unassigned: ${assigneesToRemove.join(', ')}`);
+                    unassignedCount++;
+                  }
+                } else if (hasOpenPR) {
+                  core.info(`  Has open PR, no action needed`);
+                } else if (closedPRsOlderThan6h.length === 0) {
+                  core.info(`  No closed PRs older than 12 hours`);
+                } else {
+                  core.info(`  No action needed`);
+                }
+                
+                processedCount++;
+                
+              } catch (e) {
+                core.warning(`Failed to process issue #${issue.number}: ${e.message}`);
+              }
+            }
+            
+            core.info(`\n${'='.repeat(60)}`);
+            core.info(`Cleanup complete`);
+            core.info(`   Processed: ${processedCount} issues`);
+            core.info(`   Unassigned: ${unassignedCount} issues`);
+            core.info(`   Dry run: ${dryRun}`);
+            
+            if (dryRun) {
+              core.info(`\nThis was a dry run. Run again with dry_run=false to actually unassign.`);
+            }
