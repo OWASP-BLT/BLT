@@ -13,16 +13,31 @@ from django.db import connection
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
-from website.models import Organization, Repo
+from website.models import GitHubIssue, Organization, Repo
 from website.utils import ai_summary, markdown_to_text
 
 logger = logging.getLogger(__name__)
+
+
+def get_bot_filter_query():
+    """
+    Returns a Q object for filtering out bot contributors.
+    This ensures consistent bot detection across the codebase.
+    
+    Note: The 'icontains="bot"' check is intentionally broad to catch various
+    bot naming patterns, following the pattern used in hackathon leaderboard views.
+    This matches GitHub's common bot naming conventions like 'dependabot', 'github-bot', etc.
+    """
+    return Q(contributor__contributor_type="Bot") | Q(contributor__name__endswith="[bot]") | Q(
+        contributor__name__icontains="bot"
+    )
 
 
 class RepoListView(ListView):
@@ -364,6 +379,52 @@ class RepoDetailView(DetailView):
         # Add dollar tag issues
         context["dollar_tag_issues"] = repo.github_issues.filter(has_dollar_tag=True).order_by("-updated_at")[:5]
         context["dollar_tag_issues_count"] = repo.github_issues.filter(has_dollar_tag=True).count()
+
+        # Add active hackathon data
+        now = timezone.now()
+        active_hackathons = repo.hackathons.filter(
+            is_active=True, start_time__lte=now, end_time__gte=now
+        ).order_by("-start_time")
+
+        if active_hackathons.exists():
+            active_hackathon = active_hackathons.first()
+            context["active_hackathon"] = active_hackathon
+
+            # Calculate hackathon stats for this repo
+            # Get all PRs created during the hackathon period (excluding bots)
+            # Note: We filter by created_at to count all PRs submitted during the event
+            hackathon_prs = GitHubIssue.objects.filter(
+                repo=repo,
+                type="pull_request",
+                created_at__gte=active_hackathon.start_time,
+                created_at__lte=active_hackathon.end_time,
+            ).exclude(get_bot_filter_query())
+
+            # Get merged PRs (must be both created AND merged during the hackathon)
+            # This ensures we only count PRs that completed the full lifecycle during the event
+            merged_prs = hackathon_prs.filter(
+                is_merged=True,
+                merged_at__gte=active_hackathon.start_time,
+                merged_at__lte=active_hackathon.end_time,
+            )
+
+            # Count unique participants (excluding bots)
+            user_profile_count = merged_prs.exclude(user_profile=None).values("user_profile").distinct().count()
+            contributor_count = (
+                merged_prs.filter(user_profile=None)
+                .exclude(contributor=None)
+                .exclude(get_bot_filter_query())
+                .values("contributor")
+                .distinct()
+                .count()
+            )
+            participant_count = user_profile_count + contributor_count
+
+            context["active_hackathon_stats"] = {
+                "total_prs": hackathon_prs.count(),
+                "merged_prs": merged_prs.count(),
+                "participants": participant_count,
+            }
 
         return context
 
