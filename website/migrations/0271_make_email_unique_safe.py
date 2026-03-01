@@ -377,7 +377,7 @@ def drop_email_unique_index(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    atomic = True
+    atomic = False
 
     dependencies = [
         ("website", "0270_githubcomment"),
