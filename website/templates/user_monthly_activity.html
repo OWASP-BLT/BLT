@@ -115,7 +115,7 @@
                                     <div class="flex-1">
                                         <div class="flex items-center gap-3 mb-2">
                                             {% if point.issue %}
-                                                <a href="{% url 'issue_view' pk=point.issue.id %}"
+                                                <a href="{% url 'issue_view' slug=point.issue.id %}"
                                                    class="text-lg font-medium text-[#e74c3c] hover:text-[#c0392b] transition-colors">
                                                     <i class="fas fa-bug mr-1"></i>
                                                     {{ point.issue.description|truncatewords:15 }}

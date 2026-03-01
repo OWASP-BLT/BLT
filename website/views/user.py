@@ -826,12 +826,27 @@ class UserMonthlyActivityView(ListView):
         self.validated_month = month
         self.validated_year = year
         self.validated_user = get_object_or_404(User, username=username)
+        # Ensure the user has an associated UserProfile to avoid RelatedObjectDoesNotExist
+        UserProfile.objects.get_or_create(user=self.validated_user)
 
-        return (
+        queryset = (
             Points.objects.filter(user=self.validated_user, created__year=year, created__month=month)
             .select_related("issue", "domain", "user")
             .order_by("-created")
         )
+
+        # Apply visibility rules: hide points for hidden issues unless the requester
+        # is viewing their own points or has elevated privileges.
+        request_user = self.request.user
+        if (
+            request_user.is_authenticated
+            and not request_user.is_staff
+            and not request_user.is_superuser
+            and request_user != self.validated_user
+        ):
+            queryset = queryset.exclude(issue__is_hidden=True)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -858,9 +873,9 @@ class UserMonthlyActivityView(ListView):
         ]
         context["month_name"] = month_names[self.validated_month - 1]
 
-        # Use the paginator's queryset to avoid duplicate queries
+        # Use the already-evaluated base queryset to avoid duplicate queries
         # Calculate total score and issue count in a single query
-        base_queryset = self.get_queryset()
+        base_queryset = self.object_list
         aggregation = base_queryset.aggregate(
             total_score=Sum("score"),
             issue_count=Count("issue", distinct=True, filter=Q(issue__isnull=False)),
