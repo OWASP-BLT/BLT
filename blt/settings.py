@@ -333,15 +333,6 @@ else:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-    # Removed DEBUG override - DEBUG should be controlled by environment variable
-
-    # use this to debug emails locally
-    # python -m smtpd -n -c DebuggingServer localhost:1025
-    # if DEBUG:
-    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-    # Keep using our custom backend even in debug mode
-    # But make sure we keep the EMAIL_BACKEND setting from above
     pass
 
 DATABASES = {
@@ -351,21 +342,27 @@ DATABASES = {
     }
 }
 
-# Test database optimizations for faster test execution
+# Test database optimizations for async compatibility
 if TESTING:
     DATABASES["default"]["TEST"] = {
-        "NAME": ":memory:",  # Use in-memory database for tests
+        # Using a file-based test database instead of :memory:
+        # In-memory SQLite causes strict deadlocks during async/background thread operations.
+        "NAME": os.path.join(BASE_DIR, "test_db.sqlite3"),
+    }
+    DATABASES["default"]["OPTIONS"] = {
+        "timeout": 20,  # Prevent "database table is locked" during concurrent async tests
     }
 
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    # Use connection pooling with 600 second max age to prevent connection exhaustion
     DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=False)
-    # Apply test optimizations to configured database as well
     if TESTING:
         DATABASES["default"]["TEST"] = {
-            "NAME": ":memory:",
+            "NAME": os.path.join(BASE_DIR, "test_db.sqlite3"),
+        }
+        DATABASES["default"]["OPTIONS"] = {
+            "timeout": 20,
         }
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
@@ -374,12 +371,8 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
-# Security: Do not send emails to unknown accounts during password reset
-# This prevents account enumeration attacks
 ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
-
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
@@ -442,7 +435,6 @@ LOGGING = {
         },
     },
 }
-
 
 USERS_AVATAR_PATH = "avatars"
 AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
@@ -581,11 +573,9 @@ MDEDITOR_CONFIGS = {
 }
 
 # SuperUser Details
-
 SUPERUSER_USERNAME = env("SUPERUSER", default="admin123")
 SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="admin123@gmail.com")
 SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
-
 
 SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 
@@ -604,7 +594,6 @@ ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 
 USPTO_API = os.environ.get("USPTO_API")
-
 
 BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
