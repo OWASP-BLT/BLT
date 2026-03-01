@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.html import escape, strip_tags
 
-from website.models import Issue
+from website.models import Issue, UserProfile
 
 from .models import Comment
 
@@ -87,7 +87,15 @@ def add_comment(request):
     _notify_mentioned_users(mentioned_users, request.user, pk, new_msg)
 
     issue_ct = _get_issue_ct()
-    comment = Comment(author=author, author_url=author_url, content_type=issue_ct, object_id=issue.pk, text=new_text)
+    author_fk = UserProfile.objects.filter(user=request.user).first()
+    comment = Comment(
+        author=author,
+        author_fk=author_fk,
+        author_url=author_url,
+        content_type=issue_ct,
+        object_id=issue.pk,
+        text=new_text,
+    )
     comment.save()
     all_comment = Comment.objects.filter(content_type=issue_ct, object_id=issue.pk)
     return render(
@@ -216,8 +224,10 @@ def reply_comment(request, pk):
     new_text, new_msg, mentioned_users = _process_mentions(reply_text)
     _notify_mentioned_users(mentioned_users, request.user, issue_pk, new_msg)
 
+    author_fk = UserProfile.objects.filter(user=request.user).first()
     comment = Comment(
         author=author,
+        author_fk=author_fk,
         author_url=author_url,
         content_type=issue_ct,
         object_id=issue.pk,
