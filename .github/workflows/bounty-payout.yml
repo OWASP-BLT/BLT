@@ -101,7 +101,7 @@ jobs:
           CONTRIBUTOR_USERNAME: ${{ steps.check-issues.outputs.contributor-username }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://blt.owasp.org' }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owaspblt.org' }}
         uses: actions/github-script@v6.1.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
