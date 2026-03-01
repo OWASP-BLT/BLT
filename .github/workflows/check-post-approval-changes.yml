@@ -1,0 +1,185 @@
+name: Post-Approval Change Detector
+
+on:
+  pull_request:
+    types: [synchronize]  # Runs when new commits pushed
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for significant changes after approval
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Step 1: Find last approval timestamp
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const approvals = reviews.filter(r => r.state === 'APPROVED');
+            if (approvals.length === 0) {
+              console.log('✅ No approvals yet - nothing to check');
+              return;
+            }
+            
+            const lastApprovalDate = new Date(Math.max(...approvals.map(a => new Date(a.submitted_at))));
+            console.log(`Last approval: ${lastApprovalDate.toISOString()}`);
+            
+            // Step 2: Determine the approved commit SHA (with pagination)
+            const commits = await github.paginate(github.rest.pulls.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100
+            });
+            
+            // Find the last commit before or at approval time
+            // Iterate through ALL commits to handle rebase scenarios
+            let approvedCommitSha = null;
+            let approvedCommitDate = null;
+            for (const commit of commits) {
+              const commitDate = new Date(commit.commit.committer.date);
+              if (commitDate <= lastApprovalDate) {
+                // Keep track of the most recent commit before approval
+                if (!approvedCommitDate || commitDate > approvedCommitDate) {
+                  approvedCommitSha = commit.sha;
+                  approvedCommitDate = commitDate;
+                }
+              }
+            }
+            
+            if (!approvedCommitSha) {
+              console.log('⚠️ Could not determine approved commit');
+              return;
+            }
+            
+            const headCommitSha = commits[commits.length - 1].sha;
+            
+            if (approvedCommitSha === headCommitSha) {
+              console.log('✅ No new commits since approval');
+              return;
+            }
+            
+            console.log(`Approved commit: ${approvedCommitSha.substring(0, 7)}`);
+            console.log(`Current HEAD: ${headCommitSha.substring(0, 7)}`);
+            
+            // Step 3: Use Compare API to get changes (with error handling for force pushes)
+            let comparison;
+            try {
+              const response = await github.rest.repos.compareCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                base: approvedCommitSha,
+                head: headCommitSha
+              });
+              comparison = response.data;
+            } catch (error) {
+              console.log(`⚠️ Could not compare commits: ${error.message}`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ **Unable to check post-approval changes**\n\n` +
+                      `The approved commit (${approvedCommitSha.substring(0, 7)}) is no longer in the branch history. ` +
+                      `This typically happens after a force push or rebase.\n\n` +
+                      `Please request re-review manually if significant changes were made.`
+              });
+              return;
+            }
+            
+            // Filter to code files only (guard against undefined files)
+            const codeExtensions = [
+              '.py', '.js', '.jsx', '.ts', '.tsx', '.vue',
+              '.java', '.go', '.rs', '.cpp', '.c', '.h',
+              '.rb', '.php', '.html', '.css', '.scss', '.sql'
+            ];
+            
+            const codeFiles = (comparison.files || []).filter(file =>
+              codeExtensions.some(ext => file.filename.endsWith(ext))
+            );
+            
+            const totalLinesChanged = codeFiles.reduce((sum, f) => 
+              sum + f.additions + f.deletions, 0
+            );
+            
+            const nonMergeCommits = comparison.commits.filter(c => c.parents.length < 2);
+            
+            console.log(`📊 Changes since approval:`);
+            console.log(`  - Total commits: ${comparison.commits.length}`);
+            console.log(`  - Merge commits: ${comparison.commits.filter(c => c.parents.length > 1).length}`);
+            console.log(`  - Code files changed: ${codeFiles.length}`);
+            console.log(`  - Lines of code changed: ${totalLinesChanged}`);
+            
+            // Step 4: Trigger re-review only if conditions met
+            if (totalLinesChanged > 10 && codeFiles.length > 0 && nonMergeCommits.length > 0) {
+              // Filter out deleted users before accessing login
+              const reviewers = [...new Set(approvals.filter(r => r.user).map(r => r.user.login))];
+              
+              // Guard against empty reviewers array
+              if (reviewers.length === 0) {
+                console.log('⚠️ No valid reviewers to request re-review from (all approvers have deleted accounts)');
+                return;
+              }
+              
+              // Filter out PR author (cannot request review from self)
+              const prAuthor = context.payload.pull_request.user.login;
+              const eligibleReviewers = reviewers.filter(r => r !== prAuthor);
+              
+              if (eligibleReviewers.length === 0) {
+                console.log('⚠️ No eligible reviewers to request re-review from (all approvers are the PR author)');
+                return;
+              }
+              
+              // Build file list (show max 10 files)
+              const fileList = codeFiles.slice(0, 10).map(f => 
+                `- \`${f.filename}\` (+${f.additions}/-${f.deletions})`
+              ).join('\n');
+              const moreFiles = codeFiles.length > 10 ? `\n- ...and ${codeFiles.length - 10} more` : '';
+              
+              // Build commit list (show max 5 commits, exclude merges)
+              const commitList = nonMergeCommits.slice(0, 5).map(c =>
+                `- [\`${c.sha.substring(0, 7)}\`](${c.html_url}): ${c.commit.message.split('\n')[0]}`
+              ).join('\n');
+              const moreCommits = nonMergeCommits.length > 5 ? `\n- ...and ${nonMergeCommits.length - 5} more` : '';
+              
+              // Post comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ **Significant code changes detected after approval**\n\n` +
+                      `**Summary:**\n` +
+                      `- ${totalLinesChanged} lines changed across ${codeFiles.length} code file(s)\n` +
+                      `- ${nonMergeCommits.length} non-merge commit(s) pushed after approval\n\n` +
+                      `**Commits:**\n${commitList}${moreCommits}\n\n` +
+                      `**Files changed:**\n${fileList}${moreFiles}\n\n` +
+                      `@${eligibleReviewers.join(', @')} - Please re-review this PR.`
+              });
+              
+              // Request re-review from previous approvers
+              for (const reviewer of eligibleReviewers) {
+                try {
+                  await github.rest.pulls.requestReviewers({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: context.issue.number,
+                    reviewers: [reviewer]
+                  });
+                  console.log(`✅ Re-review requested from @${reviewer}`);
+                } catch (error) {
+                  console.log(`⚠️ Could not request review from @${reviewer}: ${error.message}`);
+                }
+              }
+            } else if (totalLinesChanged > 10 && codeFiles.length > 0) {
+              console.log('✅ Only merge commits since approval - no re-review needed');
+            } else {
+              console.log('✅ Changes below threshold - no re-review needed');
+            }
