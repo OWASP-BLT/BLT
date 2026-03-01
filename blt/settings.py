@@ -139,6 +139,23 @@ BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
+    # Configure INTERNAL_IPS for Docker environment
+    import socket
+
+    INTERNAL_IPS = ["127.0.0.1", "::1", "10.0.2.2"]
+    try:
+        _, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    except (socket.gaierror, OSError):
+        # Fall back to default INTERNAL_IPS if hostname resolution fails
+        ips = []
+    else:
+        # Add Docker network IPs
+        INTERNAL_IPS += [ip[: ip.rfind(".")] + ".1" for ip in ips if "." in ip]
+        # Add the container's own IP
+        INTERNAL_IPS += ips
+    # Deduplicate the list
+    INTERNAL_IPS = list(set(INTERNAL_IPS))
+
     DEBUG_TOOLBAR_PANELS = [
         "debug_toolbar.panels.versions.VersionsPanel",
         "debug_toolbar.panels.timer.TimerPanel",
