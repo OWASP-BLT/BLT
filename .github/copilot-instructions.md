@@ -261,7 +261,7 @@ python manage.py runserver
 - Test your changes thoroughly
 
 ❌ **DON'T**:
-- Use pip for package installation
+- Use pip for package installation.
 - Add `<style>` tags or inline styles
 - Embed JavaScript in HTML templates
 - Include exception details in user-facing messages
