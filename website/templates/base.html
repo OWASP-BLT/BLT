@@ -303,6 +303,36 @@
         <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/json-enc.js"
                 integrity="sha384-nRnAvEUI7N/XvvowiMiq7oEI04gOXMCqD3Bidvedw+YNbj7zTQACPlRI3Jt3vYM4"
                 crossorigin="anonymous"></script>
+        <!-- Handle login redirects for HTMX requests -->
+        <script>
+            document.body.addEventListener('htmx:beforeSwap', function(evt) {
+                // Check if response is a redirect to login page (302/301)
+                const xhr = evt.detail && evt.detail.xhr;
+                if (!xhr) return;
+
+                // Primary signal: detect redirect via final URL
+                const responseURL = xhr.responseURL || '';
+                if (responseURL.includes('/accounts/login/')) {
+                    evt.detail.shouldSwap = false;
+                    const loginUrl = new URL(responseURL, window.location.origin);
+                    const next = `${window.location.pathname}${window.location.search}`;
+                    loginUrl.searchParams.set('next', next);
+                    window.location.assign(loginUrl.toString());
+                    return;
+                }
+
+                // Fallback: inspect HTML more robustly
+                if (xhr.status === 200 && (xhr.getResponseHeader('Content-Type') || '').includes('text/html')) {
+                    const doc = new DOMParser().parseFromString(xhr.responseText, 'text/html');
+                    const looksLikeLogin = doc.querySelector('#login, [name="login"], form[action*="/accounts/login/"]');
+                    if (looksLikeLogin) {
+                        evt.detail.shouldSwap = false;
+                        const next = `${window.location.pathname}${window.location.search}`;
+                        window.location.assign(`/accounts/login/?next=${encodeURIComponent(next)}`);
+                    }
+                }
+            });
+        </script>
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/ui.js' %}"></script>
         {% block after_js %}
