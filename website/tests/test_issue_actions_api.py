@@ -17,7 +17,7 @@ class IssueActionsApiTestBase(APITestCase):
             username="owner", email="owner@test.com", password="TestPass123!"
         )
         EmailAddress.objects.create(user=self.owner, email="owner@test.com", verified=True, primary=True)
-        self.owner_token = Token.objects.create(user=self.owner)
+        self.owner_token = Token.objects.get(user=self.owner)
 
         self.other_user = User.objects.create_user(
             username="other", email="other@test.com", password="TestPass123!"
@@ -25,12 +25,12 @@ class IssueActionsApiTestBase(APITestCase):
         EmailAddress.objects.create(
             user=self.other_user, email="other@test.com", verified=True, primary=True
         )
-        self.other_token = Token.objects.create(user=self.other_user)
+        self.other_token = Token.objects.get(user=self.other_user)
 
         self.admin = User.objects.create_superuser(
             username="admin", email="admin@test.com", password="TestPass123!"
         )
-        self.admin_token = Token.objects.create(user=self.admin)
+        self.admin_token = Token.objects.get(user=self.admin)
 
         self.domain = Domain.objects.create(url="https://example.com", name="example.com")
         self.issue = Issue.objects.create(
@@ -49,8 +49,12 @@ class LikeIssueApiViewTests(IssueActionsApiTestBase):
     def get_url(self, issue_id):
         return f"/api/v1/issue/like/{issue_id}/"
 
-    def test_get_like_count_unauthenticated(self):
+    def test_get_like_count_unauthenticated_rejected(self):
         response = self.client.get(self.get_url(self.issue.id))
+        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+    def test_get_like_count_authenticated(self):
+        response = self.client.get(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["likes"], 0)
 
@@ -63,14 +67,14 @@ class LikeIssueApiViewTests(IssueActionsApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["issue"], "liked")
 
-        response = self.client.get(self.get_url(self.issue.id))
+        response = self.client.get(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.data["likes"], 1)
 
         response = self.client.post(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["issue"], "unliked")
 
-        response = self.client.get(self.get_url(self.issue.id))
+        response = self.client.get(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.data["likes"], 0)
 
 
@@ -79,8 +83,12 @@ class FlagIssueApiViewTests(IssueActionsApiTestBase):
     def get_url(self, issue_id):
         return f"/api/v1/issue/flag/{issue_id}/"
 
-    def test_get_flag_count_unauthenticated(self):
+    def test_get_flag_count_unauthenticated_rejected(self):
         response = self.client.get(self.get_url(self.issue.id))
+        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+    def test_get_flag_count_authenticated(self):
+        response = self.client.get(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["flags"], 0)
 
@@ -93,21 +101,21 @@ class FlagIssueApiViewTests(IssueActionsApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["issue"], "flagged")
 
-        response = self.client.get(self.get_url(self.issue.id))
+        response = self.client.get(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.data["flags"], 1)
 
         response = self.client.post(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["issue"], "unflagged")
 
-        response = self.client.get(self.get_url(self.issue.id))
+        response = self.client.get(self.get_url(self.issue.id), **self.auth_header(self.other_token))
         self.assertEqual(response.data["flags"], 0)
 
 
 class DeleteIssueApiViewTests(IssueActionsApiTestBase):
 
     def get_url(self, issue_id):
-        return f"/delete_issue/{issue_id}/"
+        return f"/api/v1/delete_issue/{issue_id}/"
 
     def test_delete_requires_authentication(self):
         response = self.client.delete(self.get_url(self.issue.id))
