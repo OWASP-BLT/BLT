@@ -40,6 +40,13 @@ GITHUB_API_TIMEOUT = getattr(settings, "GITHUB_API_TIMEOUT", 30)
 GITHUB_API_RATE_LIMIT_DELAY = getattr(settings, "GITHUB_API_RATE_LIMIT_DELAY", 0.5)
 
 
+class HackathonPermissionMixin:
+    """Reusable permission logic for hackathon management."""
+
+    def _can_manage_hackathon(self, user, hackathon):
+        return can_manage_hackathon(user, hackathon)
+
+
 class HackathonListView(ListView):
     """View for listing all hackathons."""
 
@@ -95,7 +102,7 @@ class HackathonListView(ListView):
         return context
 
 
-class HackathonDetailView(DetailView):
+class HackathonDetailView(HackathonPermissionMixin, DetailView):
     """View for displaying a single hackathon."""
 
     model = Hackathon
@@ -305,15 +312,7 @@ class HackathonDetailView(DetailView):
 
         # Check if user can manage this hackathon
         user = self.request.user
-        can_manage = False
-        if user.is_authenticated:
-            if user.is_superuser:
-                can_manage = True
-            else:
-                # Check if user is admin or manager of the organization
-                org = hackathon.organization
-                can_manage = org.is_admin(user) or org.is_manager(user)
-        context["can_manage"] = can_manage
+        context["can_manage"] = user.is_authenticated and self._can_manage_hackathon(user, hackathon)
 
         # Get all merged pull requests during the hackathon period for participant count
         merged_prs = self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
@@ -398,7 +397,13 @@ class HackathonCreateView(LoginRequiredMixin, HackathonFormMixin, CreateView):
         return context
 
 
-class HackathonUpdateView(LoginRequiredMixin, UserPassesTestMixin, HackathonFormMixin, UpdateView):
+class HackathonUpdateView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    HackathonPermissionMixin,
+    HackathonFormMixin,
+    UpdateView,
+):
     """View for updating an existing hackathon."""
 
     model = Hackathon
@@ -409,10 +414,7 @@ class HackathonUpdateView(LoginRequiredMixin, UserPassesTestMixin, HackathonForm
     def test_func(self):
         hackathon = self.get_object()
         user = self.request.user
-        if user.is_superuser:
-            return True
-        org = hackathon.organization
-        return org.is_admin(user) or org.is_manager(user)
+        return self._can_manage_hackathon(user, hackathon)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -421,16 +423,17 @@ class HackathonUpdateView(LoginRequiredMixin, UserPassesTestMixin, HackathonForm
         return context
 
 
-class HackathonItemCreateMixin(LoginRequiredMixin, UserPassesTestMixin):
+class HackathonItemCreateMixin(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    HackathonPermissionMixin,
+):
     """Mixin for common functionality between hackathon item create views."""
 
     def test_func(self):
-        hackathon = get_object_or_404(Hackathon, slug=self.kwargs["slug"])
+        hackathon = self.get_object()
         user = self.request.user
-        if user.is_superuser:
-            return True
-        org = hackathon.organization
-        return org.is_admin(user) or org.is_manager(user)
+        return self._can_manage_hackathon(user, hackathon)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -472,6 +475,10 @@ class HackathonPrizeCreateView(HackathonItemCreateMixin, CreateView):
         return kwargs
 
 
+def can_manage_hackathon(user, hackathon):
+    return user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)
+
+
 @login_required
 def refresh_repository_data(request, hackathon_slug, repo_id):
     """View to refresh repository data from GitHub API."""
@@ -480,7 +487,7 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
 
     # Check if user has permission to refresh data
     user = request.user
-    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+    if not can_manage_hackathon(user, hackathon):
         messages.error(request, "You don't have permission to refresh repository data.")
         return redirect("hackathon_detail", slug=hackathon_slug)
 
@@ -499,7 +506,7 @@ def refresh_all_hackathon_repositories(request, slug):
     hackathon = get_object_or_404(Hackathon, slug=slug)
 
     user = request.user
-    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+    if not can_manage_hackathon(user, hackathon):
         messages.error(request, "You don't have permission to refresh repository data.")
         return redirect("hackathon_detail", slug=slug)
 
@@ -726,7 +733,7 @@ def add_org_repos_to_hackathon(request, slug):
 
     # Check if user has permission to manage this hackathon
     user = request.user
-    if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
+    if not can_manage_hackathon(user, hackathon):
         messages.error(request, "You don't have permission to manage this hackathon.")
         return redirect("hackathon_detail", slug=slug)
 
