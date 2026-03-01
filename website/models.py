@@ -999,16 +999,20 @@ class UserProfile(models.Model):
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
 
-    def avatar(self, size=36):
-        if self.user_avatar:
+     def avatar(self, size=36):
+         from website.utils import gravatar_url
+      
+         if self.user_avatar:
             return self.user_avatar.url
-
-        for account in self.user.socialaccount_set.all():
-            if "avatar_url" in account.extra_data:
-                return account.extra_data["avatar_url"]
-            elif "picture" in account.extra_data:
-                return account.extra_data["picture"]
-
+      
+         for account in self.user.socialaccount_set.all().order_by('id'):
+             if "avatar_url" in account.extra_data:              
+                 return account.extra_data["avatar_url"]         
+             elif "picture" in account.extra_data:               
+                  return account.extra_data["picture"]            
+      
+          return gravatar_url(self.user.email)                    
+    
     def __unicode__(self):
         return self.user.email
 
