@@ -432,3 +432,80 @@ class ProjectFreshnessFilteringTestCase(APITestCase):
         for project in data["results"]:
             self.assertIn("freshness", project)
             self.assertIsNotNone(project["freshness"])
+
+
+class ProjectLeastMembersChannelApiTestCase(APITestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="API Test Org", url="https://api-test.org")
+        self.user = get_user_model().objects.create_user(username="leastmembers-user", email="lm@example.com")
+        self.client.force_authenticate(user=self.user)
+
+    def test_requires_authentication(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get("/api/v1/projects/least-members-channel/")
+        self.assertIn(response.status_code, [401, 403])
+
+    def test_returns_least_members_channel(self):
+        Project.objects.create(
+            organization=self.org,
+            name="BLT",
+            slug="blt",
+            description="BLT project",
+            slack_channel="project-blt",
+            slack_user_count=1,
+        )
+        Project.objects.create(
+            organization=self.org,
+            name="Project A",
+            slug="project-a",
+            description="A",
+            slack_channel="project-a",
+            slack_user_count=30,
+        )
+        Project.objects.create(
+            organization=self.org,
+            name="Project B",
+            slug="project-b",
+            description="B",
+            slack_channel="project-b",
+            slack_user_count=10,
+        )
+
+        response = self.client.get("/api/v1/projects/least-members-channel/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["slack_channel"], "project-b")
+
+    def test_returns_none_when_no_eligible_project(self):
+        Project.objects.create(
+            organization=self.org,
+            name="BLT",
+            slug="blt-only",
+            description="BLT only",
+            slack_channel="project-blt",
+            slack_user_count=4,
+        )
+        response = self.client.get("/api/v1/projects/least-members-channel/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["slack_channel"])
+
+    def test_excludes_blank_slack_channel(self):
+        Project.objects.create(
+            organization=self.org,
+            name="Blank Channel",
+            slug="blank-channel",
+            description="Blank",
+            slack_channel="",
+            slack_user_count=1,
+        )
+        Project.objects.create(
+            organization=self.org,
+            name="Valid Channel",
+            slug="valid-channel",
+            description="Valid",
+            slack_channel="project-valid",
+            slack_user_count=2,
+        )
+
+        response = self.client.get("/api/v1/projects/least-members-channel/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["slack_channel"], "project-valid")

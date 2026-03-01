@@ -940,6 +940,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project_data = self._serialize_projects(projects)
         return Response({"count": len(project_data), "projects": project_data})
 
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="least-members-channel",
+        permission_classes=[IsAuthenticated],
+    )
+    def least_members_channel(self, request, *args, **kwargs):
+        """Return the project channel with the least members (excluding project-blt)."""
+        project = (
+            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+            .exclude(slack_channel="")
+            .exclude(slack_channel="project-blt")
+            .order_by("slack_user_count")
+            .first()
+        )
+        return Response({"slack_channel": project.slack_channel if project else None})
+
     @action(detail=False, methods=["get"])
     def search(self, request, *args, **kwargs):
         """Search projects by name, description, or tags."""

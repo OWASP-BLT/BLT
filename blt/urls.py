@@ -1040,6 +1040,11 @@ urlpatterns = [
         name="projects_api",
     ),
     path(
+        "api/v1/projects/least-members-channel/",
+        ProjectViewSet.as_view({"get": "least_members_channel"}),
+        name="projects_least_members_channel_api",
+    ),
+    path(
         "auth/delete",
         AuthApiViewset.as_view({"delete": "delete"}),
         name="auth-delete-api",
