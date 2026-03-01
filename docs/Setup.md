@@ -457,7 +457,6 @@ Run:
 
 ```bash
 docker-compose exec app python manage.py shell
-```md
 Once inside the Django shell, run:
 
 ```python
