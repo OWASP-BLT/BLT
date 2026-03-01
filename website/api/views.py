@@ -2,6 +2,7 @@ import json
 import logging
 import smtplib
 import sys
+import time
 import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -1524,79 +1525,78 @@ class CheckDuplicateBugApiView(APIView):
         {
             "is_duplicate": true/false,
             "confidence": "high/medium/low/none",
-            "similar_bugs": [
-                {
-                    "id": 123,
-                    "url": "...",
-                    "description": "...",
-                    "similarity": 0.85,
-                    "status": "open",
-                    "created": "...",
-                    "user": "..."
-                }
-            ]
+            "confidence_score": 0.9,
+            "similar_bugs": [...],
+            "total_similar": 1,
+            "message": "...",
+            "metadata": {
+                "processing_time_ms": 1.23,
+                "api_version": "v1.1-ai-ready"
+            }
         }
         """
-        # Input validation and sanitization
         url = request.data.get("url", "").strip()
         description = request.data.get("description", "").strip()
         domain_id = request.data.get("domain_id")
 
-        # Validate input
         if not url:
             return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
-
         if not description:
             return Response({"error": "Description is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate URL length (prevent DoS)
         if len(url) > 2048:
             return Response({"error": "URL is too long (max 2048 characters)"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Validate description length (prevent DoS)
         if len(description) > 10000:
             return Response(
                 {"error": "Description is too long (max 10000 characters)"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Get domain if provided
         domain = None
         if domain_id:
             try:
                 domain_id = int(domain_id)
                 domain = Domain.objects.get(id=domain_id)
             except (ValueError, TypeError, Domain.DoesNotExist):
-                logger.warning("Invalid domain_id provided: %s", domain_id)
                 pass
 
-        # Check for duplicates
         try:
+            start_time = time.time()
             result = check_for_duplicates(url, description, domain)
+            processing_time = time.time() - start_time
 
-            # Format the response using shared helper
             similar_bugs_data = []
+            dropped_similar = 0
             for bug_info in result["similar_bugs"]:
                 try:
                     similar_bugs_data.append(format_similar_bug(bug_info, truncate_description=200))
-                except (KeyError, AttributeError, ValueError, TypeError) as e:
-                    logger.warning("Error formatting similar bug: %s", e)
+                except (KeyError, AttributeError, ValueError, TypeError) as format_error:
+                    dropped_similar += 1
+                    logger.warning("Skipping malformed similar bug entry: %s", format_error)
                     continue
+
+            confidence_map = {"high": 0.9, "medium": 0.6, "low": 0.3, "none": 0.0}
+
+            # Create a modified result dictionary just for message generation
+            message_result = {**result, "similar_bugs": similar_bugs_data}
 
             response_data = {
                 "is_duplicate": result["is_duplicate"],
                 "confidence": result["confidence"],
+                "confidence_score": confidence_map.get(result["confidence"], 0.0),
                 "similar_bugs": similar_bugs_data,
-                "message": self._get_message(result),
+                "total_similar": len(similar_bugs_data),
+                "message": self._get_message(message_result),
+                "metadata": {
+                    "processing_time_ms": round(processing_time * 1000, 2),
+                    "api_version": "v1.1-ai-ready",
+                    "dropped_similar": dropped_similar,
+                },
             }
-
             return Response(response_data, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error("Error checking for duplicates: %s", e, exc_info=True)
-            return Response(
-                {"error": "An error occurred while checking for duplicates"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return Response({"error": "An error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _get_message(self, result):
         """Generate a user-friendly message based on the duplicate check result."""
