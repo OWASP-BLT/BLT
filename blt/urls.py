@@ -332,6 +332,7 @@ from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
     GlobalLeaderboardView,
+    MonthlyVisitorsLeaderboardView,
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
@@ -602,6 +603,11 @@ urlpatterns = [
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
     re_path(r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
+    re_path(
+        r"^leaderboard/monthly-visitors/$",
+        MonthlyVisitorsLeaderboardView.as_view(),
+        name="leaderboard_monthly_visitors",
+    ),
     re_path(
         r"^leaderboard/monthly/$",
         SpecificMonthLeaderboardView.as_view(),

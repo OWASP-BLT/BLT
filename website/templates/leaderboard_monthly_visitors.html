@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Monthly Visitors Leaderboard
+{% endblock title %}
+{% block description %}
+    Check out the top visitors of the month. See who has visited the platform most frequently this month.
+{% endblock description %}
+{% block keywords %}
+    Monthly Leaderboard, Top Visitors, Active Users, Monthly Rankings, Community Engagement
+{% endblock keywords %}
+{% block og_title %}
+    Monthly Visitors Leaderboard - Top Active Users This Month
+{% endblock og_title %}
+{% block og_description %}
+    Explore the monthly visitors leaderboard to see the most active users this month. Recognition for consistent community engagement.
+{% endblock og_description %}
+{% load gravatar %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="row container-min-height flex justify-center pb-4">
+        <div class="col-lg-12 flex justify-center items-center">
+            <h1 class="page-header">Monthly Visitors Leaderboard</h1>
+        </div>
+    </div>
+    <div class="flex flex-col items-center px-4 gap-4 md:px-0 pb-8">
+        <div class="text-center text-gray-600 dark:text-gray-400 mb-2">
+            <p class="text-xl font-semibold">{{ current_month }} {{ current_year }}</p>
+            <p class="text-sm">Recognizing our most active community members this month</p>
+        </div>
+        <div class="flex justify-center gap-4 flex-wrap mb-4">
+            <a href="{% url 'leaderboard_monthly_visitors' %}"
+               class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-all duration-200">
+                Current Month Visitors
+            </a>
+            <a href="{% url 'leaderboard_global' %}"
+               class="px-4 py-2 border-2 border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200">
+                Points - Global
+            </a>
+            <a href="{% url 'leaderboard_specific_month' %}"
+               class="px-4 py-2 border-2 border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200">
+                Points - Specific Month
+            </a>
+            <a href="{% url 'leaderboard_eachmonth' %}"
+               class="px-4 py-2 border-2 border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200">
+                Points - Each Month
+            </a>
+        </div>
+        <div class="border-2 border-[#e74c3c] pb-3 rounded-lg w-full max-w-[800px]">
+            <div class="text-center text-3xl font-bold py-4 border-b-2 border-[#e74c3c] rounded-t-lg">
+                Top Visitors - {{ current_month }} {{ current_year }}
+            </div>
+            <div class="list-group w-full p-4">
+                {% if leaderboard %}
+                    <div class="flex flex-col gap-2">
+                        {% for profile in leaderboard %}
+                            <div class="flex justify-between items-center {% if forloop.counter <= 3 %}bg-yellow-50 dark:bg-gray-800 rounded-lg p-2{% endif %}">
+                                <div class="flex gap-3 items-center truncate">
+                                    <div class="text-xl font-bold text-gray-500 dark:text-gray-400 min-w-[2rem]">#{{ forloop.counter }}</div>
+                                    {% if profile.avatar %}
+                                        <img src="{{ profile.avatar }}"
+                                             class="size-12 select-none border border-gray-200 dark:border-gray-700 rounded-full"
+                                             alt="{{ profile.user.username }}"
+                                             width="50px"
+                                             height="50px">
+                                    {% else %}
+                                        <img src="{% gravatar_url profile.user.email 50 %}"
+                                             class="size-12 select-none border border-gray-200 dark:border-gray-700 rounded-full"
+                                             alt="{{ profile.user.username }}"
+                                             width="50px"
+                                             height="50px">
+                                    {% endif %}
+                                    <div class="flex flex-col">
+                                        <a href="{% url 'profile' profile.user.username %}"
+                                           class="text-lg font-medium transition-all duration-200 hover:text-[#e74c3c]">{{ profile.user.username }}</a>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                                            {% if profile.last_monthly_visit %}Last visit: {{ profile.last_monthly_visit }}{% endif %}
+                                        </span>
+                                    </div>
+                                    {% if forloop.counter == 1 %}
+                                        <span class="ml-2 text-2xl">🥇</span>
+                                    {% elif forloop.counter == 2 %}
+                                        <span class="ml-2 text-2xl">🥈</span>
+                                    {% elif forloop.counter == 3 %}
+                                        <span class="ml-2 text-2xl">🥉</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex flex-col items-end text-right">
+                                    <span class="badge bg-[#e74c3c] text-white rounded-md py-1 px-3 select-none font-semibold">
+                                        {{ profile.monthly_visit_count }} visits
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <p class="text-[#e74c3c] text-xl font-medium mb-2">No visitor data available for this month!</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Start visiting daily to be featured on the leaderboard!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="text-center text-gray-600 dark:text-gray-400 mt-4 max-w-[800px]">
+            <p class="text-sm">
+                <i class="fas fa-info-circle mr-1"></i>
+                The monthly visitors leaderboard recognizes community members who visit and engage with the platform most frequently during the current month.
+                Visit counts reset at the beginning of each month.
+            </p>
+        </div>
+    </div>
+{% endblock content %}
