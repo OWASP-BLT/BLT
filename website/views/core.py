@@ -79,6 +79,7 @@ from website.utils import (
 
 logger = logging.getLogger(__name__)
 SEARCH_HISTORY_LIMIT = getattr(settings, "SEARCH_HISTORY_LIMIT", 50)
+SEARCH_RESULT_LIMIT = 20  # Max results per category in search views
 
 # Constants
 SAMPLE_INVITE_EMAIL_PATTERN = r"^sample-\d+@invite\.placeholder$"
@@ -611,17 +612,27 @@ def search(request, template="search.html"):
 
         # Handle type='all' - search ALL models
         if stype == "all":
-            organizations = Organization.objects.filter(name__icontains=query)
+            organizations = Organization.objects.filter(name__icontains=query)[:SEARCH_RESULT_LIMIT]
             if request.user.is_authenticated:
                 issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
-                )
+                )[:SEARCH_RESULT_LIMIT]
             else:
-                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)
-            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-            users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+                issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(is_hidden=True)[
+                    :SEARCH_RESULT_LIMIT
+                ]
+            domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[:SEARCH_RESULT_LIMIT]
+            users = (
+                User.objects.filter(username__icontains=query)
+                .exclude(is_superuser=True)
+                .order_by("-points")[:SEARCH_RESULT_LIMIT]
+            )
+            projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
+            repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[
+                :SEARCH_RESULT_LIMIT
+            ]
 
             context = {
                 "request": request,
