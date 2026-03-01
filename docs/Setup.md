@@ -446,7 +446,7 @@ BLT uses `django-allauth`, which enforces email verification by default.
 In local development, BLT is configured to use the
 `SlackNotificationEmailBackend` with an SMTP host of `localhost:1025`.
 However, no SMTP server (and typically no Slack integration) is running
-by default, so the verification email is never actually delivered..
+by default, so the verification email is never actually delivered.
 
 ### Local Development Workaround
 
