@@ -278,6 +278,7 @@ This will give you a fully populated development environment with realistic rela
 - Make sure all tests pass before submitting
 - Keep pull requests focused on a single issue or feature
 - Provide a clear description of the changes in your PR
+- For UI changes or new features, include clear screenshots or a short demo video showing the functionality
 
 ## Coding Standards
 

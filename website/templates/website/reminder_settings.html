@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="page-container bg-gray-50 dark:bg-gray-900 py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-8 text-center sm:text-left">
@@ -95,26 +95,6 @@
                                         </svg>
                                     </div>
                                     <div class="time-input-wrapper w-full">{{ form.reminder_time }}</div>
-                                    <style>
-                                        /* Fix for time input in dark mode */
-                                        input[type="time"] {
-                                            background-color: white;
-                                            color: #374151;
-                                            border: 1px solid #d1d5db;
-                                        }
-                                        
-                                        .dark input[type="time"] {
-                                            background-color: #111827; /* gray-900 - same as daily reminder toggle */
-                                            color: #e5e7eb; /* gray-200 */
-                                            border-color: #374151; /* gray-700 */
-                                        }
-                                        
-                                        .dark input[type="time"]:hover,
-                                        .dark input[type="time"]:focus {
-                                            color: #f9fafb; /* gray-50 */
-                                            border-color: #4b5563; /* gray-600 */
-                                        }
-                                    </style>
                                 </div>
                                 {% if form.reminder_time.errors %}
                                     <p class="mt-1 text-sm text-[#e74c3c] hover:text-gray-900 dark:hover:text-white">{{ form.reminder_time.errors.0 }}</p>
@@ -144,26 +124,6 @@
                                         </svg>
                                     </div>
                                     <div class="timezone-select-wrapper w-full">{{ form.timezone }}</div>
-                                    <style>
-                                        /* Fix for select elements in dark mode */
-                                        select {
-                                            background-color: white;
-                                            color: #374151;
-                                            border: 1px solid #d1d5db;
-                                        }
-                                        
-                                        .dark select {
-                                            background-color: #111827; /* gray-900 - same as daily reminder toggle */
-                                            color: #e5e7eb; /* gray-200 */
-                                            border-color: #374151; /* gray-700 */
-                                        }
-                                        
-                                        .dark select:hover,
-                                        .dark select:focus {
-                                            color: #f9fafb; /* gray-50 */
-                                            border-color: #4b5563; /* gray-600 */
-                                        }
-                                    </style>
                                 </div>
                                 {% if form.timezone.errors %}
                                     <p class="mt-1 text-sm text-[#e74c3c] hover:text-gray-900 dark:hover:text-white">{{ form.timezone.errors.0 }}</p>

@@ -536,7 +536,7 @@ class OrganizationDashboardAnalyticsView(View):
             "current_year": current_year,
         }
 
-    def bug_rate_increase_descrease_weekly(self, organization, is_accepted_bugs=False):
+    def bug_rate_increase_decrease_weekly(self, organization, is_accepted_bugs=False):
         """Returns stats comparing past 8-15 days (previous week) to 0-7 days (this week)."""
         current_date = timezone.now().date()
         date_ranges = {
@@ -783,8 +783,8 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
-            "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
-            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
+            "bug_rate_increase_decrease_weekly": self.bug_rate_increase_decrease_weekly(id),
+            "accepted_bug_rate_increase_decrease_weekly": self.bug_rate_increase_decrease_weekly(id, True),
             "security_incidents_summary": self.get_security_incidents_summary(id),
             "threat_intelligence": self.get_threat_intelligence(id),
         }
@@ -2962,80 +2962,3 @@ def toggle_job_status(request, id, job_id):
     job.save(update_fields=["status"])
 
     return JsonResponse({"success": True, "status": job.status})
-
-
-def public_job_list(request):
-    """Public view showing all active public jobs"""
-    from django.utils import timezone
-
-    from website.models import Job
-
-    # Get all public and active jobs that haven't expired
-    jobs = (
-        Job.objects.filter(is_public=True, status="active")
-        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
-        .select_related("organization")
-        .order_by("-created_at")
-    )
-
-    # Search functionality
-    search_query = request.GET.get("q", "")
-    if search_query:
-        jobs = jobs.filter(
-            Q(title__icontains=search_query)
-            | Q(description__icontains=search_query)
-            | Q(location__icontains=search_query)
-            | Q(organization__name__icontains=search_query)
-        )
-
-    # Filter by job type
-    job_type = request.GET.get("type", "")
-    if job_type:
-        jobs = jobs.filter(job_type=job_type)
-
-    # Filter by location
-    location = request.GET.get("location", "")
-    if location:
-        jobs = jobs.filter(location__icontains=location)
-
-    context = {
-        "jobs": jobs,
-        "search_query": search_query,
-        "job_type_filter": job_type,
-        "location_filter": location,
-    }
-
-    return render(request, "jobs/public_job_list.html", context)
-
-
-def job_detail(request, pk):
-    """Public view for a single job posting; org members can see all their jobs"""
-    from django.http import Http404
-
-    from website.models import Job
-
-    job = get_object_or_404(Job, pk=pk)
-
-    # Check if user is org member (admin or manager)
-    is_org_member = False
-    if request.user.is_authenticated:
-        is_org_member = (
-            job.organization.admin == request.user or job.organization.managers.filter(id=request.user.id).exists()
-        )
-
-    # Public users can only see active, public, non-expired jobs
-    if not is_org_member:
-        from django.utils import timezone
-
-        is_expired = job.expires_at and job.expires_at < timezone.now()
-        if not job.is_public or job.status != "active" or is_expired:
-            raise Http404("Job not found")
-
-    # Increment view count
-    job.increment_views()
-
-    context = {
-        "job": job,
-    }
-
-    return render(request, "jobs/job_detail.html", context)
