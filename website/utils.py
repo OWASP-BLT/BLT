@@ -1136,8 +1136,8 @@ def analyze_contribution(instance, action_type):
     import json
 
     model_name = instance._meta.model_name
-    title = getattr(instance, "title", "") or ""
-    description = getattr(instance, "content", "") or getattr(instance, "body", "") or ""
+    title = str(getattr(instance, "title", "") or "").strip()
+    description = str(getattr(instance, "content", "") or getattr(instance, "body", "") or "").strip()
     is_security_flag = getattr(instance, "is_security", False)
 
     detected_severity = detect_security_severity(title, description)
