@@ -17,7 +17,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.db import IntegrityError, transaction
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -34,6 +36,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
+from website.forms import (
+    MonitorForm,
+    RecommendationBlurbForm,
+    RecommendationForm,
+    RecommendationRequestForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 from website.decorators import ratelimit
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
@@ -54,6 +64,9 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Recommendation,
+    RecommendationRequest,
+    RecommendationSkill,
     Repo,
     Tag,
     Thread,
@@ -64,6 +77,22 @@ from website.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def build_skills_by_category():
+    """Build skills grouped by category for form rendering."""
+    try:
+        skills_queryset = RecommendationSkill.objects.all().order_by("category", "name")
+        skills_by_category = {}
+        for skill in skills_queryset:
+            category = skill.category or "Other"
+            if category not in skills_by_category:
+                skills_by_category[category] = []
+            skills_by_category[category].append((skill.name, skill.name))
+        return skills_by_category
+    except Exception as e:
+        logger.warning(f"Failed to load recommendation skills: {e}")
+        return {}
 
 
 def extract_github_username(github_url):
@@ -489,6 +518,90 @@ class UserProfileDetailView(DetailView):
                 "repos_with_prs": stats["repos_with_prs"],
             }
         )
+
+        # Recommendations - only show approved and visible recommendations
+        # Show highlighted recommendations first, then by date
+        # Use single query with annotation for count to avoid duplicate queries
+        recommendations_qs = (
+            Recommendation.objects.filter(to_user=user, is_approved=True, is_visible=True)
+            .select_related("from_user", "from_user__userprofile")
+            .order_by("-is_highlighted", "-created_at")
+        )
+        context["recommendations"] = recommendations_qs[:10]
+        context["recommendations_count"] = recommendations_qs.count()
+
+        # Recommendation blurb
+        context["recommendation_blurb"] = (
+            user.userprofile.recommendation_blurb if hasattr(user, "userprofile") else None
+        )
+
+        # Check if current user has already recommended this user
+        if self.request.user.is_authenticated:
+            context["has_recommended"] = Recommendation.objects.filter(
+                from_user=self.request.user, to_user=user
+            ).exists()
+            # Get pending recommendations for the profile owner
+            if self.request.user == user:
+                context["pending_recommendations"] = (
+                    Recommendation.objects.filter(to_user=user, is_approved=False)
+                    .select_related("from_user", "from_user__userprofile")
+                    .order_by("-created_at")
+                )
+                # Get given recommendations for tabs (always set, even if 0)
+                # Include both approved and pending recommendations
+                given_recommendations_qs = (
+                    Recommendation.objects.filter(from_user=self.request.user)
+                    .select_related("to_user", "to_user__userprofile")
+                    .order_by("-created_at")
+                )
+                context["given_recommendations"] = given_recommendations_qs[:10]
+                context["given_recommendations_count"] = given_recommendations_qs.filter(
+                    is_approved=True, is_visible=True
+                ).count()
+                # Separate pending recommendations given by user
+                context["given_pending_recommendations"] = given_recommendations_qs.filter(is_approved=False)[:10]
+                context["given_pending_count"] = given_recommendations_qs.filter(is_approved=False).count()
+
+                # Get recommendation requests sent by user
+                sent_requests_qs = (
+                    RecommendationRequest.objects.filter(from_user=self.request.user)
+                    .select_related("to_user", "to_user__userprofile")
+                    .order_by("-created_at")
+                )
+                context["sent_requests"] = sent_requests_qs
+                context["sent_requests_pending"] = sent_requests_qs.filter(status="pending")
+                context["sent_requests_pending_count"] = sent_requests_qs.filter(status="pending").count()
+                context["sent_requests_accepted"] = sent_requests_qs.filter(status="accepted")
+                context["sent_requests_declined"] = sent_requests_qs.filter(status="declined")
+                context["sent_requests_completed"] = sent_requests_qs.filter(status="completed")
+
+                # Get recommendation requests received by user
+                received_requests_qs = (
+                    RecommendationRequest.objects.filter(to_user=user, status="pending")
+                    .select_related("from_user", "from_user__userprofile")
+                    .order_by("-created_at")
+                )
+                context["received_requests"] = received_requests_qs
+                context["received_requests_count"] = received_requests_qs.count()
+            else:
+                # When viewing someone else's profile, ensure given_recommendations is not set
+                context["given_recommendations"] = None
+                context["given_recommendations_count"] = None
+                # Keep the real has_recommended value (already computed above)
+                # Check if user has pending request
+                context["has_pending_request"] = RecommendationRequest.objects.filter(
+                    from_user=self.request.user, to_user=user, status="pending"
+                ).exists()
+        else:
+            context["has_recommended"] = False
+            context["given_recommendations"] = None
+            context["given_recommendations_count"] = None
+            context["sent_requests"] = None
+            context["sent_requests_pending"] = None
+            context["sent_requests_pending_count"] = 0
+            context["sent_requests_accepted"] = None
+            context["sent_requests_declined"] = None
+            context["sent_requests_completed"] = None
 
         return context
 
@@ -2117,6 +2230,536 @@ def delete_notification(request, notification_id):
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
 
+@login_required
+def add_recommendation(request, username):
+    """
+    Create a new recommendation for a user.
+    POST /recommendations/add/<username>/
+    """
+    to_user = get_object_or_404(User, username=username)
+
+    # Prevent self-recommendation
+    if request.user == to_user:
+        messages.error(request, "You cannot recommend yourself.")
+        return redirect("profile", slug=username)
+
+    if request.method == "POST":
+        form = RecommendationForm(request.POST)
+        # Pass skills_by_category to template for checkbox rendering
+        form.skills_by_category = build_skills_by_category()
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Check for existing recommendation (atomic with creation)
+                    if Recommendation.objects.filter(from_user=request.user, to_user=to_user).exists():
+                        messages.warning(request, "You have already recommended this user.")
+                        return redirect("profile", slug=username)
+
+                    # Rate limiting: Check if user has written more than 5 recommendations today (atomic)
+                    today = timezone.now().date()
+                    today_recommendations_count = Recommendation.objects.filter(
+                        from_user=request.user, created_at__date=today
+                    ).count()
+                    if today_recommendations_count >= 5:
+                        messages.error(
+                            request, "You have reached the daily limit of 5 recommendations. Please try again tomorrow."
+                        )
+                        return redirect("profile", slug=username)
+
+                    # Create recommendation (unique constraint will catch any race condition)
+                    recommendation = form.save(commit=False)
+                    recommendation.from_user = request.user
+                    recommendation.to_user = to_user
+                    # Ensure skills_endorsed is set (form.save handles this, but double-check)
+                    if not recommendation.skills_endorsed:
+                        recommendation.skills_endorsed = []
+                    # Validate before saving (now that both users are set)
+                    try:
+                        recommendation.full_clean()
+                    except ValidationError as e:
+                        logger.exception("Validation error during recommendation creation")
+                        # Extract user-friendly messages from ValidationError
+                        if hasattr(e, "message_dict"):
+                            error_messages = []
+                            for field, errors in e.message_dict.items():
+                                error_messages.extend(errors)
+                            messages.error(request, " ".join(error_messages))
+                        elif hasattr(e, "messages"):
+                            messages.error(request, " ".join(e.messages))
+                        else:
+                            messages.error(request, "There was a validation error. Please check your input.")
+                        form = RecommendationForm(request.POST)
+                        # Pass skills_by_category to template
+                        form.skills_by_category = build_skills_by_category()
+                        return render(
+                            request,
+                            "recommendation_form.html",
+                            {"form": form, "to_user": to_user},
+                        )
+                    except Exception as e:
+                        logger.exception("Unexpected error during recommendation validation")
+                        messages.error(request, "An unexpected error occurred. Please try again.")
+                        form = RecommendationForm(request.POST)
+                        # Pass skills_by_category to template
+                        form.skills_by_category = build_skills_by_category()
+                        return render(
+                            request,
+                            "recommendation_form.html",
+                            {"form": form, "to_user": to_user},
+                        )
+                    recommendation.save()
+
+                    # If this recommendation was written in response to a request, mark request as completed
+                    # Check if there's a pending/accepted request from to_user to request.user
+                    rec_request = RecommendationRequest.objects.filter(
+                        from_user=to_user, to_user=request.user, status__in=["pending", "accepted"]
+                    ).first()
+                    if rec_request:
+                        rec_request.mark_completed()
+                        recommendation.request = rec_request
+                        recommendation.save(update_fields=["request"])
+
+                    # Create notification for the recipient
+                    Notification.objects.create(
+                        user=to_user,
+                        message=f"{request.user.username} wrote you a recommendation!",
+                        notification_type="general",
+                        link=reverse("profile", kwargs={"slug": to_user.username}),
+                    )
+
+                messages.success(
+                    request,
+                    f"Your recommendation has been submitted and is pending approval from {to_user.username}.",
+                )
+                return redirect("profile", slug=username)
+            except IntegrityError:
+                # Handle IntegrityError from unique constraint violation (race condition protection)
+                messages.warning(request, "You have already recommended this user.")
+                return redirect("profile", slug=username)
+            except Exception as e:
+                # Handle other errors
+                logger.exception(f"Error creating recommendation: {e}")
+                messages.error(request, "An error occurred while creating the recommendation. Please try again.")
+                return redirect("profile", slug=username)
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        # For GET requests, check if already recommended (non-critical check)
+        existing_recommendation = Recommendation.objects.filter(from_user=request.user, to_user=to_user).exists()
+        if existing_recommendation:
+            messages.info(request, "You have already recommended this user.")
+            return redirect("profile", slug=username)
+
+        form = RecommendationForm()
+        # Pass skills_by_category to template for checkbox rendering
+        form.skills_by_category = build_skills_by_category()
+
+    return render(
+        request,
+        "recommendation_form.html",
+        {"form": form, "to_user": to_user},
+    )
+
+
+@login_required
+def approve_recommendation(request, recommendation_id):
+    """
+    Approve or reject a recommendation (only recipient can do this).
+    POST /recommendations/<id>/approve/
+    """
+    recommendation = get_object_or_404(Recommendation, id=recommendation_id)
+
+    # Only the recipient can approve
+    if request.user != recommendation.to_user:
+        messages.error(request, "You don't have permission to approve this recommendation.")
+        return redirect("profile", slug=request.user.username)
+
+    if request.method == "POST":
+        action = request.POST.get("action")  # "approve", "hide", or "delete"
+
+        if action == "approve":
+            # CRITICAL: Once approved, recommendation is solidified
+            recommendation.is_approved = True
+            recommendation.is_visible = True
+            recommendation.save(update_fields=["is_approved", "is_visible", "updated_at"])
+            messages.success(
+                request,
+                "Recommendation approved and is now visible on your profile. It has been solidified and cannot be modified.",
+            )
+        elif action == "hide":
+            # Hide/unhide the recommendation (only if approved)
+            if recommendation.is_approved:
+                # Toggle visibility
+                recommendation.is_visible = not recommendation.is_visible
+                recommendation.save(update_fields=["is_visible", "updated_at"])
+                if recommendation.is_visible:
+                    messages.success(request, "Recommendation is now visible on your profile.")
+                else:
+                    messages.success(request, "Recommendation has been hidden from your profile.")
+            else:
+                messages.error(request, "Cannot hide a pending recommendation. Please approve or delete it first.")
+                return redirect("profile", slug=request.user.username)
+        elif action == "delete":
+            # CRITICAL: Can only delete if NOT approved (pending recommendations)
+            if recommendation.is_approved:
+                messages.error(request, "Cannot delete an approved recommendation. It has been solidified.")
+                return redirect("profile", slug=request.user.username)
+            recommendation.delete()
+            messages.success(request, "Recommendation deleted.")
+        else:
+            messages.error(request, "Invalid action.")
+
+    return redirect("profile", slug=request.user.username)
+
+
+@login_required
+def delete_recommendation(request, recommendation_id):
+    """
+    Delete a recommendation (only recommender can delete if pending, recipient can delete if pending).
+    After approval, recommendation is solidified and cannot be deleted.
+    POST /recommendations/<id>/delete/
+    """
+    recommendation = get_object_or_404(Recommendation, id=recommendation_id)
+
+    if request.method == "POST":
+        # CRITICAL: Once approved, recommendation is solidified - cannot be deleted
+        if recommendation.is_approved:
+            messages.error(request, "Cannot delete an approved recommendation. It has been solidified.")
+            return redirect("profile", slug=recommendation.to_user.username)
+
+        # Only the recommender can delete pending recommendations (cancel before approval)
+        if request.user != recommendation.from_user:
+            messages.error(request, "You don't have permission to delete this recommendation.")
+            return redirect("profile", slug=request.user.username)
+
+        # Delete the recommendation
+        recommendation.delete()
+        messages.success(request, "Recommendation cancelled successfully.")
+        return redirect("profile", slug=recommendation.to_user.username)
+
+    return redirect("profile", slug=request.user.username)
+
+
+@login_required
+def list_recommendations(request, username):
+    """
+    Get all recommendations for a user (API endpoint).
+    GET /api/recommendations/<username>/
+    """
+    user = get_object_or_404(User, username=username)
+
+    # Only show approved and visible recommendations to public
+    # Profile owner can see pending ones
+    if request.user == user:
+        recommendations = (
+            Recommendation.objects.filter(to_user=user)
+            .select_related("from_user", "from_user__userprofile")
+            .prefetch_related("from_user__userprofile__user__socialaccount_set")
+        )
+    else:
+        recommendations = (
+            Recommendation.objects.filter(to_user=user, is_approved=True, is_visible=True)
+            .select_related("from_user", "from_user__userprofile")
+            .prefetch_related("from_user__userprofile__user__socialaccount_set")
+        )
+
+    recommendations_data = []
+    for rec in recommendations.order_by("-created_at"):
+        profile = getattr(rec.from_user, "userprofile", None)
+        avatar = profile.avatar() if profile is not None else None
+        recommendations_data.append(
+            {
+                "id": rec.id,
+                "from_user": {
+                    "id": rec.from_user.id,
+                    "username": rec.from_user.username,
+                    "avatar": avatar,
+                },
+                "relationship": rec.get_relationship_display(),
+                "recommendation_text": rec.recommendation_text,
+                "skills_endorsed": rec.skills_endorsed,
+                "is_approved": rec.is_approved,
+                "is_visible": rec.is_visible,
+                "created_at": rec.created_at.isoformat(),
+            }
+        )
+
+    return JsonResponse({"recommendations": recommendations_data}, safe=False)
+
+
+@login_required
+def request_recommendation(request, username):
+    """
+    Request a recommendation from another user.
+    POST /recommendations/request/<username>/
+    """
+    to_user = get_object_or_404(User, username=username)
+
+    # Prevent self-request
+    if request.user == to_user:
+        messages.error(request, "You cannot request a recommendation from yourself.")
+        return redirect("profile", slug=username)
+
+    if request.method == "POST":
+        form = RecommendationRequestForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Rate limiting: Check if user has sent more than 10 requests today
+                    today = timezone.now().date()
+                    today_requests_count = RecommendationRequest.objects.filter(
+                        from_user=request.user, created_at__date=today
+                    ).count()
+                    if today_requests_count >= 10:
+                        messages.error(
+                            request,
+                            "You have reached the daily limit of 10 recommendation requests. Please try again tomorrow.",
+                        )
+                        return redirect("profile", slug=username)
+
+                    # Check for existing request (any status) due to unique_together constraint
+                    existing_request = RecommendationRequest.objects.filter(
+                        from_user=request.user, to_user=to_user
+                    ).first()
+
+                    if existing_request:
+                        # Block if pending, accepted, or completed
+                        if existing_request.status == "pending":
+                            messages.warning(request, "You already have a pending request with this user.")
+                            return redirect("profile", slug=username)
+                        elif existing_request.status == "accepted":
+                            messages.info(
+                                request, "Your request has been accepted. The user is working on your recommendation."
+                            )
+                            return redirect("profile", slug=username)
+                        elif existing_request.status == "completed":
+                            messages.info(request, "You have already received a recommendation from this user.")
+                            return redirect("profile", slug=username)
+                        # Allow creating new request if declined or cancelled - delete old request first
+                        elif existing_request.status in ["declined", "cancelled"]:
+                            existing_request.delete()
+
+                    # Create request
+                    rec_request = form.save(commit=False)
+                    rec_request.from_user = request.user
+                    rec_request.to_user = to_user
+                    rec_request.save()
+
+                    # Create notification for the recipient
+                    Notification.objects.create(
+                        user=to_user,
+                        message=f"{request.user.username} requested a recommendation from you!",
+                        notification_type="general",
+                        link=reverse("profile", kwargs={"slug": request.user.username}),
+                    )
+
+                messages.success(
+                    request,
+                    f"Recommendation request sent to {to_user.username}. They will be notified.",
+                )
+                return redirect("profile", slug=username)
+            except IntegrityError:
+                messages.warning(
+                    request, "A request with this user already exists. Please check your pending or completed requests."
+                )
+                return redirect("profile", slug=username)
+            except Exception:
+                logger.exception("Error creating recommendation request")
+                messages.error(request, "An error occurred while sending the request. Please try again.")
+                return redirect("profile", slug=username)
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = RecommendationRequestForm()
+
+    return render(
+        request,
+        "request_recommendation.html",
+        {"form": form, "to_user": to_user},
+    )
+
+
+@login_required
+def respond_to_request(request, request_id):
+    """
+    Accept, decline, or cancel a recommendation request.
+    POST /recommendations/request/<request_id>/respond/
+    """
+    rec_request = get_object_or_404(RecommendationRequest, id=request_id)
+
+    if request.method == "POST":
+        action = request.POST.get("action")  # "accept", "decline", or "cancel"
+
+        # Validate action
+        if action not in ["accept", "decline", "cancel"]:
+            messages.error(request, "Invalid action.")
+            return redirect("profile", slug=request.user.username)
+
+        # CANCEL: Only sender can cancel, and only if pending and not completed
+        if action == "cancel":
+            if request.user != rec_request.from_user:
+                messages.error(request, "You don't have permission to cancel this request.")
+                return redirect("profile", slug=request.user.username)
+
+            # Can only cancel if pending and not completed
+            if rec_request.status != "pending":
+                messages.error(request, "You can only cancel pending requests.")
+                return redirect("profile", slug=request.user.username)
+
+            # Check if recommendation was already written (completed)
+            if Recommendation.objects.filter(request=rec_request, is_approved=True).exists():
+                messages.error(request, "Cannot cancel request after recommendation has been approved.")
+                return redirect("profile", slug=request.user.username)
+
+            # Cancel the request
+            rec_request.status = "cancelled"
+            rec_request.responded_at = timezone.now()
+            rec_request.save(update_fields=["status", "responded_at"])
+            messages.success(request, "Request cancelled successfully.")
+            return redirect("profile", slug=request.user.username)
+
+        # ACCEPT/DECLINE: Only recipient can respond
+        if request.user != rec_request.to_user:
+            messages.error(request, "You don't have permission to respond to this request.")
+            return redirect("profile", slug=request.user.username)
+
+        # Can only accept/decline if pending
+        if rec_request.status != "pending":
+            messages.error(request, "This request has already been responded to.")
+            return redirect("profile", slug=request.user.username)
+
+        if action == "accept":
+            rec_request.accept()
+            # Redirect to recommendation form
+            messages.success(
+                request, f"Request accepted! Please write a recommendation for {rec_request.from_user.username}."
+            )
+            return redirect("add_recommendation", username=rec_request.from_user.username)
+        elif action == "decline":
+            rec_request.decline()
+            messages.info(request, "Request declined.")
+        else:
+            messages.error(request, "Invalid action.")
+
+    return redirect("profile", slug=request.user.username)
+
+
+@login_required
+def edit_recommendation(request, recommendation_id):
+    """
+    Edit a pending recommendation (only recommender can edit, only if pending).
+    GET/POST /recommendations/<id>/edit/
+    """
+    recommendation = get_object_or_404(Recommendation, id=recommendation_id)
+
+    # Only the recommender can edit, and only if pending
+    if request.user != recommendation.from_user:
+        messages.error(request, "You don't have permission to edit this recommendation.")
+        return redirect("profile", slug=request.user.username)
+
+    if recommendation.is_approved:
+        messages.error(request, "You can only edit pending recommendations.")
+        return redirect("profile", slug=request.user.username)
+
+    if request.method == "POST":
+        form = RecommendationForm(request.POST, instance=recommendation)
+        # Pass skills_by_category to template
+        form.skills_by_category = build_skills_by_category()
+        if form.is_valid():
+            try:
+                recommendation = form.save()
+                messages.success(request, "Recommendation updated successfully.")
+                return redirect("profile", slug=recommendation.to_user.username)
+            except Exception as e:
+                logger.exception(f"Error updating recommendation: {e}")
+                messages.error(request, "An error occurred while updating the recommendation. Please try again.")
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = RecommendationForm(instance=recommendation)
+        # Pre-populate skills (they're stored as list of names in JSONField)
+        if recommendation.skills_endorsed:
+            form.fields["skills_endorsed"].initial = recommendation.skills_endorsed
+
+        # Pass skills_by_category to template for checkbox rendering
+        form.skills_by_category = build_skills_by_category()
+
+    return render(
+        request,
+        "edit_recommendation.html",
+        {"form": form, "recommendation": recommendation, "to_user": recommendation.to_user},
+    )
+
+
+@login_required
+def highlight_recommendation(request, recommendation_id):
+    """
+    Toggle highlight status of a recommendation (only recipient can highlight, max 3).
+    POST /recommendations/<id>/highlight/
+    """
+    recommendation = get_object_or_404(Recommendation, id=recommendation_id)
+
+    # Only the recipient can highlight
+    if request.user != recommendation.to_user:
+        messages.error(request, "You don't have permission to highlight this recommendation.")
+        return redirect("profile", slug=request.user.username)
+
+    # Only approved recommendations can be highlighted
+    if not recommendation.is_approved:
+        messages.error(request, "You can only highlight approved recommendations.")
+        return redirect("profile", slug=request.user.username)
+
+    if request.method == "POST":
+        with transaction.atomic():
+            # Lock the specific recommendation row
+            recommendation = Recommendation.objects.select_for_update().get(id=recommendation_id)
+
+            if recommendation.is_highlighted:
+                # Unhighlight
+                recommendation.is_highlighted = False
+                recommendation.save(update_fields=["is_highlighted", "updated_at"])
+                messages.info(request, "Recommendation unhighlighted.")
+            else:
+                # Lock and count highlighted recommendations to prevent race conditions
+                highlighted_recommendations = Recommendation.objects.select_for_update().filter(
+                    to_user=request.user, is_highlighted=True, is_approved=True, is_visible=True
+                )
+                highlighted_count = highlighted_recommendations.count()
+
+                if highlighted_count >= 3:
+                    messages.error(request, "You can only highlight up to 3 recommendations.")
+                else:
+                    recommendation.is_highlighted = True
+                    recommendation.save(update_fields=["is_highlighted", "updated_at"])
+                    messages.success(request, "Recommendation highlighted!")
+
+    return redirect("profile", slug=request.user.username)
+
+
+@login_required
+def edit_recommendation_blurb(request):
+    """
+    Edit the recommendation blurb on user's own profile.
+    POST /recommendations/blurb/edit/
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = RecommendationBlurbForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Recommendation blurb updated successfully.")
+            return redirect("profile", slug=request.user.username)
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = RecommendationBlurbForm(instance=profile)
+
+    return render(
+        request,
+        "edit_recommendation_blurb.html",
+        {"form": form},
+    )
 @ratelimit(key="user", rate="10/m", method="POST")
 @login_required
 @require_POST

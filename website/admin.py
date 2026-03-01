@@ -67,6 +67,9 @@ from website.models import (
     Project,
     Queue,
     Rating,
+    Recommendation,
+    RecommendationRequest,
+    RecommendationSkill,
     ReminderSettings,
     Repo,
     Room,
@@ -1234,3 +1237,48 @@ class UserTaskSubmissionAdmin(admin.ModelAdmin):
         ("Submission Information", {"fields": ("progress", "task", "proof_url", "notes", "submitted_at")}),
         ("Review Information", {"fields": ("status", "approved", "reviewed_by", "reviewed_at", "reviewer_notes")}),
     )
+
+
+@admin.register(RecommendationSkill)
+class RecommendationSkillAdmin(admin.ModelAdmin):
+    list_display = ("name", "category", "created_at")
+    list_filter = ("category", "created_at")
+    search_fields = ("name",)
+    ordering = ("category", "name")
+
+
+@admin.register(RecommendationRequest)
+class RecommendationRequestAdmin(admin.ModelAdmin):
+    list_display = ("from_user", "to_user", "status", "created_at", "responded_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("from_user__username", "to_user__username", "message")
+    raw_id_fields = ("from_user", "to_user")
+    readonly_fields = ("created_at", "responded_at", "completed_at")
+
+
+@admin.register(Recommendation)
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = (
+        "from_user",
+        "to_user",
+        "relationship",
+        "is_approved",
+        "is_visible",
+        "created_at",
+        "truncated_text",
+    )
+    list_filter = ("is_approved", "is_visible", "relationship", "created_at")
+    search_fields = ("from_user__username", "to_user__username", "recommendation_text")
+    readonly_fields = ("created_at", "updated_at")
+    date_hierarchy = "created_at"
+    fieldsets = (
+        ("Users", {"fields": ("from_user", "to_user")}),
+        ("Recommendation Details", {"fields": ("relationship", "recommendation_text", "skills_endorsed")}),
+        ("Status", {"fields": ("is_approved", "is_visible")}),
+        ("Timestamps", {"fields": ("created_at", "updated_at")}),
+    )
+
+    def truncated_text(self, obj):
+        return truncatechars(obj.recommendation_text, 50)
+
+    truncated_text.short_description = "Recommendation Text"
