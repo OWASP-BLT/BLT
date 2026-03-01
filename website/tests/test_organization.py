@@ -262,3 +262,69 @@ class SizzleCheckInViewTests(TestCase):
         self.assertContains(response, "Last check-in was on")
         self.assertContains(response, "Fill from Last Check-in")
         self.assertContains(response, "fillFromLastCheckinBtn")
+
+
+class OrganizationDetailViewAccessTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+        # Users
+        self.regular_user = User.objects.create_user(username="regular", password="pass123")
+
+        self.superuser = User.objects.create_superuser(username="super", email="super@test.com", password="pass123")
+
+        # Inactive organization
+        self.inactive_org = Organization.objects.create(
+            name="Inactive Org",
+            slug="inactive-org",
+            description="Inactive",
+            url="https://inactive.example.com",
+            is_active=False,
+        )
+
+        self.active_org = Organization.objects.create(
+            name="Active Org",
+            slug="active-org",
+            description="Active",
+            url="https://active.example.com",
+            is_active=True,
+        )
+
+    def test_anonymous_user_cannot_access_inactive_org(self):
+        url = reverse("organization_detail", kwargs={"slug": self.inactive_org.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_regular_user_cannot_access_inactive_org(self):
+        self.client.login(username="regular", password="pass123")
+        url = reverse("organization_detail", kwargs={"slug": self.inactive_org.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_superuser_can_access_inactive_org(self):
+        self.client.login(username="super", password="pass123")
+        url = reverse("organization_detail", kwargs={"slug": self.inactive_org.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_can_access_their_inactive_org(self):
+        self.inactive_org.admin = self.regular_user
+        self.inactive_org.save()
+
+        self.client.login(username="regular", password="pass123")
+        url = reverse("organization_detail", kwargs={"slug": self.inactive_org.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_manager_can_access_their_inactive_org(self):
+        self.inactive_org.managers.add(self.regular_user)
+
+        self.client.login(username="regular", password="pass123")
+        url = reverse("organization_detail", kwargs={"slug": self.inactive_org.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_active_org_accessible_to_all(self):
+        url = reverse("organization_detail", kwargs={"slug": self.active_org.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
