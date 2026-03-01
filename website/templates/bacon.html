@@ -231,12 +231,14 @@
                                                 <div class="flex items-center gap-3">
                                                     {% if submission.user.userprofile.avatar %}
                                                         <img src="{{ submission.user.userprofile.avatar }}"
+                                                             loading="lazy"
                                                              alt="{{ submission.user.username }}"
                                                              class="w-10 h-10 rounded-full"
                                                              width="40"
                                                              height="40">
                                                     {% else %}
                                                         <img src="{% gravatar_url submission.user.email 40 %}"
+                                                             loading="lazy"
                                                              alt="{{ submission.user.username }}"
                                                              class="w-10 h-10 rounded-full"
                                                              width="40"

@@ -14,17 +14,17 @@ from website.models import ReminderSettings
 
 @login_required
 def reminder_settings(request):
-    settings, created = ReminderSettings.objects.get_or_create(
+    user_settings, created = ReminderSettings.objects.get_or_create(
         user=request.user,
         defaults={
-            "reminder_time": timezone.now().time(),  # Set default time to current time
-            "timezone": "UTC",  # Set default timezone
-            "is_active": False,  # Set default active state
+            "reminder_time": timezone.now().time(),
+            "timezone": "UTC",
+            "is_active": False,
         },
     )
 
     if request.method == "POST":
-        form = ReminderSettingsForm(request.POST, instance=settings)
+        form = ReminderSettingsForm(request.POST, instance=user_settings)
         if form.is_valid():
             # Get the timezone from the form
             user_timezone = form.cleaned_data["timezone"]
@@ -46,23 +46,23 @@ def reminder_settings(request):
             form.save()
 
             # Update the UTC time
-            settings.reminder_time_utc = utc_dt.time()
-            settings.save()
+            user_settings.reminder_time_utc = utc_dt.time()
+            user_settings.save()
 
             messages.success(request, "Your reminder settings have been updated successfully.")
             return redirect("reminder_settings")
     else:
-        form = ReminderSettingsForm(instance=settings)
+        form = ReminderSettingsForm(instance=user_settings)
 
         # If we have a UTC time stored, convert it to the user's timezone for display
-        if settings.reminder_time_utc:
-            user_tz = pytz.timezone(settings.timezone)
+        if user_settings.reminder_time_utc:
+            user_tz = pytz.timezone(user_settings.timezone)
             today = timezone.now().date()
-            utc_dt = pytz.UTC.localize(datetime.combine(today, settings.reminder_time_utc))
+            utc_dt = pytz.UTC.localize(datetime.combine(today, user_settings.reminder_time_utc))
             local_dt = utc_dt.astimezone(user_tz)
             form.initial["reminder_time"] = local_dt.time()
 
-    return render(request, "website/reminder_settings.html", {"form": form, "settings": settings})
+    return render(request, "website/reminder_settings.html", {"form": form, "settings": user_settings})
 
 
 @login_required

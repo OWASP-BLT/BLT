@@ -2,7 +2,7 @@
 <h3 align="center">Bug Logging Tool - Gamified Crowd-Sourced QA Testing & Vulnerability Disclosure</h3>
 
 <p align="center">
-  <strong>A gamified platform for discovering and reporting bugs across websites, apps, git repositories, and more</strong>
+  <strong>A gamified platform for discovering and reporting bugs across websites, applications, Git repositories, and more.</strong>
 </p>
 
 <p align="center">
@@ -105,12 +105,31 @@ docker-compose up
 
 Access the application at **http://localhost:8000**
 
+
+##### Docker Desktop (Windows)
+
+This project uses Linux containers.
+
+On modern Docker Desktop (WSL 2–based), Linux containers are enabled by default.
+You may not see a “Switch to Linux containers” option in the Docker tray menu — this is expected.
+
+If Docker Desktop is running and the following command shows `OSType: linux`,
+then your setup is correct and no additional action is required:
+
+```bash
+docker info | findstr OSType
+```
+
 #### Using Poetry
 ```bash
-# Install dependencies
+# Install Poetry
 pip install poetry
-poetry shell
+
+# 1. Install dependencies first (Creates the virtual environment)
 poetry install
+
+# 2. Activate the virtual environment
+poetry shell
 
 
 #### Beginner-Friendly Non-Docker Setup (Codespaces for Windows Beginners)
