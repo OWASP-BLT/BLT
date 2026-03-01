@@ -342,14 +342,14 @@
                                                          width="20"
                                                          class="size-11 rounded-full"
                                                          alt="{{ leader.username }}"
-                                                         onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                         onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% else %}
                                                     <img src="{% gravatar_url leader.email 50 %}"
                                                          height="20"
                                                          width="20"
                                                          class="size-11 rounded-full"
                                                          alt="{{ leader.username }}"
-                                                         onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                         onerror="this.onerror=null; this.src='{% static 'images/dummy-user.webp' %}';">
                                                 {% endif %}
                                             </a>
                                             <a class="hover:text-red-600"

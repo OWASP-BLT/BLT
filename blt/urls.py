@@ -11,7 +11,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
@@ -29,6 +29,7 @@ from website.api.views import (
     DebugClearCacheApiView,
     DebugPopulateDataApiView,
     DebugSystemStatsApiView,
+    DeleteIssueApiView,
     DomainViewSet,
     FindSimilarBugsApiView,
     FlagIssueApiView,
@@ -40,7 +41,6 @@ from website.api.views import (
     OrganizationJobStatsViewSet,
     OrganizationViewSet,
     ProjectViewSet,
-    PublicJobListViewSet,
     SearchHistoryApiView,
     SecurityIncidentViewSet,
     StatsApiViewset,
@@ -53,7 +53,6 @@ from website.api.views import (
 )
 from website.feeds import ActivityFeed
 from website.views.adventure import AdventureDetailView, AdventureListView, start_adventure, submit_task
-from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -64,7 +63,6 @@ from website.views.bitcoin import (
     pending_transactions_view,
     update_submission_status,
 )
-from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bounty import bounty_payout
 from website.views.company import (
     AddDomainView,
@@ -95,8 +93,6 @@ from website.views.company import (
     delete_prize,
     edit_job,
     edit_prize,
-    job_detail,
-    public_job_list,
     toggle_job_status,
 )
 from website.views.core import (
@@ -112,11 +108,8 @@ from website.views.core import (
     StatsDetailView,
     StyleGuideView,
     UploadCreate,
-    add_forum_comment,
-    add_forum_post,
     badge_list,
     check_owasp_compliance,
-    delete_forum_post,
     donate_view,
     features_view,
     find_key,
@@ -127,7 +120,6 @@ from website.views.core import (
     run_management_command,
     search,
     set_theme,
-    set_vote_status,
     sitemap,
     sponsor_view,
     stats_dashboard,
@@ -136,9 +128,7 @@ from website.views.core import (
     sync_github_projects,
     template_list,
     test_sentry,
-    view_forum,
     view_pr_analysis,
-    vote_forum_post,
     website_stats,
 )
 from website.views.daily_reminders import reminder_settings, send_test_reminder
@@ -181,6 +171,7 @@ from website.views.hackathon import (
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
+    GitHubIssueBadgeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
     GsocView,
@@ -193,6 +184,7 @@ from website.views.issue import (
     change_bid_status,
     comment_on_content,
     create_github_issue,
+    cve_autocomplete,
     delete_content_comment,
     delete_issue,
     dislike_issue,
@@ -212,7 +204,6 @@ from website.views.issue import (
     select_bid,
     submit_bug,
     submit_pr,
-    unsave_issue,
     update_content_comment,
     vote_count,
 )
@@ -367,6 +358,7 @@ from website.views.user import (
     referral_signup,
     set_public_key,
     start_thread,
+    toggle_follow,
     update_bch_address,
     user_dashboard,
     users_view,
@@ -411,8 +403,6 @@ urlpatterns = [
     path("simulation/lab/<int:lab_id>/", lab_detail, name="lab_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/", task_detail, name="task_detail"),
     path("simulation/lab/<int:lab_id>/task/<int:task_id>/submit/", submit_answer, name="submit_answer"),
-    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
-    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
@@ -582,13 +572,6 @@ urlpatterns = [
         name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$",
-        dislike_issue,
-        name="dislike_issue",
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(
         r"^create_github_issue/(?P<id>\w+)/$",
@@ -597,13 +580,7 @@ urlpatterns = [
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
-    re_path(
-        r"^unsave_issue/(?P<issue_pk>\d+)/$",
-        unsave_issue,
-        name="unsave_issue",
-    ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
     # comment on content
@@ -667,7 +644,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
-    path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
+    path("delete_issue/<int:id>/", delete_issue, name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,
@@ -803,7 +780,6 @@ urlpatterns = [
     re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
     re_path(r"^api/v1/userscore/$", get_score, name="get_score"),
     # Job Board API URLs
-    path("api/v1/jobs/public/", PublicJobListViewSet.as_view(), name="api_public_jobs"),
     path(
         "api/v1/organization/<int:org_id>/jobs/stats/",
         OrganizationJobStatsViewSet.as_view(),
@@ -828,12 +804,17 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v1/search/$",
-        csrf_exempt(search_issues),
+        search_issues,
         name="search_issues",
     ),
     re_path(
-        r"^api/v1/delete_issue/(?P<id>\w+)/$",
-        csrf_exempt(delete_issue),
+        r"^api/v1/cve/autocomplete/$",
+        csrf_exempt(cve_autocomplete),
+        name="cve_autocomplete",
+    ),
+    re_path(
+        r"^api/v1/delete_issue/(?P<id>\d+)/$",
+        DeleteIssueApiView.as_view(),
         name="delete_api_issue",
     ),
     re_path(
@@ -849,17 +830,17 @@ urlpatterns = [
     re_path(r"^api/v1/scoreboard/$", get_scoreboard, name="api_scoreboard"),
     re_path(
         r"^api/v1/terms/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
+        TemplateView.as_view(template_name="mobile_terms.html"),
         name="api_terms",
     ),
     re_path(
         r"^api/v1/about/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
+        TemplateView.as_view(template_name="mobile_about.html"),
         name="api_about",
     ),
     re_path(
         r"^api/v1/privacypolicy/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
+        TemplateView.as_view(template_name="mobile_privacy.html"),
         name="api_privacypolicy",
     ),
     re_path(
@@ -1018,8 +999,8 @@ urlpatterns = [
         toggle_job_status,
         name="toggle_job_status",
     ),
-    path("jobs/", public_job_list, name="public_job_list"),
-    path("jobs/<int:pk>/", job_detail, name="job_detail"),
+    path("jobs/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="public_job_list"),
+    path("jobs/<int:pk>/", RedirectView.as_view(url="https://jobs.owaspblt.org", permanent=False), name="job_detail"),
     path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
@@ -1039,12 +1020,6 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("weekly-report/", weekly_report, name="weekly_report"),
-    path("forum/add/", add_forum_post, name="add_forum_post"),
-    path("forum/", view_forum, name="view_forum"),
-    path("forum/vote/", vote_forum_post, name="vote_forum_post"),
-    path("forum/set-vote-status/", set_vote_status, name="set_vote_status"),
-    path("forum/comment/", add_forum_comment, name="add_forum_comment"),
-    path("forum/delete/", delete_forum_post, name="delete_forum_post"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
@@ -1061,7 +1036,7 @@ urlpatterns = [
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
-        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
+        ProjectViewSet.as_view({"get": "list"}),
         name="projects_api",
     ),
     path(
@@ -1092,12 +1067,6 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
-    # blog urls
-    path("blog/", PostListView.as_view(), name="post_list"),
-    path("blog/new/", PostCreateView.as_view(), name="post_form"),
-    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
-    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
-    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
     path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),
@@ -1164,6 +1133,16 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
+    path(
+        "api/v1/badge/issue/<str:owner>/<str:repo_name>/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge",
+    ),
+    path(
+        "api/v1/badge/issue/<int:issue_id>/",
+        GitHubIssueBadgeView.as_view(),
+        name="github_issue_badge_simple",
+    ),
     path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
     path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
     path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
@@ -1242,6 +1221,11 @@ urlpatterns = [
     path("security/incidents/add/", SecurityIncidentCreateView.as_view(), name="security_incident_add"),
     path("security/incidents/<int:pk>/", SecurityIncidentDetailView.as_view(), name="security_incident_detail"),
     path("security/incidents/<int:pk>/edit/", SecurityIncidentUpdateView.as_view(), name="security_incident_edit"),
+    path("like_issue/<int:issue_pk>/", like_issue, name="like_issue"),
+    path("dislike_issue/<int:issue_pk>/", dislike_issue, name="dislike_issue"),
+    path("flag_issue/<int:issue_pk>/", flag_issue, name="flag_issue"),
+    path("save_issue/<int:issue_pk>/", save_issue, name="save_issue"),
+    path("users/<str:username>/toggle-follow/", toggle_follow, name="toggle_follow"),
 ]
 
 if settings.DEBUG:

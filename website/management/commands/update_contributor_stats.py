@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
 from website.models import Contributor, ContributorStats, Repo
@@ -40,7 +41,7 @@ class Command(LoggedBaseCommand):
         owner, repo_name = self.parse_github_url(repo.repo_url)
 
         # Calculate current month date range
-        today = datetime.now().date()
+        today = timezone.now().date()
         current_month_start = today.replace(day=1)  # First day of current month
 
         # Fetch and store daily stats for current month (using update_or_create for incremental updates)
@@ -224,7 +225,7 @@ class Command(LoggedBaseCommand):
             current_month_start = repo_created_at.replace(day=1)
 
         # Process each month until last month (not including current month)
-        today = datetime.now().date()
+        today = timezone.now().date()
         last_month_end = today.replace(day=1) - timedelta(days=1)
         last_month_start = last_month_end.replace(day=1)
 
