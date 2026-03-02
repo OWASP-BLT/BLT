@@ -576,31 +576,34 @@ class LeaderboardTests(TestCase):
         Points.objects.create(user=user_without_issues, score=150)  # No issue linked
 
         # Patch external API calls to avoid slow/flaky tests
-        with patch("website.views.core.get_job_board_data", return_value=([], [])):
-            with patch("website.views.core.fetch_github_discussions", return_value=[]):
-                # Get the homepage which displays top bug reporters
-                response = self.client.get("/")
-                self.assertEqual(response.status_code, 200)
+        with patch("website.views.core.get_job_board_data", return_value=([], [])), patch(
+            "website.views.core.fetch_github_discussions", return_value=[]
+        ), patch("website.views.core.fetch_devto_articles", return_value=[]), patch(
+            "website.views.core.get_last_commit_date", return_value=None
+        ):
+            # Get the homepage which displays top bug reporters
+            response = self.client.get("/")
+            self.assertEqual(response.status_code, 200)
 
-                # Check that the user with issue-linked points appears in top bug reporters
-                # The response context should have top_bug_reporters
-                top_bug_reporters = response.context.get("top_bug_reporters", [])
+            # Check that the user with issue-linked points appears in top bug reporters
+            # The response context should have top_bug_reporters
+            top_bug_reporters = response.context.get("top_bug_reporters", [])
 
-                # Convert queryset to list of usernames for easier testing
-                reporter_usernames = [user.username for user in top_bug_reporters]
+            # Convert queryset to list of usernames for easier testing
+            reporter_usernames = [user.username for user in top_bug_reporters]
 
-                # User with issue-linked points SHOULD appear
-                self.assertIn("issue_reporter", reporter_usernames)
+            # User with issue-linked points SHOULD appear
+            self.assertIn("issue_reporter", reporter_usernames)
 
-                # User with only non-issue points should NOT appear
-                self.assertNotIn("non_issue_user", reporter_usernames)
+            # User with only non-issue points should NOT appear
+            self.assertNotIn("non_issue_user", reporter_usernames)
 
-                # Verify the scores are calculated correctly (only issue-linked points count)
-                if top_bug_reporters:
-                    issue_reporter = next((u for u in top_bug_reporters if u.username == "issue_reporter"), None)
-                    if issue_reporter:
-                        # Should have total_score of 150 (100 + 50 from issue-linked points only)
-                        self.assertEqual(issue_reporter.total_score, 150)
+            # Verify the scores are calculated correctly (only issue-linked points count)
+            if top_bug_reporters:
+                issue_reporter = next((u for u in top_bug_reporters if u.username == "issue_reporter"), None)
+                if issue_reporter:
+                    # Should have total_score of 150 (100 + 50 from issue-linked points only)
+                    self.assertEqual(issue_reporter.total_score, 150)
 
 
 class ProjectPageTest(TestCase):
