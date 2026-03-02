@@ -16,6 +16,7 @@ try:
     import cv2
 except ImportError:
     cv2 = None
+    logging.warning("OpenCV (cv2) not installed; face-processing features will be disabled.")
 
 import markdown
 import numpy as np
