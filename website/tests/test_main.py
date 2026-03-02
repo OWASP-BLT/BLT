@@ -576,7 +576,7 @@ class LeaderboardTests(TestCase):
         Points.objects.create(user=user_without_issues, score=150)  # No issue linked
 
         # Patch external API calls to avoid slow/flaky tests
-        with patch("website.views.core.get_job_board_data", return_value=[]):
+        with patch("website.views.core.get_job_board_data", return_value=([], [])):
             with patch("website.views.core.fetch_github_discussions", return_value=[]):
                 # Get the homepage which displays top bug reporters
                 response = self.client.get("/")
