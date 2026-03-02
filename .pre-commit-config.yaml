@@ -39,10 +39,10 @@ repos:
       - id: check-style-tags
         name: check for <style> tags in HTML
         entry: python
-        args: [pre-commit-hooks/check_style_tags.py]
+        args: [scripts/check_style_tags.py]
         language: python
         types: [html]
-        pass_filenames: false  # <-- ADD THIS LINE
+        pass_filenames: false
         verbose: true
 
   - repo: local
@@ -60,6 +60,7 @@ repos:
         entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
         language: system
         types: [python]
+        stages: [pre-push]
         pass_filenames: false
         always_run: true
         verbose: true
