@@ -117,12 +117,8 @@ jobs:
             let labelColor;
             if (count === 0) {
               labelColor = '0e8a16'; // Green - no unresolved conversations
-            } else if (count >= 1 && count <= 3) {
-              labelColor = 'fbca04'; // Yellow
-            } else if (count >= 4 && count <= 10) {
-              labelColor = 'ff9800'; // Orange
             } else {
-              labelColor = 'e74c3c'; // Red (project's preferred red color)
+              labelColor = 'e74c3c'; // Red - has unresolved conversations
             }
             
             // Set grammatically correct description
