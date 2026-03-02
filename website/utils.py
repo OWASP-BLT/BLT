@@ -1175,12 +1175,6 @@ def analyze_contribution(instance, action_type):
             logging.error(f"AI Audit for {model_name} failed: {e}")
 
     return get_default_bacon_score(model_name, is_security_flag, detected_severity)
-    except requests.RequestException as e:
-        logging.error(f"Failed to fetch GitHub discussions: {e}")
-        return []
-    except Exception as e:
-        logging.exception("Unexpected error fetching GitHub discussions")
-        return []
 
 
 # Image Processing Utilities for Privacy Protection
