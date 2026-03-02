@@ -12,11 +12,13 @@ from urllib.parse import quote_plus, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.cache import cache
 from django.core.mail import BadHeaderError, send_mail
@@ -276,9 +278,7 @@ def weekly_report(request):
 
             for issue in issues:
                 report_data.append(
-                    f"Description: {issue.description}\n"
-                    f"Views: {issue.views}\n"
-                    f"Label: {issue.get_label_display()}\n\n"
+                    f"Description: {issue.description}\nViews: {issue.views}\nLabel: {issue.get_label_display()}\n\n"
                 )
 
             send_mail(
@@ -421,6 +421,7 @@ class DomainListView(ListView):
 
 
 @login_required(login_url="/accounts/login")
+@require_POST
 def subscribe_to_domains(request, pk):
     domain = Domain.objects.filter(pk=pk).first()
     if domain is None:
@@ -593,7 +594,7 @@ class Listbounties(TemplateView):
             )
             has_more_pages = total_count > per_page
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             github_issues = []
             total_count = 0
             has_more_pages = False
@@ -632,6 +633,25 @@ class Listbounties(TemplateView):
                     "total_earned": earner["issues_completed"] * BOUNTY_AMOUNT,
                 }
             )
+
+        # TEMP: mock leaderboard data for local UI testing
+        if settings.DEBUG and not leaderboard:
+            leaderboard = [
+                {
+                    "name": "Alice",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/1",
+                    "github_url": "https://github.com/alice",
+                    "issues_completed": 12,
+                    "total_earned": 60,
+                },
+                {
+                    "name": "Bob",
+                    "avatar_url": "https://avatars.githubusercontent.com/u/2",
+                    "github_url": "https://github.com/bob",
+                    "issues_completed": 8,
+                    "total_earned": 40,
+                },
+            ]
 
         context = {
             "hunts": hunts,
@@ -779,7 +799,7 @@ class Listbounties(TemplateView):
                 return [], 0
 
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             # Don't cache errors - could be a transient failure
             return [], 0
 
@@ -826,7 +846,7 @@ def load_more_issues(request):
             }
         )
     except Exception as e:
-        logger.error(f"Error loading more issues: {str(e)}")
+        logger.error("Error loading more issues: Something went wrong.")
         return JsonResponse(
             {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
         )
@@ -1023,7 +1043,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            logger.error(f"Error parsing domain slug '{slug}': Something went wrong.")
             raise Http404("Invalid domain format")
 
     def get_queryset(self):
@@ -1096,6 +1116,7 @@ class DomainDetailView(ListView):
             except EmptyPage:
                 closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
+            six_months_ago = timezone.now() - relativedelta(months=6)
             context.update(
                 {
                     "opened_net": open_issues,
@@ -1105,13 +1126,13 @@ class DomainDetailView(ListView):
                     "leaderboard": (
                         User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
                     ),
-                    "current_month": datetime.now().month,
+                    "current_month": timezone.now().month,
                     "domain_graph": (
                         Issue.objects.filter(
                             domain=domain,
                             hunt=None,
-                            created__month__gte=(datetime.now().month - 6),
-                            created__month__lte=datetime.now().month,
+                            created__gte=six_months_ago,
+                            created__lte=timezone.now(),
                         ).order_by("created")
                     ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
@@ -1150,7 +1171,7 @@ class DomainDetailView(ListView):
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error in DomainDetailView: {str(e)}")
+            logger.error("Error in DomainDetailView: Something went wrong.")
             raise Http404("Domain not found")
 
 
@@ -1252,7 +1273,7 @@ class InboundParseWebhookView(View):
                     profile.save()
 
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
-                logger.error(f"Error processing SendGrid webhook event: {str(e)}")
+                logger.error("Error processing SendGrid webhook event: Something went wrong.")
 
         # Send events to Slack webhook
         self._send_to_slack(events)
@@ -1306,9 +1327,9 @@ class InboundParseWebhookView(View):
             logger.info(f"Successfully sent {len(events)} SendGrid event(s) to Slack")
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to send SendGrid events to Slack: {str(e)}")
+            logger.error("Failed to send SendGrid events to Slack: Something went wrong.")
         except Exception as e:
-            logger.error(f"Unexpected error sending to Slack: {str(e)}")
+            logger.error("Unexpected error sending to Slack: Something went wrong.")
 
 
 class CreateHunt(TemplateView):
@@ -1395,7 +1416,8 @@ class CreateHunt(TemplateView):
             else:
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing organization: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required
@@ -1763,7 +1785,7 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
         return redirect("/")
 
     except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist) as e:
-        logger.error(f"Error in organization_dashboard_domain_detail: {str(e)}")
+        logger.error("Error in organization_dashboard_domain_detail: Something went wrong.")
         return redirect("/")
 
 
@@ -1807,7 +1829,8 @@ def add_or_update_domain(request):
                     else:
                         return HttpResponse("Unauthorized: Only admin can create domains")
         except (OrganizationAdmin.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error("Error managing domain: %s", e)
+            return HttpResponse("An error occurred while processing your request.")
 
 
 @login_required(login_url="/accounts/login")
@@ -1859,7 +1882,7 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error updating organization: {str(e)}")
+            logger.error("Error updating organization: Something went wrong.")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -1897,7 +1920,7 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            logger.error(f"Error adding role: {str(e)}")
+            logger.error("Error adding role: Something went wrong.")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
                 "doesn't exist or there was a key error. Please try again later."
@@ -2403,13 +2426,19 @@ def join_room(request, room_id):
     return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
-@login_required(login_url="/accounts/login")
 @require_POST
 def delete_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
 
-    # Check if the user is the admin or the anonymous creator
+    # Admin can always delete
     is_admin = request.user.is_authenticated and room.admin == request.user
+
+    # Explicitly handle anonymous users without session
+    if request.user.is_anonymous and not request.session.session_key:
+        messages.error(request, "Your session has expired. You can no longer delete this room.")
+        return redirect("rooms_list")
+
+    # Anonymous creator check (only if session exists)
     is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
 
     if not (is_admin or is_anon_creator):
@@ -2443,6 +2472,20 @@ class OrganizationDetailView(DetailView):
                 ),
             )
         )
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+
+        # 🔒 Restrict access to inactive organizations
+        if not obj.is_active:
+            user = self.request.user
+
+            allowed = user.is_authenticated and (user.is_superuser or obj.is_admin(user) or obj.is_manager(user))
+
+            if not allowed:
+                raise Http404("Organization not found")
+
+        return obj
 
     def get_leaderboard_data(self, organization):
         """
@@ -2548,6 +2591,17 @@ class OrganizationDetailView(DetailView):
             }
         )
 
+        org_ct = ContentType.objects.get_for_model(Organization)
+        context["repo_refresh_activities"] = (
+            Activity.objects.filter(
+                content_type=org_ct,
+                object_id=organization.id,
+                title="GitHub repositories refreshed",
+            )
+            .select_related("user")
+            .order_by("-timestamp")[:25]
+        )
+
         return context
 
 
@@ -2555,7 +2609,7 @@ class OrganizationListView(ListView):
     model = Organization
     template_name = "organization/organization_list.html"
     context_object_name = "organizations"
-    paginate_by = 100
+    paginate_by = 30
 
     def get_queryset(self):
         queryset = (
@@ -2563,8 +2617,9 @@ class OrganizationListView(ListView):
                 "domain_set",
                 "projects",
                 "projects__repos",
-                "repos",
+                "repos",  # Prefetch repos; Django evaluates lazily for paginated slice only
                 "tags",
+                "managers",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
                 ),
@@ -2580,15 +2635,50 @@ class OrganizationListView(ListView):
                 open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
                 closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
+                repo_count=Count("repos", distinct=True),
+                manager_count=Count("managers", distinct=True),
             )
             .select_related("admin")
-            .order_by("-created")
         )
 
         # Filter by tag if provided in the URL
         tag_slug = self.request.GET.get("tag")
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
+
+        sort_param = (self.request.GET.get("sort") or "-created").strip()
+        valid_sort_fields = {
+            "name": "name",
+            "-name": "-name",
+            "created": "created",
+            "-created": "-created",
+            "updated": "modified",
+            "-updated": "-modified",
+            "domains": "domain_count",
+            "-domains": "-domain_count",
+            "projects": "project_count",
+            "-projects": "-project_count",
+            "repos": "repo_count",
+            "-repos": "-repo_count",
+            "issues": "total_issues",
+            "-issues": "-total_issues",
+            "open_issues": "open_issues",
+            "-open_issues": "-open_issues",
+            "closed_issues": "closed_issues",
+            "-closed_issues": "-closed_issues",
+            "points": "team_points",
+            "-points": "-team_points",
+            "trademarks": "trademark_count",
+            "-trademarks": "-trademark_count",
+            "managers": "manager_count",
+            "-managers": "-manager_count",
+            "active": "is_active",
+            "-active": "-is_active",
+            "type": "type",
+            "-type": "-type",
+        }
+
+        queryset = queryset.order_by(valid_sort_fields.get(sort_param, "-created"))
 
         return queryset
 
@@ -2620,7 +2710,11 @@ class OrganizationListView(ListView):
         # Get most popular organizations by counting their view paths for today only
         today = timezone.now().date()
         orgs_with_views = []
-        for org in self.get_queryset():
+
+        # Only iterate over the current page to minimize queries
+        current_page_orgs = context["organizations"]
+
+        for org in current_page_orgs:
             view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
             orgs_with_views.append((org, view_count))
 
@@ -2643,7 +2737,10 @@ class OrganizationListView(ListView):
         if tag_slug:
             context["selected_tag"] = Tag.objects.filter(slug=tag_slug).first()
 
-        # Add top testers for each domain
+        context["sort"] = self.request.GET.get("sort", "-created")
+
+        # Add top testers for each domain and compute top_repos in Python
+        # (avoiding Window functions for SQLite compatibility)
         for org in context["organizations"]:
             for domain in org.domain_set.all():
                 domain.top_testers = (
@@ -2652,6 +2749,287 @@ class OrganizationListView(ListView):
                     .order_by("-issue_count")[:1]
                 )
 
+            # Compute top 3 repos per org in Python
+            all_repos = list(org.repos.all())
+            # Sort by stars (desc), then by id (desc)
+            sorted_repos = sorted(all_repos, key=lambda r: (-r.stars, -r.id))
+            org.top_repos = sorted_repos[:3]
+
+            # Validate GitHub URL for safe display
+            org.is_valid_github_url = False
+            if org.source_code:
+                try:
+                    parsed = urlparse(org.source_code)
+                    if parsed.scheme in ("http", "https") and parsed.hostname:
+                        hostname = parsed.hostname.lower()
+                        org.is_valid_github_url = hostname == "github.com" or hostname.endswith(".github.com")
+                except Exception:
+                    org.is_valid_github_url = False
+
+        return context
+
+
+@require_POST
+def refresh_organization_repos_api(request, org_id):
+    """Refresh an organization's GitHub repositories.
+
+    Visible to everyone in UI, but requires authentication to execute.
+    Returns JSON suitable for fetch().
+    """
+
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Authentication required.",
+            },
+            status=401,
+        )
+
+    organization = get_object_or_404(Organization, id=org_id)
+
+    # Authorization: only staff/superuser or org admin/manager can refresh repos
+    user = request.user
+    if not (
+        user.is_staff
+        or user.is_superuser
+        or organization.admin == user
+        or organization.managers.filter(id=user.id).exists()
+    ):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "You don't have permission to refresh this organization's repositories.",
+            },
+            status=403,
+        )
+
+    # Simple throttling: avoid repeated refreshes within 24 hours.
+    one_day_ago = timezone.timedelta(days=1)
+    if organization.repos_updated_at and (timezone.now() - organization.repos_updated_at) < one_day_ago:
+        time_since_update = timezone.now() - organization.repos_updated_at
+        hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
+        return JsonResponse(
+            {
+                "success": False,
+                "error": f"Repositories were updated recently. Please wait {int(hours_remaining)} hours before refreshing again.",
+            },
+            status=429,
+        )
+
+    # Determine GitHub org name.
+    github_org_name = organization.github_org
+    if not github_org_name and organization.source_code:
+        match = re.match(r"https?://github\.com/([^/]+)/?.*", organization.source_code)
+        if match:
+            github_org_name = match.group(1)
+
+    if not github_org_name:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "No GitHub organization configured for this organization.",
+            },
+            status=400,
+        )
+
+    if not getattr(settings, "GITHUB_TOKEN", None):
+        logger.error("GitHub API token not configured")
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "GitHub API token not configured. Please contact an administrator.",
+            },
+            status=500,
+        )
+
+    headers = {
+        "Authorization": f"token {settings.GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    page = 1
+    per_page = 100
+    timeout = 15
+    repos_fetched = 0
+    repos_created = 0
+    repos_updated = 0
+
+    try:
+        while True:
+            repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
+            response = requests.get(
+                repos_api_url,
+                params={"page": page, "per_page": per_page, "type": "public"},
+                headers=headers,
+                timeout=timeout,
+            )
+
+            if response.status_code == 404:
+                return JsonResponse(
+                    {"success": False, "error": f"GitHub organization '{github_org_name}' not found."},
+                    status=404,
+                )
+            if response.status_code == 401:
+                return JsonResponse(
+                    {"success": False, "error": "GitHub authentication failed. Please contact an administrator."},
+                    status=502,
+                )
+            if response.status_code == 403:
+                message = "GitHub API access forbidden."
+                if "rate limit" in (response.text or "").lower():
+                    message = "GitHub API rate limit exceeded. Please try again later."
+                return JsonResponse({"success": False, "error": message}, status=429)
+            if response.status_code != 200:
+                return JsonResponse(
+                    {"success": False, "error": "Unable to fetch repositories from GitHub. Please try again later."},
+                    status=502,
+                )
+
+            repos_data = response.json()
+            if not repos_data:
+                break
+
+            for repo_data in repos_data:
+                repos_fetched += 1
+                repo, created = Repo.objects.update_or_create(
+                    repo_url=repo_data["html_url"],
+                    defaults={
+                        "name": repo_data.get("name", "Unknown"),
+                        "description": repo_data.get("description") or "",
+                        "primary_language": repo_data.get("language") or "",
+                        "organization": organization,
+                        "stars": repo_data.get("stargazers_count", 0),
+                        "forks": repo_data.get("forks_count", 0),
+                        "open_issues": repo_data.get("open_issues_count", 0),
+                        "watchers": repo_data.get("watchers_count", 0),
+                        "is_archived": repo_data.get("archived", False),
+                        "size": repo_data.get("size", 0),
+                    },
+                )
+                if created:
+                    repos_created += 1
+                else:
+                    repos_updated += 1
+
+                if repo_data.get("topics"):
+                    for topic in repo_data["topics"]:
+                        tag_slug = slugify(topic)
+                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
+                        repo.tags.add(tag)
+
+            page += 1
+            time.sleep(0.2)
+
+    except requests.exceptions.RequestException:
+        logger.exception("Network error while refreshing GitHub repos")
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Network error while fetching repositories from GitHub. Please try again later.",
+            },
+            status=502,
+        )
+    except Exception:
+        logger.exception("Unexpected error while refreshing GitHub repos")
+        return JsonResponse(
+            {"success": False, "error": "An unexpected error occurred. Please try again later."},
+            status=500,
+        )
+
+    organization.repos_updated_at = timezone.now()
+    organization.save(update_fields=["repos_updated_at"])
+
+    # Record activity
+    org_ct = ContentType.objects.get_for_model(Organization)
+    Activity.objects.create(
+        user=request.user,
+        action_type="update",
+        title="GitHub repositories refreshed",
+        description=f"Refreshed GitHub repositories for {organization.name}.",
+        url=reverse("organization_detail", kwargs={"slug": organization.slug}),
+        content_type=org_ct,
+        object_id=organization.id,
+    )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "repos_fetched": repos_fetched,
+            "repos_created": repos_created,
+            "repos_updated": repos_updated,
+        }
+    )
+
+
+class OrganizationListModeView(ListView):
+    model = Organization
+    template_name = "organization/organization_list_mode.html"
+    context_object_name = "organizations"
+    paginate_by = 50
+
+    def get_queryset(self):
+        queryset = (
+            Organization.objects.select_related("admin")
+            .prefetch_related("tags", "managers")
+            .annotate(
+                domain_count=Count("domain", distinct=True),
+                repo_count=Count("repos", distinct=True),
+                project_count=Count("projects", distinct=True),
+                total_issues=Count("domain__issue", distinct=True),
+                open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
+                closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
+                manager_count=Count("managers", distinct=True),
+                tag_count=Count("tags", distinct=True),
+            )
+        )
+
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+
+        sort_param = (self.request.GET.get("sort") or "-created").strip()
+        valid_sort_fields = {
+            "name": "name",
+            "-name": "-name",
+            "created": "created",
+            "-created": "-created",
+            "updated": "modified",
+            "-updated": "-modified",
+            "domains": "domain_count",
+            "-domains": "-domain_count",
+            "projects": "project_count",
+            "-projects": "-project_count",
+            "repos": "repo_count",
+            "-repos": "-repo_count",
+            "issues": "total_issues",
+            "-issues": "-total_issues",
+            "open_issues": "open_issues",
+            "-open_issues": "-open_issues",
+            "closed_issues": "closed_issues",
+            "-closed_issues": "-closed_issues",
+            "points": "team_points",
+            "-points": "-team_points",
+            "trademarks": "trademark_count",
+            "-trademarks": "-trademark_count",
+            "managers": "manager_count",
+            "-managers": "-manager_count",
+            "tags": "tag_count",
+            "-tags": "-tag_count",
+            "active": "is_active",
+            "-active": "-is_active",
+            "type": "type",
+            "-type": "-type",
+        }
+
+        return queryset.order_by(valid_sort_fields.get(sort_param, "-created"))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sort"] = self.request.GET.get("sort", "-created")
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            context["selected_tag"] = Tag.objects.filter(slug=tag_slug).first()
         return context
 
 
@@ -2662,7 +3040,7 @@ def update_organization_repos(request, slug):
         organization = get_object_or_404(Organization, slug=slug)
 
         # Check if repositories were updated in the last 24 hours
-        one_day_ago = timezone.timedelta(days=1)
+        one_day_ago = timedelta(days=1)
         if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
             time_since_update = timezone.now() - organization.repos_updated_at
             hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
@@ -2763,7 +3141,7 @@ def update_organization_repos(request, slug):
                         yield "data: DONE\n\n"
                         return
                 except requests.exceptions.RequestException as e:
-                    logger.error(f"Error testing GitHub API in event_stream: {str(e)}", exc_info=True)
+                    logger.error("Error testing GitHub API in event_stream: Something went wrong.", exc_info=True)
                     yield "data: Error testing GitHub API. Please try again later.\n\n"
                     yield "data: DONE\n\n"
                     return
@@ -2819,7 +3197,7 @@ def update_organization_repos(request, slug):
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            logger.error(f"Error updating logo in event_stream: {str(e)}", exc_info=True)
+                            logger.error("Error updating logo in event_stream: Something went wrong.", exc_info=True)
                             yield "data: Error updating logo. Please try again later.\n\n"
                 except requests.exceptions.RequestException:
                     yield "data: Error: Failed to connect to GitHub\n\n"
@@ -2915,11 +3293,11 @@ def update_organization_repos(request, slug):
                                         repo.tags.add(tag)
 
                             except Exception as e:
-                                logger.error(f"Error processing repo {repo_name}: {str(e)}", exc_info=True)
+                                logger.error(f"Error processing repo {repo_name}: Something went wrong.", exc_info=True)
                                 yield f"data: Error processing {repo_name}. Please try again later.\n\n"
 
                     except requests.exceptions.RequestException as e:
-                        logger.error(f"Network error in event_stream: {str(e)}", exc_info=True)
+                        logger.error("Network error in event_stream: Something went wrong.", exc_info=True)
                         yield "data: Network error occurred. Please try again later.\n\n"
                         break
 
@@ -2934,13 +3312,13 @@ def update_organization_repos(request, slug):
                 yield "data: DONE\n\n"
 
             except Exception as e:
-                logger.error(f"Unexpected error in event_stream: {str(e)}", exc_info=True)
+                logger.error("Unexpected error in event_stream: Something went wrong.", exc_info=True)
                 yield "data: An unexpected error occurred. Please try again later.\n\n"
                 yield "data: DONE\n\n"
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        logger.error(f"Error in update_organization_repos: {str(e)}", exc_info=True)
+        logger.error("Error in update_organization_repos: Something went wrong.", exc_info=True)
         messages.error(request, "An unexpected error occurred. Please try again later.")
         return redirect("organization_detail", slug=slug)
 
@@ -2981,7 +3359,8 @@ def send_message_api(request):
         return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        logger.error("Error sending message: %s", e)
+        return JsonResponse({"success": False, "error": "An internal error occurred."}, status=500)
 
 
 def room_messages_api(request, room_id):
@@ -3107,7 +3486,7 @@ class BountyPayoutsView(ListView):
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
                 return [], 0
         except Exception as e:
-            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            logger.error("Error fetching GitHub issues: Something went wrong.")
             return [], 0
 
     def post(self, request, *args, **kwargs):
@@ -3249,9 +3628,11 @@ class BountyPayoutsView(ListView):
                                         )
                                 except Exception as e:
                                     error_msg = "Error fetching GitHub user data"
-                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                                    logger.error(f"{error_msg} for {assignee_username}: Something went wrong.")
                         except Exception as e:
-                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            logger.error(
+                                f"Error creating contributor for assignee {assignee_username}: Something went wrong."
+                            )
                             assignee_contributor = None
 
                     # Try to find a matching user profile for the GitHub username
@@ -3374,7 +3755,7 @@ class BountyPayoutsView(ListView):
                 messages.success(request, msg)
             except Exception as e:
                 error_message = "Error fetching issues from GitHub"
-                messages.error(request, f"{error_message}: {str(e)}")
+                messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "pay_bounty":
             # Record bounty payment (superusers only)
@@ -3449,7 +3830,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error recording payment"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "delete_issue":
             # Delete an issue (superusers only)
@@ -3472,7 +3853,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error deleting issue"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "refresh_assignee":
             # Refresh assignee for an issue (staff only)
@@ -3594,7 +3975,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error refreshing issue data"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         elif action == "refresh_pull_requests":
             # Refresh pull requests for an issue (staff only)
@@ -3680,7 +4061,7 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error refreshing linked pull requests"
-                        messages.error(request, f"{error_message}: {str(e)}")
+                        messages.error(request, f"{error_message}: Something went wrong.")
 
         return redirect("bounty_payouts")
 
@@ -3768,7 +4149,7 @@ class BountyPayoutsView(ListView):
                                 },
                             )
                         except Exception as e:
-                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            logger.error(f"Error creating repository for {pr_repo_url}: Something went wrong.")
                             continue
 
                         # Check if we already have this PR in our database
@@ -3798,7 +4179,7 @@ class BountyPayoutsView(ListView):
                                         f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
                                     )
                             except Exception as e:
-                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
+                                logger.error(f"Error updating PR state for {pr_url}: Something went wrong.")
 
                             logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
                         else:
@@ -3847,7 +4228,9 @@ class BountyPayoutsView(ListView):
                                                 name=github_username, defaults={"name": github_username}
                                             )
                                         except Exception as e:
-                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
+                                            logger.error(
+                                                f"Error creating contributor for {github_username}: Something went wrong."
+                                            )
                                             contributor = None
 
                                 # Check if PR is merged
@@ -3878,18 +4261,18 @@ class BountyPayoutsView(ListView):
                                     issue.linked_pull_requests.add(new_pr)
                                     logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
                                 except Exception as e:
-                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
+                                    logger.error(f"Error saving PR {pr_url}: Something went wrong.")
                                     continue
 
                             except requests.exceptions.RequestException as e:
-                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
+                                logger.error(f"Error fetching PR details for {pr_url}: Something went wrong.")
                                 continue
 
             # As a fallback, also check for PRs that mention this issue in their body with closing keywords
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            logger.error(f"Error fetching timeline for issue #{issue_number}: Something went wrong.")
             # Fall back to regex-based search for PRs mentioning this issue
             self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
@@ -3926,7 +4309,7 @@ class BountyPayoutsView(ListView):
                     logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
 
         except Exception as e:
-            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+            logger.error(f"Error finding PRs mentioning issue #{issue_number}: Something went wrong.")
 
     def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
         """
@@ -4144,5 +4527,7 @@ class BountyPayoutsView(ListView):
             return False
 
         except Exception as e:
-            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            logger.error(
+                f"Error extracting payment info from comments for issue #{issue_number}: Something went wrong."
+            )
             return False

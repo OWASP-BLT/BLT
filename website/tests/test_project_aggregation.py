@@ -5,7 +5,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from website.models import Project, Repo
+from website.models import Organization, Project, Repo
 
 User = get_user_model()
 
@@ -14,15 +14,7 @@ class ProjectAggregationTestCase(TestCase):
     """Tests for stars/forks aggregation in Project API endpoints"""
 
     def setUp(self):
-        # ✅ Patch freshness (already correct)
-        self.freshness_patcher = mock.patch(
-            "website.serializers.ProjectSerializer.get_freshness",
-            return_value=None,
-        )
-        self.freshness_patcher.start()
-        self.addCleanup(self.freshness_patcher.stop)
-
-        # ✅ Patch prefetch_related to avoid invalid 'contributors'
+        #  Patch prefetch_related to avoid invalid 'contributors'
         self.prefetch_patcher = mock.patch(
             "website.api.views.Project.objects.prefetch_related",
             return_value=Project.objects.all(),
@@ -164,3 +156,60 @@ class ProjectAggregationTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Should return all projects (all have >= 0 stars/forks)
         self.assertEqual(len(response.data["results"]), 3)
+
+    def test_freshness_calculation_integration(self):
+        """Integration test for freshness calculation with real data flow"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # Create project with repos
+        org = Organization.objects.create(name="Integration Org", url="https://int.org")
+        project = Project.objects.create(
+            name="Integration Project", organization=org, url="https://github.com/int/project"
+        )
+
+        now = timezone.now()
+
+        # Add repos with different activity levels
+        Repo.objects.create(
+            project=project,
+            name="very-active",
+            repo_url="https://github.com/int/active",
+            is_archived=False,
+            last_commit_date=now - timedelta(days=2),
+        )
+        Repo.objects.create(
+            project=project,
+            name="somewhat-active",
+            repo_url="https://github.com/int/somewhat",
+            is_archived=False,
+            last_commit_date=now - timedelta(days=20),
+        )
+        Repo.objects.create(
+            project=project,
+            name="old-active",
+            repo_url="https://github.com/int/old",
+            is_archived=False,
+            last_commit_date=now - timedelta(days=60),
+        )
+        Repo.objects.create(
+            project=project,
+            name="archived",
+            repo_url="https://github.com/int/archived",
+            is_archived=True,
+            last_commit_date=now - timedelta(days=1),  # Should be ignored
+        )
+
+        # Calculate freshness
+        freshness = project.calculate_freshness()
+
+        # Expected: 1*1.0 + 1*0.6 + 1*0.3 = 1.9, normalized: (1.9/20)*100 = 9.5
+        self.assertEqual(freshness, 9.5)
+
+        # Save and verify persistence
+        project.freshness = freshness
+        project.save()
+
+        project.refresh_from_db()
+        self.assertEqual(float(project.freshness), 9.5)

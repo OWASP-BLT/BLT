@@ -121,8 +121,12 @@ class RepoListView(ListView):
             try:
                 org = Organization.objects.get(id=organization_id)
                 context["current_organization_name"] = org.name
+                context["current_organization_slug"] = org.slug
+                context["current_organization_obj"] = org
             except Organization.DoesNotExist:
                 context["current_organization_name"] = None
+                context["current_organization_slug"] = None
+                context["current_organization_obj"] = None
 
         # Get language counts based on current filters
         queryset = Repo.objects.all()
@@ -253,7 +257,7 @@ class RepoDetailView(DetailView):
                             }
                         )
                     except Exception as e:
-                        logger.error(f"Failed to generate AI summary: {str(e)}", exc_info=True)
+                        logger.error("Failed to generate AI summary: Something went wrong.", exc_info=True)
                         return JsonResponse(
                             {
                                 "status": "error",
@@ -270,7 +274,7 @@ class RepoDetailView(DetailView):
                         status=400,
                     )
             except Exception as e:
-                logger.error(f"Unexpected error in generate_ai_summary: {str(e)}", exc_info=True)
+                logger.error("Unexpected error in generate_ai_summary: Something went wrong.", exc_info=True)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -292,7 +296,7 @@ class RepoDetailView(DetailView):
                     }
                 )
             except Exception as e:
-                logger.error(f"Error refreshing {section}: {str(e)}", exc_info=True)
+                logger.error(f"Error refreshing {section}: Something went wrong.", exc_info=True)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -574,7 +578,7 @@ def add_repo(request):
         )
 
     except Exception as e:
-        logger.error(f"Error adding repository: {str(e)}", exc_info=True)
+        logger.error("Error adding repository: Something went wrong.", exc_info=True)
         return JsonResponse(
             {"status": "error", "message": "An error occurred while adding the repository. Please try again later."},
             status=500,
@@ -611,6 +615,21 @@ def refresh_repo_data(request, repo_id):
             prs_count = repo.github_issues.filter(type="pull_request").count()
             dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
 
+            def serialize_github_issue(issue):
+                return {
+                    "issue_id": issue.issue_id,
+                    "title": issue.title,
+                    "state": issue.state,
+                    "type": issue.type,
+                    "url": issue.url,
+                    "is_merged": issue.is_merged,
+                    "has_dollar_tag": issue.has_dollar_tag,
+                }
+
+            recent_issues = list(repo.github_issues.filter(type="issue").order_by("-updated_at")[:10])
+            recent_prs = list(repo.github_issues.filter(type="pull_request").order_by("-updated_at")[:10])
+            recent_bounties = list(repo.github_issues.filter(has_dollar_tag=True).order_by("-updated_at")[:10])
+
             # Log the results
             logger.info(
                 f"Repository refresh complete. Issues: {issues_count}, "
@@ -626,6 +645,9 @@ def refresh_repo_data(request, repo_id):
                         "prs_count": prs_count,
                         "dollar_tag_count": dollar_tag_count,
                         "last_updated": repo.last_updated.isoformat() if repo.last_updated else None,
+                        "issues": [serialize_github_issue(i) for i in recent_issues],
+                        "prs": [serialize_github_issue(pr) for pr in recent_prs],
+                        "bounties": [serialize_github_issue(i) for i in recent_bounties],
                     },
                 }
             )
@@ -635,7 +657,7 @@ def refresh_repo_data(request, repo_id):
             return JsonResponse(
                 {
                     "status": "error",
-                    "message": "Error running update command. Please try again later.",
+                    "message": "Unable to refresh repository data right now. Please try again later.",
                 },
                 status=500,
             )
@@ -644,12 +666,12 @@ def refresh_repo_data(request, repo_id):
         logger.warning(f"Repository with ID {repo_id} not found")
         return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
     except Exception as e:
-        logger.error(f"Error refreshing repository data: {str(e)}", exc_info=True)
+        logger.error("Error refreshing repository data: Something went wrong.", exc_info=True)
 
         return JsonResponse(
             {
                 "status": "error",
-                "message": "An error occurred while refreshing repository data. Please try again later.",
+                "message": "Unable to refresh repository data right now. Please try again later.",
             },
             status=500,
         )

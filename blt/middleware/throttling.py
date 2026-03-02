@@ -28,6 +28,10 @@ class ThrottlingMiddleware:
         logger.info("ThrottlingMiddleware initialized with limits: %s", self.THROTTLE_LIMITS)
 
     def __call__(self, request):
+        # Bypass all throttling without logging when DEBUG is True
+        if settings.DEBUG:
+            return self.get_response(request)
+
         ip = self.get_client_ip(request)
         method = request.method
         path = request.path

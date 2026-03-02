@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from comments.models import Comment
+from website.comments.models import Comment
 from website.models import Issue, UserProfile
 
 

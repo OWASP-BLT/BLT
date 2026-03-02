@@ -279,7 +279,7 @@
                             <div class="overflow-x-auto">
                                 <table class="min-w-full">
                                     <thead>
-                                        <tr class="bg-gray-50 dark:bg-gray-900">
+                                        <tr class="bg-gray-100 dark:bg-gray-900">
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Type</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">Time</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
@@ -290,7 +290,12 @@
                                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                         {% for activity in status.slack_bot.recent_activities %}
                                             <tr class="hover:bg-gray-50">
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.activity_type|title }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                    {{ activity.activity_type|title }}
+                                                    {% if activity.activity_type == "team_join" and activity.details.slack_integration_id %}
+                                                        (ID: {{ activity.details.slack_integration_id }})
+                                                    {% endif %}
+                                                </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.created|date:"M d, H:i" }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                     <span class="inline-flex items-center">
