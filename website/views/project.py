@@ -1495,7 +1495,7 @@ class RepoDetailView(DetailView):
             api_per_page = 100
             while True:
                 paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
-                response = requests.get(paginated_url, headers=headers)
+                response = requests.get(paginated_url, headers=headers, timeout=10)
                 if response.status_code == 200:
                     page_stargazers = response.json()
                     if not page_stargazers:
@@ -1540,15 +1540,13 @@ class RepoDetailView(DetailView):
             context["total_pages"] = 0
             context["current_page"] = 1
             context["filter_type"] = "all"
-        # DISABLED: Auto-fetching stargazers on page load was causing excessive GitHub API calls
-        # Stargazers will now be fetched only when user interacts with the stargazers section
-        context["stargazers"] = []
-        context["stargazers_error"] = None
-        context["total_stargazers"] = 0
-        context["total_pages"] = 0
-        context["current_page"] = 1
-        context["filter_type"] = "all"
-
+        if "stargazers" not in context:
+            context["stargazers"] = []
+            context["stargazers_error"] = None
+            context["total_stargazers"] = 0
+            context["total_pages"] = 0
+            context["current_page"] = 1
+            context["filter_type"] = "all"
         return context
 
     def post(self, request, *args, **kwargs):

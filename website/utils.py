@@ -321,6 +321,9 @@ def generate_embedding(text, retries=2):
     :param function_text: The full text of the function.
     :return: The embedding vector for the function text.
     """
+    if client is None:
+        logging.warning("OpenAI client unavailable; skipping embedding generation.")
+        return None
     for attempt in range(retries):
         try:
             response = client.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
