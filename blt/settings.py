@@ -90,7 +90,7 @@ INSTALLED_APPS = (
     "django_gravatar",
     "email_obfuscator",
     "import_export",
-    "comments",
+    "website.comments",
     "annoying",
     "rest_framework",
     "django_filters",
