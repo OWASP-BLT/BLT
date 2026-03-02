@@ -42,7 +42,7 @@ jobs:
           script: |
             let pr = context.payload.pull_request;
             let pull_number;
-
+            
             // Handle different event types
             // pull_request_target, pull_request_review, and pull_request_review_comment all include pull_request
             if (pr) {
@@ -60,12 +60,6 @@ jobs:
             } else {
               core.info('Not a pull request event. Skipping.');
               return;
-            }
-
-            // DANGEROUS PERMISSION BYPASS FOR FORKS: IF THIS IS A FORK PR, GRACEFULLY EXIT TO PREVENT FAILURE
-            if (pr && pr.head && pr.head.repo && pr.base && pr.base.repo && pr.head.repo.full_name !== pr.base.repo.full_name) {
-                core.info('This is a PR from a fork. Due to GitHub Action token permission limitations on forks, we cannot query GraphQL reviewThreads safely. Exiting gracefully to prevent CI failure.');
-                return;
             }
 
             const owner = context.repo.owner;
@@ -115,10 +109,10 @@ jobs:
             // Count unresolved conversations (excluding outdated ones)
             const unresolvedThreads = allThreads.filter(thread => !thread.isResolved && !thread.isOutdated);
             const count = unresolvedThreads.length;
-
+            
             // Determine the label based on the number of unresolved conversations
             const newLabel = `unresolved-conversations: ${count}`;
-
+            
             // Set color based on the number of unresolved conversations
             let labelColor;
             if (count === 0) {
@@ -130,7 +124,7 @@ jobs:
             } else {
               labelColor = 'e74c3c'; // Red (project's preferred red color)
             }
-
+            
             // Set grammatically correct description
             const description = count === 1 ? 'PR has 1 unresolved conversation' : `PR has ${count} unresolved conversations`;
 
