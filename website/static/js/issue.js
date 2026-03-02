@@ -137,16 +137,16 @@ $(function () {
         });
     });
 
-    $('body').on('input, keyup', 'textarea', function () {
+    $('body').on('input keyup', 'textarea', function () {
         var search = $(this).val();
-        var data = {search: search};
         $.ajax({
             type: 'GET',
             url: '/comment/autocomplete/',
-            data: data,
-            dataType: 'jsonp',
-            jsonp: 'callback',
-            jsonpCallback: 'renderer',
+            data: {search: search},
+            dataType: 'json',
+            success: function (data) {
+                renderer(data);
+            }
         });
     });
 
