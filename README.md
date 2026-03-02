@@ -96,8 +96,8 @@ git clone https://github.com/OWASP-BLT/BLT.git
 cd BLT
 
 # Configure environment
-windows: copy .env.example .env
-Mac/Linux: cp .env.example .env
+windows(powershell/command prompt): copy .env.example .env
+Mac/Linux/Git Bash: cp .env.example .env
 
 # Build and start
 docker-compose build
