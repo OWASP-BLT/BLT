@@ -23,7 +23,7 @@ OWASP BLT is a Django-based web application for bug bounty management and securi
 
 ### Required Before Each Commit
 
-- **ALWAYS** run `pre-commit run --all-files` before committing any changes
+- **ALWAYS** run `pre-commit run --all-files` before committing any changes - don't run this when iterating locally, only before committing
 - This will run automatic formatters and linters including:
   - Black (code formatting)
   - isort (import sorting)
@@ -261,7 +261,7 @@ python manage.py runserver
 - Test your changes thoroughly
 
 ❌ **DON'T**:
-- Use pip for package installation
+- Use pip for package installation.
 - Add `<style>` tags or inline styles
 - Embed JavaScript in HTML templates
 - Include exception details in user-facing messages

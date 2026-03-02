@@ -5,10 +5,9 @@ from django.conf import settings
 from django.core.files import File
 from django.db import migrations
 
-from website.models import Badge
-
 
 def add_badge_icons(apps, schema_editor):
+    Badge = apps.get_model("website", "Badge")
     new_badges = [
         {
             "title": "Weekly Streak",

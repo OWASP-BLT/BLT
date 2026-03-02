@@ -20,8 +20,9 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.db import connection, transaction
-from django.db.models import Count, Q, Sum, Value
+from django.db.models import Count, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import filters, status, viewsets
@@ -33,6 +34,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, I
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from website.cache.cve_cache import normalize_cve_id
 from website.duplicate_checker import check_for_duplicates, find_similar_bugs, format_similar_bug
 from website.models import (
     ActivityLog,
@@ -50,6 +52,7 @@ from website.models import (
     Repo,
     SearchHistory,
     SecurityIncident,
+    SecurityIncidentHistory,
     Tag,
     TimeLog,
     Token,
@@ -90,7 +93,9 @@ class UserIssueViewSet(viewsets.ModelViewSet):
     search_fields = ("user__username", "user__id")
     http_method_names = ["get", "head"]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
+        """Retrieves a filtered list of issues based on user authentication,status, domain,
+        and CVE score ranges."""
         anonymous_user = self.request.user.is_anonymous
         user_id = self.request.user.id
         if anonymous_user:
@@ -113,6 +118,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head", "put"]
 
     def retrieve(self, request, pk, *args, **kwargs):
+        """
+        Retrieve a specific user profile using the user's ID.
+        """
         user_profile = UserProfile.objects.filter(user__id=pk).first()
 
         if user_profile is None:
@@ -122,6 +130,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, pk, *args, **kwargs):
+        """
+        Update the authenticated user's profile information.
+        """
         user_profile = request.user.userprofile
 
         if user_profile is None:
@@ -181,7 +192,6 @@ class IssueViewSet(viewsets.ModelViewSet):
         if cve_id:
             # Normalize CVE ID to match stored format (uppercase, trimmed)
             # Use case-insensitive matching to handle both normalized and unnormalized data
-            from website.cache.cve_cache import normalize_cve_id
 
             normalized_cve_id = normalize_cve_id(cve_id)
             if normalized_cve_id:
@@ -296,7 +306,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                     tags = [item for sublist in tags for item in sublist]
 
                 del request.data["tags"]
-        except (ValueError, MultiValueDictKeyError) as e:
+        except ValueError as e:
             return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
         finally:
             request.data._mutable = False
@@ -473,6 +483,35 @@ class FlagIssueApiView(APIView):
             userprof.issue_flaged.add(issue)
             userprof.save()
             return Response({"issue": "flagged"})
+
+
+class DeleteIssueApiView(APIView):
+    """
+    API endpoint for deleting issues via token authentication.
+    Requires token authentication and proper permissions.
+    """
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id):
+        issue = get_object_or_404(Issue, id=id)
+
+        # Check permissions: only superuser or issue owner can delete
+        if not (request.user.is_superuser or request.user == issue.user):
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            # Delete screenshots and issue
+            IssueScreenshot.objects.filter(issue=issue).delete()
+            issue.delete()
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("Error deleting issue: %s", e)
+            return Response(
+                {"status": "error", "message": "An unexpected error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class UserScoreApiView(APIView):
@@ -1482,12 +1521,51 @@ class SecurityIncidentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = SecurityIncident.objects.all()
 
+    def perform_create(self, serializer):
+        serializer.save(reporter=self.request.user)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        # Re-fetch with row-level lock inside the atomic block
+        locked_instance = SecurityIncident.objects.select_for_update().get(pk=serializer.instance.pk)
+
+        # Store old values from the locked instance BEFORE any modifications
+        old_values = {}
+        fields_to_track = ["title", "severity", "status", "affected_systems", "description"]
+        for field in fields_to_track:
+            old_values[field] = getattr(locked_instance, field)
+
+        # Update serializer to use the locked instance
+        serializer.instance = locked_instance
+
+        # Save the updated incident (now operating on locked instance with validated data)
+        serializer.save()
+
+        # Create history records for changed fields
+        for field in fields_to_track:
+            old_val = old_values[field]
+            new_val = getattr(serializer.instance, field)
+
+            if old_val != new_val:
+                SecurityIncidentHistory.objects.create(
+                    incident=serializer.instance,
+                    field_name=field,
+                    old_value=old_val if old_val is not None else "",
+                    new_value=new_val if new_val is not None else "",
+                    changed_by=self.request.user,
+                )
+
     def get_queryset(self):
         queryset = self.queryset  # Use class-level queryset
 
         request = self.request
         severity = request.query_params.get("severity")
         status = request.query_params.get("status")
+        if severity:
+            severity = severity.lower()
+
+        if status:
+            status = status.lower()
 
         allowed_severities = [choice[0] for choice in SecurityIncident.Severity.choices]
         allowed_statuses = [choice[0] for choice in SecurityIncident.Status.choices]

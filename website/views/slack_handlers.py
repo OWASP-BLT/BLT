@@ -652,10 +652,6 @@ def slack_commands(request):
                 activity.save()
                 return HttpResponse(status=500)
 
-        elif command == "/gsoc25":
-            search_term = request.POST.get("text", "").strip()
-            return get_gsoc_overview(workspace_client, user_id, search_term, activity, team_id)
-
         elif command == "/blt":
             search_term = request.POST.get("text", "").strip()
             if not search_term:
