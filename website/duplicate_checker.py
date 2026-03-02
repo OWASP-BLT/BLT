@@ -17,6 +17,7 @@ from django.db.models import Q
 # Check if OpenAI is available and configured
 try:
     from openai import OpenAI
+
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
@@ -134,19 +135,19 @@ def calculate_vector_similarity(vec1, vec2):
     """
     if not vec1 or not vec2:
         return 0.0
-    
+
     try:
         v1 = np.array(vec1)
         v2 = np.array(vec2)
-        
+
         # Calculate cosine similarity
         dot_product = np.dot(v1, v2)
         norm_v1 = np.linalg.norm(v1)
         norm_v2 = np.linalg.norm(v2)
-        
+
         if norm_v1 == 0 or norm_v2 == 0:
             return 0.0
-            
+
         similarity = dot_product / (norm_v1 * norm_v2)
         # Cosine similarity is [-1, 1], normalize to [0, 1] bounds for safety
         return max(0.0, min(1.0, float(similarity)))
@@ -309,9 +310,9 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
 
                 # Optional: AI Vector Embedding Boost (for GSoC PoC)
                 # If both vector embeddings are available, boost the semantic overlap
-                if hasattr(issue, 'vector_embedding') and issue.vector_embedding:
+                if hasattr(issue, "vector_embedding") and issue.vector_embedding:
                     # In a real implementation this would be pre-calculated or batched
-                    target_embedding = get_embedding(description) 
+                    target_embedding = get_embedding(description)
                     if target_embedding:
                         vec_sim = calculate_vector_similarity(target_embedding, issue.vector_embedding)
                         # Blend the semantic vector similarity with text similarity
@@ -325,7 +326,6 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
                 if keyword_matches > 0:
                     keyword_boost = min(0.1 * keyword_matches, 0.2)
                     overall_similarity = min(overall_similarity + keyword_boost, 1.0)
-
 
                 # Only include if above threshold
                 if overall_similarity >= similarity_threshold:
