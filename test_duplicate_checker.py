@@ -22,9 +22,11 @@ from django.test import Client, TestCase
 
 from website.duplicate_checker import (
     calculate_similarity,
+    calculate_vector_similarity,
     check_for_duplicates,
     extract_domain_from_url,
     extract_keywords,
+    get_embedding,
     normalize_text,
 )
 from website.models import Domain, Issue
@@ -71,6 +73,24 @@ class DuplicateCheckerUnitTests(TestCase):
         self.assertIn("button", keywords)
         self.assertNotIn("the", keywords)  # stop word
         self.assertNotIn("is", keywords)  # stop word
+
+    def test_calculate_vector_similarity(self):
+        """Test vector cosine similarity calculation"""
+        # Identical vectors should have 1.0 similarity
+        vec1 = [1.0, 0.0, 0.0]
+        vec2 = [1.0, 0.0, 0.0]
+        self.assertAlmostEqual(calculate_vector_similarity(vec1, vec2), 1.0)
+        
+        # Orthogonal vectors should have 0.0 similarity
+        vec3 = [0.0, 1.0, 0.0]
+        self.assertAlmostEqual(calculate_vector_similarity(vec1, vec3), 0.0)
+        
+        # Handle zero vectors safely
+        vec_zero = [0.0, 0.0, 0.0]
+        self.assertEqual(calculate_vector_similarity(vec1, vec_zero), 0.0)
+        
+        # Handle empty/None safely
+        self.assertEqual(calculate_vector_similarity(None, vec1), 0.0)
 
 
 class DuplicateCheckerIntegrationTests(TestCase):

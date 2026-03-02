@@ -10,7 +10,16 @@ import re
 from difflib import SequenceMatcher
 from urllib.parse import urlparse
 
+import numpy as np
+from django.conf import settings
 from django.db.models import Q
+
+# Check if OpenAI is available and configured
+try:
+    from openai import OpenAI
+    HAS_OPENAI = True
+except ImportError:
+    HAS_OPENAI = False
 
 from website.models import Issue
 
@@ -98,6 +107,52 @@ def normalize_text(text):
     except (TypeError, AttributeError, UnicodeError) as e:
         logger.warning("Error normalizing text: %s", e)
         return ""
+
+
+def get_embedding(text, model="text-embedding-3-small"):
+    """
+    Get the vector embedding for a given text using OpenAI API.
+    Fails gracefully if the API key is not configured or missing.
+    """
+    if not HAS_OPENAI or not getattr(settings, "OPENAI_API_KEY", None) or settings.OPENAI_API_KEY == "dummy":
+        return None
+
+    try:
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        text = text.replace("\n", " ")
+        response = client.embeddings.create(input=[text], model=model)
+        return response.data[0].embedding
+    except Exception as e:
+        logger.warning("Failed to generate OpenAI embedding: %s", e)
+        return None
+
+
+def calculate_vector_similarity(vec1, vec2):
+    """
+    Calculates the cosine similarity between two vector embeddings.
+    Returns a float between 0.0 and 1.0.
+    """
+    if not vec1 or not vec2:
+        return 0.0
+    
+    try:
+        v1 = np.array(vec1)
+        v2 = np.array(vec2)
+        
+        # Calculate cosine similarity
+        dot_product = np.dot(v1, v2)
+        norm_v1 = np.linalg.norm(v1)
+        norm_v2 = np.linalg.norm(v2)
+        
+        if norm_v1 == 0 or norm_v2 == 0:
+            return 0.0
+            
+        similarity = dot_product / (norm_v1 * norm_v2)
+        # Cosine similarity is [-1, 1], normalize to [0, 1] bounds for safety
+        return max(0.0, min(1.0, float(similarity)))
+    except Exception as e:
+        logger.warning("Error calculating vector similarity: %s", e)
+        return 0.0
 
 
 def extract_domain_from_url(url):
@@ -252,6 +307,16 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
                 else:
                     overall_similarity = desc_similarity
 
+                # Optional: AI Vector Embedding Boost (for GSoC PoC)
+                # If both vector embeddings are available, boost the semantic overlap
+                if hasattr(issue, 'vector_embedding') and issue.vector_embedding:
+                    # In a real implementation this would be pre-calculated or batched
+                    target_embedding = get_embedding(description) 
+                    if target_embedding:
+                        vec_sim = calculate_vector_similarity(target_embedding, issue.vector_embedding)
+                        # Blend the semantic vector similarity with text similarity
+                        overall_similarity = max(overall_similarity, vec_sim * 0.9)
+
                 # Check if any keywords match
                 issue_keywords = extract_keywords(issue.description)
                 keyword_matches = len(set(description_keywords) & set(issue_keywords))
@@ -260,6 +325,7 @@ def find_similar_bugs(url, description, domain=None, similarity_threshold=0.6, l
                 if keyword_matches > 0:
                     keyword_boost = min(0.1 * keyword_matches, 0.2)
                     overall_similarity = min(overall_similarity + keyword_boost, 1.0)
+
 
                 # Only include if above threshold
                 if overall_similarity >= similarity_threshold:
