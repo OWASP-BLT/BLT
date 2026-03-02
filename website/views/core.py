@@ -1565,8 +1565,26 @@ def home(request):
             points__issue__isnull=False,  # Only consider users with issue-related points
         )
         .annotate(
-            bug_count=Count("points", filter=Q(points__score__gt=0, points__issue__isnull=False)),  # Only count bug reports
-            total_score=Coalesce(Sum("points__score", filter=Q(points__issue__isnull=False)), 0),  # Default NULL to 0
+            bug_count=Count(
+                "points",
+                filter=Q(
+                    points__score__gt=0,
+                    points__issue__isnull=False,
+                    points__created__month=current_time.month,
+                    points__created__year=current_time.year,
+                ),
+            ),
+            total_score=Coalesce(
+                Sum(
+                    "points__score",
+                    filter=Q(
+                        points__issue__isnull=False,
+                        points__created__month=current_time.month,
+                        points__created__year=current_time.year,
+                    ),
+                ),
+                0,
+            ),
         )
         .filter(bug_count__gt=0)  # Exclude users without any bug reports
         .order_by("-total_score")[:5]
