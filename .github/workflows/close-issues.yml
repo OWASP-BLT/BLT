@@ -6,6 +6,7 @@ on:
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
   close-new-issues:
@@ -18,6 +19,27 @@ jobs:
             const issueNumber = context.issue.number;
             const repo = context.repo.repo;
             const owner = context.repo.owner;
+            const author = context.payload.issue.user.login;
+
+            // Check if the issue author is a maintainer/collaborator
+            let isMaintainer = false;
+            try {
+              const { data: permissionData } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: author
+              });
+              const permission = permissionData.permission;
+              isMaintainer = permission === "admin" || permission === "maintain" || permission === "write";
+            } catch (e) {
+              // If the user is not a collaborator, the API returns 404
+              isMaintainer = false;
+            }
+
+            if (isMaintainer) {
+              console.log(`Issue #${issueNumber} created by maintainer ${author} — skipping auto-close.`);
+              return;
+            }
 
             const message = `
                   🚫 **Please do not create new issues**  
