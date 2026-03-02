@@ -157,6 +157,16 @@ jobs:
                   continue;
                 }
                 
+                // Delete any existing reminder comments before posting a new one
+                for (const existingReminder of existingReminders) {
+                  await github.rest.issues.deleteComment({
+                    owner,
+                    repo,
+                    comment_id: existingReminder.id,
+                  });
+                  core.info(`  Deleted old reminder comment #${existingReminder.id}`);
+                }
+                
                 // Post a reminder comment
                 const conversationWord = unresolvedCount === 1 ? 'conversation' : 'conversations';
                 const commentBody = reminderMarker + '\n' +
