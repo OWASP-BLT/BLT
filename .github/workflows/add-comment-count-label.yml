@@ -151,10 +151,20 @@ jobs:
               }
             }
 
-            // Ensure the new label exists (create if missing)
+            // Ensure the new label exists with the correct color/description (create or update as needed)
             async function ensureLabelExists(labelName) {
               try {
-                await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                const { data: existing } = await github.rest.issues.getLabel({ owner, repo, name: labelName });
+                if (existing.color !== labelColor || existing.description !== description) {
+                  await github.rest.issues.updateLabel({
+                    owner,
+                    repo,
+                    name: labelName,
+                    color: labelColor,
+                    description: description,
+                  });
+                  core.info(`Updated label ${labelName} color/description`);
+                }
               } catch (e) {
                 if (e.status === 404) {
                   await github.rest.issues.createLabel({
