@@ -12,7 +12,12 @@ from datetime import datetime
 from ipaddress import ip_address
 from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+    logging.warning("OpenCV (cv2) not installed; face-processing features will be disabled.")
+
 import markdown
 import numpy as np
 import requests
@@ -1249,6 +1254,10 @@ def _get_face_cascade():
     if _face_cascade_cache is not None:
         return _face_cascade_cache
 
+    if cv2 is None:
+        logging.error("OpenCV not available – cannot load Haar Cascade classifier.")
+        return None
+
     try:
         cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         classifier = cv2.CascadeClassifier(cascade_path)
@@ -1279,6 +1288,10 @@ def overlay_faces(image, color=(0, 0, 0)):
     """
     try:
         logging.debug("Starting face detection process")
+
+        if cv2 is None:
+            logging.warning("OpenCV not available - skipping face overlay")
+            return image
 
         # Convert image to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -1343,6 +1356,9 @@ def process_bug_screenshot(image_file, overlay_color=(0, 0, 0)):
     logging.info(f"Processing screenshot: {getattr(image_file, 'name', 'unknown')}")
 
     try:
+        if cv2 is None:
+            raise ImportError("OpenCV (cv2) is not installed")
+
         logging.debug("OpenCV imported successfully for screenshot processing")
 
         # Reset file pointer to beginning
