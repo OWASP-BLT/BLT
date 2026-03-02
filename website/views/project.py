@@ -2,6 +2,7 @@ import concurrent.futures
 import ipaddress
 import json
 import logging
+from multiprocessing import context
 import re
 import socket
 import time
@@ -1506,18 +1507,34 @@ class RepoDetailView(DetailView):
                 elif response.status_code == 404:
                     context["stargazers"] = []
                     context["stargazers_error"] = "Repository not found. Please check the URL and try again."
+                    context["total_stargazers"] = 0
+                    context["total_pages"] = 0
+                    context["current_page"] = 1
+                    context["filter_type"] = filter_type
                     break
                 elif response.status_code == 403:
                     context["stargazers"] = []
                     context["stargazers_error"] = "Rate limit exceeded. Please try again later."
+                    context["total_stargazers"] = 0
+                    context["total_pages"] = 0
+                    context["current_page"] = 1
+                    context["filter_type"] = filter_type
                     break
                 elif response.status_code == 401:
                     context["stargazers"] = []
                     context["stargazers_error"] = "Authentication failed. Please contact the administrator."
+                    context["total_stargazers"] = 0
+                    context["total_pages"] = 0
+                    context["current_page"] = 1
+                    context["filter_type"] = filter_type
                     break
                 else:
                     context["stargazers"] = []
                     context["stargazers_error"] = f"Error fetching stargazers (Status code: {response.status_code})"
+                    context["total_stargazers"] = 0
+                    context["total_pages"] = 0
+                    context["current_page"] = 1
+                    context["filter_type"] = filter_type
                     break
 
             if "stargazers" not in context:
