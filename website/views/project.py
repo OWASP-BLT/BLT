@@ -1493,7 +1493,8 @@ class RepoDetailView(DetailView):
             all_stargazers = []
             current_page = 1
             api_per_page = 100
-            while True:
+            MAX_STARGAZER_PAGES = 10
+            while current_page <= MAX_STARGAZER_PAGES:
                 paginated_url = f"{api_url}?page={current_page}&per_page={api_per_page}"
                 response = requests.get(paginated_url, headers=headers, timeout=10)
                 if response.status_code == 200:
