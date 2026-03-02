@@ -11,15 +11,6 @@ RUN apt-get update && \
     dos2unix && \
     rm -rf /var/lib/apt/lists/*
 
-# # Install Chrome WebDriver
-# RUN CHROMEDRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE` && \
-#     mkdir -p /opt/chromedriver-$CHROMEDRIVER_VERSION && \
-#     curl -sS -o /tmp/chromedriver_linux64.zip http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
-#     unzip -qq /tmp/chromedriver_linux64.zip -d /opt/chromedriver-$CHROMEDRIVER_VERSION && \
-#     rm /tmp/chromedriver_linux64.zip && \
-#     chmod +x /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver && \
-#     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
-
 # Install Chromium (works on all architectures)
 # Retry logic with --fix-missing for transient network errors
 RUN apt-get update \
@@ -28,11 +19,13 @@ RUN apt-get update \
     && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry and dependencies
-RUN pip install poetry
+# Install Poetry and dependencies (Pinned to 2.2.1 to fix CI/CD conflicts)
+RUN pip install --upgrade pip && \
+    pip install poetry==2.2.1
 RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock* ./
-# Clean any existing httpx installation and update pip
+
+# Clean any existing httpx installation
 RUN pip uninstall -y httpx || true
 RUN pip install --upgrade pip
 # Install dependencies with Poetry
