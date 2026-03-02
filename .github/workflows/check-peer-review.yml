@@ -164,7 +164,7 @@ jobs:
             // Determine label based on peer review status
             const hasPeerReview = '${{ steps.check_peer_review.outputs.has_peer_review }}' === 'true';
             const newLabel = hasPeerReview ? 'has-peer-review' : 'needs-peer-review';
-            const labelColor = hasPeerReview ? '0e8a16' : 'fbca04';  // Green or Yellow
+            const labelColor = hasPeerReview ? '0e8a16' : 'b60205';  // Green or Red
             const description = hasPeerReview ? 'PR has received peer review' : 'PR needs peer review';
             
             // Get current labels on the PR
