@@ -41,7 +41,17 @@ jobs:
             const isBot = (user) => {
               if (!user || !user.login) return false;
               const loginLower = user.login.toLowerCase();
-              const botPatterns = ['copilot', '[bot]', 'dependabot', 'github-actions', 'renovate', 'actions-user'];
+              const botPatterns = [
+                'copilot',
+                '[bot]',
+                'dependabot',
+                'github-actions',
+                'renovate',
+                'actions-user',
+                'coderabbitai',
+                'coderabbit',
+                'sentry-autofix'
+              ];
               return (user.type && user.type === 'Bot') ||
                      botPatterns.some(pattern => loginLower.includes(pattern));
             };
