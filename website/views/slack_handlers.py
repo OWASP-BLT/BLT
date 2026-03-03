@@ -12,6 +12,7 @@ from urllib.parse import quote_plus
 
 import requests
 import yaml
+from django.conf import settings
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
