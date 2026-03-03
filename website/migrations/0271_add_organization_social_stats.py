@@ -5,7 +5,8 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0271"),
+        ("website", "0270_githubcomment"),
+        ("website", "0270_add_issue_verification_metadata"),
     ]
 
     operations = [

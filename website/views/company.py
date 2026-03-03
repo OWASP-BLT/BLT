@@ -989,8 +989,11 @@ class OrganizationSocialRedirectView(View):
             messages.error(request, f"Invalid {platform.capitalize()} URL configured")
             return redirect("organization_analytics", id=org_id)
 
-        # Strip query parameters and fragments before redirect to prevent parameter injection attacks
-        clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+        # Strip query parameters, fragments, and userinfo before redirect to prevent parameter injection attacks
+        safe_netloc = parsed.hostname or ""
+        if parsed.port:
+            safe_netloc = f"{safe_netloc}:{parsed.port}"
+        clean_url = urlunparse((parsed.scheme, safe_netloc, parsed.path, "", "", ""))
 
         # Redirect to the sanitized social media URL (query params already stripped)
         return redirect(clean_url)

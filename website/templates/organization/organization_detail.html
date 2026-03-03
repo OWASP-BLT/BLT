@@ -741,7 +741,6 @@ function syncGithubProjects() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         alert('An error occurred while syncing projects.');
         button.disabled = false;
         button.innerHTML = originalContent;
@@ -767,7 +766,6 @@ function updateGithubRepos(slug) {
     try {
         eventSource = new EventSource(`/organization/${slug}/update-repos/`);
     } catch (err) {
-        console.error('Error creating EventSource:', err);
         statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
@@ -832,7 +830,6 @@ function updateGithubRepos(slug) {
     // Handle errors
     eventSource.onerror = function(error) {
         clearTimeout(connectionTimeout);
-        console.error('EventSource error:', error);
         
         eventSource.close();
         

@@ -21,7 +21,13 @@ from website.models import (
     Room,
     UserProfile,
 )
-from website.utils import is_valid_host_for_domain
+
+
+def is_valid_host_for_domain(*args, **kwargs):
+    """Lazy import wrapper to avoid loading heavy website.utils module at form import time."""
+    from website.utils import is_valid_host_for_domain as _is_valid_host_for_domain
+
+    return _is_valid_host_for_domain(*args, **kwargs)
 
 
 class UserProfileForm(forms.ModelForm):
