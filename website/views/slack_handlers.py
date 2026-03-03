@@ -103,7 +103,7 @@ def get_project_with_least_members():
     except Exception as e:
         logger.error(f"Error fetching project: {str(e)}", exc_info=True)
         return None
-    
+
 
 def _build_owasp_welcome_message(user_id):
     """Build the OWASP Slack welcome message with dynamic project examples."""
