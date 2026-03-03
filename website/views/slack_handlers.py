@@ -61,16 +61,33 @@ def get_slack_username(workspace_client, user_id):
         logger.warning(f"Failed to fetch username for user_id {user_id}: {str(e)}")
     return None
 
+def fetch_project_data(source="db"):
+    """
+    Fetch project data from configurable source.
+
+    NOTE:
+    Prepares for migration from Django ORM → API (BLT-Next).
+    """
+    if source == "db":
+        return fetch_project_from_db()
+    else:
+        raise ValueError(f"Unsupported source: {source}")
+        
+
+def fetch_project_from_db():
+    """Fetch project using Django ORM (current implementation)."""
+    return (
+        Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
+        .exclude(slack_channel="project-blt")
+        .order_by("slack_user_count")
+        .first()
+    )
+
 
 def get_project_with_least_members():
     """Get the project channel name with the least members (excluding project-blt)."""
     try:
-        project = (
-            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
-            .exclude(slack_channel="project-blt")
-            .order_by("slack_user_count")
-            .first()
-        )
+        project = fetch_project_data()  # abstraction only
         return project.slack_channel if project else None
     except Exception as e:
         logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
