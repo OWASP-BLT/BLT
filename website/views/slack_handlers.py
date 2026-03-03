@@ -77,7 +77,7 @@ def fetch_project_from_db():
     )
 
 
-def fetch_project_data(source="db"):
+def fetch_project_data(source: str = "db"):
     """
     Fetch project data from configurable source.
 
@@ -91,7 +91,7 @@ def fetch_project_data(source="db"):
 
 
 def get_project_with_least_members():
-    """Return slack channel of project with least members (excluding project-blt)."""
+    """Return Slack channel of project with least members (excluding project-blt)."""
     try:
         project = fetch_project_data(source="db")
         return project.slack_channel if project else None
@@ -101,7 +101,7 @@ def get_project_with_least_members():
             exc_info=True,
         )
         return None
-
+    
 
 def _build_owasp_welcome_message(user_id):
     """Build the OWASP Slack welcome message with dynamic project examples."""
