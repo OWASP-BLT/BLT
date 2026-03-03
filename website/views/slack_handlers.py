@@ -12,6 +12,7 @@ from urllib.parse import quote_plus
 
 import requests
 import yaml
+from django.conf import settings
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -62,18 +63,50 @@ def get_slack_username(workspace_client, user_id):
     return None
 
 
-def get_project_with_least_members():
-    """Get the project channel name with the least members (excluding project-blt)."""
-    try:
-        project = (
-            Project.objects.filter(slack_channel__isnull=False, slack_user_count__gt=0)
-            .exclude(slack_channel="project-blt")
-            .order_by("slack_user_count")
-            .first()
+def fetch_project_from_db():
+    """Fetch project with least members using Django ORM."""
+    return (
+        Project.objects.filter(
+            slack_channel__isnull=False,
+            slack_channel__gt="",
+            slack_user_count__gt=0,
         )
+        .exclude(slack_channel="project-blt")
+        .order_by("slack_user_count")
+        .first()
+    )
+
+
+def fetch_project_from_api():
+    """Placeholder for future API-based fetching."""
+    raise NotImplementedError("API source is not yet implemented.")
+
+
+def fetch_project_data(source=None):
+    """
+    Dispatcher for project data. Defaults to settings.PROJECT_DATA_SOURCE.
+    """
+    if source is None:
+        source = str(getattr(settings, "PROJECT_DATA_SOURCE", "db")).strip().lower()
+
+    fetchers = {
+        "db": fetch_project_from_db,
+        "api": fetch_project_from_api,
+    }
+
+    if source not in fetchers:
+        raise ValueError(f"Unsupported data source: {source}")
+
+    return fetchers[source]()
+
+
+def get_project_with_least_members():
+    """Return Slack channel of project with least members."""
+    try:
+        project = fetch_project_data()
         return project.slack_channel if project else None
     except Exception as e:
-        logger.error(f"Failed to fetch project with least members: {str(e)}", exc_info=True)
+        logger.error(f"Error fetching project: {str(e)}", exc_info=True)
         return None
 
 
@@ -2410,7 +2443,7 @@ def get_event_overview(workspace_client, user_id, search_term, activity, team_id
                         }
 
                         for event in events_to_show:
-                            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+                            event_text = f"*{event['name']}*\n📅 {event['dates']}\n"
                             if event.get("optional-text"):
                                 event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
                             if event.get("url"):
@@ -2465,7 +2498,7 @@ def get_event_overview(workspace_client, user_id, search_term, activity, team_id
                         events_to_show = category["events"][:2]
 
                         for event in events_to_show:
-                            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+                            event_text = f"*{event['name']}*\n📅 {event['dates']}\n"
                             if event.get("optional-text"):
                                 event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
                             if event.get("url"):
@@ -2559,7 +2592,7 @@ def handle_event_pagination(action, body, client):
 
         # Add event blocks
         for event in events_to_show:
-            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+            event_text = f"*{event['name']}*\n📅 {event['dates']}\n"
             if event.get("optional-text"):
                 event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
             if event.get("url"):
