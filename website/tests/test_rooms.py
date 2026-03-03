@@ -13,7 +13,9 @@ class RoomsViewTests(TestCase):
         # Create a test user
         self.user = User.objects.create_user(username="testuser", password="12345")
         # Create a test room
-        self.room = Room.objects.create(name="Test Room", description="A test room for testing", admin=self.user)
+        self.room = Room.objects.create(
+            name="Test Room", description="A test room for testing", admin=self.user, type="project"
+        )
 
     def test_rooms_list_view(self):
         """Test that the discussion rooms page loads successfully"""
