@@ -245,7 +245,7 @@ class RefreshStatsAPIView(View):
                 "message": f"Refreshed stats for {len(updated_repos)} repositories",
                 "updated_repos": updated_repos,
             }
-            
+
             if failed_repos:
                 response_data["warning"] = f"{len(failed_repos)} repositories could not be updated"
                 response_data["failed_repos"] = failed_repos
