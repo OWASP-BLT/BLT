@@ -135,8 +135,8 @@ MIDDLEWARE = [
 if DEBUG:
     MIDDLEWARE += ("livereload.middleware.LiveReloadScript",)
 
-BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
-BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
+BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="")
+BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="")
 
 
 if DEBUG and not TESTING:
@@ -600,12 +600,16 @@ MDEDITOR_CONFIGS = {
 
 # SuperUser Details
 
-SUPERUSER_USERNAME = env("SUPERUSER", default="admin123")
-SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="admin123@gmail.com")
-SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
+SUPERUSER_USERNAME = env("SUPERUSER", default="")
+SUPERUSER_EMAIL = env("SUPERUSER_MAIL", default="")
+SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="")
 
 
-SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
+SUPERUSERS = (
+    ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
+    if all([SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD])
+    else ()
+)
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
@@ -624,8 +628,8 @@ ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 USPTO_API = os.environ.get("USPTO_API")
 
 
-BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
-BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
+BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "")
+BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 

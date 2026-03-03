@@ -2640,7 +2640,11 @@ def get_github_issue(request):
 
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is not set")
+
+        client = OpenAI(api_key=openai_api_key)
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
